@@ -10,7 +10,11 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "vite": "npm:rolldown-vite@7.2.5"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   },
   "pnpm": {
     "overrides": {
