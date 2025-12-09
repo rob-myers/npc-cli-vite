@@ -1,0 +1,25 @@
+{
+  "name": "@npc-cli/app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-swc": "^4.2.2",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "vite": "npm:rolldown-vite@7.2.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:rolldown-vite@7.2.5"
+    }
+  }
+}
