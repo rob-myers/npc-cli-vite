@@ -8,17 +8,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.140.1",
-    "@tanstack/router-plugin": "^1.140.1",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "@tanstack/react-router": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.17",
-    "@tanstack/react-router-devtools": "^1.140.1",
-    "@vitejs/plugin-react-swc": "^4.2.2",
-    "globals": "^16.5.0",
-    "tailwindcss": "^4.1.17",
-    "typescript": "~5.9.3"
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/react-router-devtools": "catalog:",
+    "@vitejs/plugin-react-swc": "catalog:",
+    "globals": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
   }
 }
