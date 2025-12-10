@@ -5,5 +5,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return <div>Hello, world!</div>;
+  return (
+    <>
+      <h1 className="text-3xl">My App</h1>
+      <div>Hello, world!</div>
+    </>
+  );
 }
