@@ -4,6 +4,51 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@biomejs/biome':
+      specifier: ^2.3.8
+      version: 2.3.8
+    '@tailwindcss/vite':
+      specifier: ^4.1.17
+      version: 4.1.17
+    '@tanstack/react-router':
+      specifier: ^1.140.1
+      version: 1.140.1
+    '@tanstack/react-router-devtools':
+      specifier: ^1.140.1
+      version: 1.140.1
+    '@tanstack/router-plugin':
+      specifier: ^1.140.1
+      version: 1.140.1
+    '@types/node':
+      specifier: ^24.10.1
+      version: 24.10.2
+    '@types/react':
+      specifier: ^19.2.5
+      version: 19.2.7
+    '@types/react-dom':
+      specifier: ^19.2.3
+      version: 19.2.3
+    '@vitejs/plugin-react-swc':
+      specifier: ^4.2.2
+      version: 4.2.2
+    globals:
+      specifier: ^16.5.0
+      version: 16.5.0
+    react:
+      specifier: ^19.2.0
+      version: 19.2.1
+    react-dom:
+      specifier: ^19.2.0
+      version: 19.2.1
+    tailwindcss:
+      specifier: ^4.1.17
+      version: 4.1.17
+    typescript:
+      specifier: ~5.9.3
+      version: 5.9.3
+
 overrides:
   vite: npm:rolldown-vite@7.2.5
 
@@ -12,16 +57,16 @@ importers:
   .:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.3.8
+        specifier: 'catalog:'
         version: 2.3.8
       '@types/node':
-        specifier: ^24.10.1
+        specifier: 'catalog:'
         version: 24.10.2
       '@types/react':
-        specifier: ^19.2.5
+        specifier: 'catalog:'
         version: 19.2.7
       '@types/react-dom':
-        specifier: ^19.2.3
+        specifier: 'catalog:'
         version: 19.2.3(@types/react@19.2.7)
       vite:
         specifier: npm:rolldown-vite@7.2.5
@@ -30,35 +75,35 @@ importers:
   packages/app:
     dependencies:
       '@tanstack/react-router':
-        specifier: ^1.140.1
+        specifier: 'catalog:'
         version: 1.140.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@tanstack/router-plugin':
-        specifier: ^1.140.1
+        specifier: 'catalog:'
         version: 1.140.1(@tanstack/react-router@1.140.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(vite@7.2.7(@types/node@24.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
       react:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.1
       react-dom:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
     devDependencies:
       '@tailwindcss/vite':
-        specifier: ^4.1.17
+        specifier: 'catalog:'
         version: 4.1.17(vite@7.2.7(@types/node@24.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
       '@tanstack/react-router-devtools':
-        specifier: ^1.140.1
+        specifier: 'catalog:'
         version: 1.140.1(@tanstack/react-router@1.140.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(@tanstack/router-core@1.140.1)(csstype@3.2.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(solid-js@1.9.10)
       '@vitejs/plugin-react-swc':
-        specifier: ^4.2.2
+        specifier: 'catalog:'
         version: 4.2.2(vite@7.2.7(@types/node@24.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
       globals:
-        specifier: ^16.5.0
+        specifier: 'catalog:'
         version: 16.5.0
       tailwindcss:
-        specifier: ^4.1.17
+        specifier: 'catalog:'
         version: 4.1.17
       typescript:
-        specifier: ~5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
 
 packages:

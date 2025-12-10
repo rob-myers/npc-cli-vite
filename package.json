@@ -8,10 +8,10 @@
     "build": "pnpm -F @npc-cli/app build"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.8",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "vite": "npm:rolldown-vite@7.2.5"
   },
   "engines": {
