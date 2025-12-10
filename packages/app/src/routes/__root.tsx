@@ -6,11 +6,9 @@ export const Route = createRootRoute({
   notFoundComponent: () => <div>Page Not Found</div>,
 });
 
-// 🚧
 function RootComponent() {
   return (
-    <div className="flex flex-col items-center gap-4 w-screen">
-      <h1>My App</h1>
+    <div className="flex flex-col items-center justify-center gap-4 w-screen h-screen">
       <Outlet /> {/* This is where child routes will render */}
       <TanStackRouterDevtools position="bottom-right" />
     </div>
