@@ -1,0 +1,8 @@
+{
+  "name": "@npc-cli/cli",
+  "private": true,
+  "type": "module",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}
