@@ -2,6 +2,9 @@
   "name": "@npc-cli/cli",
   "private": true,
   "type": "module",
+  "exports": {
+    "./src/test-load-wasm": "./src/test-load-wasm.ts"
+  },
   "scripts": {
     "wasm": "tinygo build -o main.wasm -target ./target.json"
   },
