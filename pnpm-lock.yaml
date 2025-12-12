@@ -74,6 +74,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@npc-cli/cli':
+        specifier: workspace:^
+        version: link:../cli
       '@tanstack/react-router':
         specifier: 'catalog:'
         version: 1.140.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

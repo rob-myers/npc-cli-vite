@@ -63,4 +63,10 @@ pnpm wasm
 # generates main.wasm
 ```
 
+### loading wasm in browser
 
+https://github.com/tinygo-org/tinygo/blob/3869f76887feef6c444308e7e1531b7cac1bbd10/targets/wasm_exec.js
+
+https://tinygo.org/docs/guides/webassembly/wasm/
+
+🚧 types for Go provided by tinygo in packages/cli/vendors/wasm_exec.js
