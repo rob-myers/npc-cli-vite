@@ -21,9 +21,6 @@
     "parser": {}
   },
   "files": {
-    "includes": [
-      "**",
-      "!**/routeTree.gen.ts"
-    ]
+    "includes": ["**", "!**/routeTree.gen.ts", "!packages/cli/vendors/wasm_exec.js"]
   }
 }
