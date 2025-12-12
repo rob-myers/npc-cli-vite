@@ -18,7 +18,9 @@
 
 # Dependencies
 
-## golang setup (packages/cli)
+## `packages/cli`
+
+### golang setup
 
 ```sh
 brew install go@1.23
@@ -38,3 +40,27 @@ cd processor
 # generate structs_easyjson.go
 easyjson -all structs.go
 ```
+
+### golang -> wasm setup
+
+https://tinygo.org/getting-started/install/macos/
+
+```sh
+brew tap tinygo-org/tools
+brew install tinygo
+```
+
+https://tinygo.org/docs/guides/webassembly/
+
+```ts
+//export parse
+func parse(...)
+```
+
+```sh
+cd packages/cli
+pnpm wasm
+# generates main.wasm
+```
+
+

@@ -2,7 +2,9 @@
   "name": "@npc-cli/cli",
   "private": true,
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "wasm": "tinygo build -o main.wasm -target ./target.json"
+  },
   "dependencies": {},
   "devDependencies": {}
 }
