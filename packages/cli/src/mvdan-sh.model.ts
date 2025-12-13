@@ -1,3 +1,26 @@
+import z from "zod";
+import { jsonParser } from "../../util/src/json-parser";
+
+export const ParseResultSchema = jsonParser.pipe(
+  z.object({
+    // 🚧 extend
+    file: z.looseObject({
+      Type: z.literal("File"), // added into structs.go
+      Name: z.string(),
+    }),
+    text: z.string(),
+    parseError: z
+      .object({
+        Filename: z.string().optional(),
+        Incomplete: z.boolean(),
+        Text: z.string(),
+        Pos: z.unknown().optional(),
+      })
+      .nullish(),
+    message: z.string(),
+  }),
+);
+
 export type LangVariant = (typeof LangVariant)[keyof typeof LangVariant];
 
 export const LangVariant = {

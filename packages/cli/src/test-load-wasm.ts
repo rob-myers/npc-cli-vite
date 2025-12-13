@@ -1,8 +1,11 @@
-import z from "zod";
 // Based on https://github.com/un-ts/sh-syntax/blob/main/src/processor.ts
 import "../vendors/wasm_exec";
-import { jsonParser } from "../../util/src/json-parser.js";
-import { type IParseError, LangVariant, type ShOptions } from "./mvdan-sh.model.js";
+import {
+  type IParseError,
+  LangVariant,
+  ParseResultSchema,
+  type ShOptions,
+} from "./mvdan-sh.model.js";
 
 /**
  * https://tinygo.org/docs/guides/webassembly/wasm/
@@ -140,25 +143,6 @@ type WasmInstanceExports = {
   ) => number;
 };
 
-const ParseResultSchema = jsonParser.pipe(
-  z.object({
-    // 🚧 extend
-    file: z.looseObject({
-      Type: z.literal("File"), // added into structs.go
-      Name: z.string(),
-    }),
-    text: z.string(),
-    parseError: z
-      .object({
-        Filename: z.string().optional(),
-        Incomplete: z.boolean(),
-        Text: z.string(),
-        Pos: z.unknown().optional(),
-      })
-      .nullish(),
-    message: z.string(),
-  }),
-);
 export class ParseError extends Error implements IParseError {
   Filename?: string;
   Incomplete: boolean;
