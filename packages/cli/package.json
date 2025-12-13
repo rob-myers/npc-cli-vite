@@ -6,8 +6,11 @@
     "./src/test-load-wasm": "./src/test-load-wasm.ts"
   },
   "scripts": {
+    "gen:structs": "cd processor && easyjson -all structs.go",
     "wasm": "tinygo build -o main.wasm -target ./target.json"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@npc-cli/util": "workspace:^",
+    "zod": "^4.1.13"
+  }
 }

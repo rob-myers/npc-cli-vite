@@ -1,0 +1,10 @@
+{
+  "name": "@npc-cli/util",
+  "private": true,
+  "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {}
+}
