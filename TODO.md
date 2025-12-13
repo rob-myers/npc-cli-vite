@@ -19,5 +19,7 @@
   - ✅ validate using zod
   - ✅ extend underlying structs somehow
 
+- ✅ upgrade to mvdan-sh go version 
+- ❌ upgrade to latest mvdan-sh
+  - not yet
 - add react-query
-- try migrate to latest mvdan-sh and latest go
