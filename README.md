@@ -40,9 +40,8 @@ func parse(...)
 ```
 
 ```sh
-cd packages/cli
-pnpm wasm
-# generates main.wasm
+# generate packages/cli/main.wasm with current structs
+pnpm -F @npc-cli/cli build:wasm
 ```
 
 ### loading wasm in browser

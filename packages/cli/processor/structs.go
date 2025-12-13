@@ -61,6 +61,7 @@ type Stmt struct {
 }
 
 type File struct {
+	Type string
 	Name string
 	Stmt []Stmt
 	Last []Comment
@@ -210,6 +211,7 @@ func mapStmts(stmts []*syntax.Stmt) []Stmt {
 
 func MapFile(file syntax.File) File {
 	return File{
+		Type: "File",
 		Name: file.Name,
 		Stmt: mapStmts(file.Stmts),
 		Last: mapComments(file.Last),

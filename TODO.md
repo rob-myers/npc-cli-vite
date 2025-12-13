@@ -10,11 +10,14 @@
   - monorepo with catalog
   - package.json exports
 
-- add react-query
-
 - 🚧 packages/cli
   - https://github.com/un-ts/sh-syntax
   - ✅ build main.wasm
   - ✅ can instantiate main.wasm
-  - 🚧 wrap main.wasm i.e. `parse` returns pointer and need "return value" instead
+  - ✅ wrap main.wasm i.e. `parse` returns pointer and need "return value" instead
     - https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L219
+  - ✅ validate using zod
+  - ✅ extend underlying structs somehow
+
+- add react-query
+- try migrate to latest mvdan-sh and latest go
