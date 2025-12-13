@@ -1049,6 +1049,12 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor8(in *
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		switch key {
+		case "Type":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Type = string(in.String())
+			}
 		case "Name":
 			if in.IsNull() {
 				in.Skip()
@@ -1136,8 +1142,13 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor8(out 
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"Name\":"
+		const prefix string = ",\"Type\":"
 		out.RawString(prefix[1:])
+		out.String(string(in.Type))
+	}
+	{
+		const prefix string = ",\"Name\":"
+		out.RawString(prefix)
 		out.String(string(in.Name))
 	}
 	{

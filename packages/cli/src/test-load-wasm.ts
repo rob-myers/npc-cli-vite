@@ -9,9 +9,10 @@ import { type IParseError, LangVariant, type ShOptions } from "./mvdan-sh.model.
  * 🚧 support interactive parse
  */
 export async function testLoadWasm() {
-  // await parse("for bar baz"); // ❌ 1:1: "for foo" must be followed by "in", "do", ;, or a newline
-  await parse("foo bar baz"); // ✅
-  // await parse("foo '"); // ❌ 1:5: reached EOF without closing quote '
+  // const result = await parse("for bar baz"); // ❌ 1:1: "for foo" must be followed by "in", "do", ;, or a newline
+  const parseResult = await parse("foo bar baz"); // ✅
+  // const result = await parse("foo '"); // ❌ 1:5: reached EOF without closing quote '
+  console.log({ parseResult });
 }
 
 const wasm = {
@@ -101,12 +102,12 @@ async function parse(
   const resultBuffer = new Uint8Array(memory.buffer).subarray(resultPointer);
   const end = resultBuffer.indexOf(0);
   const resultString = decoder.decode(resultBuffer.subarray(0, end));
-  console.log({ resultString });
+  // console.log({ resultString });
 
   try {
     // const resultObj = JSON.parse(resultString);
     const resultObj = ParseResultSchema.parse(resultString);
-    console.log({ resultObj });
+    return resultObj;
   } catch (e) {
     console.error(e);
     throw new ParseError({
@@ -143,8 +144,7 @@ const ParseResultSchema = jsonParser.pipe(
   z.object({
     // 🚧 extend
     file: z.looseObject({
-      // 🚧 recursively add "type" literals in post-processing step
-      // type: z.literal("File"),
+      Type: z.literal("File"), // added into structs.go
       Name: z.string(),
     }),
     text: z.string(),
