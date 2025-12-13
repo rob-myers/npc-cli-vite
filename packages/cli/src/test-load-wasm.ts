@@ -1,21 +1,12 @@
 // Based on https://github.com/un-ts/sh-syntax/blob/main/src/processor.ts
 import "../vendors/wasm_exec";
-import type { LangVariant } from "./mvdan-sh.model.js";
+import { LangVariant, type ShOptions } from "./mvdan-sh.model.js";
 
 /**
  * https://tinygo.org/docs/guides/webassembly/wasm/
  */
 export async function testLoadWasm() {
-  const { go, wasm } = await loadWasm();
-
-  /**
-   * Do not await this promise, because it only resolves once the go main()
-   * function has exited. But we need the main function to stay alive to be
-   * able to call the `parse` function.
-   */
-  void go.run(wasm);
-
-  const { memory, wasmAlloc, wasmFree, parse } = wasm.exports;
+  await parse("for bar baz");
 
   // 🚧
   console.log({ wasm });
@@ -55,23 +46,59 @@ export async function loadWasm() {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-function parse(
-  filePathPointer: number,
-  filePath0: number,
-  filePath1: number,
-
-  textPointer: number,
-  text0: number,
-  text1: number,
-
-  keepComments: boolean,
-  variant: LangVariant,
-  stopAtPointer: number,
-  stopAt0: number,
-  stopAt1: number,
-  recoverErrors: number,
+async function parse(
+  text: string,
+  {
+    filepath,
+    keepComments = true,
+    variant = LangVariant.LangBash,
+    stopAt = "",
+    recoverErrors = 0,
+  }: ShOptions = {},
 ) {
+  const { go, wasm } = await loadWasm();
+
+  /**
+   * Do not await this promise, because it only resolves once the go main()
+   * function has exited. But we need the main function to stay alive to be
+   * able to call the `parse` function.
+   */
+  void go.run(wasm);
+
+  const { memory, wasmAlloc, wasmFree, parse: wasmParse } = wasm.exports;
+
+  const filePath = encoder.encode(filepath);
+  const textBuffer = encoder.encode(text);
+  const uStopAt = encoder.encode(stopAt);
+
+  const filePathPointer = wasmAlloc(filePath.byteLength);
+  new Uint8Array(memory.buffer).set(filePath, filePathPointer);
+
+  const textPointer = wasmAlloc(textBuffer.byteLength);
+  new Uint8Array(memory.buffer).set(textBuffer, textPointer);
+
+  const stopAtPointer = wasmAlloc(uStopAt.byteLength);
+  new Uint8Array(memory.buffer).set(uStopAt, stopAtPointer);
+
   // 🚧
+  const resultPointer = wasmParse(
+    filePathPointer,
+    filePath.byteLength,
+    filePath.byteLength,
+
+    textPointer,
+    textBuffer.byteLength,
+    textBuffer.byteLength,
+
+    keepComments,
+    variant,
+    stopAtPointer,
+    uStopAt.byteLength,
+    uStopAt.byteLength,
+    recoverErrors,
+  );
+
+  console.log({ resultPointer });
 }
 
 type WasmInstanceExports = {
