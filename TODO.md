@@ -18,6 +18,7 @@
     - https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L219
   - ✅ validate using zod
   - ✅ extend underlying structs somehow
+  - ✅ test at http://localhost:5173/test-wasm/
 
 - ✅ upgrade to mvdan-sh go version 
 - ❌ upgrade to latest mvdan-sh

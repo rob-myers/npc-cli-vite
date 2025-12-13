@@ -16,6 +16,7 @@ export async function testLoadWasm() {
   const parseResult = await parse("foo bar baz"); // ✅
   // const result = await parse("foo '"); // ❌ 1:5: reached EOF without closing quote '
   console.log({ parseResult });
+  return parseResult;
 }
 
 const wasm = {
