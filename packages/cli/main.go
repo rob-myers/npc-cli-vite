@@ -61,7 +61,7 @@ func Parse(
 //
 //export parse
 func parse(
-	filepathBytes []byte,
+	filepathBytes []byte, // only used as a string inside errors for context
 	textBytes []byte,
 
 	keepComments bool,
