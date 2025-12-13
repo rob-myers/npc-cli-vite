@@ -1,15 +1,17 @@
+import z from "zod";
 // Based on https://github.com/un-ts/sh-syntax/blob/main/src/processor.ts
 import "../vendors/wasm_exec";
-import { LangVariant, type ShOptions } from "./mvdan-sh.model.js";
+import { jsonParser } from "../../util/src/json-parser.js";
+import { type IParseError, LangVariant, type ShOptions } from "./mvdan-sh.model.js";
 
 /**
  * https://tinygo.org/docs/guides/webassembly/wasm/
+ * 🚧 support interactive parse
  */
 export async function testLoadWasm() {
-  await parse("for bar baz");
-
-  // 🚧
-  console.log({ wasm });
+  // await parse("for bar baz"); // ❌ 1:1: "for foo" must be followed by "in", "do", ;, or a newline
+  await parse("foo bar baz"); // ✅
+  // await parse("foo '"); // ❌ 1:5: reached EOF without closing quote '
 }
 
 const wasm = {
@@ -24,18 +26,15 @@ export async function loadWasm() {
 
   // source https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L156
   // doesn't use instantiateStreaming
-  const wasmArrayBuffer = wasm.ready
-    ? wasm.buffer
-    : await // biome-ignore lint/suspicious/noAssignInExpressions: I wanna!
-      (wasm.promise ??= fetch(wasm.url).then((resp) => resp.arrayBuffer()));
-  wasm.ready = true;
+  if (!wasm.ready) {
+    wasm.buffer = await (wasm.promise ??= fetch(wasm.url).then((resp) => resp.arrayBuffer()));
+    wasm.ready = true;
+  }
 
-  const wasmInstance = await WebAssembly.instantiate(wasmArrayBuffer, go.importObject).then(
-    (obj) => {
-      go.run(obj.instance);
-      return obj.instance;
-    },
-  );
+  const wasmInstance = await WebAssembly.instantiate(wasm.buffer, go.importObject).then((obj) => {
+    go.run(obj.instance);
+    return obj.instance;
+  });
 
   return {
     go,
@@ -73,14 +72,11 @@ async function parse(
 
   const filePathPointer = wasmAlloc(filePath.byteLength);
   new Uint8Array(memory.buffer).set(filePath, filePathPointer);
-
   const textPointer = wasmAlloc(textBuffer.byteLength);
   new Uint8Array(memory.buffer).set(textBuffer, textPointer);
-
   const stopAtPointer = wasmAlloc(uStopAt.byteLength);
   new Uint8Array(memory.buffer).set(uStopAt, stopAtPointer);
 
-  // 🚧
   const resultPointer = wasmParse(
     filePathPointer,
     filePath.byteLength,
@@ -98,7 +94,27 @@ async function parse(
     recoverErrors,
   );
 
-  console.log({ resultPointer });
+  wasmFree(filePathPointer);
+  wasmFree(textPointer);
+  wasmFree(stopAtPointer);
+
+  const resultBuffer = new Uint8Array(memory.buffer).subarray(resultPointer);
+  const end = resultBuffer.indexOf(0);
+  const resultString = decoder.decode(resultBuffer.subarray(0, end));
+  console.log({ resultString });
+
+  try {
+    // const resultObj = JSON.parse(resultString);
+    const resultObj = ParseResultSchema.parse(resultString);
+    console.log({ resultObj });
+  } catch (e) {
+    console.error(e);
+    throw new ParseError({
+      Filename: filepath,
+      Text: resultString,
+      Incomplete: true,
+    });
+  }
 }
 
 type WasmInstanceExports = {
@@ -122,3 +138,36 @@ type WasmInstanceExports = {
     recoverErrors: number,
   ) => number;
 };
+
+const ParseResultSchema = jsonParser.pipe(
+  z.object({
+    // 🚧 extend
+    file: z.looseObject({
+      // 🚧 recursively add "type" literals in post-processing step
+      // type: z.literal("File"),
+      Name: z.string(),
+    }),
+    text: z.string(),
+    parseError: z
+      .object({
+        Filename: z.string().optional(),
+        Incomplete: z.boolean(),
+        Text: z.string(),
+        Pos: z.unknown().optional(),
+      })
+      .nullish(),
+    message: z.string(),
+  }),
+);
+export class ParseError extends Error implements IParseError {
+  Filename?: string;
+  Incomplete: boolean;
+  Text: string;
+
+  constructor({ Filename, Incomplete, Text }: IParseError) {
+    super(Text);
+    this.Filename = Filename;
+    this.Incomplete = Incomplete;
+    this.Text = Text;
+  }
+}
