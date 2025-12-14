@@ -12,7 +12,8 @@
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "react-grid-layout": "^2.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
