@@ -19,7 +19,6 @@
     "@tanstack/react-router-devtools": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
     "globals": "catalog:",
-    "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "tailwindcss": "catalog:"
   }
 }

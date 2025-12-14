@@ -8,6 +8,15 @@ import (
 
 var parser  *syntax.Parser;
 
+var incomplete = true;
+
+// 🚧 store arg when complete for usage elsewhere
+func TrackIncomplete(arg []*syntax.Stmt) bool {
+	incomplete = parser.Incomplete();
+	return false;
+}
+
+
 type ParserOptions struct {
 	KeepComments  bool
 	Variant       syntax.LangVariant
@@ -40,4 +49,19 @@ func Parse(text string, filepath string, parserOptions ParserOptions) (*syntax.F
 	parser = syntax.NewParser(options...)
 
 	return parser.Parse(bytes.NewReader([]byte(text)), filepath)
+}
+
+func InteractiveParse(text string, filepath string, parserOptions ParserOptions) (*syntax.File, error) {
+	var options []syntax.ParserOption
+
+	options = append(options, syntax.KeepComments(parserOptions.KeepComments), syntax.Variant(parserOptions.Variant))
+
+	parser = syntax.NewParser(options...)
+	parser.Interactive(bytes.NewReader([]byte(text)), TrackIncomplete);
+
+	if (incomplete) {
+		return nil, nil;
+	} else {
+		return parser.Parse(bytes.NewReader([]byte(text)), filepath);
+	}
 }
