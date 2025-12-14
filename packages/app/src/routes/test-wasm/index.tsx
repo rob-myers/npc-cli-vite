@@ -1,4 +1,4 @@
-import { testLoadWasm } from "@npc-cli/cli/src/test-load-wasm";
+import { testLoadWasm } from "@npc-cli/parse-sh/src/test-load-wasm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 

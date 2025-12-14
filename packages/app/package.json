@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@npc-cli/cli": "workspace:^",
+    "@npc-cli/parse-sh": "workspace:^",
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "react": "catalog:",
