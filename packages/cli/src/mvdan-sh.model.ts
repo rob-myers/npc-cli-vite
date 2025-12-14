@@ -119,6 +119,7 @@ export interface ShParserOptions {
 
 export interface ShOptions extends ShParserOptions {
   filepath?: string;
+  interactive?: boolean;
 }
 
 export interface IParseError {

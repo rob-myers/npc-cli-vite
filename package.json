@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm -F @npc-cli/app dev",
-    "build": "pnpm -F @npc-cli/app build"
+    "build": "pnpm -F @npc-cli/app build",
+    "types": "tsc --noEmit"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "typescript": "catalog:",
     "vite": "npm:rolldown-vite@7.2.5"
   },
   "engines": {

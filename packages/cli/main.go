@@ -51,7 +51,13 @@ func Parse(
 	return processor.Parse(text, filepath, parserOptions)
 }
 
-// 🚧 interactive parsing
+func InteractiveParse(
+	text string,
+	filepath string,
+	parserOptions processor.ParserOptions,
+) (*syntax.File, error) {
+	return processor.InteractiveParse(text, filepath, parserOptions)
+}
 
 // `parse` parses the input file path
 //
@@ -107,6 +113,61 @@ func parse(
 
 	return &bytes[0]
 }
+
+//export interactiveParse
+func interactiveParse(
+	filepathBytes []byte, // only used as a string inside errors for context
+	textBytes []byte,
+
+	keepComments bool,
+	variant int,
+	stopAt []byte,
+	recoverErrors int,
+
+ ) *byte {
+
+	filepath := string(filepathBytes)
+	text := string(textBytes)
+
+	parserOptions := processor.ParserOptions{
+		KeepComments:  keepComments,
+		Variant:       syntax.LangVariant(variant),
+		// StopAt:        string(stopAt),
+		RecoverErrors: recoverErrors,
+	}
+
+	var file processor.File
+	var error error
+
+	astFile, err := InteractiveParse(text, filepath, parserOptions)
+
+	if (astFile == nil) {
+		return nil;
+	}
+
+	file = processor.MapFile(*astFile)
+	error = err
+
+	parseError, message := processor.MapParseError(error)
+
+	result := processor.Result{
+		File:       file,
+		Text:       text,
+		ParseError: parseError,
+		Message:    message,
+	}
+
+	bytes, err := easyjson.Marshal(&result)
+
+	if err != nil {
+		fmt.Println(err)
+		bytes = []byte(err.Error())
+	}
+
+	bytes = append(bytes, 0)
+
+	return &bytes[0]
+ }
 
 func main() {
 }

@@ -12,10 +12,21 @@ import {
  * 🚧 support interactive parse
  */
 export async function testLoadWasm() {
-  // const result = await parse("for bar baz"); // ❌ 1:1: "for foo" must be followed by "in", "do", ;, or a newline
-  const parseResult = await parse("foo bar baz"); // ✅
-  // const result = await parse("foo '"); // ❌ 1:5: reached EOF without closing quote '
+  // const interactive = false;
+  // const input = "foo bar baz"; // ✅
+  // const input = "for bar baz"; // ❌ 1:1: "for foo" must be followed by "in", "do", ;, or a newline
+  // const input = "for '"; // ❌ 1:5: reached EOF without closing quote '
+
+  const interactive = true;
+  // const input = "foo bar baz\n"; // ✅
+  // const input = "foo bar baz"; // ✅ (null)
+  // const input = "foo bar '\n"; // ✅ (null)
+  const input = "foo bar '\n'\n"; // ✅
+
+  // Can be `null` if interactive parse and not enough input yet
+  const parseResult = await parse(input, { interactive });
   console.log({ parseResult });
+
   return parseResult;
 }
 
@@ -50,10 +61,14 @@ export async function loadWasm() {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+/**
+ * Parse or interactive parse.
+ */
 async function parse(
   text: string,
   {
     filepath,
+    interactive = false,
     keepComments = true,
     variant = LangVariant.LangBash,
     stopAt = "",
@@ -69,7 +84,13 @@ async function parse(
    */
   void go.run(wasm);
 
-  const { memory, wasmAlloc, wasmFree, parse: wasmParse } = wasm.exports;
+  const {
+    memory,
+    wasmAlloc,
+    wasmFree,
+    parse: transpiledParse,
+    interactiveParse: transpiledInteractiveParse,
+  } = wasm.exports;
 
   const filePath = encoder.encode(filepath);
   const textBuffer = encoder.encode(text);
@@ -82,7 +103,7 @@ async function parse(
   const stopAtPointer = wasmAlloc(uStopAt.byteLength);
   new Uint8Array(memory.buffer).set(uStopAt, stopAtPointer);
 
-  const resultPointer = wasmParse(
+  const resultPointer = (interactive === true ? transpiledInteractiveParse : transpiledParse)(
     filePathPointer,
     filePath.byteLength,
     filePath.byteLength,
@@ -102,6 +123,13 @@ async function parse(
   wasmFree(filePathPointer);
   wasmFree(textPointer);
   wasmFree(stopAtPointer);
+
+  if (resultPointer === 0) {
+    if (interactive === true) {
+      return null;
+    }
+    throw new Error("Non-interactive parse failed: resultPointer is 0");
+  }
 
   const resultBuffer = new Uint8Array(memory.buffer).subarray(resultPointer);
   const end = resultBuffer.indexOf(0);
@@ -127,6 +155,22 @@ type WasmInstanceExports = {
   wasmAlloc: (size: number) => number;
   wasmFree: (pointer: number) => void;
   parse: (
+    filePathPointer: number,
+    filePath0: number,
+    filePath1: number,
+
+    textPointer: number,
+    text0: number,
+    text1: number,
+
+    keepComments: boolean,
+    variant: LangVariant,
+    stopAtPointer: number,
+    stopAt0: number,
+    stopAt1: number,
+    recoverErrors: number,
+  ) => number;
+  interactiveParse: (
     filePathPointer: number,
     filePath0: number,
     filePath1: number,

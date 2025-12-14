@@ -23,4 +23,7 @@
 - ✅ upgrade to mvdan-sh go version 
 - ❌ upgrade to latest mvdan-sh
   - not yet
+
+- ✅ interactive parsing works!
+
 - add react-query
