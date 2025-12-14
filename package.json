@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm -F @npc-cli/app dev",
     "build": "pnpm -F @npc-cli/app build",
+    "preview": "pnpm -F @npc-cli/app preview",
     "types": "tsc --noEmit"
   },
   "devDependencies": {
