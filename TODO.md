@@ -37,7 +37,8 @@
   - https://www.youtube.com/watch?v=y0ees2j17AY
 
 - ✅ add react-grid-layout at root index
-- add mdx
+- ✅ add mdx
+- ✅ can use tailwind typography styles in mdx
 - add react-query
 - start cli
 - add react-three-fiber and import gltf
