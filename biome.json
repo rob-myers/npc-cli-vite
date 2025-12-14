@@ -23,7 +23,9 @@
     }
   },
   "css": {
-    "parser": {}
+    "parser": {
+      "tailwindDirectives": true
+    }
   },
   "files": {
     "includes": ["**", "!**/routeTree.gen.ts", "!packages/cli/vendors/wasm_exec.js"]

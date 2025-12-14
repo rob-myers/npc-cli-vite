@@ -1,5 +1,16 @@
 # Dependencies
 
+## `packages/app`
+
+### react-grid-layout
+
+https://github.com/react-grid-layout/react-grid-layout?tab=readme-ov-file#installation
+
+
+### @mdx-js/rollup
+
+https://www.npmjs.com/package/@mdx-js/rollup
+
 ## `packages/parse-sh`
 
 ### golang setup
@@ -50,4 +61,4 @@ https://github.com/tinygo-org/tinygo/blob/3869f76887feef6c444308e7e1531b7cac1bbd
 
 https://tinygo.org/docs/guides/webassembly/wasm/
 
-🚧 types for Go provided by tinygo in packages/cli/vendors/wasm_exec.js
+types for Go provided by tinygo in packages/cli/vendors/wasm_exec.js
