@@ -12,9 +12,7 @@ export default defineConfig({
       autoCodeSplitting: true,
       routesDirectory: "src/routes",
     }),
-    mdx({
-      pragmaImportSource: "@mdx-js/react",
-    }),
+    mdx(),
     react(),
     tailwindcss(),
   ],
