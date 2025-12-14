@@ -1,6 +1,6 @@
 # Dependencies
 
-## `packages/cli`
+## `packages/parse-sh`
 
 ### golang setup
 
@@ -40,8 +40,8 @@ func parse(...)
 ```
 
 ```sh
-# generate packages/cli/main.wasm with current structs
-pnpm -F @npc-cli/cli build:wasm
+# generate packages/parse-sh/main.wasm with current structs
+pnpm -F @npc-cli/parse-sh build:wasm
 ```
 
 ### loading wasm in browser

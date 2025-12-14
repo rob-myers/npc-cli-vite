@@ -77,9 +77,9 @@ importers:
 
   packages/app:
     dependencies:
-      '@npc-cli/cli':
+      '@npc-cli/parse-sh':
         specifier: workspace:^
-        version: link:../cli
+        version: link:../parse-sh
       '@tanstack/react-router':
         specifier: 'catalog:'
         version: 1.140.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -110,6 +110,12 @@ importers:
         version: 4.1.17
 
   packages/cli:
+    dependencies:
+      '@npc-cli/parse-sh':
+        specifier: workspace:^
+        version: link:../parse-sh
+
+  packages/parse-sh:
     dependencies:
       '@npc-cli/util':
         specifier: workspace:^

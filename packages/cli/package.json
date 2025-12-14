@@ -2,16 +2,9 @@
   "name": "@npc-cli/cli",
   "private": true,
   "type": "module",
-  "exports": {
-    "./src/test-load-wasm": "./src/test-load-wasm.ts"
-  },
-  "scripts": {
-    "build:wasm": "pnpm gen:structs && pnpm gen:wasm",
-    "gen:structs": "cd processor && easyjson -all structs.go",
-    "gen:wasm": "tinygo build -o main.wasm -target ./target.json"
-  },
+  "exports": {},
+  "scripts": {},
   "dependencies": {
-    "@npc-cli/util": "workspace:^",
-    "zod": "^4.1.13"
+    "@npc-cli/parse-sh": "workspace:^"
   }
 }
