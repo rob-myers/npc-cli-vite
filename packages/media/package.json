@@ -1,0 +1,8 @@
+{
+  "name": "@npc-cli/media",
+  "private": true,
+  "type": "module",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}

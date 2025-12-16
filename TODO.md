@@ -31,9 +31,13 @@
   - cube at center; move right 3; scale uniform +1 (option/alt + drag)
   - dup: cmd + d, undo: cmd + z, redo (rebound): cmd + shift + z
 
-- follow a blockbench animation tutorial and export gltf
-  - split legs into upper/lower
-  - https://www.youtube.com/watch?v=CA1NSAeQVuw
+- 🚧 follow a blockbench animation tutorial and export gltf
+  - ✅ split legs into upper/lower
+  - ✅ split arms into upper/lower
+  - ✅ create first pose with upper/lower legs and upper arms
+  - 🚧 create 0.5s pose by
+    - copy right arm @0 to left arm @0.5
+    - copy left arm @0 to right arm @0.5
   - https://www.youtube.com/watch?v=y0ees2j17AY
 
 - ✅ add react-grid-layout at root index
