@@ -42,7 +42,12 @@ function Index() {
             <TestMdx />
           </div>
           <div key="e" className="border p-4 flex items-center">
-            <button type="button" className="cursor-pointer" onClick={themeApi.setOther}>
+            <button
+              type="button"
+              className="cursor-pointer"
+              // onClick={themeApi.setOther}>
+              onPointerDown={themeApi.setOther}
+            >
               {theme}
             </button>
           </div>
