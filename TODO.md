@@ -44,10 +44,10 @@
 - ✅ add mdx
 - ✅ can use tailwind typography styles in mdx
 
-- 🚧 dark theme
+- ✅ dark theme
   - ✅ theme store
   - ✅ theme switch in react-grid-layout
-  - 🚧 fix dark mode colours
+  - ✅ fix dark mode colours
 
 - add react-query
 - start packages/cli

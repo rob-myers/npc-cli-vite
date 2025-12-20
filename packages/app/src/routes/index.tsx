@@ -4,6 +4,7 @@ import ReactGridLayout, { useContainerWidth } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
+import { cn } from "@npc-cli/util";
 import TestMdx from "../blog/test-mdx.mdx";
 import { themeApi, useThemeName } from "../stores/theme.store";
 
@@ -19,7 +20,7 @@ function Index() {
     <div ref={containerRef} className="w-full">
       {mounted && (
         <ReactGridLayout
-          className="border"
+          className="border text-on-background"
           gridConfig={{ cols: 12, rowHeight: 50 }}
           layout={layout}
           width={width}
@@ -29,7 +30,13 @@ function Index() {
               {key}
             </div>
           ))}
-          <div key="d" className="prose prose-sm overflow-auto border p-4">
+          <div
+            key="d"
+            className={cn(
+              theme === "dark" && "prose-invert",
+              "prose prose-sm overflow-auto border p-4",
+            )}
+          >
             <TestMdx />
           </div>
           <div key="e" className="border p-4 flex items-center">

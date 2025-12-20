@@ -2,9 +2,13 @@
   "name": "@npc-cli/util",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/main.ts"
+  },
   "scripts": {},
   "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
     "zod": "^4.1.13"
-  },
-  "devDependencies": {}
+  }
 }
