@@ -15,14 +15,14 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "typescript": "catalog:",
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "npm:rolldown-vite@latest"
   },
   "engines": {
     "node": ">=24.0.0"
   },
   "pnpm": {
     "overrides": {
-      "vite": "npm:rolldown-vite@7.2.5"
+      "vite": "npm:rolldown-vite@latest"
     }
   }
 }
