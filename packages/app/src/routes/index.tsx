@@ -14,28 +14,25 @@ function Index() {
   const { width, containerRef, mounted } = useContainerWidth();
 
   return (
-    <>
-      <div>Hello, world!</div>
-      <div ref={containerRef} className="w-full">
-        {mounted && (
-          <ReactGridLayout
-            className="border"
-            gridConfig={{ cols: 12, rowHeight: 50 }}
-            layout={layout}
-            width={width}
-          >
-            {["a", "b", "c"].map((key) => (
-              <div key={key} className="border flex items-center justify-center">
-                {key}
-              </div>
-            ))}
-            <div key="d" className="prose prose-sm overflow-auto border p-4">
-              <TestMdx />
+    <div ref={containerRef} className="w-full">
+      {mounted && (
+        <ReactGridLayout
+          className="border"
+          gridConfig={{ cols: 12, rowHeight: 50 }}
+          layout={layout}
+          width={width}
+        >
+          {["a", "b", "c"].map((key) => (
+            <div key={key} className="border flex items-center justify-center">
+              {key}
             </div>
-          </ReactGridLayout>
-        )}
-      </div>
-    </>
+          ))}
+          <div key="d" className="prose prose-sm overflow-auto border p-4">
+            <TestMdx />
+          </div>
+        </ReactGridLayout>
+      )}
+    </div>
   );
 }
 
