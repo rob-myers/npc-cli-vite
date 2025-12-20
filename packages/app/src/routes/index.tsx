@@ -38,7 +38,7 @@ function Index() {
   });
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div ref={containerRef} className="w-full mb-16">
       {mounted && (
         <GridLayout
           className="border text-on-background [&_.react-resizable-handle::after]:border-on-background!"
