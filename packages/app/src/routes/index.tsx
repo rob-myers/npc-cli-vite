@@ -5,6 +5,7 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 import TestMdx from "../blog/test-mdx.mdx";
+import { themeApi, useThemeName } from "../stores/theme.store";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { width, containerRef, mounted } = useContainerWidth();
+  const theme = useThemeName();
 
   return (
     <div ref={containerRef} className="w-full">
@@ -29,6 +31,11 @@ function Index() {
           ))}
           <div key="d" className="prose prose-sm overflow-auto border p-4">
             <TestMdx />
+          </div>
+          <div key="e" className="border p-4 flex items-center">
+            <button type="button" className="cursor-pointer" onClick={themeApi.setOther}>
+              {theme}
+            </button>
           </div>
         </ReactGridLayout>
       )}

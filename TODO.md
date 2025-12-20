@@ -43,6 +43,12 @@
 - ✅ add react-grid-layout at root index
 - ✅ add mdx
 - ✅ can use tailwind typography styles in mdx
+
+- 🚧 dark theme
+  - ✅ theme store
+  - ✅ theme switch in react-grid-layout
+  - 🚧 fix dark mode colours
+
 - add react-query
-- start cli
+- start packages/cli
 - add react-three-fiber and import gltf
