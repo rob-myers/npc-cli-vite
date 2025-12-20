@@ -1,0 +1,7 @@
+@theme {
+  --color-background: #fafafa;
+}
+
+.theme-dark {
+  --color-background: #1f1f1f;
+}
