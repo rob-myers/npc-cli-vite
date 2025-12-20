@@ -9,7 +9,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <div className="flex flex-col items-center justify-center gap-4 w-screen h-screen">
-      <h1 className="text-3xl">My App</h1>
+      {/* <h1 className="text-3xl">My App</h1> */}
       <Outlet /> {/* This is where child routes will render */}
       <TanStackRouterDevtools position="bottom-right" />
     </div>
