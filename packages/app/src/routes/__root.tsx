@@ -16,7 +16,7 @@ themeStore.subscribe(() => {
 
 function RootComponent() {
   return (
-    <div className="bg-background flex flex-col items-center justify-center gap-4 w-screen h-screen">
+    <div className="bg-background">
       {/* <h1 className="text-3xl">My App</h1> */}
       <Outlet /> {/* This is where child routes will render */}
       <TanStackRouterDevtools position="bottom-right" />
