@@ -1,7 +1,9 @@
 @theme {
   --color-background: #fafafa;
+  --color-on-background: #222222;
 }
 
 .theme-dark {
   --color-background: #1f1f1f;
+  --color-on-background: #bbbbbb;
 }

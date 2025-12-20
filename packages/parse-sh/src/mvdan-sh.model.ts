@@ -1,5 +1,5 @@
+import { jsonParser } from "@npc-cli/util";
 import z from "zod";
-import { jsonParser } from "../../util/src/json-parser";
 
 export const ParseResultSchema = jsonParser.pipe(
   z.object({
