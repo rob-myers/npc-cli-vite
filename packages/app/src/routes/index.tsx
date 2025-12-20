@@ -29,9 +29,12 @@ function Index() {
     breakpoints: demo.breakpoints,
     cols: demo.cols,
     layouts: demo.layouts,
-    compactType: "vertical",
-    onBreakpointChange: (bp, cols) => console.log(`Now at ${bp} (${cols} cols)`),
-    // onLayoutChange: (layout, allLayouts) => saveToServer(allLayouts)
+    // compactType: "vertical",
+    compactType: "horizontal",
+    // onBreakpointChange: (bp, cols) => console.log(`Now at ${bp} (${cols} cols)`),
+    // onLayoutChange(layout, allLayouts) {
+    //   console.log({ layout });
+    // },
   });
 
   return (
@@ -44,6 +47,12 @@ function Index() {
             cols, // 🔔 not mentioned in documentation
           }}
           layout={layout}
+          onResizeStop={(layout) => {
+            console.log("onResizeStop", layout);
+          }}
+          onDragStop={(layout) => {
+            console.log("onDragStop", layout);
+          }}
         >
           {["a", "b", "c"].map((key) => (
             <div key={key} className="border flex items-center justify-center">
