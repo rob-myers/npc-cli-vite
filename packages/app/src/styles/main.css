@@ -4,3 +4,7 @@
 @custom-variant dark (&:where(.theme-dark, .theme-dark *));
 
 @plugin "@tailwindcss/typography";
+
+html {
+  overscroll-behavior: none;
+}

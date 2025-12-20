@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import ReactGridLayout, { useContainerWidth } from "react-grid-layout";
+import { Responsive as ResponsiveReactGridLayout, useContainerWidth } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -19,10 +19,12 @@ function Index() {
   return (
     <div ref={containerRef} className="w-full">
       {mounted && (
-        <ReactGridLayout
+        <ResponsiveReactGridLayout
           className="border text-on-background [&_.react-resizable-handle::after]:border-on-background!"
-          gridConfig={{ cols: 12, rowHeight: 50 }}
-          layout={layout}
+          // gridConfig={{ cols: 12, rowHeight: 50 }}
+          breakpoints={breakpoints}
+          layouts={layouts}
+          cols={cols}
           width={width}
         >
           {["a", "b", "c"].map((key) => (
@@ -44,15 +46,19 @@ function Index() {
               {theme}
             </button>
           </div>
-        </ReactGridLayout>
+        </ResponsiveReactGridLayout>
       )}
     </div>
   );
 }
 
-const layout = [
-  { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
-  { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
-  { i: "c", x: 4, y: 0, w: 1, h: 2 },
-  { i: "d", x: 0, y: 1, w: 4, h: 4 },
-];
+const layouts = {
+  lg: [
+    { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
+    { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
+    { i: "c", x: 4, y: 0, w: 1, h: 2 },
+    { i: "d", x: 0, y: 1, w: 4, h: 4 },
+  ],
+};
+const breakpoints = { lg: 1200, sm: 768 };
+const cols = { lg: 12, sm: 6 };
