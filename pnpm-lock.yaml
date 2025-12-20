@@ -42,6 +42,9 @@ catalogs:
     react-dom:
       specifier: ^19.2.0
       version: 19.2.1
+    react-grid-layout:
+      specifier: 2.1.0
+      version: 2.1.0
     tailwindcss:
       specifier: ^4.1.17
       version: 4.1.17
@@ -96,8 +99,8 @@ importers:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
       react-grid-layout:
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+        specifier: 'catalog:'
+        version: 2.1.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       zustand:
         specifier: ^5.0.9
         version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
@@ -1596,8 +1599,8 @@ packages:
       react: '>= 16.3.0'
       react-dom: '>= 16.3.0'
 
-  react-grid-layout@2.0.0:
-    resolution: {integrity: sha512-RcSej/qs+47OYKu4eELZMBBzREu067/92Zouis/UvCWvBXEKFtj46vTecTvmZTKFqILGZjPFGtgsQySI+LMjSQ==}
+  react-grid-layout@2.1.0:
+    resolution: {integrity: sha512-d2UOqsTokpua1iaVN6wpxHxum6OE3+DOEKFzDn3UEOsSHxnb9m4Lzwkh3FaNTvQd4Z/2gjcqt1dfy3AnBfZiQw==}
     peerDependencies:
       react: '>= 16.3.0'
       react-dom: '>= 16.3.0'
@@ -3453,7 +3456,7 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  react-grid-layout@2.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
+  react-grid-layout@2.1.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
       clsx: 2.1.1
       fast-equals: 4.0.3
