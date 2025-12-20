@@ -20,7 +20,7 @@ function Index() {
     <div ref={containerRef} className="w-full">
       {mounted && (
         <ReactGridLayout
-          className="border text-on-background"
+          className="border text-on-background [&_.react-resizable-handle::after]:border-on-background!"
           gridConfig={{ cols: 12, rowHeight: 50 }}
           layout={layout}
           width={width}
