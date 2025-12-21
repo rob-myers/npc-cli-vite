@@ -13,6 +13,7 @@ export async function loadWasm() {
   // source https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L156
   // doesn't use instantiateStreaming
   if (!wasm.ready) {
+    console.log("Loading WASM from", wasm.url);
     wasm.buffer = await (wasm.promise ??= fetch(wasm.url).then((resp) => resp.arrayBuffer()));
     wasm.ready = true;
   }
