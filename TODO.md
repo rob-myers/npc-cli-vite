@@ -70,5 +70,10 @@
   - ✅ fix dark mode colours
 
 - 🚧 start packages/cli
+  - 🚧 start migrating parse.ts
+  - 🚧 does namespace `MvdanSh` still make sense?
+  - start migrating tty.shell
+
+- normalize tsconfigs like bz-frontend
 - add react-query
 - add react-three-fiber and import gltf
