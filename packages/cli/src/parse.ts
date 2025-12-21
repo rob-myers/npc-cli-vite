@@ -1,4 +1,5 @@
-import type { BaseMeta, FileWithMeta } from "./types";
+import cloneWithRefs from "lodash.clonedeep";
+import type { BaseMeta, FileWithMeta, ParsedSh } from "./types";
 
 export class ParseShService {
   /** This is actually attached to parse trees, and then reset per-parse */
@@ -35,3 +36,11 @@ export const defaults = {
   defaultProcessKey: "code-has-not-run",
   defaultStdInOut: "unassigned-tty",
 };
+
+/**
+ * Clone creates completely fresh tree, sharing internal refs as before.
+ * In particular, every node has the same node.meta.
+ */
+export function cloneParsed<T extends ParsedSh>(parsed: T): T {
+  return cloneWithRefs(parsed);
+}
