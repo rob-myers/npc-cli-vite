@@ -1,55 +1,55 @@
 declare namespace MvdanSh {
-  namespace syntax {
-    /**
-     * NewParser allocates a new `Parser` and applies any number of options.
-     * - Hack to turn on `keepComments`:
-     * `parser['Parser'].__internal_object__.keepComments = true`
-     */
-    function NewParser(...opts: any[]): MvdanSh.Parser;
-    /**
-     * Given a node returns its type e.g. `'Assign'` or `'Comment'`.
-     */
-    function NodeType(node: MvdanSh.Node): MvdanSh.NodeType;
+  // namespace syntax {
+  //   /**
+  //    * NewParser allocates a new `Parser` and applies any number of options.
+  //    * - Hack to turn on `keepComments`:
+  //    * `parser['Parser'].__internal_object__.keepComments = true`
+  //    */
+  //   function NewParser(...opts: any[]): MvdanSh.Parser;
+  //   /**
+  //    * Given a node returns its type e.g. `'Assign'` or `'Comment'`.
+  //    */
+  //   function NodeType(node: MvdanSh.Node): MvdanSh.NodeType;
 
-    function NewPrinter(): MvdanSh.Printer;
-    function DebugPrint(): void; // Return value?
+  //   function NewPrinter(): MvdanSh.Printer;
+  //   function DebugPrint(): void; // Return value?
 
-    function Walk(
-      /** Initial node. */
-      node: MvdanSh.Node,
-      /**
-       * This predicate is recursively applied in a
-       * depth-first fashion. It should return true
-       * iff traversal should continue.
-       */
-      predicate: (node: MvdanSh.Node) => boolean,
-    ): void;
+  //   function Walk(
+  //     /** Initial node. */
+  //     node: MvdanSh.Node,
+  //     /**
+  //      * This predicate is recursively applied in a
+  //      * depth-first fashion. It should return true
+  //      * iff traversal should continue.
+  //      */
+  //     predicate: (node: MvdanSh.Node) => boolean,
+  //   ): void;
 
-    function KeepComments(enabled?: boolean): any;
-    function Variant(variant: 0 | 1 | 2): any;
-    const LangBash: 0;
-    const LangPOSIX: 1;
-    const LangMirBSDKorn: 2;
-  }
+  //   function KeepComments(enabled?: boolean): any;
+  //   function Variant(variant: 0 | 1 | 2): any;
+  //   const LangBash: 0;
+  //   const LangPOSIX: 1;
+  //   const LangMirBSDKorn: 2;
+  // }
 
-  interface Parser {
-    Parse(
-      /** Source code e.g. `echo 'Hello, world!'`. */
-      src: string,
-      /** Name of file e.g. `src.sh`. */
-      filename: string,
-    ): MvdanSh.File;
+  // interface Parser {
+  //   Parse(
+  //     /** Source code e.g. `echo 'Hello, world!'`. */
+  //     src: string,
+  //     /** Name of file e.g. `src.sh`. */
+  //     filename: string,
+  //   ): MvdanSh.File;
 
-    Interactive(
-      /**
-       * `null` means EOF.
-       */
-      src: { read: (size?: number) => string | null },
-      pred: (stmts: MvdanSh.Stmt[]) => boolean,
-    ): void;
+  //   Interactive(
+  //     /**
+  //      * `null` means EOF.
+  //      */
+  //     src: { read: (size?: number) => string | null },
+  //     pred: (stmts: MvdanSh.Stmt[]) => boolean,
+  //   ): void;
 
-    Incomplete(): boolean;
-  }
+  //   Incomplete(): boolean;
+  // }
 
   /**
    * Union
@@ -64,13 +64,13 @@ declare namespace MvdanSh {
      * Pos returns the position of the first character of the node. Comments
      * are ignored, except if the node is a *File.
      */
-    End(): MvdanSh.Pos;
+    End: MvdanSh.Pos;
     /**
      * End returns the position of the character immediately after the node.
      * If the character is a newline, the line number won't cross into the
      * next line. Comments are ignored, except if the node is a *File.
      */
-    Pos(): MvdanSh.Pos;
+    Pos: MvdanSh.Pos;
   }
   /**
    * Operators e.g. '|&' are represented by numbers.
@@ -656,27 +656,27 @@ declare namespace MvdanSh {
    */
   interface Pos {
     type: "Pos";
-    /**
-     * After reports whether this position p is after p2. It is a more expressive version of p.Offset() > p2.Offset().
-     */
-    After(p2: Pos): boolean;
+    // /**
+    //  * After reports whether this position p is after p2. It is a more expressive version of p.Offset() > p2.Offset().
+    //  */
+    // After(p2: Pos): boolean;
     /**
      * Col returns the column number of the position, starting at 1. It counts in bytes.
      */
-    Col(): number;
-    /**
-     * IsValid reports whether the position is valid. All positions in nodes returned by Parse are valid.
-     */
-    IsValid(): boolean;
+    Col: number;
+    // /**
+    //  * IsValid reports whether the position is valid. All positions in nodes returned by Parse are valid.
+    //  */
+    // IsValid: boolean;
     /**
      * Line returns the line number of the position, starting at 1.
      */
-    Line(): number;
+    Line: number;
     /**
      * Offset returns the byte offset of the position in the original source file. Byte offsets start at 0.
      */
-    Offset(): number;
-    String(): string;
+    Offset: number;
+    // String(): string;
   }
   /**
    * ProcSubst represents a Bash process substitution.
@@ -839,15 +839,15 @@ declare namespace MvdanSh {
   type WordGeneric<Base, Pos, Op> = Base & {
     type: "Word";
     Parts: WordPartGeneric<Base, Pos, Op>[];
-    /**
-     * ExpandBraces performs Bash brace expansion on a word
-     * For example, passing it a single-literal word "foo{bar,baz}"
-     * will return two single-literal words, "foobar" and "foobaz".
-     * Deprecated: use mvdan.cc/sh/expand.Braces instead.
-     *
-     * Optional to permit serialization.
-     */
-    ExpandBraces?(): WordGeneric<Base, Pos, Op>[];
+    // /**
+    //  * ExpandBraces performs Bash brace expansion on a word
+    //  * For example, passing it a single-literal word "foo{bar,baz}"
+    //  * will return two single-literal words, "foobar" and "foobaz".
+    //  * Deprecated: use mvdan.cc/sh/expand.Braces instead.
+    //  *
+    //  * Optional to permit serialization.
+    //  */
+    // ExpandBraces?(): WordGeneric<Base, Pos, Op>[];
   };
   /**
    * WordIter represents the iteration of a variable over a series of words in a for clause.

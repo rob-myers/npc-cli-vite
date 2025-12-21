@@ -10,7 +10,7 @@ export class ParseShService {
   private cache: { [src: string]: FileWithMeta } = {};
 
   constructor() {
-    this.mockPos = () => ({ Line: () => 1, Col: () => 1, Offset: () => 0 }) as MvdanSh.Pos;
+    this.mockPos = () => ({ Line: 1, Col: 1, Offset: 0 }) as MvdanSh.Pos;
     this.resetMockMeta();
   }
 
