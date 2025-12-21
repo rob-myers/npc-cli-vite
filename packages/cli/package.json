@@ -2,7 +2,9 @@
   "name": "@npc-cli/cli",
   "private": true,
   "type": "module",
-  "exports": {},
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {},
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^"

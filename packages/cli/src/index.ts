@@ -1,1 +1,1 @@
-// 🚧 tty + shell using @npc-cli/parse-sh
+export * from "./parse";
