@@ -1,9 +1,11 @@
 @theme {
-  --color-background: #fafafa;
-  --color-on-background: #222222;
+  --color-background: var(--color-zinc-300);
+  --color-on-background: var(--color-black);
+  --color-button: var(--color-zinc-200);
 }
 
 .theme-dark {
   --color-background: #1f1f1f;
   --color-on-background: #bbbbbb;
+  --color-button: var(--color-zinc-800);
 }

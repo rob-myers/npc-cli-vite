@@ -5,6 +5,7 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 import { cn } from "@npc-cli/util";
+import { useRef } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
 import { themeApi, useThemeName } from "../stores/theme.store";
 
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { width, containerRef, mounted } = useContainerWidth();
   const theme = useThemeName();
+  const layouts = useRef(demo.layouts);
 
   const {
     layout, // Current layout for active breakpoint
@@ -22,26 +24,26 @@ function Index() {
     // layouts, // All layouts by breakpoint
     // breakpoint, // Current active breakpoint ('lg', 'md', etc.)
     // setLayoutForBreakpoint,
-    // setLayouts,
+    setLayouts,
     // sortedBreakpoints,
   } = useResponsiveLayout({
     width,
     breakpoints: demo.breakpoints,
     cols: demo.cols,
-    layouts: demo.layouts,
+    layouts: layouts.current,
     // compactType: "vertical",
     compactType: "horizontal",
-    // onBreakpointChange: (bp, cols) => console.log(`Now at ${bp} (${cols} cols)`),
-    // onLayoutChange(layout, allLayouts) {
-    //   console.log({ layout });
-    // },
+    onBreakpointChange(_bp, _cols) {
+      // Fixes overflow on slow/sudden change
+      setLayouts((layouts.current = { ...layouts.current }));
+    },
   });
 
   return (
-    <div ref={containerRef} className="w-full mb-16">
+    <div ref={containerRef}>
       {mounted && (
         <GridLayout
-          className="border text-on-background [&_.react-resizable-handle::after]:border-on-background!"
+          className="border text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!"
           width={width}
           gridConfig={{
             cols, // 🔔 not mentioned in documentation
@@ -49,13 +51,15 @@ function Index() {
           layout={layout}
           onResizeStop={(layout) => {
             console.log("onResizeStop", layout);
+            layouts.current.lg = layouts.current.sm = layout;
           }}
           onDragStop={(layout) => {
             console.log("onDragStop", layout);
+            layouts.current.lg = layouts.current.sm = layout;
           }}
         >
           {["a", "b", "c"].map((key) => (
-            <div key={key} className="border flex items-center justify-center">
+            <div key={key} className="border rounded flex items-center justify-center">
               {key}
             </div>
           ))}
@@ -63,7 +67,7 @@ function Index() {
             key="d"
             className={cn(
               theme === "dark" && "prose-invert",
-              "prose prose-sm overflow-auto border p-4",
+              "prose overflow-auto border p-4 leading-[1.4]",
             )}
           >
             <TestMdx />
@@ -71,7 +75,7 @@ function Index() {
           <div key="e" className="border p-4 flex items-center">
             <button
               type="button"
-              className="cursor-pointer border rounded px-4 py-1"
+              className="cursor-pointer border rounded px-4 py-1 bg-button"
               onPointerUp={themeApi.setOther}
             >
               {theme}
@@ -85,6 +89,12 @@ function Index() {
 
 const demo = {
   layouts: {
+    sm: [
+      { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
+      { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
+      { i: "c", x: 4, y: 0, w: 1, h: 2 },
+      { i: "d", x: 0, y: 1, w: 4, h: 4, isDraggable: false },
+    ],
     lg: [
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
       { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
