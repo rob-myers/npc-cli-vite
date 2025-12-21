@@ -531,7 +531,7 @@
 
 	if (
 		global.require &&
-		global.require.main === module &&
+		// global.require.main === module &&
 		global.process &&
 		global.process.versions &&
 		!global.process.versions.electron
