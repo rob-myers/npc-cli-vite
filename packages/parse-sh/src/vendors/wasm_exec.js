@@ -531,6 +531,7 @@
 
 	if (
 		global.require &&
+		// Commenting out fixes 'Maximum call stack size exceeded'
 		// global.require.main === module &&
 		global.process &&
 		global.process.versions &&
