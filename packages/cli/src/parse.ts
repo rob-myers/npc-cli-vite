@@ -1,3 +1,4 @@
+import { parse as parseSh } from "@npc-cli/parse-sh";
 import cloneWithRefs from "lodash.clonedeep";
 import type { BaseMeta, FileWithMeta, ParsedSh } from "./types";
 
@@ -13,6 +14,21 @@ export class ParseShService {
   constructor() {
     this.mockPos = () => ({ Line: 1, Col: 1, Offset: 0 }) as MvdanSh.Pos;
     this.resetMockMeta();
+  }
+
+  /**
+   * Use npm module `mvdan-sh` to parse shell code.
+   */
+  async parse(src: string, cache = false): Promise<FileWithMeta> {
+    if (src in this.cache) {
+      return cloneParsed(this.cache[src]);
+    }
+
+    // 🚧
+    const parsed = await parseSh(src, { interactive: false });
+    console.log({ parsed });
+
+    return parsed as any; // 🚧
   }
 
   resetMockMeta() {
