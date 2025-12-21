@@ -1,5 +1,5 @@
 // Based on https://github.com/un-ts/sh-syntax/blob/main/src/processor.ts
-import "../vendors/wasm_exec.js";
+// import "../vendors/wasm_exec.js";
 import {
   type IParseError,
   LangVariant,
@@ -8,6 +8,7 @@ import {
 } from "./mvdan-sh.model.js";
 
 export async function loadWasm() {
+  //@ts-expect-error
   const go = new Go();
 
   // source https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L156
