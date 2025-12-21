@@ -35,10 +35,30 @@
   - ✅ split legs into upper/lower
   - ✅ split arms into upper/lower
   - ✅ create first pose with upper/lower legs and upper arms
-  - 🚧 create 0.5s pose by
+  - ✅ create 0.5s pose by
     - copy right arm @0 to left arm @0.5
     - copy left arm @0 to right arm @0.5
-  - https://www.youtube.com/watch?v=y0ees2j17AY
+  - ✅ copy 0s pose to 1s
+  - ✅ move 3 steps forwards (24fps) and adjust left leg down
+    - lower, upper so that "foot" on floor
+  - ✅ move 4 steps forwards and adjust hips up (so left foot on ground)
+  - ✅ move 4 steps backwards and adjust hips down (so left foot on/in ground)
+  - ✅ copy hip frames in `[0, 0.5)` to `0.5`
+  - 🚧 
+
+  - https://youtu.be/y0ees2j17AY?si=EmmdGiXTgI0_11V7&t=240
+  - https://youtu.be/y0ees2j17AY?si=ch61BNtn0ErcaXI2&t=388
+
+  - Select all in Timeline:
+    - Animation > "Bring up all animators"
+  - Scale UI
+    - Settings > Interface > Ensure Desktop, Choose UI Scale [0,100]
+  - Loop animation
+    - Right click > Loop Mode > Loop
+  - Default 24 frames-per-second
+  - Can also specify max FPS
+    - Settings > Preview > e.g. 60fps
+  - Shift for 0.25 unit translation
 
 - ✅ add react-grid-layout at root index
 - ✅ add mdx
