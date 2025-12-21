@@ -32,6 +32,8 @@
   - dup: cmd + d, undo: cmd + z, redo (rebound): cmd + shift + z
 
 - 🚧 follow a blockbench animation tutorial and export gltf
+  - https://youtu.be/y0ees2j17AY?si=EmmdGiXTgI0_11V7&t=240
+  - https://youtu.be/y0ees2j17AY?si=ch61BNtn0ErcaXI2&t=388
   - ✅ split legs into upper/lower
   - ✅ split arms into upper/lower
   - ✅ create first pose with upper/lower legs and upper arms
@@ -46,9 +48,7 @@
   - ✅ copy hip frames in `[0, 0.5)` to `0.5`
   - 🚧 
 
-  - https://youtu.be/y0ees2j17AY?si=EmmdGiXTgI0_11V7&t=240
-  - https://youtu.be/y0ees2j17AY?si=ch61BNtn0ErcaXI2&t=388
-
+- Blockbench UI
   - Select all in Timeline:
     - Animation > "Bring up all animators"
   - Scale UI
@@ -69,6 +69,6 @@
   - ✅ theme switch in react-grid-layout
   - ✅ fix dark mode colours
 
+- 🚧 start packages/cli
 - add react-query
-- start packages/cli
 - add react-three-fiber and import gltf
