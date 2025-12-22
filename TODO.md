@@ -34,6 +34,7 @@
 - 🚧 follow a blockbench animation tutorial and export gltf
   - https://youtu.be/y0ees2j17AY?si=EmmdGiXTgI0_11V7&t=240
   - https://youtu.be/y0ees2j17AY?si=ch61BNtn0ErcaXI2&t=388
+  - https://youtu.be/y0ees2j17AY?si=DaJvvW05wfqMOhH6&t=466
   - ✅ split legs into upper/lower
   - ✅ split arms into upper/lower
   - ✅ create first pose with upper/lower legs and upper arms
@@ -46,7 +47,14 @@
   - ✅ move 4 steps forwards and adjust hips up (so left foot on ground)
   - ✅ move 4 steps backwards and adjust hips down (so left foot on/in ground)
   - ✅ copy hip frames in `[0, 0.5)` to `0.5`
-  - 🚧 
+  - ✅ move 3 steps forwards from `0.5` and rotate left_leg_lower back
+    - 🔔 important
+  - ✅ copy all left_leg_lower keyframes and:
+    - paste on right_leg_lower at `0.5`
+    - copy final 3 and paste at `0`
+    - remove final 2
+    - adjust max time back to `1`
+  - ✅ paste over "extra" left_leg_upper keyframe onto right_left_upper shifted +0.5
 
 - Blockbench UI
   - Select all in Timeline:
