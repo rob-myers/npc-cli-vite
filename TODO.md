@@ -87,7 +87,9 @@
   - packages/ui/world
 
 - 🚧 start packages/cli
-  - 🚧 start migrating parse.ts
+  - ✅ start migrating parse.ts
+  - ✅ start extending `syntax.Command` parsing
+    - extend structs.go, run `pnpm build:wasm`
   - 🚧 does namespace `MvdanSh` still make sense?
   - start migrating tty.shell
 

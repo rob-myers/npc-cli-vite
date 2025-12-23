@@ -15,6 +15,14 @@ type Node struct {
 	End Pos
 }
 
+// 🚧 poc
+type Command struct {
+	Type string
+	Op string
+	Pos Pos
+	End Pos
+}
+
 type Comment struct {
 	Hash Pos
 	Text string
@@ -49,7 +57,7 @@ type Redirect struct {
 
 type Stmt struct {
 	Comments   []Comment
-	Cmd        *Node
+	Cmd        *Command
 	Position   Pos
 	Semicolon  Pos
 	Negated    bool
@@ -114,6 +122,37 @@ func mapNode(node syntax.Node) *Node {
 		Pos: mapPos(node.Pos()),
 		End: mapPos(node.End()),
 	}
+}
+
+// 🚧 poc: test if can disciminate (binary node, call expression, others)
+// https://github.com/mvdan/sh/blob/b84a3905c4f978a4b0050711d9d38ec4f3a51bec/syntax/walk.go#L16
+func mapCommand(node syntax.Command) *Command {
+	if node == nil {
+		return nil
+	}
+
+	switch node := node.(type) {
+		case *syntax.BinaryCmd:
+			return &Command{
+				Type: "BinaryCmd",
+				Op: node.Op.String(),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.CallExpr:
+			return &Command{
+				Type: "CallExpr",
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		default:
+			return &Command{
+				Type: "Unhandled",
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+	}
+	
 }
 
 // `mapComments` transforms a slice of syntax.Comment into a slice of Comment by converting each comment's hash, text, start, and end positions using mapPos. It preserves the order of the comments and returns an empty slice if the input is nil or empty.
@@ -195,7 +234,9 @@ func mapStmts(stmts []*syntax.Stmt) []Stmt {
 		curr := stmts[i]
 		stmtList[i] = Stmt{
 			Comments:   mapComments(curr.Comments),
-			Cmd:        mapNode(curr.Cmd),
+			// 🚧 richer i.e. union of structs
+			// Cmd:        mapNode(curr.Cmd),
+			Cmd:        mapCommand(curr.Cmd),
 			Position:   mapPos(curr.Position),
 			Semicolon:  mapPos(curr.Semicolon),
 			Negated:    curr.Negated,
