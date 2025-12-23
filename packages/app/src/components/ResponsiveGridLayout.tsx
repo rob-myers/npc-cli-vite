@@ -9,6 +9,7 @@ import { useRef, useState } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
 import { themeApi, useThemeName } from "../stores/theme.store";
 
+// 🚧 remove component hard-coding
 export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBreakpoint }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
@@ -26,10 +27,13 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
     },
   });
 
-  const theme = useThemeName();
+  // 🚧 useStateRef and useUpdate
   // disable initial animation until fade in
   const [animateItems, setAnimateItems] = useState(false);
   const [resizing, setResizing] = useState(false);
+
+  // 🚧 packages/ui/themer
+  const theme = useThemeName();
 
   return (
     <motion.div
@@ -47,7 +51,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
         )}
         width={width}
         gridConfig={{
-          cols, // 🔔 not mentioned in documentation
+          cols,
           rowHeight: 80,
         }}
         layout={layout}
@@ -93,7 +97,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
 }
 
 type Props = {
-  /** Initial */
+  /** Initial layout configuration by breakpoint */
   layoutByBreakpoint: Partial<Record<"lg" | "sm", Layout>>;
   breakpoints: { lg: number; sm: number };
   colsByBreakpoint: { lg: number; sm: number };
