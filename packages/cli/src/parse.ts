@@ -53,6 +53,8 @@ export const defaults = {
   defaultStdInOut: "unassigned-tty",
 };
 
+export const parseService = new ParseShService();
+
 /**
  * Clone creates completely fresh tree, sharing internal refs as before.
  * In particular, every node has the same node.meta.
