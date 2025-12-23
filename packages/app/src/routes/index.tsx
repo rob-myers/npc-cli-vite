@@ -37,11 +37,11 @@ function Index() {
 
   return (
     <motion.div
-      className="m-2"
+      ref={containerRef}
+      className="w-full overflow-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.3 } }}
       onAnimationComplete={() => setAnimateItems(true)}
-      ref={containerRef}
     >
       <GridLayout
         className={cn(
@@ -86,7 +86,7 @@ function Index() {
           <button
             type="button"
             className="cursor-pointer border rounded px-4 py-1 bg-button"
-            onPointerUp={themeApi.setOther}
+            onPointerDown={themeApi.setOther}
           >
             {theme}
           </button>
