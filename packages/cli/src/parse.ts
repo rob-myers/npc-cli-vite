@@ -4,9 +4,11 @@ import type { BaseMeta, FileWithMeta, ParsedSh } from "./types";
 
 export class ParseShService {
   /** This is actually attached to parse trees and then overwritten per-parse */
+  //@ts-expect-error
   private mockMeta!: BaseMeta;
 
   // 🚧 can we use these types going forwards?
+  //@ts-expect-error
   private mockPos: () => MvdanSh.Pos;
 
   private cache: { [src: string]: FileWithMeta } = {};
@@ -19,6 +21,7 @@ export class ParseShService {
   /**
    * Use `mvdan-sh` to parse shell code.
    */
+  //@ts-expect-error
   async parse(src: string, cache = false): Promise<FileWithMeta> {
     if (src in this.cache) {
       return cloneParsed(this.cache[src]);

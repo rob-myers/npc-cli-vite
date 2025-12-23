@@ -8,7 +8,7 @@
     "build": "pnpm -F @npc-cli/app build",
     "build:wasm": "pnpm -F @npc-cli/parse-sh build:wasm",
     "preview": "pnpm -F @npc-cli/app preview",
-    "types": "tsc --noEmit"
+    "types": "tsc -b"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

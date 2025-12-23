@@ -1,3 +1,5 @@
+import "./mvdan-sh.d";
+
 export interface BaseMeta {
   sessionKey: string;
   pid: number;

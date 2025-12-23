@@ -73,7 +73,7 @@ export function useStateRef(initializer, opts = {}) {
   return state;
 }
 
-import.meta.webpackHot?.decline();
+// import.meta.webpackHot?.decline();
 
 /**
  * @template {Record<string, any>} State
