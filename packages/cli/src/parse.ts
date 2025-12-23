@@ -3,7 +3,7 @@ import cloneWithRefs from "lodash.clonedeep";
 import type { BaseMeta, FileWithMeta, ParsedSh } from "./types";
 
 export class ParseShService {
-  /** This is actually attached to parse trees, and then reset per-parse */
+  /** This is actually attached to parse trees and then overwritten per-parse */
   private mockMeta!: BaseMeta;
 
   // 🚧 can we use these types going forwards?
@@ -17,7 +17,7 @@ export class ParseShService {
   }
 
   /**
-   * Use npm module `mvdan-sh` to parse shell code.
+   * Use `mvdan-sh` to parse shell code.
    */
   async parse(src: string, cache = false): Promise<FileWithMeta> {
     if (src in this.cache) {
