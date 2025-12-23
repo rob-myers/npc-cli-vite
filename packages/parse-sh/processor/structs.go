@@ -25,34 +25,33 @@ type Assign struct {
 	// Array ArrayExpr
 }
 
-type Command struct {
+// union type via common interface
+type Command interface {
+	commandNode()
+}
+func (BinaryCmd) commandNode() {}
+func (CallExpr) commandNode()  {}
+func (Unhandled) commandNode() {}
+type BinaryCmd struct {
 	Type string
-
 	X Stmt
 	Y Stmt
 	Op string
-
-	Assigns []Assign
-	Args []Word
-
 	Pos Pos
 	End Pos
 }
-
-// type BinaryCmd struct {
-// 	Node
-// 	Type string
-// 	X Stmt
-// 	Y Stmt
-// 	Op string
-// }
-
-// type CallExpr struct {
-// 	Node
-// 	Type string
-// 	Assigns []Assign
-// 	Args []Word
-// }
+type CallExpr struct {
+	Type string
+	Assigns []Assign
+	Args []Word
+	Pos Pos
+	End Pos
+}
+type Unhandled struct {
+	Type string
+	Pos Pos
+	End Pos
+}
 
 type Comment struct {
 	Hash Pos
@@ -88,7 +87,9 @@ type Redirect struct {
 
 type Stmt struct {
 	Comments   []Comment
-	Cmd        *Command
+	// Cmd        Command
+	// interface type processor.Command not supported: only interface{} and easyjson/json Unmarshaler are allowed
+	Cmd        interface{}
 	Position   Pos
 	Semicolon  Pos
 	Negated    bool
@@ -170,7 +171,7 @@ func mapNode(node syntax.Node) *Node {
 	}
 }
 
-func mapCommand(node syntax.Command) *Command {
+func mapCommand(node syntax.Command) Command {
 	if node == nil {
 		return nil
 	}
@@ -178,7 +179,7 @@ func mapCommand(node syntax.Command) *Command {
 	// https://github.com/mvdan/sh/blob/b84a3905c4f978a4b0050711d9d38ec4f3a51bec/syntax/walk.go#L16
 	switch node := node.(type) {
 		case *syntax.BinaryCmd:
-			return &Command{
+			return &BinaryCmd{
 				Type: "BinaryCmd",
 				Op: node.Op.String(),
 				X: mapStmt(node.X),
@@ -187,7 +188,7 @@ func mapCommand(node syntax.Command) *Command {
 				End: mapPos(node.End()),
 			}
 		case *syntax.CallExpr:
-			return &Command{
+			return &CallExpr{
 				Type: "CallExpr",
 				Assigns: mapAssigns(node.Assigns),
 				Args: mapWords(node.Args),
@@ -195,7 +196,7 @@ func mapCommand(node syntax.Command) *Command {
 				End: mapPos(node.End()),
 			}
 		default:
-			return &Command{
+			return &Unhandled{
 				Type: "Unhandled",
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
