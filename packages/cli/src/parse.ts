@@ -26,7 +26,7 @@ export class ParseShService {
 
     // 🚧
     const parsed = await parseSh(src, { interactive: false });
-    console.log({ parsed });
+    console.log({ parseShServiceDebug: parsed });
 
     return parsed as any; // 🚧
   }
