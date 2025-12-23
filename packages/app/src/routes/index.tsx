@@ -47,6 +47,7 @@ function Index() {
           width={width}
           gridConfig={{
             cols, // 🔔 not mentioned in documentation
+            rowHeight: 80,
           }}
           layout={layout}
           onResizeStop={(layout) => {
@@ -67,7 +68,7 @@ function Index() {
             key="d"
             className={cn(
               theme === "dark" && "prose-invert",
-              "prose overflow-auto border p-4 leading-[1.4]",
+              "prose max-w-[unset] overflow-auto border p-4 leading-[1.4]",
             )}
           >
             <TestMdx />
@@ -93,13 +94,15 @@ const demo = {
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
       { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
       { i: "c", x: 4, y: 0, w: 1, h: 2 },
-      { i: "d", x: 0, y: 1, w: 4, h: 4, isDraggable: false },
+      { i: "d", x: 0, y: 2, w: 4, h: 3, isDraggable: false },
+      { i: "e", x: 1, y: 4, w: 1, h: 1 },
     ],
     lg: [
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
       { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
       { i: "c", x: 4, y: 0, w: 1, h: 2 },
-      { i: "d", x: 0, y: 1, w: 4, h: 4, isDraggable: false },
+      { i: "d", x: 0, y: 1, w: 4, h: 3, isDraggable: false },
+      { i: "e", x: 0, y: 4, w: 1, h: 1 },
     ],
   } satisfies Partial<Record<"lg" | "sm", Layout>> as Partial<Record<"lg" | "sm", Layout>>,
   breakpoints: { lg: 1200, sm: 768 },
