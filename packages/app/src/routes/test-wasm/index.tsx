@@ -36,8 +36,9 @@ function RouteComponent() {
         className="flex gap-2 border rounded-xl px-4 py-2 cursor-pointer hover:brightness-125"
         onClick={async () => {
           const demoCommandParsed = await parseService.parse(demoCommandToParse);
+          const prettyParsed = jsStringify(demoCommandParsed, null, 2);
           console.log({ demoCommandParsed });
-          setCliResponse((x) => (x ? undefined : jsStringify(demoCommandParsed, null, 2)));
+          setCliResponse((x) => (x === prettyParsed ? undefined : prettyParsed));
         }}
       >
         Test wasm
@@ -52,4 +53,5 @@ function RouteComponent() {
   );
 }
 
-const demoCommandToParse = `echo {1..5} && sleep 2 && echo "Done"`;
+// const demoCommandToParse = `echo {1..5} && sleep 2 && echo "Done"`;
+const demoCommandToParse = `while true; do echo foo; done`;
