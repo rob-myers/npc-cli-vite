@@ -11,6 +11,9 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
+    "allowJs": true,
+    "checkJs": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
