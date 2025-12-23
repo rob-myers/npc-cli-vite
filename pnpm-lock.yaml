@@ -83,6 +83,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@npc-cli/cli':
+        specifier: workspace:^
+        version: link:../cli
       '@npc-cli/parse-sh':
         specifier: workspace:^
         version: link:../parse-sh
