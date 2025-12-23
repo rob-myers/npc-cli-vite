@@ -15,13 +15,44 @@ type Node struct {
 	End Pos
 }
 
-// 🚧 poc
+type Assign struct {
+	Type string
+	Append bool
+	Naked bool
+	Name Lit
+	// Index ArithmExpr
+	Value Word
+	// Array ArrayExpr
+}
+
 type Command struct {
 	Type string
+
+	X Stmt
+	Y Stmt
 	Op string
+
+	Assigns []Assign
+	Args []Word
+
 	Pos Pos
 	End Pos
 }
+
+// type BinaryCmd struct {
+// 	Node
+// 	Type string
+// 	X Stmt
+// 	Y Stmt
+// 	Op string
+// }
+
+// type CallExpr struct {
+// 	Node
+// 	Type string
+// 	Assigns []Assign
+// 	Args []Word
+// }
 
 type Comment struct {
 	Hash Pos
@@ -106,6 +137,21 @@ func MapParseError(err error) (*ParseError, string) {
 	return nil, err.Error()
 }
 
+func mapAssigns(assigns []*syntax.Assign) []Assign {
+	assignsSize := len(assigns)
+	assignList := make([]Assign, assignsSize)
+	for i := range assignsSize {
+		assignList[i] = Assign{
+			Type:   "Assign",
+			Append: assigns[i].Append,
+			Naked:  assigns[i].Naked,
+			Name:   *mapLit(assigns[i].Name),
+			Value:  *mapWord(assigns[i].Value),
+		}
+	}
+	return assignList
+}
+
 func mapPos(pos syntax.Pos) Pos {
 	return Pos{
 		Offset: pos.Offset(),
@@ -124,24 +170,27 @@ func mapNode(node syntax.Node) *Node {
 	}
 }
 
-// 🚧 poc: test if can disciminate (binary node, call expression, others)
-// https://github.com/mvdan/sh/blob/b84a3905c4f978a4b0050711d9d38ec4f3a51bec/syntax/walk.go#L16
 func mapCommand(node syntax.Command) *Command {
 	if node == nil {
 		return nil
 	}
-
+	
+	// https://github.com/mvdan/sh/blob/b84a3905c4f978a4b0050711d9d38ec4f3a51bec/syntax/walk.go#L16
 	switch node := node.(type) {
 		case *syntax.BinaryCmd:
 			return &Command{
 				Type: "BinaryCmd",
 				Op: node.Op.String(),
+				X: mapStmt(node.X),
+				Y: mapStmt(node.Y),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
 		case *syntax.CallExpr:
 			return &Command{
 				Type: "CallExpr",
+				Assigns: mapAssigns(node.Assigns),
+				Args: mapWords(node.Args),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
@@ -193,6 +242,28 @@ func mapWord(word *syntax.Word) *Word {
 	}
 }
 
+func mapWords(words []*syntax.Word) []Word {
+	wordsSize := len(words)
+	wordList := make([]Word, wordsSize)
+	for i := range wordsSize {
+		wordList[i] = *mapWord(words[i])
+	}
+	return wordList
+}
+
+func mapLit(lit *syntax.Lit) *Lit {
+	if lit == nil {
+		return nil
+	}
+	return &Lit{
+		ValuePos: mapPos(lit.Pos()),
+		ValueEnd: mapPos(lit.End()),
+		Value:    lit.Value,
+		Pos:      mapPos(lit.Pos()),
+		End:      mapPos(lit.End()),
+	}
+}
+
 // `mapRedirects` converts a slice of syntax.Redirect pointers into a slice of custom Redirect structures.
 // It maps each redirect’s operator position, associated literal (if present), word, heredoc, and overall positional data using helper functions.
 // If the literal component (N) is non-nil, it is transformed into a Lit structure that encapsulates both its value and positional information.
@@ -201,22 +272,10 @@ func mapRedirects(redirects []*syntax.Redirect) []Redirect {
 	redirs := make([]Redirect, redirsSize)
 	for i := range redirsSize {
 		curr := redirects[i]
-		var N *Lit
-		if curr.N != nil {
-			ValuePos := mapPos(curr.N.Pos())
-			ValueEnd := mapPos(curr.N.End())
-			N = &Lit{
-				ValuePos: ValuePos,
-				ValueEnd: ValueEnd,
-				Value:    curr.N.Value,
-				Pos:      ValuePos,
-				End:      ValueEnd,
-			}
-		}
 		redirs[i] = Redirect{
 			OpPos: mapPos(curr.OpPos),
 			Op:    curr.Op.String(),
-			N:     N,
+			N:     mapLit(curr.N),
 			Word:  mapWord(curr.Word),
 			Hdoc:  mapWord(curr.Hdoc),
 			Pos:   mapPos(curr.Pos()),
@@ -226,26 +285,27 @@ func mapRedirects(redirects []*syntax.Redirect) []Redirect {
 	return redirs
 }
 
+func mapStmt(stmt *syntax.Stmt) Stmt {
+	return Stmt{
+		Comments:   mapComments(stmt.Comments),
+		Cmd:        mapCommand(stmt.Cmd),
+		Position:   mapPos(stmt.Position),
+		Semicolon:  mapPos(stmt.Semicolon),
+		Negated:    stmt.Negated,
+		Background: stmt.Background,
+		Coprocess:  stmt.Coprocess,
+		Redirs:     mapRedirects(stmt.Redirs),
+		Pos:        mapPos(stmt.Pos()),
+		End:        mapPos(stmt.End()),
+	}
+}
+
 // `mapStmts` converts a slice of *syntax.Stmt into a slice of Stmt by mapping each statement's components—including comments, command node, positional information, semicolon, redirections, and execution flags (negated, background, coprocess).
 func mapStmts(stmts []*syntax.Stmt) []Stmt {
 	stmtsSize := len(stmts)
 	stmtList := make([]Stmt, stmtsSize)
 	for i := range stmtsSize {
-		curr := stmts[i]
-		stmtList[i] = Stmt{
-			Comments:   mapComments(curr.Comments),
-			// 🚧 richer i.e. union of structs
-			// Cmd:        mapNode(curr.Cmd),
-			Cmd:        mapCommand(curr.Cmd),
-			Position:   mapPos(curr.Position),
-			Semicolon:  mapPos(curr.Semicolon),
-			Negated:    curr.Negated,
-			Background: curr.Background,
-			Coprocess:  curr.Coprocess,
-			Redirs:     mapRedirects(curr.Redirs),
-			Pos:        mapPos(curr.Pos()),
-			End:        mapPos(curr.End()),
-		}
+		stmtList[i] = mapStmt(stmts[i])
 	}
 	return stmtList
 }
