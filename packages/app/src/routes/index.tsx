@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "motion/react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 import { cn } from "@npc-cli/util";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
 import { themeApi, useThemeName } from "../stores/theme.store";
 
@@ -14,24 +15,15 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { width, containerRef, mounted } = useContainerWidth();
+  const { width, containerRef } = useContainerWidth();
   const theme = useThemeName();
   const layouts = useRef(demo.layouts);
 
-  const {
-    layout, // Current layout for active breakpoint
-    cols, // Column count for current breakpoint
-    // layouts, // All layouts by breakpoint
-    // breakpoint, // Current active breakpoint ('lg', 'md', etc.)
-    // setLayoutForBreakpoint,
-    setLayouts,
-    // sortedBreakpoints,
-  } = useResponsiveLayout({
+  const { layout, cols, setLayouts } = useResponsiveLayout({
     width,
     breakpoints: demo.breakpoints,
     cols: demo.cols,
     layouts: layouts.current,
-    // compactType: "vertical",
     compactType: "horizontal",
     onBreakpointChange(_bp, _cols) {
       // Fixes overflow on slow/sudden change
@@ -39,52 +31,61 @@ function Index() {
     },
   });
 
+  // disable initial animation until fade in
+  const [animateItems, setAnimateItems] = useState(false);
+
   return (
-    <div ref={containerRef}>
-      {mounted && (
-        <GridLayout
-          className="border text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!"
-          width={width}
-          gridConfig={{
-            cols, // 🔔 not mentioned in documentation
-            rowHeight: 80,
-          }}
-          layout={layout}
-          onResizeStop={(layout) => {
-            console.log("onResizeStop", layout);
-            layouts.current.lg = layouts.current.sm = layout;
-          }}
-          onDragStop={(layout) => {
-            console.log("onDragStop", layout);
-            layouts.current.lg = layouts.current.sm = layout;
-          }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1, transition: { duration: 0.3 } }}
+      onAnimationComplete={() => setAnimateItems(true)}
+      ref={containerRef}
+    >
+      <GridLayout
+        className={cn(
+          !animateItems && "[&_.react-grid-item]:transition-none!",
+          "border text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
+        )}
+        width={width}
+        gridConfig={{
+          cols, // 🔔 not mentioned in documentation
+          rowHeight: 80,
+        }}
+        layout={layout}
+        onResizeStop={(layout) => {
+          console.log("onResizeStop", layout);
+          layouts.current.lg = layouts.current.sm = layout;
+        }}
+        onDragStop={(layout) => {
+          console.log("onDragStop", layout);
+          layouts.current.lg = layouts.current.sm = layout;
+        }}
+      >
+        {["a", "b", "c"].map((key) => (
+          <div key={key} className="border rounded flex items-center justify-center">
+            {key}
+          </div>
+        ))}
+        <div
+          key="d"
+          className={cn(
+            theme === "dark" && "prose-invert",
+            "prose max-w-[unset] overflow-auto border p-4 leading-[1.4]",
+          )}
         >
-          {["a", "b", "c"].map((key) => (
-            <div key={key} className="border rounded flex items-center justify-center">
-              {key}
-            </div>
-          ))}
-          <div
-            key="d"
-            className={cn(
-              theme === "dark" && "prose-invert",
-              "prose max-w-[unset] overflow-auto border p-4 leading-[1.4]",
-            )}
+          <TestMdx />
+        </div>
+        <div key="e" className="border p-4 flex items-center">
+          <button
+            type="button"
+            className="cursor-pointer border rounded px-4 py-1 bg-button"
+            onPointerUp={themeApi.setOther}
           >
-            <TestMdx />
-          </div>
-          <div key="e" className="border p-4 flex items-center">
-            <button
-              type="button"
-              className="cursor-pointer border rounded px-4 py-1 bg-button"
-              onPointerUp={themeApi.setOther}
-            >
-              {theme}
-            </button>
-          </div>
-        </GridLayout>
-      )}
-    </div>
+            {theme}
+          </button>
+        </div>
+      </GridLayout>
+    </motion.div>
   );
 }
 
