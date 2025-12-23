@@ -31,7 +31,9 @@ type Command interface {
 }
 func (BinaryCmd) commandNode() {}
 func (CallExpr) commandNode()  {}
+func (IfClause) commandNode()  {}
 func (Unhandled) commandNode() {}
+func (WhileClause) commandNode() {}
 type BinaryCmd struct {
 	Type string
 	X Stmt
@@ -47,8 +49,25 @@ type CallExpr struct {
 	Pos Pos
 	End Pos
 }
+type IfClause struct {
+	Type string
+	Then []Stmt;
+	/** if non-nil an "elif" or an "else" */
+	Else *IfClause;
+	Pos Pos
+	End Pos
+}
 type Unhandled struct {
 	Type string
+	Pos Pos
+	End Pos
+}
+type WhileClause struct {
+	Type string
+	Until bool
+	/** if non-nil an "elif" or an "else" */
+	Cond []Stmt;
+	Do []Stmt;
 	Pos Pos
 	End Pos
 }
@@ -171,6 +190,7 @@ func mapNode(node syntax.Node) *Node {
 	}
 }
 
+// 🚧
 func mapCommand(node syntax.Command) Command {
 	if node == nil {
 		return nil
@@ -192,6 +212,23 @@ func mapCommand(node syntax.Command) Command {
 				Type: "CallExpr",
 				Assigns: mapAssigns(node.Assigns),
 				Args: mapWords(node.Args),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.IfClause:
+			return &IfClause{
+				Type: "IfClause",
+				Then: mapStmts(node.Then),
+				Else: mapCommand(node.Else).(*IfClause),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.WhileClause:
+			return &WhileClause{
+				Type: "WhileClause",
+				Until: node.Until,
+				Cond: mapStmts(node.Cond),
+				Do: mapStmts(node.Do),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
