@@ -12,6 +12,7 @@
     "@npc-cli/util": "workspace:^",
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
+    "javascript-stringify": "catalog:",
     "motion": "^12.23.26",
     "react": "catalog:",
     "react-dom": "catalog:",
