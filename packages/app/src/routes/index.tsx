@@ -33,9 +33,11 @@ function Index() {
 
   // disable initial animation until fade in
   const [animateItems, setAnimateItems] = useState(false);
+  const [resizing, setResizing] = useState(false);
 
   return (
     <motion.div
+      className="m-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.3 } }}
       onAnimationComplete={() => setAnimateItems(true)}
@@ -44,6 +46,7 @@ function Index() {
       <GridLayout
         className={cn(
           !animateItems && "[&_.react-grid-item]:transition-none!",
+          resizing && "select-none",
           "border text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
         )}
         width={width}
@@ -52,9 +55,13 @@ function Index() {
           rowHeight: 80,
         }}
         layout={layout}
+        onResizeStart={() => {
+          setResizing(true);
+        }}
         onResizeStop={(layout) => {
           console.log("onResizeStop", layout);
           layouts.current.lg = layouts.current.sm = layout;
+          setResizing(false);
         }}
         onDragStop={(layout) => {
           console.log("onDragStop", layout);
