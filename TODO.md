@@ -77,11 +77,21 @@
   - ✅ theme switch in react-grid-layout
   - ✅ fix dark mode colours
 
+- 🚧 responsive grid layout items as packages/ui/*
+  - scaffold script
+  - registered somehow inside app
+  - packages/ui/demo
+  - packages/ui/mdx
+  - packages/ui/themer
+  - packages/ui/cli
+  - packages/ui/world
+
 - 🚧 start packages/cli
   - 🚧 start migrating parse.ts
   - 🚧 does namespace `MvdanSh` still make sense?
   - start migrating tty.shell
 
-- normalize tsconfigs like bz-frontend
+- 🚧 normalize tsconfigs like bz-frontend
+  - ✅ inherit from tsconfig.base.json
 - add react-query
 - add react-three-fiber and import gltf
