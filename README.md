@@ -1,5 +1,8 @@
 # Dependencies
 
+Install pnpm
+> https://pnpm.io/installation
+
 ## `packages/app`
 
 ### react-grid-layout
@@ -29,36 +32,28 @@ export PATH="$GOPATH/bin:$PATH"
 go mod download
 go get
 
-cd processor
 # generate structs_easyjson.go
+cd processor
 easyjson -all structs.go
 ```
 
-### golang -> wasm setup
+### golang -> wasm
 
-https://tinygo.org/getting-started/install/macos/
+Install tinygo
 
-```sh
-brew tap tinygo-org/tools
-brew install tinygo
-```
+> On MacOS
+>
+> https://tinygo.org/getting-started/install/macos/
+>
+> ```sh
+> brew tap tinygo-org/tools
+> brew install tinygo
+> ```
 
-https://tinygo.org/docs/guides/webassembly/
+We use it to generate WASM (https://tinygo.org/docs/guides/webassembly/) following the method of https://github.com/un-ts/sh-syntax
 
-```ts
-//export parse
-func parse(...)
-```
 
 ```sh
 # generate packages/parse-sh/main.wasm with current structs
 pnpm -F @npc-cli/parse-sh build:wasm
 ```
-
-### loading wasm in browser
-
-https://github.com/tinygo-org/tinygo/blob/3869f76887feef6c444308e7e1531b7cac1bbd10/targets/wasm_exec.js
-
-https://tinygo.org/docs/guides/webassembly/wasm/
-
-types for Go provided by tinygo in packages/cli/vendors/wasm_exec.js
