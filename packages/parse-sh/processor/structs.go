@@ -51,26 +51,21 @@ type Assign struct {
 	End Pos
 }
 
-type CaseItem struct {
-	Type 			string
-	Op 				string
-	Patterns 	[]Word
-	Stmts 		[]Stmt
-	Pos 			Pos
-	End 			Pos
-}
-
 // union type via common interface
 type Command interface {
 	commandNode()
 }
 func (ArithmCmd) 		commandNode() {}
 func (BinaryCmd) 		commandNode() {}
+func (Block) 				commandNode() {}
 func (CallExpr) 		commandNode() {}
+func (CaseClause) 	commandNode() {}
+func (CaseItem) 		commandNode() {}
 func (ForClause) 		commandNode() {}
 func (FuncDecl) 		commandNode() {}
 func (IfClause) 		commandNode() {}
 func (SubShell) 		commandNode() {}
+func (TestClause) 	commandNode() {}
 func (Unhandled) 		commandNode() {}
 func (WhileClause) 	commandNode() {}
 type ArithmCmd struct {
@@ -108,6 +103,14 @@ type CaseClause struct {
 	Pos Pos
 	End Pos
 }
+type CaseItem struct {
+	Type 			string
+	Op 				string
+	Patterns 	[]Word
+	Stmts 		[]Stmt
+	Pos 			Pos
+	End 			Pos
+}
 type ForClause struct {
 	Type string
 	Select bool
@@ -139,6 +142,13 @@ type SubShell struct {
 	Stmts []Stmt
 	Pos Pos
 	End Pos
+}
+type TestClause struct {
+	Type 	string
+	// X 		TestExpr
+	X 		interface{}
+	Pos 	Pos
+	End 	Pos
 }
 type Unhandled struct {
 	Type string
@@ -215,6 +225,30 @@ type Stmt struct {
 	Redirs     []Redirect
 	Pos        Pos
 	End        Pos
+}
+
+type TestExpr interface {
+	testExprNode()
+}
+func (BinaryTest) testExprNode() {}
+func (UnaryTest) 	testExprNode() {}
+type BinaryTest struct {
+	Type 	string
+	Op 		string
+	// X  		TestExpr
+	X  		interface{}
+	// Y  		TestExpr
+	Y  		interface{}
+	Pos   Pos
+	End   Pos
+}
+type UnaryTest struct {
+	Type 	string
+	Op 		string
+	// X  		TestExpr
+	X  		interface{}
+	Pos   Pos
+	End   Pos
 }
 
 type Word struct {
