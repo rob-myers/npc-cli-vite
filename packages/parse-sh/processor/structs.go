@@ -15,14 +15,38 @@ type Node struct {
 	End Pos
 }
 
+type ArrayElem struct {
+	Type string
+	Index ArithmExpr
+	Value Word
+	Pos Pos
+	End Pos
+}
+
+type ArithmExpr struct {
+	Type string
+	Bracket bool
+	Unsigned bool
+	X *ArithmExpr
+	Pos Pos
+	End Pos
+}
+
+type ArrayExpr struct {
+	Type string
+	Elems []ArrayElem;
+	Pos Pos
+	End Pos
+}
+
 type Assign struct {
 	Type string
 	Append bool
 	Naked bool
 	Name Lit
-	// Index ArithmExpr
+	Index ArithmExpr
 	Value Word
-	// Array ArrayExpr
+	Array ArrayExpr
 }
 
 // union type via common interface
@@ -46,6 +70,16 @@ type CallExpr struct {
 	Type string
 	Assigns []Assign
 	Args []Word
+	Pos Pos
+	End Pos
+}
+type ForClause struct {
+	Type string
+	Select bool
+	// interface type processor.Loop not supported: only interface{} and easyjson/json Unmarshaler are allowed
+	// Loop Loop;
+	Loop interface{}
+	Do []Stmt
 	Pos Pos
 	End Pos
 }
@@ -79,11 +113,20 @@ type Comment struct {
 	End  Pos
 }
 
-type Word struct {
-	Parts []Node
-	Lit   string
-	Pos   Pos
-	End   Pos
+type CStyleLoop struct {
+	Type string
+	Init ArithmExpr
+	Cond ArithmExpr
+	Post ArithmExpr
+}
+
+type File struct {
+	Type string
+	Name string
+	Stmt []Stmt
+	Last []Comment
+	Pos  Pos
+	End  Pos
 }
 
 type Lit struct {
@@ -93,6 +136,13 @@ type Lit struct {
 	Pos      Pos
 	End      Pos
 }
+
+type Loop interface {
+	loopNode()
+}
+func (WordIter) commandNode() {}
+func (CStyleLoop) commandNode()  {}
+
 
 type Redirect struct {
 	OpPos Pos
@@ -119,13 +169,19 @@ type Stmt struct {
 	End        Pos
 }
 
-type File struct {
-	Type string
-	Name string
-	Stmt []Stmt
-	Last []Comment
-	Pos  Pos
-	End  Pos
+type Word struct {
+	Parts []Node
+	Lit   string
+	Pos   Pos
+	End   Pos
+}
+
+type WordIter struct {
+	Type 	string
+	Name  Lit
+	Items []Word
+	Pos   Pos
+	End   Pos
 }
 
 type ParseError struct {
@@ -239,7 +295,6 @@ func mapCommand(node syntax.Command) Command {
 				End: mapPos(node.End()),
 			}
 	}
-	
 }
 
 // `mapComments` transforms a slice of syntax.Comment into a slice of Comment by converting each comment's hash, text, start, and end positions using mapPos. It preserves the order of the comments and returns an empty slice if the input is nil or empty.
