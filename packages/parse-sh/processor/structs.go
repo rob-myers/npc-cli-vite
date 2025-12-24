@@ -47,17 +47,39 @@ type Assign struct {
 	Index ArithmExpr
 	Value Word
 	Array ArrayExpr
+	Pos Pos
+	End Pos
+}
+
+type CaseItem struct {
+	Type 			string
+	Op 				string
+	Patterns 	[]Word
+	Stmts 		[]Stmt
+	Pos 			Pos
+	End 			Pos
 }
 
 // union type via common interface
 type Command interface {
 	commandNode()
 }
-func (BinaryCmd) commandNode() {}
-func (CallExpr) commandNode()  {}
-func (IfClause) commandNode()  {}
-func (Unhandled) commandNode() {}
-func (WhileClause) commandNode() {}
+func (ArithmCmd) 		commandNode() {}
+func (BinaryCmd) 		commandNode() {}
+func (CallExpr) 		commandNode() {}
+func (ForClause) 		commandNode() {}
+func (FuncDecl) 		commandNode() {}
+func (IfClause) 		commandNode() {}
+func (SubShell) 		commandNode() {}
+func (Unhandled) 		commandNode() {}
+func (WhileClause) 	commandNode() {}
+type ArithmCmd struct {
+	Type 			string
+	Unsigned 	bool // mksh's ((# expr))
+	X 				ArithmExpr
+	Pos 			Pos
+	End 			Pos
+}
 type BinaryCmd struct {
 	Type string
 	X Stmt
@@ -66,10 +88,23 @@ type BinaryCmd struct {
 	Pos Pos
 	End Pos
 }
+type Block struct {
+	Type string
+	Stmts []Stmt
+	Pos Pos
+	End Pos
+}
 type CallExpr struct {
 	Type string
 	Assigns []Assign
 	Args []Word
+	Pos Pos
+	End Pos
+}
+type CaseClause struct {
+	Type string
+	Word Word
+	Items []CaseItem
 	Pos Pos
 	End Pos
 }
@@ -83,11 +118,25 @@ type ForClause struct {
 	Pos Pos
 	End Pos
 }
+type FuncDecl struct {
+	Type string
+	RsrvWord bool
+	Name Lit
+	Body Stmt
+	Pos Pos
+	End Pos
+}
 type IfClause struct {
 	Type string
 	Then []Stmt;
 	/** if non-nil an "elif" or an "else" */
 	Else *IfClause;
+	Pos Pos
+	End Pos
+}
+type SubShell struct {
+	Type string
+	Stmts []Stmt
 	Pos Pos
 	End Pos
 }
@@ -140,9 +189,8 @@ type Lit struct {
 type Loop interface {
 	loopNode()
 }
-func (WordIter) commandNode() {}
-func (CStyleLoop) commandNode()  {}
-
+func (WordIter) loopNode() {}
+func (CStyleLoop) loopNode()  {}
 
 type Redirect struct {
 	OpPos Pos
