@@ -4,10 +4,12 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-type ArrayElem struct {
+type ArithmCmd struct {
 	Type string
-	Index ArithmExp
-	Value Word
+	Unsigned bool // mksh's ((# expr))
+	X interface{} // ArithmExpr
+	Left Pos
+	Right Pos
 	Pos Pos
 	End Pos
 }
@@ -27,10 +29,18 @@ type ArithmExp struct {
 type ArithmExpr interface {
 	arithmExprNode()
 }
+// 🚧
 // func (BinaryArithm) arithmExprNode() {}
 // func (UnaryArithm) arithmExprNode() {}
 // func (ParenArithm) arithmExprNode() {}
 func (Word) arithmExprNode() {}
+type ArrayElem struct {
+	Type string
+	Index ArithmExp
+	Value Word
+	Pos Pos
+	End Pos
+}
 
 type ArrayExpr struct {
 	Type string
@@ -49,6 +59,71 @@ type Assign struct {
 	Array ArrayExpr
 	Lparen Pos
 	Rparen Pos
+	Pos Pos
+	End Pos
+}
+
+type BinaryCmd struct {
+	Type string
+	X Stmt
+	Y Stmt
+	Op string
+	OpPos Pos
+	Pos Pos
+	End Pos
+}
+
+type BinaryTest struct {
+	Type 	string
+	Op 		string
+	X  		interface{} // TestExpr
+	Y  		interface{} // TestExpr
+	OpPos Pos
+	Pos   Pos
+	End   Pos
+}
+
+type Block struct {
+	Type string
+	Stmts []Stmt
+	Lbrace Pos
+	Rbrace Pos
+	Pos Pos
+	End Pos
+}
+
+type CallExpr struct {
+	Type string
+	Assigns []Assign
+	Args []Word
+	Pos Pos
+	End Pos
+}
+
+type CaseClause struct {
+	Type string
+	Word Word
+	Items []CaseItem
+	Case Pos
+	Esac Pos
+	Pos Pos
+	End Pos
+}
+
+type CaseItem struct {
+	Type string
+	Op string
+	Patterns []Word
+	Stmts []Stmt
+	Pos Pos
+	End Pos
+}
+
+type CmdSubst struct {
+	Type string
+	TempFile bool
+	ReplyVar bool
+	Stmts []Stmt
 	Pos Pos
 	End Pos
 }
@@ -74,138 +149,20 @@ func (TestClause) commandNode() {}
 func (TimeClause) commandNode() {}
 func (Unhandled) commandNode() {}
 func (WhileClause) commandNode() {}
-type ArithmCmd struct {
-	Type string
-	Unsigned bool // mksh's ((# expr))
-	X interface{} // ArithmExpr
-	Left Pos
-	Right Pos
-	Pos Pos
-	End Pos
-}
-type BinaryCmd struct {
-	Type string
-	X Stmt
-	Y Stmt
-	Op string
-	OpPos Pos
-	Pos Pos
-	End Pos
-}
-type Block struct {
-	Type string
-	Stmts []Stmt
-	Lbrace Pos
-	Rbrace Pos
-	Pos Pos
-	End Pos
-}
-type CallExpr struct {
-	Type string
-	Assigns []Assign
-	Args []Word
-	Pos Pos
-	End Pos
-}
-type CaseClause struct {
-	Type string
-	Word Word
-	Items []CaseItem
-	Case Pos
-	Esac Pos
-	Pos Pos
-	End Pos
-}
-type CaseItem struct {
-	Type string
-	Op string
-	Patterns []Word
-	Stmts []Stmt
-	Pos Pos
-	End Pos
-}
-type CoprocClause struct {
-	Type string
-	Name Word
-	Stmt Stmt
-	Pos Pos
-	End Pos
-}
-type DeclClause struct {
-	Type string
-	Variant Lit
-	Args []Assign
-	Pos Pos
-	End Pos
-}
-type ForClause struct {
-	Type string
-	Select bool
-	// interface type processor.Loop not supported: only interface{} and easyjson/json Unmarshaler are allowed
-	// Loop Loop;
-	Loop interface{}
-	Do []Stmt
-	Pos Pos
-	End Pos
-}
-type FuncDecl struct {
-	Type string
-	RsrvWord bool
-	Name Lit
-	Body Stmt
-	Pos Pos
-	End Pos
-}
-type IfClause struct {
-	Type string
-	Then []Stmt;
-	/* if non-nil an "elif" or an "else" */
-	Else *IfClause;
-	Pos Pos
-	End Pos
-}
-type LetClause struct {
-	Type 	string
-	// Exprs []ArithmExpr
-	Exprs interface{}
-	Pos Pos
-	End Pos
-}
-type SubShell struct {
-	Type string
-	Stmts []Stmt
-	Pos Pos
-	End Pos
-}
-type TestClause struct {
-	Type 	string
-	X 		interface{} // TestExpr
-	Pos 	Pos
-	End 	Pos
-}
-type Unhandled struct {
-	Type string
-	Pos Pos
-	End Pos
-}
-type WhileClause struct {
-	Type string
-	Until bool
-	/** if non-nil an "elif" or an "else" */
-	Cond []Stmt;
-	Do []Stmt;
-	DonePos Pos
-	DoPos Pos
-	WhilePos Pos
-	Pos Pos
-	End Pos
-}
 
 type Comment struct {
 	Hash Pos
 	Text string
 	Pos  Pos
 	End  Pos
+}
+
+type CoprocClause struct {
+	Type string
+	Name Word
+	Stmt Stmt
+	Pos Pos
+	End Pos
 }
 
 type CStyleLoop struct {
@@ -218,6 +175,24 @@ type CStyleLoop struct {
 	Post interface{}
 	Pos  Pos
 	End  Pos
+}
+
+type DblQuoted struct {
+	Type string
+	Dollar bool
+	Parts interface{} // WordPart
+	Left Pos
+	Right Pos
+	Pos Pos
+	End Pos
+}
+
+type DeclClause struct {
+	Type string
+	Variant Lit
+	Args []Assign
+	Pos Pos
+	End Pos
 }
 
 type Expansion struct {
@@ -235,6 +210,43 @@ type File struct {
 	Last []Comment
 	Pos  Pos
 	End  Pos
+}
+
+type ForClause struct {
+	Type string
+	Select bool
+	// interface type processor.Loop not supported: only interface{} and easyjson/json Unmarshaler are allowed
+	// Loop Loop;
+	Loop interface{}
+	Do []Stmt
+	Pos Pos
+	End Pos
+}
+
+type FuncDecl struct {
+	Type string
+	RsrvWord bool
+	Name Lit
+	Body Stmt
+	Pos Pos
+	End Pos
+}
+
+type IfClause struct {
+	Type string
+	Then []Stmt;
+	/* if non-nil an "elif" or an "else" */
+	Else *IfClause;
+	Pos Pos
+	End Pos
+}
+
+type LetClause struct {
+	Type 	string
+	// Exprs []ArithmExpr
+	Exprs interface{}
+	Pos Pos
+	End Pos
 }
 
 type Lit struct {
@@ -256,6 +268,30 @@ type Node struct {
 	End Pos
 }
 
+type ParamExp struct {
+	Type string
+	Short bool
+	Excl bool
+	Length bool
+	Width bool
+	Param Lit
+	Index interface{} // ArithmExpr
+	Slice Slice
+	Repl Replace
+	Names string
+	Exp Expansion
+	Pos Pos
+	End Pos
+}
+
+type ParenTest struct {
+	Type 	string
+	Op 		string
+	X  		interface{}
+	Pos   Pos
+	End   Pos
+}
+
 type Pos struct {
 	Offset uint
 	Line   uint
@@ -272,122 +308,18 @@ type Redirect struct {
 	End   Pos
 }
 
-type Stmt struct {
-	Comments []Comment
-	// interface type processor.Command not supported: only interface{} and easyjson/json Unmarshaler are allowed
-	Cmd        interface{} // Command
-	Position   Pos
-	Semicolon  Pos
-	Negated    bool
-	Background bool
-	Coprocess  bool
-	Redirs     []Redirect
-	Pos        Pos
-	End        Pos
-}
-
-type TestExpr interface {
-	testExprNode()
-}
-func (BinaryTest) testExprNode() {}
-func (UnaryTest) 	testExprNode() {}
-func (ParenTest) 	testExprNode() {}
-func (Word) testExprNode() {}
-type BinaryTest struct {
-	Type 	string
-	Op 		string
-	X  		interface{} // TestExpr
-	Y  		interface{} // TestExpr
-	OpPos Pos
-	Pos   Pos
-	End   Pos
-}
-type UnaryTest struct {
-	Type 	string
-	Op 		string
-	// X  		TestExpr
-	X  		interface{}
-	Pos   Pos
-	End   Pos
-}
-type ParenTest struct {
-	Type 	string
-	Op 		string
-	X  		interface{}
-	Pos   Pos
-	End   Pos
-}
-
-type TimeClause struct {
-	Type string
-	PosixFormat bool
-	Stmt Stmt
-	Pos   Pos
-	End   Pos
-}
-
-type Word struct {
-	Type string
-	Parts interface{} // []WordPart
-	// Lit   string
-	Pos   Pos
-	End   Pos
-}
-
-// 🚧
-type WordPart interface {
-	wordPartNode()
-}
-func (CmdSubst) wordPartNode() {}
-func (DblQuoted) wordPartNode() {}
-func (Lit) wordPartNode() {}
-func (ParamExp) wordPartNode() {}
-func (SglQuoted) wordPartNode() {}
-type SglQuoted struct {
-	Type string
-	Dollar bool
-	Value string
-	Pos Pos
-	End Pos
-}
-type DblQuoted struct {
-	Type string
-	Dollar bool
-	Parts interface{} // WordPart
-	Left Pos
-	Right Pos
-	Pos Pos
-	End Pos
-}
-type ParamExp struct {
-	Type string
-	Short bool
-	Excl bool
-	Length bool
-	Width bool
-	Param Lit
-	// Index ArithmExpr
-	Index interface{}
-	Slice Slice
-	Repl Replace
-	Names string
-	Exp Expansion
-	Pos Pos
-	End Pos
-}
-type CmdSubst struct {
-	Type string
-	TempFile bool
-	ReplyVar bool
-	Stmts []Stmt
-	Pos Pos
-	End Pos
-}
-
 type Replace struct {
 	Type string
 	All bool
 	Orig Word
+	Pos Pos
+	End Pos
+}
+
+type SglQuoted struct {
+	Type string
+	Dollar bool
+	Value string
 	Pos Pos
 	End Pos
 }
@@ -402,6 +334,87 @@ type Slice struct {
 	End Pos
 }
 
+type Stmt struct {
+	Comments []Comment
+	// interface type processor.Command not supported: only interface{} and easyjson/json Unmarshaler are allowed
+	Cmd        interface{} // Command
+	Position   Pos
+	Semicolon  Pos
+	Negated    bool
+	Background bool
+	Coprocess  bool
+	Redirs     []Redirect
+	Pos        Pos
+	End        Pos
+}
+
+
+type SubShell struct {
+	Type string
+	Stmts []Stmt
+	Pos Pos
+	End Pos
+}
+
+type TestClause struct {
+	Type 	string
+	X 		interface{} // TestExpr
+	Pos 	Pos
+	End 	Pos
+}
+
+type TestExpr interface {
+	testExprNode()
+}
+func (BinaryTest) testExprNode() {}
+func (UnaryTest) 	testExprNode() {}
+func (ParenTest) 	testExprNode() {}
+func (Word) testExprNode() {}
+
+type TimeClause struct {
+	Type string
+	PosixFormat bool
+	Stmt Stmt
+	Pos   Pos
+	End   Pos
+}
+
+type UnaryTest struct {
+	Type 	string
+	Op 		string
+	// X  		TestExpr
+	X  		interface{}
+	Pos   Pos
+	End   Pos
+}
+
+type Unhandled struct {
+	Type string
+	Pos Pos
+	End Pos
+}
+
+type WhileClause struct {
+	Type string
+	Until bool
+	/** if non-nil an "elif" or an "else" */
+	Cond []Stmt;
+	Do []Stmt;
+	DonePos Pos
+	DoPos Pos
+	WhilePos Pos
+	Pos Pos
+	End Pos
+}
+
+type Word struct {
+	Type string
+	Parts interface{} // []WordPart
+	// Lit   string
+	Pos   Pos
+	End   Pos
+}
+
 type WordIter struct {
 	Type 	string
 	Name  Lit
@@ -409,6 +422,16 @@ type WordIter struct {
 	Pos   Pos
 	End   Pos
 }
+
+// 🚧
+type WordPart interface {
+	wordPartNode()
+}
+func (CmdSubst) wordPartNode() {}
+func (DblQuoted) wordPartNode() {}
+func (Lit) wordPartNode() {}
+func (ParamExp) wordPartNode() {}
+func (SglQuoted) wordPartNode() {}
 
 // ---
 
