@@ -18,8 +18,7 @@ type ArithmExp struct {
 	Type string
 	Bracket bool
 	Unsigned bool
-	// X ArithmExpr
-	X interface{}
+	X interface{} // ArithmExpr
 	Left Pos
 	Right Pos
 	Pos Pos
@@ -34,17 +33,22 @@ type ArithmExpr interface {
 // func (UnaryArithm) arithmExprNode() {}
 // func (ParenArithm) arithmExprNode() {}
 func (Word) arithmExprNode() {}
+
 type ArrayElem struct {
 	Type string
 	Index ArithmExp
 	Value Word
+	Comments []Comment
 	Pos Pos
 	End Pos
 }
 
 type ArrayExpr struct {
 	Type string
-	Elems []ArrayElem;
+	Elems []ArrayElem
+	Lparen Pos
+	Rparen Pos
+	Last Comment
 	Pos Pos
 	End Pos
 }
@@ -57,8 +61,6 @@ type Assign struct {
 	Index ArithmExp
 	Value Word
 	Array ArrayExpr
-	Lparen Pos
-	Rparen Pos
 	Pos Pos
 	End Pos
 }
@@ -106,6 +108,7 @@ type CaseClause struct {
 	Items []CaseItem
 	Case Pos
 	Esac Pos
+	Last []Comment
 	Pos Pos
 	End Pos
 }
@@ -115,6 +118,8 @@ type CaseItem struct {
 	Op string
 	Patterns []Word
 	Stmts []Stmt
+	OpPos Pos
+	Comments []Comment
 	Pos Pos
 	End Pos
 }
@@ -151,8 +156,8 @@ func (Unhandled) commandNode() {}
 func (WhileClause) commandNode() {}
 
 type Comment struct {
-	Hash Pos
 	Text string
+	Hash Pos
 	Pos  Pos
 	End  Pos
 }
@@ -161,18 +166,16 @@ type CoprocClause struct {
 	Type string
 	Name Word
 	Stmt Stmt
+	Coproc Pos;
 	Pos Pos
 	End Pos
 }
 
 type CStyleLoop struct {
 	Type string
-	// Init ArithmExpr
-	// Cond ArithmExpr
-	// Post ArithmExpr
-	Init interface{}
-	Cond interface{}
-	Post interface{}
+	Init interface{} // ArithmExpr
+	Cond interface{} // ArithmExpr
+	Post interface{} // ArithmExpr
 	Pos  Pos
 	End  Pos
 }
@@ -216,8 +219,7 @@ type ForClause struct {
 	Type string
 	Select bool
 	// interface type processor.Loop not supported: only interface{} and easyjson/json Unmarshaler are allowed
-	// Loop Loop;
-	Loop interface{}
+	Loop interface{} // Loop
 	Do []Stmt
 	Pos Pos
 	End Pos
@@ -237,14 +239,19 @@ type IfClause struct {
 	Then []Stmt;
 	/* if non-nil an "elif" or an "else" */
 	Else *IfClause;
+	ThenPos Pos // Position of "then", empty if this is an "else"
+	FiPos Pos // position of "fi", empty if Elif == true
+	CondLast []Comment
+	ThenLast []Comment
+	Last []Comment
 	Pos Pos
 	End Pos
 }
 
 type LetClause struct {
 	Type 	string
-	// Exprs []ArithmExpr
-	Exprs interface{}
+	Exprs interface{} // []ArithmExpr
+	Let Pos
 	Pos Pos
 	End Pos
 }
@@ -285,11 +292,13 @@ type ParamExp struct {
 }
 
 type ParenTest struct {
-	Type 	string
-	Op 		string
-	X  		interface{}
-	Pos   Pos
-	End   Pos
+	Type string
+	Op string
+	X interface{}
+	Lparen Pos
+	Rparen Pos
+	Pos Pos
+	End Pos
 }
 
 type Pos struct {
@@ -299,13 +308,13 @@ type Pos struct {
 }
 
 type Redirect struct {
+	Op string
+	N *Lit
+	Word *Word
+	Hdoc *Word
 	OpPos Pos
-	Op    string
-	N     *Lit
-	Word  *Word
-	Hdoc  *Word
-	Pos   Pos
-	End   Pos
+	Pos Pos
+	End Pos
 }
 
 type Replace struct {
@@ -320,6 +329,8 @@ type SglQuoted struct {
 	Type string
 	Dollar bool
 	Value string
+	Left Pos
+	Right Pos
 	Pos Pos
 	End Pos
 }
@@ -347,7 +358,6 @@ type Stmt struct {
 	Pos        Pos
 	End        Pos
 }
-
 
 type SubShell struct {
 	Type string
@@ -432,8 +442,6 @@ func (DblQuoted) wordPartNode() {}
 func (Lit) wordPartNode() {}
 func (ParamExp) wordPartNode() {}
 func (SglQuoted) wordPartNode() {}
-
-// ---
 
 type ParseError struct {
 	syntax.ParseError
@@ -527,6 +535,8 @@ func mapCaseItems(caseItems []*syntax.CaseItem) []CaseItem {
 			Op: curr.Op.String(),
 			Patterns: mapWords(curr.Patterns),
 			Stmts: mapStmts(curr.Stmts),
+			OpPos: mapPos(curr.OpPos),
+			Comments: mapComments(curr.Comments),
 			Pos:  mapPos(curr.Pos()),
 			End:  mapPos(curr.End()),
 		}
@@ -623,6 +633,11 @@ func mapCommand(node syntax.Command) Command {
 				Type: "IfClause",
 				Then: mapStmts(node.Then),
 				Else: mapCommand(node.Else).(*IfClause),
+				ThenPos: mapPos(node.ThenPos),
+				FiPos: mapPos(node.FiPos),
+				CondLast: mapComments(node.CondLast),
+				ThenLast: mapComments(node.ThenLast),
+				Last: mapComments(node.Last),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
@@ -673,18 +688,21 @@ func mapCommand(node syntax.Command) Command {
 	}
 }
 
+func mapComment(curr syntax.Comment) Comment {
+	return Comment{
+		Hash: mapPos(curr.Hash),
+		Text: curr.Text,
+		Pos:  mapPos(curr.Pos()),
+		End:  mapPos(curr.End()),
+	};
+}
+
 // `mapComments` transforms a slice of syntax.Comment into a slice of Comment by converting each comment's hash, text, start, and end positions using mapPos. It preserves the order of the comments and returns an empty slice if the input is nil or empty.
 func mapComments(comments []syntax.Comment) []Comment {
 	commentsSize := len(comments)
 	commentList := make([]Comment, commentsSize)
 	for i := range commentsSize {
-		curr := comments[i]
-		commentList[i] = Comment{
-			Hash: mapPos(curr.Hash),
-			Text: curr.Text,
-			Pos:  mapPos(curr.Pos()),
-			End:  mapPos(curr.End()),
-		}
+		commentList[i] = mapComment(comments[i])
 	}
 	return commentList
 }
@@ -734,16 +752,6 @@ func mapPos(pos syntax.Pos) Pos {
 		Offset: pos.Offset(),
 		Line:   pos.Line(),
 		Col:    pos.Col(),
-	}
-}
-
-func mapNode(node syntax.Node) *Node {
-	if node == nil {
-		return nil
-	}
-	return &Node{
-		Pos: mapPos(node.Pos()),
-		End: mapPos(node.End()),
 	}
 }
 
