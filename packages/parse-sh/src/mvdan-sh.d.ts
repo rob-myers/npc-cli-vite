@@ -1,3 +1,6 @@
+/**
+ * Types for mvdan-sh parser.
+ */
 export declare namespace MvdanSh {
   /**
    * Union
@@ -12,18 +15,16 @@ export declare namespace MvdanSh {
      * Pos returns the position of the first character of the node. Comments
      * are ignored, except if the node is a *File.
      */
-    End: MvdanSh.Pos;
+    Pos: MvdanSh.Pos;
     /**
      * End returns the position of the character immediately after the node.
      * If the character is a newline, the line number won't cross into the
      * next line. Comments are ignored, except if the node is a *File.
      */
-    Pos: MvdanSh.Pos;
+    End: MvdanSh.Pos;
   }
-  /**
-   * Operators e.g. '|&' are represented by numbers.
-   */
-  type Op = number;
+  // type Op = number;
+  type Op = string;
 
   type ArithmCmd = ArithmCmdGeneric<BaseNode, Pos, Op>;
   type ArithmExp = ArithmExpGeneric<BaseNode, Pos, Op>;
@@ -819,55 +820,3 @@ export declare namespace MvdanSh {
     | ProcSubstGeneric<Base, Pos, Op>
     | ExtGlobGeneric<Base, Pos, Op>;
 }
-
-// namespace syntax {
-//   /**
-//    * NewParser allocates a new `Parser` and applies any number of options.
-//    * - Hack to turn on `keepComments`:
-//    * `parser['Parser'].__internal_object__.keepComments = true`
-//    */
-//   function NewParser(...opts: any[]): MvdanSh.Parser;
-//   /**
-//    * Given a node returns its type e.g. `'Assign'` or `'Comment'`.
-//    */
-//   function NodeType(node: MvdanSh.Node): MvdanSh.NodeType;
-
-//   function NewPrinter(): MvdanSh.Printer;
-//   function DebugPrint(): void; // Return value?
-
-//   function Walk(
-//     /** Initial node. */
-//     node: MvdanSh.Node,
-//     /**
-//      * This predicate is recursively applied in a
-//      * depth-first fashion. It should return true
-//      * iff traversal should continue.
-//      */
-//     predicate: (node: MvdanSh.Node) => boolean,
-//   ): void;
-
-//   function KeepComments(enabled?: boolean): any;
-//   function Variant(variant: 0 | 1 | 2): any;
-//   const LangBash: 0;
-//   const LangPOSIX: 1;
-//   const LangMirBSDKorn: 2;
-// }
-
-// interface Parser {
-//   Parse(
-//     /** Source code e.g. `echo 'Hello, world!'`. */
-//     src: string,
-//     /** Name of file e.g. `src.sh`. */
-//     filename: string,
-//   ): MvdanSh.File;
-
-//   Interactive(
-//     /**
-//      * `null` means EOF.
-//      */
-//     src: { read: (size?: number) => string | null },
-//     pred: (stmts: MvdanSh.Stmt[]) => boolean,
-//   ): void;
-
-//   Incomplete(): boolean;
-// }

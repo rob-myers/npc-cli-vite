@@ -18,6 +18,8 @@ type ArithmExp struct {
 	Unsigned bool
 	// X ArithmExpr
 	X interface{}
+	Left Pos
+	Right Pos
 	Pos Pos
 	End Pos
 }
@@ -45,6 +47,8 @@ type Assign struct {
 	Index ArithmExp
 	Value Word
 	Array ArrayExpr
+	Lparen Pos
+	Rparen Pos
 	Pos Pos
 	End Pos
 }
@@ -73,8 +77,9 @@ func (WhileClause) commandNode() {}
 type ArithmCmd struct {
 	Type string
 	Unsigned bool // mksh's ((# expr))
-	// X 				ArithmExpr
-	X interface{}
+	X interface{} // ArithmExpr
+	Left Pos
+	Right Pos
 	Pos Pos
 	End Pos
 }
@@ -83,12 +88,15 @@ type BinaryCmd struct {
 	X Stmt
 	Y Stmt
 	Op string
+	OpPos Pos
 	Pos Pos
 	End Pos
 }
 type Block struct {
 	Type string
 	Stmts []Stmt
+	Lbrace Pos
+	Rbrace Pos
 	Pos Pos
 	End Pos
 }
@@ -103,6 +111,8 @@ type CaseClause struct {
 	Type string
 	Word Word
 	Items []CaseItem
+	Case Pos
+	Esac Pos
 	Pos Pos
 	End Pos
 }
@@ -184,6 +194,9 @@ type WhileClause struct {
 	/** if non-nil an "elif" or an "else" */
 	Cond []Stmt;
 	Do []Stmt;
+	DonePos Pos
+	DoPos Pos
+	WhilePos Pos
 	Pos Pos
 	End Pos
 }
@@ -225,9 +238,9 @@ type File struct {
 }
 
 type Lit struct {
+	Value    string
 	ValuePos Pos
 	ValueEnd Pos
-	Value    string
 	Pos      Pos
 	End      Pos
 }
@@ -283,10 +296,9 @@ func (Word) testExprNode() {}
 type BinaryTest struct {
 	Type 	string
 	Op 		string
-	// X  		TestExpr
-	X  		interface{}
-	// Y  		TestExpr
-	Y  		interface{}
+	X  		interface{} // TestExpr
+	Y  		interface{} // TestExpr
+	OpPos Pos
 	Pos   Pos
 	End   Pos
 }
@@ -342,6 +354,8 @@ type DblQuoted struct {
 	Type string
 	Dollar bool
 	Parts interface{} // WordPart
+	Left Pos
+	Right Pos
 	Pos Pos
 	End Pos
 }
@@ -509,6 +523,8 @@ func mapCommand(node syntax.Command) Command {
 				Type: "ArithmCmd",
 				Unsigned: node.Unsigned,
 				X: mapArithmExpr(node.X),
+				Left: mapPos(node.Left),
+				Right: mapPos(node.Right),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
@@ -516,6 +532,7 @@ func mapCommand(node syntax.Command) Command {
 			return &BinaryCmd{
 				Type: "BinaryCmd",
 				Op: node.Op.String(),
+				OpPos: mapPos(node.OpPos),
 				X: mapStmt(node.X),
 				Y: mapStmt(node.Y),
 				Pos: mapPos(node.Pos()),
@@ -654,9 +671,9 @@ func mapLit(lit *syntax.Lit) *Lit {
 		return nil
 	}
 	return &Lit{
-		ValuePos: mapPos(lit.Pos()),
-		ValueEnd: mapPos(lit.End()),
 		Value:    lit.Value,
+		ValuePos: mapPos(lit.ValuePos),
+		ValueEnd: mapPos(lit.ValueEnd),
 		Pos:      mapPos(lit.Pos()),
 		End:      mapPos(lit.End()),
 	}
@@ -836,6 +853,8 @@ func mapWordPart(part syntax.WordPart) WordPart {
 				Type: "DblQuoted",
 				Dollar: part.Dollar,
 				Parts: mapWordParts(part.Parts),
+				Left: mapPos(part.Left),
+				Right: mapPos(part.Right),
 				Pos: mapPos(part.Pos()),
 				End: mapPos(part.End()),
 			}
