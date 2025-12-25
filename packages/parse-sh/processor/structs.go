@@ -4,17 +4,6 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-type Pos struct {
-	Offset uint
-	Line   uint
-	Col    uint
-}
-
-type Node struct {
-	Pos Pos
-	End Pos
-}
-
 type ArrayElem struct {
 	Type string
 	Index ArithmExp
@@ -249,6 +238,17 @@ type Loop interface {
 func (WordIter) loopNode() {}
 func (CStyleLoop) loopNode()  {}
 
+type Node struct {
+	Pos Pos
+	End Pos
+}
+
+type Pos struct {
+	Offset uint
+	Line   uint
+	Col    uint
+}
+
 type Redirect struct {
 	OpPos Pos
 	Op    string
@@ -260,10 +260,9 @@ type Redirect struct {
 }
 
 type Stmt struct {
-	Comments   []Comment
-	// Cmd        Command
+	Comments []Comment
 	// interface type processor.Command not supported: only interface{} and easyjson/json Unmarshaler are allowed
-	Cmd        interface{}
+	Cmd        interface{} // Command
 	Position   Pos
 	Semicolon  Pos
 	Negated    bool
@@ -316,9 +315,9 @@ type TimeClause struct {
 }
 
 type Word struct {
-	// Parts []WordPart
-	Parts interface{}
-	Lit   string
+	Type string
+	Parts interface{} // []WordPart
+	// Lit   string
 	Pos   Pos
 	End   Pos
 }
@@ -327,10 +326,11 @@ type Word struct {
 type WordPart interface {
 	wordPartNode()
 }
-func (Lit) wordPartNode() {}
-func (SglQuoted) wordPartNode() {}
+func (CmdSubst) wordPartNode() {}
 func (DblQuoted) wordPartNode() {}
+func (Lit) wordPartNode() {}
 func (ParamExp) wordPartNode() {}
+func (SglQuoted) wordPartNode() {}
 type SglQuoted struct {
 	Type string
 	Dollar bool
@@ -341,7 +341,7 @@ type SglQuoted struct {
 type DblQuoted struct {
 	Type string
 	Dollar bool
-	Parts []Word
+	Parts interface{} // WordPart
 	Pos Pos
 	End Pos
 }
@@ -358,6 +358,14 @@ type ParamExp struct {
 	Repl Replace
 	Names string
 	Exp Expansion
+	Pos Pos
+	End Pos
+}
+type CmdSubst struct {
+	Type string
+	TempFile bool
+	ReplyVar bool
+	Stmts []Stmt
 	Pos Pos
 	End Pos
 }
@@ -786,15 +794,14 @@ func mapWord(word *syntax.Word) *Word {
 	}
 
 	size := len(word.Parts)
-	parts := make([]Node, size)
-
+	parts := make([]WordPart, size)
 	for i := range size {
-		parts[i] = *mapNode(word.Parts[i])
+		parts[i] = mapWordPart(word.Parts[i])
 	}
 
 	return &Word{
+		Type: "Word",
 		Parts: parts,
-		Lit:   word.Lit(),
 		Pos:   mapPos(word.Pos()),
 		End:   mapPos(word.End()),
 	}
@@ -807,6 +814,74 @@ func mapWords(words []*syntax.Word) []Word {
 		wordList[i] = *mapWord(words[i])
 	}
 	return wordList
+}
+
+func mapWordPart(part syntax.WordPart) WordPart {
+	if part == nil {
+		return nil
+	}
+	switch part := part.(type) {
+		case *syntax.CmdSubst:
+			return &CmdSubst{
+				Type: "CmdSubst",
+				TempFile: part.TempFile,
+				ReplyVar: part.ReplyVar,
+				Stmts: mapStmts(part.Stmts),
+				Pos: mapPos(part.Pos()),
+				End: mapPos(part.End()),
+			}
+		case *syntax.DblQuoted:
+			return &DblQuoted{
+				Type: "DblQuoted",
+				Dollar: part.Dollar,
+				Parts: mapWordParts(part.Parts),
+				Pos: mapPos(part.Pos()),
+				End: mapPos(part.End()),
+			}
+		case *syntax.Lit:
+			return &Lit{
+				ValuePos: mapPos(part.Pos()),
+				ValueEnd: mapPos(part.End()),
+				Value:    part.Value,
+				Pos:      mapPos(part.Pos()),
+				End:      mapPos(part.End()),
+			}
+		case *syntax.ParamExp:
+			return &ParamExp{
+				Type: "ParamExp",
+				Short: part.Short,
+				Excl: part.Excl,
+				Length: part.Length,
+				Width: part.Width,
+				Param: *mapLit(part.Param),
+				Index: mapArithmExpr(part.Index),
+				// Slice: mapSlice(part.Slice),
+				// Repl: mapReplace(part.Repl),
+				Names: part.Names.String(),
+				// Exp: mapExpansion(part.Exp),
+				Pos: mapPos(part.Pos()),
+				End: mapPos(part.End()),
+			}
+		case *syntax.SglQuoted:
+			return &SglQuoted{
+				Type: "SglQuoted",
+				Dollar: part.Dollar,
+				Value: part.Value,
+				Pos: mapPos(part.Pos()),
+				End: mapPos(part.End()),
+			}
+		default:
+			return nil
+	}
+}
+
+func mapWordParts(wordParts []syntax.WordPart) []WordPart {
+	outputSize := len(wordParts)
+	outputList := make([]WordPart, outputSize)
+	for i := range outputSize {
+		outputList[i] = mapWordPart(wordParts[i])
+	}
+	return outputList
 }
 
 func MapFile(file syntax.File) File {
