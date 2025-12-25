@@ -17,20 +17,29 @@ type Node struct {
 
 type ArrayElem struct {
 	Type string
-	Index ArithmExpr
+	Index ArithmExp
 	Value Word
 	Pos Pos
 	End Pos
 }
 
-type ArithmExpr struct {
+type ArithmExp struct {
 	Type string
 	Bracket bool
 	Unsigned bool
-	X *ArithmExpr
+	// X ArithmExpr
+	X interface{}
 	Pos Pos
 	End Pos
 }
+
+type ArithmExpr interface {
+	arithmExprNode()
+}
+// func (BinaryArithm) arithmExprNode() {}
+// func (UnaryArithm) arithmExprNode() {}
+// func (ParenArithm) arithmExprNode() {}
+func (Word) arithmExprNode() {}
 
 type ArrayExpr struct {
 	Type string
@@ -44,7 +53,7 @@ type Assign struct {
 	Append bool
 	Naked bool
 	Name Lit
-	Index ArithmExpr
+	Index ArithmExp
 	Value Word
 	Array ArrayExpr
 	Pos Pos
@@ -71,7 +80,7 @@ func (WhileClause) 	commandNode() {}
 type ArithmCmd struct {
 	Type 			string
 	Unsigned 	bool // mksh's ((# expr))
-	X 				ArithmExpr
+	X 				ArithmExp
 	Pos 			Pos
 	End 			Pos
 }
@@ -174,9 +183,14 @@ type Comment struct {
 
 type CStyleLoop struct {
 	Type string
-	Init ArithmExpr
-	Cond ArithmExpr
-	Post ArithmExpr
+	// Init ArithmExpr
+	// Cond ArithmExpr
+	// Post ArithmExpr
+	Init interface{}
+	Cond interface{}
+	Post interface{}
+	Pos  Pos
+	End  Pos
 }
 
 type File struct {
@@ -295,6 +309,31 @@ func MapParseError(err error) (*ParseError, string) {
 	return nil, err.Error()
 }
 
+func mapArithmExp(node syntax.ArithmExp) ArithmExp {
+	return ArithmExp{
+		Type: "ArithmExp",
+		Bracket: node.Bracket,
+		Unsigned: node.Unsigned,
+		X: mapArithmExpr(node.X),
+		Pos: mapPos(node.Pos()),
+		End: mapPos(node.End()),
+	}
+}
+
+func mapArithmExpr(node syntax.ArithmExpr) ArithmExpr {
+	if node == nil {
+		return nil
+	}
+	switch node := node.(type) {
+		// BinaryArithm
+		// UnaryArithm
+		// ParenArithm
+		case *syntax.Word:
+			return mapWord(node)
+		}
+	return nil;
+}
+
 func mapAssigns(assigns []*syntax.Assign) []Assign {
 	assignsSize := len(assigns)
 	assignList := make([]Assign, assignsSize)
@@ -353,6 +392,15 @@ func mapCommand(node syntax.Command) Command {
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
+		case *syntax.ForClause:
+			return &ForClause{
+				Type: "CallExpr",
+				Do: mapStmts((node.Do)),
+				Select: node.Select,
+				Loop: mapLoop(node.Loop),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.IfClause:
 			return &IfClause{
 				Type: "IfClause",
@@ -395,37 +443,6 @@ func mapComments(comments []syntax.Comment) []Comment {
 	return commentList
 }
 
-// `mapWord` converts a *syntax.Word into a custom *Word structure. It maps each part of the syntax.Word using mapNode,
-// extracts the literal via Lit(), and maps the start and end positions using mapPos. If the input word is nil, it returns nil.
-func mapWord(word *syntax.Word) *Word {
-	if word == nil {
-		return nil
-	}
-
-	size := len(word.Parts)
-	parts := make([]Node, size)
-
-	for i := range size {
-		parts[i] = *mapNode(word.Parts[i])
-	}
-
-	return &Word{
-		Parts: parts,
-		Lit:   word.Lit(),
-		Pos:   mapPos(word.Pos()),
-		End:   mapPos(word.End()),
-	}
-}
-
-func mapWords(words []*syntax.Word) []Word {
-	wordsSize := len(words)
-	wordList := make([]Word, wordsSize)
-	for i := range wordsSize {
-		wordList[i] = *mapWord(words[i])
-	}
-	return wordList
-}
-
 func mapLit(lit *syntax.Lit) *Lit {
 	if lit == nil {
 		return nil
@@ -436,6 +453,33 @@ func mapLit(lit *syntax.Lit) *Lit {
 		Value:    lit.Value,
 		Pos:      mapPos(lit.Pos()),
 		End:      mapPos(lit.End()),
+	}
+}
+
+func mapLoop(node syntax.Loop) Loop {
+	if node == nil {
+		return nil
+	}
+	switch node := node.(type) {
+		case *syntax.WordIter:
+			return &WordIter{
+				Type: "WordIter",
+				Name: *mapLit(node.Name),
+				Items: mapWords(node.Items),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.CStyleLoop:
+			return &CStyleLoop{
+				Type: "CStyleLoop",
+				Init: mapArithmExpr(node.Init),
+				Cond: mapArithmExpr(node.Cond),
+				Post: mapArithmExpr(node.Post),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		default:
+			return nil;
 	}
 }
 
@@ -483,6 +527,37 @@ func mapStmts(stmts []*syntax.Stmt) []Stmt {
 		stmtList[i] = mapStmt(stmts[i])
 	}
 	return stmtList
+}
+
+// `mapWord` converts a *syntax.Word into a custom *Word structure. It maps each part of the syntax.Word using mapNode,
+// extracts the literal via Lit(), and maps the start and end positions using mapPos. If the input word is nil, it returns nil.
+func mapWord(word *syntax.Word) *Word {
+	if word == nil {
+		return nil
+	}
+
+	size := len(word.Parts)
+	parts := make([]Node, size)
+
+	for i := range size {
+		parts[i] = *mapNode(word.Parts[i])
+	}
+
+	return &Word{
+		Parts: parts,
+		Lit:   word.Lit(),
+		Pos:   mapPos(word.Pos()),
+		End:   mapPos(word.End()),
+	}
+}
+
+func mapWords(words []*syntax.Word) []Word {
+	wordsSize := len(words)
+	wordList := make([]Word, wordsSize)
+	for i := range wordsSize {
+		wordList[i] = *mapWord(words[i])
+	}
+	return wordList
 }
 
 func MapFile(file syntax.File) File {
