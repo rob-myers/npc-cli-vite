@@ -316,7 +316,8 @@ type TimeClause struct {
 }
 
 type Word struct {
-	Parts []Node
+	// Parts []WordPart
+	Parts interface{}
 	Lit   string
 	Pos   Pos
 	End   Pos
