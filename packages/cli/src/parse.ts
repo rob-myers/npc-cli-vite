@@ -1,67 +1,35 @@
-import type { MvdanSh } from "@npc-cli/parse-sh";
-import { parse as parseSh } from "@npc-cli/parse-sh";
+import { convertMvdanShToJsh, parse as parseSh, withParents } from "@npc-cli/parse-sh";
 import cloneWithRefs from "lodash.clonedeep";
-import type { BaseMeta, FileWithMeta, ParsedSh } from "./types";
+import type { FileWithMeta, ParsedSh } from "./types";
 
 export class ParseShService {
-  /** This is actually attached to parse trees and then overwritten per-parse */
-  //@ts-expect-error
-  private mockMeta!: BaseMeta;
-
-  // 🚧 can we use these types going forwards?
-  //@ts-expect-error
-  private mockPos: () => MvdanSh.Pos;
-
   private cache: { [src: string]: FileWithMeta } = {};
-
-  constructor() {
-    this.mockPos = () => ({ Line: 1, Col: 1, Offset: 0 }) as MvdanSh.Pos;
-    this.resetMockMeta();
-  }
 
   /**
    * Use `mvdan-sh` to parse shell code.
    */
-  //@ts-expect-error
   async parse(src: string, cache = false): Promise<FileWithMeta> {
     if (src in this.cache) {
       return cloneParsed(this.cache[src]);
     }
 
     const parsed = await parseSh(src, { interactive: false });
-    console.log({ parseShServiceDebug: parsed });
+    console.debug({ parseShService: parsed });
 
-    // Fresh `this.mockMeta` required, else other session
-    // will overwrite `meta.sessionKey`
-    this.resetMockMeta();
+    if (parsed === null) {
+      throw new Error("Non-interactive parse should not have result `null`");
+    }
 
-    // 🚧
-    // const output = withParents(this.File(parsed));
+    // Avoid other session overwrite `meta.sessionKey`
+    convertMvdanShToJsh.resetMockMeta();
 
-    return parsed as any; // 🚧
-  }
+    // - transform parse tree to have "our notion" of BaseNode
+    // - ensure parents
+    const file = withParents(convertMvdanShToJsh.File(parsed.file));
 
-  resetMockMeta() {
-    this.mockMeta = {
-      sessionKey: defaults.defaultSessionKey,
-      pid: -1,
-      ppid: -1,
-      pgid: -1,
-      fd: {
-        0: defaults.defaultStdInOut,
-        1: defaults.defaultStdInOut,
-        2: defaults.defaultStdInOut,
-      },
-      stack: [],
-    };
+    return cache === true ? (this.cache[src] = file) : file;
   }
 }
-
-export const defaults = {
-  defaultSessionKey: "code-has-not-run",
-  defaultProcessKey: "code-has-not-run",
-  defaultStdInOut: "unassigned-tty",
-};
 
 export const parseService = new ParseShService();
 
