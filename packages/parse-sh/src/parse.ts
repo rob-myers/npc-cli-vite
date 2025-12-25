@@ -1,11 +1,7 @@
 // Based on https://github.com/un-ts/sh-syntax/blob/main/src/processor.ts
 import "./vendors/wasm_exec.js";
-import {
-  type IParseError,
-  LangVariant,
-  ParseResultSchema,
-  type ShOptions,
-} from "./mvdan-sh.model.js";
+import type { MvdanSh } from "./mvdan-sh.d";
+import { LangVariant, ParseResultSchema, type ShOptions } from "./mvdan-sh.model.js";
 
 export async function loadWasm() {
   const go = new Go();
@@ -52,7 +48,11 @@ export async function parse(
     stopAt = "",
     recoverErrors = 0,
   }: ShOptions = {},
-) {
+): Promise<null | {
+  text: string;
+  file: MvdanSh.File;
+  message: string;
+}> {
   const { go, wasm } = await loadWasm();
 
   /**
@@ -115,16 +115,27 @@ export async function parse(
   // console.log({ resultString });
 
   try {
-    // const resultObj = JSON.parse(resultString);
-    const resultObj = ParseResultSchema.parse(resultString);
-    return resultObj;
+    const { file, message, text, parseError } = ParseResultSchema.parse(resultString);
+    if (parseError) {
+      throw new ParseError(parseError);
+    }
+
+    return {
+      text,
+      file: {
+        type: "File",
+        Name: file.Name,
+        Stmts: file.Stmts as MvdanSh.Stmt[],
+      },
+      message,
+    };
   } catch (e) {
-    console.error(e);
-    throw new ParseError({
-      Filename: filepath,
-      Text: resultString,
-      Incomplete: true,
-    });
+    if (e instanceof ParseError) {
+      throw e;
+    } else {
+      console.error(e);
+      throw new Error(`zod parse error: ${e}`);
+    }
   }
 }
 
@@ -166,12 +177,20 @@ type WasmInstanceExports = {
   ) => number;
 };
 
-export class ParseError extends Error implements IParseError {
-  Filename?: string;
-  Incomplete: boolean;
+export class ParseError extends Error {
   Text: string;
+  Filename?: string;
+  Incomplete?: boolean;
 
-  constructor({ Filename, Incomplete, Text }: IParseError) {
+  constructor({
+    Filename,
+    Incomplete,
+    Text,
+  }: {
+    Text: string;
+    Filename?: string;
+    Incomplete?: boolean;
+  }) {
     super(Text);
     this.Filename = Filename;
     this.Incomplete = Incomplete;

@@ -1,3 +1,4 @@
+import type { MvdanSh } from "@npc-cli/parse-sh";
 import { parse as parseSh } from "@npc-cli/parse-sh";
 import cloneWithRefs from "lodash.clonedeep";
 import type { BaseMeta, FileWithMeta, ParsedSh } from "./types";
@@ -27,9 +28,15 @@ export class ParseShService {
       return cloneParsed(this.cache[src]);
     }
 
-    // 🚧
     const parsed = await parseSh(src, { interactive: false });
     console.log({ parseShServiceDebug: parsed });
+
+    // Fresh `this.mockMeta` required, else other session
+    // will overwrite `meta.sessionKey`
+    this.resetMockMeta();
+
+    // 🚧
+    // const output = withParents(this.File(parsed));
 
     return parsed as any; // 🚧
   }
@@ -60,7 +67,7 @@ export const parseService = new ParseShService();
 
 /**
  * Clone creates completely fresh tree, sharing internal refs as before.
- * In particular, every node has the same node.meta.
+ * In particular every node has the same `node.meta`
  */
 export function cloneParsed<T extends ParsedSh>(parsed: T): T {
   return cloneWithRefs(parsed);

@@ -1,56 +1,4 @@
-declare namespace MvdanSh {
-  // namespace syntax {
-  //   /**
-  //    * NewParser allocates a new `Parser` and applies any number of options.
-  //    * - Hack to turn on `keepComments`:
-  //    * `parser['Parser'].__internal_object__.keepComments = true`
-  //    */
-  //   function NewParser(...opts: any[]): MvdanSh.Parser;
-  //   /**
-  //    * Given a node returns its type e.g. `'Assign'` or `'Comment'`.
-  //    */
-  //   function NodeType(node: MvdanSh.Node): MvdanSh.NodeType;
-
-  //   function NewPrinter(): MvdanSh.Printer;
-  //   function DebugPrint(): void; // Return value?
-
-  //   function Walk(
-  //     /** Initial node. */
-  //     node: MvdanSh.Node,
-  //     /**
-  //      * This predicate is recursively applied in a
-  //      * depth-first fashion. It should return true
-  //      * iff traversal should continue.
-  //      */
-  //     predicate: (node: MvdanSh.Node) => boolean,
-  //   ): void;
-
-  //   function KeepComments(enabled?: boolean): any;
-  //   function Variant(variant: 0 | 1 | 2): any;
-  //   const LangBash: 0;
-  //   const LangPOSIX: 1;
-  //   const LangMirBSDKorn: 2;
-  // }
-
-  // interface Parser {
-  //   Parse(
-  //     /** Source code e.g. `echo 'Hello, world!'`. */
-  //     src: string,
-  //     /** Name of file e.g. `src.sh`. */
-  //     filename: string,
-  //   ): MvdanSh.File;
-
-  //   Interactive(
-  //     /**
-  //      * `null` means EOF.
-  //      */
-  //     src: { read: (size?: number) => string | null },
-  //     pred: (stmts: MvdanSh.Stmt[]) => boolean,
-  //   ): void;
-
-  //   Incomplete(): boolean;
-  // }
-
+export declare namespace MvdanSh {
   /**
    * Union
    */
@@ -872,7 +820,54 @@ declare namespace MvdanSh {
     | ExtGlobGeneric<Base, Pos, Op>;
 }
 
-// 🚧
-// declare module "mvdan-sh" {
-//   export = MvdanSh;
+// namespace syntax {
+//   /**
+//    * NewParser allocates a new `Parser` and applies any number of options.
+//    * - Hack to turn on `keepComments`:
+//    * `parser['Parser'].__internal_object__.keepComments = true`
+//    */
+//   function NewParser(...opts: any[]): MvdanSh.Parser;
+//   /**
+//    * Given a node returns its type e.g. `'Assign'` or `'Comment'`.
+//    */
+//   function NodeType(node: MvdanSh.Node): MvdanSh.NodeType;
+
+//   function NewPrinter(): MvdanSh.Printer;
+//   function DebugPrint(): void; // Return value?
+
+//   function Walk(
+//     /** Initial node. */
+//     node: MvdanSh.Node,
+//     /**
+//      * This predicate is recursively applied in a
+//      * depth-first fashion. It should return true
+//      * iff traversal should continue.
+//      */
+//     predicate: (node: MvdanSh.Node) => boolean,
+//   ): void;
+
+//   function KeepComments(enabled?: boolean): any;
+//   function Variant(variant: 0 | 1 | 2): any;
+//   const LangBash: 0;
+//   const LangPOSIX: 1;
+//   const LangMirBSDKorn: 2;
+// }
+
+// interface Parser {
+//   Parse(
+//     /** Source code e.g. `echo 'Hello, world!'`. */
+//     src: string,
+//     /** Name of file e.g. `src.sh`. */
+//     filename: string,
+//   ): MvdanSh.File;
+
+//   Interactive(
+//     /**
+//      * `null` means EOF.
+//      */
+//     src: { read: (size?: number) => string | null },
+//     pred: (stmts: MvdanSh.Stmt[]) => boolean,
+//   ): void;
+
+//   Incomplete(): boolean;
 // }

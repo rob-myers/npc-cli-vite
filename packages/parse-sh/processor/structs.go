@@ -218,7 +218,7 @@ type Expansion struct {
 type File struct {
 	Type string
 	Name string
-	Stmt []Stmt
+	Stmts []Stmt
 	Last []Comment
 	Pos  Pos
 	End  Pos
@@ -404,10 +404,10 @@ type ParseError struct {
 }
 
 type Result struct {
-	File        `json:"file"`
-	Text        string `json:"text"`
+	File `json:"file"`
+	Text string `json:"text"`
 	*ParseError `json:"parseError"`
-	Message     string `json:"message"`
+	Message string `json:"message"`
 }
 
 func MapParseError(err error) (*ParseError, string) {
@@ -438,6 +438,7 @@ func MapParseError(err error) (*ParseError, string) {
 // 	}
 // }
 
+// 🚧
 func mapArithmExpr(node syntax.ArithmExpr) ArithmExpr {
 	if node == nil {
 		return nil
@@ -888,7 +889,7 @@ func MapFile(file syntax.File) File {
 	return File{
 		Type: "File",
 		Name: file.Name,
-		Stmt: mapStmts(file.Stmts),
+		Stmts: mapStmts(file.Stmts),
 		Last: mapComments(file.Last),
 		Pos:  mapPos(file.Pos()),
 		End:  mapPos(file.End()),
