@@ -64,19 +64,23 @@ type Assign struct {
 type Command interface {
 	commandNode()
 }
-func (ArithmCmd) 		commandNode() {}
-func (BinaryCmd) 		commandNode() {}
-func (Block) 				commandNode() {}
-func (CallExpr) 		commandNode() {}
-func (CaseClause) 	commandNode() {}
-func (CaseItem) 		commandNode() {}
-func (ForClause) 		commandNode() {}
-func (FuncDecl) 		commandNode() {}
-func (IfClause) 		commandNode() {}
-func (SubShell) 		commandNode() {}
-func (TestClause) 	commandNode() {}
-func (Unhandled) 		commandNode() {}
-func (WhileClause) 	commandNode() {}
+func (ArithmCmd) commandNode() {}
+func (BinaryCmd) commandNode() {}
+func (Block) commandNode() {}
+func (CallExpr) commandNode() {}
+func (CaseClause) commandNode() {}
+func (CaseItem) commandNode() {}
+func (CoprocClause) commandNode() {}
+func (DeclClause) commandNode() {}
+func (ForClause) commandNode() {}
+func (FuncDecl) commandNode() {}
+func (IfClause) commandNode() {}
+func (LetClause) commandNode() {}
+func (SubShell) commandNode() {}
+func (TestClause) commandNode() {}
+func (TimeClause) commandNode() {}
+func (Unhandled) commandNode() {}
+func (WhileClause) commandNode() {}
 type ArithmCmd struct {
 	Type string
 	Unsigned bool // mksh's ((# expr))
@@ -114,12 +118,26 @@ type CaseClause struct {
 	End Pos
 }
 type CaseItem struct {
-	Type 			string
-	Op 				string
-	Patterns 	[]Word
-	Stmts 		[]Stmt
-	Pos 			Pos
-	End 			Pos
+	Type string
+	Op string
+	Patterns []Word
+	Stmts []Stmt
+	Pos Pos
+	End Pos
+}
+type CoprocClause struct {
+	Type string
+	Name Word
+	Stmt Stmt
+	Pos Pos
+	End Pos
+}
+type DeclClause struct {
+	Type string
+	Variant Lit
+	Args []Assign
+	Pos Pos
+	End Pos
 }
 type ForClause struct {
 	Type string
@@ -142,8 +160,15 @@ type FuncDecl struct {
 type IfClause struct {
 	Type string
 	Then []Stmt;
-	/** if non-nil an "elif" or an "else" */
+	/* if non-nil an "elif" or an "else" */
 	Else *IfClause;
+	Pos Pos
+	End Pos
+}
+type LetClause struct {
+	Type 	string
+	// Exprs []ArithmExpr
+	Exprs interface{}
 	Pos Pos
 	End Pos
 }
@@ -155,8 +180,7 @@ type SubShell struct {
 }
 type TestClause struct {
 	Type 	string
-	// X 		TestExpr
-	X 		interface{}
+	X 		interface{} // TestExpr
 	Pos 	Pos
 	End 	Pos
 }
@@ -247,6 +271,8 @@ type TestExpr interface {
 }
 func (BinaryTest) testExprNode() {}
 func (UnaryTest) 	testExprNode() {}
+func (ParenTest) 	testExprNode() {}
+func (Word) testExprNode() {}
 type BinaryTest struct {
 	Type 	string
 	Op 		string
@@ -265,6 +291,21 @@ type UnaryTest struct {
 	Pos   Pos
 	End   Pos
 }
+type ParenTest struct {
+	Type 	string
+	Op 		string
+	X  		interface{}
+	Pos   Pos
+	End   Pos
+}
+
+type TimeClause struct {
+	Type string
+	PosixFormat bool
+	Stmt Stmt
+	Pos   Pos
+	End   Pos
+}
 
 type Word struct {
 	Parts []Node
@@ -280,6 +321,8 @@ type WordIter struct {
 	Pos   Pos
 	End   Pos
 }
+
+// ---
 
 type ParseError struct {
 	syntax.ParseError
@@ -310,16 +353,16 @@ func MapParseError(err error) (*ParseError, string) {
 	return nil, err.Error()
 }
 
-func mapArithmExp(node syntax.ArithmExp) ArithmExp {
-	return ArithmExp{
-		Type: "ArithmExp",
-		Bracket: node.Bracket,
-		Unsigned: node.Unsigned,
-		X: mapArithmExpr(node.X),
-		Pos: mapPos(node.Pos()),
-		End: mapPos(node.End()),
-	}
-}
+// func mapArithmExp(node syntax.ArithmExp) ArithmExp {
+// 	return ArithmExp{
+// 		Type: "ArithmExp",
+// 		Bracket: node.Bracket,
+// 		Unsigned: node.Unsigned,
+// 		X: mapArithmExpr(node.X),
+// 		Pos: mapPos(node.Pos()),
+// 		End: mapPos(node.End()),
+// 	}
+// }
 
 func mapArithmExpr(node syntax.ArithmExpr) ArithmExpr {
 	if node == nil {
@@ -335,16 +378,28 @@ func mapArithmExpr(node syntax.ArithmExpr) ArithmExpr {
 	return nil;
 }
 
+func mapArithmExprs(arithmExprs []syntax.ArithmExpr) []ArithmExpr {
+	outputsSize := len(arithmExprs)
+	outputList := make([]ArithmExpr, outputsSize)
+	for i := range outputsSize {
+		outputList[i] = mapArithmExpr(arithmExprs[i])
+	}
+	return outputList
+}
+
 func mapAssigns(assigns []*syntax.Assign) []Assign {
 	assignsSize := len(assigns)
 	assignList := make([]Assign, assignsSize)
 	for i := range assignsSize {
+		curr := assigns[i]
 		assignList[i] = Assign{
 			Type:   "Assign",
-			Append: assigns[i].Append,
-			Naked:  assigns[i].Naked,
-			Name:   *mapLit(assigns[i].Name),
-			Value:  *mapWord(assigns[i].Value),
+			Append: curr.Append,
+			Naked:  curr.Naked,
+			Name:   *mapLit(curr.Name),
+			Value:  *mapWord(curr.Value),
+			Pos: mapPos(curr.Pos()),
+			End: mapPos(curr.End()),
 		}
 	}
 	return assignList
@@ -415,6 +470,22 @@ func mapCommand(node syntax.Command) Command {
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
+		case *syntax.CoprocClause:
+			return &CoprocClause{
+				Type: "CoprocClause",
+				Name: *mapWord(node.Name),
+				Stmt: mapStmt(node.Stmt),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.DeclClause:
+			return &DeclClause{
+				Type: "DeclClause",
+				Variant: *mapLit(node.Variant),
+				Args: mapAssigns(node.Args),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.ForClause:
 			return &ForClause{
 				Type: "ForClause",
@@ -441,10 +512,32 @@ func mapCommand(node syntax.Command) Command {
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
+		case *syntax.LetClause:
+			return &LetClause{
+				Type: "LetClause",
+				Exprs: mapArithmExprs(node.Exprs),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.TestClause:
+			return &TestClause{
+				Type: "TestClause",
+				X: mapTestExpr(node.X),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.Subshell:
 			return &SubShell{
 				Type: "Subshell",
 				Stmts: mapStmts(node.Stmts),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.TimeClause:
+			return &TimeClause{
+				Type: "TimeClause",
+				PosixFormat: node.PosixFormat,
+				Stmt: mapStmt(node.Stmt),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
@@ -584,6 +677,40 @@ func mapStmts(stmts []*syntax.Stmt) []Stmt {
 		stmtList[i] = mapStmt(stmts[i])
 	}
 	return stmtList
+}
+
+func mapTestExpr(node syntax.TestExpr) TestExpr {
+	if node == nil {
+		return nil
+	}
+	switch node := node.(type) {
+		case *syntax.BinaryTest:
+			return &BinaryTest{
+				Type: "BinaryTest",
+				Op: node.Op.String(),
+				X: mapTestExpr(node.X),
+				Y: mapTestExpr(node.Y),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.UnaryTest:
+			return &UnaryTest{
+				Type: "UnaryTest",
+				Op: node.Op.String(),
+				X: mapTestExpr(node.X),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.ParenTest:
+			return &ParenTest{
+				Type: "ParenTest",
+				X: mapTestExpr(node.X),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		default:
+			return nil
+	}	
 }
 
 // `mapWord` converts a *syntax.Word into a custom *Word structure. It maps each part of the syntax.Word using mapNode,
