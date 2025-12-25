@@ -53,5 +53,6 @@ function RouteComponent() {
   );
 }
 
-// const demoCommandToParse = `echo {1..5} && sleep 2 && echo "Done"`;
-const demoCommandToParse = `while true; do echo foo; done`;
+const demoCommandToParse = `echo {1..5} && sleep 2 && echo "Done"`;
+// const demoCommandToParse = `while true; do echo foo; done`;
+// const demoCommandToParse = `echo "hello"`;
