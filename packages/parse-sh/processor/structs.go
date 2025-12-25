@@ -78,11 +78,12 @@ func (TestClause) 	commandNode() {}
 func (Unhandled) 		commandNode() {}
 func (WhileClause) 	commandNode() {}
 type ArithmCmd struct {
-	Type 			string
-	Unsigned 	bool // mksh's ((# expr))
-	X 				ArithmExp
-	Pos 			Pos
-	End 			Pos
+	Type string
+	Unsigned bool // mksh's ((# expr))
+	// X 				ArithmExpr
+	X interface{}
+	Pos Pos
+	End Pos
 }
 type BinaryCmd struct {
 	Type string
@@ -374,6 +375,14 @@ func mapCommand(node syntax.Command) Command {
 	
 	// https://github.com/mvdan/sh/blob/b84a3905c4f978a4b0050711d9d38ec4f3a51bec/syntax/walk.go#L16
 	switch node := node.(type) {
+		case *syntax.ArithmCmd:
+			return &ArithmCmd{
+				Type: "ArithmCmd",
+				Unsigned: node.Unsigned,
+				X: mapArithmExpr(node.X),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.BinaryCmd:
 			return &BinaryCmd{
 				Type: "BinaryCmd",
@@ -415,11 +424,27 @@ func mapCommand(node syntax.Command) Command {
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
+		case *syntax.FuncDecl:
+			return &FuncDecl{
+				Type: "FuncDecl",
+				RsrvWord: node.RsrvWord,
+				Name: *mapLit(node.Name),
+				Body: mapStmt(node.Body),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.IfClause:
 			return &IfClause{
 				Type: "IfClause",
 				Then: mapStmts(node.Then),
 				Else: mapCommand(node.Else).(*IfClause),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
+		case *syntax.Subshell:
+			return &SubShell{
+				Type: "Subshell",
+				Stmts: mapStmts(node.Stmts),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}

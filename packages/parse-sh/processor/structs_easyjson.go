@@ -4086,10 +4086,12 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor30(in 
 				out.Unsigned = bool(in.Bool())
 			}
 		case "X":
-			if in.IsNull() {
-				in.Skip()
+			if m, ok := out.X.(easyjson.Unmarshaler); ok {
+				m.UnmarshalEasyJSON(in)
+			} else if m, ok := out.X.(json.Unmarshaler); ok {
+				_ = m.UnmarshalJSON(in.Raw())
 			} else {
-				(out.X).UnmarshalEasyJSON(in)
+				out.X = in.Interface()
 			}
 		case "Pos":
 			if in.IsNull() {
@@ -4130,7 +4132,13 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor30(out
 	{
 		const prefix string = ",\"X\":"
 		out.RawString(prefix)
-		(in.X).MarshalEasyJSON(out)
+		if m, ok := in.X.(easyjson.Marshaler); ok {
+			m.MarshalEasyJSON(out)
+		} else if m, ok := in.X.(json.Marshaler); ok {
+			out.Raw(m.MarshalJSON())
+		} else {
+			out.Raw(json.Marshal(in.X))
+		}
 	}
 	{
 		const prefix string = ",\"Pos\":"
