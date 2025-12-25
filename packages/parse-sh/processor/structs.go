@@ -349,22 +349,21 @@ func mapAssigns(assigns []*syntax.Assign) []Assign {
 	return assignList
 }
 
-func mapPos(pos syntax.Pos) Pos {
-	return Pos{
-		Offset: pos.Offset(),
-		Line:   pos.Line(),
-		Col:    pos.Col(),
+func mapCaseItems(caseItems []*syntax.CaseItem) []CaseItem {
+	outputsSize := len(caseItems)
+	outputs := make([]CaseItem, outputsSize)
+	for i := range outputs {
+		curr := caseItems[i]
+		outputs[i] = CaseItem{
+			Type: "CaseItem",
+			Op: curr.Op.String(),
+			Patterns: mapWords(curr.Patterns),
+			Stmts: mapStmts(curr.Stmts),
+			Pos:  mapPos(curr.Pos()),
+			End:  mapPos(curr.End()),
+		}
 	}
-}
-
-func mapNode(node syntax.Node) *Node {
-	if node == nil {
-		return nil
-	}
-	return &Node{
-		Pos: mapPos(node.Pos()),
-		End: mapPos(node.End()),
-	}
+	return outputs
 }
 
 // 🚧
@@ -384,6 +383,13 @@ func mapCommand(node syntax.Command) Command {
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
+		case *syntax.Block:
+			return &Block{
+				Type: "Block",
+				Stmts: mapStmts(node.Stmts),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.CallExpr:
 			return &CallExpr{
 				Type: "CallExpr",
@@ -392,9 +398,17 @@ func mapCommand(node syntax.Command) Command {
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
+		case *syntax.CaseClause:
+			return &CaseClause{
+				Type: "CaseClause",
+				Word: *mapWord(node.Word),
+				Items: mapCaseItems(node.Items),
+				Pos: mapPos(node.Pos()),
+				End: mapPos(node.End()),
+			}
 		case *syntax.ForClause:
 			return &ForClause{
-				Type: "CallExpr",
+				Type: "ForClause",
 				Do: mapStmts((node.Do)),
 				Select: node.Select,
 				Loop: mapLoop(node.Loop),
@@ -480,6 +494,24 @@ func mapLoop(node syntax.Loop) Loop {
 			}
 		default:
 			return nil;
+	}
+}
+
+func mapPos(pos syntax.Pos) Pos {
+	return Pos{
+		Offset: pos.Offset(),
+		Line:   pos.Line(),
+		Col:    pos.Col(),
+	}
+}
+
+func mapNode(node syntax.Node) *Node {
+	if node == nil {
+		return nil
+	}
+	return &Node{
+		Pos: mapPos(node.Pos()),
+		End: mapPos(node.End()),
 	}
 }
 
