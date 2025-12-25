@@ -3111,20 +3111,20 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor24(in 
 			} else {
 				out.Name = string(in.String())
 			}
-		case "Stmt":
+		case "Stmts":
 			if in.IsNull() {
 				in.Skip()
-				out.Stmt = nil
+				out.Stmts = nil
 			} else {
 				in.Delim('[')
-				if out.Stmt == nil {
+				if out.Stmts == nil {
 					if !in.IsDelim(']') {
-						out.Stmt = make([]Stmt, 0, 0)
+						out.Stmts = make([]Stmt, 0, 0)
 					} else {
-						out.Stmt = []Stmt{}
+						out.Stmts = []Stmt{}
 					}
 				} else {
-					out.Stmt = (out.Stmt)[:0]
+					out.Stmts = (out.Stmts)[:0]
 				}
 				for !in.IsDelim(']') {
 					var v25 Stmt
@@ -3133,7 +3133,7 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor24(in 
 					} else {
 						(v25).UnmarshalEasyJSON(in)
 					}
-					out.Stmt = append(out.Stmt, v25)
+					out.Stmts = append(out.Stmts, v25)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3202,13 +3202,13 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor24(out
 		out.String(string(in.Name))
 	}
 	{
-		const prefix string = ",\"Stmt\":"
+		const prefix string = ",\"Stmts\":"
 		out.RawString(prefix)
-		if in.Stmt == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+		if in.Stmts == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v27, v28 := range in.Stmt {
+			for v27, v28 := range in.Stmts {
 				if v27 > 0 {
 					out.RawByte(',')
 				}

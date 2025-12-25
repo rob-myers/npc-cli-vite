@@ -1,4 +1,4 @@
-import "./mvdan-sh.d";
+import type { MvdanSh } from "@npc-cli/parse-sh";
 
 export interface BaseMeta {
   sessionKey: string;

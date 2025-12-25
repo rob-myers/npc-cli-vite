@@ -3,10 +3,10 @@ import z from "zod";
 
 export const ParseResultSchema = jsonParser.pipe(
   z.object({
-    // 🚧 extend
     file: z.looseObject({
-      Type: z.literal("File"), // added into structs.go
+      Type: z.literal("File"),
       Name: z.string(),
+      Stmts: z.array(z.unknown()), // Could extend
     }),
     text: z.string(),
     parseError: z
@@ -121,40 +121,3 @@ export interface ShOptions extends ShParserOptions {
   filepath?: string;
   interactive?: boolean;
 }
-
-export interface IParseError {
-  Filename?: string;
-  Incomplete: boolean;
-  Text: string;
-  Pos?: Pos;
-}
-
-// 🚧 transform types from npc-cli-next
-
-/**
- * Pos is a position within a shell source file.
- */
-type Pos = {
-  type: "Pos";
-  /**
-   * After reports whether this position p is after p2. It is a more expressive version of p.Offset() > p2.Offset().
-   */
-  // After(p2: Pos): boolean;
-  /**
-   * Col returns the column number of the position, starting at 1. It counts in bytes.
-   */
-  Col: number;
-  /**
-   * IsValid reports whether the position is valid. All positions in nodes returned by Parse are valid.
-   */
-  IsValid: boolean;
-  /**
-   * Line returns the line number of the position, starting at 1.
-   */
-  Line: number;
-  /**
-   * Offset returns the byte offset of the position in the original source file. Byte offsets start at 0.
-   */
-  Offset: number;
-  String: string;
-};
