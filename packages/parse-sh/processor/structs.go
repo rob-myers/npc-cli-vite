@@ -218,6 +218,14 @@ type CStyleLoop struct {
 	End  Pos
 }
 
+type Expansion struct {
+	Type string
+	Op string
+	Word Word
+	Pos Pos
+	End Pos
+}
+
 type File struct {
 	Type string
 	Name string
@@ -312,6 +320,63 @@ type Word struct {
 	Lit   string
 	Pos   Pos
 	End   Pos
+}
+
+// 🚧
+type WordPart interface {
+	wordPartNode()
+}
+func (Lit) wordPartNode() {}
+func (SglQuoted) wordPartNode() {}
+func (DblQuoted) wordPartNode() {}
+func (ParamExp) wordPartNode() {}
+type SglQuoted struct {
+	Type string
+	Dollar bool
+	Value string
+	Pos Pos
+	End Pos
+}
+type DblQuoted struct {
+	Type string
+	Dollar bool
+	Parts []Word
+	Pos Pos
+	End Pos
+}
+type ParamExp struct {
+	Type string
+	Short bool
+	Excl bool
+	Length bool
+	Width bool
+	Param Lit
+	// Index ArithmExpr
+	Index interface{}
+	Slice Slice
+	Repl Replace
+	Names string
+	Exp Expansion
+	Pos Pos
+	End Pos
+}
+
+type Replace struct {
+	Type string
+	All bool
+	Orig Word
+	Pos Pos
+	End Pos
+}
+
+type Slice struct {
+	Type string
+	// Offset ArithmExpr
+	// Length ArithmExpr
+	Offset interface{}
+	Length interface{}
+	Pos Pos
+	End Pos
 }
 
 type WordIter struct {
@@ -422,7 +487,6 @@ func mapCaseItems(caseItems []*syntax.CaseItem) []CaseItem {
 	return outputs
 }
 
-// 🚧
 func mapCommand(node syntax.Command) Command {
 	if node == nil {
 		return nil
@@ -656,16 +720,16 @@ func mapRedirects(redirects []*syntax.Redirect) []Redirect {
 
 func mapStmt(stmt *syntax.Stmt) Stmt {
 	return Stmt{
-		Comments:   mapComments(stmt.Comments),
-		Cmd:        mapCommand(stmt.Cmd),
-		Position:   mapPos(stmt.Position),
-		Semicolon:  mapPos(stmt.Semicolon),
-		Negated:    stmt.Negated,
+		Comments: mapComments(stmt.Comments),
+		Cmd: mapCommand(stmt.Cmd),
+		Position: mapPos(stmt.Position),
+		Semicolon: mapPos(stmt.Semicolon),
+		Negated: stmt.Negated,
 		Background: stmt.Background,
-		Coprocess:  stmt.Coprocess,
-		Redirs:     mapRedirects(stmt.Redirs),
-		Pos:        mapPos(stmt.Pos()),
-		End:        mapPos(stmt.End()),
+		Coprocess: stmt.Coprocess,
+		Redirs: mapRedirects(stmt.Redirs),
+		Pos: mapPos(stmt.Pos()),
+		End: mapPos(stmt.End()),
 	}
 }
 
