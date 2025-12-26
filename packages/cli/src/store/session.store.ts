@@ -1,8 +1,11 @@
-import { type KeyedLookup, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { type KeyedLookup, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
+import { ProcessTag } from "../const";
 import type { Device, MessageFromShell, MessageFromXterm, ShellIo } from "../io";
 import type { NamedFunction } from "../parse";
 import type { TtyShell } from "../tty-shell";
+import type { BaseMeta } from "../types";
+import { killProcess } from "../util";
 
 export const sessionApi = {
   createProcess(def: {
@@ -35,12 +38,102 @@ export const sessionApi = {
   getNextPid(sessionKey: string) {
     return sessionApi.getSession(sessionKey).nextPid++;
   },
+  getProcesses(sessionKey: string, pgid: number) {
+    const session = sessionApi.getSession(sessionKey);
+    if (session !== undefined) {
+      const processes = Object.values(session.process);
+      return pgid === undefined ? processes : processes.filter((x) => x.pgid === pgid);
+    } else {
+      warn(`${"getProcesses"}: session does not exist: ${sessionKey}`);
+      return [];
+    }
+  },
   getSession(sessionKey: string) {
     return useSession.getState().session[sessionKey];
+  },
+  kill(sessionKey: string, pids: number[], opts: KillOpts = {}) {
+    const session = sessionApi.getSession(sessionKey);
+
+    if (opts.byPtags === true) {
+      // const interactive = session.ttyShell.isInteractive();
+
+      if (opts.STOP === true) {
+        const processes = Object.values(session.process)
+          .filter((p) => p.status === toProcessStatus.Running && !(ProcessTag.always in p.ptags))
+          .reverse();
+        sessionApi.killProcesses(processes, opts);
+        return processes.map((p) => p.key);
+      }
+
+      if (opts.CONT === true) {
+        // continue specific pids (ones we previously paused)
+        const processes = pids
+          .map((pid) => session.process[pid])
+          .filter((p) => p?.status === toProcessStatus.Suspended);
+        sessionApi.killProcesses(processes, opts);
+        return processes.map((p) => p.key);
+      }
+    }
+
+    for (const pid of pids) {
+      const p = session.process[pid];
+      if (!p) {
+        // Already killed
+        continue;
+      }
+
+      const processes =
+        p.pgid === pid || opts.GROUP === true
+          ? // Apply command to whole process group in reverse
+            sessionApi
+              .getProcesses(sessionKey, p.pgid)
+              .reverse()
+          : [p]; // Apply command to exactly one process
+
+      sessionApi.killProcesses(processes, opts);
+    }
+    return pids;
+  },
+  killProcesses(processes: ProcessMeta[], opts: KillOpts) {
+    if (opts.SIGINT === true) {
+      for (const p of processes) {
+        killProcess(p, opts.SIGINT);
+      }
+    } else if (opts.STOP === true) {
+      const byPtags = !!opts.byPtags;
+      for (const p of processes) {
+        p.onSuspends = p.onSuspends.filter((onSuspend) => onSuspend(byPtags));
+        p.status = toProcessStatus.Suspended;
+      }
+    } else if (opts.CONT === true) {
+      for (const p of processes) {
+        p.onResumes = p.onResumes.filter((onResume) => onResume());
+        p.status = toProcessStatus.Running;
+      }
+    }
+
+    if (opts.ptags !== undefined) {
+      processes.forEach((p) => void Object.assign(p.ptags, opts.ptags));
+    }
   },
   persistHistory(sessionKey: string) {
     const { ttyShell } = sessionApi.getSession(sessionKey);
     tryLocalStorageSet(`history@session-${sessionKey}`, JSON.stringify(ttyShell.getHistory()));
+  },
+  removeProcess(pid: number, sessionKey: string) {
+    const processes = useSession.getState().session[sessionKey].process;
+    killProcess(processes[pid]);
+    delete processes[pid];
+  },
+  setLastExitCode(meta: BaseMeta, exitCode?: number) {
+    const session = sessionApi.getSession(meta.sessionKey);
+    if (session === undefined) {
+      warn(`session ${meta.sessionKey} no longer exists`);
+    } else if (typeof exitCode === "number") {
+      session.lastExit[meta.background ? "bg" : "fg"] = exitCode;
+    } else {
+      warn(`process ${meta.pid} had no exitCode`);
+    }
   },
 };
 
@@ -173,3 +266,17 @@ export type TtyLinkCtxt = {
    */
   callback(lineNumber: number): void;
 };
+
+interface KillOpts {
+  STOP?: boolean;
+  CONT?: boolean;
+  SIGINT?: boolean;
+  /**
+   * - For `api.killProcesses` this is just passed to suspend callbacks.
+   * - For `api.kill` this selects the processes to be killed, i.e. those
+   *   lacking the process tag `ProcessTag.always`
+   */
+  byPtags?: boolean;
+  GROUP?: boolean;
+  ptags?: Ptags;
+}

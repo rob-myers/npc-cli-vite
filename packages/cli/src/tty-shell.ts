@@ -1,12 +1,13 @@
 import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
-import { error } from "@npc-cli/util/legacy/generic";
-import { ProcessTag } from "./const";
+import { debug, error, warn } from "@npc-cli/util/legacy/generic";
+import { ProcessTag, spawnBgPausedDefault } from "./const";
 import type { MessageFromShell, MessageFromXterm, ShellIo } from "./io";
 import { parseService } from "./parse";
-import { type ProcessMeta, type Ptags, sessionApi } from "./store/session.store";
+import { jShSemantics } from "./semantics";
+import { type ProcessMeta, type Ptags, sessionApi, toProcessStatus } from "./store/session.store";
 import type { TtyXterm } from "./tty-xterm";
-import { SigKillError } from "./util";
+import { applyPtagUpdates, killError, ShError, SigKillError } from "./util";
 
 export class TtyShell {
   key: string;
@@ -14,12 +15,12 @@ export class TtyShell {
   io: ShellIo<MessageFromXterm, MessageFromShell>;
   history: string[];
   xterm!: TtyXterm;
+  /** Is corresponding component `<Tty>` disabled? */
+  disabled = false;
+  /** While `this.disabled` spawn background processes paused? */
+  spawnBgPaused = spawnBgPausedDefault;
 
-  /** Lines received from a TtyXterm. */
-  private inputs = [] as { line: string; resolve(): void }[];
-  private input = null as null | { line: string; resolve(): void };
-  /** Lines in current interactive parse */
-  private buffer = [] as string[];
+  private profileFinished = false;
 
   private process!: ProcessMeta;
   private oneTimeReaders = [] as {
@@ -27,6 +28,12 @@ export class TtyShell {
     reject: (e: unknown) => void;
   }[];
   private cleanups = [] as (() => void)[];
+
+  /** Lines received from a TtyXterm. */
+  private inputs = [] as { line: string; resolve(): void }[];
+  private input = null as null | { line: string; resolve(): void };
+  /** Lines in current interactive parse */
+  private buffer = [] as string[];
 
   private readonly maxLines = 500;
 
@@ -140,7 +147,6 @@ export class TtyShell {
     return { [ProcessTag.interactive]: true };
   }
 
-  // 🚧
   /**
    * Spawn a process, assigning:
    * - new pid
@@ -169,9 +175,175 @@ export class TtyShell {
       ptags?: Ptags;
     },
   ) {
+    const { meta } = term;
+
+    /** An "interactive spawn" runs by re-using the session leader i.e. `this.process`. */
+    const interactive = meta.pgid === 0 && (opts.by === "root" || opts.by === "source");
+
+    let process = this.process;
+
+    if (this.profileFinished === true) {
+      if (interactive === true) {
+        // - Only reachable by interactively specifying a command after profile has run
+        // - We ensure session leader has status Running
+        process.status = toProcessStatus.Running;
+      }
+    } else {
+      if (process.status === toProcessStatus.Suspended && opts.by !== "source-external") {
+        // - Only reachable if session leader paused "externally" during profile
+        // - We halt
+        await new Promise<void>((resolve, reject) => {
+          process.cleanups.push(() => reject(killError(meta, 130)));
+          process.onResumes.push(resolve);
+        });
+      }
+    }
+
     // 🚧
-    term;
-    opts;
+    if (interactive !== true) {
+      // Create subprocess
+      const { ppid, pgid, sessionKey } = meta;
+      const session = sessionApi.getSession(sessionKey);
+      const parent = session.process[ppid]; // Exists
+      process = sessionApi.createProcess({
+        ppid,
+        pgid,
+        sessionKey,
+        src: computeJShSource.src(term),
+        posPositionals: opts.posPositionals || parent.positionals.slice(1),
+        ptags: applyPtagUpdates({ ...parent.ptags }, opts.ptags ?? {}),
+      });
+      meta.pid = process.key;
+
+      if (opts.cleanups !== undefined) {
+        process.cleanups.push(...opts.cleanups);
+      }
+
+      if (parent.pgid === 0 && opts.by !== "source-external") {
+        // reset session leader ptags after non-interactive spawn,
+        // except e.g. external sources triggered by hot-module-reload
+        this.process.ptags = this.sessionLeaderPtags;
+      }
+
+      if (
+        this.disabled === true &&
+        // processes not tagged with 'always' are paused,
+        // except those which are tagged interactive
+        !(ProcessTag.always in process.ptags) &&
+        !(ProcessTag.interactive in process.ptags) &&
+        this.spawnBgPaused === true
+      ) {
+        process.status = toProcessStatus.Suspended;
+      }
+
+      // Shallow clone avoids mutation by descendants
+      process.inheritVar = { ...parent.inheritVar, ...parent.localVar };
+      if (opts.localVar === true) {
+        // Some processes need their own PWD e.g. background, subshell
+        process.localVar.PWD = parent.inheritVar.PWD ?? session.var.PWD;
+        process.localVar.OLDPWD = parent.inheritVar.OLDPWD ?? session.var.OLDPWD;
+      }
+
+      if (opts.by === "&") {
+        session.lastBg = process.key;
+      }
+    }
+
+    /**
+     * This spawn is leading if either:
+     * 1. `pgid === 0` and it was spawned by session leader (not `source`).
+     * 2. `pid === pgid !== 0`
+     */
+    const leading = interactive === true ? opts.by === "root" : meta.pid === meta.pgid;
+
+    if (leading === true) {
+      // Process leaders emit external events
+      process.src !== "" &&
+        this.io.write({
+          key: "external",
+          msg: {
+            key: "process-leader",
+            pid: meta.pid,
+            act: "started",
+            profileRunning: this.profileFinished === false ? true : undefined,
+            // src: process.src,
+          },
+        });
+
+      process.onSuspends.push(() => {
+        this.io.write({
+          key: "external",
+          msg: {
+            key: "process-leader",
+            pid: meta.pid,
+            act: "paused",
+            profileRunning: this.profileFinished === false ? true : undefined,
+          },
+        });
+        return true;
+      });
+
+      process.onResumes.push(() => {
+        this.io.write({
+          key: "external",
+          msg: {
+            key: "process-leader",
+            pid: meta.pid,
+            act: "resumed",
+            profileRunning: this.profileFinished === false ? true : undefined,
+          },
+        });
+        return true;
+      });
+    }
+
+    try {
+      // Run process
+      for await (const _ of jShSemantics.File(term)) {
+        // Unreachable: yielded values already sent to devices:
+        // - (tty, fifo, null, var, voice)
+      }
+      term.meta.verbose === true &&
+        warn(
+          `${meta.sessionKey}${meta.background ? " (background)" : ""}: ${meta.pid}: exit ${
+            term.exitCode
+          }`,
+        );
+    } catch (e) {
+      if (e instanceof SigKillError) {
+        // 🔔 possibly via preProcessWrite
+        ttyError(`${meta.sessionKey}${meta.pgid ? " (background)" : ""}: ${meta.pid}: SIGKILL`);
+        // Ctrl-C code is 130 unless overridden
+        term.exitCode = e.exitCode ?? 130; // 🚧 or 137?
+      } else if (e instanceof ShError) {
+        term.exitCode = e.exitCode;
+      }
+      throw e;
+    } finally {
+      sessionApi.setLastExitCode(term.meta, term.exitCode);
+
+      if (!interactive) {
+        sessionApi.removeProcess(meta.pid, this.sessionKey);
+      }
+
+      if (leading) {
+        process.src !== "" &&
+          this.io.write({
+            key: "external",
+            msg: {
+              key: "process-leader",
+              pid: meta.pid,
+              act: "ended",
+              profileRunning: this.profileFinished === false ? true : undefined,
+            },
+          });
+
+        // must clear in case of session leader (reused)
+        process.cleanups.length = 0;
+        process.onResumes.length = 0;
+        process.onSuspends.length = 0;
+      }
+    }
   }
 
   private storeSrcLine(srcLine: string) {
@@ -237,4 +409,9 @@ export class TtyShell {
       this.input = null;
     }
   }
+}
+
+/** Avoid clogging logs with "pseudo errors" */
+export function ttyError(...args: any[]) {
+  debug("[ttyError]", ...args);
 }
