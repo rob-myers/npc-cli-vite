@@ -350,7 +350,7 @@ type Stmt struct {
 	// interface type processor.Command not supported: only interface{} and easyjson/json Unmarshaler are allowed
 	Cmd        interface{} // Command
 	Position   Pos
-	Semicolon  Pos
+	Semicolon  *Pos
 	Negated    bool
 	Background bool
 	Coprocess  bool
@@ -755,6 +755,17 @@ func mapPos(pos syntax.Pos) Pos {
 	}
 }
 
+func mapNullablePos(pos syntax.Pos) *Pos {
+	if pos.IsValid() == false {
+		return nil
+	}
+	return &Pos{
+		Offset: pos.Offset(),
+		Line:   pos.Line(),
+		Col:    pos.Col(),
+	}
+}
+
 // `mapRedirects` converts a slice of syntax.Redirect pointers into a slice of custom Redirect structures.
 // It maps each redirect’s operator position, associated literal (if present), word, heredoc, and overall positional data using helper functions.
 // If the literal component (N) is non-nil, it is transformed into a Lit structure that encapsulates both its value and positional information.
@@ -781,7 +792,7 @@ func mapStmt(stmt *syntax.Stmt) Stmt {
 		Comments: mapComments(stmt.Comments),
 		Cmd: mapCommand(stmt.Cmd),
 		Position: mapPos(stmt.Position),
-		Semicolon: mapPos(stmt.Semicolon),
+		Semicolon: mapNullablePos(stmt.Semicolon),
 		Negated: stmt.Negated,
 		Background: stmt.Background,
 		Coprocess: stmt.Coprocess,

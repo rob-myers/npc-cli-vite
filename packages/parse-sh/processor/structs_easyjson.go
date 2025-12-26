@@ -1088,8 +1088,16 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor8(in *
 		case "Semicolon":
 			if in.IsNull() {
 				in.Skip()
+				out.Semicolon = nil
 			} else {
-				(out.Semicolon).UnmarshalEasyJSON(in)
+				if out.Semicolon == nil {
+					out.Semicolon = new(Pos)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					(*out.Semicolon).UnmarshalEasyJSON(in)
+				}
 			}
 		case "Negated":
 			if in.IsNull() {
@@ -1197,7 +1205,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor8(out 
 	{
 		const prefix string = ",\"Semicolon\":"
 		out.RawString(prefix)
-		(in.Semicolon).MarshalEasyJSON(out)
+		if in.Semicolon == nil {
+			out.RawString("null")
+		} else {
+			(*in.Semicolon).MarshalEasyJSON(out)
+		}
 	}
 	{
 		const prefix string = ",\"Negated\":"
