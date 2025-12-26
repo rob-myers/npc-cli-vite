@@ -1,5 +1,6 @@
 import type { JSh } from "@npc-cli/parse-sh";
-import { type ProcessMeta, type Ptags, toProcessStatus } from "./store/session.store";
+import { toProcessStatus } from "./const";
+import type { ProcessMeta, Ptags } from "./session.store";
 
 export class ShError extends Error {
   exitCode: number;

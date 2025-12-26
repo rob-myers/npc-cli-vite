@@ -1,11 +1,11 @@
 import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { debug, error, warn } from "@npc-cli/util/legacy/generic";
-import { ProcessTag, spawnBgPausedDefault } from "./const";
+import { ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
 import type { MessageFromShell, MessageFromXterm, ShellIo } from "./io";
 import { parseService } from "./parse";
 import { jShSemantics } from "./semantics";
-import { type ProcessMeta, type Ptags, sessionApi, toProcessStatus } from "./store/session.store";
+import { type ProcessMeta, type Ptags, sessionApi } from "./session.store";
 import type { TtyXterm } from "./tty-xterm";
 import { applyPtagUpdates, killError, ShError, SigKillError } from "./util";
 
@@ -199,7 +199,6 @@ export class TtyShell {
       }
     }
 
-    // 🚧
     if (interactive !== true) {
       // Create subprocess
       const { ppid, pgid, sessionKey } = meta;
@@ -311,7 +310,7 @@ export class TtyShell {
         );
     } catch (e) {
       if (e instanceof SigKillError) {
-        // 🔔 possibly via preProcessWrite
+        // possibly via preProcessWrite
         ttyError(`${meta.sessionKey}${meta.pgid ? " (background)" : ""}: ${meta.pid}: SIGKILL`);
         // Ctrl-C code is 130 unless overridden
         term.exitCode = e.exitCode ?? 130; // 🚧 or 137?
@@ -412,6 +411,6 @@ export class TtyShell {
 }
 
 /** Avoid clogging logs with "pseudo errors" */
-export function ttyError(...args: any[]) {
+export function ttyError(...args: unknown[]) {
   debug("[ttyError]", ...args);
 }

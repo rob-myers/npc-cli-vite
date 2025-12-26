@@ -1,11 +1,11 @@
 import { type KeyedLookup, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
-import { ProcessTag } from "../const";
-import type { Device, MessageFromShell, MessageFromXterm, ShellIo } from "../io";
-import type { NamedFunction } from "../parse";
-import type { TtyShell } from "../tty-shell";
-import type { BaseMeta } from "../types";
-import { killProcess } from "../util";
+import { type ProcessStatus, ProcessTag, toProcessStatus } from "./const";
+import type { Device, MessageFromShell, MessageFromXterm, ShellIo } from "./io";
+import type { NamedFunction } from "./parse";
+import type { TtyShell } from "./tty-shell";
+import type { BaseMeta } from "./types";
+import { killProcess } from "./util";
 
 export const sessionApi = {
   createProcess(def: {
@@ -184,15 +184,6 @@ export type Session = {
   lastBg: number;
   verbose: boolean;
 };
-
-export const toProcessStatus = {
-  Suspended: 0,
-  Running: 1,
-  Killed: 2,
-} as const;
-
-/** `0` is suspended, `1` is running, `2` is killed */
-export type ProcessStatus = (typeof toProcessStatus)[keyof typeof toProcessStatus];
 
 export type Ptags = Record<string, string | boolean | number | undefined | null>;
 

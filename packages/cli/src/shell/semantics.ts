@@ -1,7 +1,7 @@
 import type { JSh } from "@npc-cli/parse-sh";
+import { cloneParsed } from "../main";
 import { ProcessTag } from "./const";
-import { cloneParsed } from "./main";
-import { sessionApi } from "./store/session.store";
+import { sessionApi } from "./session.store";
 import { ttyError } from "./tty-shell";
 import { ShError, SigKillError } from "./util";
 
