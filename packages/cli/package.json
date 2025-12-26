@@ -9,7 +9,8 @@
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/util": "workspace:^",
-    "lodash.clonedeep": "^4.5.0"
+    "lodash.clonedeep": "catalog:",
+    "rxjs": "catalog:"
   },
   "devDependencies": {
     "@types/lodash.clonedeep": "^4.5.9"
