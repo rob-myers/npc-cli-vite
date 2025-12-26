@@ -4,3 +4,8 @@ export const ProcessTag = {
   /** Interactive processes e.g. a non-background pipeline spawned from shell */
   interactive: "interactive",
 } as const;
+
+/**
+ * Whilst paused, should spawned background processes also start paused?
+ */
+export const spawnBgPausedDefault = false;
