@@ -6,8 +6,8 @@ import { cmdService, preProcessWrite } from "./cmd-service";
 import { ansi, bracesOpts, ProcessTag } from "./const";
 import { redirectNode } from "./io";
 import { cloneParsed, type NamedFunction } from "./parse";
-import { sessionApi } from "./session.store";
-import { ttyError } from "./tty-shell";
+import { sessionApi } from "./session";
+import { ttyError } from "./shell";
 import {
   formatMessage,
   handleProcessError,

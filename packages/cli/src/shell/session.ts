@@ -12,7 +12,7 @@ import {
   type VarDeviceMode,
 } from "./io";
 import type { NamedFunction } from "./parse";
-import type { TtyShell } from "./tty-shell";
+import type { TtyShell } from "./shell";
 import { computeNormalizedParts, killProcess, resolveNormalized, ShError } from "./util";
 
 export const sessionApi = {
