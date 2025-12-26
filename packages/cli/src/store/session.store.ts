@@ -26,23 +26,22 @@ export type State = {
   device: KeyedLookup<Device>;
 };
 
-export interface Session {
+export type Session = {
   key: string;
   process: KeyedLookup<ProcessMeta>;
   func: KeyedLookup<NamedFunction>;
 
   /**
-   * Currently only support one tty per session,
-   * i.e. cannot have two terminals in same session.
-   * This could be changed e.g. `ttys: { io, shell }[]`.
+   * Currently only support one tty per session, i.e.
+   * cannot have two terminals in same session.
    */
   ttyIo: ShellIo<MessageFromXterm, MessageFromShell>;
   ttyShell: TtyShell;
   ttyLink: { [lineText: string]: TtyLinkCtxt[] };
 
-  etc: Record<string, any>;
+  etc: Record<string, unknown>;
   var: {
-    [varName: string]: any;
+    [varName: string]: unknown;
     PWD: string;
     OLDPWD: string;
     /** `processApi[key]` is `processApi.getCached(var[CACHE_SHORTCUTS[key]])` */
@@ -53,14 +52,15 @@ export interface Session {
   // modules: import("../terminal/TtyWithFunctions").TtyJsModules;
 
   nextPid: number;
-  /** Last exit code: */
   lastExit: {
-    /** Foreground */ fg: number;
-    /** Background */ bg: number;
+    /** Last exit code: foreground */
+    fg: number;
+    /** Last exit code: background */
+    bg: number;
   };
   lastBg: number;
   verbose: boolean;
-}
+};
 
 export type ProcessStatus = {
   Suspended: 0;
@@ -70,7 +70,7 @@ export type ProcessStatus = {
 
 export type Ptags = Record<string, string | boolean | number | undefined | null>;
 
-export interface ProcessMeta {
+export type ProcessMeta = {
   /** pid */
   key: number;
   ppid: number;
@@ -118,13 +118,13 @@ export interface ProcessMeta {
    * Particularly helpful for background processes and subshells,
    * which have their own PWD and OLDPWD.
    */
-  localVar: Record<string, any>;
+  localVar: Record<string, unknown>;
   /** Inherited local variables. */
-  inheritVar: Record<string, any>;
+  inheritVar: Record<string, unknown>;
   ptags: Ptags;
-}
+};
 
-export interface TtyLinkCtxt {
+export type TtyLinkCtxt = {
   /** Line stripped of ansi-codes. */
   lineText: string;
   /** Label text stripped of ansi-codes e.g. `[ foo ]` has link text `foo` */
@@ -139,4 +139,4 @@ export interface TtyLinkCtxt {
    * @param callback Line we clicked on (possibly wrapped)
    */
   callback(lineNumber: number): void;
-}
+};

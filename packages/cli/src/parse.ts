@@ -42,9 +42,8 @@ export class ParseShService {
   }
 
   async tryParseBuffer(buffer: string[]) {
-    // console.log('parsing shell code', buffer.slice());
     try {
-      // mvdan-sh `Parser.Interactive` expects terminal newline.
+      // mvdan-sh `Parser.Interactive` expects terminal newline
       const src = `${buffer.join("\n")}\n`;
       const { parsed } = await this.interactiveParse(src);
 
@@ -53,7 +52,7 @@ export class ParseShService {
         : ({ key: "complete", parsed, src } as const);
     } catch (e) {
       error(e);
-      return { key: "failed" as "failed", error: `${(e as any).Error()}` };
+      return { key: "failed", error: `${(e as any).Error()}` } as const;
     }
   }
 }
@@ -68,15 +67,10 @@ export function cloneParsed<T extends ParsedSh>(parsed: T): T {
   return cloneWithRefs(parsed);
 }
 
-export interface InteractiveParseResult {
-  /**
-   * `parser.Interactive` callback appears to
-   * run synchronously. Permit null just in case.
-   */
-  incomplete: boolean | null;
-  /** If `incomplete` is false, this is the cleaned parse. */
+export type InteractiveParseResult = {
+  incomplete: boolean;
   parsed: null | FileWithMeta;
-}
+};
 
 export type NamedFunction = {
   /** Function name. */
