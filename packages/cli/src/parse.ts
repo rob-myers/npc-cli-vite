@@ -77,3 +77,11 @@ export interface InteractiveParseResult {
   /** If `incomplete` is false, this is the cleaned parse. */
   parsed: null | FileWithMeta;
 }
+
+export type NamedFunction = {
+  /** Function name. */
+  key: string;
+  /** The source code of the body of the function, e.g. `{ echo foo; }` */
+  src: null | string;
+  node: FileWithMeta;
+};
