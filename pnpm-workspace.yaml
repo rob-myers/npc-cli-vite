@@ -13,6 +13,7 @@ catalog:
   "@types/react-dom": ^19.2.3
   "@vitejs/plugin-react-swc": ^4.2.2
   braces: ^3.0.3
+  cli-columns: ^4.0.0
   clsx: ^2.1.1
   rxjs: ^7.8.2
   getopts: ^2.3.0
