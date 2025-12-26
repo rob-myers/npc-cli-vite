@@ -413,6 +413,12 @@ export class TtyShell {
         }
       }
     } catch (e) {
+      if (e instanceof SigKillError) {
+        jShSemantics.handleTopLevelProcessError(e);
+      } else {
+        ttyError("unexpected error propagated to tty.shell", e);
+      }
+      this.prompt("$");
     } finally {
       this.input.resolve();
       this.input = null;
