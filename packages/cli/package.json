@@ -8,6 +8,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^",
+    "@npc-cli/util": "workspace:^",
     "lodash.clonedeep": "^4.5.0"
   },
   "devDependencies": {

@@ -1,9 +1,22 @@
 import { convertMvdanShToJsh, parse as parseSh, withParents } from "@npc-cli/parse-sh";
+import { error } from "@npc-cli/util/legacy/generic";
 import cloneWithRefs from "lodash.clonedeep";
 import type { FileWithMeta, ParsedSh } from "./types";
 
 export class ParseShService {
   private cache: { [src: string]: FileWithMeta } = {};
+
+  async interactiveParse(partialSrc: string): Promise<InteractiveParseResult> {
+    const parsed = await parseSh(partialSrc, { interactive: true });
+    if (parsed === null) {
+      return { incomplete: true, parsed: null };
+    } else {
+      return {
+        incomplete: false,
+        parsed: await this.parse(partialSrc, true),
+      };
+    }
+  }
 
   /**
    * Use `mvdan-sh` to parse shell code.
@@ -29,6 +42,25 @@ export class ParseShService {
 
     return cache === true ? (this.cache[src] = file) : file;
   }
+
+  async tryParseBuffer(buffer: string[]) {
+    // console.log('parsing shell code', buffer.slice());
+    try {
+      // Parser.Interactive expects terminal newline.
+      const src = `${buffer.join("\n")}\n`;
+      const { incomplete, parsed } = await this.interactiveParse(src);
+      // if (parsed) {
+      //   console.log('parsed shell code', parsed);
+      // }
+
+      return incomplete === true
+        ? ({ key: "incomplete" } as const)
+        : ({ key: "complete", parsed: parsed!, src } as const);
+    } catch (e) {
+      error(e);
+      return { key: "failed" as "failed", error: `${(e as any).Error()}` };
+    }
+  }
 }
 
 export const parseService = new ParseShService();
@@ -39,4 +71,14 @@ export const parseService = new ParseShService();
  */
 export function cloneParsed<T extends ParsedSh>(parsed: T): T {
   return cloneWithRefs(parsed);
+}
+
+export interface InteractiveParseResult {
+  /**
+   * `parser.Interactive` callback appears to
+   * run synchronously. Permit null just in case.
+   */
+  incomplete: boolean | null;
+  /** If `incomplete` is false, this is the cleaned parse. */
+  parsed: null | FileWithMeta;
 }

@@ -33,12 +33,18 @@ catalogs:
     '@vitejs/plugin-react-swc':
       specifier: ^4.2.2
       version: 4.2.2
+    clsx:
+      specifier: ^2.1.1
+      version: 2.1.1
     globals:
       specifier: ^16.5.0
       version: 16.5.0
     javascript-stringify:
       specifier: 2.1.0
       version: 2.1.0
+    json-stringify-pretty-compact:
+      specifier: ^4.0.0
+      version: 4.0.0
     react:
       specifier: 19.2.1
       version: 19.2.1
@@ -48,12 +54,18 @@ catalogs:
     react-grid-layout:
       specifier: 2.1.0
       version: 2.1.0
+    tailwind-merge:
+      specifier: ^3.4.0
+      version: 3.4.0
     tailwindcss:
       specifier: ^4.1.17
       version: 4.1.17
     typescript:
       specifier: ~5.9.3
       version: 5.9.3
+    zod:
+      specifier: ^4.1.13
+      version: 4.1.13
 
 overrides:
   vite: npm:rolldown-vite@latest
@@ -147,6 +159,9 @@ importers:
       '@npc-cli/parse-sh':
         specifier: workspace:^
         version: link:../parse-sh
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../util
       lodash.clonedeep:
         specifier: ^4.5.0
         version: 4.5.0
@@ -169,16 +184,22 @@ importers:
   packages/util:
     dependencies:
       clsx:
-        specifier: ^2.1.1
+        specifier: 'catalog:'
         version: 2.1.1
+      javascript-stringify:
+        specifier: 'catalog:'
+        version: 2.1.0
+      json-stringify-pretty-compact:
+        specifier: 'catalog:'
+        version: 4.0.0
       react:
         specifier: 'catalog:'
         version: 19.2.1
       tailwind-merge:
-        specifier: ^3.4.0
+        specifier: 'catalog:'
         version: 3.4.0
       zod:
-        specifier: ^4.1.13
+        specifier: 'catalog:'
         version: 4.1.13
 
 packages:
@@ -1535,6 +1556,9 @@ packages:
     resolution: {integrity: sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==}
     engines: {node: '>=6'}
     hasBin: true
+
+  json-stringify-pretty-compact@4.0.0:
+    resolution: {integrity: sha512-3CNZ2DnrpByG9Nqj6Xo8vqbjT4F6N+tb4Gb28ESAZjYZ5yqvmc56J+/kuIwkaAMOyblTQhUW7PxMkUb8Q36N3Q==}
 
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
@@ -3380,6 +3404,8 @@ snapshots:
   js-tokens@4.0.0: {}
 
   jsesc@3.1.0: {}
+
+  json-stringify-pretty-compact@4.0.0: {}
 
   json5@2.2.3: {}
 
