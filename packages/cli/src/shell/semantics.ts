@@ -241,6 +241,10 @@ export class JShSemantics {
     node.exitCode = 0;
   }
 
+  private Block(node: JSh.Block) {
+    return this.stmts(node, node.Stmts);
+  }
+
   private async *CallExpr(node: JSh.CallExpr) {
     node.exitCode = 0;
     const args = await sem.performShellExpansion(node.Args);
@@ -288,9 +292,9 @@ export class JShSemantics {
         generator = this.CallExpr(node);
       } else {
         switch (node.type) {
-          // case "Block":
-          //   generator = this.Block(node);
-          //   break;
+          case "Block":
+            generator = this.Block(node);
+            break;
           // case "BinaryCmd":
           //   generator = this.BinaryCmd(node);
           //   break;
