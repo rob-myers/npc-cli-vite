@@ -10,6 +10,7 @@
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "braces": "catalog:",
+    "cli-columns": "catalog:",
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
     "rxjs": "catalog:",
