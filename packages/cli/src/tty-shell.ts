@@ -1,6 +1,7 @@
-import { computeJShSource } from "@npc-cli/parse-sh";
+import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import type { MessageFromShell, MessageFromXterm, ShellIo } from "./io";
 import { parseService } from "./parse";
+import { type ProcessMeta, type Ptags, sessionApi } from "./store/session.store";
 import type { TtyXterm } from "./tty-xterm";
 
 export class TtyShell {
@@ -16,6 +17,8 @@ export class TtyShell {
   /** Lines in current interactive parse */
   private buffer = [] as string[];
 
+  private process!: ProcessMeta;
+
   private readonly maxLines = 500;
 
   constructor(
@@ -30,6 +33,55 @@ export class TtyShell {
     this.key = `/dev/tty-${sessionKey}`;
   }
 
+  getHistory() {
+    return this.history.slice();
+  }
+
+  private provideContextToParsed(parsed: JSh.FileWithMeta) {
+    Object.assign<JSh.BaseMeta, JSh.BaseMeta>(parsed.meta, {
+      sessionKey: this.sessionKey,
+      pid: 0,
+      ppid: 0,
+      pgid: 0,
+      fd: { 0: this.key, 1: this.key, 2: this.key },
+      stack: [],
+      verbose: false,
+    });
+  }
+
+  /**
+   * Spawn a process, assigning:
+   * - new pid
+   * - ppid as term.meta.ppid
+   * - pgid as term.meta.pgid
+   */
+  async spawn(
+    term: JSh.FileWithMeta,
+    opts: {
+      /**
+       * Spawned by:
+       * - `&` -- running a background operator.
+       * - `|` -- running a shell pipeline.
+       * - `()` -- running a subshell.
+       * - `$()` -- running a command substitution.
+       * - `function` -- invoking shell function.
+       * - `root` -- the session leader right after parsing shell code.
+       * - `source` -- the builtin `source` in cmd.service.
+       * - `source-external` -- an externally triggered "source".
+       */
+      by: "&" | "|" | "()" | "$()" | "function" | "root" | "source" | "source-external";
+      cleanups?: (() => void)[];
+      localVar?: boolean;
+      posPositionals?: string[];
+      /** Process tags overriding those inherited from parent */
+      ptags?: Ptags;
+    },
+  ) {
+    // 🚧
+    term;
+    opts;
+  }
+
   private storeSrcLine(srcLine: string) {
     const prev = this.history.pop();
     if (prev !== undefined) {
@@ -40,8 +92,7 @@ export class TtyShell {
       while (this.history.length > this.maxLines) {
         this.history.shift();
       }
-      // 🚧
-      // useSession.api.persistHistory(this.sessionKey);
+      sessionApi.persistHistory(this.sessionKey);
     }
   }
 
@@ -65,6 +116,11 @@ export class TtyShell {
             if (singleLineSrc !== "" && this.xterm.historyEnabled === true) {
               this.storeSrcLine(singleLineSrc); // Store command in history
             }
+
+            // Run command
+            this.process.src = singleLineSrc;
+            this.provideContextToParsed(result.parsed);
+            await this.spawn(result.parsed, { by: "root" });
 
             // 🚧
           }
