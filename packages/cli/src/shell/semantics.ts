@@ -1,4 +1,5 @@
 import { type JSh, reconstructReplParamExp } from "@npc-cli/parse-sh";
+import { ExhaustiveError } from "@npc-cli/util";
 import { jsStringify, last, parseJsArg, safeJsonParse } from "@npc-cli/util/legacy/generic";
 import braces from "braces";
 import { cmdService, preProcessWrite } from "./cmd-service";
@@ -39,7 +40,7 @@ export class JShSemantics {
     }
   }
 
-  private expand(values: string | any[]): Expanded {
+  private expand(values: string | unknown[]): Expanded {
     return {
       key: "expanded",
       values: Array.isArray(values) ? values : [values],
@@ -60,7 +61,7 @@ export class JShSemantics {
     }
   }
 
-  private handleShError(node: JSh.ParsedSh, e: any, prefix?: string) {
+  private handleShError(node: JSh.ParsedSh, e: SigKillError | ShError, prefix?: string) {
     if (e instanceof SigKillError) {
       // Rethrow unless returning from a shell function
       return handleProcessError(node, e);
@@ -96,6 +97,7 @@ export class JShSemantics {
   private async lastExpanded(generator: AsyncGenerator<Expanded>) {
     let lastExpanded = undefined as Expanded | undefined;
     for await (const expanded of generator) lastExpanded = expanded;
+    // biome-ignore lint/style/noNonNullAssertion: TODO justify
     return lastExpanded!;
   }
 
@@ -147,9 +149,10 @@ export class JShSemantics {
     const expanded = [] as string[];
     for (const word of Args) {
       const result = await this.lastExpanded(this.Expand(word));
+      word.exitCode ??= -1;
       const single = word.Parts.length === 1 ? word.Parts[0] : null;
-      if (word.exitCode! > 0) {
-        throw new ShError("failed to expand word", word.exitCode!);
+      if (word.exitCode !== 0) {
+        throw new ShError("failed to expand word", word.exitCode);
       } else if (single?.type === "SglQuoted") {
         expanded.push(result.value);
       } else if (single?.type === "ParamExp" || single?.type === "CmdSubst") {
@@ -208,6 +211,7 @@ export class JShSemantics {
     const { value, values } = await this.lastExpanded(sem.Expand(Value));
     const firstValue = values[0]; // know values.length > 0 because not Naked
 
+    // biome-ignore lint/suspicious/noExplicitAny: TODO justify
     function objectAssignOrAdd(x: any, y: any) {
       return typeof y === "object" ? Object.assign(x, y) : x + y;
     }
@@ -278,6 +282,7 @@ export class JShSemantics {
     const cmdStackIndex = node.meta.stack.length;
     try {
       await sem.applyRedirects(node, Redirs);
+      // biome-ignore lint/suspicious/noExplicitAny: TODO justify
       let generator: AsyncGenerator<any, void, unknown>;
       if (node.type === "CallExpr") {
         generator = this.CallExpr(node);
@@ -373,17 +378,18 @@ export class JShSemantics {
       const values = [] as (string | string[])[];
 
       for (const part of node.Parts) {
-        const value = part.string!;
+        const value = part.string as string;
+        // biome-ignore lint/suspicious/noExplicitAny: TODO justify
         const brace = part.type === "Lit" && !!(part as any).braceExp;
 
         if (part.type === "ParamExp" || part.type === "CmdSubst") {
-          const vs = normalizeWhitespace(value!, false); // Do not trim
+          const vs = normalizeWhitespace(value, false); // Do not trim
           if (vs.length === 0) {
             continue;
           } else if (values.length === 0 || lastTrailing === true || vs[0].startsWith(" ")) {
             // Freely add, although trim 1st and last
             values.push(...vs.map((x) => x.trim()));
-          } else if (last(values) instanceof Array) {
+          } else if (Array.isArray(last(values))) {
             // prev brace exp
             const value = vs.join(" ").trim();
             values.push((values.pop() as string[]).map((x) => `${x}${value}`));
@@ -393,12 +399,12 @@ export class JShSemantics {
             values.push(values.pop() + vs[0].trim());
             values.push(...vs.slice(1).map((x) => x.trim()));
           }
-          lastTrailing = last(vs)!.endsWith(" ");
+          lastTrailing = (last(vs) as string).endsWith(" ");
         } else if (values.length === 0 || lastTrailing === true) {
           // Freely add
           values.push(brace === true ? value.split(" ") : value);
           lastTrailing = false;
-        } else if (last(values) instanceof Array) {
+        } else if (Array.isArray(last(values))) {
           values.push(
             brace === true
               ? (values.pop() as string[]).flatMap((x) => value.split(" ").map((y) => `${x}${y}`))
@@ -415,7 +421,7 @@ export class JShSemantics {
         }
       }
 
-      const allValues = values.flatMap((x) => x);
+      const allValues = values.flat();
       node.string = allValues.join(" ");
       yield this.expand(allValues);
     } else {
@@ -476,7 +482,7 @@ export class JShSemantics {
               ? node.parent.Parts
               : [];
 
-          if (wordParts.length === 1 && node.parent!.parent?.type === "Assign") {
+          if (wordParts.length === 1 && (node.parent as JSh.ParsedSh).parent?.type === "Assign") {
             yield this.expand(values); // When `foo=$( bar )` forward non-string values
           } else {
             if (values.length > 1) {
@@ -500,8 +506,9 @@ export class JShSemantics {
       case "ArithmExp":
       case "ExtGlob":
       case "ProcSubst":
+        break;
       default:
-        throw Error(`${node.type} unimplemented`);
+        throw new ExhaustiveError(node);
     }
   }
 
@@ -575,18 +582,18 @@ export class JShSemantics {
         throw new ShError(`${node.Op}: bad file descriptor: "${dstValue}"`, 127);
       }
 
-      return redirectNode(node.parent!, { [srcFd]: node.meta.fd[dstFd] });
+      return redirectNode(node.parent as JSh.ParsedSh, { [srcFd]: node.meta.fd[dstFd] });
     }
 
     if (node.Op === ">" || node.Op === ">>" || node.Op === "&>>") {
       const { value } = await this.lastExpanded(sem.Expand(node.Word));
       if (value === "/dev/null") {
-        return redirectNode(node.parent!, { [srcFd]: "/dev/null" });
+        return redirectNode(node.parent as JSh.ParsedSh, { [srcFd]: "/dev/null" });
       } else if (value === "/dev/voice") {
-        return redirectNode(node.parent!, { [srcFd]: "/dev/voice" });
+        return redirectNode(node.parent as JSh.ParsedSh, { [srcFd]: "/dev/voice" });
       } else {
         cmdService.redirectToVar(
-          node.parent!,
+          node.parent as JSh.ParsedSh,
           srcFd,
           value,
           node.Op === ">" ? "last" : node.Op === ">>" ? "array" : "fresh-array",
