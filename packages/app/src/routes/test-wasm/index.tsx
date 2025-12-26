@@ -1,7 +1,7 @@
 import { parseService } from "@npc-cli/cli";
 import { testLoadWasm } from "@npc-cli/parse-sh";
+import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { createFileRoute } from "@tanstack/react-router";
-import { stringify as jsStringify } from "javascript-stringify";
 import { useState } from "react";
 
 export const Route = createFileRoute("/test-wasm/")({
@@ -19,7 +19,7 @@ function RouteComponent() {
         className="flex gap-2 border rounded-xl px-4 py-2 cursor-pointer hover:brightness-125"
         onClick={async () => {
           const testLoadWasmParsed = await testLoadWasm();
-          setParseShResponse((x) => (x ? undefined : jsStringify(testLoadWasmParsed, null, 2)));
+          setParseShResponse((x) => (x ? undefined : safeJsonCompact(testLoadWasmParsed)));
         }}
       >
         Test wasm
@@ -36,7 +36,7 @@ function RouteComponent() {
         className="flex gap-2 border rounded-xl px-4 py-2 cursor-pointer hover:brightness-125"
         onClick={async () => {
           const demoCommandParsed = await parseService.parse(demoCommandToParse);
-          const prettyParsed = jsStringify(demoCommandParsed, null, 2);
+          const prettyParsed = safeJsonCompact(demoCommandParsed);
           console.log({ demoCommandParsed });
           setCliResponse((x) => (x === prettyParsed ? undefined : prettyParsed));
         }}
