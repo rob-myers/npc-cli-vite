@@ -18,9 +18,7 @@ export class ParseShService {
     }
   }
 
-  /**
-   * Use `mvdan-sh` to parse shell code.
-   */
+  /** Use `mvdan-sh` to parse shell code. */
   async parse(src: string, cache = false): Promise<FileWithMeta> {
     if (src in this.cache) {
       return cloneParsed(this.cache[src]);
@@ -49,13 +47,10 @@ export class ParseShService {
       // Parser.Interactive expects terminal newline.
       const src = `${buffer.join("\n")}\n`;
       const { incomplete, parsed } = await this.interactiveParse(src);
-      // if (parsed) {
-      //   console.log('parsed shell code', parsed);
-      // }
 
-      return incomplete === true
+      return parsed === null
         ? ({ key: "incomplete" } as const)
-        : ({ key: "complete", parsed: parsed!, src } as const);
+        : ({ key: "complete", parsed, src } as const);
     } catch (e) {
       error(e);
       return { key: "failed" as "failed", error: `${(e as any).Error()}` };
