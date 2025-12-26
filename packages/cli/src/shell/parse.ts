@@ -1,10 +1,10 @@
+import type { JSh } from "@npc-cli/parse-sh";
 import { convertMvdanShToJsh, parse as parseSh, withParents } from "@npc-cli/parse-sh";
 import { error } from "@npc-cli/util/legacy/generic";
 import cloneWithRefs from "lodash.clonedeep";
-import type { FileWithMeta, ParsedSh } from "./types";
 
 export class ParseShService {
-  private cache: { [src: string]: FileWithMeta } = {};
+  private cache: { [src: string]: JSh.FileWithMeta } = {};
 
   async interactiveParse(partialSrc: string): Promise<InteractiveParseResult> {
     const parsed = await parseSh(partialSrc, { interactive: true });
@@ -19,7 +19,7 @@ export class ParseShService {
   }
 
   /** Use `mvdan-sh` to parse shell code. */
-  async parse(src: string, cache = false): Promise<FileWithMeta> {
+  async parse(src: string, cache = false): Promise<JSh.FileWithMeta> {
     if (src in this.cache) {
       return cloneParsed(this.cache[src]);
     }
@@ -63,13 +63,13 @@ export const parseService = new ParseShService();
  * Create completely fresh tree but share internal refs as before.
  * In particular every node has the same `node.meta`.
  */
-export function cloneParsed<T extends ParsedSh>(parsed: T): T {
+export function cloneParsed<T extends JSh.ParsedSh>(parsed: T): T {
   return cloneWithRefs(parsed);
 }
 
 export type InteractiveParseResult = {
   incomplete: boolean;
-  parsed: null | FileWithMeta;
+  parsed: null | JSh.FileWithMeta;
 };
 
 export type NamedFunction = {
@@ -77,5 +77,5 @@ export type NamedFunction = {
   key: string;
   /** The source code of the body of the function, e.g. `{ echo foo; }` */
   src: null | string;
-  node: FileWithMeta;
+  node: JSh.FileWithMeta;
 };

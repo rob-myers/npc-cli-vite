@@ -1,3 +1,4 @@
+import type { JSh } from "@npc-cli/parse-sh";
 import { type KeyedLookup, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
 import { type ProcessStatus, ProcessTag, toProcessStatus } from "./const";
@@ -12,7 +13,6 @@ import {
 } from "./io";
 import type { NamedFunction } from "./parse";
 import type { TtyShell } from "./tty-shell";
-import type { BaseMeta } from "./types";
 import { computeNormalizedParts, killProcess, resolveNormalized, ShError } from "./util";
 
 export const sessionApi = {
@@ -50,14 +50,14 @@ export const sessionApi = {
       ptags: def.ptags,
     });
   },
-  createVarDevice(meta: BaseMeta, varPath: string, mode: VarDeviceMode) {
+  createVarDevice(meta: JSh.BaseMeta, varPath: string, mode: VarDeviceMode) {
     const device = new VarDevice(meta, varPath, mode);
     return (useSession.getState().device[device.key] = device);
   },
   getFunc(sessionKey: string, fnKey: string): NamedFunction | undefined {
     return sessionApi.getSession(sessionKey).func[fnKey];
   },
-  getLastExitCode(meta: BaseMeta) {
+  getLastExitCode(meta: JSh.BaseMeta) {
     return sessionApi.getSession(meta.sessionKey).lastExit[meta.background ? "bg" : "fg"];
   },
   getNextPid(sessionKey: string) {
@@ -82,7 +82,7 @@ export const sessionApi = {
   getSession(sessionKey: string) {
     return useSession.getState().session[sessionKey];
   },
-  getVar<T = any>(meta: BaseMeta, varName: string): T {
+  getVar<T = any>(meta: JSh.BaseMeta, varName: string): T {
     const process = sessionApi.getProcess(meta);
     if (process !== undefined && varName in process.localVar) {
       // Got locally specified variable
@@ -95,7 +95,7 @@ export const sessionApi = {
       return sessionApi.getSession(meta.sessionKey).var[varName] as T;
     }
   },
-  getVarDeep(meta: BaseMeta, varPath: string): any | undefined {
+  getVarDeep(meta: JSh.BaseMeta, varPath: string): any | undefined {
     const session = sessionApi.getSession(meta.sessionKey);
     /**
      * Can deep get /home/* and /etc/*
@@ -185,10 +185,10 @@ export const sessionApi = {
   removeTtyLineCtxts(sessionKey: string, lineText: string) {
     delete sessionApi.getSession(sessionKey).ttyLink[lineText];
   },
-  resolve(fd: number, meta: BaseMeta) {
+  resolve(fd: number, meta: JSh.BaseMeta) {
     return useSession.getState().device[meta.fd[fd]];
   },
-  setLastExitCode(meta: BaseMeta, exitCode?: number) {
+  setLastExitCode(meta: JSh.BaseMeta, exitCode?: number) {
     const session = sessionApi.getSession(meta.sessionKey);
     if (session === undefined) {
       warn(`session ${meta.sessionKey} no longer exists`);
@@ -198,7 +198,7 @@ export const sessionApi = {
       warn(`process ${meta.pid} had no exitCode`);
     }
   },
-  setVar(meta: BaseMeta, varName: string, varValue: any) {
+  setVar(meta: JSh.BaseMeta, varName: string, varValue: any) {
     const session = sessionApi.getSession(meta.sessionKey);
     const process = session.process[meta.pid];
     if (process !== undefined && (varName in process.localVar || varName in process.inheritVar)) {
@@ -211,7 +211,7 @@ export const sessionApi = {
       session.var[varName] = varValue;
     }
   },
-  setVarDeep(meta: BaseMeta, varPath: string, varValue: any) {
+  setVarDeep(meta: JSh.BaseMeta, varPath: string, varValue: any) {
     const session = sessionApi.getSession(meta.sessionKey);
     const process = session.process[meta.pid];
     const parts = varPath.split("/");
