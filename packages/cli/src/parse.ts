@@ -44,9 +44,9 @@ export class ParseShService {
   async tryParseBuffer(buffer: string[]) {
     // console.log('parsing shell code', buffer.slice());
     try {
-      // Parser.Interactive expects terminal newline.
+      // mvdan-sh `Parser.Interactive` expects terminal newline.
       const src = `${buffer.join("\n")}\n`;
-      const { incomplete, parsed } = await this.interactiveParse(src);
+      const { parsed } = await this.interactiveParse(src);
 
       return parsed === null
         ? ({ key: "incomplete" } as const)
@@ -61,8 +61,8 @@ export class ParseShService {
 export const parseService = new ParseShService();
 
 /**
- * Clone creates completely fresh tree, sharing internal refs as before.
- * In particular every node has the same `node.meta`
+ * Create completely fresh tree but share internal refs as before.
+ * In particular every node has the same `node.meta`.
  */
 export function cloneParsed<T extends ParsedSh>(parsed: T): T {
   return cloneWithRefs(parsed);
