@@ -1,4 +1,12 @@
+import { type JSh, traverseParsed } from "@npc-cli/parse-sh";
+import { deepClone, last } from "@npc-cli/util/legacy/generic";
+import type * as GetOpts from "getopts";
+//@ts-expect-error
+import getopts from "getopts";
 import { Subject, type Subscription } from "rxjs";
+import { sessionApi } from "./session.store";
+import type { FifoStatus } from "./types";
+import { simplifyGetOpts } from "./util";
 
 /**
  * Two ShellSubjects i.e. the man in the middle.
@@ -62,10 +70,182 @@ export interface Device {
   finishedReading: (query?: boolean) => void | undefined | boolean;
 }
 
+/**
+ * Supports exactly one writer and one reader.
+ */
+export class FifoDevice implements Device {
+  key: string;
+  size: number;
+  private buffer: any[];
+  private readerStatus: FifoStatus = "Initial";
+  private writerStatus: FifoStatus = "Initial";
+  /** Invoked to resume pending reader */
+  private readerResolver = null as null | (() => void);
+  /** Invoked to resume pending writer */
+  private writerResolver = null as null | (() => void);
+
+  private readonly defaultBuffer = 10000;
+
+  constructor(key: string, size = this.defaultBuffer) {
+    this.key = key;
+    this.size = size;
+    this.buffer = [];
+  }
+
+  public async readData(exactlyOnce?: boolean, chunks?: boolean): Promise<ReadResult> {
+    this.readerStatus = this.readerStatus || "Connected";
+
+    if (this.buffer.length) {
+      this.writerResolver?.(); // Unblock writer
+      this.writerResolver = null;
+
+      if (exactlyOnce) {
+        if (isDataChunk(this.buffer[0]) === false) {
+          // Standard case
+          return { data: this.buffer.shift() };
+        } else if (chunks) {
+          // Forward chunk
+          return { data: this.buffer.shift() };
+        } else {
+          // Handle chunk
+          if (this.buffer[0].items.length <= 1) {
+            // returns `{ data: undefined }` for empty chunks
+            return { data: this.buffer.shift()!.items[0] };
+          } else {
+            return { data: this.buffer[0].items.shift() };
+          }
+        }
+      } else {
+        return { data: this.buffer.shift() };
+      }
+    } else if (this.writerStatus === "Disconnected") {
+      return { eof: true };
+    }
+    // Reader is blocked
+    return new Promise<void>((resolve) => {
+      this.readerResolver = resolve;
+    }).then(
+      // data `undefined` will be filtered by reader
+      () => ({ data: undefined }),
+    );
+  }
+
+  public async writeData(data: any) {
+    this.writerStatus = "Connected";
+    if (this.readerStatus === "Disconnected") {
+      this.buffer.length = 0;
+      return;
+    }
+    this.buffer.push(data);
+    this.readerResolver?.(); // Unblock reader
+    this.readerResolver = null;
+    if (this.buffer.length >= this.size) {
+      // Writer is blocked
+      return new Promise<void>((resolve) => {
+        this.writerResolver = resolve;
+      });
+    }
+  }
+
+  public finishedReading(query?: boolean) {
+    if (query === true) {
+      return this.readerStatus === "Disconnected";
+    }
+    this.readerStatus = "Disconnected";
+    this.writerResolver?.();
+    this.writerResolver = null;
+  }
+
+  public finishedWriting(query?: boolean) {
+    if (query === true) {
+      return this.writerStatus === "Disconnected";
+    }
+    this.writerStatus = "Disconnected";
+    this.readerResolver?.();
+    this.readerResolver = null;
+  }
+
+  public readAll() {
+    const contents = [] as any[];
+    this.buffer.forEach((x) => {
+      if (x === undefined) {
+        return; // 🤔 should undefined ever be in buffer?
+      }
+      if (isDataChunk(x) === true) {
+        x.items.forEach((y) => void contents.push(y));
+      } else {
+        contents.push(x);
+      }
+    });
+    this.buffer.length = 0;
+    return contents;
+  }
+}
+
 export type ReadResult = {
   eof?: boolean;
   data?: any;
 };
+
+export type VarDeviceMode = "array" | "fresh-array" | "last";
+
+export class VarDevice implements Device {
+  public key: string;
+  private buffer: null | any[];
+  private meta: JSh.BaseMeta;
+  private varPath: string;
+  private mode: VarDeviceMode;
+
+  constructor(meta: JSh.BaseMeta, varPath: string, mode: VarDeviceMode) {
+    this.key = `${varPath}@${meta.sessionKey}(${meta.pid})`;
+    this.buffer = null;
+    this.meta = meta;
+    this.varPath = varPath;
+    this.mode = mode;
+  }
+
+  public async writeData(data: any) {
+    if (this.mode === "array" || this.mode === "fresh-array") {
+      if (!this.buffer) {
+        if (this.mode === "array") {
+          this.buffer = sessionApi.getVarDeep(this.meta, this.varPath);
+          if (!Array.isArray(this.buffer)) {
+            sessionApi.setVarDeep(this.meta, this.varPath, (this.buffer = []));
+          }
+        } else {
+          // "fresh-array"
+          sessionApi.setVarDeep(this.meta, this.varPath, (this.buffer = []));
+        }
+      }
+      if (data === undefined) {
+        return;
+      } else if (isDataChunk(data)) {
+        this.buffer.push(...data.items);
+      } else {
+        this.buffer.push(data);
+      }
+    } else {
+      if (data === undefined) {
+        return;
+      } else if (isDataChunk(data)) {
+        sessionApi.setVarDeep(this.meta, this.varPath, last(data.items));
+      } else {
+        sessionApi.setVarDeep(this.meta, this.varPath, data);
+      }
+    }
+  }
+
+  public async readData(): Promise<ReadResult> {
+    return { eof: true };
+  }
+
+  public finishedReading() {
+    // NOOP
+  }
+  public finishedWriting() {
+    // NOOP
+  }
+}
 
 /** A wire with two ends */
 class ShellWire<T> {
@@ -171,3 +351,57 @@ export type ExternalMessageProcessLeader = {
   /** Pid `0` only */
   profileRunning?: true;
 };
+
+//#region data chunk
+export const dataChunkKey = "__chunk__";
+
+export function isDataChunk(data: any): data is DataChunk {
+  return (
+    data !== undefined &&
+    data !== null &&
+    // && dataChunkKey in data
+    !!data[dataChunkKey]
+  );
+}
+export function dataChunk(items: any[]): DataChunk {
+  return { __chunk__: true, items };
+}
+
+export interface DataChunk<T = any> {
+  [dataChunkKey]: true;
+  items: T[];
+}
+//#endregion
+
+export function getOpts(args: string[], options?: GetOpts.Options) {
+  const sortedOpts = args
+    .filter((x) => x[0] === "-")
+    // -a1 --> -1a (avoid short-opt-assigns)
+    // --foo is preserved
+    .map((x) => (x[1] === "-" ? x : Array.from(x).sort().join("")));
+  const operands = args.filter((x) => x[0] !== "-");
+  return {
+    opts: simplifyGetOpts(getopts(sortedOpts, options)),
+    operands,
+  };
+}
+
+/**
+ * Redirect a node and its descendants e.g.
+ * - `echo foo; echo bar >/dev/null; echo baz`.
+ * - `echo foo; { echo bar; } >/dev/null; echo baz`.
+ *
+ * We clone to avoid mutating ancestors.
+ */
+export function redirectNode(node: JSh.ParsedSh, fdUpdates: Record<number, string>) {
+  const newMeta = deepClone(node.meta);
+  Object.assign(newMeta.fd, fdUpdates);
+  traverseParsed(node, (descendant) => (descendant.meta = newMeta));
+}
+
+/** `Proxy`s sent as messages should implement `msg[proxyKey] = true` */
+export const proxyKey = "__proxy__";
+/** `Proxy`s sent as messages should implement `msg[proxyKey] = true` */
+export function isProxy(msg: any): boolean {
+  return !!(msg && msg[proxyKey]);
+}

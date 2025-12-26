@@ -1,13 +1,28 @@
 import { type KeyedLookup, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
 import { type ProcessStatus, ProcessTag, toProcessStatus } from "./const";
-import type { Device, MessageFromShell, MessageFromXterm, ShellIo } from "./io";
+import {
+  type Device,
+  FifoDevice,
+  type MessageFromShell,
+  type MessageFromXterm,
+  type ShellIo,
+  VarDevice,
+  type VarDeviceMode,
+} from "./io";
 import type { NamedFunction } from "./parse";
 import type { TtyShell } from "./tty-shell";
 import type { BaseMeta } from "./types";
-import { killProcess } from "./util";
+import { computeNormalizedParts, killProcess, resolveNormalized, ShError } from "./util";
 
 export const sessionApi = {
+  addTtyLineCtxts(sessionKey: string, lineText: string, ctxts: TtyLinkCtxt[]) {
+    sessionApi.getSession(sessionKey).ttyLink[lineText] = ctxts;
+  },
+  createFifo(key: string, size?: number) {
+    const fifo = new FifoDevice(key, size);
+    return (useSession.getState().device[fifo.key] = fifo);
+  },
   createProcess(def: {
     sessionKey: string;
     ppid: number;
@@ -35,8 +50,24 @@ export const sessionApi = {
       ptags: def.ptags,
     });
   },
+  createVarDevice(meta: BaseMeta, varPath: string, mode: VarDeviceMode) {
+    const device = new VarDevice(meta, varPath, mode);
+    return (useSession.getState().device[device.key] = device);
+  },
+  getFunc(sessionKey: string, fnKey: string): NamedFunction | undefined {
+    return sessionApi.getSession(sessionKey).func[fnKey];
+  },
+  getLastExitCode(meta: BaseMeta) {
+    return sessionApi.getSession(meta.sessionKey).lastExit[meta.background ? "bg" : "fg"];
+  },
   getNextPid(sessionKey: string) {
     return sessionApi.getSession(sessionKey).nextPid++;
+  },
+  getPositional(pid: number, sessionKey: string, varName: number) {
+    return sessionApi.getSession(sessionKey).process[pid].positionals[varName] || "";
+  },
+  getProcess(meta: { sessionKey: string; pid: number }) {
+    return sessionApi.getSession(meta.sessionKey).process[meta.pid];
   },
   getProcesses(sessionKey: string, pgid: number) {
     const session = sessionApi.getSession(sessionKey);
@@ -50,6 +81,29 @@ export const sessionApi = {
   },
   getSession(sessionKey: string) {
     return useSession.getState().session[sessionKey];
+  },
+  getVar(meta: BaseMeta, varName: string): any {
+    const process = sessionApi.getProcess(meta);
+    if (process !== undefined && varName in process.localVar) {
+      // Got locally specified variable
+      return process.localVar[varName];
+    } else if (process !== undefined && varName in process.inheritVar) {
+      // Got variable locally specified in ancestral process
+      return process.inheritVar[varName];
+    } else {
+      // Got top-level variable in "file-system" e.g. /home/foo
+      return sessionApi.getSession(meta.sessionKey).var[varName];
+    }
+  },
+  getVarDeep(meta: BaseMeta, varPath: string): any | undefined {
+    const session = sessionApi.getSession(meta.sessionKey);
+    /**
+     * Can deep get /home/* and /etc/*
+     * TODO support deep get of local vars?
+     */
+    const root = { home: session.var, etc: session.etc };
+    const parts = computeNormalizedParts(varPath, sessionApi.getVar(meta, "PWD") as string);
+    return Function("__", `return ${JSON.stringify(parts)}.reduce((agg, x) => agg[x], __)`)(root);
   },
   kill(sessionKey: string, pids: number[], opts: KillOpts = {}) {
     const session = sessionApi.getSession(sessionKey);
@@ -120,10 +174,19 @@ export const sessionApi = {
     const { ttyShell } = sessionApi.getSession(sessionKey);
     tryLocalStorageSet(`history@session-${sessionKey}`, JSON.stringify(ttyShell.getHistory()));
   },
+  removeDevice(deviceKey: string) {
+    delete useSession.getState().device[deviceKey];
+  },
   removeProcess(pid: number, sessionKey: string) {
     const processes = useSession.getState().session[sessionKey].process;
     killProcess(processes[pid]);
     delete processes[pid];
+  },
+  removeTtyLineCtxts(sessionKey: string, lineText: string) {
+    delete sessionApi.getSession(sessionKey).ttyLink[lineText];
+  },
+  resolve(fd: number, meta: BaseMeta) {
+    return useSession.getState().device[meta.fd[fd]];
   },
   setLastExitCode(meta: BaseMeta, exitCode?: number) {
     const session = sessionApi.getSession(meta.sessionKey);
@@ -133,6 +196,56 @@ export const sessionApi = {
       session.lastExit[meta.background ? "bg" : "fg"] = exitCode;
     } else {
       warn(`process ${meta.pid} had no exitCode`);
+    }
+  },
+  setVar(meta: BaseMeta, varName: string, varValue: any) {
+    const session = sessionApi.getSession(meta.sessionKey);
+    const process = session.process[meta.pid];
+    if (process !== undefined && (varName in process.localVar || varName in process.inheritVar)) {
+      /**
+       * One can set a local variable from an ancestral process,
+       * but it will only change the value in current process.
+       */
+      process.localVar[varName] = varValue;
+    } else {
+      session.var[varName] = varValue;
+    }
+  },
+  setVarDeep(meta: BaseMeta, varPath: string, varValue: any) {
+    const session = sessionApi.getSession(meta.sessionKey);
+    const process = session.process[meta.pid];
+    const parts = varPath.split("/");
+
+    let root: Record<string, any>, normalParts: string[];
+
+    /**
+     * We support writing to local process variables,
+     * e.g. `( cd && echo 'pwn3d!'>PWD && pwd )`
+     */
+    const localCtxt =
+      parts[0] in process.localVar
+        ? process.localVar
+        : parts[0] in process.inheritVar
+          ? process.inheritVar
+          : null;
+    if (localCtxt) {
+      root = localCtxt;
+      normalParts = parts;
+    } else {
+      root = { home: session.var };
+      normalParts = computeNormalizedParts(varPath, sessionApi.getVar(meta, "PWD") as string);
+
+      if (!(normalParts[0] === "home" && normalParts.length > 1)) {
+        throw new ShError("only the home directory is writable", 1);
+      }
+    }
+
+    try {
+      const leafKey = normalParts.pop() as string;
+      const parent = resolveNormalized(normalParts, root);
+      parent[leafKey] = varValue;
+    } catch (e) {
+      throw new ShError(`cannot resolve /${normalParts.join("/")}`, 1);
     }
   },
 };
@@ -173,6 +286,7 @@ export type Session = {
 
   // 🚧
   // modules: import("../terminal/TtyWithFunctions").TtyJsModules;
+  modules: any;
 
   nextPid: number;
   lastExit: {

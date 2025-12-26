@@ -16,6 +16,15 @@ export interface BaseMeta {
   verbose?: boolean;
 }
 
+export interface Expanded {
+  key: "expanded";
+  values: any[];
+  /** This is values.join(' ') */
+  value: string;
+}
+
+export type FifoStatus = "Initial" | "Connected" | "Disconnected";
+
 export interface FileWithMeta extends File {
   meta: BaseMeta;
 }
