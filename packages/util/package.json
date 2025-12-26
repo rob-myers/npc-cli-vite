@@ -9,6 +9,7 @@
   "scripts": {},
   "dependencies": {
     "clsx": "catalog:",
+    "debounce": "^3.0.0",
     "javascript-stringify": "catalog:",
     "json-stringify-pretty-compact": "catalog:",
     "react": "catalog:",
