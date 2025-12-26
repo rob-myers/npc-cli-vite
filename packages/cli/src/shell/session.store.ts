@@ -82,17 +82,17 @@ export const sessionApi = {
   getSession(sessionKey: string) {
     return useSession.getState().session[sessionKey];
   },
-  getVar(meta: BaseMeta, varName: string): any {
+  getVar<T = any>(meta: BaseMeta, varName: string): T {
     const process = sessionApi.getProcess(meta);
     if (process !== undefined && varName in process.localVar) {
       // Got locally specified variable
-      return process.localVar[varName];
+      return process.localVar[varName] as T;
     } else if (process !== undefined && varName in process.inheritVar) {
       // Got variable locally specified in ancestral process
-      return process.inheritVar[varName];
+      return process.inheritVar[varName] as T;
     } else {
       // Got top-level variable in "file-system" e.g. /home/foo
-      return sessionApi.getSession(meta.sessionKey).var[varName];
+      return sessionApi.getSession(meta.sessionKey).var[varName] as T;
     }
   },
   getVarDeep(meta: BaseMeta, varPath: string): any | undefined {
@@ -247,6 +247,9 @@ export const sessionApi = {
     } catch (e) {
       throw new ShError(`cannot resolve /${normalParts.join("/")}`, 1);
     }
+  },
+  writeMsg(sessionKey: string, msg: string, level: "info" | "error") {
+    sessionApi.getSession(sessionKey).ttyIo.write({ key: level, msg });
   },
 };
 

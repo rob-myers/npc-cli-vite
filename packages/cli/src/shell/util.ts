@@ -1,7 +1,7 @@
 import type { JSh } from "@npc-cli/parse-sh";
 import { last } from "@npc-cli/util/legacy/generic";
 import type * as GetOpts from "getopts";
-import { ansi, toProcessStatus } from "./const";
+import { ansi, ProcessTagPreview, toProcessStatus } from "./const";
 import type { ProcessMeta, Ptags } from "./session.store";
 
 export class ShError extends Error {
@@ -38,6 +38,11 @@ export class SigKillError extends Error {
   }
 }
 
+export function absPath(path: string, pwd: string) {
+  const absParts = path.startsWith("/") ? path.split("/") : pwd.split("/").concat(path.split("/"));
+  return `/${normalizeAbsParts(absParts).join("/")}`;
+}
+
 export function addStdinToArgs(dataFromStdin: any, args: any[]): any[] {
   const index = args.indexOf("-");
   args = args.slice();
@@ -71,6 +76,14 @@ export function computeNormalizedParts(varPath: string, pwd: string): string[] {
 
 export function formatMessage(msg: string, level: "info" | "error") {
   return level === "info" ? `${ansi.Cyan}${msg}${ansi.Reset}` : `${ansi.Red}${msg}${ansi.Reset}`;
+}
+
+export function getPtagsPreview(ptags: Ptags) {
+  return Object.keys(ptags).map((key) =>
+    key in ProcessTagPreview
+      ? ProcessTagPreview[key as keyof typeof ProcessTagPreview]
+      : `[${key[0]}]`,
+  );
 }
 
 export function handleProcessError(node: JSh.ParsedSh, e: SigKillError) {

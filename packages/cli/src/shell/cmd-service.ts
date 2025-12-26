@@ -1,17 +1,23 @@
 import type { JSh } from "@npc-cli/parse-sh";
-import { observableToAsyncIterable } from "@npc-cli/util";
+import { ExhaustiveError, observableToAsyncIterable } from "@npc-cli/util";
 import {
+  deepGet,
   entries,
   generateSelector,
   jsArg,
   jsStringify,
+  keysDeep,
   parseJsArg,
   parseJsonArg,
   removeLast,
   safeJsonCompact,
   safeJsStringify,
+  tagsToMeta,
+  truncateOneLine,
+  warn,
 } from "@npc-cli/util/legacy/generic";
-import { ansi, EOF, toProcessStatus } from "./const";
+import cliColumns from "cli-columns";
+import { ansi, EOF, type ProcessStatus, toProcessStatus } from "./const";
 import {
   type Device,
   dataChunk,
@@ -22,13 +28,33 @@ import {
   redirectNode,
   type VarDeviceMode,
 } from "./io";
-import { cloneParsed, type NamedFunction } from "./parse";
+import jsFunctionToShellFunction from "./js-to-shell-function";
+import { cloneParsed, type NamedFunction, parseService } from "./parse";
 import { type ProcessMeta, type Session, sessionApi } from "./session.store";
-import { TtyShell } from "./tty-shell";
+import { TtyShell, ttyError } from "./tty-shell";
 import { computeChoiceTtyLinkFactory } from "./ttyLinkFactory";
-import { addStdinToArgs, killError, parseFnOrStr, resolvePath, ShError } from "./util";
+import {
+  absPath,
+  addStdinToArgs,
+  applyPtagUpdates,
+  computeNormalizedParts,
+  getPtagsPreview,
+  handleProcessError,
+  killError,
+  normalizeAbsParts,
+  parseFnOrStr,
+  resolveNormalized,
+  resolvePath,
+  ShError,
+  SigKillError,
+} from "./util";
 
 class CmdService {
+  absPath(meta: JSh.BaseMeta, path: string) {
+    const pwd = sessionApi.getVar<string>(meta, "PWD");
+    return absPath(path, pwd);
+  }
+
   /** Wait for process to resume with escape-hatch `exposeReject`. */
   async awaitResume(
     meta: Pick<JSh.BaseMeta, "sessionKey" | "pid">,
@@ -100,6 +126,11 @@ class CmdService {
         ({ ttyTextKey }) => void sessionApi.removeTtyLineCtxts(node.meta.sessionKey, ttyTextKey),
       );
     }
+  }
+
+  private computeCwd(meta: JSh.BaseMeta, root: any) {
+    const pwd = sessionApi.getVar(meta, "PWD");
+    return resolveNormalized(pwd.split("/"), root);
   }
 
   get(node: JSh.ParsedSh, args: string[]) {
@@ -471,10 +502,661 @@ class CmdService {
     return redirectNode(node, { [fd]: varDevice.key });
   }
 
-  // 🚧
-  //@ts-expect-error
   async *runCmd(node: JSh.CallExpr | JSh.DeclClause, command: CommandName, args: string[]) {
-    // const { meta } = node;
+    const { meta } = node;
+    switch (command) {
+      case "[]":
+      case "array":
+        yield args.map(parseJsArg);
+        break;
+      case "assign": {
+        const { opts, operands } = getOpts(args, {
+          boolean: ["out"], // write to stdout
+        });
+
+        const values = operands.map((arg) => {
+          const parsed = parseJsArg(arg);
+          return typeof parsed === "string"
+            ? // strings are assumed to be variables
+              sessionApi.getVarDeep(meta, arg)
+            : parsed;
+        });
+
+        if (isTtyAt(meta, 0)) {
+          Object.assign(values[0], ...values.slice(1));
+          if (opts.out === true) yield values[0];
+        } else {
+          let datum: any;
+          while ((datum = await cmdService.read(meta)) !== EOF) {
+            Object.assign(datum, ...values);
+            if (opts.out === true) yield datum;
+          }
+        }
+        break;
+      }
+      case "break": {
+        const depth = parseInt(args[0] || "1");
+        if (!Number.isFinite(depth)) {
+          throw new ShError("numeric argument required", 2);
+        }
+        throw killError(meta, 0, depth);
+      }
+      case "cd": {
+        if (args.length > 1) {
+          throw new ShError(
+            "usage: `cd /`, `cd`, `cd foo/bar`, `cd /foo/bar`, `cd ..` and `cd -`",
+            1,
+          );
+        }
+        const prevPwd: string = sessionApi.getVar(meta, "OLDPWD");
+        const currPwd: string = sessionApi.getVar(meta, "PWD");
+        sessionApi.setVar(meta, "OLDPWD", currPwd);
+
+        try {
+          if (!args[0]) {
+            sessionApi.setVar(meta, "PWD", "/home");
+          } else if (args[0] === "-") {
+            sessionApi.setVar(meta, "PWD", prevPwd);
+          } else if (args[0].startsWith("/")) {
+            const parts = normalizeAbsParts(args[0].split("/"));
+            if (resolveNormalized(parts, this.provideProcessCtxt(node)) === undefined) {
+              throw Error();
+            }
+            sessionApi.setVar(meta, "PWD", ["", ...parts].join("/"));
+          } else {
+            const parts = normalizeAbsParts(currPwd.split("/").concat(args[0].split("/")));
+            if (resolveNormalized(parts, this.provideProcessCtxt(node)) === undefined) {
+              throw Error();
+            }
+            sessionApi.setVar(meta, "PWD", ["", ...parts].join("/"));
+          }
+        } catch {
+          sessionApi.setVar(meta, "OLDPWD", prevPwd);
+          throw new ShError(`${args[0]} not found`, 1);
+        }
+        break;
+      }
+      case "choice": {
+        if (isTtyAt(meta, 1) === false) {
+          throw Error("stdout must be a tty");
+        }
+        if (isTtyAt(meta, 0) === true) {
+          // `choice {textWithLinks}+` where text may contain newlines
+          const text = args.join(" ");
+          yield* this.choice(node, text);
+        } else {
+          // `choice` expects to read `ChoiceReadValue`s
+          let datum: string;
+          while ((datum = await cmdService.read(meta)) !== EOF) yield* this.choice(node, datum);
+        }
+        break;
+      }
+      case "continue": {
+        throw killError(meta, 0, undefined, true);
+      }
+      case "declare": {
+        // 🔔 see DeclClause
+        const { opts, operands } = getOpts(args, {
+          boolean: [
+            "f", // list functions [matching prefixes]
+            "F", // list function names [matching prefixes]
+            "x", // list variables [matching prefixes]
+            "p", // list variables [matching prefixes]
+          ],
+        });
+
+        const noOpts = [opts.x, opts.p, opts.f, opts.F].every((opt) => opt !== true);
+        const showVars = opts.x === true || opts.p === true || noOpts;
+        const showFuncs = opts.f === true || noOpts;
+        const showFuncNames = opts.F === true;
+        // Only match prefixes when some option specified
+        const prefixes = operands.length && !noOpts ? operands : null;
+
+        const {
+          var: home,
+          func,
+          ttyShell: { xterm },
+          process: {
+            [meta.pid]: { inheritVar },
+          },
+        } = sessionApi.getSession(meta.sessionKey);
+
+        const vars = { ...home, ...inheritVar };
+        const funcs = Object.values(func);
+
+        if (showVars) {
+          for (const [key, value] of Object.entries(vars)) {
+            if (prefixes && !prefixes.some((x) => key.startsWith(x))) continue;
+            yield `${ansi.BlueBold}${key}${ansi.Reset}=${
+              typeof value === "string" ? ansi.White : ansi.YellowBright
+            }${jsStringify(value).slice(-xterm.maxStringifyLength)}${ansi.Reset}`;
+          }
+        }
+        if (showFuncs) {
+          // If 1 prefix and exact match, we'll only show exact match,
+          // so that `declare -f foo` works as expected
+          const exactMatch =
+            // biome-ignore lint/suspicious/noDoubleEquals: intentional
+            prefixes?.length == 1 ? prefixes.find((prefix) => func[prefix]) : undefined;
+          for (const { key, src } of funcs) {
+            if (prefixes && !prefixes.some((x) => key.startsWith(x))) continue;
+            if (exactMatch && key !== exactMatch) continue;
+            const lines =
+              `${ansi.BlueBold}${key}${ansi.White} ()${ansi.BoldReset} ${src}${ansi.Reset}`.split(
+                /\r?\n/,
+              );
+            yield* lines;
+            yield "";
+          }
+        }
+        if (showFuncNames) {
+          for (const { key } of funcs) {
+            if (prefixes && !prefixes.some((x) => key.startsWith(x))) continue;
+            yield `${ansi.White}declare -f ${key}${ansi.Reset}`;
+          }
+        }
+        break;
+      }
+      case "echo": {
+        const { opts, operands } = getOpts(args, {
+          boolean: [
+            "a", // output array
+            "n", // cast as numbers
+          ],
+        });
+        if (opts.a === true) {
+          yield opts.n ? operands.map(Number) : operands;
+        } else if (opts.n === true) {
+          for (const operand of operands) yield Number(operand);
+        } else {
+          yield args.join(" ");
+        }
+        break;
+      }
+      case "false": {
+        node.exitCode = 1;
+        break;
+      }
+      case "get": {
+        yield* this.get(node, args);
+        break;
+      }
+      case "help": {
+        const { ttyShell } = sessionApi.getSession(meta.sessionKey);
+        yield `The following commands are supported:`;
+        const commands = cliColumns(Object.keys(commandKeys), {
+          width: ttyShell.xterm.xterm.cols,
+        }).split(/\r?\n/);
+        for (const line of commands) yield `${ansi.BlueBold}${line}`;
+        // yield `Traverse context via \`ls\` or \`ls -l var.foo.bar\` (Object.keys).`
+        yield `\n\rView shell functions via ${ansi.BlueBold}declare -F${ansi.Reset}.`;
+        // yield `Use Ctrl-c to interrupt and Ctrl-l to clear screen.`
+        // yield `View history via up/down or \`history\`.`
+        // yield `Traverse input using Option-left/right and Ctrl-{a,e}.`
+        // yield `Delete input using Ctrl-{w,u,k}.`
+        // yield `You can copy and paste.`
+        // yield `Features: functions, pipes, command substitution, background processes, history, readline-esque shortcuts, copy-paste.`
+        break;
+      }
+      case "history": {
+        const { ttyShell } = sessionApi.getSession(meta.sessionKey);
+        const history = ttyShell.getHistory();
+        for (const line of history) yield line;
+        break;
+      }
+      case "import": {
+        const session = sessionApi.getSession(meta.sessionKey);
+        const { modules } = session;
+        const moduleKey = args.pop();
+        if (typeof moduleKey !== "string") {
+          throw Error(`format: import moduleName; import fn fn1:alias from moduleName`);
+        }
+        const module = modules[moduleKey as keyof typeof modules];
+
+        if (!module) {
+          throw Error(`unknown module: ${moduleKey}`);
+        }
+
+        const namesOrNamesAndAliases: Record<string, any> = (() => {
+          if (args.length === 0) {
+            // import qux
+
+            return Object.fromEntries(Object.keys(module).map((key) => [key, true]));
+          } else {
+            // import moduleName moduleName1:moduleAlias from qux
+
+            const from = args.pop();
+            if (from !== "from") {
+              throw Error(`format: import moduleName; import fn fn1:alias from moduleName`);
+            }
+
+            return jsArg(args);
+          }
+        })();
+
+        const shellFuncs = [] as string[];
+        for (const [fnName, fnAlias] of Object.entries(namesOrNamesAndAliases)) {
+          const jsFunc = module[fnName as keyof typeof module];
+          if (jsFunc === undefined) {
+            throw Error(`unknown function: ${fnName} from ${moduleKey}`);
+          }
+          shellFuncs.push(
+            jsFunctionToShellFunction({
+              modules,
+              moduleKey,
+              fnKey: fnName,
+              fnAliasKey: fnAlias !== true ? fnAlias : undefined,
+              fn: jsFunc,
+            }),
+          );
+        }
+
+        // source functions
+        const src = shellFuncs.join("\n\n");
+        await session.ttyShell.sourceExternal(src);
+
+        // 🚧 auto re-source?
+        break;
+      }
+      case "jsArg": {
+        const { opts, operands } = getOpts(args, {
+          string: [
+            "alias" /** e.g. '{ points: "ps" }' */,
+            "opts" /** e.g. '{ array: { to: true } }' */,
+          ],
+        });
+        yield jsArg(
+          operands,
+          opts.alias === "" ? undefined : parseJsArg(opts.alias),
+          opts.opts === "" ? undefined : parseJsArg(opts.opts),
+        );
+        break;
+      }
+      case "kill": {
+        const { opts, operands } = getOpts(args, {
+          boolean: [
+            "all" /** --all all processes */,
+            "ALL" /** --ALL all processes */,
+            "CONT" /** --CONT continues a paused process */,
+            "GROUP" /** --GROUP extends pids to their process groups */,
+            "STOP" /** --STOP pauses a process */,
+          ],
+        });
+
+        /**
+         * Actually kill (SIGINT) if we're not stopping or resuming.
+         */
+        const SIGINT = opts.STOP === false && opts.CONT === false;
+
+        let pids = [] as number[];
+
+        if (opts.all === true || opts.ALL === true) {
+          const session = sessionApi.getSession(meta.sessionKey);
+          pids = Object.keys(session.process).map(Number);
+        } else {
+          pids = operands
+            .map((x) => parseJsonArg(x))
+            .filter((x): x is number => Number.isFinite(x));
+        }
+
+        sessionApi.kill(meta.sessionKey, pids, {
+          CONT: opts.CONT,
+          GROUP: opts.GROUP,
+          STOP: opts.STOP,
+          SIGINT,
+        });
+        break;
+      }
+      case "local": {
+        // 🔔 see DeclClause
+        const process = sessionApi.getProcess(meta);
+        if (process.key === 0) {
+          throw new ShError("session leader doesn't support local variables", 1);
+        }
+        if (args.join(" ").includes("=")) {
+          throw new ShError("usage: `local x y z` (assign values elsewhere)", 1);
+        }
+        for (const name of args) {
+          if (name) {
+            process.localVar[name] = undefined;
+          }
+        }
+        break;
+      }
+      case "ls": {
+        const { opts, operands } = getOpts(args, {
+          boolean: [
+            "1" /** One line per item */,
+            "l" /** Detailed */,
+            "r" /** Recursive properties (prototype) */,
+            "a" /** Show capitalized vars at top level */,
+          ],
+        });
+        const pwd = sessionApi.getVar(meta, "PWD");
+        const queries = operands.length > 0 ? operands.slice() : [""];
+        const root = this.provideProcessCtxt(node);
+        const roots = queries.map((path) => resolvePath(path, root, pwd));
+
+        const { ttyShell } = sessionApi.getSession(node.meta.sessionKey);
+        for (const [i, obj] of roots.entries()) {
+          if (obj === undefined) {
+            sessionApi.writeMsg(meta.sessionKey, `ls: "${queries[i]}" is not defined`, "error");
+            continue;
+          }
+
+          if (roots.length > 1) yield `${ansi.BlueBold}${queries[i]}:`;
+          let keys = (opts.r ? keysDeep(obj) : Object.keys(obj)).sort();
+          let items = [] as string[];
+          if (pwd === "/home" && !opts.a) {
+            keys = keys.filter((x) => x.toUpperCase() !== x || /^[0-9]/.test(x));
+          }
+
+          if (opts.l === true) {
+            if (typeof obj === "function") {
+              keys = keys.filter((x) => !["caller", "callee", "arguments"].includes(x));
+            }
+            const metas =
+              opts.r !== undefined
+                ? keys.map(
+                    (x) =>
+                      deepGet(obj, x.split("/"))?.constructor?.name ||
+                      (obj[x] === null ? "null" : "undefined"),
+                  )
+                : keys.map(
+                    (x) => obj[x]?.constructor?.name || (obj[x] === null ? "null" : "undefined"),
+                  );
+            const metasWidth = Math.max(...metas.map((x) => x.length));
+            items = keys.map(
+              (x, i) =>
+                `${ansi.YellowBright}${metas[i].padEnd(metasWidth)}${ansi.White} ${x}${ansi.Reset}`,
+            );
+          } else if (opts[1]) {
+            items = keys;
+          } else {
+            items = cliColumns(keys, { width: ttyShell.xterm.xterm.cols }).split(/\r?\n/);
+          }
+          for (const item of items) {
+            yield item;
+          }
+        }
+        break;
+      }
+      case "ps": {
+        const { opts } = getOpts(args, {
+          boolean: ["a" /** Show all processes */, "s" /** Show process src */],
+        });
+
+        /** Either all processes or all process leaders */
+        let processes = sessionApi.getSession(meta.sessionKey).process;
+
+        if (opts.a === false) {
+          processes = Object.values(processes).reduce(
+            (agg, p) => {
+              if (p.key === p.pgid) agg[p.key] = p;
+              return agg;
+            },
+            {} as Session["process"],
+          );
+        }
+
+        const statusColour: Record<ProcessStatus, string> = {
+          0: `${ansi.Grey}${ansi.Italic}`,
+          1: ansi.White,
+          2: ansi.Red,
+        };
+
+        function getProcessLine(p: ProcessMeta) {
+          const info = [p.key, p.ppid, p.pgid].map((x) => `${x}`.padEnd(5)).join(" ");
+          const ptagPreviews = opts.s === true ? [] : getPtagsPreview(p.ptags);
+          const tagsOrEmpty = `${ansi.YellowBright}${opts.s === true ? jsStringify(p.ptags) : `${ptagPreviews.join("")}${ptagPreviews.length > 0 ? " " : ""}`}${ansi.Reset}`;
+          const oneLineSrcOrEmpty = opts.s === false ? truncateOneLine(p.src.trimStart(), 30) : "";
+          const oneLineSrcColour =
+            p.status === toProcessStatus.Suspended ? statusColour[p.status] : "";
+          const line = `${statusColour[p.status]}${info}${ansi.Reset}${tagsOrEmpty}${oneLineSrcColour}${oneLineSrcOrEmpty}`;
+          return line;
+        }
+
+        const title = ["pid", "ppid", "pgid"].map((x) => x.padEnd(5)).join(" ");
+        yield `${ansi.BlueBold}${title}${ansi.Reset}`;
+
+        for (const process of Object.values(processes)) {
+          yield getProcessLine(process);
+          if (opts.s === true) {
+            // Avoid multiline white in tty
+            yield* process.src.split("\n").map((x) => `${ansi.Reset}${x}`);
+          }
+        }
+
+        break;
+      }
+      case "ptags": {
+        const process = sessionApi.getProcess(meta);
+        if (args.length === 0) {
+          yield process.ptags;
+        } else {
+          const ptagUpdates = tagsToMeta(args);
+          applyPtagUpdates(process.ptags, ptagUpdates);
+        }
+        break;
+      }
+      case "pwd": {
+        yield sessionApi.getVar(meta, "PWD");
+        break;
+      }
+      case "return": {
+        const exitCode = parseInt(args[0] || "0");
+        if (!Number.isFinite(exitCode)) {
+          throw new ShError("numeric argument required", 2);
+        }
+        // Terminate parent e.g. a shell function
+        throw killError(meta, exitCode, 1);
+      }
+      case "rm": {
+        const { opts, operands } = getOpts(args, {
+          boolean: ["f"],
+        });
+
+        const root = this.provideProcessCtxt(node);
+        const pwd = sessionApi.getVar<string>(meta, "PWD");
+        const force = opts.f === true;
+
+        for (const path of operands) {
+          const parts = computeNormalizedParts(path, pwd);
+          if (parts[0] === "home" && parts.length > 1) {
+            const last = parts.pop() as string;
+            const parent = resolveNormalized(parts, root);
+            if (last in parent) {
+              delete resolveNormalized(parts, root)[last];
+            } else if (!force) {
+              throw new ShError(`${path}: not found`, 1);
+            }
+          } else if (!force) {
+            throw new ShError(`${path}: only /home/* writable`, 1);
+          }
+        }
+        break;
+      }
+      /**
+       * ```sh
+       * run '({ api:{read} }) { yield "foo"; yield await read(); }'
+       * run game move npcKey:rob to:$( click 1 )
+       * ```
+       */
+      case "run": {
+        try {
+          const ct = this.provideProcessCtxt(node, args.slice(1));
+
+          if (args[0] in ct.lib) {
+            // 🔔 support process hot-reloading
+            // ℹ️ e.g. call '({ api }) => api.getProcess({ sessionKey: "tty-0", pid: 11 }).reboot.apply()'
+            const process = sessionApi.getProcess(meta);
+            process.reboot = {
+              apply() {
+                if (this.applying === true)
+                  return warn(`already rebooting process ${process.key}: ${process.src}`);
+                this.applying = true;
+                const removed = process.cleanups.splice(
+                  this.cleanupId,
+                  process.cleanups.length - this.cleanupId,
+                );
+                removed.forEach((cleanup) => void cleanup());
+              },
+              applying: false,
+              cleanupId: process.cleanups.length,
+            };
+            meta.stack.push(`${args[0]}.${args[1]}`);
+
+            while (true) {
+              try {
+                const func = (ct.lib as any)[args[0]]?.[args[1]];
+                if (func === undefined) {
+                  throw Error(`not found`);
+                }
+
+                ct.args = args.slice(2); // discard 2nd arg too
+
+                if (functionOrAsync.includes(func.constructor.name)) {
+                  yield await func(ct); // support all sh/src/* functions
+                } else {
+                  yield* func(ct);
+                }
+
+                break;
+              } catch (e) {
+                // 🔔 distinguish hot-reload from error
+                if (
+                  process.reboot.applying === false ||
+                  process.status === toProcessStatus.Killed
+                ) {
+                  throw e;
+                }
+                process.reboot.applying = false;
+              }
+            }
+          } else {
+            // Function provided as argument
+            const fnName = meta.stack.at(-1) || "generator";
+            const func = Function("_", `return async function *${fnName} ${args[0]}`);
+            yield* func()(ct);
+          }
+        } catch (e) {
+          if (e instanceof SigKillError) {
+            handleProcessError(node, e);
+          } else if (e instanceof ShError) {
+            node.exitCode = e.exitCode;
+            // Permit silent errors i.e. just set exit code
+            if (e.message.length > 0) {
+              throw e;
+            }
+          } else {
+            ttyError(e); // Provide JS stack
+            node.exitCode = 1;
+            throw new ShError(`${(e as Error)?.message ?? safeJsStringify(e)}`, 1);
+          }
+        }
+        break;
+      }
+      case "session": {
+        yield meta.sessionKey;
+        break;
+      }
+      case "set": {
+        const root = this.provideProcessCtxt(node);
+        const value = parseJsArg(args[1]);
+        if (args[0][0] === "/") {
+          Function("__1", "__2", `return __1.${args[0].slice(1)} = __2`)(root, value);
+        } else {
+          const cwd = this.computeCwd(meta, root);
+          Function("__1", "__2", `return __1.${args[0]} = __2`)(cwd, value);
+        }
+        break;
+      }
+      case "shift": {
+        const shiftBy = Number(args[0] || "1");
+        if (!(Number.isInteger(shiftBy) && shiftBy >= 0)) {
+          throw new ShError("usage: `shift [n]` for non-negative integer n", 1);
+        }
+        const { positionals } = sessionApi.getProcess(meta);
+        for (let i = 0; i < shiftBy; i++) positionals.shift();
+        break;
+      }
+      case "sleep": {
+        const seconds = args.length ? parseFloat(parseJsonArg(args[0])) || 0 : 1;
+        await this.sleep(meta, seconds);
+        break;
+      }
+      case "source": {
+        for (const filepath of args) {
+          const [script] = this.get(node, [filepath]);
+
+          if (script === undefined) {
+            throw Error(`source: "${filepath}" not found`);
+          }
+          if (typeof script !== "string") {
+            throw Error(`source: "${filepath}" is not a string`);
+          }
+
+          const parsed = await parseService.parse(script, true); // we cache scripts
+
+          // Mutate `parsed.meta` because it may occur many times deeply in tree
+          // Note pid will be overwritten in `ttyShell.spawn`
+          Object.assign(parsed.meta, {
+            ...meta,
+            ppid: meta.pid,
+            fd: { ...meta.fd },
+            stack: meta.stack.slice(),
+          });
+
+          const { ttyShell } = sessionApi.getSession(meta.sessionKey);
+          await ttyShell.spawn(parsed, {
+            by: "source",
+            posPositionals: args.slice(1),
+          });
+
+          // On `source /etc/foo` we'll auto-re-source on hot-reload JavaScript code
+          const absPath = cmdService.absPath(node.meta, filepath);
+          if (absPath.startsWith("/etc/")) {
+            sessionApi.getSession(meta.sessionKey).ttyShell.io.write({
+              key: "external",
+              msg: {
+                key: "auto-re-source-file",
+                absPath: `/etc/${absPath.slice("/etc/".length)}`,
+              },
+            });
+          }
+        }
+
+        break;
+      }
+      case "test": {
+        node.exitCode = !parseJsArg(args.join(" ")) ? 1 : 0;
+        break;
+      }
+      case "true": {
+        node.exitCode = 0;
+        break;
+      }
+      case "unset": {
+        const {
+          var: home,
+          func,
+          process: { [meta.pid]: process },
+        } = sessionApi.getSession(meta.sessionKey);
+
+        for (const arg of args) {
+          if (arg in process.localVar) {
+            // NOTE cannot unset ancestral variables
+            delete process.localVar[arg];
+          } else {
+            delete home[arg];
+            delete func[arg];
+          }
+        }
+        break;
+      }
+      default:
+        throw new ExhaustiveError(command);
+    }
   }
 
   async sleep(meta: JSh.BaseMeta, seconds: number) {
@@ -636,6 +1318,7 @@ export async function preProcessRead(process: ProcessMeta, _device: Device) {
 
 const emptyResolve = () => {};
 const emptyReject = (_e: any) => {};
+const functionOrAsync = ["Function", "AsyncFunction"];
 
 // 🚧 avoid hard-coded single QueryClient
 function getCached(_queryKey: string | string[]) {
