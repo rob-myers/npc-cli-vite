@@ -1,6 +1,6 @@
 import { parseJsonArg } from "@npc-cli/util/legacy/generic";
 import { ansi } from "./const";
-import type { TtyLinkCtxt } from "./session.store";
+import type { TtyLinkCtxt } from "./session";
 import { stripAnsi } from "./util";
 
 /**

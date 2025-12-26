@@ -4,7 +4,7 @@ import type * as GetOpts from "getopts";
 //@ts-expect-error
 import getopts from "getopts";
 import { Subject, type Subscription } from "rxjs";
-import { sessionApi } from "./session.store";
+import { sessionApi } from "./session";
 import { simplifyGetOpts } from "./util";
 
 /**

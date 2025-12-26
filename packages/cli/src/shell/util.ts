@@ -2,7 +2,7 @@ import type { JSh } from "@npc-cli/parse-sh";
 import { last } from "@npc-cli/util/legacy/generic";
 import type * as GetOpts from "getopts";
 import { ansi, ProcessTagPreview, toProcessStatus } from "./const";
-import type { ProcessMeta, Ptags } from "./session.store";
+import type { ProcessMeta, Ptags } from "./session";
 
 export class ShError extends Error {
   exitCode: number;

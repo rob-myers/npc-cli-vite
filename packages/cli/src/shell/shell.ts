@@ -5,9 +5,9 @@ import { ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
 import type { MessageFromShell, MessageFromXterm, ShellIo } from "./io";
 import { parseService } from "./parse";
 import { jShSemantics } from "./semantics";
-import { type ProcessMeta, type Ptags, sessionApi } from "./session.store";
-import type { TtyXterm } from "./tty-xterm";
+import { type ProcessMeta, type Ptags, sessionApi } from "./session";
 import { applyPtagUpdates, killError, ShError, SigKillError } from "./util";
+import type { TtyXterm } from "./xterm";
 
 export class TtyShell {
   key: string;

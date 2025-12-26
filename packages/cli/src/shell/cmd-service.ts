@@ -30,9 +30,9 @@ import {
 } from "./io";
 import jsFunctionToShellFunction from "./js-to-shell-function";
 import { cloneParsed, type NamedFunction, parseService } from "./parse";
-import { type ProcessMeta, type Session, sessionApi } from "./session.store";
-import { TtyShell, ttyError } from "./tty-shell";
-import { computeChoiceTtyLinkFactory } from "./ttyLinkFactory";
+import { type ProcessMeta, type Session, sessionApi } from "./session";
+import { TtyShell, ttyError } from "./shell";
+import { computeChoiceTtyLinkFactory } from "./tty-link-factory";
 import {
   absPath,
   addStdinToArgs,
