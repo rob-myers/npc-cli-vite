@@ -703,7 +703,7 @@ export class ConvertMvdanShToJsh {
     Negated,
     Position: this.pos(Position),
     Redirs: Redirs.map(this.Redirect),
-    Semicolon: this.pos(Semicolon),
+    Semicolon: Semicolon ? this.pos(Semicolon) : null,
   });
 
   private Subshell = ({ Pos, End, Lparen, Rparen, Stmts }: MvdanSh.Subshell): JSh.Subshell => ({

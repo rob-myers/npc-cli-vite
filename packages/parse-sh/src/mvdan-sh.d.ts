@@ -698,7 +698,7 @@ export declare namespace MvdanSh {
     Cmd: null | CommandGeneric<Base, Pos, Op>;
     Position: Pos;
     /** Position of `;`, `&`, or `|&`, if any. */
-    Semicolon: Pos; // position of ';', '&', or '|&', if any
+    Semicolon: null | Pos; // position of ';', '&', or '|&', if any
     /** `true` iff have prefix `!` */
     Negated: boolean; // ! stmt
     /** `true` iff have postfix `&` */
