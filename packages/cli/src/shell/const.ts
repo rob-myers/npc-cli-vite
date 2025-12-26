@@ -45,6 +45,11 @@ export const ProcessTag = {
   interactive: "interactive",
 } as const;
 
+export const ProcessTagPreview = {
+  always: "a",
+  interactive: "i",
+} as const;
+
 /**
  * Whilst paused, should spawned background processes also start paused?
  */

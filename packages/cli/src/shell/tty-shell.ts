@@ -345,6 +345,16 @@ export class TtyShell {
     }
   }
 
+  /**
+   * 🔔 This runs code `src` in a process whose parent is the session leader.
+   * @param src should only contain shell function declarations
+   */
+  async sourceExternal(src: string) {
+    const term = await parseService.parse(src);
+    this.provideContextToParsed(term);
+    await this.spawn(term, { by: "source-external" });
+  }
+
   private storeSrcLine(srcLine: string) {
     const prev = this.history.pop();
     if (prev !== undefined) {

@@ -405,3 +405,5 @@ export const proxyKey = "__proxy__";
 export function isProxy(msg: any): boolean {
   return !!(msg && msg[proxyKey]);
 }
+
+export const scrollback = 200;
