@@ -5,6 +5,36 @@ import type { NamedFunction } from "../parse";
 import type { TtyShell } from "../tty-shell";
 
 export const sessionApi = {
+  createProcess(def: {
+    sessionKey: string;
+    ppid: number;
+    pgid: number;
+    src: string;
+    posPositionals?: string[];
+    ptags: Meta;
+  }) {
+    const pid = sessionApi.getNextPid(def.sessionKey);
+    const processes = sessionApi.getSession(def.sessionKey).process;
+
+    return (processes[pid] = {
+      key: pid,
+      ppid: def.ppid,
+      pgid: def.pgid,
+      sessionKey: def.sessionKey,
+      status: toProcessStatus.Running,
+      src: def.src,
+      positionals: ["jsh", ...(def.posPositionals ?? [])],
+      cleanups: [],
+      onSuspends: [],
+      onResumes: [],
+      localVar: {},
+      inheritVar: {},
+      ptags: def.ptags,
+    });
+  },
+  getNextPid(sessionKey: string) {
+    return sessionApi.getSession(sessionKey).nextPid++;
+  },
   getSession(sessionKey: string) {
     return useSession.getState().session[sessionKey];
   },
@@ -62,11 +92,14 @@ export type Session = {
   verbose: boolean;
 };
 
-export type ProcessStatus = {
-  Suspended: 0;
-  Running: 1;
-  Killed: 2;
-};
+export const toProcessStatus = {
+  Suspended: 0,
+  Running: 1,
+  Killed: 2,
+} as const;
+
+/** `0` is suspended, `1` is running, `2` is killed */
+export type ProcessStatus = (typeof toProcessStatus)[keyof typeof toProcessStatus];
 
 export type Ptags = Record<string, string | boolean | number | undefined | null>;
 

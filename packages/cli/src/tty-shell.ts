@@ -1,8 +1,12 @@
 import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
+import { ExhaustiveError } from "@npc-cli/util";
+import { error } from "@npc-cli/util/legacy/generic";
+import { ProcessTag } from "./const";
 import type { MessageFromShell, MessageFromXterm, ShellIo } from "./io";
 import { parseService } from "./parse";
 import { type ProcessMeta, type Ptags, sessionApi } from "./store/session.store";
 import type { TtyXterm } from "./tty-xterm";
+import { SigKillError } from "./util";
 
 export class TtyShell {
   key: string;
@@ -18,6 +22,11 @@ export class TtyShell {
   private buffer = [] as string[];
 
   private process!: ProcessMeta;
+  private oneTimeReaders = [] as {
+    resolve: (msg: unknown) => void;
+    reject: (e: unknown) => void;
+  }[];
+  private cleanups = [] as (() => void)[];
 
   private readonly maxLines = 500;
 
@@ -37,6 +46,80 @@ export class TtyShell {
     return this.history.slice();
   }
 
+  private getHistoryLine(lineIndex: number) {
+    const maxIndex = this.history.length - 1;
+    return {
+      line: this.history[maxIndex - lineIndex] ?? "",
+      nextIndex: Math.min(Math.max(0, lineIndex), maxIndex),
+    };
+  }
+
+  async initialise(xterm: TtyXterm) {
+    this.xterm = xterm;
+
+    // Connect
+    this.cleanups.push(this.io.read(this.onMessage.bind(this)));
+
+    // The session corresponds to leading process where pid = ppid = pgid = 0
+    this.process = sessionApi.createProcess({
+      sessionKey: this.sessionKey,
+      ppid: 0,
+      pgid: 0,
+      src: "",
+      ptags: this.sessionLeaderPtags,
+    });
+  }
+
+  private onMessage(msg: MessageFromXterm) {
+    switch (msg.key) {
+      case "req-history-line": {
+        const { line, nextIndex } = this.getHistoryLine(msg.historyIndex);
+        this.io.write({
+          key: "send-history-line",
+          line,
+          nextIndex,
+        });
+        break;
+      }
+      case "send-kill-sig": {
+        this.buffer.length = 0;
+        this.oneTimeReaders.forEach(
+          ({ reject }) => void reject(new SigKillError({ pid: 0, sessionKey: this.sessionKey })),
+        );
+        this.oneTimeReaders.length = 0;
+
+        break;
+      }
+      case "send-line": {
+        const reader = this.oneTimeReaders.shift();
+
+        if (reader === undefined) {
+          this.inputs.push({
+            line: msg.line,
+            // xterm won't send another line until resolved
+            resolve: () => this.io.write({ key: "tty-received-line" }),
+          });
+          this.tryParse();
+        } else {
+          reader.resolve(msg.line);
+          this.io.write({ key: "tty-received-line" });
+        }
+
+        break;
+      }
+      default:
+        throw new ExhaustiveError(msg);
+    }
+  }
+
+  /** `prompt` must not contain non-readable characters e.g. ansi color codes */
+  private prompt(prompt: string) {
+    this.io.write({
+      key: "send-xterm-prompt",
+      prompt: `${prompt} `,
+    });
+  }
+
   private provideContextToParsed(parsed: JSh.FileWithMeta) {
     Object.assign<JSh.BaseMeta, JSh.BaseMeta>(parsed.meta, {
       sessionKey: this.sessionKey,
@@ -49,6 +132,15 @@ export class TtyShell {
     });
   }
 
+  /**
+   * `ptags.interactive` inherited until overwritten via `&` (background operator).
+   * Pipes don't overwrite, despite having their own process group.
+   */
+  private get sessionLeaderPtags() {
+    return { [ProcessTag.interactive]: true };
+  }
+
+  // 🚧
   /**
    * Spawn a process, assigning:
    * - new pid
@@ -96,8 +188,6 @@ export class TtyShell {
     }
   }
 
-  // 🚧
-  //@ts-expect-error
   private async tryParse() {
     this.input = this.inputs.pop() ?? null;
     if (this.input === null) {
@@ -122,13 +212,24 @@ export class TtyShell {
             this.provideContextToParsed(result.parsed);
             await this.spawn(result.parsed, { by: "root" });
 
-            // 🚧
+            this.prompt("$");
           }
           break;
         case "incomplete":
+          this.prompt(">");
           break;
-        case "failed":
+        case "failed": {
+          const errMsg = `mvdan-sh: ${result.error.replace(/^src\.sh:/, "")}`;
+          error(errMsg);
+          this.io.write({ key: "error", msg: errMsg });
+
+          // store mvdan-sh parse errors in history
+          this.storeSrcLine(this.buffer.join("\n"));
+
+          this.buffer.length = 0;
+          this.prompt("$");
           break;
+        }
       }
     } catch (e) {
     } finally {
