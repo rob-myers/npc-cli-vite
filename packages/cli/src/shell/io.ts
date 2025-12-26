@@ -5,7 +5,6 @@ import type * as GetOpts from "getopts";
 import getopts from "getopts";
 import { Subject, type Subscription } from "rxjs";
 import { sessionApi } from "./session.store";
-import type { FifoStatus } from "./types";
 import { simplifyGetOpts } from "./util";
 
 /**
@@ -181,6 +180,8 @@ export class FifoDevice implements Device {
     return contents;
   }
 }
+
+export type FifoStatus = "Initial" | "Connected" | "Disconnected";
 
 export type ReadResult = {
   eof?: boolean;

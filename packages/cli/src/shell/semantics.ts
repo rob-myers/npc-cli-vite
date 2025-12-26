@@ -8,7 +8,6 @@ import { redirectNode } from "./io";
 import { cloneParsed, type NamedFunction } from "./parse";
 import { sessionApi } from "./session.store";
 import { ttyError } from "./tty-shell";
-import type { Expanded } from "./types";
 import {
   formatMessage,
   handleProcessError,
@@ -659,3 +658,10 @@ export const jShSemantics = new JShSemantics();
 
 /** Local shortcut */
 const sem = jShSemantics;
+
+export interface Expanded {
+  key: "expanded";
+  values: any[];
+  /** This is values.join(' ') */
+  value: string;
+}
