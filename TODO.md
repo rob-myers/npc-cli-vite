@@ -95,5 +95,8 @@
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
-- add react-query
+
+- 🚧 add react-query
+  - 🚧 initialize using app's queryClient
+
 - add react-three-fiber and import gltf
