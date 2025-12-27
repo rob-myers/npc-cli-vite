@@ -259,10 +259,7 @@ class CmdService {
     },
 
     // 🚧 avoid hard-coded single QueryClient
-    //@ts-expect-error
-    getCached(queryKey: string | string[]) {
-      return null;
-    },
+    getCached,
 
     getKillError(exitCode?: number) {
       return killError(this.meta, exitCode);

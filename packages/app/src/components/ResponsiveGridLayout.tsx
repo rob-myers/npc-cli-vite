@@ -61,7 +61,6 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           setResizing(true);
         }}
         onResizeStop={(layout) => {
-          console.log("onResizeStop", layout);
           layouts.current.lg = layouts.current.sm = layout;
           setResizing(false);
         }}
