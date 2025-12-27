@@ -96,8 +96,8 @@
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
 
-- 🚧 add react-query
+- ✅ add react-query
   - ✅ packages/cli has getCached based on packages/util QueryCacheApi
-  - 🚧 initialize using app's queryClient
+  - ✅ initialize using app's queryClient
 
 - add react-three-fiber and import gltf

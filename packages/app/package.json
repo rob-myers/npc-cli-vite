@@ -11,6 +11,7 @@
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/util": "workspace:^",
+    "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "javascript-stringify": "catalog:",
