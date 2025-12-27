@@ -77,10 +77,12 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           key="d"
           className={cn(
             theme === "dark" && "prose-invert",
-            "prose max-w-[unset] overflow-auto border p-4 leading-[1.4]",
+            "prose max-w-[unset] border leading-[1.4]",
           )}
         >
-          <TestMdx />
+          <div className="overflow-auto p-4 size-full">
+            <TestMdx />
+          </div>
         </div>
         <div key="e" className="border p-4 flex items-center">
           <button
