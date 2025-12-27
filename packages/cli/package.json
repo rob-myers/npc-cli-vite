@@ -9,6 +9,7 @@
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/util": "workspace:^",
+    "@tanstack/react-query": "catalog:",
     "braces": "catalog:",
     "cli-columns": "catalog:",
     "getopts": "catalog:",
