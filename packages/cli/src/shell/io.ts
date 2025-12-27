@@ -387,6 +387,10 @@ export function getOpts(args: string[], options?: GetOpts.Options) {
   };
 }
 
+export function isTtyAt(meta: JSh.BaseMeta, fd: number) {
+  return meta.fd[fd]?.startsWith("/dev/tty-");
+}
+
 /**
  * Redirect a node and its descendants e.g.
  * - `echo foo; echo bar >/dev/null; echo baz`.

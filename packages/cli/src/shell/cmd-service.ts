@@ -24,12 +24,14 @@ import {
   getOpts,
   isDataChunk,
   isProxy,
+  isTtyAt,
   type ReadResult,
   redirectNode,
   type VarDeviceMode,
 } from "./io";
 import jsFunctionToShellFunction from "./js-to-shell-function";
 import { cloneParsed, type NamedFunction, parseService } from "./parse";
+import { queryClientApi } from "./query-client";
 import { type ProcessMeta, type Session, sessionApi } from "./session";
 import { TtyShell, ttyError } from "./shell";
 import { computeChoiceTtyLinkFactory } from "./tty-link-factory";
@@ -258,7 +260,6 @@ class CmdService {
       return cmdService.get(this.node, args);
     },
 
-    // 🚧 avoid hard-coded single QueryClient
     getCached,
 
     getKillError(exitCode?: number) {
@@ -1293,10 +1294,6 @@ export type ProcessContext = {
   get api(): ProcessApi;
 };
 
-export function isTtyAt(meta: JSh.BaseMeta, fd: number) {
-  return meta.fd[fd]?.startsWith("/dev/tty-");
-}
-
 export async function preProcessWrite(process: ProcessMeta, device: Device) {
   if (process.status === toProcessStatus.Killed || device.finishedReading(true) === true) {
     throw killError(process);
@@ -1314,10 +1311,9 @@ export async function preProcessRead(process: ProcessMeta, _device: Device) {
 }
 
 const emptyResolve = () => {};
-const emptyReject = (_e: any) => {};
+const emptyReject = (_e: unknown) => {};
 const functionOrAsync = ["Function", "AsyncFunction"];
 
-// 🚧 avoid hard-coded single QueryClient
-function getCached(_queryKey: string | string[]) {
-  return null;
+function getCached(queryKey: string | string[]) {
+  return queryClientApi.get(queryKey);
 }
