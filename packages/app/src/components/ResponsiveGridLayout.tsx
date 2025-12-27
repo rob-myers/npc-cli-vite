@@ -68,7 +68,6 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           setDragging(true);
         }}
         onDragStop={(layout) => {
-          console.log("onDragStop", layout);
           layouts.current.lg = layouts.current.sm = layout;
           setDragging(false);
         }}
