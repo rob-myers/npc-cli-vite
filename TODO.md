@@ -97,6 +97,7 @@
   - ✅ inherit from tsconfig.base.json
 
 - 🚧 add react-query
+  - ✅ packages/cli has getCached based on packages/util QueryCacheApi
   - 🚧 initialize using app's queryClient
 
 - add react-three-fiber and import gltf
