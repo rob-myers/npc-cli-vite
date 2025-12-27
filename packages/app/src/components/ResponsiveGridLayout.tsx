@@ -31,6 +31,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
   // disable initial animation until fade in
   const [animateItems, setAnimateItems] = useState(false);
   const [resizing, setResizing] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   // 🚧 packages/ui/themer
   const theme = useThemeName();
@@ -46,13 +47,14 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
       <GridLayout
         className={cn(
           !animateItems && "[&_.react-grid-item]:transition-none!",
-          resizing && "select-none",
-          "border text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
+          (resizing || dragging) && "select-none",
+          "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
         )}
         width={width}
         gridConfig={{
           cols,
           rowHeight: 80,
+          // margin: [16, 16],
         }}
         layout={layout}
         onResizeStart={() => {
@@ -63,9 +65,13 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           layouts.current.lg = layouts.current.sm = layout;
           setResizing(false);
         }}
+        onDragStart={() => {
+          setDragging(true);
+        }}
         onDragStop={(layout) => {
           console.log("onDragStop", layout);
           layouts.current.lg = layouts.current.sm = layout;
+          setDragging(false);
         }}
       >
         {["a", "b", "c"].map((key) => (
