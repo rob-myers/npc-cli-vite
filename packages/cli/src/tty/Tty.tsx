@@ -18,7 +18,7 @@ import { TtyMenu } from "./TtyMenu";
  * - booted with a shell profile (~/PROFILE)
  * - sourced with externally provided shell functions (/etc/*)
  */
-export default function Tty(props: Props) {
+export function Tty(props: Props) {
   const [rootRef, bounds] = useMeasure({ debounce: 0, scroll: false });
 
   const state = useStateRef(
@@ -303,7 +303,7 @@ export default function Tty(props: Props) {
   const update = useUpdate();
 
   return (
-    <div className="h-full p-1" ref={rootRef}>
+    <div className="h-full w-full p-1" ref={rootRef}>
       <BaseTty
         ref={state.ref("base")}
         sessionKey={props.sessionKey}

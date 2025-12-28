@@ -4,6 +4,7 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
+import { Tty } from "@npc-cli/cli";
 import { cn } from "@npc-cli/util";
 import { useRef, useState } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
@@ -97,8 +98,20 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
             {theme}
           </button>
         </div>
-        <div key="f" className="border p-4 flex items-center justify-center">
-          TTY here!
+        <div key="f" className="overflow-auto border bg-black p-1 flex items-center justify-center">
+          <Tty
+            key="my-test-tty"
+            sessionKey="tty-0"
+            setTabsEnabled={() => {}}
+            updateTabMeta={() => {}}
+            disabled={false}
+            env={{}}
+            tabKey="my-tab-key"
+            onKey={() => {}}
+            modules={{}}
+            shFiles={{}}
+            profile={`echo Hello, world\necho ...`}
+          />
         </div>
       </GridLayout>
     </motion.div>
