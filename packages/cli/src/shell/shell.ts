@@ -2,7 +2,7 @@ import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { debug, error, warn } from "@npc-cli/util/legacy/generic";
 import { ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
-import type { MessageFromShell, MessageFromXterm, ShellIo } from "./io";
+import type { MessageFromShell, MessageFromXterm, ReadResult, ShellIo } from "./io";
 import { parseService } from "./parse";
 import { jShSemantics } from "./semantics";
 import { type ProcessMeta, type Ptags, sessionApi } from "./session";
@@ -24,8 +24,8 @@ export class TtyShell {
 
   private process!: ProcessMeta;
   private oneTimeReaders = [] as {
-    resolve: (msg: unknown) => void;
-    reject: (e: unknown) => void;
+    resolve: (msg: any) => void;
+    reject: (e: any) => void;
   }[];
   private cleanups = [] as (() => void)[];
 
@@ -47,6 +47,41 @@ export class TtyShell {
     this.io = io;
     this.history = history;
     this.key = `/dev/tty-${sessionKey}`;
+  }
+
+  //#region Device
+  async readData(): Promise<ReadResult> {
+    return await new Promise((resolve, reject) => {
+      this.oneTimeReaders.push({
+        resolve: (msg: string) => resolve({ data: msg }),
+        reject,
+      });
+      this.input?.resolve();
+      this.input = null;
+    });
+  }
+  async writeData(data: any) {
+    this.io.write(data);
+  }
+  finishedWriting() {
+    // NOOP
+  }
+  /**
+   * Background processes are not allowed to read from TTY.
+   * We further assume there is at most one interactive process reading it.
+   */
+  finishedReading() {
+    this.buffer.length = 0;
+    // this.oneTimeReaders.forEach(({ reject }) => reject());
+    this.oneTimeReaders.forEach(({ resolve }) => void resolve(undefined));
+    this.oneTimeReaders.length = 0;
+  }
+  //#endregion
+
+  dispose() {
+    this.xterm.dispose();
+    this.cleanups.forEach((cleanup) => void cleanup());
+    this.cleanups.length = 0;
   }
 
   getHistory() {

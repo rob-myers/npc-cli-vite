@@ -1,4 +1,5 @@
 import { type JSh, traverseParsed } from "@npc-cli/parse-sh";
+import { speak } from "@npc-cli/util/legacy/dom";
 import { deepClone, last } from "@npc-cli/util/legacy/generic";
 import type * as GetOpts from "getopts";
 //@ts-expect-error
@@ -7,8 +8,12 @@ import { Subject, type Subscription } from "rxjs";
 import { sessionApi } from "./session";
 import { simplifyGetOpts } from "./util";
 
+export function makeShellIo<R, W>() {
+  return new ShellIo(new ShellWire<R>(), new ShellWire<W>());
+}
+
 /**
- * Two ShellSubjects i.e. the man in the middle.
+ * Two ``ShellSubjects`` i.e. the man in the middle.
  * Currently only used for TTY.
  */
 export class ShellIo<R, W> {
@@ -183,6 +188,26 @@ export class FifoDevice implements Device {
 
 export type FifoStatus = "Initial" | "Connected" | "Disconnected";
 
+export class NullDevice implements Device {
+  key: "/dev/null";
+  constructor(key: "/dev/null") {
+    this.key = key;
+  }
+
+  public async writeData(_data: any) {
+    // NOOP
+  }
+  public async readData(): Promise<ReadResult> {
+    return { eof: true };
+  }
+  public finishedReading() {
+    // NOOP
+  }
+  public finishedWriting() {
+    // NOOP
+  }
+}
+
 export type ReadResult = {
   eof?: boolean;
   data?: any;
@@ -246,6 +271,89 @@ export class VarDevice implements Device {
   public finishedWriting() {
     // NOOP
   }
+}
+
+export class VoiceDevice implements Device {
+  key: "/dev/voice";
+  command: null | VoiceCommand = null;
+  defaultVoice = {} as SpeechSynthesisVoice;
+  readBlocked = false;
+  synth: SpeechSynthesis = window.speechSynthesis;
+  voices: SpeechSynthesisVoice[] = [];
+
+  /**
+   * Manually queue commands, otherwise
+   * @see {SpeechSynthesis.cancel} will cancel them all.
+   */
+  pending = [] as (() => void)[];
+  speaking = false;
+
+  constructor(key: "/dev/voice", defaultVoiceName = "Daniel") {
+    this.key = key;
+    // https://stackoverflow.com/a/52005323/2917822
+    setTimeout(() => {
+      this.voices = this.synth.getVoices();
+      this.defaultVoice =
+        this.voices.find(({ name }) => name === defaultVoiceName) ||
+        this.voices.find(({ default: isDefault }) => isDefault) ||
+        this.voices[0];
+    }, 100);
+  }
+
+  public finishedReading() {
+    // NOOP
+  }
+  public finishedWriting() {
+    // NOOP
+  }
+
+  /**
+   * Nothing to read. Behaves like /dev/null.
+   */
+  public async readData(): Promise<ReadResult> {
+    return { eof: true };
+  }
+
+  /**
+   * Writing takes a long time, due to speech.
+   * Moreover we write every line before returning.
+   * - `VoiceCommand` from e.g. `speak foo{1..5}`
+   * - `string` from e.g. `echo foo{1..5} >/dev/voice`
+   */
+  async writeData(input: VoiceCommand | string) {
+    if (typeof input === "string") {
+      this.command = { text: input };
+    } else if (typeof input?.text === "string") {
+      this.command = input;
+    } else {
+      return;
+    }
+
+    await this.speak(this.command);
+    this.command = null;
+  }
+
+  private async speak(command: VoiceCommand) {
+    const voice = this.voices.find(({ name }) => name === command.voice) || this.defaultVoice;
+
+    if (this.speaking === true) {
+      await new Promise<void>((resolve) => this.pending.push(resolve));
+    }
+
+    // fix blocked speech
+    this.synth.cancel();
+
+    this.speaking = true;
+    await speak(command.text, voice);
+    this.speaking = false;
+
+    this.pending.shift()?.();
+  }
+}
+
+export interface VoiceCommand {
+  voice?: string;
+  text: string;
 }
 
 /** A wire with two ends */
@@ -410,5 +518,3 @@ export const proxyKey = "__proxy__";
 export function isProxy(msg: any): boolean {
   return !!(msg && msg[proxyKey]);
 }
-
-export const scrollback = 200;

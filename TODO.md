@@ -86,12 +86,16 @@
   - packages/ui/cli
   - packages/ui/world
 
-- 🚧 start packages/cli
+- ✅ start packages/cli
   - ✅ start migrating parse.ts
   - ✅ start extending `syntax.Command` parsing
     - extend structs.go, run `pnpm build:wasm`
   - ✅ does namespace `MvdanSh` still make sense?
   - ✅ start migrating tty.shell
+
+- 🚧 packages/cli has Terminal component
+  - ✅ add BaseTty
+  - 🚧 add Tty
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
