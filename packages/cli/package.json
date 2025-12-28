@@ -17,6 +17,7 @@
     "debounce": "^3.0.0",
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
+    "react": "catalog:",
     "react-beforeunload": "^2.7.0",
     "react-use-measure": "^2.1.7",
     "rxjs": "catalog:",
