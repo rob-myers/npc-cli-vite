@@ -1,3 +1,4 @@
+import "../types/cli-columns.d";
 import type { JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError, observableToAsyncIterable } from "@npc-cli/util";
 import {
