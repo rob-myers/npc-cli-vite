@@ -2,7 +2,7 @@ import { type JSh, reconstructReplParamExp } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { jsStringify, last, parseJsArg, safeJsonParse } from "@npc-cli/util/legacy/generic";
 import braces from "braces";
-import { cmdService, preProcessWrite } from "./cmd-service";
+import { cmdService, preProcessWrite } from "./command";
 import { ansi, bracesOpts, ProcessTag } from "./const";
 import { redirectNode } from "./io";
 import { cloneParsed, type NamedFunction } from "./parse";
