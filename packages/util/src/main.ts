@@ -2,6 +2,7 @@ export * from "./Broadcaster";
 export * from "./ExhaustiveError";
 export * from "./hooks/use-effect-non-strict";
 export * from "./hooks/use-state-ref";
+export * from "./hooks/use-update";
 export * from "./json-parser";
 export * from "./observable-to-async-it";
 export * from "./QueryClientApi";

@@ -1,7 +1,7 @@
 import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { debug, error, warn } from "@npc-cli/util/legacy/generic";
-import { ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
+import { ansi, ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
 import type { MessageFromShell, MessageFromXterm, ReadResult, ShellIo } from "./io";
 import { parseService } from "./parse";
 import { jShSemantics } from "./semantics";
@@ -112,6 +112,21 @@ export class TtyShell {
     });
   }
 
+  isInitialized() {
+    return !!this.process;
+  }
+
+  /**
+   * The shell is "interactive" iff the profile has run and the prompt is ready.
+   * This should happen exactly when the leading process is NOT running.
+   *
+   * We also tag processes with `ProcessTag.interactive`,
+   * where the session leader is always tagged.
+   */
+  isInteractive() {
+    return this.profileFinished === true && this.xterm.isPromptReady() === true;
+  }
+
   private onMessage(msg: MessageFromXterm) {
     switch (msg.key) {
       case "req-history-line": {
@@ -172,6 +187,35 @@ export class TtyShell {
       stack: [],
       verbose: false,
     });
+  }
+
+  /**
+   * We run the profile by pasting it into the terminal.
+   * This explicit approach can be avoided via `source`.
+   *
+   * Importantly this sets `this.profileHasRun` as `true`.
+   */
+  async runProfile() {
+    const profile =
+      sessionApi.getVar({ pid: 0, sessionKey: this.sessionKey } as JSh.BaseMeta, "PROFILE") || "";
+
+    try {
+      this.xterm.historyEnabled = false;
+      sessionApi.writeMsg(
+        this.sessionKey,
+        `${ansi.BlueBold}${this.sessionKey}${ansi.White} running ${ansi.BlueBold}/home/PROFILE${ansi.Reset}`,
+        "info",
+      );
+
+      await this.xterm.pasteAndRunLines(profile.split("\n"), true);
+    } catch {
+      // see tryParse catch
+    } finally {
+      this.profileFinished = true;
+      this.process.status = toProcessStatus.Suspended;
+      this.xterm.historyEnabled = true;
+      this.prompt("$");
+    }
   }
 
   /**

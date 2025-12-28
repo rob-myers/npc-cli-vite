@@ -90,6 +90,10 @@ export class TtyXterm {
     return this.prompt + input;
   }
 
+  canType() {
+    return this.xterm.textarea!.disabled === false;
+  }
+
   /**
    * Clears the input possibly over many lines.
    * Returns the cursor to the start of the input.
@@ -181,6 +185,24 @@ export class TtyXterm {
       // xterm-addon-webgl throws `Cannot read properties of undefined (reading 'onRequestRedraw')`
       warn(`xterm.dispose: ignoring error: "${((e as any) || {}).message || e}"`);
     }
+  }
+
+  getCursor() {
+    return this.cursor;
+  }
+
+  getInput() {
+    return this.input;
+  }
+
+  /**
+   * If xterm invisible and we paste exceeding scroll bounds for first time,
+   * then scrollbars do not appear (nor does fitAddon.fit() help).
+   * This hack makes them appear.
+   */
+  forceResize() {
+    this.xterm.resize(this.xterm.cols + 1, this.xterm.rows);
+    this.xterm.resize(this.xterm.cols - 1, this.xterm.rows);
   }
 
   /**
@@ -418,6 +440,11 @@ export class TtyXterm {
     return col === 0;
   }
 
+  /** Has the tty prompted for input and we haven't sent yet? */
+  isPromptReady() {
+    return this.promptReady;
+  }
+
   /**
    * Count the number of lines in the current input, including prompt.
    */
@@ -572,6 +599,23 @@ export class TtyXterm {
     }
   }
 
+  /**
+   * Paste lines, greedily running them as soon as a newline is encountered.
+   */
+  async pasteAndRunLines(lines: string[], fromProfile = false) {
+    this.clearInput();
+    this.xterm.write(this.prompt);
+
+    for (const line of lines) {
+      await new Promise<void>((resolve, reject) => {
+        this.queueCommands([
+          { key: "paste-line", line },
+          { key: "await-prompt", noPrint: fromProfile, resolve, reject },
+        ]);
+      });
+    }
+  }
+
   reqHistoryLine(dir: -1 | 1) {
     if (this.promptReady === true) {
       this.session.io.writeToReaders({
@@ -696,6 +740,10 @@ export class TtyXterm {
     this.session.io.writeToReaders({ key: "send-kill-sig" });
   }
 
+  setCanType(canType: boolean) {
+    this.xterm.textarea!.disabled = !canType;
+  }
+
   /**
    * Move the terminal's cursor and update `this.cursor`.
    */
@@ -783,6 +831,29 @@ export class TtyXterm {
       const input = this.input;
       this.clearInput(); // Clear to avoid double prompt
       this.setInput(input);
+    }
+  }
+
+  /**
+   * Splice `input` into `this.input`.
+   */
+  spliceInput(input: string) {
+    if (this.promptReady === true) {
+      const prevInput = this.input;
+      const prevCursor = this.cursor;
+      this.clearInput();
+      this.setInput(prevInput.slice(0, prevCursor) + input + prevInput.slice(prevCursor));
+    } else {
+      this.warnIfNotReady();
+    }
+  }
+
+  warnIfNotReady() {
+    if (this.promptReady === false) {
+      this.queueCommands([{ key: "line", line: formatMessage("not ready", "info") }]);
+      return true; // not ready
+    } else {
+      return false;
     }
   }
 
