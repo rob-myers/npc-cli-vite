@@ -65,3 +65,8 @@ export const toProcessStatus = {
 export type ProcessStatus = (typeof toProcessStatus)[keyof typeof toProcessStatus];
 
 export const scrollback = 200;
+
+export const localStorageKey = {
+  touchTtyCanType: "touch-tty-can-type",
+  touchTtyOpen: "touch-tty-open",
+};

@@ -218,6 +218,10 @@ export const sessionApi = {
       processes.forEach((p) => void Object.assign(p.ptags, opts.ptags));
     }
   },
+  killSessionLeader(sessionKey: string) {
+    const { ttyShell } = sessionApi.getSession(sessionKey);
+    ttyShell.xterm.sendSigKill();
+  },
   onTtyLink(opts: {
     sessionKey: string;
     lineText: string;
@@ -409,7 +413,7 @@ export type Session = {
   ttyShell: TtyShell;
   ttyLink: { [lineText: string]: TtyLinkCtxt[] };
 
-  etc: Record<string, unknown>;
+  etc: Record<string, string>;
   var: {
     [varName: string]: unknown;
     PWD: string;
