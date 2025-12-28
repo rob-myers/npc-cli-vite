@@ -4,7 +4,8 @@
     "enabled": true,
     "rules": {
       "suspicious": {
-        "noAssignInExpressions": "off"
+        "noAssignInExpressions": "off",
+        "noConfusingVoidType": "off"
       }
     }
   },
