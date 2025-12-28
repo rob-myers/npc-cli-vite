@@ -5,7 +5,7 @@
 
 /**
  * @template T
- * @param {import('./Broadcaster.js').Broadcaster<T>} observable
+ * @param {import('./broadcaster.js').Broadcaster<T>} observable
  * @returns {AsyncIterableIterator<T>}
  */
 export function observableToAsyncIterable(observable) {
