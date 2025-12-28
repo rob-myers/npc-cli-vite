@@ -5,7 +5,8 @@
     "rules": {
       "suspicious": {
         "noAssignInExpressions": "off",
-        "noConfusingVoidType": "off"
+        "noConfusingVoidType": "off",
+        "noDoubleEquals": "off"
       }
     }
   },
