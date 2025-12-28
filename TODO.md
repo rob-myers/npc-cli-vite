@@ -97,7 +97,7 @@
   - ✅ add BaseTty
   - ✅ add Tty
   - ✅ test mount Tty
-  - 🚧 fix issue `failed to epand word`
+  - 🚧 fix issue `failed to expand word`
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json

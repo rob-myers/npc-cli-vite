@@ -141,6 +141,7 @@ export class JShSemantics {
   }
 
   /**
+   * 🚧 ensure `exitCode`s in each word
    * We normalise textual input e.g. via parameter substitution,
    * in order to construct a simple/compound command we can run.
    */
@@ -148,10 +149,9 @@ export class JShSemantics {
     const expanded = [] as string[];
     for (const word of Args) {
       const result = await this.lastExpanded(this.Expand(word));
-      word.exitCode ??= -1;
       const single = word.Parts.length === 1 ? word.Parts[0] : null;
-      if (word.exitCode !== 0) {
-        throw new ShError("failed to expand word", word.exitCode);
+      if (word.exitCode! > 0) {
+        throw new ShError("failed to expand word", word.exitCode!);
       } else if (single?.type === "SglQuoted") {
         expanded.push(result.value);
       } else if (single?.type === "ParamExp" || single?.type === "CmdSubst") {
