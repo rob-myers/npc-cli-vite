@@ -14,10 +14,12 @@
     "@xterm/xterm": "^6.0.0",
     "braces": "catalog:",
     "cli-columns": "catalog:",
+    "debounce": "^3.0.0",
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
     "react-beforeunload": "^2.7.0",
     "rxjs": "catalog:",
+    "sugar-high": "^0.9.5",
     "zustand": "^5.0.9"
   },
   "devDependencies": {

@@ -201,6 +201,9 @@ importers:
       cli-columns:
         specifier: 'catalog:'
         version: 4.0.0
+      debounce:
+        specifier: ^3.0.0
+        version: 3.0.0
       getopts:
         specifier: 'catalog:'
         version: 2.3.0
@@ -213,6 +216,9 @@ importers:
       rxjs:
         specifier: 'catalog:'
         version: 7.8.2
+      sugar-high:
+        specifier: ^0.9.5
+        version: 0.9.5
       zustand:
         specifier: ^5.0.9
         version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
@@ -2137,6 +2143,9 @@ packages:
 
   style-to-object@1.0.14:
     resolution: {integrity: sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw==}
+
+  sugar-high@0.9.5:
+    resolution: {integrity: sha512-eirwp9p7QcMg6EFCD6zrGh4H30uFx2YtfiMJUavagceP6/YUUjLeiQmis7QuwqKB3nXrWXlLaRumCqOd9AKpSA==}
 
   tailwind-merge@3.4.0:
     resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
@@ -4199,6 +4208,8 @@ snapshots:
   style-to-object@1.0.14:
     dependencies:
       inline-style-parser: 0.2.7
+
+  sugar-high@0.9.5: {}
 
   tailwind-merge@3.4.0: {}
 
