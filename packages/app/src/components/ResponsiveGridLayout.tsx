@@ -39,7 +39,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
   return (
     <motion.div
       ref={containerRef}
-      className="w-full overflow-auto"
+      className="w-full overflow-auto h-full border border-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.3 } }}
       onAnimationComplete={() => setAnimateItems(true)}
@@ -88,7 +88,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
             <TestMdx />
           </div>
         </div>
-        <div key="e" className="border p-4 flex items-center">
+        <div key="e" className="border p-4 flex items-center justify-center">
           <button
             type="button"
             className="cursor-pointer border rounded px-4 py-1 bg-button"
@@ -96,6 +96,9 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           >
             {theme}
           </button>
+        </div>
+        <div key="f" className="border p-4 flex items-center justify-center">
+          TTY here!
         </div>
       </GridLayout>
     </motion.div>

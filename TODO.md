@@ -95,7 +95,8 @@
 
 - 🚧 packages/cli has Terminal component
   - ✅ add BaseTty
-  - 🚧 add Tty
+  - ✅ add Tty
+  - 🚧 test mount Tty
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json

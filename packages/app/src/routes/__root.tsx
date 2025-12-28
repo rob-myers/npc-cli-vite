@@ -16,7 +16,7 @@ themeStore.subscribe(() => {
 
 function RootComponent() {
   return (
-    <div className="bg-background">
+    <div className="bg-background h-screen">
       <Outlet />
       <TanStackRouterDevtools position="bottom-right" />
     </div>
