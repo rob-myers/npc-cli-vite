@@ -96,7 +96,8 @@
 - 🚧 packages/cli has Terminal component
   - ✅ add BaseTty
   - ✅ add Tty
-  - 🚧 test mount Tty
+  - ✅ test mount Tty
+  - 🚧 fix issue `failed to epand word`
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json

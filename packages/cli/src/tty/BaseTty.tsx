@@ -14,6 +14,8 @@ import { stripAnsi } from "../shell/util";
 import { TtyXterm } from "../shell/xterm";
 import { LinkProvider } from "./xterm-link-provider";
 
+import "@xterm/xterm/css/xterm.css";
+
 export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Props, ref) {
   const state = useStateRef(
     (): State => ({
