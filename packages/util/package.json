@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/main.ts",
-    "./legacy/generic": "./src/legacy/generic.js"
+    "./legacy/generic": "./src/legacy/generic.js",
+    "./legacy/dom": "./src/legacy/dom.js"
   },
   "scripts": {},
   "dependencies": {
