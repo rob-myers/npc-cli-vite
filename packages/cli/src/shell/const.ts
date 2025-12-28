@@ -63,3 +63,5 @@ export const toProcessStatus = {
 
 /** `0` is suspended, `1` is running, `2` is killed */
 export type ProcessStatus = (typeof toProcessStatus)[keyof typeof toProcessStatus];
+
+export const scrollback = 200;
