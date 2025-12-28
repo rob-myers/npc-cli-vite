@@ -9,15 +9,20 @@
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/util": "workspace:^",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0",
     "braces": "catalog:",
     "cli-columns": "catalog:",
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
+    "react-beforeunload": "^2.7.0",
     "rxjs": "catalog:",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@types/braces": "catalog:",
-    "@types/lodash.clonedeep": "^4.5.9"
+    "@types/lodash.clonedeep": "^4.5.9",
+    "@types/react-beforeunload": "^2.1.5"
   }
 }
