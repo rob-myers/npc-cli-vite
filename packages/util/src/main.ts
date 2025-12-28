@@ -1,4 +1,4 @@
-export * from "./Broadcaster";
+export * from "./Broadcaster.js";
 export * from "./ExhaustiveError";
 export * from "./hooks/use-effect-non-strict";
 export * from "./hooks/use-state-ref";
