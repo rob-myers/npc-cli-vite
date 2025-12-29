@@ -27,7 +27,7 @@ const demo = {
       { i: "c", x: 4, y: 0, w: 1, h: 2 },
       { i: "d", x: 0, y: 2, w: 3, h: 3, isDraggable: false },
       { i: "e", x: 1, y: 4, w: 1, h: 1 },
-      { i: "f", x: 6, y: 2, w: 3, h: 3 },
+      { i: "f", x: 6, y: 2, w: 3, h: 3, isDraggable: false },
     ],
     lg: [
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
