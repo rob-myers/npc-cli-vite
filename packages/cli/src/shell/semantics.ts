@@ -1,4 +1,9 @@
-import { computeJShSource, type JSh, reconstructReplParamExp } from "@npc-cli/parse-sh";
+import {
+  collectIfClauses,
+  computeJShSource,
+  type JSh,
+  reconstructReplParamExp,
+} from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { jsStringify, last, parseJsArg, pause, safeJsonParse } from "@npc-cli/util/legacy/generic";
 import braces from "braces";
@@ -401,7 +406,6 @@ export class JShSemantics {
     }
   }
 
-  // 🚧
   /** Construct a simple command or a compound command. */
   private async Command(node: JSh.Command, Redirs: JSh.Redirect[]) {
     const cmdStackIndex = node.meta.stack.length;
@@ -429,18 +433,18 @@ export class JShSemantics {
           case "FuncDecl":
             generator = this.FuncDecl(node);
             break;
-          // case "IfClause":
-          //   generator = this.IfClause(node);
-          //   break;
-          // case "TimeClause":
-          //   generator = this.TimeClause(node);
-          //   break;
-          // case "Subshell":
-          //   generator = this.Subshell(node);
-          //   break;
-          // case "WhileClause":
-          //   generator = this.WhileClause(node);
-          //   break;
+          case "IfClause":
+            generator = this.IfClause(node);
+            break;
+          case "TimeClause":
+            generator = this.TimeClause(node);
+            break;
+          case "Subshell":
+            generator = this.Subshell(node);
+            break;
+          case "WhileClause":
+            generator = this.WhileClause(node);
+            break;
           default:
             throw new ShError("not implemented", 2);
         }
@@ -764,6 +768,28 @@ export class JShSemantics {
     node.exitCode = 0;
   }
 
+  private async *IfClause(node: JSh.IfClause) {
+    for (const { Cond, Then } of collectIfClauses(node)) {
+      if (Cond.length) {
+        // if | elif i.e. have a test
+        yield* sem.stmts(node, Cond);
+        // console.log(last(Cond))
+
+        if (last(Cond)!.exitCode === 0) {
+          // Test succeeded
+          yield* sem.stmts(node, Then);
+          node.exitCode = last(Then)?.exitCode || 0;
+          return;
+        }
+      } else {
+        // else
+        yield* sem.stmts(node, Then);
+        node.exitCode = last(Then)?.exitCode || 0;
+        return;
+      }
+    }
+  }
+
   /**
    * 1. $0, $1, ... Positionals
    * 2. "${@}" All positionals
@@ -895,6 +921,59 @@ export class JShSemantics {
     } finally {
       stmt.exitCode = stmt.Cmd.exitCode;
       stmt.Negated === true && (stmt.exitCode = 1 - Number(!!stmt.Cmd.exitCode));
+    }
+  }
+
+  // biome-ignore lint/correctness/useYield: generic pattern
+  private async *Subshell(node: JSh.Subshell) {
+    const cloned = this.wrapInFile(cloneParsed(node));
+    cloned.meta.ppid = cloned.meta.pid;
+
+    const { ttyShell } = sessionApi.getSession(node.meta.sessionKey);
+    await ttyShell.spawn(cloned, {
+      by: "()",
+      localVar: true,
+    });
+  }
+
+  /** Bash language variant only? */
+  private async *TimeClause(node: JSh.TimeClause) {
+    const before = Date.now(); // Milliseconds since epoch
+    if (node.Stmt) {
+      yield* sem.Stmt(node.Stmt);
+    }
+    sessionApi.resolve(1, node.meta).writeData(`real\t${Date.now() - before}ms`);
+  }
+
+  private async *WhileClause(node: JSh.WhileClause) {
+    const { Cond, Do, Until } = node;
+    let itStartMs = -1,
+      itLengthMs = 0;
+
+    while (true) {
+      // Force iteration to take at least @see {itMinLengthMs} milliseconds
+      // Also throws if process killed
+      if ((itLengthMs = Date.now() - itStartMs) < itMinLengthMs) {
+        await cmdService.sleep(node.meta, (itMinLengthMs - itLengthMs) / 1000);
+      }
+      itStartMs = Date.now();
+
+      yield* this.stmts(node, Cond);
+
+      if (Until === true ? !node.exitCode : node.exitCode) {
+        // e.g. consider `while false; do echo foo; done`
+        node.exitCode = 0;
+        break;
+      }
+
+      try {
+        yield* this.stmts(node, Do);
+      } catch (e) {
+        // support `continue`
+        if (!(e instanceof SigKillError && e.skip === true)) {
+          throw e;
+        }
+      }
     }
   }
 }
