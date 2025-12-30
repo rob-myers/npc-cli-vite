@@ -3094,6 +3094,12 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor22(in 
 			} else {
 				(out.Body).UnmarshalEasyJSON(in)
 			}
+		case "Position":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.Position).UnmarshalEasyJSON(in)
+			}
 		case "Pos":
 			if in.IsNull() {
 				in.Skip()
@@ -3139,6 +3145,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor22(out
 		const prefix string = ",\"Body\":"
 		out.RawString(prefix)
 		(in.Body).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"Position\":"
+		out.RawString(prefix)
+		(in.Position).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"Pos\":"

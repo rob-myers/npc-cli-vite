@@ -221,6 +221,7 @@ type FuncDecl struct {
 	RsrvWord bool
 	Name Lit
 	Body Stmt
+	Position Pos;
 	Pos Pos
 	End Pos
 }
@@ -640,6 +641,7 @@ func mapCommand(node syntax.Command) Command {
 				RsrvWord: node.RsrvWord,
 				Name: *mapLit(node.Name),
 				Body: mapStmt(node.Body),
+				Position: mapPos(node.Position),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
