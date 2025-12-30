@@ -98,7 +98,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
             {theme}
           </button>
         </div>
-        <div key="f" className="overflow-auto border bg-black p-1 flex items-center justify-center">
+        <div key="f" className="overflow-hidden bg-black p-1 flex items-center justify-center">
           <Tty
             key="my-test-tty"
             sessionKey="tty-0"
