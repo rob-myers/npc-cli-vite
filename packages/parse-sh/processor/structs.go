@@ -14,16 +14,6 @@ type ArithmCmd struct {
 	End Pos
 }
 
-type ArithmExp struct {
-	Type string
-	Bracket bool
-	Unsigned bool
-	X interface{} // ArithmExpr
-	Left Pos
-	Right Pos
-	Pos Pos
-	End Pos
-}
 
 type ArithmExpr interface {
 	arithmExprNode()
@@ -36,7 +26,7 @@ func (Word) arithmExprNode() {}
 
 type ArrayElem struct {
 	Type string
-	Index ArithmExp
+	Index interface{} // ArithmExpr
 	Value Word
 	Comments []Comment
 	Pos Pos
@@ -48,7 +38,7 @@ type ArrayExpr struct {
 	Elems []ArrayElem
 	Lparen Pos
 	Rparen Pos
-	Last Comment
+	Last []Comment
 	Pos Pos
 	End Pos
 }
@@ -58,9 +48,9 @@ type Assign struct {
 	Append bool
 	Naked bool
 	Name Lit
-	Index ArithmExp
+	Index interface{} // ArithmExpr
 	Value Word
-	Array ArrayExpr
+	Array *ArrayExpr
 	Pos Pos
 	End Pos
 }
@@ -473,16 +463,6 @@ func MapParseError(err error) (*ParseError, string) {
 	return nil, err.Error()
 }
 
-// func mapArithmExp(node syntax.ArithmExp) ArithmExp {
-// 	return ArithmExp{
-// 		Type: "ArithmExp",
-// 		Bracket: node.Bracket,
-// 		Unsigned: node.Unsigned,
-// 		X: mapArithmExpr(node.X),
-// 		Pos: mapPos(node.Pos()),
-// 		End: mapPos(node.End()),
-// 	}
-// }
 
 // 🚧
 func mapArithmExpr(node syntax.ArithmExpr) ArithmExpr {
@@ -508,6 +488,37 @@ func mapArithmExprs(arithmExprs []syntax.ArithmExpr) []ArithmExpr {
 	return outputList
 }
 
+func mapArrayElems(input []*syntax.ArrayElem) []ArrayElem {
+	outputsSize := len(input)
+	outputList := make([]ArrayElem, outputsSize)
+	for i := range outputsSize {
+		outputList[i] = ArrayElem{
+			Type: "ArrayElem",
+			Index: mapArithmExpr(input[i].Index),
+			Value: *mapWord(input[i].Value),
+			Comments: mapComments(input[i].Comments),
+			Pos: mapPos(input[i].Pos()),
+			End: mapPos(input[i].End()),
+		}
+	}
+	return outputList
+}
+
+func mapArrayExpr(input *syntax.ArrayExpr) *ArrayExpr {
+	if (input == nil) {
+		return nil;
+	}
+	return &ArrayExpr{
+		Type: "ArrayExpr",
+		Elems: mapArrayElems(input.Elems),
+		Lparen: mapPos(input.Lparen),
+		Rparen: mapPos(input.Rparen),
+		Last: mapComments(input.Last),
+		Pos: mapPos(input.Pos()),
+		End: mapPos(input.End()),
+	}
+}
+
 func mapAssigns(assigns []*syntax.Assign) []Assign {
 	assignsSize := len(assigns)
 	assignList := make([]Assign, assignsSize)
@@ -517,8 +528,10 @@ func mapAssigns(assigns []*syntax.Assign) []Assign {
 			Type:   "Assign",
 			Append: curr.Append,
 			Naked:  curr.Naked,
-			Name:   *mapLit(curr.Name),
-			Value:  *mapWord(curr.Value),
+			Index: mapArithmExpr(curr.Index),
+			Array: mapArrayExpr(curr.Array),
+			Name: *mapLit(curr.Name),
+			Value: *mapWord(curr.Value),
 			Pos: mapPos(curr.Pos()),
 			End: mapPos(curr.End()),
 		}

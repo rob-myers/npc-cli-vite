@@ -5552,10 +5552,12 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor38(in 
 				(out.Name).UnmarshalEasyJSON(in)
 			}
 		case "Index":
-			if in.IsNull() {
-				in.Skip()
+			if m, ok := out.Index.(easyjson.Unmarshaler); ok {
+				m.UnmarshalEasyJSON(in)
+			} else if m, ok := out.Index.(json.Unmarshaler); ok {
+				_ = m.UnmarshalJSON(in.Raw())
 			} else {
-				(out.Index).UnmarshalEasyJSON(in)
+				out.Index = in.Interface()
 			}
 		case "Value":
 			if in.IsNull() {
@@ -5566,8 +5568,16 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor38(in 
 		case "Array":
 			if in.IsNull() {
 				in.Skip()
+				out.Array = nil
 			} else {
-				(out.Array).UnmarshalEasyJSON(in)
+				if out.Array == nil {
+					out.Array = new(ArrayExpr)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					(*out.Array).UnmarshalEasyJSON(in)
+				}
 			}
 		case "Pos":
 			if in.IsNull() {
@@ -5618,7 +5628,13 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor38(out
 	{
 		const prefix string = ",\"Index\":"
 		out.RawString(prefix)
-		(in.Index).MarshalEasyJSON(out)
+		if m, ok := in.Index.(easyjson.Marshaler); ok {
+			m.MarshalEasyJSON(out)
+		} else if m, ok := in.Index.(json.Marshaler); ok {
+			out.Raw(m.MarshalJSON())
+		} else {
+			out.Raw(json.Marshal(in.Index))
+		}
 	}
 	{
 		const prefix string = ",\"Value\":"
@@ -5628,7 +5644,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor38(out
 	{
 		const prefix string = ",\"Array\":"
 		out.RawString(prefix)
-		(in.Array).MarshalEasyJSON(out)
+		if in.Array == nil {
+			out.RawString("null")
+		} else {
+			(*in.Array).MarshalEasyJSON(out)
+		}
 	}
 	{
 		const prefix string = ",\"Pos\":"
@@ -5728,8 +5748,29 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor39(in 
 		case "Last":
 			if in.IsNull() {
 				in.Skip()
+				out.Last = nil
 			} else {
-				(out.Last).UnmarshalEasyJSON(in)
+				in.Delim('[')
+				if out.Last == nil {
+					if !in.IsDelim(']') {
+						out.Last = make([]Comment, 0, 0)
+					} else {
+						out.Last = []Comment{}
+					}
+				} else {
+					out.Last = (out.Last)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v74 Comment
+					if in.IsNull() {
+						in.Skip()
+					} else {
+						(v74).UnmarshalEasyJSON(in)
+					}
+					out.Last = append(out.Last, v74)
+					in.WantComma()
+				}
+				in.Delim(']')
 			}
 		case "Pos":
 			if in.IsNull() {
@@ -5769,11 +5810,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor39(out
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v74, v75 := range in.Elems {
-				if v74 > 0 {
+			for v75, v76 := range in.Elems {
+				if v75 > 0 {
 					out.RawByte(',')
 				}
-				(v75).MarshalEasyJSON(out)
+				(v76).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -5791,7 +5832,18 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor39(out
 	{
 		const prefix string = ",\"Last\":"
 		out.RawString(prefix)
-		(in.Last).MarshalEasyJSON(out)
+		if in.Last == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v77, v78 := range in.Last {
+				if v77 > 0 {
+					out.RawByte(',')
+				}
+				(v78).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
+		}
 	}
 	{
 		const prefix string = ",\"Pos\":"
@@ -5850,10 +5902,12 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(in 
 				out.Type = string(in.String())
 			}
 		case "Index":
-			if in.IsNull() {
-				in.Skip()
+			if m, ok := out.Index.(easyjson.Unmarshaler); ok {
+				m.UnmarshalEasyJSON(in)
+			} else if m, ok := out.Index.(json.Unmarshaler); ok {
+				_ = m.UnmarshalJSON(in.Raw())
 			} else {
-				(out.Index).UnmarshalEasyJSON(in)
+				out.Index = in.Interface()
 			}
 		case "Value":
 			if in.IsNull() {
@@ -5877,13 +5931,13 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(in 
 					out.Comments = (out.Comments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v76 Comment
+					var v79 Comment
 					if in.IsNull() {
 						in.Skip()
 					} else {
-						(v76).UnmarshalEasyJSON(in)
+						(v79).UnmarshalEasyJSON(in)
 					}
-					out.Comments = append(out.Comments, v76)
+					out.Comments = append(out.Comments, v79)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -5922,7 +5976,13 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(out
 	{
 		const prefix string = ",\"Index\":"
 		out.RawString(prefix)
-		(in.Index).MarshalEasyJSON(out)
+		if m, ok := in.Index.(easyjson.Marshaler); ok {
+			m.MarshalEasyJSON(out)
+		} else if m, ok := in.Index.(json.Marshaler); ok {
+			out.Raw(m.MarshalJSON())
+		} else {
+			out.Raw(json.Marshal(in.Index))
+		}
 	}
 	{
 		const prefix string = ",\"Value\":"
@@ -5936,11 +5996,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(out
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v77, v78 := range in.Comments {
-				if v77 > 0 {
+			for v80, v81 := range in.Comments {
+				if v80 > 0 {
 					out.RawByte(',')
 				}
-				(v78).MarshalEasyJSON(out)
+				(v81).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -5981,157 +6041,7 @@ func (v *ArrayElem) UnmarshalJSON(data []byte) error {
 func (v *ArrayElem) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(l, v)
 }
-func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(in *jlexer.Lexer, out *ArithmExp) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		switch key {
-		case "Type":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.Type = string(in.String())
-			}
-		case "Bracket":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.Bracket = bool(in.Bool())
-			}
-		case "Unsigned":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.Unsigned = bool(in.Bool())
-			}
-		case "X":
-			if m, ok := out.X.(easyjson.Unmarshaler); ok {
-				m.UnmarshalEasyJSON(in)
-			} else if m, ok := out.X.(json.Unmarshaler); ok {
-				_ = m.UnmarshalJSON(in.Raw())
-			} else {
-				out.X = in.Interface()
-			}
-		case "Left":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				(out.Left).UnmarshalEasyJSON(in)
-			}
-		case "Right":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				(out.Right).UnmarshalEasyJSON(in)
-			}
-		case "Pos":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				(out.Pos).UnmarshalEasyJSON(in)
-			}
-		case "End":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				(out.End).UnmarshalEasyJSON(in)
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(out *jwriter.Writer, in ArithmExp) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"Type\":"
-		out.RawString(prefix[1:])
-		out.String(string(in.Type))
-	}
-	{
-		const prefix string = ",\"Bracket\":"
-		out.RawString(prefix)
-		out.Bool(bool(in.Bracket))
-	}
-	{
-		const prefix string = ",\"Unsigned\":"
-		out.RawString(prefix)
-		out.Bool(bool(in.Unsigned))
-	}
-	{
-		const prefix string = ",\"X\":"
-		out.RawString(prefix)
-		if m, ok := in.X.(easyjson.Marshaler); ok {
-			m.MarshalEasyJSON(out)
-		} else if m, ok := in.X.(json.Marshaler); ok {
-			out.Raw(m.MarshalJSON())
-		} else {
-			out.Raw(json.Marshal(in.X))
-		}
-	}
-	{
-		const prefix string = ",\"Left\":"
-		out.RawString(prefix)
-		(in.Left).MarshalEasyJSON(out)
-	}
-	{
-		const prefix string = ",\"Right\":"
-		out.RawString(prefix)
-		(in.Right).MarshalEasyJSON(out)
-	}
-	{
-		const prefix string = ",\"Pos\":"
-		out.RawString(prefix)
-		(in.Pos).MarshalEasyJSON(out)
-	}
-	{
-		const prefix string = ",\"End\":"
-		out.RawString(prefix)
-		(in.End).MarshalEasyJSON(out)
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v ArithmExp) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ArithmExp) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *ArithmExp) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *ArithmExp) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(l, v)
-}
-func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(in *jlexer.Lexer, out *ArithmCmd) {
+func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(in *jlexer.Lexer, out *ArithmCmd) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -6199,7 +6109,7 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(in 
 		in.Consumed()
 	}
 }
-func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(out *jwriter.Writer, in ArithmCmd) {
+func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(out *jwriter.Writer, in ArithmCmd) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -6250,23 +6160,23 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(out
 // MarshalJSON supports json.Marshaler interface
 func (v ArithmCmd) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(&w, v)
+	easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v ArithmCmd) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(w, v)
+	easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *ArithmCmd) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(&r, v)
+	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *ArithmCmd) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor42(l, v)
+	easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor41(l, v)
 }
