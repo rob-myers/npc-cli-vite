@@ -1,4 +1,4 @@
-import type { JSh } from "@npc-cli/parse-sh";
+import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import {
   addToLookup,
   deepClone,
@@ -28,6 +28,13 @@ import { TtyShell, ttyError } from "./shell";
 import { computeNormalizedParts, killProcess, resolveNormalized, ShError } from "./util";
 
 export const sessionApi = {
+  addFunc(sessionKey: string, funcName: string, file: JSh.FileWithMeta) {
+    sessionApi.getSession(sessionKey).func[funcName] = {
+      key: funcName,
+      node: file,
+      src: computeJShSource.multilineSrc(file),
+    };
+  },
   addTtyLineCtxts(sessionKey: string, lineText: string, ctxts: TtyLinkCtxt[]) {
     sessionApi.getSession(sessionKey).ttyLink[lineText] = ctxts;
   },
