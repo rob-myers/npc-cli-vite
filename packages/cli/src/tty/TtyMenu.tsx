@@ -154,7 +154,7 @@ export function TtyMenu(props: Props) {
 
       <div className="max-h-full overflow-auto scrollbar-thin scrollbar-thumb-white scrollbar-track-black border-l border-b border-solid border-[#444] pb-2 rounded-br-lg">
         <div
-          className={cn(icon, "text-[#999]", state.xterm.canType() && "text-[#cfc]")}
+          className={cn(icon, "can-type", state.xterm.canType() ? "text-[#cfc]" : "text-[#999]")}
           title={`text input ${state.xterm.canType() ? "enabled" : "disabled"}`}
         >
           $
@@ -192,4 +192,4 @@ interface Props {
   setTabsEnabled(next: boolean): void;
 }
 
-const icon = cn("w-full h-4 cursor-pointer text-center pt-3 bg-[rgba(0,0,0,0.5)]");
+const icon = cn("w-full h-6 cursor-pointer text-center pt-3 bg-[rgba(0,0,0,0.5)]");
