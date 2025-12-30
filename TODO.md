@@ -93,11 +93,13 @@
   - ✅ does namespace `MvdanSh` still make sense?
   - ✅ start migrating tty.shell
 
-- 🚧 packages/cli has Terminal component
+- ✅ packages/cli has Terminal component
   - ✅ add BaseTty
   - ✅ add Tty
   - ✅ test mount Tty
-  - 🚧 fix issue `failed to expand word`
+  - ✅ fix issue `failed to expand word`
+
+- 🚧 finish migrating semantics
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json

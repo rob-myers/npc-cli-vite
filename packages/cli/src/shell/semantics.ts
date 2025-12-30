@@ -419,16 +419,16 @@ export class JShSemantics {
           case "BinaryCmd":
             generator = this.BinaryCmd(node);
             break;
-          // // syntax.LangBash only
-          // case "DeclClause":
-          //   generator = this.DeclClause(node);
-          //   break;
+          // syntax.LangBash only
+          case "DeclClause":
+            generator = this.DeclClause(node);
+            break;
           // case "ForClause":
           //   generator = this.ForClause(node);
           //   break;
-          // case "FuncDecl":
-          //   generator = this.FuncDecl(node);
-          //   break;
+          case "FuncDecl":
+            generator = this.FuncDecl(node);
+            break;
           // case "IfClause":
           //   generator = this.IfClause(node);
           //   break;
@@ -487,6 +487,67 @@ export class JShSemantics {
       }
       sem.handleShError(node, error);
     }
+  }
+
+  /**
+   * - Reachable for `syntax.Variant(syntax.LangBash)` (not LangPOSIX).
+   * - We use LangBash to support the syntax $'...', which allows us
+   *   to use all possible quotes in the underlying JavaScript functions.
+   */
+  private async *DeclClause(node: JSh.DeclClause) {
+    if (node.Variant.Value === "declare") {
+      // only listing variables/functions are supported,
+      // and we delegate to command.ts 'declare'
+      const args = [] as string[];
+      for (const { Name, Value } of node.Args) {
+        if (Name !== null) {
+          args.push(Name.Value); // myFunc in `declare -f myFunc`
+        } else if (Value !== null && Value.Parts[0]?.type === "Lit") {
+          args.push(Value.Parts[0].Value); // -f in `declare -f myFunc`
+        }
+      }
+
+      yield* cmdService.runCmd(node, "declare", args);
+      node.exitCode = 0;
+    } else {
+      // 🔔 we support assignments, so ignore cmd.service 'local'
+
+      if (node.meta.pid === 0) {
+        throw Error(`local: cannot be used in session leader`);
+      }
+
+      const process = sessionApi.getProcess(node.meta);
+      for (const arg of node.Args) {
+        if (arg.Name !== null) {
+          process.localVar[arg.Name.Value] = undefined;
+          yield* this.Assign(arg);
+        }
+      }
+
+      node.exitCode = 0;
+    }
+
+    // if (node.Variant.Value === "declare") {
+    //   if (node.Args.length) {
+    //     // TODO support options e.g. interpret as json
+    //     for (const assign of node.Args) yield* this.Assign(assign);
+    //   } else {
+    //     node.exitCode = 0;
+    //     yield* cmdService.runCmd(node, "declare", []);
+    //   }
+    // } else if (node.Variant.Value === "local") {
+    //   for (const arg of node.Args) {
+    //     const process = getProcess(node.meta);
+    //     if (process.key > 0) {
+    //       // Can only set local variable outside session leader,
+    //       // where variables are e.g. /home/foo
+    //       process.localVar[arg.Name.Value] = undefined;
+    //     }
+    //     yield* this.Assign(arg);
+    //   }
+    // } else {
+    //   throw new ShError(`Command: DeclClause: ${node.Variant.Value} unsupported`, 2);
+    // }
   }
 
   /**
@@ -639,6 +700,14 @@ export class JShSemantics {
 
   File(node: JSh.File) {
     return sem.stmts(node, node.Stmts);
+  }
+
+  // biome-ignore lint/correctness/useYield: pattern expects async generator
+  private async *FuncDecl(node: JSh.FuncDecl) {
+    const clonedBody = cloneParsed(node.Body);
+    const wrappedFile = this.wrapInFile(clonedBody);
+    sessionApi.addFunc(node.meta.sessionKey, node.Name.Value, wrappedFile);
+    node.exitCode = 0;
   }
 
   /**
