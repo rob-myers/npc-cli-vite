@@ -113,13 +113,13 @@ export function TtyMenu(props: Props) {
     <div
       className={cn(
         "[--menu-width:54px] max-md:[--menu-width:90px] w-(--menu-width) h-[calc(100%-8px)]",
-        "absolute z-[110] top-0 right-0",
+        "absolute z-110 top-0 right-0",
         "flex flex-col",
         "text-sm leading-1 border-[0_0_2px_2px] border-solid border-[rgba(255,255,255,0.1)] text-white",
         "transition-transform duration-500",
         state.touchMenuOpen
-          ? "transform-[translate_(0px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
-          : "transform-[translate_(var(--menu-width),0px)]",
+          ? "transform-[translate(0px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
+          : "transform-[translate(var(--menu-width),0px)]",
       )}
       onClick={state.onClickMenu}
     >
