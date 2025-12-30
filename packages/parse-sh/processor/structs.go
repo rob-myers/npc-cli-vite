@@ -155,7 +155,7 @@ type Comment struct {
 
 type CoprocClause struct {
 	Type string
-	Name Word
+	Name *Word
 	Stmt Stmt
 	Coproc Pos;
 	Pos Pos
@@ -193,8 +193,8 @@ type Expansion struct {
 	Type string
 	Op string
 	Word Word
-	Pos Pos
-	End Pos
+	// Pos Pos
+	// End Pos
 }
 
 type File struct {
@@ -212,6 +212,9 @@ type ForClause struct {
 	// interface type processor.Loop not supported: only interface{} and easyjson/json Unmarshaler are allowed
 	Loop interface{} // Loop
 	Do []Stmt
+	ForPos Pos
+	DoPos Pos
+	DonePos Pos
 	Pos Pos
 	End Pos
 }
@@ -275,10 +278,12 @@ type ParamExp struct {
 	Width bool
 	Param Lit
 	Index interface{} // ArithmExpr
-	Slice Slice
-	Repl Replace
+	Slice *Slice
+	Repl *Replace
 	Names string
-	Exp Expansion
+	Exp *Expansion
+	Dollar Pos
+	Rbrace Pos
 	Pos Pos
 	End Pos
 }
@@ -313,6 +318,7 @@ type Replace struct {
 	Type string
 	All bool
 	Orig Word
+	With Word
 	Pos Pos
 	End Pos
 }
@@ -613,8 +619,9 @@ func mapCommand(node syntax.Command) Command {
 		case *syntax.CoprocClause:
 			return &CoprocClause{
 				Type: "CoprocClause",
-				Name: *mapWord(node.Name),
+				Name: mapWord(node.Name),
 				Stmt: mapStmt(node.Stmt),
+				Coproc: mapPos(node.Coproc),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
@@ -632,6 +639,9 @@ func mapCommand(node syntax.Command) Command {
 				Do: mapStmts((node.Do)),
 				Select: node.Select,
 				Loop: mapLoop(node.Loop),
+				ForPos: mapPos(node.ForPos),
+				DoPos: mapPos(node.DoPos),
+				DonePos: mapPos(node.DonePos),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}
@@ -724,6 +734,17 @@ func mapComments(comments []syntax.Comment) []Comment {
 	return commentList
 }
 
+func mapExpansion(expansion *syntax.Expansion) *Expansion {
+	if expansion == nil {
+		return nil
+	}
+	return &Expansion{
+		Type: "Expansion",
+		Op: expansion.Op.String(),
+		Word: *mapWord(expansion.Word),
+	}
+}
+
 func mapLit(lit *syntax.Lit) *Lit {
 	if lit == nil {
 		return nil
@@ -802,6 +823,29 @@ func mapRedirects(redirects []*syntax.Redirect) []Redirect {
 		}
 	}
 	return redirs
+}
+
+func mapReplace(replace *syntax.Replace) *Replace {
+	if replace == nil {
+		return nil
+	}
+	return &Replace{
+		Type: "Replace",
+		All: replace.All,
+		Orig: *mapWord(replace.Orig),
+		With: *mapWord(replace.With),
+	}
+}
+
+func mapSlice(slice *syntax.Slice) *Slice {
+	if slice == nil {
+		return nil
+	}
+	return &Slice{
+		Type: "Slice",
+		Length: mapArithmExpr(slice.Length),
+		Offset: mapArithmExpr(slice.Offset),
+	}
 }
 
 func mapStmt(stmt *syntax.Stmt) Stmt {
@@ -934,10 +978,12 @@ func mapWordPart(part syntax.WordPart) WordPart {
 				Width: part.Width,
 				Param: *mapLit(part.Param),
 				Index: mapArithmExpr(part.Index),
-				// Slice: mapSlice(part.Slice),
-				// Repl: mapReplace(part.Repl),
+				Repl: mapReplace(part.Repl),
+				Slice: mapSlice(part.Slice),
 				Names: part.Names.String(),
-				// Exp: mapExpansion(part.Exp),
+				Exp: mapExpansion(part.Exp),
+				Dollar: mapPos(part.Dollar),
+				Rbrace: mapPos(part.Rbrace),
 				Pos: mapPos(part.Pos()),
 				End: mapPos(part.End()),
 			}

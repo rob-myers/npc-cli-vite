@@ -1677,6 +1677,12 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor12(in 
 			} else {
 				(out.Orig).UnmarshalEasyJSON(in)
 			}
+		case "With":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.With).UnmarshalEasyJSON(in)
+			}
 		case "Pos":
 			if in.IsNull() {
 				in.Skip()
@@ -1717,6 +1723,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor12(out
 		const prefix string = ",\"Orig\":"
 		out.RawString(prefix)
 		(in.Orig).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"With\":"
+		out.RawString(prefix)
+		(in.With).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"Pos\":"
@@ -2306,14 +2317,30 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor17(in 
 		case "Slice":
 			if in.IsNull() {
 				in.Skip()
+				out.Slice = nil
 			} else {
-				(out.Slice).UnmarshalEasyJSON(in)
+				if out.Slice == nil {
+					out.Slice = new(Slice)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					(*out.Slice).UnmarshalEasyJSON(in)
+				}
 			}
 		case "Repl":
 			if in.IsNull() {
 				in.Skip()
+				out.Repl = nil
 			} else {
-				(out.Repl).UnmarshalEasyJSON(in)
+				if out.Repl == nil {
+					out.Repl = new(Replace)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					(*out.Repl).UnmarshalEasyJSON(in)
+				}
 			}
 		case "Names":
 			if in.IsNull() {
@@ -2324,8 +2351,28 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor17(in 
 		case "Exp":
 			if in.IsNull() {
 				in.Skip()
+				out.Exp = nil
 			} else {
-				(out.Exp).UnmarshalEasyJSON(in)
+				if out.Exp == nil {
+					out.Exp = new(Expansion)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					(*out.Exp).UnmarshalEasyJSON(in)
+				}
+			}
+		case "Dollar":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.Dollar).UnmarshalEasyJSON(in)
+			}
+		case "Rbrace":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.Rbrace).UnmarshalEasyJSON(in)
 			}
 		case "Pos":
 			if in.IsNull() {
@@ -2397,12 +2444,20 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor17(out
 	{
 		const prefix string = ",\"Slice\":"
 		out.RawString(prefix)
-		(in.Slice).MarshalEasyJSON(out)
+		if in.Slice == nil {
+			out.RawString("null")
+		} else {
+			(*in.Slice).MarshalEasyJSON(out)
+		}
 	}
 	{
 		const prefix string = ",\"Repl\":"
 		out.RawString(prefix)
-		(in.Repl).MarshalEasyJSON(out)
+		if in.Repl == nil {
+			out.RawString("null")
+		} else {
+			(*in.Repl).MarshalEasyJSON(out)
+		}
 	}
 	{
 		const prefix string = ",\"Names\":"
@@ -2412,7 +2467,21 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor17(out
 	{
 		const prefix string = ",\"Exp\":"
 		out.RawString(prefix)
-		(in.Exp).MarshalEasyJSON(out)
+		if in.Exp == nil {
+			out.RawString("null")
+		} else {
+			(*in.Exp).MarshalEasyJSON(out)
+		}
+	}
+	{
+		const prefix string = ",\"Dollar\":"
+		out.RawString(prefix)
+		(in.Dollar).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"Rbrace\":"
+		out.RawString(prefix)
+		(in.Rbrace).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"Pos\":"
@@ -3248,6 +3317,24 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor23(in 
 				}
 				in.Delim(']')
 			}
+		case "ForPos":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.ForPos).UnmarshalEasyJSON(in)
+			}
+		case "DoPos":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.DoPos).UnmarshalEasyJSON(in)
+			}
+		case "DonePos":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.DonePos).UnmarshalEasyJSON(in)
+			}
 		case "Pos":
 			if in.IsNull() {
 				in.Skip()
@@ -3310,6 +3397,21 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor23(out
 			}
 			out.RawByte(']')
 		}
+	}
+	{
+		const prefix string = ",\"ForPos\":"
+		out.RawString(prefix)
+		(in.ForPos).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"DoPos\":"
+		out.RawString(prefix)
+		(in.DoPos).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"DonePos\":"
+		out.RawString(prefix)
+		(in.DonePos).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"Pos\":"
@@ -3563,18 +3665,6 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor25(in 
 			} else {
 				(out.Word).UnmarshalEasyJSON(in)
 			}
-		case "Pos":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				(out.Pos).UnmarshalEasyJSON(in)
-			}
-		case "End":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				(out.End).UnmarshalEasyJSON(in)
-			}
 		default:
 			in.SkipRecursive()
 		}
@@ -3603,16 +3693,6 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor25(out
 		const prefix string = ",\"Word\":"
 		out.RawString(prefix)
 		(in.Word).MarshalEasyJSON(out)
-	}
-	{
-		const prefix string = ",\"Pos\":"
-		out.RawString(prefix)
-		(in.Pos).MarshalEasyJSON(out)
-	}
-	{
-		const prefix string = ",\"End\":"
-		out.RawString(prefix)
-		(in.End).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }
@@ -3943,8 +4023,16 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor28(in 
 		case "Name":
 			if in.IsNull() {
 				in.Skip()
+				out.Name = nil
 			} else {
-				(out.Name).UnmarshalEasyJSON(in)
+				if out.Name == nil {
+					out.Name = new(Word)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					(*out.Name).UnmarshalEasyJSON(in)
+				}
 			}
 		case "Stmt":
 			if in.IsNull() {
@@ -3992,7 +4080,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor28(out
 	{
 		const prefix string = ",\"Name\":"
 		out.RawString(prefix)
-		(in.Name).MarshalEasyJSON(out)
+		if in.Name == nil {
+			out.RawString("null")
+		} else {
+			(*in.Name).MarshalEasyJSON(out)
+		}
 	}
 	{
 		const prefix string = ",\"Stmt\":"
