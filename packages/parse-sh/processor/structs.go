@@ -90,6 +90,7 @@ type Block struct {
 	Stmts []Stmt
 	Lbrace Pos
 	Rbrace Pos
+	Last []Comment
 	Pos Pos
 	End Pos
 }
@@ -575,6 +576,7 @@ func mapCommand(node syntax.Command) Command {
 			return &Block{
 				Type: "Block",
 				Stmts: mapStmts(node.Stmts),
+				Last: mapComments(node.Last),
 				Pos: mapPos(node.Pos()),
 				End: mapPos(node.End()),
 			}

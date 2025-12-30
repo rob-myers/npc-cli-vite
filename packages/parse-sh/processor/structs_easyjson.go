@@ -5099,6 +5099,33 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor35(in 
 			} else {
 				(out.Rbrace).UnmarshalEasyJSON(in)
 			}
+		case "Last":
+			if in.IsNull() {
+				in.Skip()
+				out.Last = nil
+			} else {
+				in.Delim('[')
+				if out.Last == nil {
+					if !in.IsDelim(']') {
+						out.Last = make([]Comment, 0, 0)
+					} else {
+						out.Last = []Comment{}
+					}
+				} else {
+					out.Last = (out.Last)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v68 Comment
+					if in.IsNull() {
+						in.Skip()
+					} else {
+						(v68).UnmarshalEasyJSON(in)
+					}
+					out.Last = append(out.Last, v68)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
 		case "Pos":
 			if in.IsNull() {
 				in.Skip()
@@ -5137,11 +5164,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor35(out
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v68, v69 := range in.Stmts {
-				if v68 > 0 {
+			for v69, v70 := range in.Stmts {
+				if v69 > 0 {
 					out.RawByte(',')
 				}
-				(v69).MarshalEasyJSON(out)
+				(v70).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -5155,6 +5182,22 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor35(out
 		const prefix string = ",\"Rbrace\":"
 		out.RawString(prefix)
 		(in.Rbrace).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"Last\":"
+		out.RawString(prefix)
+		if in.Last == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v71, v72 := range in.Last {
+				if v71 > 0 {
+					out.RawByte(',')
+				}
+				(v72).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
+		}
 	}
 	{
 		const prefix string = ",\"Pos\":"
@@ -5659,13 +5702,13 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor39(in 
 					out.Elems = (out.Elems)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v70 ArrayElem
+					var v73 ArrayElem
 					if in.IsNull() {
 						in.Skip()
 					} else {
-						(v70).UnmarshalEasyJSON(in)
+						(v73).UnmarshalEasyJSON(in)
 					}
-					out.Elems = append(out.Elems, v70)
+					out.Elems = append(out.Elems, v73)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -5726,11 +5769,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor39(out
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v71, v72 := range in.Elems {
-				if v71 > 0 {
+			for v74, v75 := range in.Elems {
+				if v74 > 0 {
 					out.RawByte(',')
 				}
-				(v72).MarshalEasyJSON(out)
+				(v75).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -5834,13 +5877,13 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(in 
 					out.Comments = (out.Comments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v73 Comment
+					var v76 Comment
 					if in.IsNull() {
 						in.Skip()
 					} else {
-						(v73).UnmarshalEasyJSON(in)
+						(v76).UnmarshalEasyJSON(in)
 					}
-					out.Comments = append(out.Comments, v73)
+					out.Comments = append(out.Comments, v76)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -5893,11 +5936,11 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor40(out
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v74, v75 := range in.Comments {
-				if v74 > 0 {
+			for v77, v78 := range in.Comments {
+				if v77 > 0 {
 					out.RawByte(',')
 				}
-				(v75).MarshalEasyJSON(out)
+				(v78).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
