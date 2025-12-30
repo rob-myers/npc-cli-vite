@@ -496,6 +496,7 @@ export class TtyShell {
         jShSemantics.handleTopLevelProcessError(e);
       } else {
         ttyError("unexpected error propagated to tty.shell", e);
+        this.buffer.length = 0;
       }
       this.prompt("$");
     } finally {
