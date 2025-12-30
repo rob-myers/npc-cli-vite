@@ -47,9 +47,9 @@ type Assign struct {
 	Type string
 	Append bool
 	Naked bool
-	Name Lit
+	Name *Lit
 	Index interface{} // ArithmExpr
-	Value Word
+	Value *Word
 	Array *ArrayExpr
 	Pos Pos
 	End Pos
@@ -530,8 +530,8 @@ func mapAssigns(assigns []*syntax.Assign) []Assign {
 			Naked:  curr.Naked,
 			Index: mapArithmExpr(curr.Index),
 			Array: mapArrayExpr(curr.Array),
-			Name: *mapLit(curr.Name),
-			Value: *mapWord(curr.Value),
+			Name: mapLit(curr.Name),
+			Value: mapWord(curr.Value),
 			Pos: mapPos(curr.Pos()),
 			End: mapPos(curr.End()),
 		}
