@@ -423,9 +423,9 @@ export class JShSemantics {
           case "DeclClause":
             generator = this.DeclClause(node);
             break;
-          // case "ForClause":
-          //   generator = this.ForClause(node);
-          //   break;
+          case "ForClause":
+            generator = this.ForClause(node);
+            break;
           case "FuncDecl":
             generator = this.FuncDecl(node);
             break;
@@ -702,6 +702,60 @@ export class JShSemantics {
     return sem.stmts(node, node.Stmts);
   }
 
+  private async *ForClause(node: JSh.ForClause) {
+    if (node.Select === true) {
+      throw new ShError("not implemented", 2);
+    }
+
+    if (node.Loop.type === "CStyleLoop") {
+      throw new ShError("not implemented", 2);
+    }
+
+    const { Loop, Do } = node;
+
+    let itStartMs = -1,
+      itLengthMs = 0;
+
+    const varName = Loop.Name.Value;
+    const items = Loop.Items.slice() as ((typeof Loop.Items)[0] | { expanded: any })[];
+    let item: (typeof items)[0] | undefined;
+
+    while ((item = items.shift())) {
+      // Force iteration to take at least `itMinLengthMs` milliseconds
+      if ((itLengthMs = Date.now() - itStartMs) < itMinLengthMs) {
+        await cmdService.sleep(node.meta, (itMinLengthMs - itLengthMs) / 1000);
+      }
+      itStartMs = Date.now();
+
+      if (!("expanded" in item)) {
+        // aggregate expanded
+        const expanded = await this.lastExpanded(this.Expand(item));
+        items.unshift(
+          ...expanded.values
+            .map((x) => parseJsArg(x))
+            .flatMap(
+              // handle $( range 5 ) is "[0, 1, 2, 3, 4]"
+              (x) => (Array.isArray(x) ? x.map((y) => ({ expanded: y })) : { expanded: x }),
+            ),
+        );
+        // itStartMs = -1;
+        continue;
+      }
+
+      try {
+        sessionApi.setVar(node.meta, varName, item.expanded);
+        yield* this.stmts(node, Do);
+      } catch (e) {
+        // support `continue`
+        if (!(e instanceof SigKillError && e.skip === true)) {
+          throw e;
+        }
+        // speeding up continue means large loops cannot be terminated
+        // itStartMs -= itMinLengthMs;
+      }
+    }
+  }
+
   // biome-ignore lint/correctness/useYield: pattern expects async generator
   private async *FuncDecl(node: JSh.FuncDecl) {
     const clonedBody = cloneParsed(node.Body);
@@ -846,7 +900,6 @@ export class JShSemantics {
 }
 
 export const jShSemantics = new JShSemantics();
-
 /** Local shortcut */
 const sem = jShSemantics;
 
@@ -856,3 +909,5 @@ export interface Expanded {
   /** This is values.join(' ') */
   value: string;
 }
+
+const itMinLengthMs = 300;
