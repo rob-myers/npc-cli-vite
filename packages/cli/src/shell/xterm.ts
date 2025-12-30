@@ -327,6 +327,7 @@ export class TtyXterm {
           break;
         // case "b": // Alt + Left
         case "[1;5D": // Alt + Left
+        case "[1;3D": // Alt + Left
           cursor = this.closestLeftBoundary(this.input, this.cursor);
           if (cursor != null) {
             this.setCursor(cursor);
@@ -334,6 +335,7 @@ export class TtyXterm {
           break;
         // case "f": // Alt + Right
         case "[1;5C": // Alt + Right
+        case "[1;3C": // Alt + Right
           cursor = this.closestRightBoundary(this.input, this.cursor);
           if (cursor != null) {
             this.setCursor(cursor);
