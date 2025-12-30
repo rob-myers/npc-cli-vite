@@ -1,10 +1,10 @@
-import { type JSh, reconstructReplParamExp } from "@npc-cli/parse-sh";
+import { computeJShSource, type JSh, reconstructReplParamExp } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
-import { jsStringify, last, parseJsArg, safeJsonParse } from "@npc-cli/util/legacy/generic";
+import { jsStringify, last, parseJsArg, pause, safeJsonParse } from "@npc-cli/util/legacy/generic";
 import braces from "braces";
 import { cmdService, preProcessWrite } from "./command";
-import { ansi, bracesOpts, ProcessTag } from "./const";
-import { redirectNode } from "./io";
+import { ansi, bracesOpts, ProcessTag, toProcessStatus } from "./const";
+import { isTtyAt, redirectNode } from "./io";
 import { cloneParsed, type NamedFunction } from "./parse";
 import { sessionApi } from "./session";
 import { ttyError } from "./shell";
@@ -13,6 +13,7 @@ import {
   handleProcessError,
   interpretEscapeSequences,
   killError,
+  killProcess,
   matchFuncFormat,
   normalizeWhitespace,
   ShError,
@@ -240,6 +241,127 @@ export class JShSemantics {
     node.exitCode = 0;
   }
 
+  private async *BinaryCmd(node: JSh.BinaryCmd) {
+    /** All contiguous binary cmds for same operator */
+    const cmds = computeJShSource.binaryCmds(node);
+    // Restrict to leaves of binary tree, assuming it was
+    // originally left-biased e.g. (((A * B) * C) * D) * E
+    const stmts = [cmds[0].X].concat(cmds.map(({ Y }) => Y));
+
+    switch (node.Op) {
+      case "&&": {
+        for (const stmt of stmts) {
+          yield* sem.Stmt(stmt);
+          if ((node.exitCode = stmt.exitCode)) break;
+        }
+        break;
+      }
+      case "||": {
+        for (const stmt of stmts) {
+          yield* sem.Stmt(stmt);
+          if (!(node.exitCode = stmt.exitCode)) {
+            break;
+          }
+        }
+        break;
+      }
+      case "|": {
+        const { sessionKey, pid: ppid } = node.meta;
+        const pgid = ppid; // 🔔 `node.meta.pgid` breaks pgid 0, and nested pipelines
+        const { ttyShell } = sessionApi.getSession(sessionKey);
+
+        function killPipeChildren(SIGINT?: boolean) {
+          sessionApi
+            .getProcesses(sessionKey, pgid)
+            // nested-pipeline issue?
+            .filter((x) => x.key !== ppid && x.status !== toProcessStatus.Killed)
+            .reverse()
+            .forEach((x) => void killProcess(x, SIGINT));
+        }
+        const statusHandlers = cmdService.handleStatus(node.meta, {
+          cleanups: killPipeChildren,
+        });
+
+        const fifos = stmts
+          .slice(0, -1)
+          .map(({ meta }, i) => sessionApi.createFifo(`/dev/fifo-${sessionKey}-${meta.pid}-${i}`));
+        const stdOut = sessionApi.resolve(1, stmts.at(-1)!.meta);
+        const process = sessionApi.getProcess(node.meta);
+
+        try {
+          // Clone, connecting stdout to stdin of subsequent process
+          const clones = stmts.map((x) => this.wrapInFile(cloneParsed(x), { ppid, pgid }));
+          fifos.forEach(
+            (fifo, i) => void (clones[i + 1].meta.fd[0] = clones[i].meta.fd[1] = fifo.key),
+          );
+
+          const errors = [] as any[];
+          let exitCode = undefined as undefined | number;
+          const cleanupSetupMs = 0; // 🔔 30ms caused restart issue while `events | map key`
+
+          await Promise.allSettled(
+            clones.map((file, i) =>
+              (async () => {
+                try {
+                  await ttyShell.spawn(file, {
+                    by: "|",
+                    localVar: true,
+                    // e.g. `take 3 | true`:
+                    cleanups:
+                      i === 0 && isTtyAt(file.meta, 0)
+                        ? [() => ttyShell.finishedReading()]
+                        : undefined,
+                    // 🔔 despite new process group we do not delete ptags.interactive
+                  });
+                } catch (e) {
+                  errors.push(e);
+                  throw e;
+                } finally {
+                  // 🔔 assume we're the only process writing to `stdOut`
+                  (fifos[i] ?? stdOut).finishedWriting(); // pipe-child `i` won't write any more
+                  // (fifos[i - 1] ?? stdIn).finishedReading(); // pipe-child `i` won't read any more
+                  fifos[i - 1]?.finishedReading(); // pipe-child `i` won't read any more
+
+                  if (i === clones.length - 1 && errors.length === 0) {
+                    exitCode = file.exitCode ?? 0;
+                  } else if (errors.length !== 1) {
+                    // biome-ignore lint/correctness/noUnsafeFinally: must have thrown
+                    return; // No error, or already handled
+                  }
+                  // 🔔 Kill other pipe-children (delay permits cleanup setup)
+                  setTimeout(killPipeChildren, cleanupSetupMs);
+                }
+              })(),
+            ),
+          );
+          // 🔔 Avoid above `killPipeChildren` killing children of next pipeline
+          // e.g. call '() => { throw "☹️" }' | true; true | { sleep 1; echo 🔔; }
+          await pause(cleanupSetupMs);
+
+          if (
+            exitCode === undefined ||
+            exitCode === 130 ||
+            process.status === toProcessStatus.Killed
+          ) {
+            node.exitCode = errors[0]?.exitCode ?? 1;
+            throw killError(node.meta);
+          } else {
+            node.exitCode = exitCode;
+          }
+        } finally {
+          fifos.forEach((fifo) => {
+            fifo.finishedWriting();
+            sessionApi.removeDevice(fifo.key);
+          });
+          statusHandlers.dispose();
+        }
+        break;
+      }
+      default:
+        throw new ShError(`binary command ${node.Op} unsupported`, 2);
+    }
+  }
+
   private Block(node: JSh.Block) {
     return this.stmts(node, node.Stmts);
   }
@@ -294,9 +416,9 @@ export class JShSemantics {
           case "Block":
             generator = this.Block(node);
             break;
-          // case "BinaryCmd":
-          //   generator = this.BinaryCmd(node);
-          //   break;
+          case "BinaryCmd":
+            generator = this.BinaryCmd(node);
+            break;
           // // syntax.LangBash only
           // case "DeclClause":
           //   generator = this.DeclClause(node);
