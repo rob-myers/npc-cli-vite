@@ -313,7 +313,7 @@ class CmdService {
       return safeJsonCompact(x);
     },
 
-    /** 🔔 Use `cleanups() { asyncIterable.return?.() }` to support ctrl-c */
+    /** Use `cleanups() { asyncIterable.return?.() }` to support ctrl-c */
     observableToAsyncIterable,
 
     /** js parse with string fallback */
