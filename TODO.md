@@ -99,7 +99,10 @@
   - ✅ test mount Tty
   - ✅ fix issue `failed to expand word`
 
-- 🚧 finish migrating semantics
+- 🚧 shell refinement
+  - ✅ finish migrating semantics
+  - ✅ provide `modules` so can `import util`
+  - 🚧 fix ctrl-C for `poll`
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json

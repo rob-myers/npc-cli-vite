@@ -5,6 +5,13 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 import { Tty } from "@npc-cli/cli";
+/**
+ * Each keyed module contains JS generators and functions.
+ * - They will be converted into shell functions.
+ * - We also store them directly in session.
+ * - Example usage `import util`
+ */
+import * as modules from "@npc-cli/cli/jsh/modules";
 import { cn } from "@npc-cli/util";
 import { useRef, useState } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
@@ -108,9 +115,9 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
             env={{}}
             tabKey="my-tab-key"
             onKey={() => {}}
-            modules={{}}
+            modules={modules}
             shFiles={{}}
-            profile={`echo Hello, world\necho ...`}
+            profile={`import util\necho Hello, world\necho ...`}
           />
         </div>
       </GridLayout>

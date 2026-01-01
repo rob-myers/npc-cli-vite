@@ -431,6 +431,7 @@ export type Session = {
 
   // 🚧
   // modules: import("../terminal/TtyWithFunctions").TtyJsModules;
+  /** e.g. `import util` */
   modules: any;
 
   nextPid: number;
