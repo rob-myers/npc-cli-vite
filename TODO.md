@@ -102,7 +102,7 @@
 - 🚧 shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
-  - 🚧 fix ctrl-C for `poll`
+  - ✅ fix ctrl-C for `poll`
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json

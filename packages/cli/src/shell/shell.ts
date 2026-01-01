@@ -145,6 +145,10 @@ export class TtyShell {
         );
         this.oneTimeReaders.length = 0;
 
+        this.prompt("$");
+        jShSemantics.handleTopLevelProcessError(
+          new SigKillError({ pid: 0, sessionKey: this.sessionKey }),
+        );
         break;
       }
       case "send-line": {
