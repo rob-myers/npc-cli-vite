@@ -25,7 +25,6 @@ import {
   SigKillError,
 } from "./util";
 
-// 🚧
 export class JShSemantics {
   private async applyRedirects(parent: JSh.Command, redirects: JSh.Redirect[]) {
     try {

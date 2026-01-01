@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/main.ts"
+    ".": "./src/main.ts",
+    "./jsh/modules": "./src/jsh/modules.js"
   },
   "scripts": {},
   "dependencies": {

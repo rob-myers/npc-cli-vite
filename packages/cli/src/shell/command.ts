@@ -390,8 +390,7 @@ class CmdService {
       {
         home: session.var, // see NPC.RunArg['home']
         etc: session.etc,
-        // 🚧
-        // lib: session.modules, // see NPC.RunArg['lib']
+        lib: session.modules, // see NPC.RunArg['lib']
       },
       {
         get: (target, key) => {
