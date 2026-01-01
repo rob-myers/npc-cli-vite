@@ -6,7 +6,8 @@
       "suspicious": {
         "noAssignInExpressions": "off",
         "noConfusingVoidType": "off",
-        "noDoubleEquals": "off"
+        "noDoubleEquals": "off",
+        "useIterableCallbackReturn": "off"
       }
     }
   },
