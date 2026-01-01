@@ -113,7 +113,7 @@ export function TtyMenu(props: Props) {
     <div
       className={cn(
         "absolute z-110 top-0 right-0",
-        "[--menu-width:54px] max-md:[--menu-width:90px] w-(--menu-width)",
+        "[--menu-width:54px] w-(--menu-width)",
         "flex flex-col",
         "text-sm leading-1 border-[0_0_2px_2px] border-solid border-[rgba(255,255,255,0.1)] text-white",
         "transition-transform duration-500",
