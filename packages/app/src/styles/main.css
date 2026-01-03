@@ -6,6 +6,7 @@
 @plugin "@tailwindcss/typography";
 
 @source "../../../../packages/cli/src";
+@source "../../../../packages/ui";
 
 html {
   overscroll-behavior: none;
