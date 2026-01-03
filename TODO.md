@@ -38,13 +38,13 @@
   - Shift for 0.25 unit translation
 
 - 🚧 responsive grid layout items as packages/ui/*
-  - scaffold script
-  - registered somehow inside app
-  - packages/ui/demo
+  - 🚧 registered somehow inside app
+  - 🚧 packages/ui/demo
   - packages/ui/mdx
-  - packages/ui/themer
   - packages/ui/cli
+  - packages/ui/themer
   - packages/ui/world
+  - scaffold script
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics

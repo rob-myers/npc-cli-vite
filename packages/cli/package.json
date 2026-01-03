@@ -19,6 +19,7 @@
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
     "react": "catalog:",
+    "react-dom": "catalog:",
     "react-beforeunload": "^2.7.0",
     "react-use-measure": "^2.1.7",
     "rxjs": "catalog:",
