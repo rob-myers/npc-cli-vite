@@ -4,7 +4,10 @@
   "type": "module",
   "exports": {
     ".": "./src/main.ts",
-    "./jsh/modules": "./src/jsh/modules.js"
+    "./jsh/modules": "./src/jsh/modules.js",
+    "./legacy/npc.d.ts": {
+      "types": "./src/legacy/npc.d.ts"
+    }
   },
   "scripts": {},
   "dependencies": {
