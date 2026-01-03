@@ -4,6 +4,8 @@
     { "path": "./packages/app" },
     { "path": "./packages/cli" },
     { "path": "./packages/media" },
-    { "path": "./packages/util" }
+    { "path": "./packages/util" },
+    { "path": "./packages/ui/demo" },
+    { "path": "./packages/ui/registry" }
   ]
 }

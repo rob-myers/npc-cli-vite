@@ -10,6 +10,7 @@
   "dependencies": {
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/parse-sh": "workspace:^",
+    "@npc-cli/ui__registry": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",

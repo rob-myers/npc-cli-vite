@@ -1,5 +1,5 @@
 {
-  "name": "@npc-cli/ui__demo",
+  "name": "@npc-cli/ui__registry",
   "private": true,
   "type": "module",
   "exports": {
@@ -7,7 +7,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "@npc-cli/ui__demo": "workspace:^"
   }
 }

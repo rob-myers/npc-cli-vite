@@ -12,6 +12,7 @@ import { Tty } from "@npc-cli/cli";
  * - Example usage `import util`
  */
 import * as modules from "@npc-cli/cli/jsh/modules";
+import { uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
 import { useRef, useState } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
@@ -80,11 +81,14 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           setDragging(false);
         }}
       >
-        {["a", "b", "c"].map((key) => (
+        {["a", "b"].map((key) => (
           <div key={key} className="border rounded flex items-center justify-center">
             {key}
           </div>
         ))}
+        <div key={"c"} className="border rounded flex items-center justify-center">
+          <uiRegistry.Demo />
+        </div>
         <div
           key="d"
           className={cn(

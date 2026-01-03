@@ -122,6 +122,9 @@ importers:
       '@npc-cli/parse-sh':
         specifier: workspace:^
         version: link:../parse-sh
+      '@npc-cli/ui__registry':
+        specifier: workspace:^
+        version: link:../ui/registry
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
@@ -261,6 +264,12 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+
+  packages/ui/registry:
+    dependencies:
+      '@npc-cli/ui__demo':
+        specifier: workspace:^
+        version: link:../demo
 
   packages/util:
     dependencies:
