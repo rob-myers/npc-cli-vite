@@ -2,6 +2,7 @@ import mdx from "@mdx-js/rollup";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
+import vike from "vike/plugin";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
@@ -14,6 +15,7 @@ export default defineConfig({
     }),
     mdx(),
     react(),
+    vike({ prerender: true }),
     tailwindcss(),
   ],
 });

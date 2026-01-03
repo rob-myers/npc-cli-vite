@@ -38,8 +38,9 @@
   - Shift for 0.25 unit translation
 
 - 🚧 responsive grid layout items as packages/ui/*
+  - ✅ packages/ui/demo
   - 🚧 registered somehow inside app
-  - 🚧 packages/ui/demo
+  - 🚧 can specify ui by key in layout
   - packages/ui/mdx
   - packages/ui/cli
   - packages/ui/themer

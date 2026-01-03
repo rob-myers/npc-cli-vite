@@ -30,6 +30,7 @@
     "@tanstack/react-router-devtools": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
     "globals": "catalog:",
-    "tailwindcss": "catalog:"
+    "tailwindcss": "catalog:",
+    "vike": "^0.4.250"
   }
 }
