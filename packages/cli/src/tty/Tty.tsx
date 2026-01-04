@@ -240,7 +240,6 @@ export function Tty(props: Props) {
       });
 
       state.resize();
-      // const onKeyDispose = xterm.onKey((e) => props.onKey?.(e.domEvent));
       xterm.textarea?.addEventListener("focus", state.onFocus);
 
       const cleanupExternalMsgs = session.ttyShell.io.handleWriters(
@@ -248,12 +247,16 @@ export function Tty(props: Props) {
       );
 
       return () => {
-        // onKeyDispose.dispose();
         xterm.textarea?.removeEventListener("focus", state.onFocus);
         cleanupExternalMsgs();
       };
     }
-  }, [state.base.session, props.onKey]);
+  }, [state.base.session]);
+
+  React.useEffect(() => {
+    const onKeyDispose = state.base.xterm?.xterm.onKey((e) => props.onKey?.(e.domEvent));
+    return () => onKeyDispose?.dispose();
+  }, [props.onKey]);
 
   React.useEffect(() => {
     // Handle resize
