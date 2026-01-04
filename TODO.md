@@ -54,4 +54,7 @@
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
 
+- 🚧 avoid react-grid-layout initial animation
+  - ✅ initialWidth window.clientWidth + positionStrategy={absoluteStrategy} works
+
 - add react-three-fiber and import gltf

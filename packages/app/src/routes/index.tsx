@@ -33,7 +33,7 @@ const demo = {
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
       { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
       { i: "c", x: 4, y: 0, w: 1, h: 2 },
-      { i: "d", x: 0, y: 1, w: 3, h: 3, isDraggable: false },
+      { i: "d", x: 0, y: 2, w: 3, h: 3, isDraggable: false },
       { i: "e", x: 0, y: 4, w: 1, h: 1 },
       { i: "f", x: 6, y: 2, w: 3, h: 3 },
     ],

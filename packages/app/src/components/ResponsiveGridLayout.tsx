@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
+import { absoluteStrategy } from "react-grid-layout/core";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -22,7 +23,9 @@ import { themeApi, useThemeName } from "../stores/theme.store";
 export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBreakpoint }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
-  const { width, containerRef } = useContainerWidth();
+  const { width, containerRef } = useContainerWidth({
+    initialWidth: window.innerWidth, // avoid initial animation + positionStrategy={absoluteStrategy}
+  });
 
   const { layout, cols, setLayouts } = useResponsiveLayout({
     width,
@@ -38,7 +41,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
 
   // 🚧 useStateRef and useUpdate
   // disable initial animation until fade in
-  const [animateItems, setAnimateItems] = useState(false);
+  const [_animateItems, setAnimateItems] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -50,15 +53,16 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
       ref={containerRef}
       className="w-full overflow-auto h-full border border-white"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { duration: 0.3 } }}
+      animate={{ opacity: 1, transition: { duration: 0 } }}
       onAnimationComplete={() => setAnimateItems(true)}
     >
       <GridLayout
         className={cn(
-          !animateItems && "[&_.react-grid-item]:transition-none!",
+          // !animateItems && "[&_.react-grid-item]:transition-none!",
           (resizing || dragging) && "select-none",
           "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
         )}
+        // autoSize={false}
         width={width}
         gridConfig={{
           cols,
@@ -80,6 +84,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           layouts.current.lg = layouts.current.sm = layout;
           setDragging(false);
         }}
+        positionStrategy={absoluteStrategy} // avoid initial animation
       >
         {["a", "b"].map((key) => (
           <div key={key} className="border rounded flex items-center justify-center">
