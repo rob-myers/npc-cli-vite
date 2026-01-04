@@ -22,8 +22,8 @@
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
     "react": "catalog:",
+    "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
-    "react-beforeunload": "^2.7.0",
     "react-use-measure": "^2.1.7",
     "rxjs": "catalog:",
     "sugar-high": "^0.9.5",
@@ -32,6 +32,6 @@
   "devDependencies": {
     "@types/braces": "catalog:",
     "@types/lodash.clonedeep": "^4.5.9",
-    "@types/react-beforeunload": "^2.1.5"
+    "@types/react-beforeunload": "catalog:"
   }
 }
