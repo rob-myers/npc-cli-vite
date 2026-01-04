@@ -1,5 +1,5 @@
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
-import { absoluteStrategy } from "react-grid-layout/core";
+// import { absoluteStrategy } from "react-grid-layout/core";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -14,7 +14,7 @@ import { Tty } from "@npc-cli/cli";
 import * as modules from "@npc-cli/cli/jsh/modules";
 import { uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TestMdx from "../blog/test-mdx.mdx";
 import { themeApi, useThemeName } from "../stores/theme.store";
 
@@ -26,12 +26,11 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
     initialWidth: window.innerWidth, // avoid initial animation + positionStrategy={absoluteStrategy}
   });
 
-  const { layout, cols, setLayouts } = useResponsiveLayout({
+  const { layout, cols, setLayouts, breakpoint } = useResponsiveLayout({
     width,
     breakpoints,
     cols: colsByBreakpoint,
     layouts: layouts.current,
-    compactType: "horizontal",
     onBreakpointChange(_bp, _cols) {
       // Fixes overflow on slow/sudden change
       setLayouts((layouts.current = { ...layouts.current }));
@@ -39,21 +38,25 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
   });
 
   // 🚧 useStateRef and useUpdate
+  const [preventTransition, setPreventTransition] = useState(true);
   const [resizing, setResizing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   // 🚧 packages/ui/themer
   const theme = useThemeName();
 
+  useEffect(() => void setTimeout(() => setPreventTransition(false), 0), []);
+
   return (
     <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
       <GridLayout
         className={cn(
-          "[&_.react-grid-item]:transition-none!",
+          preventTransition && "[&_.react-grid-item]:transition-none!",
           (resizing || dragging) && "select-none",
           "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
         )}
         // autoSize={false}
+        // compactor={noCompactor}
         width={width}
         gridConfig={{
           cols,
@@ -65,17 +68,19 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           setResizing(true);
         }}
         onResizeStop={(layout) => {
-          layouts.current.lg = layouts.current.sm = layout;
+          // layouts.current.lg = layouts.current.sm = layout;
+          layouts.current[breakpoint] = layout;
           setResizing(false);
         }}
         onDragStart={() => {
           setDragging(true);
         }}
         onDragStop={(layout) => {
-          layouts.current.lg = layouts.current.sm = layout;
+          // layouts.current.lg = layouts.current.sm = layout;
+          layouts.current[breakpoint] = layout;
           setDragging(false);
         }}
-        positionStrategy={absoluteStrategy} // avoid initial animation
+        // positionStrategy={absoluteStrategy} // avoid initial animation
       >
         {["a", "b"].map((key) => (
           <div key={key} className="border rounded flex items-center justify-center">
@@ -117,7 +122,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
             onKey={() => {}}
             modules={modules}
             shFiles={{}}
-            profile={`import util\necho Hello, world\necho ...`}
+            profile={`import util\n`}
           />
         </div>
       </GridLayout>
