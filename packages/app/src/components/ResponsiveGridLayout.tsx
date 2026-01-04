@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import { absoluteStrategy } from "react-grid-layout/core";
 
@@ -40,8 +39,6 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
   });
 
   // 🚧 useStateRef and useUpdate
-  // disable initial animation until fade in
-  const [_animateItems, setAnimateItems] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -49,16 +46,10 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
   const theme = useThemeName();
 
   return (
-    <motion.div
-      ref={containerRef}
-      className="w-full overflow-auto h-full border border-white"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { duration: 0 } }}
-      onAnimationComplete={() => setAnimateItems(true)}
-    >
+    <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
       <GridLayout
         className={cn(
-          // !animateItems && "[&_.react-grid-item]:transition-none!",
+          "[&_.react-grid-item]:transition-none!",
           (resizing || dragging) && "select-none",
           "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
         )}
@@ -130,7 +121,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           />
         </div>
       </GridLayout>
-    </motion.div>
+    </div>
   );
 }
 
