@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "@npc-cli/scripts",
+  "type": "module",
+  "bin": {
+    "scaffold-package": "./src/bins/scaffold-package.ts"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "catalog:"
+  }
+}
