@@ -38,13 +38,14 @@
   - Shift for 0.25 unit translation
 
 - 🚧 responsive grid layout items as packages/ui/*
+  - ✅ packages/ui/demo
+  - 🚧 scaffold script
+  - 🚧 packages/ui/mdx
+  - 🚧 packages/ui/cli
+  - 🚧 packages/ui/site (e.g. theme button)
   - 🚧 registered somehow inside app
-  - 🚧 packages/ui/demo
-  - packages/ui/mdx
-  - packages/ui/cli
-  - packages/ui/themer
+  - 🚧 defined by layout
   - packages/ui/world
-  - scaffold script
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
@@ -54,7 +55,7 @@
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
 
-- 🚧 avoid react-grid-layout initial animation
+- ✅ avoid react-grid-layout initial animation
   - ✅ initialWidth window.clientWidth + positionStrategy={absoluteStrategy} works
 
 - add react-three-fiber and import gltf
