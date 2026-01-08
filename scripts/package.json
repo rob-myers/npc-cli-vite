@@ -3,13 +3,10 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "bin": {
-    "scaffold-package": "./src/bins/scaffold-package.ts"
+    "scaffold-ui": "./src/bins/scaffold-ui.ts"
   },
   "dependencies": {
-    "@inquirer/prompts": "catalog:",
-    "zod": "catalog:"
+    "@inquirer/prompts": "catalog:"
   },
-  "devDependencies": {
-    "type-fest": "catalog:"
-  }
+  "devDependencies": {}
 }

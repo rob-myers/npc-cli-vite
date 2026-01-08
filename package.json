@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@npc-cli/scripts": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
