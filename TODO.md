@@ -42,12 +42,14 @@
   - ✅ packages/ui/demo -> packages/ui/template
   - ✅ scaffold-ui script
     - `pnpm exec scaffold-ui`
-  - 🚧 packages/ui/mdx
+  - 🚧 packages/ui/blog (renders mdx, can specify initial)
   - 🚧 packages/ui/cli
   - 🚧 packages/ui/site (e.g. theme button)
   - 🚧 registered somehow inside app
   - 🚧 defined by layout
-  - packages/ui/world
+  - 🚧 can have serializable props
+
+- packages/ui/world
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics

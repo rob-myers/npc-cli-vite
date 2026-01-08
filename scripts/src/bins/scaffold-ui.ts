@@ -14,7 +14,7 @@ const { packageName, packageDirectory } = await (async (): Promise<{
   packageDirectory: string;
 }> => {
   const packageSuffix = await input({
-    message: 'package suffix e.g. "foo" will become @npc-cli/ui__foo',
+    message: "package suffix e.g. foo becomes @npc-cli/ui__foo",
     validate: (value) =>
       /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value) ||
       `invalid package suffix ${value}: must be non-empty lowercase and dash-separated`,
