@@ -40,7 +40,8 @@
 - 🚧 responsive grid layout items as packages/ui/*
   - ✅ packages/ui/demo
   - ✅ packages/ui/demo -> packages/ui/template
-  - 🚧 scaffold script
+  - ✅ scaffold-ui script
+    - `pnpm exec scaffold-ui`
   - 🚧 packages/ui/mdx
   - 🚧 packages/ui/cli
   - 🚧 packages/ui/site (e.g. theme button)

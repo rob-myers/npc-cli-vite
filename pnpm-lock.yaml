@@ -90,9 +90,6 @@ catalogs:
     tailwindcss:
       specifier: ^4.1.17
       version: 4.1.17
-    type-fest:
-      specifier: ^5.3.1
-      version: 5.3.1
     typescript:
       specifier: ~5.9.3
       version: 5.9.3
@@ -110,6 +107,9 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.3.8
+      '@npc-cli/scripts':
+        specifier: workspace:*
+        version: link:scripts
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.2
@@ -315,13 +315,6 @@ importers:
       '@inquirer/prompts':
         specifier: 'catalog:'
         version: 8.1.0(@types/node@24.10.2)
-      zod:
-        specifier: 'catalog:'
-        version: 4.1.13
-    devDependencies:
-      type-fest:
-        specifier: 'catalog:'
-        version: 5.3.1
 
 packages:
 
@@ -2387,10 +2380,6 @@ packages:
   sugar-high@0.9.5:
     resolution: {integrity: sha512-eirwp9p7QcMg6EFCD6zrGh4H30uFx2YtfiMJUavagceP6/YUUjLeiQmis7QuwqKB3nXrWXlLaRumCqOd9AKpSA==}
 
-  tagged-tag@1.0.0:
-    resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
-    engines: {node: '>=20'}
-
   tailwind-merge@3.4.0:
     resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
 
@@ -2428,10 +2417,6 @@ packages:
     resolution: {integrity: sha512-5C1sg4USs1lfG0GFb2RLXsdpXqBSEhAaA/0kPL01wxzpMqLILNxIxIOKiILz+cdg/pLnOUxFYOR5yhHU666wbw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
-
-  type-fest@5.3.1:
-    resolution: {integrity: sha512-VCn+LMHbd4t6sF3wfU/+HKT63C9OoyrSIf4b+vtWHpt2U7/4InZG467YDNMFMR70DdHjAdpPWmw2lzRdg0Xqqg==}
-    engines: {node: '>=20'}
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -4659,8 +4644,6 @@ snapshots:
 
   sugar-high@0.9.5: {}
 
-  tagged-tag@1.0.0: {}
-
   tailwind-merge@3.4.0: {}
 
   tailwindcss@4.1.17: {}
@@ -4692,10 +4675,6 @@ snapshots:
       get-tsconfig: 4.13.0
     optionalDependencies:
       fsevents: 2.3.3
-
-  type-fest@5.3.1:
-    dependencies:
-      tagged-tag: 1.0.0
 
   typescript@5.9.3: {}
 
