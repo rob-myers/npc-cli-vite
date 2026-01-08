@@ -1,5 +1,5 @@
-import { Demo } from "@npc-cli/ui__demo";
+import { Template } from "@npc-cli/ui__template";
 
 export const uiRegistry = {
-  Demo,
+  Template,
 };

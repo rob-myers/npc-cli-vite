@@ -6,6 +6,10 @@
     "scaffold-package": "./src/bins/scaffold-package.ts"
   },
   "dependencies": {
-    "@inquirer/prompts": "catalog:"
+    "@inquirer/prompts": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "type-fest": "catalog:"
   }
 }

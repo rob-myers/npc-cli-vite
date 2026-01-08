@@ -39,6 +39,7 @@
 
 - 🚧 responsive grid layout items as packages/ui/*
   - ✅ packages/ui/demo
+  - ✅ packages/ui/demo -> packages/ui/template
   - 🚧 scaffold script
   - 🚧 packages/ui/mdx
   - 🚧 packages/ui/cli

@@ -1,5 +1,5 @@
 {
-  "name": "@npc-cli/ui__demo",
+  "name": "@npc-cli/ui__template",
   "private": true,
   "type": "module",
   "exports": {
