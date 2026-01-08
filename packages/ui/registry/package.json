@@ -7,6 +7,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "@npc-cli/ui__demo": "workspace:^"
+    "@npc-cli/ui__template": "workspace:^"
   }
 }

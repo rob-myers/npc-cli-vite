@@ -88,13 +88,13 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           </div>
         ))}
         <div key={"c"} className="border rounded flex items-center justify-center">
-          <uiRegistry.Demo />
+          <uiRegistry.Template />
         </div>
         <div
           key="d"
           className={cn(
             theme === "dark" && "prose-invert",
-            "prose max-w-[unset] border leading-[1.4]",
+            "prose max-w-[unset] border border-on-background/60 leading-[1.4]",
           )}
         >
           <div className="overflow-auto p-4 size-full">
