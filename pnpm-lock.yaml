@@ -140,6 +140,9 @@ importers:
       '@npc-cli/parse-sh':
         specifier: workspace:^
         version: link:../parse-sh
+      '@npc-cli/theme':
+        specifier: workspace:^
+        version: link:../theme
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../ui-sdk
@@ -176,9 +179,6 @@ importers:
       react-grid-layout:
         specifier: 'catalog:'
         version: 2.1.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      zustand:
-        specifier: 'catalog:'
-        version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
     devDependencies:
       '@mdx-js/react':
         specifier: ^3.1.1
@@ -280,8 +280,17 @@ importers:
         specifier: ^4.1.13
         version: 4.1.13
 
+  packages/theme:
+    dependencies:
+      zustand:
+        specifier: 'catalog:'
+        version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
+
   packages/ui-sdk:
     dependencies:
+      '@npc-cli/theme':
+        specifier: workspace:^
+        version: link:../theme
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
@@ -291,10 +300,6 @@ importers:
       zustand:
         specifier: 'catalog:'
         version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
-    devDependencies:
-      '@npc-cli/app':
-        specifier: workspace:^
-        version: link:../app
 
   packages/ui/blog:
     dependencies:
@@ -304,6 +309,21 @@ importers:
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../../util
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.1(react@19.2.1)
+
+  packages/ui/global:
+    dependencies:
+      '@npc-cli/theme':
+        specifier: workspace:^
+        version: link:../../theme
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
       react:
         specifier: 'catalog:'
         version: 19.2.1
