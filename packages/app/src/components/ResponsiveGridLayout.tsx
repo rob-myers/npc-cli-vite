@@ -3,14 +3,6 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-import { Tty } from "@npc-cli/cli";
-/**
- * Each keyed module contains JS generators and functions.
- * - They will be converted into shell functions.
- * - We also store them directly in session.
- * - Example usage `import util`
- */
-import * as modules from "@npc-cli/cli/jsh/modules";
 import { uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
 import { useEffect, useRef, useState } from "react";
@@ -101,20 +93,8 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
             {theme}
           </button>
         </div>
-        <div key="f" className="overflow-hidden bg-black p-1 flex items-center justify-center">
-          <Tty
-            key="my-test-tty"
-            sessionKey="tty-0"
-            setTabsEnabled={() => {}}
-            updateTabMeta={() => {}}
-            disabled={false}
-            env={{}}
-            tabKey="my-tab-key"
-            onKey={() => {}}
-            modules={modules}
-            shFiles={{}}
-            profile={`import util\n`}
-          />
+        <div key="f">
+          <uiRegistry.Jsh />
         </div>
       </GridLayout>
     </div>

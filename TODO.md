@@ -44,11 +44,13 @@
     - `pnpm exec scaffold-ui`
   - ✅ packages/ui/blog
     - renders mdx
-  - 🚧 packages/ui/cli
+  - ✅ packages/ui/jsh
   - 🚧 packages/ui/site (e.g. theme button)
   - 🚧 registered somehow inside app
   - 🚧 defined by layout
   - 🚧 can have serializable props
+
+- 🚧 theme provided by ui context to uis
 
 - 🚧 can lock uis via overlay ui
   - e.g. to fix TtyMenu open/close in mobile

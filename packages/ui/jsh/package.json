@@ -1,0 +1,14 @@
+{
+  "name": "@npc-cli/ui__jsh",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@npc-cli/cli": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  }
+}
