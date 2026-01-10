@@ -1,12 +1,10 @@
+import { uiRegistry } from "@npc-cli/ui__registry";
+import { cn } from "@npc-cli/util";
+import { useEffect, useRef, useState } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-
-import { useThemeName } from "@npc-cli/theme";
-import { uiRegistry } from "@npc-cli/ui__registry";
-import { cn } from "@npc-cli/util";
-import { useEffect, useRef, useState } from "react";
 
 export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBreakpoint }: Props) {
   const layouts = useRef(layoutByBreakpoint);
@@ -31,9 +29,6 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
   const [resizing, setResizing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
-  // 🚧 packages/ui/themer
-  const theme = useThemeName();
-
   useEffect(() => void setTimeout(() => setPreventTransition(false), 0), []);
 
   return (
@@ -51,7 +46,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
         gridConfig={{
           cols,
           rowHeight: 80,
-          // margin: [16, 16],
+          // margin: [0, 0],
         }}
         layout={layout}
         onResizeStart={() => {
@@ -72,14 +67,11 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
         }}
         // positionStrategy={absoluteStrategy}
       >
-        {["a", "b"].map((key) => (
+        {["a", "b", "c"].map((key) => (
           <div key={key} className="border rounded flex items-center justify-center">
             <uiRegistry.Template />
           </div>
         ))}
-        <div key={"c"} className="border rounded flex items-center justify-center">
-          <uiRegistry.Template />
-        </div>
         <div key="d">
           <uiRegistry.Blog />
         </div>
