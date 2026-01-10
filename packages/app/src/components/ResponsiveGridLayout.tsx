@@ -14,7 +14,6 @@ import * as modules from "@npc-cli/cli/jsh/modules";
 import { uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
 import { useEffect, useRef, useState } from "react";
-import TestMdx from "../blog/test-mdx.mdx";
 import { themeApi, useThemeName } from "../stores/theme.store";
 
 // 🚧 remove component hard-coding
@@ -90,16 +89,8 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
         <div key={"c"} className="border rounded flex items-center justify-center">
           <uiRegistry.Template />
         </div>
-        <div
-          key="d"
-          className={cn(
-            theme === "dark" && "prose-invert",
-            "prose max-w-[unset] border border-on-background/60 leading-[1.4]",
-          )}
-        >
-          <div className="overflow-auto p-4 size-full">
-            <TestMdx />
-          </div>
+        <div key="d">
+          <uiRegistry.Blog />
         </div>
         <div key="e" className="border p-4 flex items-center justify-center">
           <button
