@@ -1,5 +1,5 @@
 {
-  "name": "@npc-cli/ui-sdk",
+  "name": "@npc-cli/ui__global",
   "private": true,
   "type": "module",
   "exports": {
@@ -8,8 +8,8 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/theme": "workspace:^",
-    "@npc-cli/util": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
     "react": "catalog:",
-    "zustand": "catalog:"
+    "react-dom": "catalog:"
   }
 }

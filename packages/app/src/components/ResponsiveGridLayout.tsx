@@ -3,10 +3,10 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
+import { themeApi, useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
 import { useEffect, useRef, useState } from "react";
-import { themeApi, useThemeName } from "../stores/theme.store";
 
 // 🚧 remove component hard-coding
 export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBreakpoint }: Props) {

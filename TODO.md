@@ -45,7 +45,8 @@
   - ✅ packages/ui/blog
     - renders mdx
   - ✅ packages/ui/jsh
-  - 🚧 packages/ui/site (e.g. theme button)
+  - ✅ packages/ui/global
+    - e.g. theme button, layouts
   - 🚧 registered somehow inside app
   - 🚧 defined by layout
   - 🚧 can have serializable props

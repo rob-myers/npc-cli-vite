@@ -4,8 +4,8 @@ import type { Layout } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
+import { useThemeName } from "@npc-cli/theme";
 import { ResponsiveGridLayout } from "../components/ResponsiveGridLayout";
-import { useThemeName } from "../stores/theme.store";
 
 export const Route = createFileRoute("/")({
   component: Index,

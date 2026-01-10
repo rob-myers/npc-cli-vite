@@ -1,4 +1,4 @@
-import type { ThemeName, ThemeState, ThemeStorageKey } from "@npc-cli/app/theme-types.ts";
+import type { ThemeName, ThemeState, ThemeStorageKey } from "@npc-cli/theme";
 import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { createContext } from "react";
 import type { StorageValue } from "zustand/middleware/persist";
