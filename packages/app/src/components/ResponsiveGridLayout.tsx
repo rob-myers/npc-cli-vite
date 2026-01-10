@@ -1,5 +1,4 @@
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
-// import { absoluteStrategy } from "react-grid-layout/core";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -58,6 +57,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
         // autoSize={false}
         // compactor={noCompactor}
         width={width}
+        // dragConfig={{}}
         gridConfig={{
           cols,
           rowHeight: 80,
@@ -80,7 +80,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
           layouts.current[breakpoint] = layout;
           setDragging(false);
         }}
-        // positionStrategy={absoluteStrategy} // avoid initial animation
+        // positionStrategy={absoluteStrategy}
       >
         {["a", "b"].map((key) => (
           <div key={key} className="border rounded flex items-center justify-center">
