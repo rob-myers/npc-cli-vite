@@ -9,6 +9,7 @@
     "build:wasm": "pnpm -F @npc-cli/parse-sh build:wasm",
     "gen:ui": "pnpm exec scaffold-ui",
     "preview": "pnpm -F @npc-cli/app preview",
+    "typecheck": "tsc -b",
     "types": "tsc -b"
   },
   "devDependencies": {
