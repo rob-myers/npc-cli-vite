@@ -8,6 +8,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/ui__blog": "workspace:^",
+    "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/ui__template": "workspace:^"
   }
 }
