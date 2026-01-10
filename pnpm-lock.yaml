@@ -348,6 +348,9 @@ importers:
       '@npc-cli/ui__blog':
         specifier: workspace:^
         version: link:../blog
+      '@npc-cli/ui__global':
+        specifier: workspace:^
+        version: link:../global
       '@npc-cli/ui__jsh':
         specifier: workspace:^
         version: link:../jsh

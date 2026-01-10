@@ -84,14 +84,8 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
         <div key="d">
           <uiRegistry.Blog />
         </div>
-        <div key="e" className="border p-4 flex items-center justify-center">
-          <button
-            type="button"
-            className="cursor-pointer border rounded px-4 py-1 bg-button"
-            onPointerDown={themeApi.setOther}
-          >
-            {theme}
-          </button>
+        <div key="e">
+          <uiRegistry.Global />
         </div>
         <div key="f">
           <uiRegistry.Jsh />
