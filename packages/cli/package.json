@@ -27,7 +27,7 @@
     "react-use-measure": "^2.1.7",
     "rxjs": "catalog:",
     "sugar-high": "^0.9.5",
-    "zustand": "^5.0.9"
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@types/braces": "catalog:",

@@ -1,5 +1,6 @@
 import { create, useStore } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { ThemeName, ThemeState, ThemeStorageKey } from "./theme-types";
 
 export const themeApi: ThemeState["api"] = {
   getName(this: ThemeState) {
@@ -22,21 +23,10 @@ export const themeStore = create<ThemeState>()(
       api: themeApi,
     }),
     {
-      name: "theme-storage",
+      name: "theme-storage" satisfies ThemeStorageKey,
       storage: createJSONStorage(() => localStorage),
     },
   ),
 );
-
-type ThemeState = {
-  theme: ThemeName;
-  readonly api: {
-    getName(): ThemeName;
-    getOther(): ThemeName;
-    setOther(): void;
-  };
-};
-
-type ThemeName = "light" | "dark";
 
 export const useThemeName = () => useStore(themeStore).theme;
