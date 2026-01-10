@@ -3,12 +3,11 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-import { themeApi, useThemeName } from "@npc-cli/theme";
+import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
 import { useEffect, useRef, useState } from "react";
 
-// 🚧 remove component hard-coding
 export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBreakpoint }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
@@ -75,7 +74,7 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
       >
         {["a", "b"].map((key) => (
           <div key={key} className="border rounded flex items-center justify-center">
-            {key}
+            <uiRegistry.Template />
           </div>
         ))}
         <div key={"c"} className="border rounded flex items-center justify-center">

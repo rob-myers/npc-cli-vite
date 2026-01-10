@@ -47,7 +47,7 @@
   - ✅ packages/ui/jsh
   - ✅ packages/ui/global
     - e.g. theme button, layouts
-  - 🚧 registered somehow inside app
+  - ✅ registered somehow inside app
   - 🚧 defined by layout
   - 🚧 can have serializable props
 
