@@ -1,4 +1,4 @@
-import { uiRegistry } from "@npc-cli/ui__registry";
+import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
 import { useEffect, useRef, useState } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
@@ -6,7 +6,9 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBreakpoint }: Props) {
+export function ResponsiveGridLayout({
+  uiLayout: { layouts: layoutByBreakpoint, breakpoints, cols: colsByBreakpoint },
+}: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
   const { width, containerRef } = useContainerWidth({
@@ -87,8 +89,12 @@ export function ResponsiveGridLayout({ layoutByBreakpoint, breakpoints, colsByBr
 }
 
 type Props = {
-  /** Initial layout configuration by breakpoint */
-  layoutByBreakpoint: Partial<Record<"lg" | "sm", Layout>>;
-  breakpoints: { lg: number; sm: number };
-  colsByBreakpoint: { lg: number; sm: number };
+  uiLayout: UiLayout;
+};
+
+export type UiLayout = {
+  breakpoints: Record<"lg" | "sm", number>;
+  cols: Record<"lg" | "sm", number>;
+  layouts: Record<"lg" | "sm", Layout>;
+  layoutToUi: { [layoutKey: string]: { uiKey: UiRegistryKey } };
 };

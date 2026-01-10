@@ -58,6 +58,8 @@
   - 🚧 rewrite layout so every item created "in same way"
   - 🚧 add extra component using phosopher-icons
 
+- move ui borders outside uis
+
 - packages/ui/world
 
 - 🚧 shell refinement

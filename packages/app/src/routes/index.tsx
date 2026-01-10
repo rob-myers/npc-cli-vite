@@ -1,11 +1,10 @@
 import { UiContext } from "@npc-cli/ui-sdk";
 import { createFileRoute } from "@tanstack/react-router";
-import type { Layout } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
-import { ResponsiveGridLayout } from "../components/ResponsiveGridLayout";
+import { ResponsiveGridLayout, type UiLayout } from "../components/ResponsiveGridLayout";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -16,16 +15,12 @@ function Index() {
 
   return (
     <UiContext.Provider value={{ theme }}>
-      <ResponsiveGridLayout
-        breakpoints={demo.breakpoints}
-        colsByBreakpoint={demo.cols}
-        layoutByBreakpoint={demo.layouts}
-      />
+      <ResponsiveGridLayout uiLayout={demo} />
     </UiContext.Provider>
   );
 }
 
-const demo = {
+const demo: UiLayout = {
   layouts: {
     sm: [
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
@@ -43,7 +38,15 @@ const demo = {
       { i: "e", x: 0, y: 4, w: 2, h: 1 },
       { i: "f", x: 6, y: 2, w: 3, h: 3 },
     ],
-  } satisfies Partial<Record<"lg" | "sm", Layout>> as Partial<Record<"lg" | "sm", Layout>>,
+  },
   breakpoints: { lg: 1200, sm: 768 },
   cols: { lg: 12, sm: 6 },
+  layoutToUi: {
+    a: { uiKey: "Template" },
+    b: { uiKey: "Template" },
+    c: { uiKey: "Template" },
+    d: { uiKey: "Blog" },
+    e: { uiKey: "Global" },
+    f: { uiKey: "Jsh" },
+  },
 };
