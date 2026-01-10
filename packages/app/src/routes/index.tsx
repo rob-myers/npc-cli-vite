@@ -1,21 +1,27 @@
+import { UiContext } from "@npc-cli/ui-sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Layout } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { ResponsiveGridLayout } from "../components/ResponsiveGridLayout";
+import { useThemeName } from "../stores/theme.store";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
+  const theme = useThemeName();
+
   return (
-    <ResponsiveGridLayout
-      breakpoints={demo.breakpoints}
-      colsByBreakpoint={demo.cols}
-      layoutByBreakpoint={demo.layouts}
-    />
+    <UiContext.Provider value={{ theme }}>
+      <ResponsiveGridLayout
+        breakpoints={demo.breakpoints}
+        colsByBreakpoint={demo.cols}
+        layoutByBreakpoint={demo.layouts}
+      />
+    </UiContext.Provider>
   );
 }
 

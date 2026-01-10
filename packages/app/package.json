@@ -2,6 +2,11 @@
   "name": "@npc-cli/app",
   "private": true,
   "type": "module",
+  "exports": {
+    "./theme-types.ts": {
+      "types": "./src/stores/theme-types.ts"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -10,6 +15,7 @@
   "dependencies": {
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/parse-sh": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/ui__registry": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
@@ -21,7 +27,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-grid-layout": "catalog:",
-    "zustand": "^5.0.9"
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@mdx-js/react": "^3.1.1",

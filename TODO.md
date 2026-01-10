@@ -50,7 +50,7 @@
   - 🚧 defined by layout
   - 🚧 can have serializable props
 
-- 🚧 theme provided by ui context to uis
+- ✅ theme provided by ui context to uis
 
 - 🚧 can lock uis via overlay ui
   - e.g. to fix TtyMenu open/close in mobile

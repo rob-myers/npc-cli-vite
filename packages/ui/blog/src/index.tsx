@@ -1,10 +1,10 @@
+import { UiContext } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
+import { useContext } from "react";
 import TestMdx from "./pages/test-mdx.mdx";
 
-// 🚧 get theme from ui context
-const theme = "dark";
-
 export function Blog() {
+  const { theme } = useContext(UiContext);
   return (
     <div
       className={cn(
