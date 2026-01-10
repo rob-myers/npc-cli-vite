@@ -42,7 +42,8 @@
   - ✅ packages/ui/demo -> packages/ui/template
   - ✅ scaffold-ui script
     - `pnpm exec scaffold-ui`
-  - 🚧 packages/ui/blog (renders mdx, can specify page)
+  - ✅ packages/ui/blog
+    - renders mdx
   - 🚧 packages/ui/cli
   - 🚧 packages/ui/site (e.g. theme button)
   - 🚧 registered somehow inside app
