@@ -42,12 +42,17 @@
   - ✅ packages/ui/demo -> packages/ui/template
   - ✅ scaffold-ui script
     - `pnpm exec scaffold-ui`
-  - 🚧 packages/ui/blog (renders mdx, can specify initial)
+  - 🚧 packages/ui/blog (renders mdx, can specify page)
   - 🚧 packages/ui/cli
   - 🚧 packages/ui/site (e.g. theme button)
   - 🚧 registered somehow inside app
   - 🚧 defined by layout
   - 🚧 can have serializable props
+
+- 🚧 can lock uis via overlay ui
+  - e.g. to fix TtyMenu open/close in mobile
+  - 🚧 rewrite layout so every item created "in same way"
+  - 🚧 add extra component using phosopher-icons
 
 - packages/ui/world
 
