@@ -9,3 +9,5 @@ export const uiRegistry = {
   Jsh,
   Template,
 };
+
+export type UiRegistryKey = keyof typeof uiRegistry;
