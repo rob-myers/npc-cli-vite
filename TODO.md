@@ -52,13 +52,16 @@
 
 - ✅ theme provided by ui context to uis
 
-- 🚧 can lock uis via overlay ui
+- ✅ can lock uis via overlay ui
   - e.g. to fix TtyMenu open/close in mobile
   - ✅ rewrite layout so every item created "in same way"
   - ✅ move borders out of uis
-  - 🚧 add extra component using phosopher-icons
+  - ✅ add extra component using phosopher-icons
 
-- move ui borders outside uis
+- ✅ move ui borders outside uis
+
+- 🚧 persist layout
+- 🚧 ssg layout frame
 
 - packages/ui/world
 
