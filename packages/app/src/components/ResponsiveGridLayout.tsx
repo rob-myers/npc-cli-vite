@@ -7,7 +7,12 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 export function ResponsiveGridLayout({
-  uiLayout: { layouts: layoutByBreakpoint, breakpoints, cols: colsByBreakpoint },
+  uiLayout: {
+    breakpoints,
+    cols: colsByBreakpoint,
+    layouts: layoutByBreakpoint,
+    layoutToUi: _layoutToUi,
+  },
 }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
@@ -31,7 +36,7 @@ export function ResponsiveGridLayout({
   const [resizing, setResizing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => void setTimeout(() => setPreventTransition(false), 0), []);
+  useEffect(() => void setTimeout(() => setPreventTransition(false), 1), []);
 
   return (
     <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
