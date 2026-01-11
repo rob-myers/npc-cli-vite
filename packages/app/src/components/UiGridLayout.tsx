@@ -10,7 +10,7 @@ import { layoutStore } from "./layout-store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-export function ResponsiveGridLayout({
+export function UiGridLayout({
   uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, toUi },
   ref,
 }: Props) {
@@ -160,16 +160,16 @@ export function ResponsiveGridLayout({
 }
 
 type Props = {
-  uiLayout: UiLayout;
+  uiLayout: UiGridLayout;
   ref: React.Ref<GridApi>;
 };
 
 export type GridApi = {
-  getUiLayout(): UiLayout;
+  getUiLayout(): UiGridLayout;
   getItemToRect(): { [itemId: string]: { x: number; y: number; width: number; height: number } };
 };
 
-export type UiLayout = {
+export type UiGridLayout = {
   breakpoints: Record<"lg" | "sm", number>;
   cols: Record<"lg" | "sm", number>;
   layouts: Record<"lg" | "sm", Layout>;

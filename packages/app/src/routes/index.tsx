@@ -7,11 +7,7 @@ import { useThemeName } from "@npc-cli/theme";
 import { useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { layoutStore } from "../components/layout-store";
-import {
-  type GridApi,
-  ResponsiveGridLayout,
-  type UiLayout,
-} from "../components/ResponsiveGridLayout";
+import { type GridApi, UiGridLayout } from "../components/UiGridLayout";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -30,12 +26,12 @@ function Index() {
 
   return (
     <UiContext.Provider value={{ theme }}>
-      <ResponsiveGridLayout ref={gridRef} uiLayout={demo} />
+      <UiGridLayout ref={gridRef} uiLayout={demo} />
     </UiContext.Provider>
   );
 }
 
-const demo: UiLayout = {
+const demo: UiGridLayout = {
   layouts: {
     sm: [
       { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
