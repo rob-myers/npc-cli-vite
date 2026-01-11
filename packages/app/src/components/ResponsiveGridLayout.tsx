@@ -1,7 +1,8 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui__registry";
 import { cn, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import React, { useEffect, useRef } from "react";
+import { LockIcon } from "@phosphor-icons/react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 
@@ -30,13 +31,20 @@ export function ResponsiveGridLayout({
 
   const state = useStateRef(
     (): State => ({
-      preventTransition: true,
-      resizing: false,
       dragging: false,
       gridConfig: {
         cols,
         rowHeight: 80,
         // margin: [0, 0],
+      },
+      isLocked: {},
+      preventTransition: true,
+      resizing: false,
+      onDragStart() {
+        state.set({ dragging: true });
+      },
+      onDragStop() {
+        state.set({ dragging: false });
       },
       onMount() {
         pause(1).then(() => state.set({ preventTransition: false }));
@@ -45,32 +53,38 @@ export function ResponsiveGridLayout({
         state.set({ resizing: true });
       },
       onResizeStop() {
-        layouts.current[breakpoint] = layout;
         state.set({ resizing: false });
       },
-      onDragStart() {
-        state.set({ dragging: true });
-      },
-      onDragStop() {
-        layouts.current[breakpoint] = layout;
-        state.set({ dragging: false });
+      onToggleItemLock(e: React.PointerEvent<HTMLDivElement>) {
+        const itemId = e.currentTarget.dataset.itemId as string;
+        const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
+
+        setLayouts({
+          [breakpoint]: layouts.current[breakpoint].map((item) =>
+            item.i === itemId ? { ...item, isDraggable: !locked } : item,
+          ),
+        });
       },
       set(partial: Partial<State>) {
         Object.assign(state, partial);
         update();
       },
     }),
+    { deps: [breakpoint] },
   );
   const update = useUpdate();
 
   useEffect(state.onMount, []);
 
-  const childDefs = layout.map((item) => ({
-    layoutId: item.i,
-    uiKey: toUi[item.i]?.uiKey,
-    ui: uiRegistry[toUi[item.i]?.uiKey],
-  }));
-
+  const childDefs = useMemo(
+    () =>
+      layout.map((item) => ({
+        itemId: item.i,
+        uiKey: toUi[item.i]?.uiKey,
+        ui: uiRegistry[toUi[item.i]?.uiKey],
+      })),
+    [layout, toUi],
+  );
   return (
     <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
       <GridLayout
@@ -86,10 +100,24 @@ export function ResponsiveGridLayout({
         onResizeStop={state.onResizeStop}
         onDragStart={state.onDragStart}
         onDragStop={state.onDragStop}
+        onLayoutChange={(layout) => {
+          // console.log("onLayoutChange", layout);
+          layouts.current[breakpoint] = layout;
+        }}
       >
         {childDefs.map((def) => (
-          <div key={def.layoutId} className="border rounded *:rounded">
+          <div key={def.itemId} className="relative border rounded *:rounded">
             {def.ui ? React.createElement(def.ui) : <UnknownUi uiKey={def.uiKey} />}
+            <div
+              data-item-id={def.itemId}
+              className={cn(
+                "z-10 absolute bottom-1 left-1 cursor-pointer",
+                state.isLocked[def.itemId] ? "opacity-100" : "opacity-50",
+              )}
+              onPointerUp={state.onToggleItemLock}
+            >
+              <LockIcon />
+            </div>
           </div>
         ))}
       </GridLayout>
@@ -109,15 +137,17 @@ export type UiLayout = {
 };
 
 type State = {
-  preventTransition: boolean;
-  resizing: boolean;
   dragging: boolean;
   gridConfig: Partial<GridConfig>;
+  isLocked: { [layoutKey: string]: boolean };
+  preventTransition: boolean;
+  resizing: boolean;
   onMount(): void;
   onResizeStart(): void;
   onResizeStop(): void;
   onDragStart(): void;
   onDragStop(): void;
+  onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
   set(partial: Partial<State>): void;
 };
 
