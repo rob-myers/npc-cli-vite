@@ -1,8 +1,9 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui__registry";
 import { cn, useStateRef, useUpdate } from "@npc-cli/util";
-import { pause } from "@npc-cli/util/legacy/generic";
+import { pause, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { LockIcon } from "@phosphor-icons/react";
 import React, { useEffect, useMemo, useRef } from "react";
+import { useBeforeunload } from "react-beforeunload";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 
@@ -47,6 +48,7 @@ export function ResponsiveGridLayout({
         state.set({ dragging: false });
       },
       onMount() {
+        state.persist();
         pause(1).then(() => state.set({ preventTransition: false }));
       },
       onResizeStart() {
@@ -65,6 +67,19 @@ export function ResponsiveGridLayout({
           ),
         });
       },
+      persist() {
+        tryLocalStorageSet(
+          "ui-layout",
+          JSON.stringify({
+            uiLayout: {
+              layouts: layouts.current,
+              breakpoints,
+              cols: colsByBreakpoint,
+              toUi,
+            } satisfies UiLayout,
+          }),
+        );
+      },
       set(partial: Partial<State>) {
         Object.assign(state, partial);
         update();
@@ -76,6 +91,11 @@ export function ResponsiveGridLayout({
 
   useEffect(state.onMount, []);
 
+  useBeforeunload(() => {
+    // 🚧
+    state.persist();
+  });
+
   const childDefs = useMemo(
     () =>
       layout.map((item) => ({
@@ -85,6 +105,7 @@ export function ResponsiveGridLayout({
       })),
     [layout, toUi],
   );
+
   return (
     <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
       <GridLayout
@@ -149,6 +170,7 @@ type State = {
   onDragStart(): void;
   onDragStop(): void;
   onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
+  persist(): void;
   set(partial: Partial<State>): void;
 };
 

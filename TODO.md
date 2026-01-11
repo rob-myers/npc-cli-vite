@@ -60,7 +60,7 @@
 
 - ✅ move ui borders outside uis
 
-- 🚧 persist layout
+- ✅ persist UiLayout as "ui-layout"
 - 🚧 ssg layout frame
 
 - packages/ui/world
@@ -69,6 +69,8 @@
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
   - ✅ fix ctrl-C for `poll`
+  - ❌ BUG `echo foo | map 'x\n=>x'`
+    - technically string does not define a valid js function so is interpreted as a string
 
 - 🚧 normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
