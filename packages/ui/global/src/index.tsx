@@ -6,7 +6,7 @@ export function Global() {
   const { theme } = useContext(UiContext);
 
   return (
-    <div className="h-full border p-4 flex items-center justify-center">
+    <div className="h-full p-4 flex items-center justify-center">
       <button
         type="button"
         className="cursor-pointer border rounded px-4 py-1 bg-button"

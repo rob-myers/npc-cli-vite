@@ -12,7 +12,7 @@ export function ResponsiveGridLayout({
   const layouts = useRef(layoutByBreakpoint);
 
   const { width, containerRef } = useContainerWidth({
-    initialWidth: window.innerWidth, // avoid initial animation + positionStrategy={absoluteStrategy}
+    initialWidth: window.innerWidth, // avoid initial animation
   });
 
   const { layout, cols, setLayouts, breakpoint } = useResponsiveLayout({
@@ -26,7 +26,6 @@ export function ResponsiveGridLayout({
     },
   });
 
-  // 🚧 useStateRef and useUpdate
   const [preventTransition, setPreventTransition] = useState(true);
   const [resizing, setResizing] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -64,7 +63,7 @@ export function ResponsiveGridLayout({
         }}
       >
         {layout.map((item) => (
-          <div key={item.i} className="border rounded">
+          <div key={item.i} className="border rounded *:rounded">
             {React.createElement(uiRegistry[layoutToUi[item.i].uiKey])}
           </div>
         ))}
