@@ -62,6 +62,7 @@
 
 - ✅ persist UiLayout as "ui-layout"
 - ✅ persist UiLayout with itemIdToClientRect
+- 🚧 initial skeleton on refresh via persisted data
 - 🚧 retreive persisted ui-layout
 - 🚧 ssg layout frame
 

@@ -113,7 +113,7 @@ export function ResponsiveGridLayout({
   );
 
   return (
-    <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
+    <div ref={containerRef} className="w-full overflow-auto h-full">
       <GridLayout
         className={cn(
           state.preventTransition && "[&_.react-grid-item]:transition-none!",
