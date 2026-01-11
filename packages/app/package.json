@@ -23,7 +23,8 @@
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
-    "react-grid-layout": "catalog:"
+    "react-grid-layout": "catalog:",
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@mdx-js/react": "^3.1.1",

@@ -1,17 +1,18 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui__registry";
 import { cn, useStateRef, useUpdate } from "@npc-cli/util";
-import { pause, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon } from "@phosphor-icons/react";
-import React, { useEffect, useMemo, useRef } from "react";
-import { useBeforeunload } from "react-beforeunload";
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 
+import { layoutStore } from "./layout-store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 export function ResponsiveGridLayout({
   uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, toUi },
+  ref,
 }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
@@ -48,8 +49,10 @@ export function ResponsiveGridLayout({
         state.set({ dragging: false });
       },
       onMount() {
-        state.persist();
-        pause(1).then(() => state.set({ preventTransition: false }));
+        pause(1).then(() => {
+          state.set({ preventTransition: false });
+          layoutStore.setState({ ready: true });
+        });
       },
       onResizeStart() {
         state.set({ resizing: true });
@@ -67,25 +70,6 @@ export function ResponsiveGridLayout({
           ),
         });
       },
-      persist() {
-        tryLocalStorageSet(
-          "ui-layout",
-          JSON.stringify({
-            uiLayout: {
-              layouts: layouts.current,
-              breakpoints,
-              cols: colsByBreakpoint,
-              toUi,
-            } satisfies UiLayout,
-            itemIdToClientRect: Object.fromEntries(
-              Array.from(document.querySelectorAll<HTMLElement>(".react-grid-item")).map((el) => [
-                el.dataset.itemId,
-                el.getBoundingClientRect(),
-              ]),
-            ),
-          }),
-        );
-      },
       set(partial: Partial<State>) {
         Object.assign(state, partial);
         update();
@@ -97,10 +81,28 @@ export function ResponsiveGridLayout({
 
   useEffect(state.onMount, []);
 
-  useBeforeunload(() => {
-    // 🚧
-    state.persist();
-  });
+  useImperativeHandle<GridApi, GridApi>(
+    ref,
+    () => ({
+      getUiLayout() {
+        return {
+          layouts: layouts.current,
+          breakpoints,
+          cols: colsByBreakpoint,
+          toUi,
+        };
+      },
+      getItemToRect() {
+        return Object.fromEntries(
+          Array.from(document.querySelectorAll<HTMLElement>(".react-grid-item")).map((el) => [
+            el.dataset.itemId,
+            el.getBoundingClientRect(),
+          ]),
+        );
+      },
+    }),
+    [],
+  );
 
   const childDefs = useMemo(
     () =>
@@ -159,6 +161,12 @@ export function ResponsiveGridLayout({
 
 type Props = {
   uiLayout: UiLayout;
+  ref: React.Ref<GridApi>;
+};
+
+export type GridApi = {
+  getUiLayout(): UiLayout;
+  getItemToRect(): { [itemId: string]: { x: number; y: number; width: number; height: number } };
 };
 
 export type UiLayout = {
@@ -180,7 +188,6 @@ type State = {
   onDragStart(): void;
   onDragStop(): void;
   onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
-  persist(): void;
   set(partial: Partial<State>): void;
 };
 

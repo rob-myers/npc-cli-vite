@@ -4,7 +4,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
-import { ResponsiveGridLayout, type UiLayout } from "../components/ResponsiveGridLayout";
+import { useRef } from "react";
+import { useBeforeunload } from "react-beforeunload";
+import { layoutStore } from "../components/layout-store";
+import {
+  type GridApi,
+  ResponsiveGridLayout,
+  type UiLayout,
+} from "../components/ResponsiveGridLayout";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -12,10 +19,18 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const theme = useThemeName();
+  const gridRef = useRef<GridApi>(null);
+
+  useBeforeunload(() => {
+    // persist layout
+    const uiLayout = gridRef.current?.getUiLayout();
+    const itemToRect = gridRef.current?.getItemToRect();
+    layoutStore.setState({ uiLayout, itemToRect });
+  });
 
   return (
     <UiContext.Provider value={{ theme }}>
-      <ResponsiveGridLayout uiLayout={demo} />
+      <ResponsiveGridLayout ref={gridRef} uiLayout={demo} />
     </UiContext.Provider>
   );
 }
