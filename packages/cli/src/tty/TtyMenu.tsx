@@ -110,7 +110,7 @@ export function TtyMenu(props: Props) {
         "text-sm leading-1 border-[0_0_2px_2px] border-solid border-[rgba(255,255,255,0.1)] text-white",
         "transition-transform duration-500",
         state.touchMenuOpen
-          ? "transform-[translate(0px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
+          ? "transform-[translate(-20px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
           : "transform-[translate(var(--menu-width),0px)]",
       )}
       onClick={state.onClickMenu}
@@ -144,7 +144,7 @@ export function TtyMenu(props: Props) {
         )}
       </div>
 
-      <div className="max-h-full overflow-auto scrollbar-thin scrollbar-thumb-white scrollbar-track-black border-l border-b border-solid border-[#444] pb-2 rounded-br-lg">
+      <div className="max-h-full overflow-auto scrollbar-thin scrollbar-thumb-white scrollbar-track-black border border-solid border-[#444] pb-2 rounded-br-lg">
         <div
           className={cn(icon, "can-type", state.xterm.canType() ? "text-[#cfc]" : "text-[#999]")}
           title={`text input ${state.xterm.canType() ? "enabled" : "disabled"}`}
