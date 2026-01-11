@@ -77,6 +77,12 @@ export function ResponsiveGridLayout({
               cols: colsByBreakpoint,
               toUi,
             } satisfies UiLayout,
+            itemIdToClientRect: Object.fromEntries(
+              Array.from(document.querySelectorAll<HTMLElement>(".react-grid-item")).map((el) => [
+                el.dataset.itemId,
+                el.getBoundingClientRect(),
+              ]),
+            ),
           }),
         );
       },
@@ -128,7 +134,11 @@ export function ResponsiveGridLayout({
         }}
       >
         {childDefs.map((def) => (
-          <div key={def.itemId} className="relative border rounded *:rounded">
+          <div
+            key={def.itemId}
+            data-item-id={def.itemId}
+            className="relative border rounded *:rounded"
+          >
             {def.ui ? React.createElement(def.ui) : <UnknownUi uiKey={def.uiKey} />}
             <div
               data-item-id={def.itemId}
