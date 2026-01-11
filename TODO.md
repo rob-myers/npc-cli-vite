@@ -61,6 +61,8 @@
 - ✅ move ui borders outside uis
 
 - ✅ persist UiLayout as "ui-layout"
+- ✅ persist UiLayout with itemIdToClientRect
+- 🚧 retreive persisted ui-layout
 - 🚧 ssg layout frame
 
 - packages/ui/world
