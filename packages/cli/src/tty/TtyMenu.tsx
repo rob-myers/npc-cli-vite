@@ -87,21 +87,13 @@ export function TtyMenu(props: Props) {
 
   React.useMemo(() => {
     if (!tryLocalStorageGet(localStorageKey.touchTtyCanType)) {
-      tryLocalStorageSet(
-        localStorageKey.touchTtyCanType,
-        JSON.stringify(
-          // tty disabled by default on touch devices
-          isTouchDevice() ? false : true,
-        ),
-      );
+      tryLocalStorageSet(localStorageKey.touchTtyCanType, JSON.stringify(false));
     }
     if (!tryLocalStorageGet(localStorageKey.touchTtyOpen)) {
       tryLocalStorageSet(
         localStorageKey.touchTtyOpen,
-        JSON.stringify(
-          // touch menu open by default on touch devices
-          isTouchDevice() ? true : false,
-        ),
+        // touch menu open by default on touch devices
+        JSON.stringify(isTouchDevice()),
       );
     }
     state.xterm.setCanType(tryLocalStorageGetParsed(localStorageKey.touchTtyCanType) === true);
