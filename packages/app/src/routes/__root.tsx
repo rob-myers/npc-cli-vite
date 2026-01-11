@@ -1,9 +1,9 @@
 import { themeApi, themeStore } from "@npc-cli/theme";
+import { useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { motion } from "motion/react";
-import { useStateRef } from "../../../util/src/hooks/use-state-ref";
 import type { UiLayout } from "../components/ResponsiveGridLayout";
 
 export const Route = createRootRoute({
