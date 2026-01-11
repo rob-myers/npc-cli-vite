@@ -92,6 +92,7 @@ export function ResponsiveGridLayout({
           state.preventTransition && "[&_.react-grid-item]:transition-none!",
           (state.resizing || state.dragging) && "select-none",
           "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
+          "[&_.react-resizable-handle::after]:z-200",
         )}
         width={width}
         gridConfig={state.gridConfig}
@@ -111,7 +112,7 @@ export function ResponsiveGridLayout({
             <div
               data-item-id={def.itemId}
               className={cn(
-                "z-10 absolute bottom-1 left-1 cursor-pointer",
+                "z-200 absolute bottom-1 left-1 cursor-pointer",
                 state.isLocked[def.itemId] ? "opacity-100" : "opacity-50",
               )}
               onPointerUp={state.onToggleItemLock}
