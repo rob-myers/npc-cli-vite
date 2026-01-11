@@ -18,6 +18,7 @@
   "search.exclude": {
     "**/routeTree.gen.ts": true
   },
+  "tailwindCSS.classFunctions": ["tw", "cn"],
   "tailwindCSS.experimental.configFile": "packages/app/src/styles/main.css",
   "[yaml]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
