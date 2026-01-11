@@ -204,8 +204,6 @@ export function Tty(props: Props) {
 
   state.disabled = props.disabled;
 
-  console.log({ state });
-
   // Pause/resume
   React.useEffect(() => {
     if (!state.base?.session) return;
