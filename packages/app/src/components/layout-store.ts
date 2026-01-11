@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { UiLayout } from "./ResponsiveGridLayout";
+import type { UiGridLayout } from "./UiGridLayout";
 
 /**
  * Used to persist layout
@@ -26,5 +26,5 @@ export const layoutStore = create<LayoutState>()(
 type LayoutState = {
   itemToRect: { [itemId: string]: { x: number; y: number; width: number; height: number } };
   ready: boolean;
-  uiLayout: UiLayout | null;
+  uiLayout: UiGridLayout | null;
 };
