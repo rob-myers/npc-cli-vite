@@ -48,7 +48,7 @@
   - ✅ packages/ui/global
     - e.g. theme button, layouts
   - ✅ registered somehow inside app
-  - 🚧 defined by layout
+  - ✅ defined by layout
   - 🚧 can have serializable props
 
 - ✅ theme provided by ui context to uis
