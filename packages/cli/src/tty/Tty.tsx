@@ -23,7 +23,7 @@ export function Tty(props: Props) {
 
   const state = useStateRef(
     () => ({
-      base: {} as BaseTtyState, // 🔔 hack to avoid excessive optional-chaining
+      base: null as null | BaseTtyState,
       /**
        * Have we initiated the profile?
        * We don't want to re-run it on hmr.
@@ -96,13 +96,14 @@ export function Tty(props: Props) {
         }
       },
       onFocus() {
-        if (state.inputOnFocus !== undefined) {
+        if (state.base && state.inputOnFocus !== undefined) {
           state.base.xterm.setInput(state.inputOnFocus.input);
           state.base.xterm.setCursor(state.inputOnFocus.cursor);
           state.inputOnFocus = undefined;
         }
       },
       pauseByPtags() {
+        if (!state.base) return;
         const pids = sessionApi.kill(props.sessionKey, [], { byPtags: true, STOP: true });
         pids.forEach((pid) => void state.pausedPids.add(pid));
 
@@ -121,6 +122,7 @@ export function Tty(props: Props) {
         update();
       },
       async resize() {
+        if (!state.base) return;
         if (state.isTouchDevice) {
           state.fitDebounced();
         } else {
@@ -136,6 +138,7 @@ export function Tty(props: Props) {
         }
       },
       resumeByPtags() {
+        if (!state.base) return;
         // restore previously paused processes
         sessionApi.kill(props.sessionKey, Array.from(state.pausedPids), {
           byPtags: true,
@@ -160,6 +163,7 @@ export function Tty(props: Props) {
         update();
       },
       async storeAndSourceFuncs() {
+        if (!state.base) return;
         const session = state.base.session;
 
         Object.assign(session.etc, props.shFiles);
@@ -200,12 +204,12 @@ export function Tty(props: Props) {
 
   state.disabled = props.disabled;
 
+  console.log({ state });
+
+  // Pause/resume
   React.useEffect(() => {
-    // Pause/resume
+    if (!state.base?.session) return;
     const { session } = state.base;
-    if (!session) {
-      return;
-    }
 
     // if disabled, suspend spawned bg processes sans process tag 'always'
     session.ttyShell.disabled = !!props.disabled;
@@ -216,75 +220,74 @@ export function Tty(props: Props) {
     } else {
       state.resumeByPtags();
     }
-  }, [props.disabled, state.base.session]);
+  }, [props.disabled, state.base?.session]);
 
   React.useEffect(() => {
+    if (!state.base?.session) return;
     // Bind external events
-    if (state.base.session) {
-      const {
-        xterm: { xterm },
-        session,
-      } = state.base;
+    const {
+      xterm: { xterm },
+      session,
+    } = state.base;
 
-      xterm.attachCustomKeyEventHandler((e) => {
-        // xterm.js should not handle shift/ctrl + enter,
-        // so we can unpause Tabs from Tty
-        if (e.type === "keyup") {
-          props.onKey?.(e); // handle shift/ctrl + enter
-        }
-        if (e.key === "Enter" && (e.shiftKey === true || e.ctrlKey === true)) {
-          return false;
-        } else {
-          return true;
-        }
-      });
+    xterm.attachCustomKeyEventHandler((e) => {
+      // xterm.js should not handle shift/ctrl + enter,
+      // so we can unpause Tabs from Tty
+      if (e.type === "keyup") {
+        props.onKey?.(e); // handle shift/ctrl + enter
+      }
+      if (e.key === "Enter" && (e.shiftKey === true || e.ctrlKey === true)) {
+        return false;
+      } else {
+        return true;
+      }
+    });
 
-      state.resize();
-      xterm.textarea?.addEventListener("focus", state.onFocus);
+    state.resize();
+    xterm.textarea?.addEventListener("focus", state.onFocus);
 
-      const cleanupExternalMsgs = session.ttyShell.io.handleWriters(
-        (msg) => msg?.key === "external" && state.handleExternalMsg(msg),
-      );
+    const cleanupExternalMsgs = session.ttyShell.io.handleWriters(
+      (msg) => msg?.key === "external" && state.handleExternalMsg(msg),
+    );
 
-      return () => {
-        xterm.textarea?.removeEventListener("focus", state.onFocus);
-        cleanupExternalMsgs();
-      };
-    }
-  }, [state.base.session]);
+    return () => {
+      xterm.textarea?.removeEventListener("focus", state.onFocus);
+      cleanupExternalMsgs();
+    };
+  }, [state.base?.session]);
 
   React.useEffect(() => {
-    const onKeyDispose = state.base.xterm?.xterm.onKey((e) => props.onKey?.(e.domEvent));
+    const onKeyDispose = state.base?.xterm?.xterm.onKey((e) => props.onKey?.(e.domEvent));
     return () => onKeyDispose?.dispose();
   }, [props.onKey]);
 
   React.useEffect(() => {
     // Handle resize
     state.bounds = bounds;
-    state.base.session && state.resize();
+    state.base?.session && state.resize();
   }, [bounds]);
 
   React.useEffect(() => {
     // sync shell functions
-    if (state.base.session?.ttyShell.isInitialized()) {
+    if (state.base?.session?.ttyShell.isInitialized()) {
       state.storeAndSourceFuncs();
     }
   }, [
-    state.base.session,
+    state.base?.session,
     ...Object.entries(props.shFiles).flatMap((x) => x),
     ...Object.entries(props.modules).flatMap((x) => x),
   ]);
 
   React.useEffect(() => {
     // sync ~/PROFILE
-    if (state.base.session) {
+    if (state.base?.session) {
       state.base.session.var.PROFILE = props.profile;
     }
-  }, [state.base.session, props.profile]);
+  }, [state.base?.session, props.profile]);
 
   React.useEffect(() => {
     // Boot profile (possibly while disabled)
-    if (state.base.session && !state.booted) {
+    if (state.base?.session && !state.booted) {
       const { xterm, session } = state.base;
       xterm.initialise();
       state.booted = true;
@@ -301,19 +304,19 @@ export function Tty(props: Props) {
         await session.ttyShell.runProfile();
       });
     }
-  }, [state.base.session, props.disabled]);
+  }, [state.base?.session, props.disabled]);
 
   const update = useUpdate();
 
   return (
     <div className="h-full w-full p-1" ref={rootRef}>
       <BaseTty
-        ref={state.ref("base")}
+        ref={state.ref("base")} // 🔔 sets and unsets state.base
         sessionKey={props.sessionKey}
         env={props.env}
         onUnmount={state.reboot}
       />
-      {state.base.session && (
+      {state.base?.session && (
         <TtyMenu
           canContOrStop={state.canContOrStop}
           disabled={props.disabled}
