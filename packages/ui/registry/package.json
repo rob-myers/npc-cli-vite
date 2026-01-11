@@ -10,6 +10,7 @@
     "@npc-cli/ui__blog": "workspace:^",
     "@npc-cli/ui__global": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
-    "@npc-cli/ui__template": "workspace:^"
+    "@npc-cli/ui__template": "workspace:^",
+    "react": "catalog:"
   }
 }

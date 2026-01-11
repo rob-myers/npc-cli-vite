@@ -357,6 +357,9 @@ importers:
       '@npc-cli/ui__template':
         specifier: workspace:^
         version: link:../template
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
 
   packages/ui/template:
     dependencies:
