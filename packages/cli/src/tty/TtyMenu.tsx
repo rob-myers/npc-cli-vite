@@ -105,9 +105,9 @@ export function TtyMenu(props: Props) {
     <div
       className={cn(
         "absolute z-110 top-0 right-0",
-        "[--menu-width:54px] w-(--menu-width)",
+        "[--menu-width:54px] w-(--menu-width) h-full",
         "flex flex-col",
-        "text-sm leading-1 border-[0_0_2px_2px] border-solid border-[rgba(255,255,255,0.1)] text-white",
+        "text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
         "transition-transform duration-500",
         state.touchMenuOpen
           ? "transform-[translate(-20px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
@@ -144,7 +144,11 @@ export function TtyMenu(props: Props) {
         )}
       </div>
 
-      <div className="max-h-full overflow-auto scrollbar-thin scrollbar-thumb-white scrollbar-track-black border border-solid border-[#444] pb-2 rounded-br-lg">
+      <div
+        className={cn(
+          "max-h-full overflow-auto scrollbar-track-black border border-solid border-[#444]/60 pb-2 filter backdrop-blur-[2px]",
+        )}
+      >
         <div
           className={cn(icon, "can-type", state.xterm.canType() ? "text-[#cfc]" : "text-[#999]")}
           title={`text input ${state.xterm.canType() ? "enabled" : "disabled"}`}
@@ -184,4 +188,4 @@ interface Props {
   setTabsEnabled(next: boolean): void;
 }
 
-const icon = cn("w-full h-6 cursor-pointer text-center pt-3 bg-[rgba(0,0,0,0.5)]");
+const icon = cn("w-full h-6 cursor-pointer text-center pt-3");
