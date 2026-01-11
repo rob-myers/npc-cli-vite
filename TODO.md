@@ -37,7 +37,7 @@
     - Settings > Preview > e.g. 60fps
   - Shift for 0.25 unit translation
 
-- 🚧 responsive grid layout items as packages/ui/*
+- ✅ responsive grid layout items as packages/ui/*
   - ✅ packages/ui/demo
   - ✅ packages/ui/demo -> packages/ui/template
   - ✅ scaffold-ui script
@@ -49,13 +49,13 @@
     - e.g. theme button, layouts
   - ✅ registered somehow inside app
   - ✅ defined by layout
-  - 🚧 can have serializable props
 
 - ✅ theme provided by ui context to uis
 
 - 🚧 can lock uis via overlay ui
   - e.g. to fix TtyMenu open/close in mobile
-  - 🚧 rewrite layout so every item created "in same way"
+  - ✅ rewrite layout so every item created "in same way"
+  - ✅ move borders out of uis
   - 🚧 add extra component using phosopher-icons
 
 - move ui borders outside uis
