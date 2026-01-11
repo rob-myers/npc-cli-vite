@@ -1,18 +1,13 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui__registry";
 import { cn } from "@npc-cli/util";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 export function ResponsiveGridLayout({
-  uiLayout: {
-    breakpoints,
-    cols: colsByBreakpoint,
-    layouts: layoutByBreakpoint,
-    layoutToUi: _layoutToUi,
-  },
+  uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, layoutToUi },
 }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
@@ -46,10 +41,7 @@ export function ResponsiveGridLayout({
           (resizing || dragging) && "select-none",
           "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
         )}
-        // autoSize={false}
-        // compactor={noCompactor}
         width={width}
-        // dragConfig={{}}
         gridConfig={{
           cols,
           rowHeight: 80,
@@ -60,7 +52,6 @@ export function ResponsiveGridLayout({
           setResizing(true);
         }}
         onResizeStop={(layout) => {
-          // layouts.current.lg = layouts.current.sm = layout;
           layouts.current[breakpoint] = layout;
           setResizing(false);
         }}
@@ -68,26 +59,15 @@ export function ResponsiveGridLayout({
           setDragging(true);
         }}
         onDragStop={(layout) => {
-          // layouts.current.lg = layouts.current.sm = layout;
           layouts.current[breakpoint] = layout;
           setDragging(false);
         }}
-        // positionStrategy={absoluteStrategy}
       >
-        {["a", "b", "c"].map((key) => (
-          <div key={key} className="border rounded flex items-center justify-center">
-            <uiRegistry.Template />
+        {layout.map((item) => (
+          <div key={item.i} className="border rounded">
+            {React.createElement(uiRegistry[layoutToUi[item.i].uiKey])}
           </div>
         ))}
-        <div key="d">
-          <uiRegistry.Blog />
-        </div>
-        <div key="e">
-          <uiRegistry.Global />
-        </div>
-        <div key="f">
-          <uiRegistry.Jsh />
-        </div>
       </GridLayout>
     </div>
   );
