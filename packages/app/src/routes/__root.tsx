@@ -1,10 +1,9 @@
 import { themeApi, themeStore } from "@npc-cli/theme";
-import { useStateRef } from "@npc-cli/util";
-import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { motion } from "motion/react";
-import type { UiLayout } from "../components/ResponsiveGridLayout";
+import { useStore } from "zustand";
+import { layoutStore } from "../components/layout-store";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -19,29 +18,20 @@ themeStore.subscribe(() => {
 });
 
 function RootComponent() {
-  const state = useStateRef(
-    (): {
-      persisted: {
-        uiLayout: UiLayout;
-        itemIdToClientRect: Record<string, { x: number; y: number; width: number; height: number }>;
-      } | null;
-    } => ({
-      persisted: tryLocalStorageGetParsed("ui-layout"),
-    }),
-  );
+  const { resolvedLocation } = useRouterState();
+  const { itemToRect, ready } = useStore(layoutStore);
 
   return (
     <div className="bg-background h-dvh">
-      {/* 🚧 clean */}
-      {/* 🚧 fade onload responsive grid layout */}
+      {/* 🚧 clean e.g. abstract */}
       {/* 🚧 handle breakpoint change via (x, y) scale? */}
-      <motion.div
-        className="fixed"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0, transition: { duration: 2 } }}
-      >
-        {Object.entries(state.persisted?.itemIdToClientRect ?? {}).map(
-          ([itemId, { x, y, width, height }]) => (
+      {resolvedLocation?.pathname === "/" && (
+        <motion.div
+          className="fixed pointer-events-none"
+          initial={{ opacity: 1 }}
+          animate={ready ? { opacity: 0, transition: { duration: 1 } } : undefined}
+        >
+          {Object.entries(itemToRect).map(([itemId, { x, y, width, height }]) => (
             <div
               key={itemId}
               className="absolute border border-white/30"
@@ -51,9 +41,10 @@ function RootComponent() {
                 transform: `translate3d(${x}px, ${y}px, 0)`,
               }}
             ></div>
-          ),
-        )}
-      </motion.div>
+          ))}
+        </motion.div>
+      )}
+
       <Outlet />
       <TanStackRouterDevtools position="bottom-right" />
     </div>
