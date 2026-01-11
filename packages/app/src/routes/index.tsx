@@ -41,7 +41,7 @@ const demo: UiLayout = {
   },
   breakpoints: { lg: 1200, sm: 768 },
   cols: { lg: 12, sm: 6 },
-  layoutToUi: {
+  toUi: {
     a: { uiKey: "Template" },
     b: { uiKey: "Template" },
     c: { uiKey: "Template" },

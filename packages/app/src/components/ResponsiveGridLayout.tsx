@@ -9,7 +9,7 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 export function ResponsiveGridLayout({
-  uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, layoutToUi },
+  uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, toUi },
 }: Props) {
   const layouts = useRef(layoutByBreakpoint);
 
@@ -65,6 +65,12 @@ export function ResponsiveGridLayout({
 
   useEffect(state.onMount, []);
 
+  const childDefs = layout.map((item) => ({
+    layoutId: item.i,
+    uiKey: toUi[item.i]?.uiKey,
+    ui: uiRegistry[toUi[item.i]?.uiKey],
+  }));
+
   return (
     <div ref={containerRef} className="w-full overflow-auto h-full border border-white">
       <GridLayout
@@ -81,9 +87,9 @@ export function ResponsiveGridLayout({
         onDragStart={state.onDragStart}
         onDragStop={state.onDragStop}
       >
-        {layout.map((item) => (
-          <div key={item.i} className="border rounded *:rounded">
-            {React.createElement(uiRegistry[layoutToUi[item.i].uiKey])}
+        {childDefs.map((def) => (
+          <div key={def.layoutId} className="border rounded *:rounded">
+            {def.ui ? React.createElement(def.ui) : <UnknownUi uiKey={def.uiKey} />}
           </div>
         ))}
       </GridLayout>
@@ -99,7 +105,7 @@ export type UiLayout = {
   breakpoints: Record<"lg" | "sm", number>;
   cols: Record<"lg" | "sm", number>;
   layouts: Record<"lg" | "sm", Layout>;
-  layoutToUi: { [layoutKey: string]: { uiKey: UiRegistryKey } };
+  toUi: { [layoutKey: string]: { uiKey: UiRegistryKey } };
 };
 
 type State = {
@@ -114,3 +120,13 @@ type State = {
   onDragStop(): void;
   set(partial: Partial<State>): void;
 };
+
+function UnknownUi({ uiKey }: { uiKey: string }) {
+  return (
+    <div className="size-full flex items-center justify-center bg-red-300 text-black">
+      <div className="flex gap-1 bg-white rounded-2xl px-4">
+        Unknown UI -<div className="text-red-500">{uiKey ?? "(no ui key)"}</div>
+      </div>
+    </div>
+  );
+}
