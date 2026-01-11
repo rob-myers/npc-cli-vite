@@ -1,10 +1,7 @@
-import { useEffectNonStrict, useStateRef } from "@npc-cli/util";
+import { cn, useEffectNonStrict, useStateRef } from "@npc-cli/util";
 import { detectTabPrevNextShortcut } from "@npc-cli/util/legacy/generic";
 import { FitAddon } from "@xterm/addon-fit";
-// debugging "Cannot read properties of undefined" onRequestRedraw
-// import { WebglAddon } from "xterm-addon-webgl";
 import { WebglAddon } from "@xterm/addon-webgl";
-// import { css } from '@emotion/react';
 import { type ITheme, Terminal as XTermTerminal } from "@xterm/xterm";
 import React from "react";
 import { useBeforeunload } from "react-beforeunload";
@@ -117,7 +114,11 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     <div
       ref={state.ref("container")}
       onKeyDown={stopKeysPropagating}
-      className="h-[inherit] bg-black [&_>_div]:w-full [&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]"
+      className={cn(
+        "h-[inherit] bg-black [&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]",
+        // thin scrollbar
+        "[&_.scrollbar.vertical_.slider]:transform-[translateX(5px)_scale(0.5)]!",
+      )}
     />
   );
 });
