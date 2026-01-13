@@ -145,7 +145,7 @@ export function UiGridLayout({
             <div
               data-item-id={def.itemId}
               className={cn(
-                "z-999 absolute bottom-1 left-1 cursor-pointer",
+                "z-999 absolute bottom-1 left-1 cursor-pointer p-0.5",
                 state.isLocked[def.itemId] ? "opacity-100" : "opacity-50",
               )}
               onPointerUp={state.onToggleItemLock}
