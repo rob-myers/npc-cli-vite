@@ -11,6 +11,7 @@
     "@npc-cli/ui__global": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/ui__template": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
     "react": "catalog:"
   }
 }

@@ -366,11 +366,23 @@ importers:
       '@npc-cli/ui__template':
         specifier: workspace:^
         version: link:../template
+      '@npc-cli/ui__world':
+        specifier: workspace:^
+        version: link:../world
       react:
         specifier: 'catalog:'
         version: 19.2.1
 
   packages/ui/template:
+    dependencies:
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.1(react@19.2.1)
+
+  packages/ui/world:
     dependencies:
       react:
         specifier: 'catalog:'
