@@ -1,6 +1,6 @@
 # TODO
 
-- 🚧 follow a blockbench animation tutorial and export gltf
+- ✅ follow a blockbench animation tutorial and export gltf
   - https://youtu.be/y0ees2j17AY?si=EmmdGiXTgI0_11V7&t=240
   - https://youtu.be/y0ees2j17AY?si=ch61BNtn0ErcaXI2&t=388
   - https://youtu.be/y0ees2j17AY?si=DaJvvW05wfqMOhH6&t=466
@@ -66,8 +66,6 @@
 - ✅ clean initial skeleton
 - ✅ retreive persisted ui-layout
 
-- packages/ui/world
-
 - 🚧 shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
@@ -75,10 +73,14 @@
   - ❌ BUG `echo foo | map 'x\n=>x'`
     - technically string does not define a valid js function so is interpreted as a string
 
-- 🚧 normalize tsconfigs like bz-frontend
+- ✅ normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
 
 - ✅ avoid react-grid-layout initial animation
   - ✅ initialWidth window.clientWidth + positionStrategy={absoluteStrategy} works
 
-- add react-three-fiber and import gltf
+- 🚧 can right click add grid item
+  - 🚧 context menu component
+
+- 🚧 packages/ui/world
+- 🚧 add react-three-fiber and import gltf
