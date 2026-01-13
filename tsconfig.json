@@ -7,6 +7,10 @@
     { "path": "./packages/media" },
     { "path": "./packages/util" },
     { "path": "./packages/ui/template" },
-    { "path": "./packages/ui/registry" }
+    { "path": "./packages/ui/registry" },
+    { "path": "./packages/ui/blog" },
+    { "path": "./packages/ui/global" },
+    { "path": "./packages/ui/jsh" },
+    { "path": "./packages/ui/world" }
   ]
 }
