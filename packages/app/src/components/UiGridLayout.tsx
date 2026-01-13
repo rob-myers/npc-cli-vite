@@ -1,4 +1,4 @@
-import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui__registry";
+import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
 import { cn, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon } from "@phosphor-icons/react";
@@ -42,6 +42,26 @@ export function UiGrid({
       isLocked: {},
       preventTransition: true,
       resizing: false,
+      showContextMenu: false,
+      closeContextMenu() {
+        state.set({ showContextMenu: false });
+      },
+      onContextMenu(e) {
+        if (
+          (e.target as HTMLElement).parentElement !== containerRef.current ||
+          !containerRef.current
+        ) {
+          return;
+        }
+        e.preventDefault();
+
+        containerRef.current.style.setProperty(
+          "--cm-transform",
+          `translate(${e.clientX}px, ${e.clientY}px)`,
+        );
+
+        state.set({ showContextMenu: true });
+      },
       onDragStart() {
         state.set({ dragging: true });
       },
@@ -53,6 +73,11 @@ export function UiGrid({
           state.set({ preventTransition: false });
           layoutStore.setState({ ready: true });
         });
+        const onKeyUp = (e: KeyboardEvent) => {
+          if (e.key === "Escape" && state.showContextMenu) state.set({ showContextMenu: false });
+        };
+        document.body.addEventListener("keyup", onKeyUp);
+        return () => document.body.removeEventListener("keyup", onKeyUp);
       },
       onResizeStart() {
         state.set({ resizing: true });
@@ -79,7 +104,7 @@ export function UiGrid({
   );
   const update = useUpdate();
 
-  useEffect(state.onMount, []);
+  useEffect(state.onMount, [state.onMount]);
 
   useImperativeHandle<GridApi, GridApi>(
     ref,
@@ -115,7 +140,12 @@ export function UiGrid({
   );
 
   return (
-    <div ref={containerRef} className="w-full overflow-auto h-full">
+    // biome-ignore lint/a11y/noStaticElementInteractions: whatevs
+    <div
+      ref={containerRef}
+      className="relative size-full overflow-auto"
+      onContextMenu={state.onContextMenu}
+    >
       <GridLayout
         className={cn(
           state.preventTransition && "[&_.react-grid-item]:transition-none!",
@@ -155,6 +185,33 @@ export function UiGrid({
           </div>
         ))}
       </GridLayout>
+
+      {/* 🚧 abstract with onMount logic */}
+      <div
+        role="dialog"
+        className={cn("fixed inset-0 bg-black/20", !state.showContextMenu && "hidden")}
+        onClick={state.closeContextMenu}
+        onKeyDown={undefined}
+      >
+        <div
+          className={cn(
+            "absolute top-0 left-0 transform-(--cm-transform) w-32",
+            "flex flex-col",
+            "bg-on-background text-background border",
+            !state.showContextMenu && "hidden",
+          )}
+        >
+          {uiRegistryKeys.map((uiRegistryKey) => (
+            <button
+              type="button"
+              key={uiRegistryKey}
+              className="px-2 py-1 hover:bg-background/20 lowercase cursor-pointer"
+            >
+              {uiRegistryKey}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -182,9 +239,12 @@ type State = {
   isLocked: { [layoutKey: string]: boolean };
   preventTransition: boolean;
   resizing: boolean;
-  onMount(): void;
+  showContextMenu: boolean;
+  closeContextMenu(): void;
+  onMount(): (() => void) | void;
   onResizeStart(): void;
   onResizeStop(): void;
+  onContextMenu(e: React.MouseEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
   onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
