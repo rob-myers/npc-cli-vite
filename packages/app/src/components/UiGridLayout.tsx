@@ -10,7 +10,7 @@ import { layoutStore } from "./layout-store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-export function UiGridLayout({
+export function UiGrid({
   uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, toUi },
   ref,
 }: Props) {

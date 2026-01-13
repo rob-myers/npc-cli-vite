@@ -6,8 +6,9 @@ import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
 import { useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
-import { layoutStore } from "../components/layout-store";
-import { type GridApi, UiGridLayout } from "../components/UiGridLayout";
+import { useStore } from "zustand";
+import { demoLayout, layoutStore } from "../components/layout-store";
+import { type GridApi, UiGrid } from "../components/UiGridLayout";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -16,48 +17,19 @@ export const Route = createFileRoute("/")({
 function Index() {
   const theme = useThemeName();
   const gridRef = useRef<GridApi>(null);
+  const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout ?? demoLayout);
 
   useBeforeunload(() => {
     // persist layout
-    const uiLayout = gridRef.current?.getUiLayout();
-    const itemToRect = gridRef.current?.getItemToRect();
-    layoutStore.setState({ uiLayout, itemToRect });
+    layoutStore.setState({
+      uiLayout: gridRef.current?.getUiLayout(),
+      itemToRect: gridRef.current?.getItemToRect(),
+    });
   });
 
   return (
     <UiContext.Provider value={{ theme }}>
-      <UiGridLayout ref={gridRef} uiLayout={demo} />
+      <UiGrid ref={gridRef} uiLayout={uiLayout} />
     </UiContext.Provider>
   );
 }
-
-const demo: UiGridLayout = {
-  layouts: {
-    sm: [
-      { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
-      { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
-      { i: "c", x: 4, y: 0, w: 2, h: 2 },
-      { i: "d", x: 0, y: 2, w: 3, h: 3, isDraggable: true },
-      { i: "e", x: 0, y: 4, w: 2, h: 1 },
-      { i: "f", x: 6, y: 2, w: 3, h: 3, isDraggable: true },
-    ],
-    lg: [
-      { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
-      { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
-      { i: "c", x: 4, y: 0, w: 2, h: 2 },
-      { i: "d", x: 0, y: 2, w: 3, h: 3, isDraggable: true },
-      { i: "e", x: 0, y: 4, w: 2, h: 1 },
-      { i: "f", x: 6, y: 2, w: 3, h: 3 },
-    ],
-  },
-  breakpoints: { lg: 1200, sm: 768 },
-  cols: { lg: 12, sm: 6 },
-  toUi: {
-    a: { uiKey: "Template" },
-    b: { uiKey: "Template" },
-    c: { uiKey: "Template" },
-    d: { uiKey: "Blog" },
-    e: { uiKey: "Global" },
-    f: { uiKey: "Jsh" },
-  },
-};

@@ -63,8 +63,8 @@
 - ✅ persist UiLayout as "ui-layout"
 - ✅ persist UiLayout with itemIdToClientRect
 - ✅ initial skeleton (ssg) on refresh via persisted data
-- clean initial skeleton
-- retreive persisted ui-layout
+- ✅ clean initial skeleton
+- ✅ retreive persisted ui-layout
 
 - packages/ui/world
 
