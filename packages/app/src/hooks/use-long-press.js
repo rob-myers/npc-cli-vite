@@ -11,6 +11,22 @@ export default function useLongPress(config) {
   const ms = config.ms ?? 0;
   const timerId = React.useRef(-1);
   const epochMs = React.useRef(-1);
+  const lastPos = React.useRef({ clientX: 0, clientY: 0 });
+
+  /** @param {{ clientX: number, clientY: number }} firstPos */
+  function onTimeout(firstPos) {
+    if (
+      Math.hypot(
+        lastPos.current.clientX - firstPos.clientX,
+        lastPos.current.clientY - firstPos.clientY,
+      ) < 3
+    ) {
+      config.onLongPress({
+        clientX: firstPos.clientX,
+        clientY: firstPos.clientY,
+      });
+    }
+  }
 
   return React.useMemo(
     () => ({
@@ -18,14 +34,17 @@ export default function useLongPress(config) {
         ? {
             /** @param {React.TouchEvent} e */
             onTouchStart(e) {
-              timerId.current = window.setTimeout(
-                config.onLongPress.bind(null, {
-                  clientX: e.touches[0].clientX,
-                  clientY: e.touches[0].clientY,
-                }),
-                config.ms,
-              );
+              if (e.touches.length > 1) return;
+              const firstPos = { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+              timerId.current = window.setTimeout(() => onTimeout(firstPos), config.ms);
               epochMs.current = Date.now();
+            },
+            /** @param {React.TouchEvent} e */
+            onTouchMove(e) {
+              lastPos.current = {
+                clientX: e.touches[0].clientX,
+                clientY: e.touches[0].clientY,
+              };
             },
             /** @param {React.TouchEvent} e */
             onTouchEnd(e) {
@@ -36,14 +55,13 @@ export default function useLongPress(config) {
         : {
             /** @param {React.MouseEvent} e */
             onMouseDown(e) {
-              timerId.current = window.setTimeout(
-                config.onLongPress.bind(null, {
-                  clientX: e.clientX,
-                  clientY: e.clientY,
-                }),
-                config.ms,
-              );
+              const firstPos = { clientX: e.clientX, clientY: e.clientY };
+              timerId.current = window.setTimeout(() => onTimeout(firstPos), config.ms);
               epochMs.current = Date.now();
+            },
+            /** @param {React.MouseEvent} e */
+            onMouseMove(e) {
+              lastPos.current = { clientX: e.clientX, clientY: e.clientY };
             },
             /** @param {React.MouseEvent} e */
             onMouseUp(e) {
