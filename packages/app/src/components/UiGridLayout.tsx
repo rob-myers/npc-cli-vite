@@ -186,32 +186,7 @@ export function UiGrid({
         ))}
       </GridLayout>
 
-      {/* 🚧 abstract */}
-      <div
-        role="dialog"
-        className={cn("fixed inset-0 bg-black/40", !state.showContextMenu && "hidden")}
-        onClick={state.closeContextMenu}
-        onKeyDown={undefined}
-      >
-        <div
-          className={cn(
-            "absolute top-0 left-0 transform-(--cm-transform)",
-            "flex flex-col",
-            "bg-on-background text-background",
-            !state.showContextMenu && "hidden",
-          )}
-        >
-          {uiRegistryKeys.map((uiRegistryKey) => (
-            <button
-              type="button"
-              key={uiRegistryKey}
-              className="px-2 py-1 hover:bg-background/20 cursor-pointer font-mono text-left border-b border-black/30 tracking-wide"
-            >
-              {uiRegistryKey}
-            </button>
-          ))}
-        </div>
-      </div>
+      <UiGridContextMenu uiGridApi={state} />
     </div>
   );
 }
@@ -256,6 +231,36 @@ function UnknownUi({ uiKey }: { uiKey: string }) {
     <div className="size-full flex items-center justify-center bg-red-300 text-black">
       <div className="flex gap-1 bg-white rounded-2xl px-4">
         Unknown UI -<div className="text-red-500">{uiKey ?? "(no ui key)"}</div>
+      </div>
+    </div>
+  );
+}
+
+function UiGridContextMenu({ uiGridApi }: { uiGridApi: State }) {
+  return (
+    <div
+      role="dialog"
+      className={cn("fixed inset-0 bg-black/40", !uiGridApi.showContextMenu && "hidden")}
+      onClick={uiGridApi.closeContextMenu}
+      onKeyDown={undefined}
+    >
+      <div
+        className={cn(
+          "absolute top-0 left-0 transform-(--cm-transform)",
+          "flex flex-col",
+          "bg-on-background text-background",
+          !uiGridApi.showContextMenu && "hidden",
+        )}
+      >
+        {uiRegistryKeys.map((uiRegistryKey) => (
+          <button
+            type="button"
+            key={uiRegistryKey}
+            className="px-2 py-1 hover:bg-background/20 cursor-pointer font-mono text-left border-b border-black/30 tracking-wide"
+          >
+            {uiRegistryKey}
+          </button>
+        ))}
       </div>
     </div>
   );

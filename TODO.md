@@ -80,7 +80,10 @@
   - ✅ initialWidth window.clientWidth + positionStrategy={absoluteStrategy} works
 
 - 🚧 can right click add grid item
-  - 🚧 context menu component
+  - ✅ UiGridContextMenu component
+  - 🚧 create item creates grid item
+
+- can remove grid item
 
 - 🚧 packages/ui/world
 - 🚧 add react-three-fiber and import gltf
