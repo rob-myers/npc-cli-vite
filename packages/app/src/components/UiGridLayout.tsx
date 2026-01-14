@@ -187,6 +187,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           (state.resizing || state.dragging) && "select-none",
           "text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
           "[&_.react-resizable-handle::after]:z-200",
+          "[&_.react-grid-placeholder]:bg-gray-500!",
         )}
         width={width}
         gridConfig={state.gridConfig}
