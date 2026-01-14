@@ -186,18 +186,18 @@ export function UiGrid({
         ))}
       </GridLayout>
 
-      {/* 🚧 abstract with onMount logic */}
+      {/* 🚧 abstract */}
       <div
         role="dialog"
-        className={cn("fixed inset-0 bg-black/20", !state.showContextMenu && "hidden")}
+        className={cn("fixed inset-0 bg-black/40", !state.showContextMenu && "hidden")}
         onClick={state.closeContextMenu}
         onKeyDown={undefined}
       >
         <div
           className={cn(
-            "absolute top-0 left-0 transform-(--cm-transform) w-32",
+            "absolute top-0 left-0 transform-(--cm-transform)",
             "flex flex-col",
-            "bg-on-background text-background border",
+            "bg-on-background text-background",
             !state.showContextMenu && "hidden",
           )}
         >
@@ -205,7 +205,7 @@ export function UiGrid({
             <button
               type="button"
               key={uiRegistryKey}
-              className="px-2 py-1 hover:bg-background/20 lowercase cursor-pointer"
+              className="px-2 py-1 hover:bg-background/20 cursor-pointer font-mono text-left border-b border-black/30 tracking-wide"
             >
               {uiRegistryKey}
             </button>
