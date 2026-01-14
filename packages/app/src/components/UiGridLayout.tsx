@@ -46,6 +46,23 @@ export function UiGrid({
       closeContextMenu() {
         state.set({ showContextMenu: false });
       },
+      onContextMenuItem(e) {
+        if (!containerRef.current) return;
+
+        const itemEl = e.currentTarget as HTMLElement;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const relativeX = e.clientX - containerRect.left;
+        const relativeY = e.clientY - containerRect.top;
+        const gridItemWidth = containerRef.current.clientWidth / cols;
+        const gridItemHeight =
+          (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
+        const gridX = Math.floor(relativeX / gridItemWidth);
+        const gridY = Math.floor(relativeY / gridItemHeight);
+
+        // 🚧 add item to layout at (gridX, gridY)
+        const uiRegistryKey = itemEl.dataset.uiRegistryKey as UiRegistryKey;
+        console.log({ uiRegistryKey, gridX, gridY });
+      },
       onContextMenu(e) {
         if (
           (e.target as HTMLElement).parentElement !== containerRef.current ||
@@ -186,7 +203,7 @@ export function UiGrid({
         ))}
       </GridLayout>
 
-      <UiGridContextMenu uiGridApi={state} />
+      <UiGridContextMenu state={state} />
     </div>
   );
 }
@@ -219,6 +236,7 @@ type State = {
   onMount(): (() => void) | void;
   onResizeStart(): void;
   onResizeStop(): void;
+  onContextMenuItem(e: React.MouseEvent<HTMLElement>): void;
   onContextMenu(e: React.MouseEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
@@ -236,12 +254,12 @@ function UnknownUi({ uiKey }: { uiKey: string }) {
   );
 }
 
-function UiGridContextMenu({ uiGridApi }: { uiGridApi: State }) {
+function UiGridContextMenu({ state }: { state: State }) {
   return (
     <div
       role="dialog"
-      className={cn("fixed inset-0 bg-black/40", !uiGridApi.showContextMenu && "hidden")}
-      onClick={uiGridApi.closeContextMenu}
+      className={cn("fixed inset-0 bg-black/40", !state.showContextMenu && "hidden")}
+      onClick={state.closeContextMenu}
       onKeyDown={undefined}
     >
       <div
@@ -249,14 +267,16 @@ function UiGridContextMenu({ uiGridApi }: { uiGridApi: State }) {
           "absolute top-0 left-0 transform-(--cm-transform)",
           "flex flex-col",
           "bg-on-background text-background",
-          !uiGridApi.showContextMenu && "hidden",
+          !state.showContextMenu && "hidden",
         )}
       >
         {uiRegistryKeys.map((uiRegistryKey) => (
           <button
             type="button"
             key={uiRegistryKey}
+            data-ui-registry-key={uiRegistryKey}
             className="px-2 py-1 hover:bg-background/20 cursor-pointer font-mono text-left border-b border-black/30 tracking-wide"
+            onClick={state.onContextMenuItem}
           >
             {uiRegistryKey}
           </button>
