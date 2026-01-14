@@ -35,7 +35,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       gridConfig: {
         cols,
         rowHeight: 80,
-        // margin: [0, 0],
+        // margin: [10, 10],
       },
       isLocked: {},
       preventTransition: true,
@@ -135,7 +135,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         update();
       },
     }),
-    { deps: [breakpoint] },
+    { deps: [breakpoint], reset: { gridConfig: true } },
   );
   const update = useUpdate();
 
@@ -211,8 +211,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             <div
               data-item-id={def.itemId}
               className={cn(
-                "z-999 absolute bottom-1 left-1 cursor-pointer p-0.5",
-                state.isLocked[def.itemId] ? "opacity-100" : "opacity-50",
+                "z-999 absolute bottom-1 left-1",
+                "cursor-pointer p-0.5 bg-background text-on-background rounded-[50%]! hover:opacity-50",
+                state.isLocked[def.itemId] ? "opacity-75!" : "opacity-25",
               )}
               onPointerUp={state.onToggleItemLock}
             >
