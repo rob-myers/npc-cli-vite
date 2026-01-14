@@ -265,8 +265,8 @@ function UiGridContextMenu({ state }: { state: State }) {
       <div
         className={cn(
           "absolute top-0 left-0 transform-(--cm-transform)",
-          "flex flex-col",
-          "bg-on-background text-background",
+          "flex flex-col gap-0.5",
+          "border bg-black border-white/20 p-1 rounded-md text-white",
           !state.showContextMenu && "hidden",
         )}
       >
@@ -275,7 +275,7 @@ function UiGridContextMenu({ state }: { state: State }) {
             type="button"
             key={uiRegistryKey}
             data-ui-registry-key={uiRegistryKey}
-            className="px-2 py-1 hover:bg-background/20 cursor-pointer font-mono text-left border-b border-black/30 tracking-wide"
+            className="px-2 py-1 hover:bg-white/20 cursor-pointer lowercase text-sm text-left tracking-widest"
             onClick={state.onContextMenuItem}
           >
             {uiRegistryKey}
