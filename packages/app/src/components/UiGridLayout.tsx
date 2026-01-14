@@ -10,6 +10,7 @@ import type { GridConfig } from "react-grid-layout/core";
 import { layoutStore } from "./layout-store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
+import useLongPress from "../hooks/use-long-press";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const layouts = useRef(initialUiLayout.layouts);
@@ -139,6 +140,19 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   );
   const update = useUpdate();
 
+  const longPressHandlers = useLongPress({
+    // 🚧 clean
+    // 🚧 overlay should ignore re-long-click
+    onLongPress: ({ clientX, clientY }) => {
+      containerRef.current?.style.setProperty(
+        "--cm-transform",
+        `translate(${clientX}px, ${clientY}px)`,
+      );
+      state.set({ showContextMenu: true });
+    },
+    ms: 500,
+  });
+
   useEffect(state.onMount, [state.onMount]);
 
   useImperativeHandle<GridApi, GridApi>(
@@ -180,6 +194,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       ref={containerRef}
       className="relative size-full overflow-auto"
       onContextMenu={state.onContextMenu}
+      {...longPressHandlers}
     >
       <GridLayout
         className={cn(
@@ -263,7 +278,7 @@ type State = {
   onResizeStart(): void;
   onResizeStop(): void;
   onContextMenuItem(e: React.MouseEvent<HTMLElement>): void;
-  onContextMenu(e: React.MouseEvent<HTMLElement>): void;
+  onContextMenu(e: MouseEvent | React.MouseEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
   onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
