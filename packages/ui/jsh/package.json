@@ -8,6 +8,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/cli": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
     "react": "catalog:",
     "react-dom": "catalog:"
   }

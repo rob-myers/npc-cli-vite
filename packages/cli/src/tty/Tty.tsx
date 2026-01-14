@@ -327,7 +327,8 @@ export function Tty(props: Props) {
 }
 
 export interface Props extends BaseTabProps {
-  sessionKey: `tty-${number}`;
+  // sessionKey: `tty-${number}`;
+  sessionKey: string;
   /** Can initialize variables */
   env: Partial<Session["var"]>;
   /**

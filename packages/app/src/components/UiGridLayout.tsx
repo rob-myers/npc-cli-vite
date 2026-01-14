@@ -2,7 +2,8 @@ import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__reg
 import { cn, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon } from "@phosphor-icons/react";
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import type React from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 
@@ -205,7 +206,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             data-item-id={def.itemId}
             className="relative border rounded *:rounded"
           >
-            {def.ui ? React.createElement(def.ui) : <UnknownUi uiKey={def.uiKey} />}
+            {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             <div
               data-item-id={def.itemId}
               className={cn(

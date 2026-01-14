@@ -1,3 +1,4 @@
+import type { UiProps } from "@npc-cli/ui-sdk";
 import { lazy } from "react";
 
 export const uiRegistry = {
@@ -6,7 +7,7 @@ export const uiRegistry = {
   Jsh: lazy(() => import("@npc-cli/ui__jsh")),
   Template: lazy(() => import("@npc-cli/ui__template")),
   World: lazy(() => import("@npc-cli/ui__world")),
-};
+} satisfies Record<string, React.LazyExoticComponent<(props: UiProps) => React.ReactNode>>;
 
 export type UiRegistryKey = keyof typeof uiRegistry;
 
