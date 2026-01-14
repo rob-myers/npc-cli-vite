@@ -345,6 +345,9 @@ importers:
       '@npc-cli/cli':
         specifier: workspace:^
         version: link:../../cli
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -354,6 +357,9 @@ importers:
 
   packages/ui/registry:
     dependencies:
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
       '@npc-cli/ui__blog':
         specifier: workspace:^
         version: link:../blog
@@ -384,6 +390,9 @@ importers:
 
   packages/ui/world:
     dependencies:
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
       react:
         specifier: 'catalog:'
         version: 19.2.1

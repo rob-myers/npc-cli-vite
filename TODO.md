@@ -83,6 +83,9 @@
   - ✅ UiGridContextMenu component
   - ✅ create item creates grid item
 
+- ✅ fix multiple ttys
+  - need different session
+- ✅ ui items receive props.id i.e. `itemId`
 - can remove grid item
 
 - 🚧 packages/ui/world
