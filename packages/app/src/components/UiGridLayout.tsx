@@ -10,11 +10,8 @@ import { layoutStore } from "./layout-store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-export function UiGrid({
-  uiLayout: { breakpoints, cols: colsByBreakpoint, layouts: layoutByBreakpoint, toUi },
-  ref,
-}: Props) {
-  const layouts = useRef(layoutByBreakpoint);
+export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
+  const layouts = useRef(initialUiLayout.layouts);
 
   const { width, containerRef } = useContainerWidth({
     initialWidth: window.innerWidth, // avoid initial animation
@@ -22,8 +19,8 @@ export function UiGrid({
 
   const { layout, cols, setLayouts, breakpoint } = useResponsiveLayout({
     width,
-    breakpoints,
-    cols: colsByBreakpoint,
+    breakpoints: initialUiLayout.breakpoints,
+    cols: initialUiLayout.cols,
     layouts: layouts.current,
     onBreakpointChange(_bp, _cols) {
       // Fixes overflow on slow/sudden change
@@ -43,6 +40,21 @@ export function UiGrid({
       preventTransition: true,
       resizing: false,
       showContextMenu: false,
+      toUi: { ...initialUiLayout.toUi },
+      addItem({ itemId, uiKey, gridRect }) {
+        // 🚧 both breakpoints?
+        setLayouts({
+          [breakpoint]: layouts.current[breakpoint].concat({
+            i: itemId,
+            x: gridRect.x,
+            y: gridRect.y,
+            w: gridRect.width,
+            h: gridRect.height,
+            isDraggable: true,
+          }),
+        });
+        state.toUi[itemId] = { uiKey };
+      },
       closeContextMenu() {
         state.set({ showContextMenu: false });
       },
@@ -62,6 +74,11 @@ export function UiGrid({
         // 🚧 add item to layout at (gridX, gridY)
         const uiRegistryKey = itemEl.dataset.uiRegistryKey as UiRegistryKey;
         console.log({ uiRegistryKey, gridX, gridY });
+        state.addItem({
+          itemId: `ui-${crypto.randomUUID()}`,
+          uiKey: uiRegistryKey,
+          gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
+        });
       },
       onContextMenu(e) {
         if (
@@ -129,9 +146,9 @@ export function UiGrid({
       getUiLayout() {
         return {
           layouts: layouts.current,
-          breakpoints,
-          cols: colsByBreakpoint,
-          toUi,
+          breakpoints: initialUiLayout.breakpoints,
+          cols: initialUiLayout.cols,
+          toUi: state.toUi,
         };
       },
       getItemToRect() {
@@ -150,10 +167,10 @@ export function UiGrid({
     () =>
       layout.map((item) => ({
         itemId: item.i,
-        uiKey: toUi[item.i]?.uiKey,
-        ui: uiRegistry[toUi[item.i]?.uiKey],
+        uiKey: state.toUi[item.i]?.uiKey,
+        ui: uiRegistry[state.toUi[item.i]?.uiKey],
       })),
-    [layout, toUi],
+    [layout],
   );
 
   return (
@@ -232,6 +249,12 @@ type State = {
   preventTransition: boolean;
   resizing: boolean;
   showContextMenu: boolean;
+  toUi: UiGridLayout["toUi"];
+  addItem(meta: {
+    itemId: string;
+    uiKey: UiRegistryKey;
+    gridRect: { x: number; y: number; width: number; height: number };
+  }): void;
   closeContextMenu(): void;
   onMount(): (() => void) | void;
   onResizeStart(): void;

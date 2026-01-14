@@ -79,9 +79,9 @@
 - ✅ avoid react-grid-layout initial animation
   - ✅ initialWidth window.clientWidth + positionStrategy={absoluteStrategy} works
 
-- 🚧 can right click add grid item
+- ✅ can right click add grid item
   - ✅ UiGridContextMenu component
-  - 🚧 create item creates grid item
+  - ✅ create item creates grid item
 
 - can remove grid item
 
