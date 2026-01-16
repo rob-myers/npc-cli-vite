@@ -7,8 +7,14 @@ export const UiContext = createContext<UiContextValue>({
   theme: // initial value for future SSG
     tryLocalStorageGetParsed<StorageValue<ThemeState>>("theme-storage" satisfies ThemeStorageKey)
       ?.state.theme || "dark",
+  layoutApi: {
+    resetLayout() {},
+  },
 });
 
 type UiContextValue = {
   theme: ThemeName;
+  layoutApi: {
+    resetLayout(): void;
+  };
 };

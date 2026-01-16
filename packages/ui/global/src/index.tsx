@@ -3,17 +3,28 @@ import { UiContext } from "@npc-cli/ui-sdk";
 import { useContext } from "react";
 
 export function Global() {
-  const { theme } = useContext(UiContext);
+  const { theme, layoutApi } = useContext(UiContext);
 
   return (
-    <div className="h-full p-4 flex items-center justify-center">
-      <button
-        type="button"
-        className="cursor-pointer border rounded px-4 py-1 bg-button"
-        onPointerDown={themeApi.setOther}
-      >
-        {theme}
-      </button>
+    <div className="flex justify-center items-center h-full overflow-auto">
+      <div className="p-4 flex flex-wrap gap-2 justify-center">
+        <button
+          type="button"
+          className="cursor-pointer border rounded px-4 py-1 bg-button"
+          onPointerDown={themeApi.setOther}
+        >
+          {theme}
+        </button>
+        <button
+          type="button"
+          className="cursor-pointer border rounded px-4 py-1 bg-button"
+          onPointerDown={() => {
+            layoutApi.resetLayout();
+          }}
+        >
+          reset
+        </button>
+      </div>
     </div>
   );
 }

@@ -88,5 +88,8 @@
 - ✅ ui items receive props.id i.e. `itemId`
 - can remove grid item
 
+- ✅ can reset layout from global
+- ✅ force grid height full
+
 - 🚧 packages/ui/world
 - 🚧 add react-three-fiber and import gltf
