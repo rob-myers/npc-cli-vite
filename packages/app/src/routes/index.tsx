@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
 import { demoLayout, layoutStore } from "../components/layout-store";
@@ -27,8 +27,17 @@ function Index() {
     });
   });
 
+  const layoutApi = useMemo(
+    () => ({
+      resetLayout() {
+        gridRef.current?.resetLayout();
+      },
+    }),
+    [],
+  );
+
   return (
-    <UiContext.Provider value={{ theme }}>
+    <UiContext.Provider value={{ theme, layoutApi }}>
       <UiGrid ref={gridRef} uiLayout={uiLayout} />
     </UiContext.Provider>
   );
