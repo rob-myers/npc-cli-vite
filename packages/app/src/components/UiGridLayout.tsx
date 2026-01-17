@@ -231,8 +231,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           state.preventTransition && "[&_.react-grid-item]:transition-none!",
           (state.resizing || state.dragging || state.showContextMenu) && "select-none",
           "h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
-          "[&_.react-resizable-handle::after]:z-200",
-          "[&_.react-resizable-handle::after]:size-4!",
+          // "[&_.react-resizable-handle::after]:z-200",
+          // "[&_.react-resizable-handle::after]:size-4!",
           "[&_.react-grid-placeholder]:bg-gray-500!",
         )}
         width={width}
@@ -252,6 +252,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             <Suspense fallback={<Spinner />}>
               {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             </Suspense>
+
+            <div className="absolute right-0 bottom-0 size-7 bg-transparent" />
 
             <UiInstanceMenu id={def.itemId} state={state} />
           </div>
