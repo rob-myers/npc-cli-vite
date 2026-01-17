@@ -121,6 +121,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ resizing: false });
       },
       onToggleItemLock(e: React.PointerEvent<HTMLDivElement>) {
+        e.stopPropagation(); // don't trigger layout e.g. during deletion
+
         const menuEl = e.currentTarget as HTMLDivElement;
         const itemEl = (e.target as HTMLElement | SVGElement).closest<SVGElement>(
           "svg[data-icon-type]",
