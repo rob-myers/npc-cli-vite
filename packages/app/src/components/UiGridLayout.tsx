@@ -232,6 +232,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           (state.resizing || state.dragging) && "select-none",
           "h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
           "[&_.react-resizable-handle::after]:z-200",
+          "[&_.react-resizable-handle::after]:size-4!",
           "[&_.react-grid-placeholder]:bg-gray-500!",
         )}
         width={width}
@@ -359,10 +360,10 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
       )}
       onPointerDown={state.onToggleItemLock}
     >
-      <div className={cn("py-0.5 px-1", !state.isLocked[id] && "grayscale")}>
+      <div className={cn("p-1", !state.isLocked[id] && "grayscale")}>
         <LockIcon data-icon-type="lock" weight="duotone" />
       </div>
-      <div className="py-0.5 px-1">
+      <div className="p-1">
         <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
       </div>
     </div>
