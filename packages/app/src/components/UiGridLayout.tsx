@@ -252,13 +252,15 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             </Suspense>
 
+            {/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
             <div // ui submenu
               data-item-id={def.itemId}
               className={cn(
                 "z-999 absolute bottom-1 left-1",
                 "flex cursor-pointer text-teal-500 bg-white/0",
               )}
-              onPointerUp={state.onToggleItemLock}
+              onClick={state.onToggleItemLock}
+              onKeyDown={undefined}
             >
               <div className={cn("py-0.5 px-1", !state.isLocked[def.itemId] && "grayscale")}>
                 <LockIcon data-icon-type="lock" weight="duotone" />
