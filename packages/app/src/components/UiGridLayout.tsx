@@ -44,9 +44,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       showContextMenu: false,
       toUi: { ...initialUiLayout.toUi },
       addItem({ itemId, uiKey, gridRect }) {
-        // 🚧 both breakpoints?
+        state.toUi[itemId] = { uiKey };
         setLayouts({
-          [breakpoint]: layouts.current[breakpoint].concat({
+          lg: layouts.current.lg.concat({
             i: itemId,
             x: gridRect.x,
             y: gridRect.y,
@@ -55,7 +55,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             isDraggable: true,
           }),
         });
-        state.toUi[itemId] = { uiKey };
       },
       closeContextMenu() {
         state.set({ showContextMenu: false });
@@ -126,7 +125,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
 
         setLayouts({
-          [breakpoint]: layouts.current[breakpoint].map((item) =>
+          lg: layouts.current.lg.map((item) =>
             item.i === itemId ? { ...item, isDraggable: !locked } : item,
           ),
         });
@@ -175,18 +174,12 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         );
       },
       resetLayout() {
-        state.toUi["ui-0"] = { uiKey: "Global" };
+        state.toUi = { "ui-0": { uiKey: "Global" } };
         state.isLocked = {};
+        layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
         setLayouts({
-          [breakpoint]: [
-            {
-              i: "ui-0",
-              w: 2,
-              h: 1,
-              x: 0,
-              y: 0,
-            },
-          ],
+          sm: undefined,
+          lg: { ...layouts.current.lg },
         });
       },
     }),
@@ -228,7 +221,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         onDragStop={state.onDragStop}
         onLayoutChange={(layout) => {
           // console.log("onLayoutChange", layout);
-          layouts.current[breakpoint] = layout;
+          layouts.current.lg = layout;
         }}
       >
         {childDefs.map((def) => (
@@ -272,7 +265,8 @@ export type GridApi = {
 export type UiGridLayout = {
   breakpoints: Record<"lg" | "sm", number>;
   cols: Record<"lg" | "sm", number>;
-  layouts: Record<"lg" | "sm", Layout>;
+  /** Only one layout but cols still responsive */
+  layouts: Record<"lg", Layout>;
   toUi: { [layoutKey: string]: { uiKey: UiRegistryKey } };
 };
 
