@@ -94,7 +94,7 @@
 - ✅ can reset layout from global
 - ✅ force grid height full
 
-- tty should use sessionKey not layoutId
+- 🚧 tty should use sessionKey not layoutId
 
 - 🚧 packages/ui/world
 - 🚧 add react-three-fiber and import gltf

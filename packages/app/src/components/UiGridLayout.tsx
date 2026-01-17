@@ -252,21 +252,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             </Suspense>
 
-            <div // ui submenu
-              data-item-id={def.itemId}
-              className={cn(
-                "z-999 absolute bottom-1 left-1",
-                "flex cursor-pointer text-teal-500 bg-on-background/5 rounded",
-              )}
-              onPointerDown={state.onToggleItemLock}
-            >
-              <div className={cn("py-0.5 px-1", !state.isLocked[def.itemId] && "grayscale")}>
-                <LockIcon data-icon-type="lock" weight="duotone" />
-              </div>
-              <div className="py-0.5 px-1">
-                <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
-              </div>
-            </div>
+            <UiInstanceMenu id={def.itemId} state={state} />
           </div>
         ))}
       </GridLayout>
@@ -358,6 +344,26 @@ function UiGridContextMenu({ state }: { state: State }) {
             {uiRegistryKey}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function UiInstanceMenu({ id, state }: { id: string; state: State }) {
+  return (
+    <div // ui submenu
+      data-item-id={id}
+      className={cn(
+        "z-999 absolute bottom-1 left-1",
+        "flex cursor-pointer text-teal-500 bg-on-background/5 rounded",
+      )}
+      onPointerDown={state.onToggleItemLock}
+    >
+      <div className={cn("py-0.5 px-1", !state.isLocked[id] && "grayscale")}>
+        <LockIcon data-icon-type="lock" weight="duotone" />
+      </div>
+      <div className="py-0.5 px-1">
+        <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
       </div>
     </div>
   );
