@@ -88,7 +88,8 @@
 - ✅ ui items receive props.id i.e. `itemId`
 
 - ✅ can remove grid item
-- 🚧 fix remove grid item bug
+- ✅ fix remove grid item bug
+  - fix mobile via onPointerUp -> onPointerDown
 
 - ✅ can reset layout from global
 - ✅ force grid height full

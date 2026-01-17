@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NPC CLI</title>
     <link href="/src/styles/main.css" rel="stylesheet">
+    <script>
+      (function themeInitialization() {
+        try {
+          const { state: { theme } } = JSON.parse(localStorage.getItem('theme-storage'));
+          document.documentElement.classList.add(`theme-${theme}`);
+        } catch (e) {
+          console.error('Theme initialization failed', e);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
