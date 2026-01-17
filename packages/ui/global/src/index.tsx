@@ -10,7 +10,7 @@ export function Global() {
       <div className="p-4 flex flex-wrap gap-2 justify-center">
         <button
           type="button"
-          className="cursor-pointer border rounded px-4 py-1 bg-button"
+          className="cursor-pointer border rounded px-4 py-1 bg-button-background"
           onPointerDown={themeApi.setOther}
         >
           {/* label is next theme */}
@@ -18,7 +18,7 @@ export function Global() {
         </button>
         <button
           type="button"
-          className="cursor-pointer border rounded px-4 py-1 bg-button"
+          className="cursor-pointer border rounded px-4 py-1 bg-button-background"
           onPointerDown={() => {
             layoutApi.resetLayout();
           }}
