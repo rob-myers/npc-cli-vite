@@ -309,8 +309,8 @@ type State = {
 
 function UnknownUi({ uiKey }: { uiKey: string }) {
   return (
-    <div className="size-full flex items-center justify-center bg-red-300 text-black">
-      <div className="flex gap-1 bg-white rounded-2xl px-4">
+    <div className="size-full flex items-center justify-center text-black">
+      <div className="flex gap-1 bg-white border border-red-500 rounded-2xl px-4">
         Unknown UI -<div className="text-red-500">{uiKey ?? "(no ui key)"}</div>
       </div>
     </div>
