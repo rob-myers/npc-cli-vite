@@ -256,7 +256,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               data-item-id={def.itemId}
               className={cn(
                 "z-999 absolute bottom-1 left-1",
-                "flex cursor-pointer text-teal-500 bg-white/0",
+                "flex cursor-pointer text-teal-500 bg-on-background/5 rounded",
               )}
               onPointerDown={state.onToggleItemLock}
             >
