@@ -229,7 +229,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       <GridLayout
         className={cn(
           state.preventTransition && "[&_.react-grid-item]:transition-none!",
-          (state.resizing || state.dragging) && "select-none",
+          (state.resizing || state.dragging || state.showContextMenu) && "select-none",
           "h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
           "[&_.react-resizable-handle::after]:z-200",
           "[&_.react-resizable-handle::after]:size-4!",
