@@ -95,6 +95,11 @@
 - ✅ force grid height full
 
 - 🚧 tty should use sessionKey not layoutId
+  - ✅ ui context provides uiStore
+  - 🚧 every ui has respective meta `{ id, uiKey }`
+  - 🚧 ui can provide bootstrap method which extends meta based on uiStore
 
 - 🚧 packages/ui/world
+  - ✅ create dummy package
+
 - 🚧 add react-three-fiber and import gltf

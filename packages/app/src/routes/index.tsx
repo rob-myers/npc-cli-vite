@@ -1,4 +1,4 @@
-import { UiContext } from "@npc-cli/ui-sdk";
+import { UiContext, uiStore } from "@npc-cli/ui-sdk";
 import { createFileRoute } from "@tanstack/react-router";
 
 import "react-grid-layout/css/styles.css";
@@ -37,7 +37,7 @@ function Index() {
   );
 
   return (
-    <UiContext.Provider value={{ theme, layoutApi }}>
+    <UiContext.Provider value={{ layoutApi, theme, uiStore }}>
       <UiGrid ref={gridRef} uiLayout={uiLayout} />
     </UiContext.Provider>
   );
