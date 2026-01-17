@@ -1,7 +1,7 @@
 import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
 import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { LockIcon } from "@phosphor-icons/react";
+import { LockIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
@@ -19,7 +19,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     initialWidth: window.innerWidth, // avoid initial animation
   });
 
-  const { layout, cols, setLayouts, breakpoint } = useResponsiveLayout({
+  const { layout, cols, setLayouts } = useResponsiveLayout({
     width,
     breakpoints: initialUiLayout.breakpoints,
     cols: initialUiLayout.cols,
@@ -121,26 +121,46 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ resizing: false });
       },
       onToggleItemLock(e: React.PointerEvent<HTMLDivElement>) {
-        const itemId = e.currentTarget.dataset.itemId as string;
-        const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
+        const menuEl = e.currentTarget as HTMLDivElement;
+        const itemEl = (e.target as HTMLElement | SVGElement).closest<SVGElement>(
+          "svg[data-icon-type]",
+        );
+        if (!itemEl) return;
 
-        setLayouts({
-          lg: layouts.current.lg.map((item) =>
-            item.i === itemId ? { ...item, isDraggable: !locked } : item,
-          ),
-        });
+        const itemId = menuEl.dataset.itemId as string;
+        const iconType = itemEl.dataset.iconType as string;
+
+        switch (iconType) {
+          case "lock": {
+            const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
+            setLayouts({
+              lg: layouts.current.lg.map((item) =>
+                item.i === itemId ? { ...item, isDraggable: !locked } : item,
+              ),
+            });
+            break;
+          }
+          case "remove": {
+            state.removeItem(itemId);
+            break;
+          }
+        }
+      },
+      removeItem(itemId) {
+        delete state.toUi[itemId];
+        layouts.current.lg = layout.filter((item) => item.i !== itemId);
+        setLayouts({ lg: layout.filter((item) => item.i !== itemId) });
       },
       set(partial: Partial<State>) {
         Object.assign(state, partial);
         update();
       },
     }),
-    { deps: [breakpoint], reset: { gridConfig: true } },
+    { deps: [layout], reset: { gridConfig: true } },
   );
   const update = useUpdate();
 
   const longPressHandlers = useLongPress({
-    // 🚧 clean
     // 🚧 overlay should ignore re-long-click
     onLongPress: ({ clientX, clientY }) => {
       containerRef.current?.style.setProperty(
@@ -229,16 +249,21 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             <Suspense fallback={<Spinner />}>
               {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             </Suspense>
+
             <div // ui submenu
               data-item-id={def.itemId}
               className={cn(
                 "z-999 absolute bottom-1 left-1",
-                "cursor-pointer p-0.5 text-teal-500 bg-white/0",
-                !state.isLocked[def.itemId] && "grayscale",
+                "flex cursor-pointer text-teal-500 bg-white/0",
               )}
               onPointerUp={state.onToggleItemLock}
             >
-              <LockIcon weight="duotone" />
+              <div className={cn("py-0.5 px-1", !state.isLocked[def.itemId] && "grayscale")}>
+                <LockIcon data-icon-type="lock" weight="duotone" />
+              </div>
+              <div className="py-0.5 px-1">
+                <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
+              </div>
             </div>
           </div>
         ))}
@@ -290,6 +315,7 @@ type State = {
   onDragStart(): void;
   onDragStop(): void;
   onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
+  removeItem(itemId: string): void;
   set(partial: Partial<State>): void;
 };
 
