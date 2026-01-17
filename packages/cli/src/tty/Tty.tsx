@@ -307,7 +307,7 @@ export function Tty(props: Props) {
   const update = useUpdate();
 
   return (
-    <div className="h-full w-full p-1" ref={rootRef}>
+    <div className="h-full w-full" ref={rootRef}>
       <BaseTty
         ref={state.ref("base")} // 🔔 sets and unsets state.base
         sessionKey={props.sessionKey}

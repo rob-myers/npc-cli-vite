@@ -253,8 +253,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             </Suspense>
 
-            <div className="absolute right-0 bottom-0 size-7 bg-transparent" />
-
             <UiInstanceMenu id={def.itemId} state={state} />
           </div>
         ))}
