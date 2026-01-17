@@ -86,10 +86,14 @@
 - ✅ fix multiple ttys
   - need different session
 - ✅ ui items receive props.id i.e. `itemId`
-- can remove grid item
+
+- ✅ can remove grid item
+- 🚧 fix remove grid item bug
 
 - ✅ can reset layout from global
 - ✅ force grid height full
+
+- tty should use sessionKey not layoutId
 
 - 🚧 packages/ui/world
 - 🚧 add react-three-fiber and import gltf
