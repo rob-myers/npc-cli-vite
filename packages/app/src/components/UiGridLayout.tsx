@@ -229,16 +229,16 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             <Suspense fallback={<Spinner />}>
               {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
             </Suspense>
-            <div
+            <div // ui submenu
               data-item-id={def.itemId}
               className={cn(
                 "z-999 absolute bottom-1 left-1",
-                "cursor-pointer p-0.5 bg-background text-on-background rounded-[50%]! hover:opacity-50",
-                state.isLocked[def.itemId] ? "opacity-75!" : "opacity-25",
+                "cursor-pointer p-0.5 text-teal-500 bg-white/0",
+                !state.isLocked[def.itemId] && "grayscale",
               )}
               onPointerUp={state.onToggleItemLock}
             >
-              <LockIcon />
+              <LockIcon weight="duotone" />
             </div>
           </div>
         ))}

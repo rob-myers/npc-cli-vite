@@ -1,13 +1,13 @@
 @theme {
   --color-background: var(--color-emerald-200);
   --color-on-background: var(--color-black);
-  --color-button: var(--color-zinc-100);
+  --color-button-background: var(--color-zinc-100);
   --color-spinner: var(--color-zinc-400);
 }
 
 .theme-dark {
   --color-background: #1f1f1f;
   --color-on-background: #dddddd;
-  --color-button: var(--color-zinc-800);
+  --color-button-background: var(--color-zinc-800);
   --color-spinner: var(--color-blue-400);
 }
