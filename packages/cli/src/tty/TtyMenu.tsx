@@ -106,7 +106,7 @@ export function TtyMenu(props: Props) {
         "absolute z-110 top-0 right-0",
         "[--menu-width:54px] w-(--menu-width) h-[calc(100%-32px)]",
         "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
-        "pointer-events-none transition-transform duration-500",
+        "transition-transform duration-500",
         state.touchMenuOpen
           ? "transform-[translate(-20px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
           : "transform-[translate(var(--menu-width),0px)]",
