@@ -1,13 +1,13 @@
-import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
-import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
+import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
+import { cn, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 
-import { layoutStore } from "./layout-store";
+import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import useLongPress from "../hooks/use-long-press";
@@ -38,7 +38,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         rowHeight: 80,
         // margin: [10, 10],
       },
-      isLocked: {},
+      isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       preventTransition: true,
       resizing: false,
       showContextMenu: false,
@@ -249,10 +249,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       >
         {childDefs.map((def) => (
           <div key={def.itemId} data-item-id={def.itemId} className="relative border">
-            <Suspense fallback={<Spinner />}>
-              {def.ui ? <def.ui id={def.itemId} /> : <UnknownUi uiKey={def.uiKey} />}
-            </Suspense>
-
+            <UiInstance id={def.itemId} uiKey={def.uiKey} />
             <UiInstanceMenu id={def.itemId} state={state} />
           </div>
         ))}
@@ -308,21 +305,11 @@ type State = {
   set(partial: Partial<State>): void;
 };
 
-function UnknownUi({ uiKey }: { uiKey: string }) {
-  return (
-    <div className="size-full flex items-center justify-center text-black">
-      <div className="flex gap-1 bg-white border border-red-500 rounded-2xl px-4">
-        Unknown UI -<div className="text-red-500">{uiKey ?? "(no ui key)"}</div>
-      </div>
-    </div>
-  );
-}
-
 function UiGridContextMenu({ state }: { state: State }) {
   return (
     <div
       role="dialog"
-      className={cn("fixed inset-0 bg-black/40", !state.showContextMenu && "hidden")}
+      className={cn("fixed inset-0 bg-black/20", !state.showContextMenu && "hidden")}
       onClick={state.closeContextMenu}
       onKeyDown={undefined}
     >

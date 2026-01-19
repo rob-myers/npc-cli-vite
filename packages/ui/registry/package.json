@@ -3,7 +3,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/main.ts"
+    ".": "./src/main.ts",
+    "./types": {
+      "types": "./src/main.ts"
+    }
   },
   "scripts": {},
   "dependencies": {
@@ -13,6 +16,7 @@
     "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/ui__template": "workspace:^",
     "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
     "react": "catalog:"
   }
 }
