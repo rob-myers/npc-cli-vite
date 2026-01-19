@@ -10,7 +10,7 @@ import type { ExternalMessage, ExternalMessageProcessLeader } from "../shell/io"
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 import { BaseTty, type State as BaseTtyState } from "./BaseTty";
-// import { TtyMenu } from "./TtyMenu";
+import { TtyMenu } from "./TtyMenu";
 
 /**
  * A `BaseTty` which can be:
@@ -314,14 +314,14 @@ export function Tty(props: Props) {
         env={props.env}
         onUnmount={state.reboot}
       />
-      {/* {state.base?.session && (
+      {state.base?.session && (
         <TtyMenu
           canContOrStop={state.canContOrStop}
           disabled={props.disabled}
           session={state.base.session}
           setTabsEnabled={props.setTabsEnabled}
         />
-      )} */}
+      )}
     </div>
   );
 }

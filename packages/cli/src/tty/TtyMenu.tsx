@@ -96,7 +96,8 @@ export function TtyMenu(props: Props) {
         JSON.stringify(isTouchDevice()),
       );
     }
-    state.xterm.setCanType(tryLocalStorageGetParsed(localStorageKey.touchTtyCanType) === true);
+    // state.xterm.setCanType(tryLocalStorageGetParsed(localStorageKey.touchTtyCanType) === true);
+    state.xterm.setCanType(true);
     state.touchMenuOpen = tryLocalStorageGetParsed(localStorageKey.touchTtyOpen) === true;
   }, []);
 
