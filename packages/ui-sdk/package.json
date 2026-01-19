@@ -9,7 +9,11 @@
   "dependencies": {
     "@npc-cli/theme": "workspace:^",
     "@npc-cli/util": "workspace:^",
+    "immer": "catalog:",
     "react": "catalog:",
     "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@npc-cli/ui__registry": "workspace:^"
   }
 }
