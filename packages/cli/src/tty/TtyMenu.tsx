@@ -98,7 +98,6 @@ export function TtyMenu(props: Props) {
     }
     state.xterm.setCanType(tryLocalStorageGetParsed(localStorageKey.touchTtyCanType) === true);
     state.touchMenuOpen = tryLocalStorageGetParsed(localStorageKey.touchTtyOpen) === true;
-    return () => void state.xterm.setCanType(true);
   }, []);
 
   return (
@@ -116,14 +115,14 @@ export function TtyMenu(props: Props) {
     >
       <div className="absolute top-0 right-(--menu-width)">
         <div
-          className="pointer-events-auto w-8 h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
+          className="w-8 h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
           onClick={state.toggleTouchMenu}
         >
           {state.touchMenuOpen ? ">" : "<"}
         </div>
         {props.canContOrStop != null && (
           <div
-            className="pointer-events-auto w-8 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
+            className="w-8 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
             onClick={state.contOrStopInteractive}
             title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
           >
@@ -132,10 +131,7 @@ export function TtyMenu(props: Props) {
         )}
         {props.disabled && (
           <div
-            className={cn(
-              "pointer-events-auto pt-1 text-[#777]",
-              !state.spawnBgPaused && "text-[#cc6]",
-            )}
+            className={cn("pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
             onClick={state.setSpawnBgPaused.bind(null, undefined)}
             title={
               state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"
@@ -190,4 +186,4 @@ interface Props {
   setTabsEnabled(next: boolean): void;
 }
 
-const icon = cn("pointer-events-auto w-full h-6 cursor-pointer text-center pt-3");
+const icon = cn("w-full h-6 cursor-pointer text-center pt-3");
