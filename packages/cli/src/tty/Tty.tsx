@@ -314,14 +314,14 @@ export function Tty(props: Props) {
         env={props.env}
         onUnmount={state.reboot}
       />
-      {state.base?.session && (
+      {/* {state.base?.session && (
         <TtyMenu
           canContOrStop={state.canContOrStop}
           disabled={props.disabled}
           session={state.base.session}
           setTabsEnabled={props.setTabsEnabled}
         />
-      )}
+      )} */}
     </div>
   );
 }
