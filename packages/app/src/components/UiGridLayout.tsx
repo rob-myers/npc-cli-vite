@@ -1,9 +1,9 @@
 import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
-import { cn, useStateRef, useUpdate } from "@npc-cli/util";
+import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 
@@ -84,7 +84,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       onContextMenu(e) {
         if (
           (e.target as HTMLElement).parentElement !== containerRef.current ||
-          !containerRef.current
+          !containerRef.current ||
+          state.showContextMenu
         ) {
           return;
         }
@@ -249,7 +250,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       >
         {childDefs.map((def) => (
           <div key={def.itemId} data-item-id={def.itemId} className="relative border">
-            <UiInstance id={def.itemId} uiKey={def.uiKey} />
+            <Suspense fallback={<Spinner />}>
+              <UiInstance id={def.itemId} uiKey={def.uiKey} />
+            </Suspense>
             <UiInstanceMenu id={def.itemId} state={state} />
           </div>
         ))}
