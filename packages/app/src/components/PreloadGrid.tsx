@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useStore } from "zustand/react";
-import { layoutStore } from "./layout-store";
+import { layoutStore } from "./layout.store";
 
 /**
  * Improve initial rendering by showing a skeleton of the grid layout

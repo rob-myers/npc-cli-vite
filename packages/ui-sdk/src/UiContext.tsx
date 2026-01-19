@@ -2,7 +2,10 @@ import type { ThemeName, ThemeState, ThemeStorageKey } from "@npc-cli/theme";
 import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { createContext } from "react";
 import type { StorageValue } from "zustand/middleware/persist";
-import { uiStore } from "./ui.store";
+import type { UseBoundStore } from "zustand/react";
+import type { StoreApi } from "zustand/vanilla";
+import { type UiStoreState, uiStore } from "./ui.store";
+import type { WithImmer } from "./with-immer-type";
 
 export const UiContext = createContext<UiContextValue>({
   layoutApi: {
@@ -19,5 +22,5 @@ type UiContextValue = {
     resetLayout(): void;
   };
   theme: ThemeName;
-  uiStore: typeof uiStore;
+  uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>>;
 };

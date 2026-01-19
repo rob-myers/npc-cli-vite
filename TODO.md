@@ -96,7 +96,7 @@
 
 - 🚧 tty should use sessionKey not layoutId
   - ✅ ui context provides uiStore
-  - 🚧 every ui has respective meta `{ id, uiKey }`
+  - ✅ every ui has respective meta `{ layoutId, uiKey }`
   - 🚧 ui can provide bootstrap method which extends meta based on uiStore
 
 - 🚧 packages/ui/world

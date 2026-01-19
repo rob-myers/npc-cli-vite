@@ -7,7 +7,7 @@ import { useThemeName } from "@npc-cli/theme";
 import { useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
-import { demoLayout, layoutStore } from "../components/layout-store";
+import { demoLayout, layoutStore } from "../components/layout.store";
 import { type GridApi, UiGrid } from "../components/UiGridLayout";
 
 export const Route = createFileRoute("/")({
