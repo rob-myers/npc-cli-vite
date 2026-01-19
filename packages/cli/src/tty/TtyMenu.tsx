@@ -106,9 +106,8 @@ export function TtyMenu(props: Props) {
       className={cn(
         "absolute z-110 top-0 right-0",
         "[--menu-width:54px] w-(--menu-width) h-[calc(100%-32px)]",
-        "flex flex-col",
-        "text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
-        "transition-transform duration-500",
+        "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
+        "pointer-events-none transition-transform duration-500",
         state.touchMenuOpen
           ? "transform-[translate(-20px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
           : "transform-[translate(var(--menu-width),0px)]",
@@ -117,14 +116,14 @@ export function TtyMenu(props: Props) {
     >
       <div className="absolute top-0 right-(--menu-width)">
         <div
-          className="w-8 h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
+          className="pointer-events-auto w-8 h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
           onClick={state.toggleTouchMenu}
         >
           {state.touchMenuOpen ? ">" : "<"}
         </div>
         {props.canContOrStop != null && (
           <div
-            className="w-8 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
+            className="pointer-events-auto w-8 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
             onClick={state.contOrStopInteractive}
             title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
           >
@@ -133,7 +132,10 @@ export function TtyMenu(props: Props) {
         )}
         {props.disabled && (
           <div
-            className={cn("pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
+            className={cn(
+              "pointer-events-auto pt-1 text-[#777]",
+              !state.spawnBgPaused && "text-[#cc6]",
+            )}
             onClick={state.setSpawnBgPaused.bind(null, undefined)}
             title={
               state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"
@@ -146,7 +148,7 @@ export function TtyMenu(props: Props) {
 
       <div
         className={cn(
-          "max-h-full overflow-auto scrollbar-track-black border border-solid border-[#444]/60 pb-2 filter backdrop-blur-[2px]",
+          "max-h-full overflow-auto border border-solid border-[#444]/60 pb-2 filter backdrop-blur-[2px]",
         )}
       >
         <div
@@ -188,4 +190,4 @@ interface Props {
   setTabsEnabled(next: boolean): void;
 }
 
-const icon = cn("w-full h-6 cursor-pointer text-center pt-3");
+const icon = cn("pointer-events-auto w-full h-6 cursor-pointer text-center pt-3");
