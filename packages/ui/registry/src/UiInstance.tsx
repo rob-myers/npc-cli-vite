@@ -1,6 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk";
-import { Spinner, useEffectNonStrict } from "@npc-cli/util";
-import { Suspense, useContext } from "react";
+import { useEffectNonStrict } from "@npc-cli/util";
+import { useContext } from "react";
 import { type UiRegistryKey, uiRegistry } from "./main";
 
 export const UiInstance = ({ id, uiKey }: UiInstanceProps) => {
@@ -13,11 +13,7 @@ export const UiInstance = ({ id, uiKey }: UiInstanceProps) => {
 
   const Ui = uiRegistry[uiKey];
 
-  return (
-    <Suspense fallback={<Spinner />}>
-      <Ui id={id} />
-    </Suspense>
-  );
+  return <Ui id={id} />;
 };
 
 export type UiInstanceProps = {
