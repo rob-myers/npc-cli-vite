@@ -63,6 +63,9 @@ catalogs:
     globals:
       specifier: ^16.5.0
       version: 16.5.0
+    immer:
+      specifier: ^11.1.3
+      version: 11.1.3
     javascript-stringify:
       specifier: 2.1.0
       version: 2.1.0
@@ -184,7 +187,7 @@ importers:
         version: 2.2.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       zustand:
         specifier: 'catalog:'
-        version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
+        version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
     devDependencies:
       '@mdx-js/react':
         specifier: ^3.1.1
@@ -266,7 +269,7 @@ importers:
         version: 0.9.5
       zustand:
         specifier: 'catalog:'
-        version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
+        version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
     devDependencies:
       '@types/braces':
         specifier: 'catalog:'
@@ -293,7 +296,7 @@ importers:
     dependencies:
       zustand:
         specifier: 'catalog:'
-        version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
+        version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
 
   packages/ui-sdk:
     dependencies:
@@ -303,12 +306,19 @@ importers:
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
+      immer:
+        specifier: 'catalog:'
+        version: 11.1.3
       react:
         specifier: 'catalog:'
         version: 19.2.1
       zustand:
         specifier: 'catalog:'
-        version: 5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
+        version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
+    devDependencies:
+      '@npc-cli/ui__registry':
+        specifier: workspace:^
+        version: link:../ui/registry
 
   packages/ui/blog:
     dependencies:
@@ -375,6 +385,9 @@ importers:
       '@npc-cli/ui__world':
         specifier: workspace:^
         version: link:../world
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -1941,6 +1954,9 @@ packages:
   iconv-lite@0.7.1:
     resolution: {integrity: sha512-2Tth85cXwGFHfvRgZWszZSvdo+0Xsqmw8k8ZwxScfcBneNUraK+dxRxRm24nszx80Y0TVio8kKLt5sLE7ZCLlw==}
     engines: {node: '>=0.10.0'}
+
+  immer@11.1.3:
+    resolution: {integrity: sha512-6jQTc5z0KJFtr1UgFpIL3N9XSC3saRaI9PwWtzM2pSqkNGtiNkYY2OSwkOGDK2XcTRcLb1pi/aNkKZz0nxVH4Q==}
 
   inline-style-parser@0.2.7:
     resolution: {integrity: sha512-Nb2ctOyNR8DqQoR0OwRG95uNWIC0C1lCgf5Naz5H6Ji72KZ8OcFZLz2P5sNgwlyoJ8Yif11oMuYs5pBQa86csA==}
@@ -4034,6 +4050,8 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
+  immer@11.1.3: {}
+
   inline-style-parser@0.2.7: {}
 
   is-alphabetical@2.0.1: {}
@@ -4908,9 +4926,10 @@ snapshots:
 
   zod@4.1.13: {}
 
-  zustand@5.0.9(@types/react@19.2.7)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1)):
+  zustand@5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1)):
     optionalDependencies:
       '@types/react': 19.2.7
+      immer: 11.1.3
       react: 19.2.1
       use-sync-external-store: 1.6.0(react@19.2.1)
 
