@@ -7,6 +7,15 @@ import {
   tryLocalStorageGetParsed,
   tryLocalStorageSet,
 } from "@npc-cli/util/legacy/generic";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  EraserIcon,
+  KeyReturnIcon,
+  PaintBrushIcon,
+  SkullIcon,
+} from "@phosphor-icons/react";
 import React from "react";
 import { localStorageKey, spawnBgPausedDefault } from "../shell/const";
 import type { Session } from "../shell/session";
@@ -36,7 +45,7 @@ export function TtyMenu(props: Props) {
         }
       },
       async onClickMenu(e: React.MouseEvent) {
-        const target = e.target as HTMLElement;
+        const target = (e.target as HTMLElement).closest("div") as HTMLElement;
         state.xterm.xterm.scrollToBottom();
         if (target.classList.contains("paste")) {
           try {
@@ -145,35 +154,35 @@ export function TtyMenu(props: Props) {
 
       <div
         className={cn(
-          "max-h-full overflow-auto border border-solid border-[#444]/60 pb-2 filter backdrop-blur-[2px]",
+          "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
         )}
       >
-        <div
+        {/* <div
           className={cn(icon, "can-type", state.xterm.canType() ? "text-[#cfc]" : "text-[#999]")}
           title={`text input ${state.xterm.canType() ? "enabled" : "disabled"}`}
         >
           $
-        </div>
-        <div className={cn(icon, "paste")} title="or press e.g. Cmd+V">
-          paste
+        </div> */}
+        <div className={cn(icon, "paste")} title="paste (Cmd+V)">
+          <PaintBrushIcon weight="light" />
         </div>
         <div className={cn(icon, "enter")} title="or press Enter">
-          enter
+          <KeyReturnIcon size={18} weight="fill" />
         </div>
         <div className={cn(icon, "up")} title="or press Up">
-          prev
+          <ArrowLeftIcon weight="fill" />
         </div>
         <div className={cn(icon, "down")} title="or press Down">
-          next
+          <ArrowRightIcon weight="fill" />
         </div>
         <div className={cn(icon, "ctrl-c")} title="or press Ctrl+C">
-          kill
+          <SkullIcon weight="fill" />
         </div>
         <div className={cn(icon, "clear")} title="or press Ctrl+L">
-          clear
+          <ArrowUpIcon weight="fill" />
         </div>
         <div className={cn(icon, "delete")} title="or press Backspace">
-          del
+          <EraserIcon weight="fill" />
         </div>
       </div>
     </div>
@@ -187,4 +196,4 @@ interface Props {
   setTabsEnabled(next: boolean): void;
 }
 
-const icon = cn("w-full h-6 cursor-pointer text-center pt-3");
+const icon = cn("flex justify-center w-full h-6 cursor-pointer");
