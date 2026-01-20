@@ -1,7 +1,7 @@
 import {
   UiInstance,
   type UiRegistryKey,
-  uiInstantatiorRegistry,
+  uiBootstrapRegistry,
   uiRegistry,
   uiRegistryKeys,
 } from "@npc-cli/ui__registry";
@@ -16,7 +16,7 @@ import type { GridConfig } from "react-grid-layout/core";
 import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import type { UiInstantiatorDef } from "@npc-cli/ui-sdk";
+import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import useLongPress from "../hooks/use-long-press";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
@@ -45,7 +45,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         rowHeight: 80,
         // margin: [10, 10],
       },
-      instantiatorDef: null,
+      uiBootstrap: null,
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       preventTransition: true,
       resizing: false,
@@ -66,7 +66,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       closeContextMenu() {
         state.set({
-          instantiatorDef: null,
+          uiBootstrap: null,
           showContextMenu: false,
         });
       },
@@ -86,14 +86,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         const gridY = Math.floor(relativeY / gridItemHeight);
         // console.log({ uiRegistryKey, gridX, gridY });
 
-        const instantiatorDef = uiInstantatiorRegistry[uiRegistryKey];
-        if (instantiatorDef) {
+        const ui = uiBootstrapRegistry[uiRegistryKey];
+        if (ui) {
           // further details needed for instantiation
           e.stopPropagation();
           state.set({
-            instantiatorDef: {
+            uiBootstrap: {
               uiKey: uiRegistryKey,
-              def: await instantiatorDef(),
+              ui,
               point: { x: gridX, y: gridY },
             },
           });
@@ -307,9 +307,9 @@ export type UiGridLayout = {
 type State = {
   dragging: boolean;
   gridConfig: Partial<GridConfig>;
-  instantiatorDef: null | {
+  uiBootstrap: null | {
     uiKey: UiRegistryKey;
-    def: UiInstantiatorDef;
+    ui: (props: UiBootstrapProps) => React.ReactNode;
     point: { x: number; y: number };
   };
   isLocked: { [layoutKey: string]: boolean };
@@ -351,7 +351,24 @@ function UiGridContextMenu({ state }: { state: State }) {
           !state.showContextMenu && "hidden",
         )}
       >
-        {state.instantiatorDef && <UiInstantiator state={state} />}
+        {state.uiBootstrap && (
+          <state.uiBootstrap.ui
+            addInstance={() => {
+              // 🚧
+              state.uiBootstrap &&
+                state.addItem({
+                  itemId: `ui-${crypto.randomUUID()}`,
+                  uiKey: state.uiBootstrap.uiKey,
+                  gridRect: {
+                    x: state.uiBootstrap.point.x,
+                    y: state.uiBootstrap.point.y,
+                    width: 2,
+                    height: 2,
+                  },
+                });
+            }}
+          />
+        )}
 
         {uiRegistryKeys.map((uiRegistryKey) => (
           <button
@@ -386,30 +403,5 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
         <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
       </div>
     </div>
-  );
-}
-
-function UiInstantiator({ state }: { state: State }) {
-  return (
-    <button
-      type="button"
-      className="p-2 font-mono text-sm text-amber-300"
-      onClick={() => {
-        // 🚧
-        if (!state.instantiatorDef) return;
-        state.addItem({
-          itemId: `ui-${crypto.randomUUID()}`,
-          uiKey: state.instantiatorDef.uiKey,
-          gridRect: {
-            x: state.instantiatorDef.point.x,
-            y: state.instantiatorDef.point.y,
-            width: 2,
-            height: 2,
-          },
-        });
-      }}
-    >
-      🚧 {JSON.stringify(state.instantiatorDef)}
-    </button>
   );
 }
