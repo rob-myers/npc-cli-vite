@@ -8,6 +8,7 @@ import {
 import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
+import { motion } from "motion/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
@@ -346,28 +347,38 @@ function UiGridContextMenu({ state }: { state: State }) {
       <div
         className={cn(
           "absolute top-0 left-0 transform-(--cm-transform)",
-          "flex flex-col gap-0.5",
+          "w-48 flex flex-col gap-0.5",
           "border bg-black border-white/20 p-1 rounded-md text-white",
           !state.showContextMenu && "hidden",
         )}
       >
         {state.uiBootstrap && (
-          <state.uiBootstrap.ui
-            addInstance={() => {
-              // 🚧
-              state.uiBootstrap &&
-                state.addItem({
-                  itemId: `ui-${crypto.randomUUID()}`,
-                  uiKey: state.uiBootstrap.uiKey,
-                  gridRect: {
-                    x: state.uiBootstrap.point.x,
-                    y: state.uiBootstrap.point.y,
-                    width: 2,
-                    height: 2,
-                  },
-                });
-            }}
-          />
+          <div className="h-12" onClick={(e) => e.stopPropagation()}>
+            <Suspense fallback={<Spinner />}>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { duration: 0.5 } }}
+              >
+                <state.uiBootstrap.ui
+                  addInstance={() => {
+                    // 🚧
+                    state.uiBootstrap &&
+                      state.addItem({
+                        itemId: `ui-${crypto.randomUUID()}`,
+                        uiKey: state.uiBootstrap.uiKey,
+                        gridRect: {
+                          x: state.uiBootstrap.point.x,
+                          y: state.uiBootstrap.point.y,
+                          width: 2,
+                          height: 2,
+                        },
+                      });
+                    state.set({ showContextMenu: false });
+                  }}
+                />
+              </motion.div>
+            </Suspense>
+          </div>
         )}
 
         {uiRegistryKeys.map((uiRegistryKey) => (
@@ -388,10 +399,10 @@ function UiGridContextMenu({ state }: { state: State }) {
 
 function UiInstanceMenu({ id, state }: { id: string; state: State }) {
   return (
-    <div // ui submenu
+    <div
       data-item-id={id}
       className={cn(
-        "z-999 absolute bottom-1 left-1",
+        "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg",
         "flex cursor-pointer text-teal-500 bg-on-background/5 rounded",
       )}
       onPointerDown={state.onToggleItemLock}
