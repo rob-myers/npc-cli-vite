@@ -118,7 +118,7 @@ export function TtyMenu(props: Props) {
         "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
         "transition-transform duration-500",
         state.touchMenuOpen
-          ? "transform-[translate(-20px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
+          ? "transform-[translate(0px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
           : "transform-[translate(var(--menu-width),0px)]",
       )}
       onClick={state.onClickMenu}
