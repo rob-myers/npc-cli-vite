@@ -1,4 +1,10 @@
-import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
+import {
+  UiInstance,
+  type UiRegistryKey,
+  uiInstantatiorRegistry,
+  uiRegistry,
+  uiRegistryKeys,
+} from "@npc-cli/ui__registry";
 import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
@@ -10,6 +16,7 @@ import type { GridConfig } from "react-grid-layout/core";
 import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
+import type { UiInstantiatorDef } from "@npc-cli/ui-sdk";
 import useLongPress from "../hooks/use-long-press";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
@@ -38,6 +45,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         rowHeight: 80,
         // margin: [10, 10],
       },
+      instantiatorDef: null,
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       preventTransition: true,
       resizing: false,
@@ -57,12 +65,17 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       closeContextMenu() {
-        state.set({ showContextMenu: false });
+        state.set({
+          instantiatorDef: null,
+          showContextMenu: false,
+        });
       },
-      onContextMenuItem(e) {
+      async onContextMenuItem(e) {
         if (!containerRef.current) return;
 
         const itemEl = e.currentTarget as HTMLElement;
+        const uiRegistryKey = itemEl.dataset.uiRegistryKey as UiRegistryKey;
+
         const containerRect = containerRef.current.getBoundingClientRect();
         const relativeX = e.clientX - containerRect.left;
         const relativeY = e.clientY - containerRect.top;
@@ -71,15 +84,26 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
         const gridX = Math.floor(relativeX / gridItemWidth);
         const gridY = Math.floor(relativeY / gridItemHeight);
+        // console.log({ uiRegistryKey, gridX, gridY });
 
-        // 🚧 add item to layout at (gridX, gridY)
-        const uiRegistryKey = itemEl.dataset.uiRegistryKey as UiRegistryKey;
-        console.log({ uiRegistryKey, gridX, gridY });
-        state.addItem({
-          itemId: `ui-${crypto.randomUUID()}`,
-          uiKey: uiRegistryKey,
-          gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
-        });
+        const instantiatorDef = uiInstantatiorRegistry[uiRegistryKey];
+        if (instantiatorDef) {
+          // further details needed for instantiation
+          e.stopPropagation();
+          state.set({
+            instantiatorDef: {
+              uiKey: uiRegistryKey,
+              def: await instantiatorDef(),
+              point: { x: gridX, y: gridY },
+            },
+          });
+        } else {
+          state.addItem({
+            itemId: `ui-${crypto.randomUUID()}`,
+            uiKey: uiRegistryKey,
+            gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
+          });
+        }
       },
       onContextMenu(e) {
         if (
@@ -164,7 +188,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const update = useUpdate();
 
   const longPressHandlers = useLongPress({
-    // 🚧 overlay should ignore re-long-click
     onLongPress: ({ clientX, clientY }) => {
       containerRef.current?.style.setProperty(
         "--cm-transform",
@@ -201,7 +224,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.isLocked = {};
         layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
         setLayouts({
-          sm: undefined,
           lg: { ...layouts.current.lg },
         });
       },
@@ -285,6 +307,11 @@ export type UiGridLayout = {
 type State = {
   dragging: boolean;
   gridConfig: Partial<GridConfig>;
+  instantiatorDef: null | {
+    uiKey: UiRegistryKey;
+    def: UiInstantiatorDef;
+    point: { x: number; y: number };
+  };
   isLocked: { [layoutKey: string]: boolean };
   preventTransition: boolean;
   resizing: boolean;
@@ -324,6 +351,8 @@ function UiGridContextMenu({ state }: { state: State }) {
           !state.showContextMenu && "hidden",
         )}
       >
+        {state.instantiatorDef && <UiInstantiator state={state} />}
+
         {uiRegistryKeys.map((uiRegistryKey) => (
           <button
             type="button"
@@ -357,5 +386,30 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
         <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
       </div>
     </div>
+  );
+}
+
+function UiInstantiator({ state }: { state: State }) {
+  return (
+    <button
+      type="button"
+      className="p-2 font-mono text-sm text-amber-300"
+      onClick={() => {
+        // 🚧
+        if (!state.instantiatorDef) return;
+        state.addItem({
+          itemId: `ui-${crypto.randomUUID()}`,
+          uiKey: state.instantiatorDef.uiKey,
+          gridRect: {
+            x: state.instantiatorDef.point.x,
+            y: state.instantiatorDef.point.y,
+            width: 2,
+            height: 2,
+          },
+        });
+      }}
+    >
+      🚧 {JSON.stringify(state.instantiatorDef)}
+    </button>
   );
 }

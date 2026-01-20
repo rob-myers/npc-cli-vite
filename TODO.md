@@ -97,7 +97,11 @@
 - 🚧 tty should use sessionKey not layoutId
   - ✅ ui context provides uiStore
   - ✅ every ui has respective meta `{ layoutId, uiKey }`
-  - 🚧 ui can provide bootstrap method which extends meta based on uiStore
+  - 🚧 contextmenu can specify sessionKey
+    - ✅ ui has optional uiInstantatiorRegistry
+    - ✅ Jsh has entry in uiInstantatiorRegistry
+    - 🚧 contextmenu shows respective ui
+  - 🚧 persisted layout can contain partial ui instance meta
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
