@@ -1,4 +1,4 @@
-import type { UiInstantiatorDef, UiProps } from "@npc-cli/ui-sdk";
+import type { UiBootstrapProps, UiProps } from "@npc-cli/ui-sdk";
 import { lazy } from "react";
 
 export const uiRegistry = {
@@ -9,10 +9,10 @@ export const uiRegistry = {
   World: lazy(() => import("@npc-cli/ui__world")),
 } satisfies Record<string, React.LazyExoticComponent<(props: UiProps) => React.ReactNode>>;
 
-export const uiInstantatiorRegistry: Partial<
-  Record<UiRegistryKey, () => Promise<UiInstantiatorDef>>
+export const uiBootstrapRegistry: Partial<
+  Record<UiRegistryKey, React.LazyExoticComponent<(props: UiBootstrapProps) => React.ReactNode>>
 > = {
-  Jsh: () => import("@npc-cli/ui__jsh").then(({ InstantiatorDef }) => InstantiatorDef),
+  Jsh: lazy(() => import("@npc-cli/ui__jsh/bootstrap")),
 };
 
 export type UiRegistryKey = keyof typeof uiRegistry;
