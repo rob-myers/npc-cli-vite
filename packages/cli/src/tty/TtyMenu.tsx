@@ -1,7 +1,4 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: I Wanna! */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { cn, useStateRef, useUpdate } from "@npc-cli/util";
-import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -99,11 +96,7 @@ export function TtyMenu(props: Props) {
       tryLocalStorageSet(localStorageKey.touchTtyCanType, JSON.stringify(false));
     }
     if (!tryLocalStorageGet(localStorageKey.touchTtyOpen)) {
-      tryLocalStorageSet(
-        localStorageKey.touchTtyOpen,
-        // touch menu open by default on touch devices
-        JSON.stringify(isTouchDevice()),
-      );
+      tryLocalStorageSet(localStorageKey.touchTtyOpen, JSON.stringify(false));
     }
     // state.xterm.setCanType(tryLocalStorageGetParsed(localStorageKey.touchTtyCanType) === true);
     state.xterm.setCanType(true);
@@ -114,7 +107,7 @@ export function TtyMenu(props: Props) {
     <div
       className={cn(
         "absolute z-110 top-0 right-0",
-        "[--menu-width:54px] w-(--menu-width) h-[calc(100%-32px)]",
+        "[--menu-width:40px] w-(--menu-width) h-[calc(100%-32px)]",
         "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
         "transition-transform duration-500",
         state.touchMenuOpen
