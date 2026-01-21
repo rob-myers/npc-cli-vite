@@ -1,3 +1,5 @@
+import { ContextMenu } from "@base-ui/react/context-menu";
+import { Popover } from "@base-ui/react/popover";
 import {
   UiInstance,
   type UiRegistryKey,
@@ -5,6 +7,7 @@ import {
   uiRegistry,
   uiRegistryKeys,
 } from "@npc-cli/ui__registry";
+import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
@@ -17,8 +20,6 @@ import type { GridConfig } from "react-grid-layout/core";
 import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
-import useLongPress from "../hooks/use-long-press";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const layouts = useRef(initialUiLayout.layouts);
@@ -40,6 +41,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
   const state = useStateRef(
     (): State => ({
+      contextMenuPopoverHandle: Popover.createHandle(),
       dragging: false,
       gridConfig: {
         cols,
@@ -88,6 +90,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         // console.log({ uiRegistryKey, gridX, gridY });
 
         const ui = uiBootstrapRegistry[uiRegistryKey];
+
         if (ui) {
           // further details needed for instantiation
           e.stopPropagation();
@@ -186,20 +189,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     }),
     { deps: [layout], reset: { gridConfig: true } },
   );
-  const update = useUpdate();
-
-  const longPressHandlers = useLongPress({
-    onLongPress: ({ clientX, clientY }) => {
-      containerRef.current?.style.setProperty(
-        "--cm-transform",
-        `translate(${clientX}px, ${clientY}px)`,
-      );
-      state.set({ showContextMenu: true });
-    },
-    ms: 500,
-  });
 
   useEffect(state.onMount, [state.onMount]);
+  const update = useUpdate();
 
   useImperativeHandle<GridApi, GridApi>(
     ref,
@@ -243,46 +235,150 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   );
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: whatevs
-    <div
-      ref={containerRef}
-      className="relative size-full overflow-auto"
-      onContextMenu={state.onContextMenu}
-      {...longPressHandlers}
-    >
-      <GridLayout
-        className={cn(
-          state.preventTransition && "[&_.react-grid-item]:transition-none!",
-          (state.resizing || state.dragging || state.showContextMenu) && "select-none",
-          "h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
-          // "[&_.react-resizable-handle::after]:z-200",
-          // "[&_.react-resizable-handle::after]:size-4!",
-          "[&_.react-grid-placeholder]:bg-gray-500!",
-        )}
-        width={width}
-        gridConfig={state.gridConfig}
-        layout={layout}
-        onResizeStart={state.onResizeStart}
-        onResizeStop={state.onResizeStop}
-        onDragStart={state.onDragStart}
-        onDragStop={state.onDragStop}
-        onLayoutChange={(layout) => {
-          // console.log("onLayoutChange", layout);
-          layouts.current.lg = layout;
+    <>
+      <ContextMenu.Root
+        onOpenChange={(open) => {
+          console.log("here", open);
+          !open && state.contextMenuPopoverHandle.close();
         }}
       >
-        {childDefs.map((def) => (
-          <div key={def.itemId} data-item-id={def.itemId} className="relative border">
-            <Suspense fallback={<Spinner />}>
-              <UiInstance id={def.itemId} uiKey={def.uiKey} />
-            </Suspense>
-            <UiInstanceMenu id={def.itemId} state={state} />
+        <ContextMenu.Trigger className="size-full">
+          <div
+            ref={containerRef}
+            className="relative size-full overflow-auto"
+            onContextMenu={(e) => {
+              if ((e.target as HTMLElement) !== containerRef.current?.childNodes[0]) {
+                e.stopPropagation(); // only open onclick background
+              }
+            }}
+          >
+            <GridLayout
+              className={cn(
+                state.preventTransition && "[&_.react-grid-item]:transition-none!",
+                (state.resizing || state.dragging || state.showContextMenu) && "select-none",
+                "h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
+                // "[&_.react-resizable-handle::after]:z-200",
+                // "[&_.react-resizable-handle::after]:size-4!",
+                "[&_.react-grid-placeholder]:bg-gray-500!",
+              )}
+              width={width}
+              gridConfig={state.gridConfig}
+              layout={layout}
+              onResizeStart={state.onResizeStart}
+              onResizeStop={state.onResizeStop}
+              onDragStart={state.onDragStart}
+              onDragStop={state.onDragStop}
+              onLayoutChange={(layout) => {
+                layouts.current.lg = layout;
+              }}
+            >
+              {childDefs.map((def) => (
+                <div key={def.itemId} data-item-id={def.itemId} className="relative border">
+                  <Suspense fallback={<Spinner />}>
+                    <UiInstance id={def.itemId} uiKey={def.uiKey} />
+                  </Suspense>
+                  <UiInstanceMenu id={def.itemId} state={state} />
+                </div>
+              ))}
+            </GridLayout>
           </div>
-        ))}
-      </GridLayout>
+        </ContextMenu.Trigger>
+        <ContextMenu.Portal>
+          <ContextMenu.Positioner>
+            <ContextMenu.Popup className="flex flex-col bg-black text-white outline-black">
+              {uiRegistryKeys.map((uiRegistryKey) => (
+                <ContextMenu.Item
+                  data-ui-registry-key={uiRegistryKey}
+                  className="px-2 py-1 hover:bg-white/20 outline-black cursor-pointer lowercase text-sm text-left tracking-widest"
+                  onClick={state.onContextMenuItem} // 🚧
+                  closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
+                >
+                  <Popover.Trigger
+                    key={uiRegistryKey}
+                    className="w-full"
+                    handle={state.contextMenuPopoverHandle}
+                  >
+                    {uiRegistryKey}
+                  </Popover.Trigger>
+                </ContextMenu.Item>
+              ))}
+            </ContextMenu.Popup>
+          </ContextMenu.Positioner>
+        </ContextMenu.Portal>
+      </ContextMenu.Root>
 
-      <UiGridContextMenu state={state} />
-    </div>
+      <Popover.Root handle={state.contextMenuPopoverHandle}>
+        <Popover.Portal>
+          <Popover.Positioner side="right">
+            <Popover.Popup className="bg-white">
+              <Popover.Arrow
+                className={cn(
+                  "flex",
+                  "data-[side=top]:top-2 data-[side=top]:rotate-180",
+                  "data-[side=bottom]:-top-2 data-[side=bottom]:rotate-0",
+                  "data-[side=left]:right-[-13px] data-[side=left]:rotate-90",
+                  "data-[side=right]:left-[-13px] data-[side=right]:-rotate-90",
+                )}
+              >
+                <ArrowSvg />
+              </Popover.Arrow>
+              {/* <Popover.Title>Create...</Popover.Title> */}
+              <Popover.Description className="bg-black">
+                {state.uiBootstrap && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<Spinner />}>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1, transition: { duration: 0.5 } }}
+                      >
+                        <state.uiBootstrap.ui
+                          addInstance={() => {
+                            // 🚧
+                            state.uiBootstrap &&
+                              state.addItem({
+                                itemId: `ui-${crypto.randomUUID()}`,
+                                uiKey: state.uiBootstrap.uiKey,
+                                gridRect: {
+                                  x: state.uiBootstrap.point.x,
+                                  y: state.uiBootstrap.point.y,
+                                  width: 2,
+                                  height: 2,
+                                },
+                              });
+                            state.set({ showContextMenu: false });
+                          }}
+                        />
+                      </motion.div>
+                    </Suspense>
+                  </div>
+                )}
+              </Popover.Description>
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
+    </>
+  );
+}
+
+/** https://base-ui.com/react/components/popover */
+function ArrowSvg(props: React.ComponentProps<"svg">) {
+  return (
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" {...props}>
+      <title>Arrow for popover</title>
+      <path
+        d="M9.66437 2.60207L4.80758 6.97318C4.07308 7.63423 3.11989 8 2.13172 8H0V10H20V8H18.5349C17.5468 8 16.5936 7.63423 15.8591 6.97318L11.0023 2.60207C10.622 2.2598 10.0447 2.25979 9.66437 2.60207Z"
+        className="fill-white"
+      />
+      <path
+        d="M8.99542 1.85876C9.75604 1.17425 10.9106 1.17422 11.6713 1.85878L16.5281 6.22989C17.0789 6.72568 17.7938 7.00001 18.5349 7.00001L15.89 7L11.0023 2.60207C10.622 2.2598 10.0447 2.2598 9.66436 2.60207L4.77734 7L2.13171 7.00001C2.87284 7.00001 3.58774 6.72568 4.13861 6.22989L8.99542 1.85876Z"
+        className="fill-white"
+      />
+      <path
+        d="M10.3333 3.34539L5.47654 7.71648C4.55842 8.54279 3.36693 9 2.13172 9H0V8H2.13172C3.11989 8 4.07308 7.63423 4.80758 6.97318L9.66437 2.60207C10.0447 2.25979 10.622 2.2598 11.0023 2.60207L15.8591 6.97318C16.5936 7.63423 17.5468 8 18.5349 8H20V9H18.5349C17.2998 9 16.1083 8.54278 15.1901 7.71648L10.3333 3.34539Z"
+        className="fill-white"
+      />
+    </svg>
   );
 }
 
@@ -307,6 +403,7 @@ export type UiGridLayout = {
 
 type State = {
   dragging: boolean;
+  contextMenuPopoverHandle: Popover.Handle<unknown>;
   gridConfig: Partial<GridConfig>;
   uiBootstrap: null | {
     uiKey: UiRegistryKey;
@@ -335,67 +432,6 @@ type State = {
   removeItem(itemId: string): void;
   set(partial: Partial<State>): void;
 };
-
-function UiGridContextMenu({ state }: { state: State }) {
-  return (
-    <div
-      role="dialog"
-      className={cn("fixed inset-0 bg-black/20", !state.showContextMenu && "hidden")}
-      onClick={state.closeContextMenu}
-      onKeyDown={undefined}
-    >
-      <div
-        className={cn(
-          "absolute top-0 left-0 transform-(--cm-transform)",
-          "w-48 flex flex-col gap-0.5",
-          "border bg-black border-white/20 p-1 rounded-md text-white",
-          !state.showContextMenu && "hidden",
-        )}
-      >
-        {state.uiBootstrap && (
-          <div className="h-12" onClick={(e) => e.stopPropagation()}>
-            <Suspense fallback={<Spinner />}>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, transition: { duration: 0.5 } }}
-              >
-                <state.uiBootstrap.ui
-                  addInstance={() => {
-                    // 🚧
-                    state.uiBootstrap &&
-                      state.addItem({
-                        itemId: `ui-${crypto.randomUUID()}`,
-                        uiKey: state.uiBootstrap.uiKey,
-                        gridRect: {
-                          x: state.uiBootstrap.point.x,
-                          y: state.uiBootstrap.point.y,
-                          width: 2,
-                          height: 2,
-                        },
-                      });
-                    state.set({ showContextMenu: false });
-                  }}
-                />
-              </motion.div>
-            </Suspense>
-          </div>
-        )}
-
-        {uiRegistryKeys.map((uiRegistryKey) => (
-          <button
-            type="button"
-            key={uiRegistryKey}
-            data-ui-registry-key={uiRegistryKey}
-            className="px-2 py-1 hover:bg-white/20 cursor-pointer lowercase text-sm text-left tracking-widest"
-            onClick={state.onContextMenuItem}
-          >
-            {uiRegistryKey}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function UiInstanceMenu({ id, state }: { id: string; state: State }) {
   return (
