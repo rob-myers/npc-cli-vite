@@ -235,7 +235,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   return (
     <>
       <ContextMenu.Root
-        onOpenChange={(open, eventDetails) => {
+        onOpenChange={(open, _eventDetails) => {
           !open && state.contextMenuPopoverHandle.close();
         }}
       >
