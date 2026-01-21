@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/theme": "workspace:^",
