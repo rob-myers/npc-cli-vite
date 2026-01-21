@@ -3,6 +3,7 @@ packages:
   - packages/**
 
 catalog:
+  '@base-ui/react': ^1.1.0
   '@biomejs/biome': ^2.3.11
   '@inquirer/prompts': ^8.1.0
   '@phosphor-icons/react': ^2.1.10
