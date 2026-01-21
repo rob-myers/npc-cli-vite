@@ -41,6 +41,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
   const state = useStateRef(
     (): State => ({
+      contextMenuDiv: null,
       contextMenuPopoverHandle: Popover.createHandle(),
       dragging: false,
       gridConfig: {
@@ -74,20 +75,20 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       async onContextMenuItem(e) {
-        if (!containerRef.current) return;
+        if (!containerRef.current || !state.contextMenuDiv) return;
+        if (e.nativeEvent instanceof KeyboardEvent && e.nativeEvent.key !== "Enter") return;
 
-        const itemEl = e.currentTarget as HTMLElement;
-        const uiRegistryKey = itemEl.dataset.uiRegistryKey as UiRegistryKey;
+        const uiRegistryKey = e.currentTarget.dataset.uiRegistryKey as UiRegistryKey;
+        const { x: clientX, y: clientY } = state.contextMenuDiv.getBoundingClientRect();
 
         const containerRect = containerRef.current.getBoundingClientRect();
-        const relativeX = e.clientX - containerRect.left;
-        const relativeY = e.clientY - containerRect.top;
+        const relativeX = clientX - containerRect.left;
+        const relativeY = clientY - containerRect.top;
         const gridItemWidth = containerRef.current.clientWidth / cols;
         const gridItemHeight =
           (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
         const gridX = Math.floor(relativeX / gridItemWidth);
         const gridY = Math.floor(relativeY / gridItemHeight);
-        // console.log({ uiRegistryKey, gridX, gridY });
 
         const ui = uiBootstrapRegistry[uiRegistryKey];
 
@@ -95,11 +96,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           // further details needed for instantiation
           e.stopPropagation();
           state.set({
-            uiBootstrap: {
-              uiKey: uiRegistryKey,
-              ui,
-              point: { x: gridX, y: gridY },
-            },
+            uiBootstrap: { uiKey: uiRegistryKey, ui, point: { x: gridX, y: gridY } },
           });
         } else {
           state.addItem({
@@ -111,8 +108,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       onContextMenu(e) {
         if (
-          (e.target as HTMLElement).parentElement !== containerRef.current ||
           !containerRef.current ||
+          (e.target as HTMLElement).parentElement !== containerRef.current ||
           state.showContextMenu
         ) {
           return;
@@ -276,13 +273,17 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
           <ContextMenu.Positioner>
-            <ContextMenu.Popup className="flex flex-col bg-black text-white outline-black">
+            <ContextMenu.Popup
+              ref={state.ref("contextMenuDiv")}
+              className="flex flex-col bg-black text-white outline-black"
+            >
               {uiRegistryKeys.map((uiRegistryKey) => (
                 <ContextMenu.Item
                   key={uiRegistryKey}
                   data-ui-registry-key={uiRegistryKey}
                   className="hover:bg-white/20 outline-black cursor-pointer lowercase text-sm text-left tracking-widest"
                   onClick={state.onContextMenuItem} // 🚧
+                  onKeyDown={state.onContextMenuItem}
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
                 >
                   <Popover.Trigger
@@ -394,6 +395,7 @@ export type UiGridLayout = {
 
 type State = {
   dragging: boolean;
+  contextMenuDiv: null | HTMLDivElement;
   contextMenuPopoverHandle: Popover.Handle<unknown>;
   gridConfig: Partial<GridConfig>;
   uiBootstrap: null | {
@@ -415,7 +417,7 @@ type State = {
   onMount(): (() => void) | void;
   onResizeStart(): void;
   onResizeStop(): void;
-  onContextMenuItem(e: React.MouseEvent<HTMLElement>): void;
+  onContextMenuItem(e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void;
   onContextMenu(e: MouseEvent | React.MouseEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
