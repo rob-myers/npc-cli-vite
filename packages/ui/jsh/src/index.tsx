@@ -13,8 +13,8 @@ import { useContext } from "react";
 export function Jsh(props: UiProps) {
   const { uiStore } = useContext(UiContext);
 
-  const jshMeta = uiStore.getState().metaById[props.id];
-  console.log({ jshMeta }); // 🚧
+  // 🚧 get sessionKey
+  const _jshMeta = uiStore.getState().metaById[props.id];
 
   return (
     <div className="relative overflow-hidden h-full bg-black p-1 flex items-center justify-center">
