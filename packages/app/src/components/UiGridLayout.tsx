@@ -238,7 +238,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     <>
       <ContextMenu.Root
         onOpenChange={(open) => {
-          console.log("here", open);
           !open && state.contextMenuPopoverHandle.close();
         }}
       >
@@ -288,16 +287,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             <ContextMenu.Popup className="flex flex-col bg-black text-white outline-black">
               {uiRegistryKeys.map((uiRegistryKey) => (
                 <ContextMenu.Item
+                  key={uiRegistryKey}
                   data-ui-registry-key={uiRegistryKey}
                   className="px-2 py-1 hover:bg-white/20 outline-black cursor-pointer lowercase text-sm text-left tracking-widest"
                   onClick={state.onContextMenuItem} // 🚧
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
                 >
-                  <Popover.Trigger
-                    key={uiRegistryKey}
-                    className="w-full"
-                    handle={state.contextMenuPopoverHandle}
-                  >
+                  <Popover.Trigger className="w-full" handle={state.contextMenuPopoverHandle}>
                     {uiRegistryKey}
                   </Popover.Trigger>
                 </ContextMenu.Item>
