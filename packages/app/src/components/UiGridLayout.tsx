@@ -235,7 +235,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   return (
     <>
       <ContextMenu.Root
-        onOpenChange={(open) => {
+        onOpenChange={(open, eventDetails) => {
           !open && state.contextMenuPopoverHandle.close();
         }}
       >
@@ -450,7 +450,7 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
         type="button"
         data-item-id={id}
         className={cn("cursor-pointer p-1", !state.isLocked[id] && "grayscale")}
-        onPointerUp={state.onClickItemLock}
+        onPointerDown={state.onClickItemLock}
       >
         <LockIcon data-icon-type="lock" weight="duotone" />
       </button>
@@ -459,7 +459,7 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
         type="button"
         data-item-id={id}
         className="cursor-pointer p-1"
-        onPointerUp={state.onClickItemDelete}
+        onPointerDown={state.onClickItemDelete}
       >
         <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
       </button>
