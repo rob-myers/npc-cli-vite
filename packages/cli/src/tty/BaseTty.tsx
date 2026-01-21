@@ -110,12 +110,11 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
   });
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: whatevs!
     <div
       ref={state.ref("container")}
       onKeyDown={stopKeysPropagating}
       className={cn(
-        "h-[inherit] bg-black [&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]",
+        // "[&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]",
         // thin scrollbar
         "[&_.scrollbar.vertical_.slider]:transform-[translateX(5px)_scale(0.5)]!",
       )}
