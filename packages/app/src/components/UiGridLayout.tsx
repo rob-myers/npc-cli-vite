@@ -74,9 +74,18 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           showContextMenu: false,
         });
       },
+      focusChildPopover(e) {
+        const child = e.currentTarget.children[0];
+        if (child && child instanceof HTMLElement) child.focus();
+      },
       async onContextMenuItem(e) {
         if (!containerRef.current || !state.contextMenuDiv) return;
-        if (e.nativeEvent instanceof KeyboardEvent && e.nativeEvent.key !== "Enter") return;
+        if (
+          e.nativeEvent instanceof KeyboardEvent &&
+          e.nativeEvent.key !== "Enter" &&
+          e.nativeEvent.key !== " "
+        )
+          return;
 
         const uiRegistryKey = e.currentTarget.dataset.uiRegistryKey as UiRegistryKey;
         const { x: clientX, y: clientY } = state.contextMenuDiv.getBoundingClientRect();
@@ -275,20 +284,21 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           <ContextMenu.Positioner>
             <ContextMenu.Popup
               ref={state.ref("contextMenuDiv")}
-              className="flex flex-col bg-black text-white outline-black"
+              className="flex flex-col rounded-md bg-black/60 text-white outline-black"
             >
               {uiRegistryKeys.map((uiRegistryKey) => (
                 <ContextMenu.Item
                   key={uiRegistryKey}
                   data-ui-registry-key={uiRegistryKey}
-                  className="hover:bg-white/20 outline-black cursor-pointer lowercase text-sm text-left tracking-widest"
-                  onClick={state.onContextMenuItem} // 🚧
-                  onKeyDown={state.onContextMenuItem}
+                  className="hover:bg-white/20 first:rounded-t-md last:rounded-b-md not-last:border-b border-white/20 outline-black lowercase text-left tracking-widest"
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
+                  onClick={state.onContextMenuItem} // 🚧
+                  onFocus={uiBootstrapRegistry[uiRegistryKey] ? state.focusChildPopover : undefined}
                 >
                   <Popover.Trigger
-                    className="w-full px-3 border-b border-white/25 py-1.5 text-left"
+                    className="w-full px-4 py-1.5 text-left cursor-pointer"
                     handle={state.contextMenuPopoverHandle}
+                    tabIndex={-1}
                   >
                     {uiRegistryKey}
                   </Popover.Trigger>
@@ -414,6 +424,7 @@ type State = {
     gridRect: { x: number; y: number; width: number; height: number };
   }): void;
   closeContextMenu(): void;
+  focusChildPopover(e: React.FocusEvent<HTMLElement>): void;
   onMount(): (() => void) | void;
   onResizeStart(): void;
   onResizeStop(): void;
