@@ -149,33 +149,25 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       onResizeStop() {
         state.set({ resizing: false });
       },
-      onToggleItemLock(e: React.PointerEvent<HTMLDivElement>) {
-        e.stopPropagation(); // don't trigger layout e.g. during deletion
-
-        const menuEl = e.currentTarget as HTMLDivElement;
-        const itemEl = (e.target as HTMLElement | SVGElement).closest<SVGElement>(
-          "svg[data-icon-type]",
-        );
-        if (!itemEl) return;
-
-        const itemId = menuEl.dataset.itemId as string;
-        const iconType = itemEl.dataset.iconType as string;
-
-        switch (iconType) {
-          case "lock": {
-            const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
-            setLayouts({
-              lg: layouts.current.lg.map((item) =>
-                item.i === itemId ? { ...item, isDraggable: !locked } : item,
-              ),
-            });
-            break;
-          }
-          case "remove": {
-            state.removeItem(itemId);
-            break;
-          }
-        }
+      onClickItemDelete(e) {
+        e.stopPropagation();
+        const itemId = e.currentTarget.dataset.itemId as string;
+        state.removeItem(itemId);
+      },
+      onClickItemLock(e) {
+        e.stopPropagation();
+        const itemId = e.currentTarget.dataset.itemId as string;
+        const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
+        setLayouts({
+          lg: layouts.current.lg.map((item) =>
+            item.i === itemId
+              ? {
+                  ...item,
+                  isDraggable: !locked,
+                }
+              : item,
+          ),
+        });
       },
       removeItem(itemId) {
         delete state.toUi[itemId];
@@ -289,11 +281,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 <ContextMenu.Item
                   key={uiRegistryKey}
                   data-ui-registry-key={uiRegistryKey}
-                  className="px-2 py-1 hover:bg-white/20 outline-black cursor-pointer lowercase text-sm text-left tracking-widest"
+                  className="hover:bg-white/20 outline-black cursor-pointer lowercase text-sm text-left tracking-widest"
                   onClick={state.onContextMenuItem} // 🚧
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
                 >
-                  <Popover.Trigger className="w-full" handle={state.contextMenuPopoverHandle}>
+                  <Popover.Trigger
+                    className="w-full px-3 border-b border-white/25 py-1.5 text-left"
+                    handle={state.contextMenuPopoverHandle}
+                  >
                     {uiRegistryKey}
                   </Popover.Trigger>
                 </ContextMenu.Item>
@@ -305,7 +300,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
       <Popover.Root handle={state.contextMenuPopoverHandle}>
         <Popover.Portal>
-          <Popover.Positioner side="right">
+          <Popover.Positioner side="right" sideOffset={8}>
             <Popover.Popup className="bg-white">
               <Popover.Arrow
                 className={cn(
@@ -424,7 +419,8 @@ type State = {
   onContextMenu(e: MouseEvent | React.MouseEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
-  onToggleItemLock(e: React.PointerEvent<HTMLDivElement>): void;
+  onClickItemDelete(e: React.MouseEvent<HTMLButtonElement>): void;
+  onClickItemLock(e: React.MouseEvent<HTMLButtonElement>): void;
   removeItem(itemId: string): void;
   set(partial: Partial<State>): void;
 };
@@ -432,19 +428,28 @@ type State = {
 function UiInstanceMenu({ id, state }: { id: string; state: State }) {
   return (
     <div
-      data-item-id={id}
       className={cn(
         "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg",
-        "flex cursor-pointer text-teal-500 bg-on-background/5 rounded",
+        "flex text-teal-500 bg-on-background/5 rounded",
       )}
-      onPointerDown={state.onToggleItemLock}
     >
-      <div className={cn("p-1", !state.isLocked[id] && "grayscale")}>
+      <button
+        type="button"
+        data-item-id={id}
+        className={cn("cursor-pointer p-1", !state.isLocked[id] && "grayscale")}
+        onPointerUp={state.onClickItemLock}
+      >
         <LockIcon data-icon-type="lock" weight="duotone" />
-      </div>
-      <div className="p-1">
+      </button>
+
+      <button
+        type="button"
+        data-item-id={id}
+        className="cursor-pointer p-1"
+        onPointerUp={state.onClickItemDelete}
+      >
         <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
-      </div>
+      </button>
     </div>
   );
 }
