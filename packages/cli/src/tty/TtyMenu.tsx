@@ -107,8 +107,8 @@ export function TtyMenu(props: Props) {
     <div
       className={cn(
         "absolute z-110 top-0 right-0",
-        "[--menu-width:40px] w-(--menu-width) h-[calc(100%-32px)]",
-        "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white",
+        "[--menu-width:32px] w-(--menu-width) h-[calc(100%-32px)]",
+        "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white/80",
         "transition-transform duration-500",
         state.touchMenuOpen
           ? "transform-[translate(0px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
@@ -118,14 +118,14 @@ export function TtyMenu(props: Props) {
     >
       <div className="absolute top-0 right-(--menu-width)">
         <div
-          className="w-8 h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
+          className="h-8 pr-2 flex justify-end items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
           onClick={state.toggleTouchMenu}
         >
           {state.touchMenuOpen ? ">" : "<"}
         </div>
         {props.canContOrStop != null && (
           <div
-            className="w-8 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
+            className="pr-1 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
             onClick={state.contOrStopInteractive}
             title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
           >
@@ -189,4 +189,4 @@ interface Props {
   setTabsEnabled(next: boolean): void;
 }
 
-const icon = cn("flex justify-center w-full h-6 cursor-pointer");
+const icon = cn("flex justify-center h-6 cursor-pointer");
