@@ -42,6 +42,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const state = useStateRef(
     (): State => ({
       contextMenuDiv: null,
+      contextMenuOpen: false,
       contextMenuPopoverHandle: Popover.createHandle(),
       dragging: false,
       gridConfig: {
@@ -53,7 +54,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       preventTransition: true,
       resizing: false,
-      showContextMenu: false,
       toUi: { ...initialUiLayout.toUi },
       addItem({ itemId, uiKey, gridRect }) {
         state.toUi[itemId] = { uiKey };
@@ -71,21 +71,27 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       closeContextMenu() {
         state.set({
           uiBootstrap: null,
-          showContextMenu: false,
+          contextMenuOpen: false,
         });
+        state.contextMenuPopoverHandle.close();
       },
       focusChildPopover(e) {
         const child = e.currentTarget.children[0];
         if (child && child instanceof HTMLElement) child.focus();
       },
+      isGridParent(el) {
+        return el === containerRef.current?.childNodes[0];
+      },
+      onChangeContextMenu(open, eventDetails) {
+        if (!open) {
+          state.contextMenuPopoverHandle.close();
+        } else if (!state.isGridParent(eventDetails.event.target as HTMLElement)) {
+          return; // ignore long press on grid children
+        }
+        state.set({ contextMenuOpen: open });
+      },
       async onContextMenuItem(e) {
         if (!containerRef.current || !state.contextMenuDiv) return;
-        if (
-          e.nativeEvent instanceof KeyboardEvent &&
-          e.nativeEvent.key !== "Enter" &&
-          e.nativeEvent.key !== " "
-        )
-          return;
 
         const uiRegistryKey = e.currentTarget.dataset.uiRegistryKey as UiRegistryKey;
         const { x: clientX, y: clientY } = state.contextMenuDiv.getBoundingClientRect();
@@ -103,7 +109,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
         if (ui) {
           // further details needed for instantiation
-          e.stopPropagation();
+          // e.stopPropagation();
           state.set({
             uiBootstrap: { uiKey: uiRegistryKey, ui, point: { x: gridX, y: gridY } },
           });
@@ -115,39 +121,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           });
         }
       },
-      onContextMenu(e) {
-        if (
-          !containerRef.current ||
-          (e.target as HTMLElement).parentElement !== containerRef.current ||
-          state.showContextMenu
-        ) {
-          return;
-        }
-        e.preventDefault();
-
-        containerRef.current.style.setProperty(
-          "--cm-transform",
-          `translate(${e.clientX}px, ${e.clientY}px)`,
-        );
-
-        state.set({ showContextMenu: true });
-      },
       onDragStart() {
         state.set({ dragging: true });
       },
       onDragStop() {
         state.set({ dragging: false });
-      },
-      onMount() {
-        pause(1).then(() => {
-          state.set({ preventTransition: false });
-          layoutStore.setState({ ready: true });
-        });
-        const onKeyUp = (e: KeyboardEvent) => {
-          if (e.key === "Escape" && state.showContextMenu) state.set({ showContextMenu: false });
-        };
-        document.body.addEventListener("keyup", onKeyUp);
-        return () => document.body.removeEventListener("keyup", onKeyUp);
       },
       onResizeStart() {
         state.set({ resizing: true });
@@ -188,7 +166,12 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     { deps: [layout], reset: { gridConfig: true } },
   );
 
-  useEffect(state.onMount, [state.onMount]);
+  useEffect(() => {
+    pause(1).then(() => {
+      state.set({ preventTransition: false });
+      layoutStore.setState({ ready: true });
+    });
+  }, []);
   const update = useUpdate();
 
   useImperativeHandle<GridApi, GridApi>(
@@ -235,24 +218,23 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   return (
     <>
       <ContextMenu.Root
-        onOpenChange={(open, _eventDetails) => {
-          !open && state.contextMenuPopoverHandle.close();
-        }}
+        open={state.contextMenuOpen} // 🚧 controlled
+        onOpenChange={state.onChangeContextMenu}
       >
         <ContextMenu.Trigger className="size-full">
           <div
             ref={containerRef}
             className="relative size-full overflow-auto"
             onContextMenu={(e) => {
-              if ((e.target as HTMLElement) !== containerRef.current?.childNodes[0]) {
-                e.stopPropagation(); // only open onclick background
+              if (!state.isGridParent(e.target as HTMLElement)) {
+                e.stopPropagation(); // show native context menu on right click children
               }
             }}
           >
             <GridLayout
               className={cn(
                 state.preventTransition && "[&_.react-grid-item]:transition-none!",
-                (state.resizing || state.dragging || state.showContextMenu) && "select-none",
+                (state.resizing || state.dragging || state.contextMenuOpen) && "select-none",
                 "h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
                 // "[&_.react-resizable-handle::after]:z-200",
                 // "[&_.react-resizable-handle::after]:size-4!",
@@ -329,25 +311,25 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 {state.uiBootstrap && (
                   <div onClick={(e) => e.stopPropagation()}>
                     <Suspense fallback={<Spinner />}>
-                      <motion.div
+                      <motion.div // 🚧 try css transition instead
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1, transition: { duration: 0.5 } }}
                       >
                         <state.uiBootstrap.ui
                           addInstance={() => {
                             // 🚧
-                            state.uiBootstrap &&
-                              state.addItem({
-                                itemId: `ui-${crypto.randomUUID()}`,
-                                uiKey: state.uiBootstrap.uiKey,
-                                gridRect: {
-                                  x: state.uiBootstrap.point.x,
-                                  y: state.uiBootstrap.point.y,
-                                  width: 2,
-                                  height: 2,
-                                },
-                              });
-                            state.set({ showContextMenu: false });
+                            if (!state.uiBootstrap) return;
+                            state.addItem({
+                              itemId: `ui-${crypto.randomUUID()}`,
+                              uiKey: state.uiBootstrap.uiKey,
+                              gridRect: {
+                                x: state.uiBootstrap.point.x,
+                                y: state.uiBootstrap.point.y,
+                                width: 2,
+                                height: 2,
+                              },
+                            });
+                            state.closeContextMenu();
                           }}
                         />
                       </motion.div>
@@ -405,19 +387,21 @@ export type UiGridLayout = {
 
 type State = {
   dragging: boolean;
+  /** Useful when keyboard events trigger `onContextMenuItem` */
   contextMenuDiv: null | HTMLDivElement;
+  contextMenuOpen: boolean;
+  /** ContextMenu items may provide a "bootstrap ui" inside a Popover */
   contextMenuPopoverHandle: Popover.Handle<unknown>;
   gridConfig: Partial<GridConfig>;
-  uiBootstrap: null | {
-    uiKey: UiRegistryKey;
-    ui: (props: UiBootstrapProps) => React.ReactNode;
-    point: { x: number; y: number };
-  };
   isLocked: { [layoutKey: string]: boolean };
   preventTransition: boolean;
   resizing: boolean;
-  showContextMenu: boolean;
   toUi: UiGridLayout["toUi"];
+  uiBootstrap: null | {
+    point: { x: number; y: number };
+    uiKey: UiRegistryKey;
+    ui: (props: UiBootstrapProps) => React.ReactNode;
+  };
   addItem(meta: {
     itemId: string;
     uiKey: UiRegistryKey;
@@ -425,15 +409,15 @@ type State = {
   }): void;
   closeContextMenu(): void;
   focusChildPopover(e: React.FocusEvent<HTMLElement>): void;
-  onMount(): (() => void) | void;
-  onResizeStart(): void;
-  onResizeStop(): void;
-  onContextMenuItem(e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void;
-  onContextMenu(e: MouseEvent | React.MouseEvent<HTMLElement>): void;
-  onDragStart(): void;
-  onDragStop(): void;
+  isGridParent(el: HTMLElement): boolean;
+  onChangeContextMenu(open: boolean, eventDetails: ContextMenu.Root.ChangeEventDetails): void;
   onClickItemDelete(e: React.MouseEvent<HTMLButtonElement>): void;
   onClickItemLock(e: React.MouseEvent<HTMLButtonElement>): void;
+  onContextMenuItem(e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void;
+  onDragStart(): void;
+  onDragStop(): void;
+  onResizeStart(): void;
+  onResizeStop(): void;
   removeItem(itemId: string): void;
   set(partial: Partial<State>): void;
 };
