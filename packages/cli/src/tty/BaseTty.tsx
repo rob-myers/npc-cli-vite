@@ -114,6 +114,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
       ref={state.ref("container")}
       onKeyDown={stopKeysPropagating}
       className={cn(
+        "h-[inherit]", // for scrolling
         // "[&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]",
         // thin scrollbar
         "[&_.scrollbar.vertical_.slider]:transform-[translateX(5px)_scale(0.5)]!",
