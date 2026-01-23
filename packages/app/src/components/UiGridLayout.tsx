@@ -41,16 +41,15 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
   const state = useStateRef(
     (): State => ({
-      contextMenuDiv: null,
       contextMenuOpen: false,
       contextMenuPopoverHandle: Popover.createHandle(),
+      contextMenuPopoverUi: null,
       dragging: false,
       gridConfig: {
         cols,
         rowHeight: 80,
         // margin: [10, 10],
       },
-      uiBootstrap: null,
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       preventTransition: true,
       resizing: false,
@@ -70,7 +69,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       closeContextMenu() {
         state.set({
-          uiBootstrap: null,
+          contextMenuPopoverUi: null,
           contextMenuOpen: false,
         });
         state.contextMenuPopoverHandle.close();
@@ -91,10 +90,12 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ contextMenuOpen: open });
       },
       async onContextMenuItem(e) {
-        if (!containerRef.current || !state.contextMenuDiv) return;
+        const cmDiv = e.currentTarget.closest("[data-context-menu-div]");
+
+        if (!containerRef.current || !cmDiv) return;
 
         const uiRegistryKey = e.currentTarget.dataset.uiRegistryKey as UiRegistryKey;
-        const { x: clientX, y: clientY } = state.contextMenuDiv.getBoundingClientRect();
+        const { x: clientX, y: clientY } = cmDiv.getBoundingClientRect();
 
         const containerRect = containerRef.current.getBoundingClientRect();
         const relativeX = clientX - containerRect.left;
@@ -109,9 +110,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
         if (ui) {
           // further details needed for instantiation
-          // e.stopPropagation();
           state.set({
-            uiBootstrap: { uiKey: uiRegistryKey, ui, point: { x: gridX, y: gridY } },
+            contextMenuPopoverUi: { uiKey: uiRegistryKey, ui, point: { x: gridX, y: gridY } },
           });
         } else {
           state.addItem({
@@ -265,8 +265,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         <ContextMenu.Portal>
           <ContextMenu.Positioner>
             <ContextMenu.Popup
-              ref={state.ref("contextMenuDiv")}
               className="flex flex-col rounded-md bg-black/60 text-white outline-black"
+              data-context-menu-div // 🚧
             >
               {uiRegistryKeys.map((uiRegistryKey) => (
                 <ContextMenu.Item
@@ -274,16 +274,22 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                   data-ui-registry-key={uiRegistryKey}
                   className="hover:bg-white/20 first:rounded-t-md last:rounded-b-md not-last:border-b border-white/20 outline-black lowercase text-left tracking-widest"
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
-                  onClick={state.onContextMenuItem} // 🚧
+                  onClick={state.onContextMenuItem}
                   onFocus={uiBootstrapRegistry[uiRegistryKey] ? state.focusChildPopover : undefined}
                 >
-                  <Popover.Trigger
-                    className="w-full px-4 py-1.5 text-left cursor-pointer"
-                    handle={state.contextMenuPopoverHandle}
-                    tabIndex={-1}
-                  >
-                    {uiRegistryKey}
-                  </Popover.Trigger>
+                  {uiBootstrapRegistry[uiRegistryKey] ? (
+                    <Popover.Trigger
+                      className="w-full px-4 py-1.5 text-left cursor-pointer"
+                      handle={state.contextMenuPopoverHandle}
+                      tabIndex={-1}
+                    >
+                      {uiRegistryKey}
+                    </Popover.Trigger>
+                  ) : (
+                    <div className="w-full px-4 py-1.5 text-left cursor-pointer">
+                      {uiRegistryKey}
+                    </div>
+                  )}
                 </ContextMenu.Item>
               ))}
             </ContextMenu.Popup>
@@ -308,23 +314,23 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               </Popover.Arrow>
               {/* <Popover.Title>Create...</Popover.Title> */}
               <Popover.Description className="bg-black">
-                {state.uiBootstrap && (
+                {state.contextMenuPopoverUi && (
                   <div onClick={(e) => e.stopPropagation()}>
                     <Suspense fallback={<Spinner />}>
                       <motion.div // 🚧 try css transition instead
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1, transition: { duration: 0.5 } }}
                       >
-                        <state.uiBootstrap.ui
+                        <state.contextMenuPopoverUi.ui
                           addInstance={() => {
                             // 🚧
-                            if (!state.uiBootstrap) return;
+                            if (!state.contextMenuPopoverUi) return;
                             state.addItem({
                               itemId: `ui-${crypto.randomUUID()}`,
-                              uiKey: state.uiBootstrap.uiKey,
+                              uiKey: state.contextMenuPopoverUi.uiKey,
                               gridRect: {
-                                x: state.uiBootstrap.point.x,
-                                y: state.uiBootstrap.point.y,
+                                x: state.contextMenuPopoverUi.point.x,
+                                y: state.contextMenuPopoverUi.point.y,
                                 width: 2,
                                 height: 2,
                               },
@@ -387,21 +393,19 @@ export type UiGridLayout = {
 
 type State = {
   dragging: boolean;
-  /** Useful when keyboard events trigger `onContextMenuItem` */
-  contextMenuDiv: null | HTMLDivElement;
   contextMenuOpen: boolean;
   /** ContextMenu items may provide a "bootstrap ui" inside a Popover */
   contextMenuPopoverHandle: Popover.Handle<unknown>;
+  contextMenuPopoverUi: null | {
+    point: { x: number; y: number };
+    uiKey: UiRegistryKey;
+    ui: (props: UiBootstrapProps) => React.ReactNode;
+  };
   gridConfig: Partial<GridConfig>;
   isLocked: { [layoutKey: string]: boolean };
   preventTransition: boolean;
   resizing: boolean;
   toUi: UiGridLayout["toUi"];
-  uiBootstrap: null | {
-    point: { x: number; y: number };
-    uiKey: UiRegistryKey;
-    ui: (props: UiBootstrapProps) => React.ReactNode;
-  };
   addItem(meta: {
     itemId: string;
     uiKey: UiRegistryKey;
