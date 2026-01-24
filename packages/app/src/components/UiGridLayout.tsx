@@ -94,6 +94,26 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
         state.set({ contextMenuOpen: open });
       },
+      onClickItemDelete(e) {
+        e.stopPropagation();
+        const itemId = e.currentTarget.dataset.itemId as string;
+        state.removeItem(itemId);
+      },
+      onClickItemLock(e) {
+        e.stopPropagation();
+        const itemId = e.currentTarget.dataset.itemId as string;
+        const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
+        setLayouts({
+          lg: layouts.current.lg.map((item) =>
+            item.i === itemId
+              ? {
+                  ...item,
+                  isDraggable: !locked,
+                }
+              : item,
+          ),
+        });
+      },
       async onContextMenuItem(e) {
         const cmDiv = e.currentTarget.closest("[data-context-menu-div]");
         if (!containerRef.current || !cmDiv) return;
@@ -131,31 +151,17 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       onDragStop() {
         state.set({ dragging: false });
       },
+      onPopoverLeftOrRightArrow(e) {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          e.stopPropagation();
+          state.contextMenuPopoverHandle.open(e.currentTarget.id);
+        }
+      },
       onResizeStart() {
         state.set({ resizing: true });
       },
       onResizeStop() {
         state.set({ resizing: false });
-      },
-      onClickItemDelete(e) {
-        e.stopPropagation();
-        const itemId = e.currentTarget.dataset.itemId as string;
-        state.removeItem(itemId);
-      },
-      onClickItemLock(e) {
-        e.stopPropagation();
-        const itemId = e.currentTarget.dataset.itemId as string;
-        const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
-        setLayouts({
-          lg: layouts.current.lg.map((item) =>
-            item.i === itemId
-              ? {
-                  ...item,
-                  isDraggable: !locked,
-                }
-              : item,
-          ),
-        });
       },
       removeItem(itemId) {
         delete state.toUi[itemId];
@@ -234,7 +240,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 e.stopPropagation(); // show native context menu on right click children
               }
             }}
-            // try avoid pinch zoom
+            // avoid pinch zoom triggering context menu
             onTouchStart={state.updateNumTouches}
             onTouchEnd={state.updateNumTouches}
             onTouchCancel={state.updateNumTouches}
@@ -290,6 +296,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                       className="w-full px-4 py-1.5 text-left cursor-pointer"
                       handle={state.contextMenuPopoverHandle}
                       tabIndex={-1}
+                      onKeyDown={state.onPopoverLeftOrRightArrow}
                     >
                       {uiRegistryKey}
                     </Popover.Trigger>
@@ -429,6 +436,7 @@ type State = {
   onContextMenuItem(e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
+  onPopoverLeftOrRightArrow(e: React.KeyboardEvent<HTMLElement>): void;
   onResizeStart(): void;
   onResizeStop(): void;
   removeItem(itemId: string): void;
