@@ -100,7 +100,8 @@
   - 🚧 contextmenu can specify sessionKey
     - ✅ ui has optional uiInstantatiorRegistry
     - ✅ Jsh has entry in uiInstantatiorRegistry
-    - 🚧 contextmenu shows respective ui
+    - ✅ contextmenu shows respective ui
+    - 🚧 bootstrap ui enforces non-existing sessionKey `tty-{n}`
   - 🚧 persisted layout can contain partial ui instance meta
 
 - ✅ avoid pinchzoom opening contextmenu

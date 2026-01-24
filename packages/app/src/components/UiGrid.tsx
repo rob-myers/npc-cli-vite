@@ -300,7 +300,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                     <Popover.Trigger
                       className="w-full px-4 py-1.5 text-left cursor-pointer"
                       handle={state.contextMenuPopoverHandle}
-                      // onKeyDown={state.onPopoverLeftOrRightArrow}
+                      tabIndex={-1}
                     >
                       {uiRegistryKey}
                     </Popover.Trigger>
@@ -331,8 +331,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               >
                 <ArrowSvg />
               </Popover.Arrow>
-              {/* <Popover.Title>Create...</Popover.Title> */}
-              <Popover.Viewport className="bg-black">
+              <Popover.Viewport className="bg-black p-2">
                 {state.contextMenuPopoverUi && (
                   <div onClick={(e) => e.stopPropagation()}>
                     <Suspense fallback={<Spinner />}>
@@ -341,13 +340,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                         animate={{ opacity: 1, transition: { duration: 0.5 } }}
                       >
                         <state.contextMenuPopoverUi.ui
-                          // 🚧 state.addConfiguredInstance
                           addInstance={(partialUiMeta) => {
                             if (!state.contextMenuPopoverUi) return;
 
                             const itemId = `ui-${crypto.randomUUID()}`;
 
-                            // 🚧 uiMeta should be persisted like layout
                             state.addItem({
                               itemId,
                               uiMeta: {
