@@ -77,7 +77,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       focusChildPopover(e) {
         const child = e.currentTarget.children[0];
-        if (child && child instanceof HTMLElement) child.focus();
+        if (child && child instanceof HTMLElement) {
+          setTimeout(() => child.focus(), 0);
+        }
       },
       isGridParent(el) {
         return el === containerRef.current?.childNodes[0];
@@ -115,10 +117,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       async onContextMenuItem(e) {
+        // invoked from ContextMenu.Item or Popover.Trigger
         const cmDiv = e.currentTarget.closest("[data-context-menu-div]");
-        if (!containerRef.current || !cmDiv) return;
+        const uiDiv = e.currentTarget.closest("[data-ui-registry-key]");
 
-        const uiRegistryKey = e.currentTarget.dataset.uiRegistryKey as UiRegistryKey;
+        if (!containerRef.current || !cmDiv || !uiDiv) return;
+
+        const uiRegistryKey = (uiDiv as HTMLElement).dataset.uiRegistryKey as UiRegistryKey;
         const { x: clientX, y: clientY } = cmDiv.getBoundingClientRect();
 
         const containerRect = containerRef.current.getBoundingClientRect();
@@ -159,6 +164,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
           e.stopPropagation();
           state.contextMenuPopoverHandle.open(e.currentTarget.id);
+          state.onContextMenuItem(e);
         }
       },
       onResizeStart() {
@@ -285,7 +291,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           <ContextMenu.Positioner>
             <ContextMenu.Popup
               className="flex flex-col rounded-md bg-black/60 text-white outline-black"
-              data-context-menu-div // 🚧
+              data-context-menu-div
             >
               {uiRegistryKeys.map((uiRegistryKey) => (
                 <ContextMenu.Item
@@ -300,7 +306,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                     <Popover.Trigger
                       className="w-full px-4 py-1.5 text-left cursor-pointer"
                       handle={state.contextMenuPopoverHandle}
-                      tabIndex={-1}
                       onKeyDown={state.onPopoverLeftOrRightArrow}
                     >
                       {uiRegistryKey}
