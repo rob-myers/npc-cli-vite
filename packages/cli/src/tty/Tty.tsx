@@ -1,4 +1,4 @@
-import { useStateRef, useUpdate } from "@npc-cli/util";
+import { useEffectNonStrict, useStateRef, useUpdate } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { error, jsStringify, keys, testNever, warn } from "@npc-cli/util/legacy/generic";
 import debounce from "debounce";
@@ -20,10 +20,10 @@ import { TtyMenu } from "./TtyMenu";
  */
 export function Tty(props: Props) {
   const [rootRef, bounds] = useMeasure({ debounce: 0, scroll: false });
+  const baseRef = React.useRef<BaseTtyState>(null);
 
   const state = useStateRef(
     () => ({
-      base: null as null | BaseTtyState,
       /**
        * Have we initiated the profile?
        * We don't want to re-run it on hmr.
@@ -42,10 +42,10 @@ export function Tty(props: Props) {
       reSource: {} as Record<string, true>,
 
       fitDebounced: debounce(() => {
-        if (state.base) {
+        if (baseRef.current) {
           // 🔔 fix scrollbar sync issue
-          state.base.xterm.forceResize();
-          state.base.fitAddon.fit();
+          baseRef.current.xterm.forceResize();
+          baseRef.current.fitAddon.fit();
         }
       }, 300),
       handleExternalMsg({ msg }: ExternalMessage) {
@@ -96,18 +96,18 @@ export function Tty(props: Props) {
         }
       },
       onFocus() {
-        if (state.base && state.inputOnFocus !== undefined) {
-          state.base.xterm.setInput(state.inputOnFocus.input);
-          state.base.xterm.setCursor(state.inputOnFocus.cursor);
+        if (baseRef.current && state.inputOnFocus !== undefined) {
+          baseRef.current.xterm.setInput(state.inputOnFocus.input);
+          baseRef.current.xterm.setCursor(state.inputOnFocus.cursor);
           state.inputOnFocus = undefined;
         }
       },
       pauseByPtags() {
-        if (!state.base) return;
+        if (!baseRef.current) return;
         const pids = sessionApi.kill(props.sessionKey, [], { byPtags: true, STOP: true });
         pids.forEach((pid) => void state.pausedPids.add(pid));
 
-        const { session } = state.base;
+        const { session } = baseRef.current;
         if (session.ttyShell.isInitialized() && !session.ttyShell.isInteractive()) {
           state.canContOrStop =
             session.process[0].status === toProcessStatus.Running ? "STOP" : "CONT";
@@ -122,23 +122,23 @@ export function Tty(props: Props) {
         update();
       },
       async resize() {
-        if (!state.base) return;
+        if (!baseRef.current) return;
         if (state.isTouchDevice) {
           state.fitDebounced();
         } else {
           // Hide input to prevent issues when screen gets too small
-          const input = state.base.xterm.getInput();
-          const cursor = state.base.xterm.getCursor();
-          if (input && state.base.xterm.isPromptReady()) {
-            state.base.xterm.clearInput();
+          const input = baseRef.current.xterm.getInput();
+          const cursor = baseRef.current.xterm.getCursor();
+          if (input && baseRef.current.xterm.isPromptReady()) {
+            baseRef.current.xterm.clearInput();
             state.inputOnFocus = { input, cursor };
-            state.base.xterm.xterm.blur(); // Must blur
+            baseRef.current.xterm.xterm.blur(); // Must blur
           }
           state.fitDebounced();
         }
       },
       resumeByPtags() {
-        if (!state.base) return;
+        if (!baseRef.current) return;
         // restore previously paused processes
         sessionApi.kill(props.sessionKey, Array.from(state.pausedPids), {
           byPtags: true,
@@ -152,7 +152,7 @@ export function Tty(props: Props) {
         }
         state.pausedSpawnPgids.clear();
 
-        const { session } = state.base;
+        const { session } = baseRef.current;
         if (session.ttyShell.isInitialized() && !session.ttyShell.isInteractive()) {
           state.canContOrStop =
             session.process[0].status === toProcessStatus.Running ? "STOP" : "CONT";
@@ -163,8 +163,8 @@ export function Tty(props: Props) {
         update();
       },
       async storeAndSourceFuncs() {
-        if (!state.base) return;
-        const session = state.base.session;
+        if (!baseRef.current) return;
+        const session = baseRef.current.session;
 
         Object.assign(session.etc, props.shFiles);
 
@@ -206,8 +206,8 @@ export function Tty(props: Props) {
 
   // Pause/resume
   React.useEffect(() => {
-    if (!state.base?.session) return;
-    const { session } = state.base;
+    if (!baseRef.current?.session) return;
+    const { session } = baseRef.current;
 
     // if disabled, suspend spawned bg processes sans process tag 'always'
     session.ttyShell.disabled = !!props.disabled;
@@ -218,15 +218,15 @@ export function Tty(props: Props) {
     } else {
       state.resumeByPtags();
     }
-  }, [props.disabled, state.base?.session]);
+  }, [props.disabled, baseRef.current?.session]);
 
   React.useEffect(() => {
-    if (!state.base?.session) return;
+    if (!baseRef.current?.session) return;
     // Bind external events
     const {
       xterm: { xterm },
       session,
-    } = state.base;
+    } = baseRef.current;
 
     xterm.attachCustomKeyEventHandler((e) => {
       // xterm.js should not handle shift/ctrl + enter,
@@ -252,41 +252,42 @@ export function Tty(props: Props) {
       xterm.textarea?.removeEventListener("focus", state.onFocus);
       cleanupExternalMsgs();
     };
-  }, [state.base?.session]);
+  }, [baseRef.current?.session]);
 
   React.useEffect(() => {
-    const onKeyDispose = state.base?.xterm?.xterm.onKey((e) => props.onKey?.(e.domEvent));
+    const onKeyDispose = baseRef.current?.xterm?.xterm.onKey((e) => props.onKey?.(e.domEvent));
     return () => onKeyDispose?.dispose();
   }, [props.onKey]);
 
   React.useEffect(() => {
     // Handle resize
     state.bounds = bounds;
-    state.base?.session && state.resize();
+    baseRef.current?.session && state.resize();
   }, [bounds]);
 
   React.useEffect(() => {
     // sync shell functions
-    if (state.base?.session?.ttyShell.isInitialized()) {
+    if (baseRef.current?.session?.ttyShell.isInitialized()) {
       state.storeAndSourceFuncs();
     }
   }, [
-    state.base?.session,
+    baseRef.current?.session,
     ...Object.entries(props.shFiles).flatMap((x) => x),
     ...Object.entries(props.modules).flatMap((x) => x),
   ]);
 
   React.useEffect(() => {
     // sync ~/PROFILE
-    if (state.base?.session) {
-      state.base.session.var.PROFILE = props.profile;
+    if (baseRef.current?.session) {
+      baseRef.current.session.var.PROFILE = props.profile;
     }
-  }, [state.base?.session, props.profile]);
+  }, [baseRef.current?.session, props.profile]);
 
-  React.useEffect(() => {
+  // useEffectNonStrict here so it occurs after BaseTty's
+  useEffectNonStrict(() => {
     // Boot profile (possibly while disabled)
-    if (state.base?.session && !state.booted) {
-      const { xterm, session } = state.base;
+    if (baseRef.current?.session && !state.booted) {
+      const { xterm, session } = baseRef.current;
       xterm.initialise();
       state.booted = true;
 
@@ -302,23 +303,23 @@ export function Tty(props: Props) {
         await session.ttyShell.runProfile();
       });
     }
-  }, [state.base?.session, props.disabled]);
+  }, [baseRef.current?.session, props.disabled]);
 
   const update = useUpdate();
 
   return (
     <div className="h-full w-full" ref={rootRef}>
       <BaseTty
-        ref={state.ref("base")} // 🔔 sets and unsets state.base
+        ref={baseRef}
         sessionKey={props.sessionKey}
         env={props.env}
         onUnmount={state.reboot}
       />
-      {state.base?.session && (
+      {baseRef.current?.session && (
         <TtyMenu
           canContOrStop={state.canContOrStop}
           disabled={props.disabled}
-          session={state.base.session}
+          session={baseRef.current.session}
           setTabsEnabled={props.setTabsEnabled}
         />
       )}
