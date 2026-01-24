@@ -51,6 +51,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         // margin: [10, 10],
       },
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
+      numTouches: 0,
       preventTransition: true,
       resizing: false,
       toUi: { ...initialUiLayout.toUi },
@@ -86,17 +87,15 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           state.contextMenuPopoverHandle.close();
         } else if (!state.isGridParent(eventDetails.event.target as HTMLElement)) {
           return; // ignore long press on grid children
-        } else if (
-          eventDetails.event instanceof TouchEvent &&
-          eventDetails.event.touches.length > 1
-        ) {
-          return; // ignore pinch zoom
         }
+        if (state.numTouches > 1) {
+          return; // try avoid pinch zoom
+        }
+
         state.set({ contextMenuOpen: open });
       },
       async onContextMenuItem(e) {
         const cmDiv = e.currentTarget.closest("[data-context-menu-div]");
-
         if (!containerRef.current || !cmDiv) return;
 
         const uiRegistryKey = e.currentTarget.dataset.uiRegistryKey as UiRegistryKey;
@@ -167,6 +166,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         Object.assign(state, partial);
         update();
       },
+      updateNumTouches(e) {
+        state.numTouches = e.touches.length;
+      },
     }),
     { deps: [layout], reset: { gridConfig: true } },
   );
@@ -232,6 +234,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 e.stopPropagation(); // show native context menu on right click children
               }
             }}
+            // try avoid pinch zoom
+            onTouchStart={state.updateNumTouches}
+            onTouchEnd={state.updateNumTouches}
+            onTouchCancel={state.updateNumTouches}
           >
             <GridLayout
               className={cn(
@@ -405,6 +411,7 @@ type State = {
   };
   gridConfig: Partial<GridConfig>;
   isLocked: { [layoutKey: string]: boolean };
+  numTouches: number;
   preventTransition: boolean;
   resizing: boolean;
   toUi: UiGridLayout["toUi"];
@@ -426,6 +433,7 @@ type State = {
   onResizeStop(): void;
   removeItem(itemId: string): void;
   set(partial: Partial<State>): void;
+  updateNumTouches(e: React.TouchEvent<HTMLElement>): void;
 };
 
 function UiInstanceMenu({ id, state }: { id: string; state: State }) {
