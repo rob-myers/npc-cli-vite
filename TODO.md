@@ -103,6 +103,8 @@
     - 🚧 contextmenu shows respective ui
   - 🚧 persisted layout can contain partial ui instance meta
 
+- ✅ avoid pinchzoom opening contextmenu
+
 - 🚧 packages/ui/world
   - ✅ create dummy package
 
