@@ -7,14 +7,10 @@ import { Tty } from "@npc-cli/cli";
  */
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { UiProps } from "@npc-cli/ui-sdk";
-import { UiContext } from "@npc-cli/ui-sdk";
-import { useContext } from "react";
 
 export function Jsh(props: UiProps) {
-  const { uiStore } = useContext(UiContext);
-
   // 🚧 get sessionKey
-  const jshMeta = uiStore.getState().metaById[props.id];
+  const jshMeta = props.meta;
   console.log({ jshMeta });
 
   return (

@@ -21,7 +21,7 @@ export type UiStoreState = {
   metaById: { [layoutId: string]: UiInstanceMeta };
 };
 
-type UiInstanceMeta = {
+export type UiInstanceMeta = {
   [key: string]: unknown;
   layoutId: string;
   uiKey: UiRegistryKey;
