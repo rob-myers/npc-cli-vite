@@ -278,7 +278,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 <ContextMenu.Item
                   key={uiRegistryKey}
                   data-ui-registry-key={uiRegistryKey}
-                  className="hover:bg-white/20 first:rounded-t-md last:rounded-b-md not-last:border-b border-white/20 outline-black lowercase text-left tracking-widest"
+                  className="hover:bg-white/20 first:rounded-t-md last:rounded-b-md not-last:border-b border-white/20 outline-black text-left tracking-widest"
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
                   onClick={state.onContextMenuItem}
                   onKeyDown={(e) => {
