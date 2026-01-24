@@ -1,4 +1,4 @@
-import { useEffectNonStrict, useStateRef, useUpdate } from "@npc-cli/util";
+import { useEffectNonStrict, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { error, jsStringify, keys, testNever, warn } from "@npc-cli/util/legacy/generic";
 import debounce from "debounce";
@@ -79,7 +79,7 @@ export function Tty(props: Props) {
           } else if (msg.act === "ended") {
             state.canContOrStop = null;
           }
-          update();
+          state.update();
         } else if (state.disabled === true) {
           if (msg.act === "started") {
             // spawned whilst paused
@@ -115,11 +115,11 @@ export function Tty(props: Props) {
           state.canContOrStop = null;
         }
 
-        update();
+        state.update();
       },
       reboot() {
         state.booted = false;
-        update();
+        state.update();
       },
       async resize() {
         if (!baseRef.current) return;
@@ -160,7 +160,7 @@ export function Tty(props: Props) {
           state.canContOrStop = null;
         }
 
-        update();
+        state.update();
       },
       async storeAndSourceFuncs() {
         if (!baseRef.current) return;
@@ -299,13 +299,11 @@ export function Tty(props: Props) {
 
       session.ttyShell.initialise(xterm).then(async () => {
         await state.storeAndSourceFuncs();
-        update();
+        state.update();
         await session.ttyShell.runProfile();
       });
     }
   }, [baseRef.current?.session, props.disabled]);
-
-  const update = useUpdate();
 
   return (
     <div className="h-full w-full" ref={rootRef}>

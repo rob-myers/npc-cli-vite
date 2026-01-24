@@ -8,7 +8,7 @@ import {
   uiRegistryKeys,
 } from "@npc-cli/ui__registry";
 import type { UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
-import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
+import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
@@ -178,10 +178,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         layouts.current.lg = layout.filter((item) => item.i !== itemId);
         setLayouts({ lg: layout.filter((item) => item.i !== itemId) });
       },
-      set(partial: Partial<State>) {
-        Object.assign(state, partial);
-        update();
-      },
       updateNumTouches(e) {
         state.numTouches = e.touches.length;
       },
@@ -195,7 +191,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       layoutStore.setState({ ready: true });
     });
   }, []);
-  const update = useUpdate();
 
   useImperativeHandle<GridApi, GridApi>(
     ref,
@@ -458,7 +453,6 @@ type State = {
   onResizeStart(): void;
   onResizeStop(): void;
   removeItem(itemId: string): void;
-  set(partial: Partial<State>): void;
   updateNumTouches(e: React.TouchEvent<HTMLElement>): void;
 };
 
