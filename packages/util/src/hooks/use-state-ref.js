@@ -29,6 +29,7 @@ export function useStateRef(initializer, opts = {}) {
       state._prevFn = initializer.toString();
 
       // Provide useUpdate wrapper `set`
+      state.update = update;
       state.set = (partial) => {
         Object.assign(state, partial);
         update();
@@ -92,7 +93,8 @@ export function useStateRef(initializer, opts = {}) {
  * @template {Record<string, any>} State
  * @typedef {State & {
  *   _prevFn?: string;
- *   set(partial?: Partial<State>): void;
+ *   set(partial: Partial<State>): void;
+ *   update(): void;
  * }} UseStateRef
  * The state returned by `useStateRef`, which includes a special function `ref`.
  */

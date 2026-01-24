@@ -1,4 +1,4 @@
-import { cn, useStateRef, useUpdate } from "@npc-cli/util";
+import { cn, useStateRef } from "@npc-cli/util";
 import {
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -19,8 +19,6 @@ import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 
 export function TtyMenu(props: Props) {
-  const update = useUpdate();
-
   const state = useStateRef(
     () => ({
       /**
@@ -54,7 +52,7 @@ export function TtyMenu(props: Props) {
           state.xterm.setCanType(next);
           tryLocalStorageSet(localStorageKey.touchTtyCanType, `${next}`);
           next && state.xterm.warnIfNotReady();
-          update();
+          state.update();
         } else if (target.classList.contains("ctrl-c")) {
           sessionApi.killSessionLeader(props.session.key);
         } else if (target.classList.contains("enter")) {
@@ -77,13 +75,13 @@ export function TtyMenu(props: Props) {
       setSpawnBgPaused(next = !state.spawnBgPaused) {
         state.spawnBgPaused = next;
         props.session.ttyShell.spawnBgPaused = state.spawnBgPaused;
-        update();
+        state.update();
       },
       toggleTouchMenu() {
         const next = !state.touchMenuOpen;
         state.touchMenuOpen = next;
         tryLocalStorageSet(localStorageKey.touchTtyOpen, `${next}`);
-        update();
+        state.update();
       },
     }),
     { deps: [props.canContOrStop] },
