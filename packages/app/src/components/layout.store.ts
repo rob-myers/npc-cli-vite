@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { UiGridLayout } from "./UiGridLayout";
+import type { UiGridLayout } from "./UiGrid";
 
 /**
  * Used to persist layout

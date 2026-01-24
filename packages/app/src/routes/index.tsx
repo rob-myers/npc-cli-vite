@@ -8,7 +8,7 @@ import { useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
 import { demoLayout, layoutStore } from "../components/layout.store";
-import { type GridApi, UiGrid } from "../components/UiGridLayout";
+import { type GridApi, UiGrid } from "../components/UiGrid";
 
 export const Route = createFileRoute("/")({
   component: Index,
