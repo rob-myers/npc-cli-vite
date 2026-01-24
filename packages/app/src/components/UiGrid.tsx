@@ -75,12 +75,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
         state.contextMenuPopoverHandle.close();
       },
-      focusChildPopover(e) {
-        const child = e.currentTarget.children[0];
-        if (child && child instanceof HTMLElement) {
-          setTimeout(() => child.focus(), 0);
-        }
-      },
       isGridParent(el) {
         return el === containerRef.current?.childNodes[0];
       },
@@ -159,13 +153,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       onDragStop() {
         state.set({ dragging: false });
-      },
-      onPopoverLeftOrRightArrow(e) {
-        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-          e.stopPropagation();
-          state.contextMenuPopoverHandle.open(e.currentTarget.id);
-          state.onContextMenuItem(e);
-        }
       },
       onResizeStart() {
         state.set({ resizing: true });
@@ -273,7 +260,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {childDefs.map((def) => (
                 <div key={def.itemId} data-item-id={def.itemId} className="relative border">
                   <Suspense fallback={<Spinner />}>
-                    {/* 🚧 pass in meta */}
                     <UiInstance id={def.itemId} meta={def.uiMeta} />
                   </Suspense>
                   <UiInstanceMenu id={def.itemId} state={state} />
@@ -295,13 +281,26 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                   className="hover:bg-white/20 first:rounded-t-md last:rounded-b-md not-last:border-b border-white/20 outline-black lowercase text-left tracking-widest"
                   closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
                   onClick={state.onContextMenuItem}
-                  onFocus={uiBootstrapRegistry[uiRegistryKey] ? state.focusChildPopover : undefined}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "Enter" ||
+                      e.key === " " ||
+                      e.key === "ArrowLeft" ||
+                      e.key === "ArrowRight"
+                    ) {
+                      e.stopPropagation();
+                      if (uiBootstrapRegistry[uiRegistryKey]) {
+                        state.contextMenuPopoverHandle.open(e.currentTarget.children[0].id);
+                        state.onContextMenuItem(e);
+                      }
+                    }
+                  }}
                 >
                   {uiBootstrapRegistry[uiRegistryKey] ? (
                     <Popover.Trigger
                       className="w-full px-4 py-1.5 text-left cursor-pointer"
                       handle={state.contextMenuPopoverHandle}
-                      onKeyDown={state.onPopoverLeftOrRightArrow}
+                      // onKeyDown={state.onPopoverLeftOrRightArrow}
                     >
                       {uiRegistryKey}
                     </Popover.Trigger>
@@ -441,7 +440,6 @@ type State = {
     gridRect: { x: number; y: number; width: number; height: number };
   }): void;
   closeContextMenu(): void;
-  focusChildPopover(e: React.FocusEvent<HTMLElement>): void;
   isGridParent(el: HTMLElement): boolean;
   onChangeContextMenu(open: boolean, eventDetails: ContextMenu.Root.ChangeEventDetails): void;
   onClickItemDelete(e: React.MouseEvent<HTMLButtonElement>): void;
@@ -449,7 +447,6 @@ type State = {
   onContextMenuItem(e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void;
   onDragStart(): void;
   onDragStop(): void;
-  onPopoverLeftOrRightArrow(e: React.KeyboardEvent<HTMLElement>): void;
   onResizeStart(): void;
   onResizeStop(): void;
   removeItem(itemId: string): void;
