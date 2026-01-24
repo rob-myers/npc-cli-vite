@@ -7,7 +7,7 @@ import {
   uiRegistry,
   uiRegistryKeys,
 } from "@npc-cli/ui__registry";
-import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
+import type { UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef, useUpdate } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
@@ -55,8 +55,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       preventTransition: true,
       resizing: false,
       toUi: { ...initialUiLayout.toUi },
-      addItem({ itemId, uiKey, gridRect }) {
-        state.toUi[itemId] = { uiKey };
+      addItem({ itemId, uiMeta, gridRect }) {
+        state.toUi[itemId] = uiMeta;
         setLayouts({
           lg: layouts.current.lg.concat({
             i: itemId,
@@ -138,9 +138,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             contextMenuPopoverUi: { uiKey: uiRegistryKey, ui, point: { x: gridX, y: gridY } },
           });
         } else {
+          const itemId = `ui-${crypto.randomUUID()}`;
           state.addItem({
-            itemId: `ui-${crypto.randomUUID()}`,
-            uiKey: uiRegistryKey,
+            itemId,
+            uiMeta: {
+              layoutId: itemId,
+              uiKey: uiRegistryKey,
+            },
             gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
           });
         }
@@ -207,7 +211,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         );
       },
       resetLayout() {
-        state.toUi = { "ui-0": { uiKey: "Global" } };
+        state.toUi = { "ui-0": { layoutId: "ui-0", uiKey: "Global" } };
         state.isLocked = {};
         layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
         setLayouts({
@@ -222,7 +226,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     () =>
       layout.map((item) => ({
         itemId: item.i,
-        uiKey: state.toUi[item.i]?.uiKey,
+        uiMeta: state.toUi[item.i],
         ui: uiRegistry[state.toUi[item.i]?.uiKey],
       })),
     [layout],
@@ -268,7 +272,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {childDefs.map((def) => (
                 <div key={def.itemId} data-item-id={def.itemId} className="relative border">
                   <Suspense fallback={<Spinner />}>
-                    <UiInstance id={def.itemId} uiKey={def.uiKey} />
+                    {/* 🚧 pass in meta */}
+                    <UiInstance id={def.itemId} meta={def.uiMeta} />
                   </Suspense>
                   <UiInstanceMenu id={def.itemId} state={state} />
                 </div>
@@ -337,12 +342,20 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                         animate={{ opacity: 1, transition: { duration: 0.5 } }}
                       >
                         <state.contextMenuPopoverUi.ui
-                          addInstance={() => {
-                            // 🚧
+                          // 🚧 state.addConfiguredInstance
+                          addInstance={(partialUiMeta) => {
                             if (!state.contextMenuPopoverUi) return;
+
+                            const itemId = `ui-${crypto.randomUUID()}`;
+
+                            // 🚧 uiMeta should be persisted like layout
                             state.addItem({
-                              itemId: `ui-${crypto.randomUUID()}`,
-                              uiKey: state.contextMenuPopoverUi.uiKey,
+                              itemId,
+                              uiMeta: {
+                                ...partialUiMeta,
+                                layoutId: itemId,
+                                uiKey: state.contextMenuPopoverUi.uiKey,
+                              },
                               gridRect: {
                                 x: state.contextMenuPopoverUi.point.x,
                                 y: state.contextMenuPopoverUi.point.y,
@@ -403,7 +416,7 @@ export type UiGridLayout = {
   cols: Record<"lg" | "sm", number>;
   /** Only one layout but cols still responsive */
   layouts: Record<"lg", Layout>;
-  toUi: { [layoutKey: string]: { uiKey: UiRegistryKey } };
+  toUi: { [layoutKey: string]: UiInstanceMeta };
 };
 
 type State = {
@@ -421,10 +434,10 @@ type State = {
   numTouches: number;
   preventTransition: boolean;
   resizing: boolean;
-  toUi: UiGridLayout["toUi"];
+  toUi: UiGridLayout["toUi"]; // 🚧 eliminate i.e. uiStore instead
   addItem(meta: {
     itemId: string;
-    uiKey: UiRegistryKey;
+    uiMeta: UiInstanceMeta;
     gridRect: { x: number; y: number; width: number; height: number };
   }): void;
   closeContextMenu(): void;
