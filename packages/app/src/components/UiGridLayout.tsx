@@ -86,6 +86,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           state.contextMenuPopoverHandle.close();
         } else if (!state.isGridParent(eventDetails.event.target as HTMLElement)) {
           return; // ignore long press on grid children
+        } else if (
+          eventDetails.event instanceof TouchEvent &&
+          eventDetails.event.touches.length > 1
+        ) {
+          return; // ignore pinch zoom
         }
         state.set({ contextMenuOpen: open });
       },
@@ -217,10 +222,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
   return (
     <>
-      <ContextMenu.Root
-        open={state.contextMenuOpen} // 🚧 controlled
-        onOpenChange={state.onChangeContextMenu}
-      >
+      <ContextMenu.Root open={state.contextMenuOpen} onOpenChange={state.onChangeContextMenu}>
         <ContextMenu.Trigger className="size-full">
           <div
             ref={containerRef}
