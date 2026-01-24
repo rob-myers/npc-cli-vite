@@ -1,4 +1,5 @@
 import React from "react";
+import { useUpdate } from "./use-update";
 
 /**
  * This hook is a mixture of `React.useState` and `React.useRef`.
@@ -15,6 +16,7 @@ import React from "react";
  */
 export function useStateRef(initializer, opts = {}) {
   const [state] = /** @type {[UseStateRef<State>, any]} */ (React.useState(initializer));
+  const update = useUpdate();
 
   React.useMemo(() => {
     const changed = initializer.toString() !== state._prevFn;
@@ -25,9 +27,12 @@ export function useStateRef(initializer, opts = {}) {
        * 🚧 avoid invocation in production
        */
       state._prevFn = initializer.toString();
-      state.ref = (key, functionRef) => (value) =>
-        void ((state[key] = value === null ? /** @type {*} */ (null) : value),
-        functionRef?.(value));
+
+      // Provide useUpdate wrapper `set`
+      state.set = (partial) => {
+        Object.assign(state, partial);
+        update();
+      };
     } else {
       /**
        * Either HMR or `opts.deps` has changed.
@@ -57,7 +62,7 @@ export function useStateRef(initializer, opts = {}) {
       }
 
       for (const k of Object.keys(state)) {
-        if (!(k in newInit) && k !== "_prevFn" && k !== "ref") {
+        if (!(k in newInit) && k !== "_prevFn" && k !== "update" && k !== "set") {
           // console.log({ deleting: k })
           delete state[/** @type {keyof State} */ (k)];
         }
@@ -87,10 +92,7 @@ export function useStateRef(initializer, opts = {}) {
  * @template {Record<string, any>} State
  * @typedef {State & {
  *   _prevFn?: string;
- *   ref<Key extends keyof State, T extends State[Key]>(
- *      key: Key,
- *      functionRef?: (value: T | null) => void,
- *   ): ((value: T | null) => void);
+ *   set(partial?: Partial<State>): void;
  * }} UseStateRef
  * The state returned by `useStateRef`, which includes a special function `ref`.
  */
