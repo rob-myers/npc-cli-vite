@@ -11,9 +11,12 @@ export class ParseShService {
     if (parsed === null) {
       return { incomplete: true, parsed: null };
     } else {
+      // Need to re-parse to convert to jsh
       return {
         incomplete: false,
-        parsed: await this.parse(partialSrc, true),
+        // 🚧 with cache saw incorrect `echo {a..e}` history `echo a b c d e`
+        // parsed: await this.parse(partialSrc, true),
+        parsed: await this.parse(partialSrc, false),
       };
     }
   }
