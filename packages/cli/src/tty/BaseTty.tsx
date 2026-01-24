@@ -14,9 +14,10 @@ import { LinkProvider } from "./xterm-link-provider";
 import "@xterm/xterm/css/xterm.css";
 
 export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Props, ref) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   const state = useStateRef(
     (): State => ({
-      container: null as unknown as HTMLDivElement,
       fitAddon: new FitAddon(),
       // `undefined` for change detection
       session: undefined as unknown as Session,
@@ -86,7 +87,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
 
     state.session.ttyShell.xterm = state.xterm;
 
-    xterm.open(state.container);
+    containerRef.current && xterm.open(containerRef.current);
 
     // 🚧 try improve mobile predictive text e.g. firefox
     xterm.textarea?.setAttribute("enterkeyhint", "send");
@@ -111,7 +112,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
 
   return (
     <div
-      ref={state.ref("container")}
+      ref={containerRef}
       onKeyDown={stopKeysPropagating}
       className={cn(
         "h-[inherit]", // for scrolling
@@ -131,7 +132,6 @@ interface Props {
 }
 
 export interface State {
-  container: HTMLDivElement;
   fitAddon: FitAddon;
   session: Session;
   webglAddon: WebglAddon;
