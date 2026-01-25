@@ -6,19 +6,23 @@ import { Tty } from "@npc-cli/cli";
  * - Example usage `import util`
  */
 import * as modules from "@npc-cli/cli/jsh/modules";
-import type { UiProps } from "@npc-cli/ui-sdk";
+import { BaseUiMetaSchema, type UiProps } from "@npc-cli/ui-sdk";
+import z from "zod";
 
 export default function Jsh(props: UiProps) {
-  // 🚧 get sessionKey
-  const jshMeta = props.meta;
-  console.log({ jshMeta });
+  const meta = UiMetaSchema.safeParse(props.meta);
+
+  if (!meta.success) {
+    // 🚧 generic
+    return <div className="bg-white text-red-500">Invalid Jsh Meta: {meta.error.message}</div>;
+  }
 
   return (
     <div className="relative overflow-hidden h-full bg-black p-1 flex items-center justify-center">
       <Tty
         key="my-test-tty"
         // sessionKey="tty-0"
-        sessionKey={props.id} // 🚧 use uiStore.metaById[props.id]
+        sessionKey={meta.data.sessionKey}
         setTabsEnabled={() => {}}
         updateTabMeta={() => {}}
         disabled={false}
@@ -32,3 +36,8 @@ export default function Jsh(props: UiProps) {
     </div>
   );
 }
+
+const UiMetaSchema = z.object({
+  ...BaseUiMetaSchema.shape,
+  sessionKey: z.string(),
+});

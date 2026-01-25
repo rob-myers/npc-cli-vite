@@ -325,7 +325,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               >
                 <ArrowSvg />
               </Popover.Arrow>
-              <Popover.Viewport className="bg-black p-2">
+              <Popover.Viewport className="bg-black">
                 {state.contextMenuPopoverUi && (
                   <div onClick={(e) => e.stopPropagation()}>
                     <Suspense fallback={<Spinner />}>

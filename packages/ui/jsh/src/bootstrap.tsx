@@ -3,14 +3,24 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 
 export default function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
-  const { uiStore: _ } = useContext(UiContext);
-
-  // ✅ provide inside meta to addInstance
-  // 🚧 validate sessionKey `tty-{n}`
+  const { uiStore } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     invalid: false,
     sessionKey: "tty-0",
+    onClickCreate() {
+      if (state.invalid) return;
+
+      for (const [_, meta] of Object.entries(uiStore.getState().metaById)) {
+        if (meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey) {
+          return alert(`${"Jsh"}: sessionKey ${state.sessionKey} already exists.`);
+        }
+      }
+
+      props.addInstance({
+        sessionKey: state.sessionKey,
+      });
+    },
   }));
 
   return (
@@ -24,17 +34,14 @@ export default function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
           onInput={(e) => state.set({ invalid: !e.currentTarget.checkValidity() })}
           pattern="tty-[0-9]+"
           value={state.sessionKey}
+          onKeyDown={(e) => e.key === "Enter" && state.onClickCreate()}
         />
       </label>
       <button
         type="button"
-        className="p-2 text-sm"
+        className="p-2 text-sm cursor-pointer disabled:cursor-not-allowed"
         disabled={state.invalid}
-        onClick={() => {
-          props.addInstance({
-            sessionKey: state.sessionKey,
-          });
-        }}
+        onClick={state.onClickCreate}
       >
         {state.invalid ? "❌" : "Create"}
       </button>
