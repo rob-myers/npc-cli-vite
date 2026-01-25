@@ -8,7 +8,7 @@ import { Tty } from "@npc-cli/cli";
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { UiProps } from "@npc-cli/ui-sdk";
 
-export function Jsh(props: UiProps) {
+export default function Jsh(props: UiProps) {
   // 🚧 get sessionKey
   const jshMeta = props.meta;
   console.log({ jshMeta });

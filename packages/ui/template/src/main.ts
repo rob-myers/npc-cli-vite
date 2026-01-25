@@ -1,1 +1,6 @@
-export { Template as default } from "./index";
+import { defineUi } from "@npc-cli/ui-sdk";
+import { lazy } from "react";
+
+export default defineUi({
+  ui: lazy(() => import("./index")),
+});

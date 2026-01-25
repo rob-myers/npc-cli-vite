@@ -3,7 +3,7 @@ import { cn } from "@npc-cli/util";
 import { useContext } from "react";
 import TestMdx from "./pages/test-mdx.mdx";
 
-export function Blog(_props: UiProps) {
+export default function Blog(_props: UiProps) {
   const { theme } = useContext(UiContext);
   return (
     <div

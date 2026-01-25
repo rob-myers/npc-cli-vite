@@ -11,7 +11,7 @@ export const UiInstance = ({ id, meta }: UiInstanceProps) => {
     return () => uiStore.setState((draft) => void delete draft.metaById[id]);
   }, []);
 
-  const Ui = uiRegistry[meta.uiKey];
+  const Ui = uiRegistry[meta.uiKey].ui;
   return <Ui id={id} meta={meta} />;
 };
 

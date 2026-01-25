@@ -1,12 +1,6 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
-import {
-  UiInstance,
-  type UiRegistryKey,
-  uiBootstrapRegistry,
-  uiRegistry,
-  uiRegistryKeys,
-} from "@npc-cli/ui__registry";
+import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
 import type { UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
@@ -129,7 +123,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         const gridX = Math.floor(relativeX / gridItemWidth);
         const gridY = Math.floor(relativeY / gridItemHeight);
 
-        const ui = uiBootstrapRegistry[uiRegistryKey];
+        const ui = uiRegistry[uiRegistryKey].bootstrap;
 
         if (ui) {
           // further details needed for instantiation
@@ -279,7 +273,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                   key={uiRegistryKey}
                   data-ui-registry-key={uiRegistryKey}
                   className="hover:bg-white/20 first:rounded-t-md last:rounded-b-md not-last:border-b border-white/20 outline-black text-left tracking-widest"
-                  closeOnClick={!uiBootstrapRegistry[uiRegistryKey]}
+                  closeOnClick={!uiRegistry[uiRegistryKey].bootstrap}
                   onClick={state.onContextMenuItem}
                   onKeyDown={(e) => {
                     if (
@@ -289,14 +283,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                       e.key === "ArrowRight"
                     ) {
                       e.stopPropagation();
-                      if (uiBootstrapRegistry[uiRegistryKey]) {
+                      if (uiRegistry[uiRegistryKey].bootstrap) {
                         state.contextMenuPopoverHandle.open(e.currentTarget.children[0].id);
                         state.onContextMenuItem(e);
                       }
                     }
                   }}
                 >
-                  {uiBootstrapRegistry[uiRegistryKey] ? (
+                  {uiRegistry[uiRegistryKey].bootstrap ? (
                     <Popover.Trigger
                       className="w-full px-4 py-1.5 text-left cursor-pointer"
                       handle={state.contextMenuPopoverHandle}

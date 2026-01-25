@@ -1,3 +1,6 @@
-export * from "./index";
+import { defineUi } from "@npc-cli/ui-sdk";
+import { lazy } from "react";
 
-export { World as default } from "./index";
+export default defineUi({
+  ui: lazy(() => import("./index")),
+});
