@@ -270,7 +270,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 <div
                   key={uiMeta.layoutId}
                   data-item-id={uiMeta.layoutId}
-                  className="relative border"
+                  className="relative border border-on-background/20"
                 >
                   <Suspense fallback={<Spinner />}>
                     <UiInstance meta={uiMeta} />
