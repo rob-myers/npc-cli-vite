@@ -19,7 +19,7 @@ function RootComponent() {
   const { resolvedLocation } = useRouterState();
 
   return (
-    <div className="bg-background h-dvh">
+    <div className="bg-background h-svh">
       {resolvedLocation?.pathname === "/" && <PreloadGrid />}
       <Outlet />
       <TanStackRouterDevtools position="bottom-right" />
