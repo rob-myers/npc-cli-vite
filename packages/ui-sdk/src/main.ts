@@ -5,7 +5,6 @@ export * from "./UiError";
 export * from "./ui.store";
 
 export type UiProps = {
-  id: string; // 🚧 remove
   meta: UiInstanceMeta;
 };
 
