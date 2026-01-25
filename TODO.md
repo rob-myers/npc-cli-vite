@@ -72,6 +72,7 @@
   - ✅ fix ctrl-C for `poll`
   - ❌ BUG `echo foo | map 'x\n=>x'`
     - technically string does not define a valid js function so is interpreted as a string
+  - 🚧 STOP bug: appears initially in e.g. 3rd tty
 
 - ✅ normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
@@ -94,19 +95,20 @@
 - ✅ can reset layout from global
 - ✅ force grid height full
 
-- 🚧 tty should use sessionKey not layoutId
+- ✅ tty should use sessionKey not layoutId
   - ✅ ui context provides uiStore
   - ✅ every ui has respective meta `{ layoutId, uiKey }`
-  - 🚧 contextmenu can specify sessionKey
+  - ✅ contextmenu can specify sessionKey
     - ✅ ui has optional uiInstantatiorRegistry
     - ✅ Jsh has entry in uiInstantatiorRegistry
     - ✅ contextmenu shows respective ui
-    - 🚧 bootstrap ui enforces non-existing sessionKey `tty-{n}`
-  - 🚧 persisted layout can contain partial ui instance meta
+    - ✅ bootstrap ui enforces non-existing sessionKey `tty-{n}`
+  - ✅ unmount should remove uiConfig
+  - ✅ persisted layout can contain partial ui instance meta
 
 - ✅ avoid pinchzoom opening contextmenu
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
+  - 🚧 add react-three-fiber and import gltf
 
-- 🚧 add react-three-fiber and import gltf
