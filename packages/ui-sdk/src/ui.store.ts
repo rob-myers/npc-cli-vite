@@ -1,4 +1,5 @@
 import type { UiRegistryKey } from "@npc-cli/ui__registry";
+import z from "zod";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -26,3 +27,8 @@ export type UiInstanceMeta = {
   layoutId: string;
   uiKey: UiRegistryKey;
 };
+
+export const BaseUiMetaSchema = z.looseObject({
+  layoutId: z.string(),
+  uiKey: z.string(),
+});
