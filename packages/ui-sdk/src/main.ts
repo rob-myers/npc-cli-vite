@@ -1,6 +1,7 @@
 import type { UiInstanceMeta } from "./ui.store";
 
 export * from "./UiContext";
+export * from "./UiError";
 export * from "./ui.store";
 
 export type UiProps = {

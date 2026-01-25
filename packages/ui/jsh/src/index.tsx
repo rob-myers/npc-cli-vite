@@ -6,15 +6,14 @@ import { Tty } from "@npc-cli/cli";
  * - Example usage `import util`
  */
 import * as modules from "@npc-cli/cli/jsh/modules";
-import { BaseUiMetaSchema, type UiProps } from "@npc-cli/ui-sdk";
+import { BaseUiMetaSchema, UiError, type UiProps } from "@npc-cli/ui-sdk";
 import z from "zod";
 
 export default function Jsh(props: UiProps) {
   const meta = UiMetaSchema.safeParse(props.meta);
 
   if (!meta.success) {
-    // 🚧 generic
-    return <div className="bg-white text-red-500">Invalid Jsh Meta: {meta.error.message}</div>;
+    return <UiError uiKey="Jsh" zodError={meta.error} />;
   }
 
   return (
