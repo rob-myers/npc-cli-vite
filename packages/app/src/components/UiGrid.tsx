@@ -49,6 +49,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       preventTransition: true,
       resizing: false,
       toUi: { ...initialUiLayout.toUi },
+      visualViewportRect: null,
       addItem({ itemId, uiMeta, gridRect }) {
         state.toUi[itemId] = uiMeta;
         setLayouts({
@@ -171,6 +172,21 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       state.set({ preventTransition: false });
       layoutStore.setState({ ready: true });
     });
+
+    // Fix hidden ContextMenu on mobile keyboard
+    function onChangeVisualViewport() {
+      window.visualViewport &&
+        state.set({
+          visualViewportRect: {
+            x: 0,
+            y: 0,
+            width: window.visualViewport.width,
+            height: window.visualViewport.height,
+          },
+        });
+    }
+    window.addEventListener("resize", onChangeVisualViewport);
+    return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
   useImperativeHandle<GridApi, GridApi>(
@@ -263,7 +279,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           </div>
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
-          <ContextMenu.Positioner sticky>
+          <ContextMenu.Positioner collisionBoundary={state.visualViewportRect ?? undefined}>
             <ContextMenu.Popup
               className="flex flex-col rounded-md bg-black/60 text-white outline-black"
               data-context-menu-div
@@ -424,7 +440,8 @@ type State = {
   numTouches: number;
   preventTransition: boolean;
   resizing: boolean;
-  toUi: UiGridLayout["toUi"]; // 🚧 eliminate i.e. uiStore instead
+  toUi: UiGridLayout["toUi"];
+  visualViewportRect: null | { x: number; y: number; width: number; height: number };
   addItem(meta: {
     itemId: string;
     uiMeta: UiInstanceMeta;
