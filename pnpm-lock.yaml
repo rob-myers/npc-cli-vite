@@ -406,6 +406,9 @@ importers:
 
   packages/ui/template:
     dependencies:
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
       react:
         specifier: 'catalog:'
         version: 19.2.1
