@@ -223,7 +223,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const childDefs = useMemo(
     () =>
       layout.map((item) => ({
-        itemId: item.i,
         uiMeta: state.toUi[item.i],
         ui: uiRegistry[state.toUi[item.i]?.uiKey],
       })),
@@ -267,12 +266,16 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 layouts.current.lg = layout;
               }}
             >
-              {childDefs.map((def) => (
-                <div key={def.itemId} data-item-id={def.itemId} className="relative border">
+              {childDefs.map(({ uiMeta }) => (
+                <div
+                  key={uiMeta.layoutId}
+                  data-item-id={uiMeta.layoutId}
+                  className="relative border"
+                >
                   <Suspense fallback={<Spinner />}>
-                    <UiInstance meta={def.uiMeta} />
+                    <UiInstance meta={uiMeta} />
                   </Suspense>
-                  <UiInstanceMenu id={def.itemId} state={state} />
+                  <UiInstanceMenu id={uiMeta.layoutId} state={state} />
                 </div>
               ))}
             </GridLayout>
