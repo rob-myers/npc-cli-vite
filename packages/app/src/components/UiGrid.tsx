@@ -263,7 +263,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           </div>
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
-          <ContextMenu.Positioner>
+          <ContextMenu.Positioner sticky>
             <ContextMenu.Popup
               className="flex flex-col rounded-md bg-black/60 text-white outline-black"
               data-context-menu-div
