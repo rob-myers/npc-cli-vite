@@ -34,6 +34,7 @@
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-router-devtools": "catalog:",
     "@types/react-beforeunload": "catalog:",
+    "@vitejs/plugin-basic-ssl": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
     "globals": "catalog:",
     "tailwindcss": "catalog:"
