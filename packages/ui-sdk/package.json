@@ -11,6 +11,7 @@
     "@npc-cli/util": "workspace:^",
     "immer": "catalog:",
     "react": "catalog:",
+    "zod": "catalog:",
     "zustand": "catalog:"
   },
   "devDependencies": {
