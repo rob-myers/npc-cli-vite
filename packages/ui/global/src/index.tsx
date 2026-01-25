@@ -2,7 +2,7 @@ import { themeApi } from "@npc-cli/theme";
 import { UiContext } from "@npc-cli/ui-sdk";
 import { useContext } from "react";
 
-export function Global() {
+export default function Global() {
   const { layoutApi } = useContext(UiContext);
 
   return (

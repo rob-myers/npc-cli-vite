@@ -1,19 +1,17 @@
-import type { UiBootstrapProps, UiProps } from "@npc-cli/ui-sdk";
-import { lazy } from "react";
+import Blog from "@npc-cli/ui__blog";
+import Global from "@npc-cli/ui__global";
+import Jsh from "@npc-cli/ui__jsh";
+import Template from "@npc-cli/ui__template";
+import World from "@npc-cli/ui__world";
+import type { UiPackageDef } from "@npc-cli/ui-sdk";
 
 export const uiRegistry = {
-  Blog: lazy(() => import("@npc-cli/ui__blog")),
-  Global: lazy(() => import("@npc-cli/ui__global")),
-  Jsh: lazy(() => import("@npc-cli/ui__jsh")),
-  Template: lazy(() => import("@npc-cli/ui__template")),
-  World: lazy(() => import("@npc-cli/ui__world")),
-} satisfies Record<string, React.LazyExoticComponent<(props: UiProps) => React.ReactNode>>;
-
-export const uiBootstrapRegistry: Partial<
-  Record<UiRegistryKey, React.LazyExoticComponent<(props: UiBootstrapProps) => React.ReactNode>>
-> = {
-  Jsh: lazy(() => import("@npc-cli/ui__jsh/bootstrap")),
-};
+  Blog,
+  Global,
+  Jsh,
+  Template,
+  World,
+} satisfies Record<string, UiPackageDef>;
 
 export type UiRegistryKey = keyof typeof uiRegistry;
 
