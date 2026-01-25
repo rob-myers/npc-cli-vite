@@ -13,7 +13,7 @@ export function UiError({
       <h3 className="p-1">@{uiKey}: Invalid Meta</h3>
       <div className="text-sm bg-white/50">
         {Object.entries(z.flattenError(zodError).fieldErrors).map(([fieldName, errorTexts]) => (
-          <div key={fieldName} className="border p-2">
+          <div key={fieldName} className="border p-2 italic">
             <strong>{fieldName}:</strong>{" "}
             {errorTexts?.map((errorText) => (
               <div key={errorText} className="border p-1">
