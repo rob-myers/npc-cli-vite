@@ -270,7 +270,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {childDefs.map((def) => (
                 <div key={def.itemId} data-item-id={def.itemId} className="relative border">
                   <Suspense fallback={<Spinner />}>
-                    <UiInstance id={def.itemId} meta={def.uiMeta} />
+                    <UiInstance meta={def.uiMeta} />
                   </Suspense>
                   <UiInstanceMenu id={def.itemId} state={state} />
                 </div>
