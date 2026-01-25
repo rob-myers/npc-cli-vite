@@ -21,7 +21,6 @@ export default function Jsh(props: UiProps) {
     <div className="relative overflow-hidden h-full bg-black p-1 flex items-center justify-center">
       <Tty
         key="my-test-tty"
-        // sessionKey="tty-0"
         sessionKey={meta.data.sessionKey}
         setTabsEnabled={() => {}}
         updateTabMeta={() => {}}
@@ -39,5 +38,5 @@ export default function Jsh(props: UiProps) {
 
 const UiMetaSchema = z.object({
   ...BaseUiMetaSchema.shape,
-  sessionKey: z.string(),
+  sessionKey: z.templateLiteral(["tty-", z.number()]),
 });
