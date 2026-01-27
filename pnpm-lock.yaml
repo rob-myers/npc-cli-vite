@@ -436,6 +436,9 @@ importers:
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
       react:
         specifier: 'catalog:'
         version: 19.2.1
