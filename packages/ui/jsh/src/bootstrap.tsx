@@ -28,6 +28,7 @@ export default function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
       <label className="flex border p-0.5 w-32">
         <input
           type="text"
+          autoCorrect="off"
           className={cn("w-full p-1 border border-black/30 invalid:bg-red-400/30 outline-black")}
           placeholder="sessionKey"
           onChange={(e) => state.set({ sessionKey: e.currentTarget.value })}
