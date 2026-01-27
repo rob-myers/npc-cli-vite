@@ -57,3 +57,7 @@ We use it to generate WASM (https://tinygo.org/docs/guides/webassembly/) followi
 # generate packages/parse-sh/main.wasm with current structs
 pnpm -F @npc-cli/parse-sh build:wasm
 ```
+
+# Gotchas
+
+Confusing type errors arise when auto-added imports reference other packages via relative paths.

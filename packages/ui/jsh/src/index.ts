@@ -4,6 +4,6 @@ import { lazy } from "react";
 import JshBootstrap from "./bootstrap";
 
 export default defineUi({
-  ui: lazy(() => import("./index")),
+  ui: lazy(() => import("./Jsh")),
   bootstrap: JshBootstrap,
 });

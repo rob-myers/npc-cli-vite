@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/main.ts",
+    ".": "./src/index.ts",
     "./types": {
-      "types": "./src/main.ts"
+      "types": "./src/index.ts"
     }
   },
   "scripts": {},

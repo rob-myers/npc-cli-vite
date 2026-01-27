@@ -1,7 +1,7 @@
 import { UiContext, type UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { useEffectNonStrict } from "@npc-cli/util";
 import { useContext } from "react";
-import { uiRegistry } from "./main";
+import { uiRegistry } from "./index";
 
 export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
   const { uiStore } = useContext(UiContext);
