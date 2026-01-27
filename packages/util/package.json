@@ -9,6 +9,8 @@
   },
   "scripts": {},
   "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "clsx": "catalog:",
     "debounce": "^3.0.0",

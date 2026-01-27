@@ -1,3 +1,5 @@
+export * from "./components/BasicPopover";
+export * from "./components/PopoverArrow";
 export * from "./components/Spinner";
 export * from "./ExhaustiveError";
 export * from "./hooks/use-effect-non-strict";
