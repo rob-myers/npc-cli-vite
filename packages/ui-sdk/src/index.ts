@@ -1,3 +1,4 @@
+import type z from "zod";
 import type { UiInstanceMeta } from "./ui.store";
 
 export * from "./UiContext";
@@ -15,6 +16,7 @@ export type UiBootstrapProps = {
 export type UiPackageDef = {
   ui: React.LazyExoticComponent<(props: UiProps) => React.ReactNode>;
   bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
+  schema: z.ZodType<UiInstanceMeta>;
 };
 
 export const defineUi = <T extends UiPackageDef>(uiDef: T) => uiDef;
