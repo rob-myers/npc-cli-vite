@@ -14,7 +14,7 @@ export type UiBootstrapProps = {
 
 export type UiPackageDef = {
   ui: React.LazyExoticComponent<(props: UiProps) => React.ReactNode>;
-  bootstrap?: (props: UiBootstrapProps) => React.ReactNode;
+  bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
 };
 
-export const defineUi = (uiDef: UiPackageDef) => uiDef;
+export const defineUi = <T extends UiPackageDef>(uiDef: T) => uiDef;

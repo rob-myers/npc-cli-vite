@@ -3,4 +3,5 @@ import { lazy } from "react";
 
 export default defineUi({
   ui: lazy(() => import("./Template")),
+  bootstrap: null,
 });

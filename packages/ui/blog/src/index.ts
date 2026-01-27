@@ -5,4 +5,5 @@ import "./mdx.d";
 
 export default defineUi({
   ui: lazy(() => import("./Blog")),
+  bootstrap: null,
 });
