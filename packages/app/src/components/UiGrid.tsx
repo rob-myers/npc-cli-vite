@@ -332,7 +332,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       <Popover.Root handle={state.contextMenuPopoverHandle}>
         <Popover.Portal>
           <Popover.Positioner side="right" sideOffset={8}>
-            <Popover.Popup className="bg-white">
+            <Popover.Popup initialFocus={false} className="bg-white">
               <Popover.Arrow
                 className={cn(
                   "flex",
