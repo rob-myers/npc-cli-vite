@@ -4,5 +4,5 @@ import { lazy } from "react";
 import "./mdx.d";
 
 export default defineUi({
-  ui: lazy(() => import("./index")),
+  ui: lazy(() => import("./Blog")),
 });
