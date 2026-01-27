@@ -10,8 +10,8 @@ import { BaseUiMetaSchema, UiError, type UiProps } from "@npc-cli/ui-sdk";
 import z from "zod";
 
 export default function Jsh(props: UiProps) {
+  // 🚧 should happen generically
   const meta = UiMetaSchema.safeParse(props.meta);
-
   if (!meta.success) {
     return <UiError uiKey="Jsh" zodError={meta.error} />;
   }

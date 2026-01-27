@@ -124,12 +124,16 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         const gridX = Math.floor(relativeX / gridItemWidth);
         const gridY = Math.floor(relativeY / gridItemHeight);
 
-        const ui = uiRegistry[uiRegistryKey].bootstrap;
+        const def = uiRegistry[uiRegistryKey];
 
-        if (ui) {
+        if (def.bootstrap) {
           // further details needed for instantiation
           state.set({
-            contextMenuPopoverUi: { uiKey: uiRegistryKey, ui, point: { x: gridX, y: gridY } },
+            contextMenuPopoverUi: {
+              uiKey: uiRegistryKey,
+              ui: def.bootstrap,
+              point: { x: gridX, y: gridY },
+            },
           });
         } else {
           const itemId = `ui-${crypto.randomUUID()}`;

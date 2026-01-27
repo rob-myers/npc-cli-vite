@@ -3,4 +3,5 @@ import { lazy } from "react";
 
 export default defineUi({
   ui: lazy(() => import("./World")),
+  bootstrap: null,
 });

@@ -111,6 +111,8 @@
 - ✅ popover confirm for ui close
 - ✅ popover confirm for Global reset
 
+- 🚧 uis have schema validated in `<UiInstance>` inducing type of `props.meta`
+
 - 🚧 packages/ui/world
   - ✅ create dummy package
   - 🚧 add react-three-fiber and import gltf
