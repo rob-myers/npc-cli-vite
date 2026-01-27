@@ -1,4 +1,4 @@
-import { cn } from "../tailwind-cn";
+import { cn } from "../service/tailwind-cn";
 
 /**
  * Centered loading spinner.
