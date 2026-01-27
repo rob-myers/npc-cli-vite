@@ -9,6 +9,7 @@
   "dependencies": {
     "@npc-cli/theme": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/util": "workspace:^",
     "react": "catalog:",
     "react-dom": "catalog:"
   }

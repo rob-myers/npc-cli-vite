@@ -109,7 +109,7 @@
 - ✅ avoid pinchzoom opening contextmenu
 
 - ✅ popover confirm for ui close
-- 🚧 popover confirm for Global reset
+- ✅ popover confirm for Global reset
 
 - 🚧 packages/ui/world
   - ✅ create dummy package

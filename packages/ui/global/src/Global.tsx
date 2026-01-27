@@ -1,5 +1,6 @@
 import { themeApi } from "@npc-cli/theme";
 import { UiContext } from "@npc-cli/ui-sdk";
+import { BasicPopover } from "@npc-cli/util";
 import { useContext } from "react";
 
 export default function Global() {
@@ -16,15 +17,21 @@ export default function Global() {
           {/* label is next theme */}
           {themeApi.getOther()}
         </button>
-        <button
-          type="button"
-          className="cursor-pointer border rounded px-4 py-1 bg-button-background"
-          onPointerDown={() => {
-            layoutApi.resetLayout();
-          }}
+        <BasicPopover
+          className="border rounded px-4 py-1 bg-button-background"
+          popoverChildren={
+            <button
+              type="button"
+              className="cursor-pointer"
+              onPointerDown={() => layoutApi.resetLayout()}
+            >
+              confirm
+            </button>
+          }
+          side="bottom"
         >
           reset
-        </button>
+        </BasicPopover>
       </div>
     </div>
   );
