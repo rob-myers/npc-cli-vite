@@ -352,7 +352,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         <Popover.Portal>
           <Popover.Positioner side="right" sideOffset={8}>
             <Popover.Popup initialFocus={false}>
-              <PopoverArrow />
+              <PopoverArrow arrowBorderFill="#ffffff" />
               <Popover.Viewport className="bg-black">
                 {state.contextMenuPopoverUi && (
                   <div onClick={(e) => e.stopPropagation()}>
