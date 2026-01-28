@@ -1,11 +1,10 @@
-import type { UiProps } from "@npc-cli/ui-sdk";
 import { useStateRef } from "@npc-cli/util";
+import type { WorldUiMeta } from "./schema";
 import { WorldContext } from "./world-context";
 
-export default function World(_props: UiProps) {
+export default function World(props: { meta: WorldUiMeta }) {
   const state = useStateRef<State>(() => ({
-    // 🚧 derived from props
-    key: "world-0",
+    key: props.meta.worldKey,
     disabled: false,
   }));
 
@@ -21,6 +20,6 @@ export default function World(_props: UiProps) {
 }
 
 export type State = {
-  key: `world-${number}`;
+  key: WorldUiMeta["worldKey"];
   disabled: boolean;
 };
