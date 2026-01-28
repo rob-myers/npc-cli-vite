@@ -1,6 +1,7 @@
 import type z from "zod";
 import type { UiInstanceMeta } from "./ui.store";
 
+export * from "./define-ui";
 export * from "./UiContext";
 export * from "./UiError";
 export * from "./ui.store";
@@ -14,9 +15,8 @@ export type UiBootstrapProps = {
 };
 
 export type UiPackageDef = {
-  ui: React.LazyExoticComponent<(props: UiProps) => React.ReactNode>;
+  // biome-ignore lint/suspicious/noExplicitAny: props will be validated by zod
+  ui: React.LazyExoticComponent<(props: any) => React.ReactNode>;
   bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
   schema: z.ZodType<UiInstanceMeta>;
 };
-
-export const defineUi = <T extends UiPackageDef>(uiDef: T) => uiDef;
