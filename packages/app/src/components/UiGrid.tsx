@@ -456,20 +456,18 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
       </button>
 
       <BasicPopover
-        popoverChildren={
-          <button
-            type="button"
-            className="cursor-pointer"
-            onPointerDown={state.onClickItemDelete}
-            data-item-id={id}
-          >
-            confirm
-          </button>
-        }
+        trigger={<XIcon data-icon-type="remove" weight="duotone" className="grayscale" />}
         sideOffset={4}
         side="right"
       >
-        <XIcon data-icon-type="remove" weight="duotone" className="grayscale" />
+        <button
+          type="button"
+          className="cursor-pointer"
+          onPointerDown={state.onClickItemDelete}
+          data-item-id={id}
+        >
+          confirm
+        </button>
       </BasicPopover>
     </div>
   );
