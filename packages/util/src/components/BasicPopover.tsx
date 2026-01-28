@@ -1,5 +1,5 @@
 import { Popover } from "@base-ui/react/popover";
-import { type PropsWithChildren, useState } from "react";
+import type { PropsWithChildren } from "react";
 import { preventReactGridDragClassName } from "../const";
 import { cn } from "../service/tailwind-cn";
 import { PopoverArrow } from "./PopoverArrow";
