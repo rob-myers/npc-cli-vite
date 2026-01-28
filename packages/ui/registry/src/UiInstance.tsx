@@ -2,6 +2,7 @@ import { UiContext, type UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { useEffectNonStrict } from "@npc-cli/util";
 import { useContext } from "react";
 import { uiRegistry } from "./index";
+import { UiErrorBoundary } from "./UiErrorBoundary";
 
 export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
   const { uiStore } = useContext(UiContext);
@@ -13,5 +14,9 @@ export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
   }, []);
 
   const def = uiRegistry[meta.uiKey];
-  return <def.ui meta={meta} />;
+  return (
+    <UiErrorBoundary>
+      <def.ui meta={meta} />
+    </UiErrorBoundary>
+  );
 };
