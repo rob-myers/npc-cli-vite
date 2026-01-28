@@ -14,23 +14,16 @@ export default function Global() {
           className="cursor-pointer border rounded px-4 py-1 bg-button-background"
           onPointerDown={themeApi.setOther}
         >
-          {/* label is next theme */}
           {themeApi.getOther()}
         </button>
         <BasicPopover
           className="border rounded px-4 py-1 bg-button-background"
-          popoverChildren={
-            <button
-              type="button"
-              className="cursor-pointer"
-              onPointerDown={() => layoutApi.resetLayout()}
-            >
-              confirm
-            </button>
-          }
+          trigger={"reset"}
           side="bottom"
         >
-          reset
+          <button type="button" className="cursor-pointer" onClick={() => layoutApi.resetLayout()}>
+            confirm
+          </button>
         </BasicPopover>
       </div>
     </div>
