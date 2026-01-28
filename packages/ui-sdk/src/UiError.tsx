@@ -9,11 +9,11 @@ export function UiError({
   zodError: z.ZodError<Record<string, unknown>>;
 }) {
   return (
-    <div className="h-full overflow-auto flex flex-col gap-1 text-black">
+    <div className="h-full overflow-auto flex flex-col gap-1 text-black text-sm">
       <h3 className="p-1 bg-white/70 border rounded-md">
-        <strong>{uiKey}</strong> has invalid Meta
+        <strong>{uiKey}</strong> meta invalid
       </h3>
-      <div className="text-sm bg-white/70 border rounded-xl">
+      <div className="bg-white/70 border rounded-lg">
         {Object.entries(z.flattenError(zodError).fieldErrors).map(([fieldName, errorTexts]) => (
           <div key={fieldName} className="p-2 italic">
             <strong>{fieldName}:</strong>{" "}
