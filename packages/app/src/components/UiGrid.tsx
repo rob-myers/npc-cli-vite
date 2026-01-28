@@ -442,7 +442,7 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
   return (
     <div
       className={cn(
-        "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg",
+        "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg backdrop-brightness-140",
         "flex text-teal-500 bg-on-background/5 rounded",
       )}
     >
