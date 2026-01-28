@@ -3,6 +3,7 @@ import { Popover } from "@base-ui/react/popover";
 import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
 import type { UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
 import {
+  allowReactGridDragClassName,
   BasicPopover,
   cn,
   PopoverArrow,
@@ -11,7 +12,7 @@ import {
   useStateRef,
 } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { LockIcon, XIcon } from "@phosphor-icons/react";
+import { LayoutIcon, LockIcon, XIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
@@ -269,6 +270,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               width={width}
               dragConfig={{
                 cancel: `.${preventReactGridDragClassName}`,
+                handle: `.${allowReactGridDragClassName}`,
                 // threshold: 10, // Touch doesn't work
               }}
               gridConfig={state.gridConfig}
@@ -280,6 +282,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               onLayoutChange={(layout) => {
                 layouts.current.lg = layout;
               }}
+              // compactor={noCompactor}
             >
               {childDefs.map(({ uiMeta }) => (
                 <div
@@ -454,17 +457,17 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
     <div
       className={cn(
         "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg backdrop-brightness-140",
-        "flex text-teal-500 bg-on-background/5 rounded",
+        "flex bg-on-background/5 rounded",
       )}
     >
-      <button
+      {/* <button
         type="button"
         data-item-id={id}
-        className={cn("cursor-pointer p-1", !state.isLocked[id] && "grayscale")}
+        className={cn("cursor-pointer p-1 text-teal-500", !state.isLocked[id] && "grayscale")}
         onPointerDown={state.onClickItemLock}
       >
         <LockIcon data-icon-type="lock" weight="duotone" />
-      </button>
+      </button> */}
 
       <BasicPopover
         trigger={<XIcon data-icon-type="remove" weight="duotone" className="grayscale" />}
@@ -480,6 +483,15 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
           confirm
         </button>
       </BasicPopover>
+
+      <button
+        type="button"
+        data-item-id={id}
+        className={cn(allowReactGridDragClassName, "cursor-move p-1")}
+        // onPointerDown={state.onClickItemLock}
+      >
+        <LayoutIcon data-icon-type="layout" weight="duotone" />
+      </button>
     </div>
   );
 }
