@@ -2,7 +2,14 @@ import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
 import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
 import type { UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
-import { BasicPopover, cn, PopoverArrow, Spinner, useStateRef } from "@npc-cli/util";
+import {
+  BasicPopover,
+  cn,
+  PopoverArrow,
+  preventReactGridDragClassName,
+  Spinner,
+  useStateRef,
+} from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LockIcon, XIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
@@ -260,6 +267,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 "[&_.react-grid-placeholder]:bg-gray-500!",
               )}
               width={width}
+              dragConfig={{
+                cancel: `.${preventReactGridDragClassName}`,
+                // threshold: 10, // Touch doesn't work
+              }}
               gridConfig={state.gridConfig}
               layout={layout}
               onResizeStart={state.onResizeStart}
