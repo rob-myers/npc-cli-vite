@@ -9,8 +9,14 @@
   "dependencies": {
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
+    "@react-three/drei": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@types/three": "catalog:",
+    "maath": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "zod": "catalog:"
+    "three": "catalog:",
+    "zod": "catalog:",
+    "zustand": "catalog:"
   }
 }
