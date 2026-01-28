@@ -3,7 +3,7 @@ import type { UiInstanceMeta } from "./ui.store";
 
 export * from "./define-ui";
 export * from "./UiContext";
-export * from "./UiError";
+export * from "./UiParseError";
 export * from "./ui.store";
 
 export type UiProps = {
