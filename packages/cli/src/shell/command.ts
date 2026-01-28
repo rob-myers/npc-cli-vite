@@ -30,7 +30,7 @@ import {
   redirectNode,
   type VarDeviceMode,
 } from "./io";
-import jsFunctionToShellFunction from "./js-to-shell-function";
+import { jsFunctionToShellFunction } from "./js-to-shell-function";
 import { cloneParsed, type NamedFunction, parseService } from "./parse";
 import { queryClientApi } from "./query-client";
 import { type ProcessMeta, type Session, sessionApi } from "./session";

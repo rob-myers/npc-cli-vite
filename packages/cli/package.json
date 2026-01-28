@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./jsh/modules": "./src/jsh/modules.js",
+    "./jsh/scripts": "./src/jsh/scripts.js",
     "./legacy/npc.d.ts": {
       "types": "./src/legacy/npc.d.ts"
     }
