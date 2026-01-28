@@ -2,23 +2,23 @@ import { type UiBootstrapProps, UiContext } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 
-export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
+export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode {
   const { uiStore } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     invalid: false,
-    sessionKey: "tty-0",
+    worldKey: "world-0",
     onClickCreate() {
       if (state.invalid) return;
 
       for (const [_, meta] of Object.entries(uiStore.getState().metaById)) {
-        if (meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey) {
-          return alert(`${"Jsh"}: sessionKey ${state.sessionKey} already exists.`);
+        if (meta.uiKey === "World" && meta.worldKey === state.worldKey) {
+          return alert(`${"World"}: worldKey ${state.worldKey} already exists.`);
         }
       }
 
       props.addInstance({
-        sessionKey: state.sessionKey,
+        worldKey: state.worldKey,
       });
     },
   }));
@@ -30,11 +30,11 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
           type="text"
           autoCorrect="off"
           className={cn("w-full p-1 border border-black/30 invalid:bg-red-400/30 outline-black")}
-          placeholder="sessionKey"
-          onChange={(e) => state.set({ sessionKey: e.currentTarget.value })}
+          placeholder="worldKey"
+          onChange={(e) => state.set({ worldKey: e.currentTarget.value })}
           onInput={(e) => state.set({ invalid: !e.currentTarget.checkValidity() })}
-          pattern="tty-[0-9]+"
-          value={state.sessionKey}
+          pattern="world-[0-9]+"
+          value={state.worldKey}
           onKeyDown={(e) => e.key === "Enter" && state.onClickCreate()}
         />
       </label>
