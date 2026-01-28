@@ -28,7 +28,7 @@ export class UiErrorBoundary extends Component<
           {this.state.error.message}
         </pre>
         <pre className="overflow-auto px-2 whitespace-pre-wrap font-mono text-xs text-amber-200 leading-relaxed tracking-wide">
-          {jsStringify(this.props.meta, true)}
+          {jsStringify(this.props.meta)}
         </pre>
       </div>
     );
