@@ -21,7 +21,11 @@ export default function Global() {
           trigger={"reset"}
           side="bottom"
         >
-          <button type="button" className="cursor-pointer" onClick={() => layoutApi.resetLayout()}>
+          <button
+            type="button"
+            className="cursor-pointer"
+            onPointerDown={() => layoutApi.resetLayout()}
+          >
             confirm
           </button>
         </BasicPopover>
