@@ -13,7 +13,6 @@ import {
 } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
-import { motion } from "motion/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
@@ -357,34 +356,29 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 {state.contextMenuPopoverUi && (
                   <div onClick={(e) => e.stopPropagation()}>
                     <Suspense fallback={<Spinner />}>
-                      <motion.div // 🚧 try css transition instead
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1, transition: { duration: 0.5 } }}
-                      >
-                        <state.contextMenuPopoverUi.ui
-                          addInstance={(partialUiMeta) => {
-                            if (!state.contextMenuPopoverUi) return;
+                      <state.contextMenuPopoverUi.ui
+                        addInstance={(partialUiMeta) => {
+                          if (!state.contextMenuPopoverUi) return;
 
-                            const itemId = `ui-${crypto.randomUUID()}`;
+                          const itemId = `ui-${crypto.randomUUID()}`;
 
-                            state.addItem({
-                              itemId,
-                              uiMeta: {
-                                ...partialUiMeta,
-                                layoutId: itemId,
-                                uiKey: state.contextMenuPopoverUi.uiKey,
-                              },
-                              gridRect: {
-                                x: state.contextMenuPopoverUi.point.x,
-                                y: state.contextMenuPopoverUi.point.y,
-                                width: 2,
-                                height: 2,
-                              },
-                            });
-                            state.closeContextMenu();
-                          }}
-                        />
-                      </motion.div>
+                          state.addItem({
+                            itemId,
+                            uiMeta: {
+                              ...partialUiMeta,
+                              layoutId: itemId,
+                              uiKey: state.contextMenuPopoverUi.uiKey,
+                            },
+                            gridRect: {
+                              x: state.contextMenuPopoverUi.point.x,
+                              y: state.contextMenuPopoverUi.point.y,
+                              width: 2,
+                              height: 2,
+                            },
+                          });
+                          state.closeContextMenu();
+                        }}
+                      />
                     </Suspense>
                   </div>
                 )}
