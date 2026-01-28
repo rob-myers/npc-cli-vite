@@ -32,7 +32,6 @@ export function Tty(props: Props) {
       bounds,
       canContOrStop: null as null | "CONT" | "STOP",
       disabled: props.disabled,
-      inputOnFocus: undefined as undefined | { input: string; cursor: number },
       isTouchDevice: isTouchDevice(),
       /** The process ids we actually paused, so we can resume them  */
       pausedPids: new Set<number>(),
@@ -95,13 +94,6 @@ export function Tty(props: Props) {
           }
         }
       },
-      onFocus() {
-        if (baseRef.current && state.inputOnFocus !== undefined) {
-          baseRef.current.xterm.setInput(state.inputOnFocus.input);
-          baseRef.current.xterm.setCursor(state.inputOnFocus.cursor);
-          state.inputOnFocus = undefined;
-        }
-      },
       pauseByPtags() {
         if (!baseRef.current) return;
         const pids = sessionApi.kill(props.sessionKey, [], { byPtags: true, STOP: true });
@@ -122,20 +114,7 @@ export function Tty(props: Props) {
         state.update();
       },
       async resize() {
-        if (!baseRef.current) return;
-        if (state.isTouchDevice) {
-          state.fitDebounced();
-        } else {
-          // Hide input to prevent issues when screen gets too small
-          const input = baseRef.current.xterm.getInput();
-          const cursor = baseRef.current.xterm.getCursor();
-          if (input && baseRef.current.xterm.isPromptReady()) {
-            baseRef.current.xterm.clearInput();
-            state.inputOnFocus = { input, cursor };
-            baseRef.current.xterm.xterm.blur(); // Must blur
-          }
-          state.fitDebounced();
-        }
+        if (baseRef.current) state.fitDebounced();
       },
       resumeByPtags() {
         if (!baseRef.current) return;
@@ -242,14 +221,11 @@ export function Tty(props: Props) {
     });
 
     state.resize();
-    xterm.textarea?.addEventListener("focus", state.onFocus);
-
     const cleanupExternalMsgs = session.ttyShell.io.handleWriters(
       (msg) => msg?.key === "external" && state.handleExternalMsg(msg),
     );
 
     return () => {
-      xterm.textarea?.removeEventListener("focus", state.onFocus);
       cleanupExternalMsgs();
     };
   }, [baseRef.current?.session]);
