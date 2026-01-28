@@ -15,7 +15,7 @@ export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
 
   const def = uiRegistry[meta.uiKey];
   return (
-    <UiErrorBoundary>
+    <UiErrorBoundary meta={meta}>
       <def.ui meta={meta} />
     </UiErrorBoundary>
   );
