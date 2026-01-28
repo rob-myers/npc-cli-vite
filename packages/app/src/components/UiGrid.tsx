@@ -12,7 +12,7 @@ import {
   useStateRef,
 } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { LayoutIcon, LockIcon, XIcon } from "@phosphor-icons/react";
+import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
