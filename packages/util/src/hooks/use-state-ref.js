@@ -34,6 +34,9 @@ export function useStateRef(initializer, opts = {}) {
         Object.assign(state, partial);
         update();
       };
+      state.ref = (key, functionRef) => (value) =>
+        void ((state[key] = value === null ? /** @type {*} */ (null) : value),
+        functionRef?.(value));
     } else {
       /**
        * Either HMR or `opts.deps` has changed.
@@ -63,7 +66,7 @@ export function useStateRef(initializer, opts = {}) {
       }
 
       for (const k of Object.keys(state)) {
-        if (!(k in newInit) && k !== "_prevFn" && k !== "update" && k !== "set") {
+        if (!(k in newInit) && k !== "_prevFn" && k !== "update" && k !== "set" && k !== "ref") {
           // console.log({ deleting: k })
           delete state[/** @type {keyof State} */ (k)];
         }
@@ -95,6 +98,10 @@ export function useStateRef(initializer, opts = {}) {
  *   _prevFn?: string;
  *   set(partial: Partial<State>): void;
  *   update(): void;
+ *   ref<Key extends keyof State, T extends State[Key]>(
+ *      key: Key,
+ *      functionRef?: (value: T | null) => void,
+ *   ): ((value: T | null) => void);
  * }} UseStateRef
  * The state returned by `useStateRef`, which includes a special function `ref`.
  */
