@@ -445,6 +445,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
 
   packages/util:
     dependencies:
