@@ -456,19 +456,10 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
   return (
     <div
       className={cn(
-        "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg backdrop-brightness-140",
-        "flex bg-on-background/5 rounded",
+        "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg backdrop-brightness-120",
+        "flex rounded text-on-background bg-background/80",
       )}
     >
-      {/* <button
-        type="button"
-        data-item-id={id}
-        className={cn("cursor-pointer p-1 text-teal-500", !state.isLocked[id] && "grayscale")}
-        onPointerDown={state.onClickItemLock}
-      >
-        <LockIcon data-icon-type="lock" weight="duotone" />
-      </button> */}
-
       <BasicPopover
         trigger={<XIcon data-icon-type="remove" weight="duotone" className="grayscale" />}
         sideOffset={4}
@@ -488,7 +479,6 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
         type="button"
         data-item-id={id}
         className={cn(allowReactGridDragClassName, "cursor-move p-1")}
-        // onPointerDown={state.onClickItemLock}
       >
         <LayoutIcon data-icon-type="layout" weight="duotone" />
       </button>
