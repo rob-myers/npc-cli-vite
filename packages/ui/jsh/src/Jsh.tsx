@@ -7,6 +7,7 @@ import { Tty } from "@npc-cli/cli";
  */
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { JshUiMeta } from ".";
+import { shellFunctionFiles } from "./sources";
 
 export default function Jsh(props: { meta: JshUiMeta }) {
   return (
@@ -21,8 +22,9 @@ export default function Jsh(props: { meta: JshUiMeta }) {
         tabKey="my-tab-key"
         onKey={() => {}}
         modules={modules}
-        shFiles={{}}
-        profile={`import util\n`}
+        shFiles={shellFunctionFiles}
+        // can also `import util`
+        profile={`source /etc/util.sh\nsource /etc/util.js.sh`}
       />
     </div>
   );

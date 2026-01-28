@@ -72,6 +72,7 @@
   - ✅ fix ctrl-C for `poll`
   - ❌ BUG `echo foo | map 'x\n=>x'`
     - technically string does not define a valid js function so is interpreted as a string
+  - ✅ Tty has /etc/{util.sh,util.js.sh}
   - 🚧 STOP bug: appears initially in e.g. 3rd tty
 
 - ✅ normalize tsconfigs like bz-frontend
@@ -111,7 +112,7 @@
 - ✅ popover confirm for ui close
 - ✅ popover confirm for Global reset
 
-- 🚧 uis have schema validated in `<UiInstance>` inducing type of `props.meta`
+- ✅ uis have schema validated in `<UiInstance>` inducing type of `props.meta`
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
