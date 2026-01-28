@@ -116,4 +116,6 @@
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
-  - 🚧 add react-three-fiber and import gltf
+  - ✅ add react-three-fiber
+  - 🚧 can drag using handle (?)
+  - 🚧 import and view gltf
