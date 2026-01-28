@@ -117,4 +117,3 @@
 - 🚧 packages/ui/world
   - ✅ create dummy package
   - 🚧 add react-three-fiber and import gltf
-
