@@ -6,7 +6,7 @@ import { Tty } from "@npc-cli/cli";
  * - Example usage `import util`
  */
 import * as modules from "@npc-cli/cli/jsh/modules";
-import type { JshUiMeta } from ".";
+import type { JshUiMeta } from "./schema";
 import { shellFunctionFiles } from "./sources";
 
 export default function Jsh(props: { meta: JshUiMeta }) {
