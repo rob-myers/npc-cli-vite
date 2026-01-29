@@ -1,7 +1,7 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { Box, type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RenderProps, type RootState } from "@react-three/fiber";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { CameraControls } from "./CameraControls";
 import type { CameraControls as BaseCameraControls } from "./camera-controls";
 import { WorldContext } from "./world-context";
@@ -44,6 +44,11 @@ export function WorldView() {
       return w.disabled ? "demand" : "always";
     },
   }));
+
+  useEffect(() => {
+    // Force initial render to show Stats
+    state.update();
+  }, []);
 
   return (
     <Canvas
