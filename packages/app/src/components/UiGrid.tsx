@@ -194,7 +194,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             x: 0,
             y: 0,
             width: window.visualViewport.width,
-            height: window.visualViewport.height,
+            height: window.visualViewport.height + 128,
           },
         });
     }
