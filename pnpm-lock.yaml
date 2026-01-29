@@ -430,6 +430,9 @@ importers:
       '@npc-cli/ui__jsh':
         specifier: workspace:^
         version: link:../jsh
+      '@npc-cli/ui__tabs':
+        specifier: workspace:^
+        version: link:../tabs
       '@npc-cli/ui__template':
         specifier: workspace:^
         version: link:../template
