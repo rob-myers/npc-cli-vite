@@ -1,7 +1,7 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
 import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
-import type { UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
+import type { UiBootstrapProps, UiContextValue, UiInstanceMeta } from "@npc-cli/ui-sdk";
 import {
   allowReactGridDragClassName,
   BasicPopover,
@@ -11,7 +11,6 @@ import {
   Spinner,
   useStateRef,
 } from "@npc-cli/util";
-import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
@@ -54,7 +53,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       numTouches: 0,
-      overridePosition: undefined,
+      overrideAnchorRef: null,
       preventTransition: true,
       resizing: false,
       toUi: { ...initialUiLayout.toUi },
@@ -83,7 +82,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         return el === containerRef.current?.childNodes[0];
       },
       onChangeContextMenu(open, eventDetails) {
-        state.set({ overridePosition: undefined });
+        state.set({ overrideAnchorRef: undefined });
         if (!open) {
           state.contextMenuPopoverHandle.close();
         } else if (!state.isGridContainer(eventDetails.event.target as HTMLElement)) {
@@ -187,12 +186,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       layoutStore.setState({ ready: true });
     });
 
+    // Mobile: fix hidden ContextMenu on mobile keyboard
     function onChangeVisualViewport() {
-      // Desktop: Hide ContextMenu on resize window (no anchor)
-      if (!isTouchDevice() && state.contextMenuOpen === true) {
-        state.set({ contextMenuOpen: false, overridePosition: undefined });
-      }
-      // Mobile: fix hidden ContextMenu on mobile keyboard
       window.visualViewport !== null &&
         state.set({
           visualViewportRect: {
@@ -226,10 +221,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           ]),
         );
       },
-      openContextMenu(point: { x: number; y: number }) {
+      openContextMenu(refObject: React.RefObject<HTMLElement>) {
         state.set({
           contextMenuOpen: true,
-          overridePosition: point,
+          overrideAnchorRef: refObject,
         });
       },
       resetLayout() {
@@ -314,11 +309,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
         <ContextMenu.Portal>
           <ContextMenu.Positioner
-            {...(state.overridePosition !== undefined && {
-              style: {
-                transform: `translate(${state.overridePosition.x}px, ${state.overridePosition.y}px)`,
-              },
-            })}
+            anchor={state.overrideAnchorRef ?? undefined}
             collisionBoundary={state.visualViewportRect ?? undefined}
           >
             <ContextMenu.Popup
@@ -416,11 +407,9 @@ type Props = {
   ref: React.Ref<GridApi>;
 };
 
-export type GridApi = {
+export type GridApi = UiContextValue["layoutApi"] & {
   getUiLayout(): UiGridLayout;
   getItemToRect(): { [itemId: string]: { x: number; y: number; width: number; height: number } };
-  openContextMenu(point: { x: number; y: number }): void;
-  resetLayout(): void;
 };
 
 export type UiGridLayout = {
@@ -444,7 +433,7 @@ type State = {
   gridConfig: Partial<GridConfig>;
   isLocked: { [layoutKey: string]: boolean };
   numTouches: number;
-  overridePosition: undefined | { x: number; y: number };
+  overrideAnchorRef: null | React.RefObject<HTMLElement>;
   preventTransition: boolean;
   resizing: boolean;
   toUi: UiGridLayout["toUi"];

@@ -20,7 +20,7 @@ export const UiContext = createContext<UiContextValue>({
 
 export type UiContextValue = {
   layoutApi: {
-    openContextMenu(point: { x: number; y: number }): void;
+    openContextMenu(refObject: React.RefObject<HTMLElement | null>): void;
     resetLayout(): void;
   };
   theme: ThemeName;
