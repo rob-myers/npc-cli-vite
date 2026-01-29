@@ -114,6 +114,12 @@
 
 - ✅ uis have schema validated in `<UiInstance>` inducing type of `props.meta`
 
+- 🚧 UiGrid supports tabs
+  - 🚧 try use react-reverse-portal in each grid item (reparenting)
+  - try make basic tabs components will draggable tabs
+    - https://atlassian.design/components/pragmatic-drag-and-drop/about
+  - can drag between different tabs components
+
 - 🚧 packages/ui/world
   - ✅ create dummy package
   - ✅ add react-three-fiber

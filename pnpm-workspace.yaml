@@ -37,6 +37,7 @@ catalog:
   react-beforeunload: ^2.7.0
   react-dom: ^19.2.0
   react-grid-layout: 2.2.2
+  react-reverse-portal: ^2.3.0
   rxjs: ^7.8.2
   short-uuid: ^6.0.3
   tailwind-merge: ^3.4.0
