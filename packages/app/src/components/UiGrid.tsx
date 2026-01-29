@@ -11,6 +11,7 @@ import {
   Spinner,
   useStateRef,
 } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
@@ -53,6 +54,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       numTouches: 0,
+      overridePosition: undefined,
       preventTransition: true,
       resizing: false,
       toUi: { ...initialUiLayout.toUi },
@@ -81,6 +83,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         return el === containerRef.current?.childNodes[0];
       },
       onChangeContextMenu(open, eventDetails) {
+        state.set({ overridePosition: undefined });
         if (!open) {
           state.contextMenuPopoverHandle.close();
         } else if (!state.isGridContainer(eventDetails.event.target as HTMLElement)) {
@@ -184,9 +187,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       layoutStore.setState({ ready: true });
     });
 
-    // Fix hidden ContextMenu on mobile keyboard
     function onChangeVisualViewport() {
-      window.visualViewport &&
+      // Desktop: Hide ContextMenu on resize window (no anchor)
+      if (!isTouchDevice() && state.contextMenuOpen === true) {
+        state.set({ contextMenuOpen: false, overridePosition: undefined });
+      }
+      // Mobile: fix hidden ContextMenu on mobile keyboard
+      window.visualViewport !== null &&
         state.set({
           visualViewportRect: {
             x: 0,
@@ -218,6 +225,12 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             el.getBoundingClientRect(),
           ]),
         );
+      },
+      openContextMenu(point: { x: number; y: number }) {
+        state.set({
+          contextMenuOpen: true,
+          overridePosition: point,
+        });
       },
       resetLayout() {
         state.toUi = { "ui-0": { layoutId: "ui-0", uiKey: "Global" } };
@@ -300,7 +313,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         </ContextMenu.Trigger>
 
         <ContextMenu.Portal>
-          <ContextMenu.Positioner collisionBoundary={state.visualViewportRect ?? undefined}>
+          <ContextMenu.Positioner
+            {...(state.overridePosition !== undefined && {
+              style: {
+                transform: `translate(${state.overridePosition.x}px, ${state.overridePosition.y}px)`,
+              },
+            })}
+            collisionBoundary={state.visualViewportRect ?? undefined}
+          >
             <ContextMenu.Popup
               className="flex flex-col rounded-md bg-black/60 text-white outline-black"
               data-context-menu-div
@@ -399,6 +419,7 @@ type Props = {
 export type GridApi = {
   getUiLayout(): UiGridLayout;
   getItemToRect(): { [itemId: string]: { x: number; y: number; width: number; height: number } };
+  openContextMenu(point: { x: number; y: number }): void;
   resetLayout(): void;
 };
 
@@ -423,6 +444,7 @@ type State = {
   gridConfig: Partial<GridConfig>;
   isLocked: { [layoutKey: string]: boolean };
   numTouches: number;
+  overridePosition: undefined | { x: number; y: number };
   preventTransition: boolean;
   resizing: boolean;
   toUi: UiGridLayout["toUi"];

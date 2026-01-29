@@ -6,7 +6,7 @@ import { useContext, useState } from "react";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNode {
-  const { uiStore: _uiStore } = useContext(UiContext);
+  const { layoutApi } = useContext(UiContext);
   const [activeKey, setActiveKey] = useState(items[0]?.layoutId); // 🚧 layoutId -> id?
 
   return (
@@ -28,7 +28,14 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
             {tab.title}
           </button>
         ))}
-        <button type="button" className="cursor-pointer open-context-menu">
+        <button
+          type="button"
+          className="cursor-pointer open-context-menu"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            layoutApi.openContextMenu({ x: e.clientX, y: e.clientY });
+          }}
+        >
           <PlusCircleIcon className="size-4" weight="duotone" />
         </button>
       </div>

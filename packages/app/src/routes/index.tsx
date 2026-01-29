@@ -1,4 +1,4 @@
-import { UiContext, uiStore } from "@npc-cli/ui-sdk";
+import { UiContext, type UiContextValue, uiStore } from "@npc-cli/ui-sdk";
 import { createFileRoute } from "@tanstack/react-router";
 
 import "react-grid-layout/css/styles.css";
@@ -19,8 +19,8 @@ function Index() {
   const gridRef = useRef<GridApi>(null);
   const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout ?? demoLayout);
 
+  // persist layout
   useBeforeunload(() => {
-    // persist layout
     layoutStore.setState({
       uiLayout: gridRef.current?.getUiLayout(),
       itemToRect: gridRef.current?.getItemToRect(),
@@ -28,7 +28,10 @@ function Index() {
   });
 
   const layoutApi = useMemo(
-    () => ({
+    (): UiContextValue["layoutApi"] => ({
+      openContextMenu(point: { x: number; y: number }) {
+        gridRef.current?.openContextMenu(point);
+      },
       resetLayout() {
         gridRef.current?.resetLayout();
       },
