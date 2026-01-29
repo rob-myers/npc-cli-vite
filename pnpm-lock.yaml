@@ -106,7 +106,7 @@ catalogs:
       specifier: 2.2.2
       version: 2.2.2
     react-reverse-portal:
-      specifier: ^2.3.0
+      specifier: 2.3.0
       version: 2.3.0
     rxjs:
       specifier: ^7.8.2
@@ -439,6 +439,9 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.2.1
+      react-reverse-portal:
+        specifier: 'catalog:'
+        version: 2.3.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
 
   packages/ui/template:
     dependencies:
