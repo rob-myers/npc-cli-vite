@@ -29,7 +29,14 @@ export function BasicPopover(
         <Popover.Positioner side={props.side} sideOffset={props.sideOffset}>
           <Popover.Popup className="outline-0">
             <PopoverArrow className="fill-gray-200" arrowBorderFill="#00000033" />
-            <Popover.Description className="border border-black/20 flex items-center px-2 py-1 bg-gray-200 text-black text-sm">
+            <Popover.Description
+              render={(props) => (
+                <div
+                  className="border border-black/20 flex items-center px-2 py-1 bg-gray-200 text-black text-sm"
+                  {...props}
+                />
+              )}
+            >
               {props.children}
             </Popover.Description>
           </Popover.Popup>
