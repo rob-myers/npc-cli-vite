@@ -31,7 +31,7 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
         <button
           type="button"
           className="cursor-pointer open-context-menu"
-          onPointerDown={(e) => {
+          onPointerUp={(e) => {
             e.stopPropagation();
             layoutApi.openContextMenu({ x: e.clientX, y: e.clientY });
           }}
