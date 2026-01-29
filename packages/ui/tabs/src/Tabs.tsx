@@ -2,12 +2,14 @@ import { UiContext } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
 import { PlusCircleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { useContext, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNode {
   const { layoutApi } = useContext(UiContext);
   const [activeKey, setActiveKey] = useState(items[0]?.layoutId); // 🚧 layoutId -> id?
+
+  const newTabButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className={cn("flex flex-col size-full")}>
@@ -29,12 +31,13 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
           </button>
         ))}
         <button
+          ref={newTabButtonRef}
           type="button"
           className="cursor-pointer open-context-menu"
           onPointerUp={(e) => {
             e.stopPropagation();
             setTimeout(() => {
-              layoutApi.openContextMenu({ x: e.clientX, y: e.clientY });
+              layoutApi.openContextMenu(newTabButtonRef);
             }, 30);
           }}
         >
