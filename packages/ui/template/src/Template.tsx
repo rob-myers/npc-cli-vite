@@ -1,7 +1,7 @@
 import { cn } from "@npc-cli/util";
 import type { TemplateUiMeta } from "./schema";
 
-export default function Template(props: { meta: TemplateUiMeta }) {
+export default function Template(_props: { meta: TemplateUiMeta }) {
   return (
     <div className="overflow-auto size-full flex justify-center items-center">
       <div

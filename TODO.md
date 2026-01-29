@@ -74,6 +74,7 @@
     - technically string does not define a valid js function so is interpreted as a string
   - ✅ Tty has /etc/{util.sh,util.js.sh}
   - 🚧 STOP bug: appears initially in e.g. 3rd tty
+  - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
 
 - ✅ normalize tsconfigs like bz-frontend
   - ✅ inherit from tsconfig.base.json
@@ -117,13 +118,19 @@
 - 🚧 UiGrid supports tabs
   - motivation: hide Global on mobile; grouping; improve mobile layouts
   - 🚧 try use react-reverse-portal in each grid item (reparenting)
-    - 🚧 basic instantiable ui/tabs with layout in schema
-    - can specify other uis in tab slots
+    - ✅ basic instantiable ui/tabs with layout in schema
+    - 🚧 show contextmenu on click add tab
+      - tried via external `Menu.trigger` but it broke main `ContextMenu.trigger`
+      - 🚧 UiContext should provide callback
+    - 🚧 can specify other uis in tab slots
     - all uis (ones in tabs too) have a portal in ui.store
     - UiInstance either OutPortals or renders Tabs which OutPortals each tab
   - try make basic tabs components will draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components
+
+- 🚧 fix crash of UiGrid on HMR ui.store 
+  - `uiMeta.layoutId`
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
