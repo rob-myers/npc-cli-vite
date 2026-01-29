@@ -1,11 +1,9 @@
-import { UiContext, type UiInstanceMeta } from "@npc-cli/ui-sdk";
+import { type UiInstanceMeta, uiStore } from "@npc-cli/ui-sdk";
 import { useEffectNonStrict } from "@npc-cli/util";
-import { useContext } from "react";
 import { uiRegistry } from "./index";
 import { UiErrorBoundary } from "./UiErrorBoundary";
 
 export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
-  const { uiStore } = useContext(UiContext);
   const id = meta.layoutId;
 
   useEffectNonStrict(() => {
