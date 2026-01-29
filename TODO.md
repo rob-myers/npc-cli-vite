@@ -117,7 +117,7 @@
 - 🚧 UiGrid supports tabs
   - motivation: hide Global on mobile; grouping; improve mobile layouts
   - 🚧 try use react-reverse-portal in each grid item (reparenting)
-    - basic instantiable ui/tabs with layout in schema
+    - 🚧 basic instantiable ui/tabs with layout in schema
     - can specify other uis in tab slots
     - all uis (ones in tabs too) have a portal in ui.store
     - UiInstance either OutPortals or renders Tabs which OutPortals each tab

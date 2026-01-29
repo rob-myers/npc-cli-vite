@@ -1,8 +1,9 @@
-import { BaseUiMetaSchema, defineUi } from "@npc-cli/ui-sdk";
+import { defineUi } from "@npc-cli/ui-sdk";
 import { lazy } from "react";
+import { TabsUiMetaSchema } from "./schema";
 
 export default defineUi({
-  ui: lazy(() => import("./Template")),
+  ui: lazy(() => import("./Tabs")),
   bootstrap: null,
-  schema: BaseUiMetaSchema,
+  schema: TabsUiMetaSchema,
 });
