@@ -33,7 +33,9 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
           className="cursor-pointer open-context-menu"
           onPointerUp={(e) => {
             e.stopPropagation();
-            layoutApi.openContextMenu({ x: e.clientX, y: e.clientY });
+            setTimeout(() => {
+              layoutApi.openContextMenu({ x: e.clientX, y: e.clientY });
+            }, 30);
           }}
         >
           <PlusCircleIcon className="size-4" weight="duotone" />
