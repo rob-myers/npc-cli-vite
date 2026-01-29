@@ -9,7 +9,8 @@ import type { WithImmer } from "./with-immer-type";
 
 export const UiContext = createContext<UiContextValue>({
   layoutApi: {
-    resetLayout() {},
+    openContextMenu: noOp,
+    resetLayout: noOp,
   },
   theme: // initial value for future SSG
     tryLocalStorageGetParsed<StorageValue<ThemeState>>("theme-storage" satisfies ThemeStorageKey)
@@ -17,10 +18,13 @@ export const UiContext = createContext<UiContextValue>({
   uiStore,
 });
 
-type UiContextValue = {
+export type UiContextValue = {
   layoutApi: {
+    openContextMenu(point: { x: number; y: number }): void;
     resetLayout(): void;
   };
   theme: ThemeName;
   uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>>;
 };
+
+function noOp() {}
