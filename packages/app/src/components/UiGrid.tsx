@@ -94,7 +94,19 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           return; // try avoid pinch zoom
         }
 
-        state.set({ contextMenuOpen: open });
+        state.set({
+          contextMenuOpen: open,
+          // ...(isTouchDevice() &&
+          //   open &&
+          //   window.visualViewport && {
+          //     visualViewportRect: {
+          //       x: 0,
+          //       y: 0,
+          //       width: window.visualViewport.width,
+          //       height: window.visualViewport.height - 40,
+          //     },
+          //   }),
+        });
       },
       onClickItemDelete(e) {
         e.stopPropagation();
@@ -362,7 +374,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
       <Popover.Root handle={state.contextMenuPopoverHandle}>
         <Popover.Portal>
-          <Popover.Positioner side="right" sideOffset={8}>
+          <Popover.Positioner side="top" sideOffset={8}>
             <Popover.Popup initialFocus={false}>
               <PopoverArrow arrowBorderFill="#ffffff" />
               <Popover.Viewport className="bg-black">
