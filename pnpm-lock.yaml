@@ -120,6 +120,9 @@ catalogs:
     three:
       specifier: ^0.182.0
       version: 0.182.0
+    type-fest:
+      specifier: ^5.3.1
+      version: 5.4.2
     typescript:
       specifier: ~5.9.3
       version: 5.9.3
@@ -448,24 +451,36 @@ importers:
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
       react:
         specifier: 'catalog:'
         version: 19.2.1
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
 
   packages/ui/template:
     dependencies:
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
       react:
         specifier: 'catalog:'
         version: 19.2.1
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
 
   packages/ui/world:
     dependencies:
@@ -532,6 +547,9 @@ importers:
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.4.0
+      type-fest:
+        specifier: 'catalog:'
+        version: 5.4.2
       zod:
         specifier: 'catalog:'
         version: 4.1.13
@@ -2867,6 +2885,10 @@ packages:
   tabbable@6.4.0:
     resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
 
+  tagged-tag@1.0.0:
+    resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
+    engines: {node: '>=20'}
+
   tailwind-merge@3.4.0:
     resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
 
@@ -2933,6 +2955,10 @@ packages:
 
   tunnel-rat@0.1.2:
     resolution: {integrity: sha512-lR5VHmkPhzdhrM092lI2nACsLO4QubF0/yoOhzX7c+wIpbN1GjHNzCc91QlpxBi+cnx8vVJ+Ur6vL5cEoQPFpQ==}
+
+  type-fest@5.4.2:
+    resolution: {integrity: sha512-FLEenlVYf7Zcd34ISMLo3ZzRE1gRjY1nMDTp+bQRBiPsaKyIW8K3Zr99ioHDUgA9OGuGGJPyYpNcffGmBhJfGg==}
+    engines: {node: '>=20'}
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -5446,6 +5472,8 @@ snapshots:
 
   tabbable@6.4.0: {}
 
+  tagged-tag@1.0.0: {}
+
   tailwind-merge@3.4.0: {}
 
   tailwindcss@4.1.17: {}
@@ -5515,6 +5543,10 @@ snapshots:
       - '@types/react'
       - immer
       - react
+
+  type-fest@5.4.2:
+    dependencies:
+      tagged-tag: 1.0.0
 
   typescript@5.9.3: {}
 

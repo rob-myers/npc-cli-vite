@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./types": "./src/types.ts",
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js"
   },
@@ -18,6 +19,7 @@
     "json-stringify-pretty-compact": "catalog:",
     "react": "catalog:",
     "tailwind-merge": "catalog:",
+    "type-fest": "catalog:",
     "zod": "catalog:"
   }
 }
