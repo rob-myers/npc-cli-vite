@@ -1,9 +1,12 @@
+import { UiContext } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
+import { PlusCircleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNode {
+  const { uiStore: _uiStore } = useContext(UiContext);
   const [activeKey, setActiveKey] = useState(items[0]?.layoutId); // 🚧 layoutId -> id?
 
   return (
@@ -14,10 +17,10 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
           <button
             key={tab.layoutId}
             className={cn(
-              "px-4 py-2 -mb-px border-b-2 border-outline font-medium focus:outline-none transition-colors duration-200 bg-surface",
+              "px-4 py-2 -mb-px border-b-2 border-outline font-medium focus:outline-none transition-colors duration-200 bg-background",
               activeKey === tab.layoutId
                 ? "border-primary text-primary"
-                : "border-outline text-on-surface hover:text-primary/80",
+                : "border-outline text-on-background hover:text-primary/80",
             )}
             onClick={() => setActiveKey(tab.layoutId)}
             type="button"
@@ -25,6 +28,9 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
             {tab.title}
           </button>
         ))}
+        <button type="button" className="cursor-pointer open-context-menu">
+          <PlusCircleIcon className="size-4" weight="duotone" />
+        </button>
       </div>
       <div className="pt-4 flex-1">
         {items.map((tab) => (

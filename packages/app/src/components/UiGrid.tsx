@@ -77,13 +77,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
         state.contextMenuPopoverHandle.close();
       },
-      isGridParent(el) {
+      isGridContainer(el) {
         return el === containerRef.current?.childNodes[0];
       },
       onChangeContextMenu(open, eventDetails) {
         if (!open) {
           state.contextMenuPopoverHandle.close();
-        } else if (!state.isGridParent(eventDetails.event.target as HTMLElement)) {
+        } else if (!state.isGridContainer(eventDetails.event.target as HTMLElement)) {
           return; // ignore long press on grid children
         }
         if (state.numTouches > 1) {
@@ -248,7 +248,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             ref={containerRef}
             className="relative size-full overflow-auto"
             onContextMenu={(e) => {
-              if (!state.isGridParent(e.target as HTMLElement)) {
+              if (!state.isGridContainer(e.target as HTMLElement)) {
                 e.stopPropagation(); // show native context menu on right click children
               }
             }}
@@ -433,7 +433,7 @@ type State = {
     gridRect: { x: number; y: number; width: number; height: number };
   }): void;
   closeContextMenu(): void;
-  isGridParent(el: HTMLElement): boolean;
+  isGridContainer(el: HTMLElement): boolean;
   onChangeContextMenu(open: boolean, eventDetails: ContextMenu.Root.ChangeEventDetails): void;
   onClickItemDelete(e: React.MouseEvent<HTMLElement>): void;
   onClickItemLock(e: React.MouseEvent<HTMLButtonElement>): void;
