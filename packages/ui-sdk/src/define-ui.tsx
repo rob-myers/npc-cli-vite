@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { type UiInstanceMeta, type UiPackageDef, UiParseError } from ".";
 
 /**
@@ -8,11 +9,12 @@ export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
   return {
     ...uiDef,
     ui({ meta }: { meta: UiInstanceMeta }) {
-      const result = uiDef.schema.safeParse(meta);
-      if (!result.success) {
-        return <UiParseError uiKey={meta.uiKey} zodError={result.error} />;
-      }
-      return <uiDef.ui meta={result.data} />;
+      const result = useMemo(() => uiDef.schema.safeParse(meta), [meta]);
+      return result.success ? (
+        <uiDef.ui meta={result.data} />
+      ) : (
+        <UiParseError uiKey={meta.uiKey} zodError={result.error} />
+      );
     },
   };
 };
