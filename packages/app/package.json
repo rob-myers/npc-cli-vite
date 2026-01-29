@@ -25,6 +25,7 @@
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
     "react-grid-layout": "catalog:",
+    "react-reverse-portal": "catalog:",
     "zustand": "catalog:"
   },
   "devDependencies": {
