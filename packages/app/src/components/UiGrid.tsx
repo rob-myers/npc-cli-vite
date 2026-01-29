@@ -78,16 +78,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
         state.contextMenuPopoverHandle.close();
       },
-      isATopLevelElement(el) {
-        return (
-          el === containerRef.current?.childNodes[0] || el === containerRef.current // include margin
-        );
+      isGridContainer(el) {
+        return el === containerRef.current?.childNodes[0];
       },
       onChangeContextMenu(open, eventDetails) {
         state.set({ overrideAnchorRef: undefined });
         if (!open) {
           state.contextMenuPopoverHandle.close();
-        } else if (!state.isATopLevelElement(eventDetails.event.target as HTMLElement)) {
+        } else if (!state.isGridContainer(eventDetails.event.target as HTMLElement)) {
           return; // ignore long press on grid children
         }
         if (state.numTouches > 1) {
@@ -258,7 +256,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             ref={containerRef}
             className="relative size-full overflow-auto"
             onContextMenu={(e) => {
-              if (!state.isATopLevelElement(e.target as HTMLElement)) {
+              if (!state.isGridContainer(e.target as HTMLElement)) {
                 e.stopPropagation(); // show native context menu on right click children
               }
             }}
@@ -271,7 +269,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               className={cn(
                 state.preventTransition && "[&_.react-grid-item]:transition-none!",
                 (state.resizing || state.dragging || state.contextMenuOpen) && "select-none",
-                "mb-32  min-h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
+                "min-h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
                 // "[&_.react-resizable-handle::after]:z-200",
                 // "[&_.react-resizable-handle::after]:size-4!",
                 "[&_.react-grid-placeholder]:bg-gray-500!",
@@ -448,7 +446,7 @@ type State = {
     gridRect: { x: number; y: number; width: number; height: number };
   }): void;
   closeContextMenu(): void;
-  isATopLevelElement(el: HTMLElement): boolean;
+  isGridContainer(el: HTMLElement): boolean;
   onChangeContextMenu(open: boolean, eventDetails: ContextMenu.Root.ChangeEventDetails): void;
   onClickItemDelete(e: React.MouseEvent<HTMLElement>): void;
   onClickItemLock(e: React.MouseEvent<HTMLButtonElement>): void;
