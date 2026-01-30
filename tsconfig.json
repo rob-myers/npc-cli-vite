@@ -5,12 +5,15 @@
     { "path": "./packages/app" },
     { "path": "./packages/cli" },
     { "path": "./packages/media" },
+    { "path": "./packages/theme" },
+    { "path": "./packages/ui-registry" },
+    { "path": "./packages/ui-sdk" },
     { "path": "./packages/util" },
-    { "path": "./packages/ui/template" },
-    { "path": "./packages/ui/registry" },
     { "path": "./packages/ui/blog" },
     { "path": "./packages/ui/global" },
     { "path": "./packages/ui/jsh" },
+    { "path": "./packages/ui/tabs" },
+    { "path": "./packages/ui/template" },
     { "path": "./packages/ui/world" }
   ]
 }

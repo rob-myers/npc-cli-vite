@@ -1,6 +1,6 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
-import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui__registry";
+import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
 import type { UiBootstrapProps, UiContextValue, UiInstanceMeta } from "@npc-cli/ui-sdk";
 import {
   allowReactGridDragClassName,

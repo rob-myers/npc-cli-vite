@@ -1,4 +1,4 @@
-import type { UiRegistryKey } from "@npc-cli/ui__registry";
+import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import { keys } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { create } from "zustand";

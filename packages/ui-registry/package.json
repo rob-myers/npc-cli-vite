@@ -1,5 +1,5 @@
 {
-  "name": "@npc-cli/ui__registry",
+  "name": "@npc-cli/ui-registry",
   "private": true,
   "type": "module",
   "exports": {
