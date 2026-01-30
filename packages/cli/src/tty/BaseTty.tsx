@@ -32,7 +32,6 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
       },
       onTouchMove(e) {
         if (e.touches.length !== 1 || state.down === null) return;
-        e.preventDefault();
         const clientY = e.touches[0].clientY;
         const deltaY = clientY - state.down.lastClientY;
         state.down.lastClientY = clientY;
@@ -137,7 +136,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
       onTouchMove={state.onTouchMove}
       onTouchEnd={state.onTouchEnd}
       className={cn(
-        "h-[inherit]", // for scrolling
+        "h-[inherit] touch-pan-x", // for scrolling
         // "[&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]",
         // thin scrollbar
         "[&_.scrollbar.vertical_.slider]:transform-[translateX(5px)_scale(0.5)]!",
