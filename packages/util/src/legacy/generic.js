@@ -692,19 +692,6 @@ export function tryLocalStorageSet(key, value) {
 }
 
 /**
- * ctrl+[ or ctrl+]
- * @param {KeyboardEvent | import('react').KeyboardEvent} e
- * @returns {false | -1 | 1}
- */
-export function detectTabPrevNextShortcut(e) {
-  if (e.ctrlKey === true) {
-    return e.key === "[" ? -1 : e.key === "]" ? 1 : false;
-  } else {
-    return false;
-  }
-}
-
-/**
  * Source:
  * - https://stackoverflow.com/a/51396686/2917822
  * - https://blog.jonnew.com/posts/poo-dot-length-equals-two

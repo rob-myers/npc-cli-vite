@@ -1,5 +1,4 @@
 import { cn, useEffectNonStrict, useStateRef } from "@npc-cli/util";
-import { detectTabPrevNextShortcut } from "@npc-cli/util/legacy/generic";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { type ITheme, Terminal as XTermTerminal } from "@xterm/xterm";
@@ -18,11 +17,30 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
 
   const state = useStateRef(
     (): State => ({
+      down: null,
       fitAddon: new FitAddon(),
       // `undefined` for change detection
       session: undefined as unknown as Session,
       webglAddon: new WebglAddon(),
       xterm: null as unknown as TtyXterm,
+
+      //#region mobile scrolling
+      onTouchStart(e) {
+        if (e.touches.length !== 1) return;
+        const clientY = e.touches[0].clientY;
+        state.down = { firstClientY: clientY, lastClientY: clientY };
+      },
+      onTouchMove(e) {
+        if (e.touches.length !== 1 || state.down === null) return;
+        const clientY = e.touches[0].clientY;
+        const deltaY = clientY - state.down.lastClientY;
+        state.down.lastClientY = clientY;
+        state.xterm.xterm.scrollLines(Math.sign(deltaY));
+      },
+      onTouchEnd() {
+        state.down = null;
+      },
+      //#endregion
     }),
   );
 
@@ -113,7 +131,10 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
   return (
     <div
       ref={containerRef}
-      onKeyDown={stopKeysPropagating}
+      onKeyDown={stopPropagation}
+      onTouchStart={state.onTouchStart}
+      onTouchMove={state.onTouchMove}
+      onTouchEnd={state.onTouchEnd}
       className={cn(
         "h-[inherit]", // for scrolling
         // "[&_.xterm-helper-textarea]:top-0! min-w-[100px] [&_.xterm-screen]:min-w-[100px]",
@@ -132,15 +153,17 @@ interface Props {
 
 export interface State {
   fitAddon: FitAddon;
+  /** For scrolling involving a single touch */
+  down: { firstClientY: number; lastClientY: number } | null;
   session: Session;
   webglAddon: WebglAddon;
   xterm: TtyXterm;
+  onTouchStart(e: React.TouchEvent): void;
+  onTouchMove(e: React.TouchEvent): void;
+  onTouchEnd(e: React.TouchEvent): void;
 }
 
-function stopKeysPropagating(e: React.KeyboardEvent) {
-  if (detectTabPrevNextShortcut(e)) {
-    return;
-  }
+function stopPropagation(e: React.KeyboardEvent) {
   e.stopPropagation();
 }
 
