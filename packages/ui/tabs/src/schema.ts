@@ -12,3 +12,4 @@ export const TabsUiMetaSchema = z.object({
 });
 
 export type TabsUiMeta = z.infer<typeof TabsUiMetaSchema>;
+export type TabUiMeta = z.infer<typeof TabUiMetaSchema>;

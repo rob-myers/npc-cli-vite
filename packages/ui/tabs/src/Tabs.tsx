@@ -1,5 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
+import { pause } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { useContext, useRef, useState } from "react";
@@ -36,15 +37,15 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
           className="cursor-pointer open-context-menu"
           onPointerUp={(e) => {
             e.stopPropagation();
-            setTimeout(() => {
-              layoutApi.overrideContextMenu({
-                refObject: newTabButtonRef,
-                addItem({ uiMeta, itemId, gridRect }) {
-                  // 🚧
-                  alert(`Add tab: ${JSON.stringify({ uiMeta, itemId, gridRect })}`);
-                },
-              });
-            }, 30);
+            pause(30); // avoid immediate click context menu item
+
+            layoutApi.overrideContextMenu({
+              refObject: newTabButtonRef,
+              addItem({ uiMeta, itemId, gridRect }) {
+                // 🚧
+                alert(`Add tab: ${JSON.stringify({ uiMeta, itemId, gridRect })}`);
+              },
+            });
           }}
         >
           <PlusCircleIcon className="size-4" weight="duotone" />
