@@ -124,6 +124,7 @@
     - ✅ can specify other uis in tab slots
     - 🚧 clicking add tab adds ui to new tab
       - ✅ alerts mock
+      - ✅ render ui's meta inside tab
     - all uis (ones in tabs too) have a portal in ui.store
     - UiInstance either OutPortals or renders Tabs which OutPortals each tab
   - try make basic tabs components will draggable tabs

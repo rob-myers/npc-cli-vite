@@ -1,12 +1,13 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
 import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
-import type {
-  AddUiItemOpts,
-  OverrideContextMenuOpts,
-  UiBootstrapProps,
-  UiContextValue,
-  UiInstanceMeta,
+import {
+  type AddUiItemOpts,
+  type OverrideContextMenuOpts,
+  type UiBootstrapProps,
+  type UiContextValue,
+  type UiInstanceMeta,
+  uiStore,
 } from "@npc-cli/ui-sdk";
 import {
   allowReactGridDragClassName,
@@ -225,9 +226,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           layouts: layouts.current,
           breakpoints: initialUiLayout.breakpoints,
           cols: initialUiLayout.cols,
-          // 🚧 use metaById once synced
-          toUi: state.toUi,
-          // toUi: uiStore.getState().metaById,
+          // toUi: state.toUi,
+          toUi: uiStore.getState().metaById,
         };
       },
       getItemToRect() {
