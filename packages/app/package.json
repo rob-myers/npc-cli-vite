@@ -13,7 +13,7 @@
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/theme": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
-    "@npc-cli/ui__registry": "workspace:^",
+    "@npc-cli/ui-registry": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",

@@ -1,4 +1,4 @@
-import type { UiRegistryKey } from "@npc-cli/ui__registry";
+import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import z from "zod";
 
 export function UiParseError({

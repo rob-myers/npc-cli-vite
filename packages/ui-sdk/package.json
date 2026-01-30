@@ -15,6 +15,6 @@
     "zustand": "catalog:"
   },
   "devDependencies": {
-    "@npc-cli/ui__registry": "workspace:^"
+    "@npc-cli/ui-registry": "workspace:^"
   }
 }

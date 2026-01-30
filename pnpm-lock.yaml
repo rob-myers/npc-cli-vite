@@ -176,12 +176,12 @@ importers:
       '@npc-cli/theme':
         specifier: workspace:^
         version: link:../theme
+      '@npc-cli/ui-registry':
+        specifier: workspace:^
+        version: link:../ui-registry
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../ui-sdk
-      '@npc-cli/ui__registry':
-        specifier: workspace:^
-        version: link:../ui/registry
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
@@ -337,6 +337,39 @@ importers:
         specifier: 'catalog:'
         version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
 
+  packages/ui-registry:
+    dependencies:
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../ui-sdk
+      '@npc-cli/ui__blog':
+        specifier: workspace:^
+        version: link:../ui/blog
+      '@npc-cli/ui__global':
+        specifier: workspace:^
+        version: link:../ui/global
+      '@npc-cli/ui__jsh':
+        specifier: workspace:^
+        version: link:../ui/jsh
+      '@npc-cli/ui__tabs':
+        specifier: workspace:^
+        version: link:../ui/tabs
+      '@npc-cli/ui__template':
+        specifier: workspace:^
+        version: link:../ui/template
+      '@npc-cli/ui__world':
+        specifier: workspace:^
+        version: link:../ui/world
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../util
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-reverse-portal:
+        specifier: 'catalog:'
+        version: 2.3.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+
   packages/ui-sdk:
     dependencies:
       '@npc-cli/theme':
@@ -358,9 +391,9 @@ importers:
         specifier: 'catalog:'
         version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
     devDependencies:
-      '@npc-cli/ui__registry':
+      '@npc-cli/ui-registry':
         specifier: workspace:^
-        version: link:../ui/registry
+        version: link:../ui-registry
 
   packages/ui/blog:
     dependencies:
@@ -415,39 +448,6 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.1.13
-
-  packages/ui/registry:
-    dependencies:
-      '@npc-cli/ui-sdk':
-        specifier: workspace:^
-        version: link:../../ui-sdk
-      '@npc-cli/ui__blog':
-        specifier: workspace:^
-        version: link:../blog
-      '@npc-cli/ui__global':
-        specifier: workspace:^
-        version: link:../global
-      '@npc-cli/ui__jsh':
-        specifier: workspace:^
-        version: link:../jsh
-      '@npc-cli/ui__tabs':
-        specifier: workspace:^
-        version: link:../tabs
-      '@npc-cli/ui__template':
-        specifier: workspace:^
-        version: link:../template
-      '@npc-cli/ui__world':
-        specifier: workspace:^
-        version: link:../world
-      '@npc-cli/util':
-        specifier: workspace:^
-        version: link:../../util
-      react:
-        specifier: 'catalog:'
-        version: 19.2.1
-      react-reverse-portal:
-        specifier: 'catalog:'
-        version: 2.3.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
 
   packages/ui/tabs:
     dependencies:
