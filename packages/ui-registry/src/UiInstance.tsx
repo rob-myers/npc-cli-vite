@@ -1,20 +1,17 @@
 import { type UiInstanceMeta, uiStore } from "@npc-cli/ui-sdk";
-import { useEffectNonStrict } from "@npc-cli/util";
+import { useStore } from "zustand/react";
 import { uiRegistry } from "./index";
 import { UiErrorBoundary } from "./UiErrorBoundary";
 
 export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
   const id = meta.layoutId;
-
-  useEffectNonStrict(() => {
-    uiStore.setState((draft) => void (draft.metaById[id] = meta));
-    return () => uiStore.setState((draft) => void delete draft.metaById[id]);
-  }, []);
-
   const def = uiRegistry[meta.uiKey];
+  // 🚧 clean e.g. move into defineUi and remove this component
+  const m = useStore(uiStore, (s) => s.metaById[id] ?? meta);
+
   return (
-    <UiErrorBoundary meta={meta}>
-      <def.ui meta={meta} />
+    <UiErrorBoundary meta={m}>
+      <def.ui meta={m} />
     </UiErrorBoundary>
   );
 };

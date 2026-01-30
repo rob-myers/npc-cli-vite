@@ -19,6 +19,7 @@
     "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "react": "catalog:",
-    "react-reverse-portal": "catalog:"
+    "react-reverse-portal": "catalog:",
+    "zustand": "catalog:"
   }
 }
