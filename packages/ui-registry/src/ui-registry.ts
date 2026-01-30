@@ -26,3 +26,5 @@ export const uiRegistry: {
 export type UiRegistryKey = keyof typeof uiRegistry;
 
 export const uiRegistryKeys = Object.keys(uiRegistry) as UiRegistryKey[];
+
+export type RegisteredUi = (typeof uiRegistry)[UiRegistryKey];

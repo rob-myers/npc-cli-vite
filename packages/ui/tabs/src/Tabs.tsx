@@ -37,7 +37,13 @@ export default function Tabs({ meta: { items } }: { meta: TabsUiMeta }): ReactNo
           onPointerUp={(e) => {
             e.stopPropagation();
             setTimeout(() => {
-              layoutApi.openContextMenu(newTabButtonRef);
+              layoutApi.overrideContextMenu({
+                refObject: newTabButtonRef,
+                addItem({ uiMeta, itemId, gridRect }) {
+                  // 🚧
+                  alert(`Add tab: ${JSON.stringify({ uiMeta, itemId, gridRect })}`);
+                },
+              });
             }, 30);
           }}
         >

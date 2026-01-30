@@ -1,7 +1,13 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
 import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
-import type { UiBootstrapProps, UiContextValue, UiInstanceMeta } from "@npc-cli/ui-sdk";
+import type {
+  AddUiItemOpts,
+  OverrideContextMenuOpts,
+  UiBootstrapProps,
+  UiContextValue,
+  UiInstanceMeta,
+} from "@npc-cli/ui-sdk";
 import {
   allowReactGridDragClassName,
   BasicPopover,
@@ -53,7 +59,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       numTouches: 0,
-      overrideAnchorRef: null,
+      overrideContextMenuOpts: null,
       preventTransition: true,
       resizing: false,
       toUi: { ...initialUiLayout.toUi },
@@ -82,8 +88,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         return el === containerRef.current?.childNodes[0];
       },
       onChangeContextMenu(open, eventDetails) {
-        state.set({ overrideAnchorRef: undefined });
         if (!open) {
+          state.set({ overrideContextMenuOpts: undefined });
           state.contextMenuPopoverHandle.close();
         } else if (!state.isGridContainer(eventDetails.event.target as HTMLElement)) {
           return; // ignore long press on grid children
@@ -146,7 +152,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           });
         } else {
           const itemId = `ui-${crypto.randomUUID()}`;
-          state.addItem({
+          (state.overrideContextMenuOpts?.addItem ?? state.addItem)({
             itemId,
             uiMeta: {
               layoutId: itemId,
@@ -221,10 +227,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           ]),
         );
       },
-      openContextMenu(refObject: React.RefObject<HTMLElement>) {
+      overrideContextMenu({ refObject, addItem }) {
         state.set({
           contextMenuOpen: true,
-          overrideAnchorRef: refObject,
+          overrideContextMenuOpts: { refObject, addItem },
         });
       },
       resetLayout() {
@@ -309,7 +315,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
         <ContextMenu.Portal>
           <ContextMenu.Positioner
-            anchor={state.overrideAnchorRef ?? undefined}
+            anchor={state.overrideContextMenuOpts?.refObject ?? undefined}
             collisionBoundary={state.visualViewportRect ?? undefined}
           >
             <ContextMenu.Popup
@@ -374,8 +380,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                           if (!state.contextMenuPopoverUi) return;
 
                           const itemId = `ui-${crypto.randomUUID()}`;
-
-                          state.addItem({
+                          (state.overrideContextMenuOpts?.addItem ?? state.addItem)({
                             itemId,
                             uiMeta: {
                               ...partialUiMeta,
@@ -435,16 +440,12 @@ type State = {
   gridConfig: Partial<GridConfig>;
   isLocked: { [layoutKey: string]: boolean };
   numTouches: number;
-  overrideAnchorRef: null | React.RefObject<HTMLElement>;
+  overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
   resizing: boolean;
   toUi: UiGridLayout["toUi"];
   visualViewportRect: null | { x: number; y: number; width: number; height: number };
-  addItem(meta: {
-    itemId: string;
-    uiMeta: UiInstanceMeta;
-    gridRect: { x: number; y: number; width: number; height: number };
-  }): void;
+  addItem(meta: AddUiItemOpts): void;
   closeContextMenu(): void;
   isGridContainer(el: HTMLElement): boolean;
   onChangeContextMenu(open: boolean, eventDetails: ContextMenu.Root.ChangeEventDetails): void;
