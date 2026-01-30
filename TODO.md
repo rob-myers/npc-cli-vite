@@ -119,10 +119,11 @@
   - motivation: hide Global on mobile; grouping; improve mobile layouts
   - 🚧 try use react-reverse-portal in each grid item (reparenting)
     - ✅ basic instantiable ui/tabs with layout in schema
-    - 🚧 show contextmenu on click add tab
+    - ✅ show contextmenu on click add tab
       - ❌ tried via external `Menu.trigger` but it broke main `ContextMenu.trigger`
-      - 🚧 UiContext should provide callback `openContextMenu`
-    - 🚧 can specify other uis in tab slots
+    - ✅ can specify other uis in tab slots
+    - 🚧 clicking add tab adds ui to new tab
+      - ✅ alerts mock
     - all uis (ones in tabs too) have a portal in ui.store
     - UiInstance either OutPortals or renders Tabs which OutPortals each tab
   - try make basic tabs components will draggable tabs

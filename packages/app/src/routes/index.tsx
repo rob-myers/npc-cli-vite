@@ -29,8 +29,8 @@ function Index() {
 
   const layoutApi = useMemo(
     (): UiContextValue["layoutApi"] => ({
-      openContextMenu(refObject: React.RefObject<HTMLElement>) {
-        gridRef.current?.openContextMenu(refObject);
+      overrideContextMenu(opts) {
+        gridRef.current?.overrideContextMenu(opts);
       },
       resetLayout() {
         gridRef.current?.resetLayout();
