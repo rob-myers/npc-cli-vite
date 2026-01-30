@@ -17,6 +17,7 @@ import {
   Spinner,
   useStateRef,
 } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
@@ -65,17 +66,25 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       toUi: { ...initialUiLayout.toUi },
       visualViewportRect: null,
       addItem({ itemId, uiMeta, gridRect }) {
-        state.toUi[itemId] = uiMeta;
-        setLayouts({
-          lg: layouts.current.lg.concat({
-            i: itemId,
-            x: gridRect.x,
-            y: gridRect.y,
-            w: gridRect.width,
-            h: gridRect.height,
-            isDraggable: true,
-          }),
-        });
+        if (state.overrideContextMenuOpts?.addItem) {
+          state.overrideContextMenuOpts.addItem({
+            itemId,
+            uiMeta,
+            gridRect,
+          });
+        } else {
+          state.toUi[itemId] = uiMeta;
+          setLayouts({
+            lg: layouts.current.lg.concat({
+              i: itemId,
+              x: gridRect.x,
+              y: gridRect.y,
+              w: gridRect.width,
+              h: gridRect.height,
+              isDraggable: true,
+            }),
+          });
+        }
       },
       closeContextMenu() {
         state.set({
@@ -152,7 +161,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           });
         } else {
           const itemId = `ui-${crypto.randomUUID()}`;
-          (state.overrideContextMenuOpts?.addItem ?? state.addItem)({
+          state.addItem({
             itemId,
             uiMeta: {
               layoutId: itemId,
@@ -216,7 +225,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           layouts: layouts.current,
           breakpoints: initialUiLayout.breakpoints,
           cols: initialUiLayout.cols,
+          // 🚧 use metaById once synced
           toUi: state.toUi,
+          // toUi: uiStore.getState().metaById,
         };
       },
       getItemToRect() {
@@ -247,10 +258,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
   const childDefs = useMemo(
     () =>
-      layout.map((item) => ({
-        uiMeta: state.toUi[item.i],
-        ui: uiRegistry[state.toUi[item.i]?.uiKey],
-      })),
+      // flatMap handles malformed layout
+      layout.flatMap((item) => {
+        const uiMeta = state.toUi[item.i]; // 🚧 only need "id -> uiKey"
+        return uiMeta ? { uiMeta, ui: uiRegistry[uiMeta?.uiKey] } : [];
+      }),
     [layout],
   );
 
@@ -366,7 +378,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
       <Popover.Root handle={state.contextMenuPopoverHandle}>
         <Popover.Portal>
-          <Popover.Positioner side="top" sideOffset={8}>
+          <Popover.Positioner side={isTouchDevice() ? "top" : "right"} sideOffset={8}>
             <Popover.Popup initialFocus={false}>
               <PopoverArrow arrowBorderFill="#ffffff" />
               <Popover.Description
@@ -380,7 +392,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                           if (!state.contextMenuPopoverUi) return;
 
                           const itemId = `ui-${crypto.randomUUID()}`;
-                          (state.overrideContextMenuOpts?.addItem ?? state.addItem)({
+                          state.addItem({
                             itemId,
                             uiMeta: {
                               ...partialUiMeta,
@@ -443,7 +455,7 @@ type State = {
   overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
   resizing: boolean;
-  toUi: UiGridLayout["toUi"];
+  toUi: UiGridLayout["toUi"]; // 🚧 only "id -> { id, uiKey }"
   visualViewportRect: null | { x: number; y: number; width: number; height: number };
   addItem(meta: AddUiItemOpts): void;
   closeContextMenu(): void;
