@@ -4,6 +4,7 @@
     { "path": "./scripts" },
     { "path": "./packages/app" },
     { "path": "./packages/cli" },
+    { "path": "./packages/parse-sh" },
     { "path": "./packages/media" },
     { "path": "./packages/theme" },
     { "path": "./packages/ui-registry" },
