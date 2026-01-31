@@ -11,6 +11,7 @@ import type { WithImmer } from "./with-immer-type";
 
 export const UiContext = createContext<UiContextValue>({
   layoutApi: {
+    addItem: noOp,
     overrideContextMenu: noOp,
     resetLayout: noOp,
   },
@@ -23,6 +24,7 @@ export const UiContext = createContext<UiContextValue>({
 
 export type UiContextValue = {
   layoutApi: {
+    addItem(opts: AddUiItemOpts): void;
     overrideContextMenu(opts: OverrideContextMenuOpts): void;
     resetLayout(): void;
   };

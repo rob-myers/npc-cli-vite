@@ -70,9 +70,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       visualViewportRect: null,
       addItem({ uiMeta, gridRect }) {
         if (state.overrideContextMenuOpts?.addItem) {
-          state.overrideContextMenuOpts.addItem({
-            uiMeta,
-          });
+          state.overrideContextMenuOpts.addItem({ uiMeta });
         } else {
           state.toUi[uiMeta.id] = uiMeta;
           setLayouts({
@@ -218,9 +216,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
-  useImperativeHandle<GridApi, GridApi>(
+  useImperativeHandle(
     ref,
-    () => ({
+    (): GridApi => ({
+      addItem: state.addItem,
       getUiLayout() {
         return {
           layouts: layouts.current,

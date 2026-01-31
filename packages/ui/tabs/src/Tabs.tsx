@@ -44,7 +44,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
     },
     onBreakOutTab(tab: UiInstanceMeta) {
       state.onDeleteTab(tab);
-      // 🚧 add ui back
+      layoutApi.addItem({
+        uiMeta: tab,
+        gridRect: { x: 0, y: 0, width: 2, height: 1 }, // 🚧
+      });
     },
     onClickTab(tab: UiInstanceMeta) {
       // 🚧 reparse tabs meta
@@ -98,6 +101,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
                     <ArrowUpRightIcon
                       weight="thin"
                       className="cursor-pointer size-5 bg-black/40 text-white"
+                      onPointerDown={() => state.onBreakOutTab(tab)}
                     />
                   </button>
 
