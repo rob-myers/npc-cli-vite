@@ -9,9 +9,12 @@ export const uiStoreApi = {
     return Object.values(uiStore.getState().metaById).flatMap((meta) => meta.items ?? meta);
   },
 
-  /** e.g. `jsh-1` where `1` is first unused natural number */
-  getDefaultTitle(uiKey: UiRegistryKey) {
-    const titleRegExp = new RegExp(`^${uiKey.toLowerCase()}-(\\d+)$`);
+  /**
+   * - For example `blog-1` in case `blog-0` and `blog-2` already exist.
+   * - Prefix permits custom titles e.g. `tty-0`
+   */
+  getDefaultTitle(uiKey: UiRegistryKey, prefix = null as null | string) {
+    const titleRegExp = new RegExp(`^${prefix ?? uiKey.toLowerCase()}-(\\d+)$`);
     const suffices = new Set(
       uiStoreApi
         .getAllMetas()
@@ -19,7 +22,7 @@ export const uiStoreApi = {
           meta.uiKey === uiKey && titleRegExp.test(meta.title) ? Number(RegExp.$1) : [],
         ),
     );
-    return `${uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
+    return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
   },
 };
 
