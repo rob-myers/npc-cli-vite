@@ -23,8 +23,8 @@ export const uiRegistry: {
   World,
 } satisfies Record<string, UiPackageDef>;
 
+export type UiRegistry = typeof uiRegistry;
+
 export type UiRegistryKey = keyof typeof uiRegistry;
 
 export const uiRegistryKeys = Object.keys(uiRegistry) as UiRegistryKey[];
-
-export type UiDefaultTitle = `${Lowercase<UiRegistryKey>}-${number}`;
