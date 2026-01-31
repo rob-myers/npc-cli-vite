@@ -320,7 +320,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             collisionBoundary={state.visualViewportRect ?? undefined}
           >
             <ContextMenu.Popup
-              className="flex flex-col rounded-md bg-black/60 text-white outline-black"
+              className="flex flex-col rounded-md bg-black/80 text-white outline-black"
               data-context-menu-div
             >
               {uiRegistryKeys.map((uiRegistryKey) => (

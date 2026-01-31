@@ -68,9 +68,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
   }));
 
   return (
-    <div className={cn("flex flex-col size-full overflow-auto")}>
-      <div className="flex items-center border-b border-outline">
-        {meta.items.length === 0 && <div className="p-2 italic">no tabs</div>}
+    <div className={cn("flex flex-col size-full overflow-auto font-mono")}>
+      <div className="flex min-h-12 items-center border-b border-outline">
         {meta.items.map((tab) => (
           <div
             key={tab.id}
@@ -119,7 +118,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         <button
           ref={newTabButtonRef}
           type="button"
-          className="cursor-pointer pl-2 pt-2"
+          className="cursor-pointer px-2"
           onPointerUp={state.onAddNewTab}
         >
           <PlusCircleIcon className="size-5" weight="duotone" />
