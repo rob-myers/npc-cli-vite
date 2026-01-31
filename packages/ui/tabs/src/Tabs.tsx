@@ -11,14 +11,14 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className={cn("flex flex-col size-full")}>
+    <div className={cn("flex flex-col size-full overflow-auto")}>
       <div className="flex border-b border-outline">
         {meta.items.length === 0 && <div className="p-2">Empty tabs...</div>}
         {meta.items.map((tab) => (
           <button
             key={tab.id}
             className={cn(
-              "cursor-pointer px-4 py-2 -mb-px border-b-2 border-outline font-medium focus:outline-none transition-colors duration-200 bg-background",
+              "cursor-pointer px-4 py-2 -mb-px border-b-2 border-outline font-medium text-sm focus:outline-none bg-background",
               meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
             )}
             onClick={() =>
@@ -29,7 +29,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
             }
             type="button"
           >
-            {tab.title}
+            <pre>{tab.title}</pre>
           </button>
         ))}
         <button
@@ -45,15 +45,18 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
               addItem({ uiMeta }) {
                 // 🚧 also re-parse tabsMeta
                 const parsed = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
-                if (parsed.success) {
+                if (!parsed.success) {
+                  // 🚧 ui reflection
+                  return console.error("Failed to parse tab meta", parsed.error);
+                } else if (parsed.data.uiKey === "Tabs") {
+                  // 🚧 ui reflection
+                  return console.error("Nested Tabs unsupported");
+                } else {
                   uiStore.setState((draft) => {
                     const tabsMeta = draft.metaById[meta.id] as TabsUiMeta;
                     tabsMeta.items.push(parsed.data);
                     tabsMeta.currentTabId = parsed.data.id;
                   });
-                } else {
-                  // 🚧 ui reflection
-                  console.error("Failed to parse tab meta", parsed.error);
                 }
               },
             });

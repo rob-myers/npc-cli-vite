@@ -1,7 +1,7 @@
 import { useEffectNonStrict } from "@npc-cli/util";
 import { useMemo } from "react";
-import { type UiInstanceMeta, type UiPackageDef, UiParseError, uiStore } from ".";
 import { useStore } from "zustand";
+import { type UiInstanceMeta, type UiPackageDef, UiParseError, uiStore } from ".";
 
 export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
   return {
