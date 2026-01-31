@@ -15,7 +15,7 @@ export type UiBootstrapProps = {
 };
 
 export type UiPackageDef = {
-  // biome-ignore lint/suspicious/noExplicitAny: props will be validated by zod
+  // biome-ignore lint/suspicious/noExplicitAny: props validated by zod in defineUi
   ui: React.LazyExoticComponent<(props: any) => React.ReactNode>;
   bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
   schema: z.ZodType<UiInstanceMeta>;

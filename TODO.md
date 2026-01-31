@@ -126,7 +126,8 @@
       - ✅ alerts mock
       - ✅ render ui's meta inside tab
     - ✅ ui.layoutId -> ui.id
-    - 🚧 all uis have title
+    - 🚧 all uis have lowercased title `${uiKey}-${firstNaturalNumber}`
+      - could change per ui but e.g. tty sessionKey already matches
     - 🚧 TabUiMetaSchema should be union of all schemas
 
     - all uis (ones in tabs too) have a portal in ui.store
