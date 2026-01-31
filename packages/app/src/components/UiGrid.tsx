@@ -383,10 +383,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                           const itemId = `ui-${crypto.randomUUID()}`;
                           state.addItem({
                             uiMeta: {
+                              title: uiStoreApi.getDefaultTitle(state.contextMenuPopoverUi.uiKey),
                               ...partialUiMeta,
                               id: itemId,
                               uiKey: state.contextMenuPopoverUi.uiKey,
-                              title: uiStoreApi.getDefaultTitle(state.contextMenuPopoverUi.uiKey),
                             },
                             gridRect: {
                               x: state.contextMenuPopoverUi.point.x,
