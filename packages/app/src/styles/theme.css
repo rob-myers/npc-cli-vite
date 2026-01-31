@@ -1,5 +1,5 @@
 @theme {
-  --color-background: var(--color-sky-200);
+  --color-background: var(--color-gray-200);
   --color-on-background: var(--color-black);
   --color-button-background: var(--color-zinc-100);
   --color-spinner: var(--color-zinc-400);
