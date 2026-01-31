@@ -30,6 +30,9 @@ function Index() {
 
   const layoutApi = useMemo(
     (): UiContextValue["layoutApi"] => ({
+      addItem(opts) {
+        gridRef.current?.addItem(opts);
+      },
       overrideContextMenu(opts) {
         gridRef.current?.overrideContextMenu(opts);
       },
