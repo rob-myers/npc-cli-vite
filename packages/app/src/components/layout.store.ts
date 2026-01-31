@@ -43,11 +43,11 @@ export const demoLayout: UiGridLayout = {
   breakpoints: { lg: 1200, sm: 768 },
   cols: { lg: 12, sm: 6 },
   toUi: {
-    a: { layoutId: "a", uiKey: "Template" },
-    b: { layoutId: "b", uiKey: "Template" },
-    c: { layoutId: "c", uiKey: "Template" },
-    d: { layoutId: "d", uiKey: "Blog" },
-    e: { layoutId: "e", uiKey: "Global" },
-    f: { layoutId: "f", uiKey: "Jsh" },
+    a: { id: "a", uiKey: "Template" },
+    b: { id: "b", uiKey: "Template" },
+    c: { id: "c", uiKey: "Template" },
+    d: { id: "d", uiKey: "Blog" },
+    e: { id: "e", uiKey: "Global" },
+    f: { id: "f", uiKey: "Jsh" },
   },
 };

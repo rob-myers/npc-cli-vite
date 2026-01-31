@@ -20,7 +20,7 @@ export const uiStore = create<UiStoreState>()(
 );
 
 export type UiStoreState = {
-  metaById: { [layoutId: string]: UiInstanceMeta };
+  metaById: { [id: string]: UiInstanceMeta };
 };
 
 /** Needed because `uiRegistryKeys` yields circular import dependency  */
@@ -34,7 +34,8 @@ const mirrored: Record<UiRegistryKey, true> = {
 };
 
 export const BaseUiMetaSchema = z.looseObject({
-  layoutId: z.string(),
+  /** Layout id */
+  id: z.string(),
   uiKey: z.literal(keys(mirrored)),
 });
 

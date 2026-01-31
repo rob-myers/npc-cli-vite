@@ -18,14 +18,14 @@ export default function Tabs({ meta }: {
         {meta.items.length === 0 && <div className="p-2">Empty tabs...</div>}
         {meta.items.map((tab) => (
           <button
-            key={tab.layoutId}
+            key={tab.id}
             className={cn(
               "cursor-pointer px-4 py-2 -mb-px border-b-2 border-outline font-medium focus:outline-none transition-colors duration-200 bg-background",
-              meta.currentTabId !== tab.layoutId && "opacity-50 hover:opacity-80",
+              meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
             )}
             onClick={() => uiStore.setState(draft => {
                 // 🚧 reparse tabs meta
-              (draft.metaById[meta.layoutId] as TabsUiMeta).currentTabId = tab.layoutId;
+              (draft.metaById[meta.id] as TabsUiMeta).currentTabId = tab.id;
             })}
             type="button"
           >
@@ -47,9 +47,9 @@ export default function Tabs({ meta }: {
                 const parsed = TabUiMetaSchema.safeParse(uiMeta);
                 if (parsed.success) {
                   uiStore.setState((draft) => {
-                    const tabsMeta = draft.metaById[meta.layoutId] as TabsUiMeta;
+                    const tabsMeta = draft.metaById[meta.id] as TabsUiMeta;
                     tabsMeta.items.push(parsed.data);
-                    tabsMeta.currentTabId = parsed.data.layoutId;
+                    tabsMeta.currentTabId = parsed.data.id;
                   });
                 } else {
                   console.error("Failed to parse tab meta", parsed.error);
@@ -65,8 +65,8 @@ export default function Tabs({ meta }: {
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {meta.items.map((tab) => (
           <div
-            key={tab.layoutId}
-            className={cn("size-full", tab.layoutId !== meta.currentTabId && "hidden")}
+            key={tab.id}
+            className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}
           >
             {
               JSON.stringify({ tab }) // 🚧

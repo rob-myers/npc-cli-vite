@@ -125,6 +125,10 @@
     - 🚧 clicking add tab adds ui to new tab
       - ✅ alerts mock
       - ✅ render ui's meta inside tab
+    - ✅ ui.layoutId -> ui.id
+    - 🚧 all uis have title
+    - 🚧 TabUiMetaSchema should be union of all schemas
+
     - all uis (ones in tabs too) have a portal in ui.store
     - UiInstance either OutPortals or renders Tabs which OutPortals each tab
   - try make basic tabs components will draggable tabs

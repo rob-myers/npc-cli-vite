@@ -16,13 +16,13 @@ export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
       // bootstrap uiStore with parsed meta if valid, else original meta
       useEffectNonStrict(() => {
         uiStore.setState(
-          (draft) => void (draft.metaById[meta.layoutId] = result.success ? result.data : meta),
+          (draft) => void (draft.metaById[meta.id] = result.success ? result.data : meta),
         );
-        return () => uiStore.setState((draft) => void delete draft.metaById[meta.layoutId]);
+        return () => uiStore.setState((draft) => void delete draft.metaById[meta.id]);
       }, []);
 
       // listen for changes
-      const parsedMeta = useStore(uiStore, (s) => s.metaById[meta.layoutId]) ?? result.data;
+      const parsedMeta = useStore(uiStore, (s) => s.metaById[meta.id]) ?? result.data;
 
       return result.success ? (
         <uiDef.ui meta={parsedMeta} />
