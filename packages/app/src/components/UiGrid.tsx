@@ -1,6 +1,6 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
-import { UiInstance, type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
+import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
 import {
   type AddUiItemOpts,
   type OverrideContextMenuOpts,
@@ -29,6 +29,7 @@ import type { GridConfig } from "react-grid-layout/core";
 import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
+import { UiErrorBoundary } from "@npc-cli/ui-registry";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const layouts = useRef(initialUiLayout.layouts);
@@ -307,17 +308,18 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               onLayoutChange={(layout) => {
                 layouts.current.lg = layout;
               }}
-              // compactor={noCompactor}
             >
-              {childDefs.map(({ uiMeta }) => (
+              {childDefs.map(({ uiMeta, ui }) => (
                 <div
                   key={uiMeta.layoutId}
                   data-item-id={uiMeta.layoutId}
                   className="relative border border-on-background/20"
                 >
-                  <Suspense fallback={<Spinner />}>
-                    <UiInstance meta={uiMeta} />
-                  </Suspense>
+                  <UiErrorBoundary meta={uiMeta}>
+                    <Suspense fallback={<Spinner />}>
+                      <ui.ui meta={uiMeta} />
+                    </Suspense>
+                  </UiErrorBoundary>
                   <UiInstanceMenu id={uiMeta.layoutId} state={state} />
                 </div>
               ))}
