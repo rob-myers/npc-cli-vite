@@ -74,6 +74,7 @@
     - technically string does not define a valid js function so is interpreted as a string
   - ✅ Tty has /etc/{util.sh,util.js.sh}
   - 🚧 STOP bug: appears initially in e.g. 3rd tty
+    - seen profile fail to load too
   - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
 
 - ✅ normalize tsconfigs like bz-frontend
@@ -122,7 +123,7 @@
     - ✅ show contextmenu on click add tab
       - ❌ tried via external `Menu.trigger` but it broke main `ContextMenu.trigger`
     - ✅ can specify other uis in tab slots
-    - 🚧 clicking add tab adds ui to new tab
+    - ✅ clicking add tab adds ui to new tab
       - ✅ alerts mock
       - ✅ render ui's meta inside tab
     - ✅ ui.layoutId -> ui.id

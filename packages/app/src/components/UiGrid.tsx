@@ -6,7 +6,7 @@ import {
   type OverrideContextMenuOpts,
   type UiBootstrapProps,
   type UiContextValue,
-  UiErrorBoundary,
+  UiInstance,
   type UiInstanceMeta,
   uiStore,
   uiStoreApi,
@@ -66,7 +66,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       overrideContextMenuOpts: null,
       preventTransition: true,
       resizing: false,
-      toUi: { ...initialUiLayout.toUi },
+      toUi: { ...initialUiLayout.toUi }, // 🚧 only need "id -> uiKey"
       visualViewportRect: null,
       addItem({ itemId, uiMeta, gridRect }) {
         if (state.overrideContextMenuOpts?.addItem) {
@@ -259,15 +259,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     [],
   );
 
-  const childDefs = useMemo(
-    () =>
-      // flatMap handles malformed layout
-      layout.flatMap((item) => {
-        const uiMeta = state.toUi[item.i]; // 🚧 only need "id -> uiKey"
-        return uiMeta ? { uiMeta, ui: uiRegistry[uiMeta?.uiKey] } : [];
-      }),
-    [layout],
-  );
+  // flatMap handles malformed layout
+  const childMetas = useMemo(() => layout.flatMap((item) => state.toUi[item.i]), [layout]);
 
   return (
     <>
@@ -311,17 +304,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 layouts.current.lg = layout;
               }}
             >
-              {childDefs.map(({ uiMeta, ui }) => (
+              {childMetas.map((uiMeta) => (
                 <div
                   key={uiMeta.id}
                   data-item-id={uiMeta.id}
                   className="relative border border-on-background/20"
                 >
-                  <UiErrorBoundary meta={uiMeta}>
-                    <Suspense fallback={<Spinner />}>
-                      <ui.ui meta={uiMeta} />
-                    </Suspense>
-                  </UiErrorBoundary>
+                  <UiInstance meta={uiMeta} uiRegistry={uiRegistry} />
                   <UiInstanceMenu id={uiMeta.id} state={state} />
                 </div>
               ))}
