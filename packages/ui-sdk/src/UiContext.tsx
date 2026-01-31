@@ -32,14 +32,13 @@ export type UiContextValue = {
 };
 
 export type AddUiItemOpts = {
-  itemId: string;
   uiMeta: UiInstanceMeta;
   gridRect: { x: number; y: number; width: number; height: number };
 };
 
 export type OverrideContextMenuOpts = {
   refObject: React.RefObject<HTMLElement | null>;
-  addItem(addItemOpts: AddUiItemOpts): void;
+  addItem(opts: { uiMeta: UiInstanceMeta }): void;
 };
 
 function noOp() {}
