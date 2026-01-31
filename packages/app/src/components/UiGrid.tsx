@@ -6,6 +6,7 @@ import {
   type OverrideContextMenuOpts,
   type UiBootstrapProps,
   type UiContextValue,
+  UiErrorBoundary,
   type UiInstanceMeta,
   uiStore,
   uiStoreApi,
@@ -30,7 +31,6 @@ import type { GridConfig } from "react-grid-layout/core";
 import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import { UiErrorBoundary } from "@npc-cli/ui-registry";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   const layouts = useRef(initialUiLayout.layouts);
