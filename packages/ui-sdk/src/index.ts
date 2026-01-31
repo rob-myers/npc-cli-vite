@@ -4,6 +4,7 @@ import type { UiInstanceMeta } from "./schema";
 export * from "./define-ui";
 export * from "./schema";
 export * from "./UiContext";
+export * from "./UiErrorBoundary";
 export * from "./UiParseError";
 export * from "./ui.store";
 
