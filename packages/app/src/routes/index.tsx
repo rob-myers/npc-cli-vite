@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
+import { uiRegistry } from "@npc-cli/ui-registry";
 import { useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
@@ -40,7 +41,7 @@ function Index() {
   );
 
   return (
-    <UiContext.Provider value={{ layoutApi, theme, uiStore }}>
+    <UiContext.Provider value={{ layoutApi, theme, uiRegistry, uiStore }}>
       <UiGrid ref={gridRef} uiLayout={uiLayout} />
     </UiContext.Provider>
   );
