@@ -3,31 +3,30 @@ import { cn } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { useContext, useRef, useState } from "react";
-import type { TabsUiMeta, TabUiMeta } from "./schema";
+import { useContext, useRef } from "react";
+import { TabUiMetaSchema, type TabsUiMeta } from "./schema";
 
-export default function Tabs({
-  meta: { layoutId: rootId, items },
-}: {
+export default function Tabs({ meta }: {
   meta: TabsUiMeta;
 }): ReactNode {
   const { layoutApi } = useContext(UiContext);
-  const [activeKey, setActiveKey] = useState(items[0]?.layoutId); // 🚧 layoutId -> id?
-
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className={cn("flex flex-col size-full")}>
       <div className="flex border-b border-outline">
-        {items.length === 0 && <div className="p-2">Empty tabs...</div>}
-        {items.map((tab) => (
+        {meta.items.length === 0 && <div className="p-2">Empty tabs...</div>}
+        {meta.items.map((tab) => (
           <button
             key={tab.layoutId}
             className={cn(
               "cursor-pointer px-4 py-2 -mb-px border-b-2 border-outline font-medium focus:outline-none transition-colors duration-200 bg-background",
-              activeKey !== tab.layoutId && "opacity-50 hover:opacity-80",
+              meta.currentTabId !== tab.layoutId && "opacity-50 hover:opacity-80",
             )}
-            onClick={() => setActiveKey(tab.layoutId)}
+            onClick={() => uiStore.setState(draft => {
+                // 🚧 reparse tabs meta
+              (draft.metaById[meta.layoutId] as TabsUiMeta).currentTabId = tab.layoutId;
+            })}
             type="button"
           >
             {tab.title}
@@ -39,22 +38,22 @@ export default function Tabs({
           className="cursor-pointer open-context-menu"
           onPointerUp={(e) => {
             e.stopPropagation();
-            pause(30); // avoid immediate click context menu item
+            pause(30); // avoid immediate select context menu item
 
             layoutApi.overrideContextMenu({
               refObject: newTabButtonRef,
-              addItem({ uiMeta, itemId }) {
-                // 🚧
-                // 🚧 zod parse rootMeta and uiMeta
-                const rootMeta = uiStore.getState().metaById[rootId];
-                console.log("Add tab", { rootMeta, uiMeta, itemId });
-                uiStore.setState((draft) => {
-                  (draft.metaById[rootId] as TabsUiMeta).items.push({
-                    layoutId: itemId,
-                    title: (uiMeta as TabUiMeta).title,
-                    uiKey: uiMeta.uiKey,
+              addItem({ uiMeta }) {
+                // 🚧 reparse tabs meta
+                const parsed = TabUiMetaSchema.safeParse(uiMeta);
+                if (parsed.success) {
+                  uiStore.setState((draft) => {
+                    const tabsMeta = draft.metaById[meta.layoutId] as TabsUiMeta;
+                    tabsMeta.items.push(parsed.data);
+                    tabsMeta.currentTabId = parsed.data.layoutId;
                   });
-                });
+                } else {
+                  console.error("Failed to parse tab meta", parsed.error);
+                }
               },
             });
           }}
@@ -62,11 +61,12 @@ export default function Tabs({
           <PlusCircleIcon className="size-4" weight="duotone" />
         </button>
       </div>
+
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
-        {items.map((tab) => (
+        {meta.items.map((tab) => (
           <div
             key={tab.layoutId}
-            className={cn("size-full", tab.layoutId !== activeKey && "hidden")}
+            className={cn("size-full", tab.layoutId !== meta.currentTabId && "hidden")}
           >
             {
               JSON.stringify({ tab }) // 🚧
