@@ -72,9 +72,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
       <div className="flex items-center border-b border-outline">
         {meta.items.length === 0 && <div className="p-2 italic">no tabs</div>}
         {meta.items.map((tab) => (
-          <button
+          <div
             key={tab.id}
-            type="button"
             className={cn(
               "flex gap-2",
               "cursor-pointer px-1 pt-2 -mb-px border-b-2 border-outline font-medium text-sm focus:outline-none",
@@ -115,7 +114,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
                 </div>
               </BasicPopover>
             </div>
-          </button>
+          </div>
         ))}
         <button
           ref={newTabButtonRef}

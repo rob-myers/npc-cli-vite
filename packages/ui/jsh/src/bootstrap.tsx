@@ -3,11 +3,11 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 
 export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
-  const { uiStore } = useContext(UiContext);
+  const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     invalid: false,
-    sessionKey: "tty-0",
+    sessionKey: uiStoreApi.getDefaultTitle("Jsh", "tty"),
     onClickCreate() {
       if (state.invalid) return;
 
@@ -19,6 +19,8 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
 
       props.addInstance({
         sessionKey: state.sessionKey,
+        // title matches sessionKey
+        title: state.sessionKey,
       });
     },
   }));
