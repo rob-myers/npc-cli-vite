@@ -20,7 +20,7 @@ export class UiErrorBoundary extends Component<
       return this.props.children;
     }
     return (
-      <div className="flex flex-col gap-1 text-on-background h-full bg-black">
+      <div className="flex flex-col gap-1 text-on-background size-full bg-black">
         <h2 className="p-4 border-b text-white border-on-background/25 bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-white)_20%,transparent)]">
           UI Error ({this.props.meta?.uiKey})
         </h2>
