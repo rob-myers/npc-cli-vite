@@ -1,7 +1,8 @@
 import type z from "zod";
-import type { UiInstanceMeta } from "./ui.store";
+import type { UiInstanceMeta } from "./schema";
 
 export * from "./define-ui";
+export * from "./schema";
 export * from "./UiContext";
 export * from "./UiParseError";
 export * from "./ui.store";

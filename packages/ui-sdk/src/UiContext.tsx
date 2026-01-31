@@ -4,7 +4,8 @@ import { createContext } from "react";
 import type { StorageValue } from "zustand/middleware/persist";
 import type { UseBoundStore } from "zustand/react";
 import type { StoreApi } from "zustand/vanilla";
-import { type UiInstanceMeta, type UiStoreState, uiStore } from "./ui.store";
+import { type UiStoreState, uiStore } from "./ui.store";
+import type { UiInstanceMeta } from "./schema";
 import type { WithImmer } from "./with-immer-type";
 
 export const UiContext = createContext<UiContextValue>({
