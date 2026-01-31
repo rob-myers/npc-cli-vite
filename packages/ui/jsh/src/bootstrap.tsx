@@ -7,7 +7,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
 
   const state = useStateRef(() => ({
     invalid: false,
-    sessionKey: uiStoreApi.getDefaultTitle("Jsh", "tty"),
+    sessionKey: uiStoreApi.getDefaultTitle("Jsh", "tty"), // e.g. tty-0
     onClickCreate() {
       if (state.invalid) return;
 

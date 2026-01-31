@@ -3,11 +3,11 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 
 export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode {
-  const { uiStore } = useContext(UiContext);
+  const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     invalid: false,
-    worldKey: "world-0",
+    worldKey: uiStoreApi.getDefaultTitle("World", "world"), // e.g. world-0
     onClickCreate() {
       if (state.invalid) return;
 
@@ -19,6 +19,8 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
 
       props.addInstance({
         worldKey: state.worldKey,
+        // title matches worldKey
+        title: state.worldKey,
       });
     },
   }));
