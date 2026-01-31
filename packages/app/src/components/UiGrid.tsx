@@ -68,18 +68,16 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       resizing: false,
       toUi: { ...initialUiLayout.toUi }, // 🚧 only need "id -> uiKey"
       visualViewportRect: null,
-      addItem({ itemId, uiMeta, gridRect }) {
+      addItem({ uiMeta, gridRect }) {
         if (state.overrideContextMenuOpts?.addItem) {
           state.overrideContextMenuOpts.addItem({
-            itemId,
             uiMeta,
-            gridRect,
           });
         } else {
-          state.toUi[itemId] = uiMeta;
+          state.toUi[uiMeta.id] = uiMeta;
           setLayouts({
             lg: layouts.current.lg.concat({
-              i: itemId,
+              i: uiMeta.id,
               x: gridRect.x,
               y: gridRect.y,
               w: gridRect.width,
@@ -165,7 +163,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         } else {
           const itemId = `ui-${crypto.randomUUID()}`;
           state.addItem({
-            itemId,
             uiMeta: {
               id: itemId,
               title: uiStoreApi.getDefaultTitle(uiRegistryKey),
@@ -386,7 +383,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
                           const itemId = `ui-${crypto.randomUUID()}`;
                           state.addItem({
-                            itemId,
                             uiMeta: {
                               ...partialUiMeta,
                               id: itemId,

@@ -42,6 +42,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         },
       });
     },
+    onBreakOutTab(tab: UiInstanceMeta) {
+      state.onDeleteTab(tab);
+      // 🚧 add ui back
+    },
     onClickTab(tab: UiInstanceMeta) {
       // 🚧 reparse tabs meta
       uiStore.setState((draft) => {
