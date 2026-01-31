@@ -15,6 +15,7 @@ const mirrored: Record<UiRegistryKey, true> = {
 export const BaseUiMetaSchema = z.looseObject({
   /** Layout id */
   id: z.string(),
+  title: z.string(),
   uiKey: z.literal(keys(mirrored)),
 });
 

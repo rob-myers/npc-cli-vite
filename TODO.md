@@ -126,7 +126,7 @@
       - ✅ alerts mock
       - ✅ render ui's meta inside tab
     - ✅ ui.layoutId -> ui.id
-    - 🚧 all uis have lowercased title `${uiKey}-${firstNaturalNumber}`
+    - ✅ by default uis have lowercased title `${uiKey}-${firstNaturalNumber}`
       - could change per ui but e.g. tty sessionKey already matches
     - 🚧 TabUiMetaSchema should be union of all schemas
 

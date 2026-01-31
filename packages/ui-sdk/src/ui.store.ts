@@ -1,7 +1,21 @@
+import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import type { UiInstanceMeta } from "./schema";
+
+export const uiStoreApi = {
+  /** e.g. `jsh-1` where `1` is first unused natural number */
+  getDefaultTitle(uiKey: UiRegistryKey) {
+    const titleRegExp = new RegExp(`^${uiKey.toLowerCase()}-(\\d+)$`);
+    const suffices = new Set(
+      Object.values(uiStore.getState().metaById).flatMap((meta) =>
+        meta.uiKey === uiKey && titleRegExp.test(meta.title) ? Number(RegExp.$1) : [],
+      ),
+    );
+    return `${uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
+  },
+};
 
 /**
  * Not persisted: contents should be determined by persisted layout.
