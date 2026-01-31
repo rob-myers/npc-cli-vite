@@ -166,7 +166,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           state.addItem({
             itemId,
             uiMeta: {
-              layoutId: itemId,
+              id: itemId,
               uiKey: uiRegistryKey,
             },
             gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
@@ -246,7 +246,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       resetLayout() {
-        state.toUi = { "ui-0": { layoutId: "ui-0", uiKey: "Global" } };
+        state.toUi = { "ui-0": { id: "ui-0", uiKey: "Global" } };
         state.isLocked = {};
         layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
         setLayouts({
@@ -311,8 +311,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             >
               {childDefs.map(({ uiMeta, ui }) => (
                 <div
-                  key={uiMeta.layoutId}
-                  data-item-id={uiMeta.layoutId}
+                  key={uiMeta.id}
+                  data-item-id={uiMeta.id}
                   className="relative border border-on-background/20"
                 >
                   <UiErrorBoundary meta={uiMeta}>
@@ -320,7 +320,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                       <ui.ui meta={uiMeta} />
                     </Suspense>
                   </UiErrorBoundary>
-                  <UiInstanceMenu id={uiMeta.layoutId} state={state} />
+                  <UiInstanceMenu id={uiMeta.id} state={state} />
                 </div>
               ))}
             </GridLayout>
@@ -398,7 +398,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                             itemId,
                             uiMeta: {
                               ...partialUiMeta,
-                              layoutId: itemId,
+                              id: itemId,
                               uiKey: state.contextMenuPopoverUi.uiKey,
                             },
                             gridRect: {
