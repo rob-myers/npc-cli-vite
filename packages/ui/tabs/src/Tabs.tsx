@@ -1,4 +1,4 @@
-import { UiContext, uiStore } from "@npc-cli/ui-sdk";
+import { UiContext, UiInstance, uiStore } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon } from "@phosphor-icons/react";
@@ -69,9 +69,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {meta.items.map((tab) => (
           <div key={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
-            {
-              JSON.stringify({ tab }) // 🚧
-            }
+            <UiInstance meta={tab} uiRegistry={uiRegistry} />
           </div>
         ))}
       </div>
