@@ -256,7 +256,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   );
 
   // flatMap handles malformed layout
-  const childMetas = useMemo(() => layout.flatMap((item) => state.toUi[item.i]), [layout]);
+  const childMetas = useMemo(() => layout.flatMap((item) => state.toUi[item.i] ?? []), [layout]);
 
   return (
     <>
