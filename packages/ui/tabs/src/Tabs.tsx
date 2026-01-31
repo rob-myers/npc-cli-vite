@@ -4,12 +4,10 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { useContext, useRef } from "react";
-import { TabUiMetaSchema, type TabsUiMeta } from "./schema";
+import type { TabsUiMeta } from "./schema";
 
-export default function Tabs({ meta }: {
-  meta: TabsUiMeta;
-}): ReactNode {
-  const { layoutApi } = useContext(UiContext);
+export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
+  const { layoutApi, uiRegistry } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -23,10 +21,12 @@ export default function Tabs({ meta }: {
               "cursor-pointer px-4 py-2 -mb-px border-b-2 border-outline font-medium focus:outline-none transition-colors duration-200 bg-background",
               meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
             )}
-            onClick={() => uiStore.setState(draft => {
+            onClick={() =>
+              uiStore.setState((draft) => {
                 // 🚧 reparse tabs meta
-              (draft.metaById[meta.id] as TabsUiMeta).currentTabId = tab.id;
-            })}
+                (draft.metaById[meta.id] as TabsUiMeta).currentTabId = tab.id;
+              })
+            }
             type="button"
           >
             {tab.title}
@@ -43,8 +43,8 @@ export default function Tabs({ meta }: {
             layoutApi.overrideContextMenu({
               refObject: newTabButtonRef,
               addItem({ uiMeta }) {
-                // 🚧 reparse tabs meta
-                const parsed = TabUiMetaSchema.safeParse(uiMeta);
+                // 🚧 also re-parse tabsMeta
+                const parsed = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
                 if (parsed.success) {
                   uiStore.setState((draft) => {
                     const tabsMeta = draft.metaById[meta.id] as TabsUiMeta;
@@ -52,6 +52,7 @@ export default function Tabs({ meta }: {
                     tabsMeta.currentTabId = parsed.data.id;
                   });
                 } else {
+                  // 🚧 ui reflection
                   console.error("Failed to parse tab meta", parsed.error);
                 }
               },
@@ -64,10 +65,7 @@ export default function Tabs({ meta }: {
 
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {meta.items.map((tab) => (
-          <div
-            key={tab.id}
-            className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}
-          >
+          <div key={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
             {
               JSON.stringify({ tab }) // 🚧
             }
