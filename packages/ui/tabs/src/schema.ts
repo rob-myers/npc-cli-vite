@@ -9,6 +9,7 @@ export const TabUiMetaSchema = z.object({
 export const TabsUiMetaSchema = z.object({
   ...BaseUiMetaSchema.shape,
   items: z.array(TabUiMetaSchema).default([]),
+  currentTabId: z.string().optional(),
 });
 
 export type TabsUiMeta = z.infer<typeof TabsUiMetaSchema>;

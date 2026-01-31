@@ -1,17 +1,13 @@
-import { type UiInstanceMeta, uiStore } from "@npc-cli/ui-sdk";
-import { useStore } from "zustand/react";
+import { type UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { uiRegistry } from "./index";
 import { UiErrorBoundary } from "./UiErrorBoundary";
 
+// 🚧 remove this component
 export const UiInstance = ({ meta }: { meta: UiInstanceMeta }) => {
-  const id = meta.layoutId;
   const def = uiRegistry[meta.uiKey];
-  // 🚧 clean e.g. move into defineUi and remove this component
-  const m = useStore(uiStore, (s) => s.metaById[id] ?? meta);
-
   return (
-    <UiErrorBoundary meta={m}>
-      <def.ui meta={m} />
+    <UiErrorBoundary meta={meta}>
+      <def.ui meta={meta} />
     </UiErrorBoundary>
   );
 };

@@ -1,6 +1,7 @@
 import { useEffectNonStrict } from "@npc-cli/util";
 import { useMemo } from "react";
 import { type UiInstanceMeta, type UiPackageDef, UiParseError, uiStore } from ".";
+import { useStore } from "zustand";
 
 /**
  * - Constrain uiDef format as extension of `UiPackageDef`.
@@ -20,8 +21,11 @@ export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
         return () => uiStore.setState((draft) => void delete draft.metaById[meta.layoutId]);
       }, []);
 
+      // listen for changes
+      const parsedMeta = useStore(uiStore, (s) => s.metaById[meta.layoutId]) ?? result.data;
+
       return result.success ? (
-        <uiDef.ui meta={result.data} />
+        <uiDef.ui meta={parsedMeta} />
       ) : (
         <UiParseError uiKey={meta.uiKey} zodError={result.error} />
       );
