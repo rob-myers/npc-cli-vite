@@ -17,7 +17,7 @@ export default function Global() {
           {themeApi.getOther()}
         </button>
         <BasicPopover
-          className="border rounded px-4 py-1 bg-button-background"
+          triggerClassName="border rounded px-4 py-1 bg-button-background"
           trigger={"reset"}
           side="bottom"
         >

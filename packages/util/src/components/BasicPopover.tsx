@@ -11,8 +11,9 @@ import { PopoverArrow } from "./PopoverArrow";
  */
 export function BasicPopover(
   props: PropsWithChildren<{
-    /** For trigger */
     className?: string;
+    arrowClassName?: string;
+    triggerClassName?: string;
     trigger?: React.ReactNode;
     side?: "top" | "right" | "bottom" | "left";
     sideOffset?: number;
@@ -21,19 +22,25 @@ export function BasicPopover(
   return (
     <Popover.Root>
       <Popover.Trigger
-        className={cn(preventReactGridDragClassName, "cursor-pointer p-1", props.className)}
+        className={cn(preventReactGridDragClassName, "cursor-pointer p-1", props.triggerClassName)}
       >
         {props.trigger}
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner side={props.side} sideOffset={props.sideOffset}>
           <Popover.Popup className="outline-0">
-            <PopoverArrow className="fill-gray-200" arrowBorderFill="#00000033" />
+            <PopoverArrow
+              className={props.arrowClassName ?? "fill-gray-200"}
+              arrowBorderFill="#00000033"
+            />
             <Popover.Description
-              render={(props) => (
+              render={(descriptionProps) => (
                 <div
-                  className="border border-black/20 flex items-center px-2 py-1 bg-gray-200 text-black text-sm"
-                  {...props}
+                  {...descriptionProps}
+                  className={cn(
+                    "border border-black/20 flex items-center px-2 py-1 bg-gray-200 text-black text-sm",
+                    props.className,
+                  )}
                 />
               )}
             >
