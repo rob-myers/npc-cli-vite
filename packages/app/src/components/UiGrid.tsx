@@ -8,6 +8,7 @@ import {
   type UiContextValue,
   type UiInstanceMeta,
   uiStore,
+  uiStoreApi,
 } from "@npc-cli/ui-sdk";
 import {
   allowReactGridDragClassName,
@@ -167,6 +168,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             itemId,
             uiMeta: {
               id: itemId,
+              title: uiStoreApi.getDefaultTitle(uiRegistryKey),
               uiKey: uiRegistryKey,
             },
             gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
@@ -246,7 +248,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       resetLayout() {
-        state.toUi = { "ui-0": { id: "ui-0", uiKey: "Global" } };
+        state.toUi = { "ui-0": { id: "ui-0", title: "global-0", uiKey: "Global" } };
         state.isLocked = {};
         layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
         setLayouts({
@@ -400,6 +402,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                               ...partialUiMeta,
                               id: itemId,
                               uiKey: state.contextMenuPopoverUi.uiKey,
+                              title: uiStoreApi.getDefaultTitle(state.contextMenuPopoverUi.uiKey),
                             },
                             gridRect: {
                               x: state.contextMenuPopoverUi.point.x,
