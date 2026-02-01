@@ -33,6 +33,9 @@ function Index() {
       addItem(opts) {
         gridRef.current?.addItem(opts);
       },
+      getUiGridRect(id) {
+        return gridRef.current?.getUiGridRect(id) ?? null;
+      },
       overrideContextMenu(opts) {
         gridRef.current?.overrideContextMenu(opts);
       },
