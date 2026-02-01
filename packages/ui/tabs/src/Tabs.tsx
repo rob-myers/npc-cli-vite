@@ -16,56 +16,59 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
   const { layoutApi, uiRegistry } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
 
-  const state = useStateRef(() => ({
-    onAddNewTab(e: React.PointerEvent<HTMLElement>) {
-      e.stopPropagation();
-      pause(30); // avoid immediate select context menu item
+  const state = useStateRef(
+    () => ({
+      onAddNewTab(e: React.PointerEvent<HTMLElement>) {
+        e.stopPropagation();
+        pause(30); // avoid immediate select context menu item
 
-      layoutApi.overrideContextMenu({
-        refObject: newTabButtonRef,
-        addItem({ uiMeta }) {
-          // 🚧 also re-parse tabsMeta
-          const parsed = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
-          if (!parsed.success) {
-            // 🚧 ui reflection
-            return console.error("Failed to parse tab meta", parsed.error);
-          } else if (parsed.data.uiKey === "Tabs") {
-            // 🚧 ui reflection
-            return console.error("Nested Tabs unsupported");
-          } else {
-            uiStore.setState((draft) => {
-              const tabsMeta = draft.metaById[meta.id] as TabsUiMeta;
-              tabsMeta.items.push(parsed.data);
-              tabsMeta.currentTabId = parsed.data.id;
-            });
+        layoutApi.overrideContextMenu({
+          refObject: newTabButtonRef,
+          addItem({ uiMeta }) {
+            // 🚧 also re-parse tabsMeta
+            const parsed = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
+            if (!parsed.success) {
+              // 🚧 ui reflection
+              return console.error("Failed to parse tab meta", parsed.error);
+            } else if (parsed.data.uiKey === "Tabs") {
+              // 🚧 ui reflection
+              return console.error("Nested Tabs unsupported");
+            } else {
+              uiStore.setState((draft) => {
+                const tabsMeta = draft.metaById[meta.id] as TabsUiMeta;
+                tabsMeta.items.push(parsed.data);
+                tabsMeta.currentTabId = parsed.data.id;
+              });
+            }
+          },
+        });
+      },
+      onBreakOutTab(tab: UiInstanceMeta) {
+        state.onDeleteTab(tab);
+        layoutApi.addItem({
+          uiMeta: tab,
+          gridRect: layoutApi.getUiGridRect(meta.id) ?? { x: 0, y: 0, width: 2, height: 1 },
+        });
+      },
+      onClickTab(tab: UiInstanceMeta) {
+        // 🚧 reparse tabs meta
+        uiStore.setState((draft) => {
+          (draft.metaById[meta.id] as TabsUiMeta).currentTabId = tab.id;
+        });
+      },
+      onDeleteTab(tab: UiInstanceMeta) {
+        // 🚧 reparse tabs meta
+        uiStore.setState((draft) => {
+          const rootMeta = draft.metaById[meta.id] as TabsUiMeta;
+          rootMeta.items = rootMeta.items.filter((item) => item.id !== tab.id);
+          if (rootMeta.currentTabId === tab.id) {
+            rootMeta.currentTabId = rootMeta.items[0]?.id;
           }
-        },
-      });
-    },
-    onBreakOutTab(tab: UiInstanceMeta) {
-      state.onDeleteTab(tab);
-      layoutApi.addItem({
-        uiMeta: tab,
-        gridRect: { x: 0, y: 0, width: 2, height: 1 }, // 🚧
-      });
-    },
-    onClickTab(tab: UiInstanceMeta) {
-      // 🚧 reparse tabs meta
-      uiStore.setState((draft) => {
-        (draft.metaById[meta.id] as TabsUiMeta).currentTabId = tab.id;
-      });
-    },
-    onDeleteTab(tab: UiInstanceMeta) {
-      // 🚧 reparse tabs meta
-      uiStore.setState((draft) => {
-        const rootMeta = draft.metaById[meta.id] as TabsUiMeta;
-        rootMeta.items = rootMeta.items.filter((item) => item.id !== tab.id);
-        if (rootMeta.currentTabId === tab.id) {
-          rootMeta.currentTabId = rootMeta.items[0]?.id;
-        }
-      });
-    },
-  }));
+        });
+      },
+    }),
+    { deps: [layoutApi] },
+  );
 
   return (
     <div className={cn("flex flex-col size-full overflow-auto font-mono")}>

@@ -220,12 +220,15 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     ref,
     (): GridApi => ({
       addItem: state.addItem,
+      getUiGridRect(id) {
+        const found = layouts.current.lg.find((item) => item.i === id);
+        return found ? { x: found.x, y: found.y, width: found.w, height: found.h } : null;
+      },
       getUiLayout() {
         return {
           layouts: layouts.current,
           breakpoints: initialUiLayout.breakpoints,
           cols: initialUiLayout.cols,
-          // toUi: state.toUi,
           toUi: uiStore.getState().metaById,
         };
       },
@@ -303,7 +306,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
               {childMetas.map((uiMeta) => (
                 <div
                   key={uiMeta.id}
-                  data-item-id={uiMeta.id}
+                  data-item-id={uiMeta.id} // used by getItemToRect
                   className="relative border border-on-background/20"
                 >
                   <UiInstance meta={uiMeta} uiRegistry={uiRegistry} />
