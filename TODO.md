@@ -155,7 +155,7 @@
 
 - 🚧 redo portals
   - ✅ remove portal code
-  - 🚧 uiStore.byId[id].{portal,meta}
+  - ✅ `uiStore.byId` with values `{portal,meta}`
   - 🚧 mount dup uis in external portal container
 
 - 🚧 packages/ui/world
