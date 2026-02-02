@@ -143,7 +143,9 @@
     - 🚧 break out tab should preserve portal
       - might need store after all
       - ✅ UiInstance stores in ui.store on mount, but does not remove on unmount
-      - 🚧 Delete tab removes portal
+      - ✅ Delete tab removes portal
+      - ✅ Delete UI removes portal
+      - ✅ Delete tabs removes all sub-portals
     - 🚧 ui break out is still broken for Jsh and World
       - still fixed by refreshing
       - probably related to stale layoutApi

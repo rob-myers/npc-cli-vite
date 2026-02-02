@@ -183,6 +183,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ resizing: false });
       },
       removeItem(itemId) {
+        const meta = uiStoreApi.getUiMeta(itemId);
+        uiStoreApi.removeUiPortal(itemId);
+        meta?.items?.forEach((childMeta) => uiStoreApi.removeUiPortal(childMeta.id));
+
         delete state.toUi[itemId];
         layouts.current.lg = layout.filter((item) => item.i !== itemId);
         setLayouts({ lg: layout.filter((item) => item.i !== itemId) });
