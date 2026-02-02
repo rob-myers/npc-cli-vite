@@ -1,5 +1,6 @@
 import { type UiBootstrapProps, UiContext } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
+import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
 
 export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode {
@@ -46,7 +47,11 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
         disabled={state.invalid}
         onClick={state.onClickCreate}
       >
-        {state.invalid ? "❌" : "Create"}
+        {state.invalid ? (
+          <WarningIcon className="size-6 fill-red-400" weight="duotone" />
+        ) : (
+          <PlusCircleIcon className="size-6" weight="duotone" />
+        )}
       </button>
     </div>
   );
