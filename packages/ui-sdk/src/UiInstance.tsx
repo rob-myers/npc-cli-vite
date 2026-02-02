@@ -1,8 +1,8 @@
 import type { UiRegistry } from "@npc-cli/ui-registry";
-import { Spinner } from "@npc-cli/util";
+import { Spinner, useEffectNonStrict } from "@npc-cli/util";
 import { Suspense, useMemo } from "react";
 import * as portals from "react-reverse-portal";
-import type { UiInstanceMeta } from ".";
+import { type UiInstanceMeta, uiStoreApi } from ".";
 import { UiErrorBoundary } from "./UiErrorBoundary";
 
 export function UiInstance({ meta, uiRegistry }: { meta: UiInstanceMeta; uiRegistry: UiRegistry }) {
@@ -11,12 +11,17 @@ export function UiInstance({ meta, uiRegistry }: { meta: UiInstanceMeta; uiRegis
     () => portals.createHtmlPortalNode({ attributes: { style: portalNodeContainerStyle } }),
     [],
   );
+  useEffectNonStrict(() => {
+    uiStoreApi.addUiPortal(meta.id, portalNode);
+    // only remove on explicitly delete tab
+  }, []);
+
   return (
     <UiErrorBoundary meta={meta}>
       <Suspense fallback={<Spinner />}>
         <def.ui meta={meta} portalNode={portalNode} />
-        <portals.OutPortal node={portalNode} />
       </Suspense>
+      <portals.OutPortal node={portalNode} />
     </UiErrorBoundary>
   );
 }
