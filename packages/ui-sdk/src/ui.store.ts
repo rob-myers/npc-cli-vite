@@ -1,6 +1,5 @@
 import type { UiRegistryKey } from "@npc-cli/ui-registry";
-import { castDraft } from "immer";
-import type * as portals from "react-reverse-portal";
+import * as portals from "react-reverse-portal";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -8,21 +7,18 @@ import type { UiInstanceMeta } from "./schema";
 import type { WithImmer } from "./with-immer-type";
 
 /** Use class to keep immer happy */
-class HtmlPortalWrapper {
+export class HtmlPortalWrapper {
   portalNode: portals.HtmlPortalNode;
-  constructor(portalNode: portals.HtmlPortalNode) {
-    this.portalNode = portalNode;
+  constructor() {
+    this.portalNode = portals.createHtmlPortalNode({
+      attributes: { style: "width: 100%; height: 100%;" },
+    });
   }
 }
 
 export const uiStoreApi = {
-  addUiPortal(id: string, portalNode: portals.HtmlPortalNode) {
-    uiStore.setState((draft) => {
-      draft.portalById[id] = castDraft(new HtmlPortalWrapper(portalNode));
-    });
-  },
   getAllMetas() {
-    return Object.values(uiStore.getState().metaById).flatMap((meta) => meta.items ?? meta);
+    return Object.values(uiStore.getState().byId).flatMap(({ meta }) => meta.items ?? meta);
   },
   /**
    * - For example `blog-1` in case `blog-0` and `blog-2` already exist.
@@ -40,11 +36,7 @@ export const uiStoreApi = {
     return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
   },
   getUiMeta(id: string): UiInstanceMeta | null {
-    const meta = uiStore.getState().metaById[id];
-    return meta ?? null;
-  },
-  removeUiPortal(id: string) {
-    uiStore.setState((draft) => void delete draft.portalById[id]);
+    return uiStore.getState().byId[id]?.meta ?? null;
   },
 };
 
@@ -55,8 +47,7 @@ export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<
   immer(
     devtools(
       (_set, _get) => ({
-        metaById: {},
-        portalById: {},
+        byId: {},
       }),
       { name: "ui.store", anonymousActionType: "ui.store" },
     ),
@@ -64,7 +55,5 @@ export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<
 );
 
 export type UiStoreState = {
-  metaById: { [id: string]: UiInstanceMeta };
-  // portalById: { [id: string]: portals.HtmlPortalNode };
-  portalById: { [id: string]: HtmlPortalWrapper };
+  byId: { [id: string]: { meta: UiInstanceMeta; portal: HtmlPortalWrapper } };
 };

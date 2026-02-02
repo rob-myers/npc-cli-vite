@@ -1,4 +1,4 @@
-import { UiContext, UiInstance, type UiInstanceMeta, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import { UiContext, UiInstance, type UiInstanceMeta, uiStore } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -36,7 +36,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
               return console.error("Nested Tabs unsupported");
             } else {
               uiStore.setState((draft) => {
-                const tabsMeta = draft.metaById[id] as TabsUiMeta;
+                const tabsMeta = draft.byId[id].meta as TabsUiMeta;
                 tabsMeta.items.push(parsed.data);
                 tabsMeta.currentTabId = parsed.data.id;
               });
@@ -45,7 +45,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         });
       },
       onBreakOutTab(tab: UiInstanceMeta) {
-        state.onDeleteTab(tab, { preservePortal: true });
+        state.onDeleteTab(tab);
         layoutApi.addItem({
           uiMeta: tab,
           gridRect: layoutApi.getUiGridRect(id) ?? { x: 0, y: 0, width: 2, height: 1 },
@@ -54,21 +54,18 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
       onClickTab(tab: UiInstanceMeta) {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
-          (draft.metaById[id] as TabsUiMeta).currentTabId = tab.id;
+          (draft.byId[id].meta as TabsUiMeta).currentTabId = tab.id;
         });
       },
-      onDeleteTab(tab: UiInstanceMeta, { preservePortal } = { preservePortal: false }) {
+      onDeleteTab(tab: UiInstanceMeta) {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
-          const rootMeta = draft.metaById[id] as TabsUiMeta;
+          const rootMeta = draft.byId[id].meta as TabsUiMeta;
           rootMeta.items = rootMeta.items.filter((item) => item.id !== tab.id);
           if (rootMeta.currentTabId === tab.id) {
             rootMeta.currentTabId = rootMeta.items[0]?.id;
           }
         });
-        if (!preservePortal) {
-          uiStoreApi.removeUiPortal(tab.id);
-        }
       },
     }),
     { deps: [id, layoutApi] },

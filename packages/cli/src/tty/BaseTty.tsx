@@ -111,6 +111,11 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     xterm.textarea?.setAttribute("enterkeyhint", "send");
 
     return () => {
+      // 🚧 hack
+      if (!state.session) {
+        return console.warn("BaseTty: session already removed");
+      }
+
       sessionApi.persistHistory(props.sessionKey);
       sessionApi.persistHome(props.sessionKey);
       sessionApi.removeSession(props.sessionKey);

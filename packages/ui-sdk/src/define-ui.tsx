@@ -1,7 +1,14 @@
 import { useEffectNonStrict } from "@npc-cli/util";
+import { castDraft } from "immer";
 import { useMemo } from "react";
 import { useStore } from "zustand";
-import { type UiInstanceMeta, type UiPackageDef, UiParseError, uiStore } from ".";
+import {
+  HtmlPortalWrapper,
+  type UiInstanceMeta,
+  type UiPackageDef,
+  UiParseError,
+  uiStore,
+} from ".";
 
 export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
   return {
@@ -11,17 +18,24 @@ export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
       const result = useMemo(() => uiDef.schema.safeParse(meta), [meta]);
 
       // bootstrap uiStore with parsed meta or invalid meta
-      // ⚠️ need parsed meta to render UI e.g. Tabs needs items array
       useEffectNonStrict(() => {
-        uiStore.setState(
-          (draft) => void (draft.metaById[meta.id] = result.success ? result.data : meta),
-        );
-        // ⚠️ assume mounted in portal so can remove meta on unmount
-        return () => uiStore.setState((draft) => void delete draft.metaById[meta.id]);
+        uiStore.setState((draft) => {
+          // 🚧 move to useStoreApi
+          const item = draft.byId[meta.id];
+          // ⚠️ need parsed meta to render UI e.g. Tabs needs items array
+          const nextMeta = result.success ? result.data : meta;
+          if (item) {
+            item.meta = nextMeta;
+          } else {
+            draft.byId[meta.id] = { meta: nextMeta, portal: castDraft(new HtmlPortalWrapper()) };
+          }
+        });
+        // ⚠️ assume mounted in portal so can remove on unmount
+        return () => uiStore.setState((draft) => void delete draft.byId[meta.id]);
       }, []);
 
       // listen for changes
-      const parsedMeta = useStore(uiStore, (s) => s.metaById[meta.id]) ?? result.data;
+      const parsedMeta = useStore(uiStore, (s) => s.byId[meta.id]?.meta) ?? result.data;
 
       return result.success ? (
         <uiDef.ui meta={parsedMeta} />

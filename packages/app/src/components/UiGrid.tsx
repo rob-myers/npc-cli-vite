@@ -21,7 +21,7 @@ import {
   useStateRef,
 } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { pause } from "@npc-cli/util/legacy/generic";
+import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
@@ -183,9 +183,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ resizing: false });
       },
       removeItem(itemId) {
-        const meta = uiStoreApi.getUiMeta(itemId);
-        uiStoreApi.removeUiPortal(itemId);
-        meta?.items?.forEach((childMeta) => uiStoreApi.removeUiPortal(childMeta.id));
+        // 🚧 remove children too
+        // const meta = uiStoreApi.getUiMeta(itemId);
+        // uiStoreApi.removeUiPortal(itemId);
+        // meta?.items?.forEach((childMeta) => uiStoreApi.removeUiPortal(childMeta.id));
 
         delete state.toUi[itemId];
         layouts.current.lg = layout.filter((item) => item.i !== itemId);
@@ -233,7 +234,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           layouts: layouts.current,
           breakpoints: initialUiLayout.breakpoints,
           cols: initialUiLayout.cols,
-          toUi: uiStore.getState().metaById,
+          toUi: mapValues(uiStore.getState().byId, ({ meta }) => meta),
         };
       },
       getItemToRect() {

@@ -12,7 +12,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
     onClickCreate() {
       if (state.invalid) return;
 
-      for (const [_, meta] of Object.entries(uiStore.getState().metaById)) {
+      for (const [_, { meta }] of Object.entries(uiStore.getState().byId)) {
         if (meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey) {
           return alert(`${"Jsh"}: sessionKey ${state.sessionKey} already exists.`);
         }

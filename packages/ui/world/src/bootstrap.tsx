@@ -12,7 +12,7 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
     onClickCreate() {
       if (state.invalid) return;
 
-      for (const [_, meta] of Object.entries(uiStore.getState().metaById)) {
+      for (const [_, { meta }] of Object.entries(uiStore.getState().byId)) {
         if (meta.uiKey === "World" && meta.worldKey === state.worldKey) {
           return alert(`${"World"}: worldKey ${state.worldKey} already exists.`);
         }
