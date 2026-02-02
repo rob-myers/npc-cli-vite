@@ -35,7 +35,7 @@ export const uiStore = create<UiStoreState>()(
       (_set, _get) => ({
         metaById: {},
       }),
-      { name: "ui-store", anonymousActionType: "ui-store" },
+      { name: "ui.store", anonymousActionType: "ui.store" },
     ),
   ),
 );
