@@ -10,6 +10,7 @@ import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
 import { demoLayout, layoutStore } from "../components/layout.store";
 import { type GridApi, UiGrid } from "../components/UiGrid";
+import { UiPortalContainer } from "../components/UiPortalContainer";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -49,6 +50,7 @@ function Index() {
   return (
     <UiContext.Provider value={{ layoutApi, theme, uiRegistry, uiStore, uiStoreApi }}>
       <UiGrid ref={gridRef} uiLayout={uiLayout} />
+      <UiPortalContainer />
     </UiContext.Provider>
   );
 }
