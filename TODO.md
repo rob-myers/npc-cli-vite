@@ -160,6 +160,10 @@
     - initially provided meta pre-zod-parse
     - try use to initiate portals
   - 🚧 mount dup uis in external portal container
+    - ✅ listen to toInitMeta
+    - ✅ ensure byId rather than in defineUi
+    - ✅ fix initial rect
+    - 🚧 fix Tabs
 
 - 🚧 packages/ui/world
   - ✅ create dummy package

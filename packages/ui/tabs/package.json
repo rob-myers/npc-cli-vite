@@ -11,7 +11,9 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "react": "catalog:",
+    "react-reverse-portal": "catalog:",
     "react-dom": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zustand": "catalog:"
   }
 }

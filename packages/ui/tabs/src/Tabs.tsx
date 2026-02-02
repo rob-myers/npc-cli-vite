@@ -1,4 +1,4 @@
-import { UiContext, UiInstance, type UiInstanceMeta, uiStore } from "@npc-cli/ui-sdk";
+import { UiContext, type UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -10,12 +10,16 @@ import {
 import type React from "react";
 import type { ReactNode } from "react";
 import { useContext, useRef } from "react";
+import * as portals from "react-reverse-portal";
+import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
-  const { layoutApi, uiRegistry } = useContext(UiContext);
+  const { layoutApi, uiRegistry, uiStore } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
   const id = meta.id;
+
+  const byId = useStore(uiStore, (s) => s.byId);
 
   const state = useStateRef(
     () => ({
@@ -36,6 +40,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
               return console.error("Nested Tabs unsupported");
             } else {
               uiStore.setState((draft) => {
+                // 🚧 create portal too, but do not display in UiGrid
+
                 const tabsMeta = draft.byId[id].meta as TabsUiMeta;
                 tabsMeta.items.push(parsed.data);
                 tabsMeta.currentTabId = parsed.data.id;
@@ -131,7 +137,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {meta.items.map((tab) => (
           <div key={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
-            <UiInstance meta={tab} uiRegistry={uiRegistry} />
+            {byId[tab.id] && <portals.OutPortal node={byId[tab.id].portal.portalNode} />}
           </div>
         ))}
       </div>

@@ -5,7 +5,6 @@ export * from "./define-ui";
 export * from "./schema";
 export * from "./UiContext";
 export * from "./UiErrorBoundary";
-export * from "./UiInstance";
 export * from "./UiParseError";
 export * from "./ui.store";
 
