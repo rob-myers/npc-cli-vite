@@ -66,13 +66,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       overrideContextMenuOpts: null,
       preventTransition: true,
       resizing: false,
-      toUi: { ...initialUiLayout.toUi }, // 🚧 only need "id -> uiKey"
       visualViewportRect: null,
       addItem({ uiMeta, gridRect }) {
         if (state.overrideContextMenuOpts?.addItem) {
           state.overrideContextMenuOpts.addItem({ uiMeta });
         } else {
-          state.toUi[uiMeta.id] = uiMeta;
+          uiStore.setState((draft) => {
+            draft.toInitMeta[uiMeta.id] = uiMeta;
+          });
           setLayouts({
             lg: layouts.current.lg.concat({
               i: uiMeta.id,
@@ -183,12 +184,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ resizing: false });
       },
       removeItem(itemId) {
-        // 🚧 remove children too
-        // const meta = uiStoreApi.getUiMeta(itemId);
-        // uiStoreApi.removeUiPortal(itemId);
-        // meta?.items?.forEach((childMeta) => uiStoreApi.removeUiPortal(childMeta.id));
+        // 🚧 remove meta.items too
 
-        delete state.toUi[itemId];
+        uiStore.setState((draft) => {
+          delete draft.toInitMeta[itemId];
+        });
         layouts.current.lg = layout.filter((item) => item.i !== itemId);
         setLayouts({ lg: layout.filter((item) => item.i !== itemId) });
       },
@@ -252,7 +252,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       resetLayout() {
-        state.toUi = { "ui-0": { id: "ui-0", title: "global-0", uiKey: "Global" } };
+        uiStore.setState((draft) => {
+          draft.toInitMeta = {
+            "ui-0": { id: "ui-0", title: "global-0", uiKey: "Global" },
+          };
+        });
         state.isLocked = {};
         layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
         setLayouts({
@@ -264,7 +268,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   );
 
   // flatMap handles malformed layout
-  const childMetas = useMemo(() => layout.flatMap((item) => state.toUi[item.i] ?? []), [layout]);
+  const childMetas = useMemo(
+    () => layout.flatMap((item) => uiStore.getState().toInitMeta[item.i] ?? []),
+    [layout],
+  );
 
   return (
     <>
@@ -452,7 +459,6 @@ type State = {
   overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
   resizing: boolean;
-  toUi: UiGridLayout["toUi"]; // 🚧 only "id -> { id, uiKey }"
   visualViewportRect: null | { x: number; y: number; width: number; height: number };
   addItem(meta: AddUiItemOpts): void;
   closeContextMenu(): void;

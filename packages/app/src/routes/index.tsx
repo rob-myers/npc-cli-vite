@@ -21,6 +21,12 @@ function Index() {
   const gridRef = useRef<GridApi>(null);
   const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout ?? demoLayout);
 
+  useMemo(() => {
+    if (!layoutStore.getState().ready) {
+      uiStore.setState((draft) => void (draft.toInitMeta = uiLayout.toUi));
+    }
+  }, []);
+
   // persist layout
   useBeforeunload(() => {
     layoutStore.setState({

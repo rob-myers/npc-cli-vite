@@ -46,8 +46,9 @@ export const uiStoreApi = {
 export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<UiStoreState>()(
   immer(
     devtools(
-      (_set, _get) => ({
+      (_set, _get): UiStoreState => ({
         byId: {},
+        toInitMeta: {},
       }),
       { name: "ui.store", anonymousActionType: "ui.store" },
     ),
@@ -56,4 +57,5 @@ export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<
 
 export type UiStoreState = {
   byId: { [id: string]: { meta: UiInstanceMeta; portal: HtmlPortalWrapper } };
+  toInitMeta: { [id: string]: UiInstanceMeta };
 };
