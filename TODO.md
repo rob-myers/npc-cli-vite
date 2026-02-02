@@ -140,7 +140,10 @@
     - ✅ defineUi ui takes optional portalNode and renders into it
     - all uis (ones in tabs too) have a portal in ui.store
     - ✅ UiInstance provides portalNode and renders out portal
-    - fix break out tab e.g. might need store after all
+    - 🚧 break out tab should preserve portal
+      - might need store after all
+    - 🚧 ui break out is still broken for Jsh and World
+      - still fixed by refreshing
   - try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components
