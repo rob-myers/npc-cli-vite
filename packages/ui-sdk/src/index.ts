@@ -1,4 +1,3 @@
-import type * as portals from "react-reverse-portal";
 import type z from "zod";
 import type { UiInstanceMeta } from "./schema";
 
@@ -12,7 +11,6 @@ export * from "./ui.store";
 
 export type UiProps = {
   meta: UiInstanceMeta;
-  portalNode?: portals.HtmlPortalNode;
 };
 
 export type UiBootstrapProps = {

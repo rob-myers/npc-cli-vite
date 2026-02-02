@@ -153,6 +153,11 @@
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components
 
+- 🚧 redo portals
+  - ✅ remove portal code
+  - 🚧 uiStore.byId[id].{portal,meta}
+  - 🚧 mount dup uis in external portal container
+
 - 🚧 packages/ui/world
   - ✅ create dummy package
   - ✅ add react-three-fiber
