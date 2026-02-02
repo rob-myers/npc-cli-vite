@@ -6,7 +6,6 @@ import {
   type OverrideContextMenuOpts,
   type UiBootstrapProps,
   type UiContextValue,
-  UiInstance,
   type UiInstanceMeta,
   uiStore,
   uiStoreApi,
@@ -24,9 +23,11 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { Suspense, useEffect, useImperativeHandle, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
+import * as portals from "react-reverse-portal";
+import { useStore } from "zustand";
 
 import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
@@ -185,10 +186,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       removeItem(itemId) {
         // 🚧 remove meta.items too
-
         uiStore.setState((draft) => {
           delete draft.toInitMeta[itemId];
         });
+
         layouts.current.lg = layout.filter((item) => item.i !== itemId);
         setLayouts({ lg: layout.filter((item) => item.i !== itemId) });
       },
@@ -257,21 +258,18 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             "ui-0": { id: "ui-0", title: "global-0", uiKey: "Global" },
           };
         });
-        state.isLocked = {};
-        layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
-        setLayouts({
-          lg: { ...layouts.current.lg },
-        });
+        // state.isLocked = {};
+        // layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
+        // setLayouts({
+        //   lg: { ...layouts.current.lg },
+        // });
       },
     }),
     [],
   );
 
-  // flatMap handles malformed layout
-  const childMetas = useMemo(
-    () => layout.flatMap((item) => uiStore.getState().toInitMeta[item.i] ?? []),
-    [layout],
-  );
+  const uiById = useStore(uiStore, (s) => s.byId);
+  const toInitMeta = useStore(uiStore, (s) => s.toInitMeta);
 
   return (
     <>
@@ -315,16 +313,19 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 layouts.current.lg = layout;
               }}
             >
-              {childMetas.map((uiMeta) => (
-                <div
-                  key={uiMeta.id}
-                  data-item-id={uiMeta.id} // used by getItemToRect
-                  className="relative border border-on-background/20"
-                >
-                  <UiInstance meta={uiMeta} uiRegistry={uiRegistry} />
-                  <UiInstanceMenu id={uiMeta.id} state={state} />
-                </div>
-              ))}
+              {Object.values(toInitMeta).map((meta) => {
+                const ui = uiById[meta.id];
+                return (
+                  <div
+                    key={meta.id}
+                    data-item-id={meta.id} // used by getItemToRect
+                    className="relative border border-on-background/20"
+                  >
+                    {ui && <portals.OutPortal node={ui.portal.portalNode} />}
+                    <UiInstanceMenu id={meta.id} state={state} />
+                  </div>
+                );
+              })}
             </GridLayout>
           </div>
         </ContextMenu.Trigger>

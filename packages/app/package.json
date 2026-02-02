@@ -19,6 +19,7 @@
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
+    "immer": "catalog:",
     "javascript-stringify": "catalog:",
     "motion": "^12.23.26",
     "react": "catalog:",
