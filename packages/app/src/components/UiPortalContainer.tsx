@@ -1,5 +1,5 @@
 import { uiRegistry } from "@npc-cli/ui-registry";
-import { HtmlPortalWrapper, UiParseError, uiStore } from "@npc-cli/ui-sdk";
+import { HtmlPortalWrapper, UiErrorBoundary, UiParseError, uiStore } from "@npc-cli/ui-sdk";
 import { Spinner } from "@npc-cli/util";
 import { castDraft } from "immer";
 import { Suspense, useEffect } from "react";
@@ -39,11 +39,13 @@ export const UiPortalContainer = () => {
         const def = uiRegistry[meta.uiKey];
         return (
           <portals.InPortal key={meta.id} node={portal.portalNode}>
-            <Suspense fallback={<Spinner />}>
-              {/* 🚧 improve type */}
-              {zodError === undefined && <def.ui meta={meta as any} />}
-              {zodError !== undefined && <UiParseError uiKey={meta.uiKey} zodError={zodError} />}
-            </Suspense>
+            <UiErrorBoundary meta={meta}>
+              <Suspense fallback={<Spinner />}>
+                {/* 🚧 improve type */}
+                {zodError === undefined && <def.ui meta={meta as any} />}
+                {zodError !== undefined && <UiParseError uiKey={meta.uiKey} zodError={zodError} />}
+              </Suspense>
+            </UiErrorBoundary>
           </portals.InPortal>
         );
       })}
