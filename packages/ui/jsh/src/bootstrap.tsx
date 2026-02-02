@@ -28,7 +28,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
 
   return (
     <div className="border flex w-full bg-black text-white">
-      <label className="flex border p-0.5 w-32">
+      <label className="flex border p-0.5 w-16">
         <input
           type="text"
           autoCorrect="off"
