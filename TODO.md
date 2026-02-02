@@ -128,24 +128,27 @@
   - ✅ ui.layoutId -> ui.id
   - ✅ by default uis have lowercased title `${uiKey}-${firstNaturalNumber}`
     - could change per ui but e.g. tty sessionKey already matches
-  - 🚧 tab has "break-out" button
+  - ✅ tab has "break-out" button
     - in future replace with "drag outside"
     - ✅ can break out
     - ✅ issue maybe with stale layoutApi e.g. lack tabs ui?
       - works after hard-refresh
       - happens from empty tabs if add two Jsh tabs
       - seems fixed after  `id := meta.id` and use as dep
-  - 🚧 try use react-reverse-portal in each grid item (reparenting)
+  - 🚧 try use react-reverse-portal in each grid item
+    - reparenting
+    - ✅ defineUi ui takes optional portalNode and renders into it
     - all uis (ones in tabs too) have a portal in ui.store
+    - ✅ UiInstance provides portalNode and renders out portal
+    - fix break out tab e.g. might need store after all
   - try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components
 
-- 🚧 fix crash of UiGrid on HMR ui.store 
-  - `uiMeta.layoutId`
-
 - 🚧 packages/ui/world
   - ✅ create dummy package
   - ✅ add react-three-fiber
-  - 🚧 can drag using handle (?)
   - 🚧 import and view gltf
+
+- hmr issues
+  - onchange ui.store sometimes lose layout
