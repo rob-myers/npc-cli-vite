@@ -11,6 +11,7 @@
     "@npc-cli/util": "workspace:^",
     "immer": "catalog:",
     "react": "catalog:",
+    "react-reverse-portal": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
   },
