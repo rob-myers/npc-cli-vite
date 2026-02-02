@@ -156,6 +156,9 @@
 - 🚧 redo portals
   - ✅ remove portal code
   - ✅ `uiStore.byId` with values `{portal,meta}`
+  - 🚧 move UiGrid's `toUi` to uiStore `toInitMeta`
+    - initially provided meta pre-zod-parse
+    - try use to initiate portals
   - 🚧 mount dup uis in external portal container
 
 - 🚧 packages/ui/world
