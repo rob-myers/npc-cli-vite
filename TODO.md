@@ -131,7 +131,10 @@
   - 🚧 tab has "break-out" button
     - in future replace with "drag outside"
     - ✅ can break out
-    - 🚧 issue maybe with stale layoutApi?
+    - ✅ issue maybe with stale layoutApi e.g. lack tabs ui?
+      - works after hard-refresh
+      - happens from empty tabs if add two Jsh tabs
+      - seems fixed after  `id := meta.id` and use as dep
   - 🚧 try use react-reverse-portal in each grid item (reparenting)
     - all uis (ones in tabs too) have a portal in ui.store
   - try make basic tabs components with draggable tabs

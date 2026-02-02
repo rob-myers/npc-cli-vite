@@ -15,6 +15,7 @@ import type { TabsUiMeta } from "./schema";
 export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
   const { layoutApi, uiRegistry } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
+  const id = meta.id;
 
   const state = useStateRef(
     () => ({
@@ -35,7 +36,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
               return console.error("Nested Tabs unsupported");
             } else {
               uiStore.setState((draft) => {
-                const tabsMeta = draft.metaById[meta.id] as TabsUiMeta;
+                const tabsMeta = draft.metaById[id] as TabsUiMeta;
                 tabsMeta.items.push(parsed.data);
                 tabsMeta.currentTabId = parsed.data.id;
               });
@@ -47,19 +48,19 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         state.onDeleteTab(tab);
         layoutApi.addItem({
           uiMeta: tab,
-          gridRect: layoutApi.getUiGridRect(meta.id) ?? { x: 0, y: 0, width: 2, height: 1 },
+          gridRect: layoutApi.getUiGridRect(id) ?? { x: 0, y: 0, width: 2, height: 1 },
         });
       },
       onClickTab(tab: UiInstanceMeta) {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
-          (draft.metaById[meta.id] as TabsUiMeta).currentTabId = tab.id;
+          (draft.metaById[id] as TabsUiMeta).currentTabId = tab.id;
         });
       },
       onDeleteTab(tab: UiInstanceMeta) {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
-          const rootMeta = draft.metaById[meta.id] as TabsUiMeta;
+          const rootMeta = draft.metaById[id] as TabsUiMeta;
           rootMeta.items = rootMeta.items.filter((item) => item.id !== tab.id);
           if (rootMeta.currentTabId === tab.id) {
             rootMeta.currentTabId = rootMeta.items[0]?.id;
@@ -67,7 +68,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         });
       },
     }),
-    { deps: [layoutApi] },
+    { deps: [id, layoutApi] },
   );
 
   return (
