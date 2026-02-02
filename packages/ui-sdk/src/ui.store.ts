@@ -39,6 +39,13 @@ export const uiStoreApi = {
     );
     return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
   },
+  getUiMeta(id: string): UiInstanceMeta | null {
+    const meta = uiStore.getState().metaById[id];
+    return meta ?? null;
+  },
+  removeUiPortal(id: string) {
+    uiStore.setState((draft) => void delete draft.portalById[id]);
+  },
 };
 
 /**

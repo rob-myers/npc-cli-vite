@@ -1,4 +1,4 @@
-import { UiContext, UiInstance, type UiInstanceMeta, uiStore } from "@npc-cli/ui-sdk";
+import { UiContext, UiInstance, type UiInstanceMeta, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -45,7 +45,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         });
       },
       onBreakOutTab(tab: UiInstanceMeta) {
-        state.onDeleteTab(tab);
+        state.onDeleteTab(tab, { preservePortal: true });
         layoutApi.addItem({
           uiMeta: tab,
           gridRect: layoutApi.getUiGridRect(id) ?? { x: 0, y: 0, width: 2, height: 1 },
@@ -57,7 +57,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
           (draft.metaById[id] as TabsUiMeta).currentTabId = tab.id;
         });
       },
-      onDeleteTab(tab: UiInstanceMeta) {
+      onDeleteTab(tab: UiInstanceMeta, { preservePortal } = { preservePortal: false }) {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
           const rootMeta = draft.metaById[id] as TabsUiMeta;
@@ -66,6 +66,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
             rootMeta.currentTabId = rootMeta.items[0]?.id;
           }
         });
+        if (!preservePortal) {
+          uiStoreApi.removeUiPortal(tab.id);
+        }
       },
     }),
     { deps: [id, layoutApi] },
