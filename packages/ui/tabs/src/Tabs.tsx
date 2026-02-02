@@ -93,20 +93,19 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
                     className="cursor-pointer size-4 text-on-background/80"
                   />
                 }
-                className="bg-gray-600/70 p-1 pt-2"
-                arrowClassName="fill-gray-600/70"
+                className="bg-black p-0"
+                arrowClassName="fill-black"
                 side="bottom"
               >
-                <div className="flex gap-2">
-                  <button type="button">
+                <div className="flex">
+                  <button type="button" className="px-0.5 py-1">
                     <ArrowUpRightIcon
                       weight="thin"
                       className="cursor-pointer size-5 bg-black/40 text-white"
                       onPointerDown={() => state.onBreakOutTab(tab)}
                     />
                   </button>
-
-                  <button type="button">
+                  <button type="button" className="px-0.5 py-1">
                     <TrashIcon
                       weight="thin"
                       className="cursor-pointer size-5 bg-black/40 text-white"
