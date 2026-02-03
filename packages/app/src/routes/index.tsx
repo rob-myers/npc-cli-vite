@@ -1,17 +1,10 @@
-import {
-  HtmlPortalWrapper,
-  UiContext,
-  type UiContextValue,
-  uiStore,
-  uiStoreApi,
-} from "@npc-cli/ui-sdk";
+import { UiContext, type UiContextValue, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
 import { createFileRoute } from "@tanstack/react-router";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
-import { castDraft } from "immer";
 import { useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
@@ -29,25 +22,10 @@ function Index() {
   const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout ?? demoLayout);
 
   useMemo(() => {
-    if (layoutStore.getState().ready) return;
-    // bootstrap from persisted layout
-    uiStore.setState(
-      (draft) =>
-        void (draft.byId = Object.fromEntries(
-          Object.entries(uiLayout.toUi).map(([id, uiMeta]) => {
-            // 🚧 uiStoreApi.addUi
-            const result = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
-            return [
-              id,
-              {
-                meta: result.success ? result.data : uiMeta,
-                portal: castDraft(new HtmlPortalWrapper()),
-              },
-            ];
-          }),
-        )),
-    );
-  }, []);
+    if (!layoutStore.getState().ready) {
+      uiStoreApi.addUis(...Object.values(uiLayout.toUi));
+    }
+  }, [uiRegistry]);
 
   // persist layout
   useBeforeunload(() => {

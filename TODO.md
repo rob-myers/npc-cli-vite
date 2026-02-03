@@ -165,15 +165,15 @@
     - ✅ fix initial rect
   - ✅ remove toInitMeta using byId only
     - initial meta should be parsed
-  - 🚧 uiStoreApi.addUi
+    - unify `byId` and `toInitMeta`
+  - ✅ On add item should parse meta and provide parsed or original to store.
+  - ✅ uiStoreApi.addUis
   - UI has no props except id.
-  - On add item should parse meta and provide parsed or original to store.
+    - avoids need to refine UI props type.
   - UI in portal should parse meta too.
   - fix Tabs
     - need to create portal which is not auto-added to grid
     - `byId.parentId` is null or tabs id
-  - Better way to refine UI props type.
-  - try to unify `byId` and `toInitMeta`
 
 
 - 🚧 packages/ui/world

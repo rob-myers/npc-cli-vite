@@ -3,7 +3,6 @@ import { Popover } from "@base-ui/react/popover";
 import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
 import {
   type AddUiItemOpts,
-  HtmlPortalWrapper,
   type OverrideContextMenuOpts,
   type UiBootstrapProps,
   type UiContextValue,
@@ -23,7 +22,6 @@ import {
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
-import { castDraft } from "immer";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
@@ -73,14 +71,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         if (state.overrideContextMenuOpts?.addItem) {
           state.overrideContextMenuOpts.addItem({ uiMeta });
         } else {
-          // 🚧 uiStoreApi.addUi
-          uiStore.setState((draft) => {
-            const result = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
-            draft.byId[uiMeta.id] = {
-              meta: result.success ? result.data : uiMeta,
-              portal: castDraft(new HtmlPortalWrapper()),
-            };
-          });
+          uiStoreApi.addUis(uiMeta);
+
           setLayouts({
             lg: layouts.current.lg.concat({
               i: uiMeta.id,
@@ -261,22 +253,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         });
       },
       resetLayout() {
-        uiStore.setState((draft) => {
-          // 🚧 clear then uiStoreApi.addUi
-          draft.byId = {
-            "ui-0": {
-              meta: { id: "ui-0", title: "global-0", uiKey: "Global" },
-              portal: castDraft(new HtmlPortalWrapper()),
-            },
-          };
-        });
+        uiStoreApi.clearUis();
+        uiStoreApi.addUis({ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" });
       },
     }),
     [],
   );
 
   const byId = useStore(uiStore, (s) => s.byId);
-  // const toInitMeta = useStore(uiStore, (s) => s.toInitMeta);
 
   return (
     <>
