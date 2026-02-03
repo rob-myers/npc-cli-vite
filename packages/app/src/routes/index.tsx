@@ -5,10 +5,11 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
-import { useMemo, useRef } from "react";
+import { mapValues } from "@npc-cli/util/legacy/generic";
+import { useEffect, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
-import { demoLayout, layoutStore } from "../components/layout.store";
+import { layoutStore } from "../components/layout.store";
 import { type GridApi, UiGrid } from "../components/UiGrid";
 import { UiPortalContainer } from "../components/UiPortalContainer";
 
@@ -19,13 +20,20 @@ export const Route = createFileRoute("/")({
 function Index() {
   const theme = useThemeName();
   const gridRef = useRef<GridApi>(null);
-  const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout ?? demoLayout);
+  const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout);
 
+  // bootstrap ui store
   useMemo(() => {
-    // 🚧 overwrites on hmr
-    uiStoreApi.addUis(...Object.values(uiLayout.toUi));
-  }, [uiRegistry]);
-
+    const { uiLayout } = layoutStore.getState();
+    uiStoreApi.addUis({ metas: Object.values(uiLayout.toUi), overwrite: false });
+  }, []);
+  // track ui store for consistent hmr (avoid reset)
+  useEffect(() => {
+    uiStore.subscribe(({ byId }) => {
+      const { uiLayout } = layoutStore.getState();
+      uiLayout.toUi = mapValues(byId, ({ meta }) => meta);
+    });
+  }, []);
   // persist layout
   useBeforeunload(() => {
     layoutStore.setState({
