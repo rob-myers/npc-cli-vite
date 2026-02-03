@@ -163,7 +163,9 @@
     - ✅ listen to toInitMeta
     - ✅ ensure byId rather than in defineUi
     - ✅ fix initial rect
-  - 🚧 remove toInitMeta using byId only
+  - ✅ remove toInitMeta using byId only
+    - initial meta should be parsed
+  - 🚧 uiStoreApi.addUi
   - UI has no props except id.
   - On add item should parse meta and provide parsed or original to store.
   - UI in portal should parse meta too.

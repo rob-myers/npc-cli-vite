@@ -49,7 +49,6 @@ export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<
     devtools(
       (_set, _get): UiStoreState => ({
         byId: {},
-        toInitMeta: {},
       }),
       { name: "ui.store", anonymousActionType: "ui.store" },
     ),
@@ -64,5 +63,4 @@ export type UiStoreState = {
       zodError?: ZodError<Record<string, unknown>>;
     };
   };
-  toInitMeta: { [id: string]: UiInstanceMeta };
 };
