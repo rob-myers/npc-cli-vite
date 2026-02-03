@@ -161,6 +161,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
             },
           });
         } else {
+          // add item directly from context menu without params
           const itemId = `ui-${crypto.randomUUID()}`;
           state.addItem({
             uiMeta: {
@@ -222,9 +223,11 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
+  // 🚧 move into store?
   useImperativeHandle(
     ref,
     (): GridApi => ({
+      // add item from inside Tabs
       addItem: state.addItem,
       getUiGridRect(id) {
         const found = layouts.current.lg.find((item) => item.i === id);
@@ -396,6 +399,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                         addInstance={(partialUiMeta) => {
                           if (!state.contextMenuPopoverUi) return;
 
+                          // add item from context menu with extra config from bootstrap component
                           const itemId = `ui-${crypto.randomUUID()}`;
                           state.addItem({
                             uiMeta: {

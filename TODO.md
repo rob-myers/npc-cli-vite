@@ -159,11 +159,20 @@
   - ✅ move UiGrid's `toUi` to uiStore `toInitMeta`
     - initially provided meta pre-zod-parse
     - try use to initiate portals
-  - 🚧 mount dup uis in external portal container
+  - ✅ mount uis in external portal container
     - ✅ listen to toInitMeta
     - ✅ ensure byId rather than in defineUi
     - ✅ fix initial rect
-    - 🚧 fix Tabs
+  - 🚧 remove toInitMeta using byId only
+  - UI has no props except id.
+  - On add item should parse meta and provide parsed or original to store.
+  - UI in portal should parse meta too.
+  - fix Tabs
+    - need to create portal which is not auto-added to grid
+    - `byId.parentId` is null or tabs id
+  - Better way to refine UI props type.
+  - try to unify `byId` and `toInitMeta`
+
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
