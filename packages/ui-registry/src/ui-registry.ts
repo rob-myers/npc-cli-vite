@@ -6,7 +6,6 @@ import Template from "@npc-cli/ui__template";
 import World from "@npc-cli/ui__world";
 import type { UiPackageDef } from "@npc-cli/ui-sdk";
 
-// https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
 export const uiRegistry: {
   Blog: typeof Blog;
   Global: typeof Global;
