@@ -3,6 +3,7 @@ import { Popover } from "@base-ui/react/popover";
 import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
 import {
   type AddUiItemOpts,
+  HtmlPortalWrapper,
   type OverrideContextMenuOpts,
   type UiBootstrapProps,
   type UiContextValue,
@@ -22,6 +23,7 @@ import {
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
+import { castDraft } from "immer";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
@@ -62,7 +64,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         rowHeight: 80,
         // margin: [10, 10],
       },
-      isLocked: Object.fromEntries(initialUiLayout.layouts.lg.map((x) => [x.i, !x.isDraggable])),
       numTouches: 0,
       overrideContextMenuOpts: null,
       preventTransition: true,
@@ -72,8 +73,13 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         if (state.overrideContextMenuOpts?.addItem) {
           state.overrideContextMenuOpts.addItem({ uiMeta });
         } else {
+          // 🚧 uiStoreApi.addUi
           uiStore.setState((draft) => {
-            draft.toInitMeta[uiMeta.id] = uiMeta;
+            const result = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
+            draft.byId[uiMeta.id] = {
+              meta: result.success ? result.data : uiMeta,
+              portal: castDraft(new HtmlPortalWrapper()),
+            };
           });
           setLayouts({
             lg: layouts.current.lg.concat({
@@ -118,13 +124,12 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       onClickItemLock(e) {
         e.stopPropagation();
         const itemId = e.currentTarget.dataset.itemId as string;
-        const locked = (state.isLocked[itemId] = !state.isLocked[itemId]);
         setLayouts({
           lg: layouts.current.lg.map((item) =>
             item.i === itemId
               ? {
                   ...item,
-                  isDraggable: !locked,
+                  isDraggable: true,
                 }
               : item,
           ),
@@ -188,7 +193,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       removeItem(itemId) {
         // 🚧 remove meta.items too
         uiStore.setState((draft) => {
-          delete draft.toInitMeta[itemId];
+          delete draft.byId[itemId];
         });
 
         layouts.current.lg = layout.filter((item) => item.i !== itemId);
@@ -257,22 +262,21 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       resetLayout() {
         uiStore.setState((draft) => {
-          draft.toInitMeta = {
-            "ui-0": { id: "ui-0", title: "global-0", uiKey: "Global" },
+          // 🚧 clear then uiStoreApi.addUi
+          draft.byId = {
+            "ui-0": {
+              meta: { id: "ui-0", title: "global-0", uiKey: "Global" },
+              portal: castDraft(new HtmlPortalWrapper()),
+            },
           };
         });
-        // state.isLocked = {};
-        // layouts.current = { lg: [{ i: "ui-0", w: 2, h: 1, x: 0, y: 0 }] };
-        // setLayouts({
-        //   lg: { ...layouts.current.lg },
-        // });
       },
     }),
     [],
   );
 
-  const uiById = useStore(uiStore, (s) => s.byId);
-  const toInitMeta = useStore(uiStore, (s) => s.toInitMeta);
+  const byId = useStore(uiStore, (s) => s.byId);
+  // const toInitMeta = useStore(uiStore, (s) => s.toInitMeta);
 
   return (
     <>
@@ -316,15 +320,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 layouts.current.lg = layout;
               }}
             >
-              {Object.values(toInitMeta).map((meta) => {
-                const ui = uiById[meta.id];
+              {Object.values(byId).map(({ meta, portal }) => {
                 return (
                   <div
                     key={meta.id}
                     data-item-id={meta.id} // used by getItemToRect
                     className="relative border border-on-background/20"
                   >
-                    {ui && <portals.OutPortal node={ui.portal.portalNode} />}
+                    <portals.OutPortal node={portal.portalNode} />
                     <UiInstanceMenu id={meta.id} state={state} />
                   </div>
                 );
@@ -459,7 +462,6 @@ type State = {
     ui: (props: UiBootstrapProps) => React.ReactNode;
   };
   gridConfig: Partial<GridConfig>;
-  isLocked: { [layoutKey: string]: boolean };
   numTouches: number;
   overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
