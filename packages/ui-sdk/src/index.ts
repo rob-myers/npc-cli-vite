@@ -8,10 +8,6 @@ export * from "./UiErrorBoundary";
 export * from "./UiParseError";
 export * from "./ui.store";
 
-export type UiProps = {
-  meta: UiInstanceMeta;
-};
-
 export type UiBootstrapProps = {
   addInstance(partialUiMeta: { [key: string]: unknown }): void;
 };

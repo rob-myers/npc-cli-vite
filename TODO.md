@@ -168,13 +168,13 @@
     - unify `byId` and `toInitMeta`
   - ✅ On add item should parse meta and provide parsed or original to store.
   - ✅ uiStoreApi.addUis
-  - UI has no props except id.
+  - ❌ UI has no props except id.
     - avoids need to refine UI props type.
-  - UI in portal should parse meta too.
+    - ❌ too much bloat in each ui
+  - 🚧 UI in portal should parse meta too.
   - fix Tabs
     - need to create portal which is not auto-added to grid
     - `byId.parentId` is null or tabs id
-
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
