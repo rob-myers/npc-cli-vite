@@ -15,7 +15,7 @@ import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
-  const { layoutApi, uiRegistry, uiStore } = useContext(UiContext);
+  const { layoutApi, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
   const id = meta.id;
 
@@ -31,20 +31,22 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
           refObject: newTabButtonRef,
           addItem({ uiMeta }) {
             // 🚧 also re-parse tabsMeta
-            const parsed = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
-            if (!parsed.success) {
+            const result = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
+            if (!result.success) {
               // 🚧 ui reflection
-              return console.error("Failed to parse tab meta", parsed.error);
-            } else if (parsed.data.uiKey === "Tabs") {
+              return console.error("Failed to parse tab meta", result.error);
+            } else if (result.data.uiKey === "Tabs") {
               // 🚧 ui reflection
               return console.error("Nested Tabs unsupported");
             } else {
-              uiStore.setState((draft) => {
-                // 🚧 create portal too, but do not display in UiGrid
+              // portal with parentId won't be displayed in UiGrid
+              result.data.parentId = id;
+              uiStoreApi.addUis(result.data);
 
+              uiStore.setState((draft) => {
                 const tabsMeta = draft.byId[id].meta as TabsUiMeta;
-                tabsMeta.items.push(parsed.data);
-                tabsMeta.currentTabId = parsed.data.id;
+                tabsMeta.items.push(result.data);
+                tabsMeta.currentTabId = result.data.id;
               });
             }
           },
