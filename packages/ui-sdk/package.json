@@ -8,14 +8,12 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/theme": "workspace:^",
+    "@npc-cli/ui-registry": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "immer": "catalog:",
     "react": "catalog:",
     "react-reverse-portal": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
-  },
-  "devDependencies": {
-    "@npc-cli/ui-registry": "workspace:^"
   }
 }

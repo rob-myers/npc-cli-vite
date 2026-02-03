@@ -1,4 +1,5 @@
-import type { UiRegistryKey } from "@npc-cli/ui-registry";
+import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
+import { castDraft } from "immer";
 import * as portals from "react-reverse-portal";
 import type { ZodError } from "zod";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
@@ -18,6 +19,22 @@ export class HtmlPortalWrapper {
 }
 
 export const uiStoreApi = {
+  addUis(...metas: UiInstanceMeta[]): void {
+    uiStore.setState((draft) => {
+      for (const meta of metas) {
+        const result = uiRegistry[meta.uiKey].schema.safeParse(meta);
+        draft.byId[meta.id] = {
+          meta: result.success ? result.data : meta,
+          portal: castDraft(new HtmlPortalWrapper()),
+        };
+      }
+    });
+  },
+  clearUis(): void {
+    uiStore.setState((draft) => {
+      draft.byId = {};
+    });
+  },
   getAllMetas() {
     return Object.values(uiStore.getState().byId).flatMap(({ meta }) => meta.items ?? meta);
   },
@@ -35,9 +52,6 @@ export const uiStoreApi = {
         ),
     );
     return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
-  },
-  getUiMeta(id: string): UiInstanceMeta | null {
-    return uiStore.getState().byId[id]?.meta ?? null;
   },
 };
 

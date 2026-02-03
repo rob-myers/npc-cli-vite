@@ -381,6 +381,9 @@ importers:
       '@npc-cli/theme':
         specifier: workspace:^
         version: link:../theme
+      '@npc-cli/ui-registry':
+        specifier: workspace:^
+        version: link:../ui-registry
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
@@ -399,10 +402,6 @@ importers:
       zustand:
         specifier: 'catalog:'
         version: 5.0.9(@types/react@19.2.7)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
-    devDependencies:
-      '@npc-cli/ui-registry':
-        specifier: workspace:^
-        version: link:../ui-registry
 
   packages/ui/blog:
     dependencies:
