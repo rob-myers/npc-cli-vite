@@ -1,4 +1,4 @@
-import type { UiRegistryKey } from "@npc-cli/ui-registry";
+import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
 import * as portals from "react-reverse-portal";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
@@ -21,7 +21,13 @@ export const uiStoreApi = {
   addUis(...metas: UiInstanceMeta[]): void {
     uiStore.setState((draft) => {
       for (const meta of metas) {
-        draft.byId[meta.id] = { meta, portal: castDraft(new HtmlPortalWrapper()) };
+        // - initial parse ensures e.g. `tabs.items` array
+        // - <UiPortal> re-parses on updates and handles errors
+        const result = uiRegistry[meta.uiKey].schema.safeParse(meta);
+        draft.byId[meta.id] = {
+          meta: result.success ? result.data : meta,
+          portal: castDraft(new HtmlPortalWrapper()),
+        };
       }
     });
   },
