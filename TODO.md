@@ -176,6 +176,8 @@
     - need to create portal which is not auto-added to grid
     - ✅ `byId.meta.parentId` is undefined or tabsId
     - ✅ UiGrid does not render portals with parentId
+  - 🚧 merge layout.store into ui.store
+    - fix overwrite on hmr
 
 - 🚧 packages/ui/world
   - ✅ create dummy package

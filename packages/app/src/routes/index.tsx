@@ -22,9 +22,8 @@ function Index() {
   const uiLayout = useStore(layoutStore, ({ uiLayout }) => uiLayout ?? demoLayout);
 
   useMemo(() => {
-    if (!layoutStore.getState().ready) {
-      uiStoreApi.addUis(...Object.values(uiLayout.toUi));
-    }
+    // 🚧 overwrites on hmr
+    uiStoreApi.addUis(...Object.values(uiLayout.toUi));
   }, [uiRegistry]);
 
   // persist layout
