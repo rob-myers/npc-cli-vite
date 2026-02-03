@@ -61,7 +61,7 @@ function Index() {
   );
 
   return (
-    <UiContext.Provider value={{ layoutApi, theme, uiRegistry, uiStore, uiStoreApi }}>
+    <UiContext.Provider value={{ layoutApi, theme, uiRegistry }}>
       <UiGrid ref={gridRef} uiLayout={uiLayout} />
       <UiPortalContainer />
     </UiContext.Provider>

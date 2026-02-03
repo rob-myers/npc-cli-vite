@@ -1,4 +1,4 @@
-import { UiContext, type UiInstanceMeta } from "@npc-cli/ui-sdk";
+import { UiContext, type UiInstanceMeta, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -7,15 +7,13 @@ import {
   PlusCircleIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
-import type React from "react";
-import type { ReactNode } from "react";
 import { useContext, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
 
-export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
-  const { layoutApi, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
+export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
+  const { layoutApi, uiRegistry } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
   const id = meta.id;
 
@@ -76,7 +74,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
         });
       },
     }),
-    { deps: [id, layoutApi] },
+    { deps: [id, layoutApi, uiStore] },
   );
 
   return (
@@ -135,11 +133,12 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
           <PlusCircleIcon className="size-5" weight="duotone" />
         </button>
       </div>
-
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {meta.items.map((tab) => (
           <div key={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
-            {byId[tab.id] && <portals.OutPortal node={byId[tab.id].portal.portalNode} />}
+            {byId[tab.id] && (
+              <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
+            )}
           </div>
         ))}
       </div>

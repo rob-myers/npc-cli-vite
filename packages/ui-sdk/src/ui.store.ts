@@ -51,16 +51,30 @@ export const uiStoreApi = {
 /**
  * Not persisted: contents should be determined by persisted layout.
  */
-export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<UiStoreState>()(
-  immer(
-    devtools(
-      (_set, _get): UiStoreState => ({
-        byId: {},
-      }),
-      { name: "ui.store", anonymousActionType: "ui.store" },
+export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = () =>
+  create<UiStoreState>()(
+    immer(
+      devtools(
+        (_set, _get): UiStoreState => ({
+          byId: {},
+        }),
+        { name: "ui.store", anonymousActionType: "ui.store" },
+      ),
     ),
-  ),
-);
+  );
+
+// ⚠️ fix horrendous hmr issue onchange Tabs.tsx
+// https://share.google/aimode/JBqFc4uwiV5h4EFyN
+export let uiStore: ReturnType<typeof uiStoreFactory>;
+if (import.meta.hot) {
+  // Check if a store already exists in the HMR data object
+  if (!import.meta.hot.data.__ZUSTAND_STORE__) {
+    import.meta.hot.data.__ZUSTAND_STORE__ = uiStoreFactory();
+  }
+  uiStore = import.meta.hot.data.__ZUSTAND_STORE__;
+} else {
+  uiStore = uiStoreFactory();
+}
 
 export type UiStoreState = {
   byId: { [id: string]: UiStoreByIdEntry };
