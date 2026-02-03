@@ -23,7 +23,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { Suspense, useEffect, useImperativeHandle, useRef } from "react";
+import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
@@ -261,6 +261,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   );
 
   const byId = useStore(uiStore, (s) => s.byId);
+  const topLevelUis = useMemo(
+    () => Object.values(byId).filter(({ meta }) => !meta.parentId),
+    [byId],
+  );
 
   return (
     <>
@@ -304,7 +308,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
                 layouts.current.lg = layout;
               }}
             >
-              {Object.values(byId).map(({ meta, portal }) => {
+              {topLevelUis.map(({ meta, portal }) => {
                 return (
                   <div
                     key={meta.id}
