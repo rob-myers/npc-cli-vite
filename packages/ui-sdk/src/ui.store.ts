@@ -1,7 +1,6 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
 import * as portals from "react-reverse-portal";
-import type { ZodError } from "zod";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -70,11 +69,10 @@ export const uiStore: UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = create<
 );
 
 export type UiStoreState = {
-  byId: {
-    [id: string]: {
-      meta: UiInstanceMeta;
-      portal: HtmlPortalWrapper;
-      zodError?: ZodError<Record<string, unknown>>;
-    };
-  };
+  byId: { [id: string]: UiStoreByIdEntry };
+};
+
+export type UiStoreByIdEntry = {
+  meta: UiInstanceMeta;
+  portal: HtmlPortalWrapper;
 };

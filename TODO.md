@@ -171,7 +171,7 @@
   - ❌ UI has no props except id.
     - avoids need to refine UI props type.
     - ❌ too much bloat in each ui
-  - 🚧 UI in portal should parse meta too.
+  - ✅ UI in portal should parse meta too.
   - fix Tabs
     - need to create portal which is not auto-added to grid
     - `byId.parentId` is null or tabs id
