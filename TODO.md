@@ -135,25 +135,26 @@
       - works after hard-refresh
       - happens from empty tabs if add two Jsh tabs
       - seems fixed after  `id := meta.id` and use as dep
-  - 🚧 try use react-reverse-portal in each grid item
+  - ✅ try use react-reverse-portal in each grid item
     - reparenting
     - ✅ defineUi ui takes optional portalNode and renders into it
     - all uis (ones in tabs too) have a portal in ui.store
     - ✅ UiInstance provides portalNode and renders out portal
-    - 🚧 break out tab should preserve portal
-      - might need store after all
-      - ✅ UiInstance stores in ui.store on mount, but does not remove on unmount
-      - ✅ Delete tab removes portal
-      - ✅ Delete UI removes portal
-      - ✅ Delete tabs removes all sub-portals
-    - 🚧 ui break out is still broken for Jsh and World
-      - still fixed by refreshing
-      - probably related to stale layoutApi
+  - 🚧 break out tab should preserve portal
+    - might need store after all
+    - ✅ UiInstance stores in ui.store on mount, but does not remove on unmount
+    - ✅ Delete tab removes portal
+    - ✅ Delete UI removes portal
+    - ✅ Delete tabs removes all sub-portals
+    - 🚧 re implement break out tabs
+  - 🚧 ui break out is still broken for Jsh and World
+    - still fixed by refreshing
+    - probably related to stale layoutApi
   - try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components
 
-- 🚧 redo portals
+- ✅ redo portals
   - ✅ remove portal code
   - ✅ `uiStore.byId` with values `{portal,meta}`
   - ✅ move UiGrid's `toUi` to uiStore `toInitMeta`
@@ -182,6 +183,7 @@
     - alternatively could use a state variable in routes/index.tsx
 
 - 🚧 merge layout.store into ui.store + separate localStorage
+  - restore layout from fixed localStorage key
   - track projected ui.store (no portals) via useState in routes/index, persist on unload
 
 - 🚧 packages/ui/world
@@ -190,4 +192,9 @@
   - 🚧 import and view gltf
 
 - hmr issues
-  - onchange ui.store sometimes lose layout
+  - ✅ onchange ui.store sometimes lose layout
+  - ✅ ui.store issue with context...
+    - editing Tabs caused it to disappear
+    - seems related to zustand ui.store hmr behaviour
+      - even when only imported, not fed thru context
+    - apparently fixed via preservation over hmr using `import.meta.hot.data.__ZUSTAND_STORE__`
