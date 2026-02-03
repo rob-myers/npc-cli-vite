@@ -71,7 +71,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         if (state.overrideContextMenuOpts?.addItem) {
           state.overrideContextMenuOpts.addItem({ uiMeta });
         } else {
-          uiStoreApi.addUis(uiMeta);
+          uiStoreApi.addUis({ metas: [uiMeta] });
 
           setLayouts({
             lg: layouts.current.lg.concat({
@@ -254,7 +254,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       },
       resetLayout() {
         uiStoreApi.clearUis();
-        uiStoreApi.addUis({ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" });
+        uiStoreApi.addUis({
+          metas: [{ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" }],
+        });
       },
     }),
     [],

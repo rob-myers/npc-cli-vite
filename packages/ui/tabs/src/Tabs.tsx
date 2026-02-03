@@ -41,7 +41,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): ReactNode {
             } else {
               // portal with parentId won't be displayed in UiGrid
               result.data.parentId = id;
-              uiStoreApi.addUis(result.data);
+              uiStoreApi.addUis({ metas: [result.data] });
 
               uiStore.setState((draft) => {
                 const tabsMeta = draft.byId[id].meta as TabsUiMeta;

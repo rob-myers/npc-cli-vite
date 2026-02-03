@@ -176,8 +176,13 @@
     - need to create portal which is not auto-added to grid
     - ✅ `byId.meta.parentId` is undefined or tabsId
     - ✅ UiGrid does not render portals with parentId
-  - 🚧 merge layout.store into ui.store
-    - fix overwrite on hmr
+  - ✅ fix overwrite uis on hmr
+    - previously the last persisted uis were reverted to
+    - currently continually tracking ui.store in layout.store uiLayout.toUi
+    - alternatively could use a state variable in routes/index.tsx
+
+- 🚧 merge layout.store into ui.store + separate localStorage
+  - track projected ui.store (no portals) via useState in routes/index, persist on unload
 
 - 🚧 packages/ui/world
   - ✅ create dummy package

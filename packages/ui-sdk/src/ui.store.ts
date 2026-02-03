@@ -1,33 +1,25 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
-import * as portals from "react-reverse-portal";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";
 import type { WithImmer } from "./with-immer-type";
 
-/** Use class to keep immer happy */
-export class HtmlPortalWrapper {
-  portalNode: portals.HtmlPortalNode;
-  constructor() {
-    this.portalNode = portals.createHtmlPortalNode({
-      attributes: { style: "width: 100%; height: 100%;" },
-    });
-  }
-}
-
 export const uiStoreApi = {
-  addUis(...metas: UiInstanceMeta[]): void {
+  addUis({ metas, overwrite = true }: { metas: UiInstanceMeta[]; overwrite?: boolean }): void {
     uiStore.setState((draft) => {
       for (const meta of metas) {
-        // - initial parse ensures e.g. `tabs.items` array
-        // - <UiPortal> re-parses on updates and handles errors
+        // initial parse ensures e.g. `tabs.items` array
+        // UiPortal will re-parse on updates and handle errors
         const result = uiRegistry[meta.uiKey].schema.safeParse(meta);
-        draft.byId[meta.id] = {
-          meta: result.success ? result.data : meta,
-          portal: castDraft(new HtmlPortalWrapper()),
-        };
+        if (overwrite || !draft.byId[meta.id]) {
+          draft.byId[meta.id] = {
+            meta: result.success ? result.data : meta,
+            portal: castDraft(new HtmlPortalWrapper()),
+          };
+        }
       }
     });
   },
