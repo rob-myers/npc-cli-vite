@@ -51,7 +51,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         });
       },
       onBreakOutTab(tab: UiInstanceMeta) {
-        state.onDeleteTab(tab);
+        state.onDeleteTab(tab, { preservePortal: true });
 
         uiStore.setState((draft) => {
           const item = draft.byId[tab.id];
@@ -67,7 +67,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           (draft.byId[id].meta as TabsUiMeta).currentTabId = tab.id;
         });
       },
-      onDeleteTab(tab: UiInstanceMeta) {
+      onDeleteTab(tab: UiInstanceMeta, { preservePortal }: { preservePortal: boolean }) {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
           const rootMeta = draft.byId[id].meta as TabsUiMeta;
@@ -75,8 +75,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           if (rootMeta.currentTabId === tab.id) {
             rootMeta.currentTabId = rootMeta.items[0]?.id;
           }
-          // remove portal too
-          delete draft.byId[tab.id];
+          if (!preservePortal) {
+            delete draft.byId[tab.id];
+          }
         });
       },
     }),
@@ -122,7 +123,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
                     <TrashIcon
                       weight="thin"
                       className="cursor-pointer size-5 bg-black/40 text-white"
-                      onPointerDown={() => state.onDeleteTab(tab)}
+                      onPointerDown={() => state.onDeleteTab(tab, { preservePortal: false })}
                     />
                   </button>
                 </div>
