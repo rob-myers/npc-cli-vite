@@ -8,7 +8,6 @@ import type { UiInstanceMeta } from "./schema";
 // 🚧 simplify
 export const UiContext = createContext<UiContextValue>({
   layoutApi: {
-    getUiGridRect: () => null,
     overrideContextMenu: noOp,
   },
   theme: // initial value for future SSG
@@ -19,7 +18,6 @@ export const UiContext = createContext<UiContextValue>({
 
 export type UiContextValue = {
   layoutApi: {
-    getUiGridRect(id: string): { x: number; y: number; width: number; height: number } | null;
     overrideContextMenu(opts: OverrideContextMenuOpts): void;
   };
   theme: ThemeName;
