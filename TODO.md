@@ -182,7 +182,7 @@
     - currently continually tracking ui.store in layout.store uiLayout.toUi
     - alternatively could use a state variable in routes/index.tsx
 
-- 🚧 refactor layoutApi e.g. addItem
+- ✅ refactor layoutApi e.g. remove addItem
 
 - merge layout.store into ui.store + separate localStorage
   - restore layout from fixed localStorage key

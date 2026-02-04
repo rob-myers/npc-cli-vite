@@ -6,7 +6,6 @@ import "react-resizable/css/styles.css";
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
 import { useMemo, useRef } from "react";
-import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
 import { layoutStore } from "../components/layout.store";
 import { type GridApi, UiGrid } from "../components/UiGrid";
@@ -26,14 +25,6 @@ function Index() {
     const { uiLayout, ready } = layoutStore.getState();
     !ready && uiStoreApi.addUis({ metas: Object.values(uiLayout.toUi), overwrite: false });
   }, []);
-
-  // persist layout
-  useBeforeunload(() => {
-    layoutStore.setState({
-      uiLayout: gridRef.current?.getUiLayout(),
-      itemToRect: gridRef.current?.getItemToRect(),
-    });
-  });
 
   const layoutApi = useMemo(
     (): UiContextValue["layoutApi"] => ({
