@@ -46,9 +46,6 @@ function Index() {
       overrideContextMenu(opts) {
         gridRef.current?.overrideContextMenu(opts);
       },
-      resetLayout() {
-        gridRef.current?.resetLayout();
-      },
     }),
     [],
   );

@@ -182,7 +182,9 @@
     - currently continually tracking ui.store in layout.store uiLayout.toUi
     - alternatively could use a state variable in routes/index.tsx
 
-- 🚧 merge layout.store into ui.store + separate localStorage
+- 🚧 refactor layoutApi e.g. addItem
+
+- merge layout.store into ui.store + separate localStorage
   - restore layout from fixed localStorage key
   - track projected ui.store (no portals) via useState in routes/index, persist on unload
 

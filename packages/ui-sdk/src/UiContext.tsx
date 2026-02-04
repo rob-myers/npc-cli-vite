@@ -11,7 +11,6 @@ export const UiContext = createContext<UiContextValue>({
     addItem: noOp,
     getUiGridRect: () => null,
     overrideContextMenu: noOp,
-    resetLayout: noOp,
   },
   theme: // initial value for future SSG
     tryLocalStorageGetParsed<StorageValue<ThemeState>>("theme-storage" satisfies ThemeStorageKey)
@@ -24,7 +23,6 @@ export type UiContextValue = {
     addItem(opts: AddUiItemOpts): void;
     getUiGridRect(id: string): { x: number; y: number; width: number; height: number } | null;
     overrideContextMenu(opts: OverrideContextMenuOpts): void;
-    resetLayout(): void;
   };
   theme: ThemeName;
   uiRegistry: UiRegistry;

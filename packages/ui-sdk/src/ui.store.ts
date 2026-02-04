@@ -7,6 +7,7 @@ import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";
 import type { WithImmer } from "./with-immer-type";
 
+// 🚧 merge layout.store into ui.store
 export const uiStoreApi = {
   addUis({ metas, overwrite = true }: { metas: UiInstanceMeta[]; overwrite?: boolean }): void {
     uiStore.setState((draft) => {
@@ -45,6 +46,12 @@ export const uiStoreApi = {
         ),
     );
     return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
+  },
+  resetLayout() {
+    uiStoreApi.clearUis();
+    uiStoreApi.addUis({
+      metas: [{ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" }],
+    });
   },
 };
 
