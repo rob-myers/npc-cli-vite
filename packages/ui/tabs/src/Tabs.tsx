@@ -52,10 +52,15 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       },
       onBreakOutTab(tab: UiInstanceMeta) {
         state.onDeleteTab(tab);
-        layoutApi.addItem({
-          uiMeta: tab,
-          gridRect: layoutApi.getUiGridRect(id) ?? { x: 0, y: 0, width: 2, height: 1 },
+
+        // 🚧 append to layout too
+        uiStore.setState((draft) => {
+          draft.byId[tab.id]!.meta.parentId = undefined;
         });
+        // layoutApi.addItem({
+        //   uiMeta: tab,
+        //   gridRect: layoutApi.getUiGridRect(id) ?? { x: 0, y: 0, width: 2, height: 1 },
+        // });
       },
       onClickTab(tab: UiInstanceMeta) {
         // 🚧 reparse tabs meta
