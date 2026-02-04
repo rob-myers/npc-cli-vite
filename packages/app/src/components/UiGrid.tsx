@@ -187,9 +187,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         uiStore.setState((draft) => {
           delete draft.byId[itemId];
         });
-
-        layouts.current.lg = layout.filter((item) => item.i !== itemId);
-        setLayouts({ lg: layout.filter((item) => item.i !== itemId) });
       },
       updateNumTouches(e) {
         state.numTouches = e.touches.length;
