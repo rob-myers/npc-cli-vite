@@ -37,9 +37,6 @@ function Index() {
 
   const layoutApi = useMemo(
     (): UiContextValue["layoutApi"] => ({
-      getUiGridRect(id) {
-        return gridRef.current?.getUiGridRect(id) ?? null;
-      },
       overrideContextMenu(opts) {
         gridRef.current?.overrideContextMenu(opts);
       },
