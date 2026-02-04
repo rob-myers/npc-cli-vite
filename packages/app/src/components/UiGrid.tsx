@@ -249,12 +249,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
           overrideContextMenuOpts: { refObject, addItem },
         });
       },
-      resetLayout() {
-        uiStoreApi.clearUis();
-        uiStoreApi.addUis({
-          metas: [{ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" }],
-        });
-      },
     }),
     [],
   );

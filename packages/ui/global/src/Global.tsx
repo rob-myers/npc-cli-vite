@@ -1,11 +1,8 @@
 import { themeApi } from "@npc-cli/theme";
-import { UiContext } from "@npc-cli/ui-sdk";
+import { uiStoreApi } from "@npc-cli/ui-sdk";
 import { BasicPopover } from "@npc-cli/util";
-import { useContext } from "react";
 
 export default function Global() {
-  const { layoutApi } = useContext(UiContext);
-
   return (
     <div className="flex justify-center items-center h-full overflow-auto">
       <div className="p-4 flex flex-wrap gap-2 justify-center">
@@ -21,11 +18,7 @@ export default function Global() {
           trigger={"reset"}
           side="bottom"
         >
-          <button
-            type="button"
-            className="cursor-pointer"
-            onPointerDown={() => layoutApi.resetLayout()}
-          >
+          <button type="button" className="cursor-pointer" onPointerDown={uiStoreApi.resetLayout}>
             confirm
           </button>
         </BasicPopover>
