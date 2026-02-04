@@ -15,5 +15,8 @@
     "react-reverse-portal": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "react-grid-layout": "catalog:"
   }
 }

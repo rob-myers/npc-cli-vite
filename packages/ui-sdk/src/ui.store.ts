@@ -1,8 +1,10 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
+import type { Layout } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+
 import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";
 import type { WithImmer } from "./with-immer-type";
@@ -65,14 +67,19 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
         devtools(
           (_set, _get): UiStoreState => ({
             byId: {},
+
+            itemToRect: {},
+            ready: false,
+            uiLayout: getDemoLayout(),
           }),
           { name: "ui.store", anonymousActionType: "ui.store" },
         ),
         {
           name: "ui.storage",
           storage: createJSONStorage(() => localStorage),
-          partialize: ({ byId: _ }) => ({
-            // 🚧
+          partialize: ({ itemToRect, uiLayout }) => ({
+            itemToRect,
+            uiLayout,
           }),
         },
       ),
@@ -94,9 +101,48 @@ if (import.meta.hot) {
 
 export type UiStoreState = {
   byId: { [id: string]: UiStoreByIdEntry };
+
+  ready: boolean;
+  /** Init only */
+  itemToRect: { [itemId: string]: { x: number; y: number; width: number; height: number } };
+  /** Init only */
+  uiLayout: UiGridLayout;
 };
 
 export type UiStoreByIdEntry = {
   meta: UiInstanceMeta;
   portal: HtmlPortalWrapper;
 };
+
+export type UiGridLayout = {
+  breakpoints: Record<"lg" | "sm", number>;
+  cols: Record<"lg" | "sm", number>;
+  /** Only one layout but cols still responsive */
+  layouts: Record<"lg", Layout>;
+  toUi: { [layoutKey: string]: UiInstanceMeta };
+};
+
+export function getDemoLayout(): UiGridLayout {
+  return {
+    layouts: {
+      lg: [
+        { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
+        { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
+        { i: "c", x: 4, y: 0, w: 2, h: 2 },
+        { i: "d", x: 0, y: 2, w: 3, h: 3, isDraggable: true },
+        { i: "e", x: 0, y: 4, w: 2, h: 1 },
+        { i: "f", x: 6, y: 2, w: 3, h: 3 },
+      ],
+    },
+    breakpoints: { lg: 1200, sm: 768 },
+    cols: { lg: 12, sm: 6 },
+    toUi: {
+      a: { id: "a", title: "template-0", uiKey: "Template" },
+      b: { id: "b", title: "template-1", uiKey: "Template" },
+      c: { id: "c", title: "template-2", uiKey: "Template" },
+      d: { id: "d", title: "blog-0", uiKey: "Blog" },
+      e: { id: "e", title: "global-0", uiKey: "Global" },
+      f: { id: "f", title: "jsh-0", uiKey: "Jsh" },
+    },
+  };
+}
