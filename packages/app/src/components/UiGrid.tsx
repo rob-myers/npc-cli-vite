@@ -51,6 +51,16 @@ export function UiGrid({ persistedLayout, ref }: Props) {
     },
   });
 
+  useMemo(() => {
+    // expose react-grid-layout api without additional context
+    uiStoreApi.uiGrid.appendLayoutItems = (ls) => setLayouts({ lg: layouts.current.lg.concat(ls) });
+    uiStoreApi.uiGrid.getUiGridRect = (id) => {
+      const found = layouts.current.lg.find((item) => item.i === id);
+      return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
+    };
+    // 🚧 provide contextmenu override
+  }, [uiStoreApi, setLayouts, layouts]);
+
   const state = useStateRef(
     (): State => ({
       contextMenuOpen: false,

@@ -150,6 +150,7 @@
   - 🚧 ui break out is still broken for Jsh and World
     - still fixed by refreshing
     - probably related to stale layoutApi
+  - 🚧 delete tab should delete portal too
   - try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components

@@ -1,6 +1,6 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
-import type { Layout } from "react-grid-layout";
+import type { Layout, LayoutItem } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -53,6 +53,14 @@ export const uiStoreApi = {
     uiStoreApi.addUis({
       metas: [{ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" }],
     });
+  },
+
+  uiGrid: {
+    /** Must call just after `addUis` if adding to react-grid-layout */
+    appendLayoutItems(_items: LayoutItem[]) {}, // overriden
+    getUiGridRect(_id: string): null | { x: number; y: number; w: number; h: number } {
+      return null;
+    },
   },
 };
 

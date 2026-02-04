@@ -22,7 +22,7 @@ function Index() {
     // clone avoids immer freeze
     const persistedLayout = deepClone(uiStore.getState().persistedLayout);
     uiStoreApi.addUis({ metas: Object.values(persistedLayout.toUi), overwrite: false });
-    return persistedLayout;
+    return persistedLayout; // has ui layout info
   });
 
   const layoutApi = useMemo(
