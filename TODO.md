@@ -184,9 +184,10 @@
 
 - ✅ refactor layoutApi e.g. remove addItem
 
-- merge layout.store into ui.store + separate localStorage
-  - restore layout from fixed localStorage key
-  - track projected ui.store (no portals) via useState in routes/index, persist on unload
+- 🚧 merge layout.store into ui.store + persist (?)
+  - ✅ ui.layout uses persist middleware
+  - 🚧 restore layout from ui.store
+  - migrate rest of layout.store e.g. ready
 
 - 🚧 packages/ui/world
   - ✅ create dummy package

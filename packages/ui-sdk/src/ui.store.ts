@@ -1,7 +1,7 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
-import { devtools } from "zustand/middleware";
+import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";
@@ -61,11 +61,20 @@ export const uiStoreApi = {
 export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState>>> = () =>
   create<UiStoreState>()(
     immer(
-      devtools(
-        (_set, _get): UiStoreState => ({
-          byId: {},
-        }),
-        { name: "ui.store", anonymousActionType: "ui.store" },
+      persist(
+        devtools(
+          (_set, _get): UiStoreState => ({
+            byId: {},
+          }),
+          { name: "ui.store", anonymousActionType: "ui.store" },
+        ),
+        {
+          name: "ui.storage",
+          storage: createJSONStorage(() => localStorage),
+          partialize: ({ byId: _ }) => ({
+            // 🚧
+          }),
+        },
       ),
     ),
   );
