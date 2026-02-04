@@ -37,9 +37,6 @@ function Index() {
 
   const layoutApi = useMemo(
     (): UiContextValue["layoutApi"] => ({
-      addItem(opts) {
-        gridRef.current?.addItem(opts);
-      },
       getUiGridRect(id) {
         return gridRef.current?.getUiGridRect(id) ?? null;
       },

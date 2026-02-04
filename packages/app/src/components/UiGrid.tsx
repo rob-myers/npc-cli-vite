@@ -222,7 +222,6 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     ref,
     (): GridApi => ({
       // add item from inside Tabs
-      addItem: state.addItem,
       getUiGridRect(id) {
         const found = layouts.current.lg.find((item) => item.i === id);
         return found ? { x: found.x, y: found.y, width: found.w, height: found.h } : null;
