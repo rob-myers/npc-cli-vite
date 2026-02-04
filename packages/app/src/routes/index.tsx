@@ -18,7 +18,7 @@ function Index() {
   const theme = useThemeName();
   const gridRef = useRef<GridApi>(null);
 
-  const [uiLayout] = useState(() => {
+  const [persistedLayout] = useState(() => {
     // clone avoids immer freeze
     const persistedLayout = deepClone(uiStore.getState().persistedLayout);
     uiStoreApi.addUis({ metas: Object.values(persistedLayout.toUi), overwrite: false });
@@ -36,7 +36,7 @@ function Index() {
 
   return (
     <UiContext.Provider value={{ layoutApi, theme, uiRegistry }}>
-      <UiGrid ref={gridRef} uiLayout={uiLayout} />
+      <UiGrid ref={gridRef} persistedLayout={persistedLayout} />
       <UiPortalContainer />
     </UiContext.Provider>
   );

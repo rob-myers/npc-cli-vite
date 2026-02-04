@@ -33,8 +33,8 @@ import { useStore } from "zustand";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
-  const layouts = useRef(initialUiLayout.layouts); // 🚧 unfreeze
+export function UiGrid({ persistedLayout, ref }: Props) {
+  const layouts = useRef(persistedLayout.layouts); // 🚧 unfreeze
 
   const { width, containerRef } = useContainerWidth({
     initialWidth: window.innerWidth, // avoid initial animation
@@ -42,8 +42,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 
   const { layout, cols, setLayouts } = useResponsiveLayout({
     width,
-    breakpoints: initialUiLayout.breakpoints,
-    cols: initialUiLayout.cols,
+    breakpoints: persistedLayout.breakpoints,
+    cols: persistedLayout.cols,
     layouts: layouts.current,
     onBreakpointChange(_bp, _cols) {
       // Fixes overflow on slow/sudden change
@@ -186,8 +186,8 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         uiStore.setState({
           persistedLayout: {
             layouts: layouts.current,
-            breakpoints: initialUiLayout.breakpoints,
-            cols: initialUiLayout.cols,
+            breakpoints: persistedLayout.breakpoints,
+            cols: persistedLayout.cols,
             toUi: mapValues(uiStore.getState().byId, ({ meta }) => meta),
           },
           persistedItemToRect: Object.fromEntries(
@@ -412,7 +412,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
 }
 
 type Props = {
-  uiLayout: UiGridLayout;
+  persistedLayout: UiGridLayout;
   ref: React.Ref<GridApi>;
 };
 
