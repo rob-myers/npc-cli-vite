@@ -30,12 +30,11 @@ import type { GridConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 
-import { layoutStore } from "./layout.store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
-  const layouts = useRef(initialUiLayout.layouts);
+  const layouts = useRef(initialUiLayout.layouts); // 🚧 unfreeze
 
   const { width, containerRef } = useContainerWidth({
     initialWidth: window.innerWidth, // avoid initial animation
@@ -184,14 +183,14 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
         state.set({ resizing: false });
       },
       persist() {
-        layoutStore.setState({
-          uiLayout: {
+        uiStore.setState({
+          persistedLayout: {
             layouts: layouts.current,
             breakpoints: initialUiLayout.breakpoints,
             cols: initialUiLayout.cols,
             toUi: mapValues(uiStore.getState().byId, ({ meta }) => meta),
           },
-          itemToRect: Object.fromEntries(
+          persistedItemToRect: Object.fromEntries(
             Array.from(document.querySelectorAll<HTMLElement>(".react-grid-item")).map((el) => [
               el.dataset.itemId,
               el.getBoundingClientRect(),
@@ -215,7 +214,7 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
   useEffect(() => {
     pause(1).then(() => {
       state.set({ preventTransition: false });
-      layoutStore.setState({ ready: true });
+      uiStore.setState({ ready: true });
     });
 
     // Mobile: fix hidden ContextMenu on mobile keyboard

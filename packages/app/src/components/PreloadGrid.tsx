@@ -1,12 +1,12 @@
+import { uiStore } from "@npc-cli/ui-sdk";
 import { motion } from "motion/react";
 import { useStore } from "zustand/react";
-import { layoutStore } from "./layout.store";
 
 /**
  * Improve initial rendering by showing a skeleton of the grid layout
  */
 export const PreloadGrid = () => {
-  const { itemToRect, ready } = useStore(layoutStore);
+  const { persistedItemToRect: itemToRect, ready } = useStore(uiStore);
 
   return (
     <motion.div

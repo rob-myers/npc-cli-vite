@@ -67,19 +67,18 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
         devtools(
           (_set, _get): UiStoreState => ({
             byId: {},
-
-            itemToRect: {},
             ready: false,
-            uiLayout: getDemoLayout(),
+            persistedItemToRect: {},
+            persistedLayout: getDemoLayout(),
           }),
           { name: "ui.store", anonymousActionType: "ui.store" },
         ),
         {
           name: "ui.storage",
           storage: createJSONStorage(() => localStorage),
-          partialize: ({ itemToRect, uiLayout }) => ({
-            itemToRect,
-            uiLayout,
+          partialize: ({ persistedItemToRect, persistedLayout }) => ({
+            persistedItemToRect,
+            persistedLayout,
           }),
         },
       ),
@@ -101,12 +100,13 @@ if (import.meta.hot) {
 
 export type UiStoreState = {
   byId: { [id: string]: UiStoreByIdEntry };
-
   ready: boolean;
   /** Init only */
-  itemToRect: { [itemId: string]: { x: number; y: number; width: number; height: number } };
+  persistedItemToRect: {
+    [itemId: string]: { x: number; y: number; width: number; height: number };
+  };
   /** Init only */
-  uiLayout: UiGridLayout;
+  persistedLayout: UiGridLayout;
 };
 
 export type UiStoreByIdEntry = {

@@ -184,10 +184,11 @@
 
 - ✅ refactor layoutApi e.g. remove addItem
 
-- 🚧 merge layout.store into ui.store + persist (?)
+- ✅ merge layout.store into ui.store + persist (?)
   - ✅ ui.layout uses persist middleware
-  - 🚧 restore layout from ui.store
-  - migrate rest of layout.store e.g. ready
+  - ✅ restore layout from ui.store
+  - ✅ migrate rest of layout.store e.g. ready
+  - ✅ remove layout.store
 
 - 🚧 packages/ui/world
   - ✅ create dummy package
