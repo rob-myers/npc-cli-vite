@@ -24,6 +24,7 @@ import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { useBeforeunload } from "react-beforeunload";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
@@ -182,6 +183,22 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
       onResizeStop() {
         state.set({ resizing: false });
       },
+      persist() {
+        layoutStore.setState({
+          uiLayout: {
+            layouts: layouts.current,
+            breakpoints: initialUiLayout.breakpoints,
+            cols: initialUiLayout.cols,
+            toUi: mapValues(uiStore.getState().byId, ({ meta }) => meta),
+          },
+          itemToRect: Object.fromEntries(
+            Array.from(document.querySelectorAll<HTMLElement>(".react-grid-item")).map((el) => [
+              el.dataset.itemId,
+              el.getBoundingClientRect(),
+            ]),
+          ),
+        });
+      },
       removeItem(itemId) {
         // 🚧 remove meta.items too
         uiStore.setState((draft) => {
@@ -217,26 +234,9 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
-  // 🚧 move into store?
   useImperativeHandle(
     ref,
     (): GridApi => ({
-      getUiLayout() {
-        return {
-          layouts: layouts.current,
-          breakpoints: initialUiLayout.breakpoints,
-          cols: initialUiLayout.cols,
-          toUi: mapValues(uiStore.getState().byId, ({ meta }) => meta),
-        };
-      },
-      getItemToRect() {
-        return Object.fromEntries(
-          Array.from(document.querySelectorAll<HTMLElement>(".react-grid-item")).map((el) => [
-            el.dataset.itemId,
-            el.getBoundingClientRect(),
-          ]),
-        );
-      },
       overrideContextMenu({ refObject, addItem }) {
         state.set({
           contextMenuOpen: true,
@@ -252,6 +252,10 @@ export function UiGrid({ uiLayout: initialUiLayout, ref }: Props) {
     () => Object.values(byId).filter(({ meta }) => !meta.parentId),
     [byId],
   );
+
+  useBeforeunload(() => {
+    state.persist();
+  });
 
   return (
     <>
@@ -413,10 +417,7 @@ type Props = {
   ref: React.Ref<GridApi>;
 };
 
-export type GridApi = UiContextValue["layoutApi"] & {
-  getUiLayout(): UiGridLayout;
-  getItemToRect(): { [itemId: string]: { x: number; y: number; width: number; height: number } };
-};
+export type GridApi = UiContextValue["layoutApi"];
 
 export type UiGridLayout = {
   breakpoints: Record<"lg" | "sm", number>;
@@ -453,6 +454,7 @@ type State = {
   onDragStop(): void;
   onResizeStart(): void;
   onResizeStop(): void;
+  persist(): void;
   removeItem(itemId: string): void;
   updateNumTouches(e: React.TouchEvent<HTMLElement>): void;
 };
