@@ -75,6 +75,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           if (rootMeta.currentTabId === tab.id) {
             rootMeta.currentTabId = rootMeta.items[0]?.id;
           }
+          // remove portal too
+          delete draft.byId[tab.id];
         });
       },
     }),

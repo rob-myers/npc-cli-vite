@@ -147,13 +147,11 @@
     - ✅ Delete UI removes portal
     - ✅ Delete tabs removes all sub-portals
     - 🚧 re implement break out tabs
-  - 🚧 ui break out is still broken for Jsh and World
+  - ✅ ui break out is still broken for Jsh and World
     - still fixed by refreshing
     - probably related to stale layoutApi
-  - 🚧 delete tab should delete portal too
-  - try make basic tabs components with draggable tabs
-    - https://atlassian.design/components/pragmatic-drag-and-drop/about
-  - can drag between different tabs components
+  - ✅ delete tab should delete portal too
+  - wrap uiStore.setState inside uiStoreApi 
 
 - ✅ redo portals
   - ✅ remove portal code
@@ -203,3 +201,8 @@
     - seems related to zustand ui.store hmr behaviour
       - even when only imported, not fed thru context
     - apparently fixed via preservation over hmr using `import.meta.hot.data.__ZUSTAND_STORE__`
+
+- future tabs
+  - try make basic tabs components with draggable tabs
+    - https://atlassian.design/components/pragmatic-drag-and-drop/about
+  - can drag between different tabs components
