@@ -21,7 +21,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   const state = useStateRef(
     () => ({
-      onAddNewTab(e: React.PointerEvent<HTMLElement>) {
+      onAddNewTab(e: React.MouseEvent<HTMLElement>) {
         e.stopPropagation();
         pause(30); // avoid immediate select context menu item
 
@@ -134,8 +134,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         <button
           ref={newTabButtonRef}
           type="button"
-          className="cursor-pointer px-2"
-          onPointerUp={state.onAddNewTab}
+          className="cursor-pointer p-2"
+          onClick={state.onAddNewTab}
         >
           <PlusCircleIcon className="size-5" weight="duotone" />
         </button>
