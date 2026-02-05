@@ -280,6 +280,7 @@ export function UiGrid({ persistedLayout, ref }: Props) {
             ref={containerRef}
             className="relative size-full overflow-auto"
             onContextMenu={(e) => {
+              state.set({ overrideContextMenuOpts: null });
               if (!state.isGridContainer(e.target as HTMLElement)) {
                 e.stopPropagation(); // show native context menu on right click children
               }
