@@ -21,12 +21,12 @@ import {
 } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
-import { LayoutIcon, XIcon } from "@phosphor-icons/react";
+import { LayoutIcon, LockIcon, PenIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
-import type { GridConfig } from "react-grid-layout/core";
+import type { GridConfig, ResizeConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 
@@ -34,7 +34,7 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 export function UiGrid({ persistedLayout, ref }: Props) {
-  const layouts = useRef(persistedLayout.layouts); // 🚧 unfreeze
+  const layouts = useRef(persistedLayout.layouts);
 
   const { width, containerRef } = useContainerWidth({
     initialWidth: window.innerWidth, // avoid initial animation
@@ -72,11 +72,17 @@ export function UiGrid({ persistedLayout, ref }: Props) {
         rowHeight: 80,
         // margin: [10, 10],
       },
+      mobileEditMode: false,
       numTouches: 0,
       overrideContextMenuOpts: null,
       preventTransition: true,
+      resizeConfig: {
+        all: { handles: ["n", "ne", "e", "se", "s", "sw", "w", "nw"] },
+        desktop: { handles: ["se"] },
+      },
       resizing: false,
       visualViewportRect: null,
+
       addItem({ uiMeta, gridRect }) {
         if (state.overrideContextMenuOpts?.addItem) {
           state.overrideContextMenuOpts.addItem({ uiMeta });
@@ -299,9 +305,9 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                 // threshold: 10, // Touch doesn't work
               }}
               gridConfig={state.gridConfig}
-              resizeConfig={{
-                handles: ["w", "s"],
-              }}
+              resizeConfig={
+                state.mobileEditMode ? state.resizeConfig.all : state.resizeConfig.desktop
+              }
               layout={layout}
               onResizeStart={state.onResizeStart}
               onResizeStop={state.onResizeStop}
@@ -316,7 +322,11 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                   <div
                     key={meta.id}
                     data-item-id={meta.id} // used by getItemToRect
-                    className="relative border border-on-background/20"
+                    className={cn(
+                      "relative border border-on-background/20",
+                      state.mobileEditMode &&
+                        "*:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-400/50 border-dashed",
+                    )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
                     <UiInstanceMenu id={meta.id} state={state} />
@@ -324,6 +334,17 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                 );
               })}
             </GridLayout>
+
+            <div
+              className="cursor-pointer absolute top-0 right-0 text-white bg-gray-800 p-2"
+              onClick={() => state.set({ mobileEditMode: !state.mobileEditMode })}
+            >
+              {state.mobileEditMode ? (
+                <PenIcon className="size-5" />
+              ) : (
+                <LockIcon className="size-5" />
+              )}
+            </div>
           </div>
         </ContextMenu.Trigger>
 
@@ -450,9 +471,14 @@ type State = {
     ui: (props: UiBootstrapProps) => React.ReactNode;
   };
   gridConfig: Partial<GridConfig>;
+  mobileEditMode: boolean;
   numTouches: number;
   overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
+  resizeConfig: {
+    all: Partial<ResizeConfig>;
+    desktop: Partial<ResizeConfig>;
+  };
   resizing: boolean;
   visualViewportRect: null | { x: number; y: number; width: number; height: number };
   addItem(meta: AddUiItemOpts): void;
