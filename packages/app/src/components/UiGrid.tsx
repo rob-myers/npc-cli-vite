@@ -299,6 +299,9 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                 // threshold: 10, // Touch doesn't work
               }}
               gridConfig={state.gridConfig}
+              resizeConfig={{
+                handles: ["w", "s"],
+              }}
               layout={layout}
               onResizeStart={state.onResizeStart}
               onResizeStop={state.onResizeStop}
