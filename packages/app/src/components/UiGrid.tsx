@@ -70,15 +70,15 @@ export function UiGrid({ persistedLayout, ref }: Props) {
       gridConfig: {
         cols,
         rowHeight: 80,
-        // margin: [10, 10],
+        margin: [8, 8],
       },
-      mobileEditMode: false,
+      editMode: false,
       numTouches: 0,
       overrideContextMenuOpts: null,
       preventTransition: true,
       resizeConfig: {
-        all: { handles: ["n", "ne", "e", "se", "s", "sw", "w", "nw"] },
-        desktop: { handles: ["se"] },
+        editMode: { handles: ["n", "ne", "e", "se", "s", "sw", "w", "nw"] },
+        default: { handles: ["se"] },
       },
       resizing: false,
       visualViewportRect: null,
@@ -306,7 +306,7 @@ export function UiGrid({ persistedLayout, ref }: Props) {
               }}
               gridConfig={state.gridConfig}
               resizeConfig={
-                state.mobileEditMode ? state.resizeConfig.all : state.resizeConfig.desktop
+                state.editMode ? state.resizeConfig.editMode : state.resizeConfig.default
               }
               layout={layout}
               onResizeStart={state.onResizeStart}
@@ -324,8 +324,9 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                     data-item-id={meta.id} // used by getItemToRect
                     className={cn(
                       "relative border border-on-background/20",
-                      state.mobileEditMode &&
-                        "*:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-400/50 border-dashed",
+                      state.editMode && allowReactGridDragClassName,
+                      state.editMode &&
+                        "cursor-move *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-600/80 border-dashed",
                     )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
@@ -336,14 +337,10 @@ export function UiGrid({ persistedLayout, ref }: Props) {
             </GridLayout>
 
             <div
-              className="cursor-pointer absolute top-0 right-0 text-white bg-gray-800 p-2"
-              onClick={() => state.set({ mobileEditMode: !state.mobileEditMode })}
+              className="cursor-pointer fixed top-0 right-0 text-white bg-gray-800 p-2"
+              onClick={() => state.set({ editMode: !state.editMode })}
             >
-              {state.mobileEditMode ? (
-                <PenIcon className="size-5" />
-              ) : (
-                <LockIcon className="size-5" />
-              )}
+              {state.editMode ? <PenIcon className="size-5" /> : <LockIcon className="size-5" />}
             </div>
           </div>
         </ContextMenu.Trigger>
@@ -471,13 +468,13 @@ type State = {
     ui: (props: UiBootstrapProps) => React.ReactNode;
   };
   gridConfig: Partial<GridConfig>;
-  mobileEditMode: boolean;
+  editMode: boolean;
   numTouches: number;
   overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
   resizeConfig: {
-    all: Partial<ResizeConfig>;
-    desktop: Partial<ResizeConfig>;
+    editMode: Partial<ResizeConfig>;
+    default: Partial<ResizeConfig>;
   };
   resizing: boolean;
   visualViewportRect: null | { x: number; y: number; width: number; height: number };
