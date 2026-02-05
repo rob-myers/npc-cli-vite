@@ -323,10 +323,10 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                     key={meta.id}
                     data-item-id={meta.id} // used by getItemToRect
                     className={cn(
-                      "relative border border-on-background/20",
+                      "relative border border-on-background/20 *:first:transition-all",
                       state.editMode && allowReactGridDragClassName,
                       state.editMode &&
-                        "cursor-move *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-600/80 border-dashed",
+                        "cursor-move *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-500/60",
                     )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
