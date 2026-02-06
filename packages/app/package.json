@@ -12,8 +12,8 @@
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/theme": "workspace:^",
-    "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/ui-registry": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
@@ -39,6 +39,7 @@
     "@vitejs/plugin-basic-ssl": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
     "globals": "catalog:",
-    "tailwindcss": "catalog:"
+    "tailwindcss": "catalog:",
+    "vite-bundle-analyzer": "catalog:"
   }
 }
