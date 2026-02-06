@@ -511,6 +511,9 @@ importers:
 
   packages/ui/world:
     dependencies:
+      '@npc-cli/media':
+        specifier: workspace:^
+        version: link:../../media
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
