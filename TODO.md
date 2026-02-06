@@ -192,7 +192,8 @@
 - 🚧 packages/ui/world
   - ✅ create dummy package
   - ✅ add react-three-fiber
-  - 🚧 import and view gltf
+  - ✅ import and view gltf
+    - debug via gltfjsx i.e. `pnpx gltfjsx TestBlockbench5.gltf`
 
 - hmr issues
   - ✅ onchange ui.store sometimes lose layout
@@ -201,6 +202,7 @@
     - seems related to zustand ui.store hmr behaviour
       - even when only imported, not fed thru context
     - apparently fixed via preservation over hmr using `import.meta.hot.data.__ZUSTAND_STORE__`
+  - `World` should reload on error resolve?
 
 - detect responsive tabs change and revert on return (?)
 

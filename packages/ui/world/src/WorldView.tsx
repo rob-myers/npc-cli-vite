@@ -6,7 +6,7 @@ import { CameraControls } from "./CameraControls";
 import type { CameraControls as BaseCameraControls } from "./camera-controls";
 import { WorldContext } from "./world-context";
 
-export function WorldView() {
+export function WorldView(props: React.PropsWithChildren) {
   const w = useContext(WorldContext);
 
   const state = useStateRef<State>(() => ({
@@ -55,8 +55,11 @@ export function WorldView() {
       className="relative"
       ref={state.canvasRef}
       frameloop={state.syncRenderMode()}
+      // frameloop="always"
       gl={state.glOpts}
     >
+      {props.children}
+
       {state.rootEl && (
         <Stats
           showPanel={0}
@@ -83,10 +86,6 @@ export function WorldView() {
         // onStart={state.onControlsStart}
         {...state.ctrlOpts}
       />
-
-      <Box position={[-1.2, 0, 0]}>
-        <meshBasicMaterial wireframe />
-      </Box>
     </Canvas>
   );
 }
