@@ -4,6 +4,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
+import { analyzer } from "vite-bundle-analyzer";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -18,5 +19,6 @@ export default defineConfig({
     tailwindcss(),
     // pnpm dev-hotspot needs https for crypto
     process.env.USE_HTTPS ? basicSsl() : undefined,
+    analyzer(),
   ],
 });
