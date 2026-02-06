@@ -116,7 +116,7 @@
 
 - ✅ uis have schema validated in `<UiInstance>` inducing type of `props.meta`
 
-- 🚧 UiGrid supports tabs
+- ✅ UiGrid supports tabs
   - motivation: hide Global on mobile; grouping; improve mobile layouts
   - ✅ basic instantiable ui/tabs with layout in schema
   - ✅ show contextmenu on click add tab
@@ -140,13 +140,13 @@
     - ✅ defineUi ui takes optional portalNode and renders into it
     - all uis (ones in tabs too) have a portal in ui.store
     - ✅ UiInstance provides portalNode and renders out portal
-  - 🚧 break out tab should preserve portal
+  - ✅ break out tab should preserve portal
     - might need store after all
     - ✅ UiInstance stores in ui.store on mount, but does not remove on unmount
     - ✅ Delete tab removes portal
     - ✅ Delete UI removes portal
     - ✅ Delete tabs removes all sub-portals
-    - 🚧 re implement break out tabs
+    - ✅ re implement break out tabs
   - ✅ ui break out is still broken for Jsh and World
     - still fixed by refreshing
     - probably related to stale layoutApi
@@ -201,6 +201,8 @@
     - seems related to zustand ui.store hmr behaviour
       - even when only imported, not fed thru context
     - apparently fixed via preservation over hmr using `import.meta.hot.data.__ZUSTAND_STORE__`
+
+- detect responsive tabs change and revert on return (?)
 
 - future tabs
   - try make basic tabs components with draggable tabs

@@ -50,15 +50,16 @@ export const uiStoreApi = {
   },
   resetLayout() {
     uiStoreApi.clearUis();
-    uiStoreApi.addUis({
-      metas: [{ id: `ui-${crypto.randomUUID()}`, title: "global-0", uiKey: "Global" }],
-    });
+    uiStoreApi.addUis({ metas: [getDefaultUiMeta()] });
   },
 
   uiGrid: {
     /** Must call just after `addUis` if adding to react-grid-layout */
-    appendLayoutItems(_items: LayoutItem[]) {}, // overriden
+    appendLayoutItems(_items: LayoutItem[]) {
+      console.warn("uiGrid.appendLayoutItems is not implemented yet");
+    },
     getUiGridRect(_id: string): null | { x: number; y: number; w: number; h: number } {
+      console.warn("uiGrid.getUiGridRect is not implemented yet");
       return null;
     },
   },
@@ -76,7 +77,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
             byId: {},
             ready: false,
             persistedItemToRect: {},
-            persistedLayout: getDemoLayout(),
+            persistedLayout: getDefaultLayout(),
           }),
           { name: "ui.store", anonymousActionType: "ui.store" },
         ),
@@ -129,27 +130,17 @@ export type UiGridLayout = {
   toUi: { [layoutKey: string]: UiInstanceMeta };
 };
 
-export function getDemoLayout(): UiGridLayout {
+function getDefaultLayout(): UiGridLayout {
+  const meta = getDefaultUiMeta();
   return {
-    layouts: {
-      lg: [
-        { i: "a", x: 0, y: 0, w: 1, h: 2, static: false },
-        { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
-        { i: "c", x: 4, y: 0, w: 2, h: 2 },
-        { i: "d", x: 0, y: 2, w: 3, h: 3, isDraggable: true },
-        { i: "e", x: 0, y: 4, w: 2, h: 1 },
-        { i: "f", x: 6, y: 2, w: 3, h: 3 },
-      ],
-    },
+    layouts: { lg: [{ i: meta.id, x: 12, y: 1, w: 2, h: 2 }] },
     breakpoints: { lg: 1200, sm: 768 },
     cols: { lg: 12, sm: 6 },
-    toUi: {
-      a: { id: "a", title: "template-0", uiKey: "Template" },
-      b: { id: "b", title: "template-1", uiKey: "Template" },
-      c: { id: "c", title: "template-2", uiKey: "Template" },
-      d: { id: "d", title: "blog-0", uiKey: "Blog" },
-      e: { id: "e", title: "global-0", uiKey: "Global" },
-      f: { id: "f", title: "jsh-0", uiKey: "Jsh" },
-    },
+    toUi: { [meta.id]: meta },
   };
+}
+
+function getDefaultUiMeta(): UiInstanceMeta {
+  const globalUiId = `ui-${crypto.randomUUID()}`;
+  return { id: globalUiId, title: "global-0", uiKey: "Global" };
 }
