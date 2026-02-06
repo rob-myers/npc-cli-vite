@@ -1,10 +1,10 @@
 import { defineUi } from "@npc-cli/ui-sdk";
-import { lazy } from "react";
 import WorldBootstrap from "./bootstrap";
 import { WorldUiSchema } from "./schema";
+import World from "./World";
 
 export default defineUi({
-  ui: lazy(() => import("./World")),
+  ui: World,
   bootstrap: WorldBootstrap,
   schema: WorldUiSchema,
 });

@@ -13,7 +13,7 @@ export const uiStoreApi = {
   addUis({ metas, overwrite = true }: { metas: UiInstanceMeta[]; overwrite?: boolean }): void {
     uiStore.setState((draft) => {
       for (const meta of metas) {
-        // initial parse ensures e.g. `tabs.items` array
+        // initial parse ensures e.g. Tabs `items` array
         // UiPortal will re-parse on updates and handle errors
         const result = uiRegistry[meta.uiKey].schema.safeParse(meta);
         if (overwrite || !draft.byId[meta.id]) {

@@ -1,10 +1,10 @@
 import { BaseUiMetaSchema, defineUi } from "@npc-cli/ui-sdk";
-import { lazy } from "react";
+import Blog from "./Blog";
 
 import "./mdx.d";
 
 export default defineUi({
-  ui: lazy(() => import("./Blog")),
+  ui: Blog,
   bootstrap: null,
   schema: BaseUiMetaSchema,
 });
