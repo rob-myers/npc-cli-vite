@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { Box, type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
+import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RenderProps, type RootState } from "@react-three/fiber";
 import { useContext, useEffect } from "react";
 import { CameraControls } from "./CameraControls";
