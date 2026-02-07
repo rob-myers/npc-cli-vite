@@ -6,23 +6,39 @@ import Template from "@npc-cli/ui__template";
 import World from "@npc-cli/ui__world";
 import type { UiPackageDef } from "@npc-cli/ui-sdk";
 
-export const uiRegistry: {
+export type UiRegistry = {
   Blog: typeof Blog;
   Global: typeof Global;
   Jsh: typeof Jsh;
   Tabs: typeof Tabs;
   Template: typeof Template;
   World: typeof World;
-} = {
-  Blog,
-  Global,
-  Jsh,
-  Tabs,
-  Template,
-  World,
-} satisfies Record<string, UiPackageDef>;
+};
 
-export type UiRegistry = typeof uiRegistry;
+export const uiRegistryFactory = (): UiRegistry =>
+  ({
+    Blog,
+    Global,
+    Jsh,
+    Tabs,
+    Template,
+    World,
+  }) satisfies Record<string, UiPackageDef>;
+
+export let uiRegistry: UiRegistry;
+if (import.meta.hot) {
+  const curr = import.meta.hot.data.__UI_REGISTRY__;
+  const next = uiRegistryFactory();
+  if (!curr) {
+    uiRegistry = import.meta.hot.data.__UI_REGISTRY__ = next;
+  } else {
+    Object.keys(next).forEach((key) => (curr[key] ??= next[key as UiRegistryKey]));
+    // Object.keys(curr).forEach((key) => !(key in next) && delete curr[key]);
+    uiRegistry = curr;
+  }
+} else {
+  uiRegistry = uiRegistryFactory();
+}
 
 export type UiRegistryKey = keyof typeof uiRegistry;
 

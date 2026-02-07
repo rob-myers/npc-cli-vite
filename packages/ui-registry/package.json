@@ -10,7 +10,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/ui__blog": "workspace:^",
     "@npc-cli/ui__global": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
@@ -21,5 +20,8 @@
     "react": "catalog:",
     "react-reverse-portal": "catalog:",
     "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@npc-cli/ui-sdk": "workspace:^"
   }
 }
