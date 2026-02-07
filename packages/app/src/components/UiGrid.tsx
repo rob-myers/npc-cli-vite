@@ -21,7 +21,14 @@ import {
 } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
-import { LayoutIcon, LockIcon, PenIcon, XIcon } from "@phosphor-icons/react";
+import {
+  LayoutIcon,
+  LockIcon,
+  PauseCircleIcon,
+  PenIcon,
+  PlayCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
@@ -329,7 +336,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                     )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
-                    <UiInstanceMenu id={meta.id} state={state} />
+                    <UiInstanceMenu meta={meta} state={state} />
                     <DraggableOverlay />
                   </div>
                 );
@@ -502,7 +509,7 @@ type State = {
   updateNumTouches(e: React.TouchEvent<HTMLElement>): void;
 };
 
-function UiInstanceMenu({ id, state }: { id: string; state: State }) {
+function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State }) {
   return (
     <div
       className={cn(
@@ -519,7 +526,7 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
           type="button"
           className="cursor-pointer"
           onPointerDown={state.onClickItemDelete}
-          data-item-id={id}
+          data-item-id={meta.id}
         >
           confirm
         </button>
@@ -527,10 +534,23 @@ function UiInstanceMenu({ id, state }: { id: string; state: State }) {
 
       <button
         type="button"
-        data-item-id={id}
+        data-item-id={meta.id}
         className={cn(allowReactGridDragClassName, "cursor-move p-1")}
       >
         <LayoutIcon data-icon-type="layout" weight="duotone" />
+      </button>
+
+      <button
+        type="button"
+        data-item-id={meta.id}
+        className="p-1 cursor-pointer"
+        onClick={() => uiStoreApi.setUiMeta(meta.id, (draft) => (draft.disabled = !draft.disabled))}
+      >
+        {meta.disabled ? (
+          <PlayCircleIcon data-icon-type="play" weight="duotone" />
+        ) : (
+          <PauseCircleIcon data-icon-type="pause" weight="duotone" />
+        )}
       </button>
     </div>
   );

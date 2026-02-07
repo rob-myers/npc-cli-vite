@@ -206,8 +206,9 @@
     - preserve uiRegistry on hmr (similar to ui.store fix)
 
 - ✅ move uiStoreApi.uiGrid to ref
-- 🚧 addUis supports opts.layoutItems
-- uis have optional play/pause button tied to meta.disabled
+- ❌ addUis supports opts.layoutItems
+  - appendLayoutItems is now inside UiContext, not uiStoreApi
+- ✅ uis have play/pause button tied to meta.disabled
 
 - detect responsive tabs change and revert on return (?)
 
