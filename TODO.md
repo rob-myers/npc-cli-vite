@@ -4,8 +4,9 @@
   - head 128x128 (1x1) body 384x128 (3x1)
   - ✅ copy over npc texture svgs
   - ✅ head has texture
-  - head and body have correct dimensions
-  - body has texture
+  - ✅ head and body have correct texture dimensions
+    - body should probably be thinner
+  - ✅ body has texture
   - has arms
 
 - 🚧 investigate blockbench texture conventions
