@@ -247,7 +247,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
-  useMemo(
+  useEffect(
     () =>
       extendContextValue({
         appendLayoutItems: (ls) => {
