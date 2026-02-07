@@ -15,6 +15,7 @@ const mirrored: Record<UiRegistryKey, true> = {
 const FlatBaseUiMetaSchema = z.looseObject({
   /** Layout id */
   id: z.string(),
+  disabled: z.boolean().optional(),
   /** For sub-uis (individual tabs) */
   parentId: z.string().optional(),
   title: z.string(),

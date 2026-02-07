@@ -13,6 +13,8 @@ export default function World(props: { meta: WorldUiMeta }) {
     disabled: props.meta.disabled,
   }));
 
+  state.disabled = props.meta.disabled;
+
   return (
     <WorldContext.Provider value={state}>
       <WorldView className={uiClassName}>

@@ -1,5 +1,5 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
-import { castDraft } from "immer";
+import { castDraft, type Draft } from "immer";
 import type { Layout } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
@@ -51,6 +51,9 @@ export const uiStoreApi = {
   resetLayout() {
     uiStoreApi.clearUis();
     uiStoreApi.addUis({ metas: [getDefaultUiMeta()] });
+  },
+  setUiMeta(id: string, uiMetaDraft: (state: Draft<UiInstanceMeta>) => void) {
+    uiStore.setState((draft) => void uiMetaDraft(draft.byId[id].meta));
   },
 };
 
