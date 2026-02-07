@@ -1,0 +1,1391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com" width="2048" height="2048" viewBox="0 0 2048 2048">
+  <defs>
+    <bx:grid x="0" y="0" width="16" height="16" color="rgba(0,255,0,0.2)"/>
+    <filter id="saturate-filter-2" bx:preset="saturate 1 1.5" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="1.5"/>
+    </filter>
+    <filter id="filter-1" bx:preset="saturate 1 1.5" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="1.5"/>
+    </filter>
+    <filter id="inner-shadow-filter-5" bx:preset="inner-shadow 1 0 0 10 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-6" bx:preset="inner-shadow 1 0 0 10 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-7" bx:preset="inner-shadow 1 0 0 10 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-8" bx:preset="inner-shadow 1 0 0 8 0.97 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="8"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1.94"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-9" bx:preset="inner-shadow 1 0 0 10 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="saturate-filter-0" bx:preset="saturate 1 1.8" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="1.8"/>
+    </filter>
+    <filter id="outline-filter-0" bx:preset="outline 1 4 #0000008e" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="4"/>
+      <feFlood flood-color="#0000008e" result="flood"/>
+      <feComposite in="flood" in2="dilated" operator="in" result="outline"/>
+      <feMerge>
+        <feMergeNode in="outline"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <bx:export>
+      <bx:file format="svg"/>
+    </bx:export>
+    <filter id="outline-filter-1" bx:preset="outline 1 2 #000" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="2"/>
+      <feFlood flood-color="#000" result="flood"/>
+      <feComposite in="flood" in2="dilated" operator="in" result="outline"/>
+      <feMerge>
+        <feMergeNode in="outline"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="inner-shadow-filter-10" bx:preset="inner-shadow 1 0 0 24 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="24"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-11" bx:preset="inner-shadow 1 0 0 21 0.61 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="21"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1.22"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="saturate-filter-8" bx:preset="saturate 1 0.84" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="0.84"/>
+    </filter>
+    <filter id="inner-shadow-filter-12" bx:preset="inner-shadow 1 0 0 40 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="40"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-13" bx:preset="inner-shadow 1 0 0 40 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="40"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="brightness-filter-0" bx:preset="brightness 1 1.2" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.2"/>
+        <feFuncG type="linear" slope="1.2"/>
+        <feFuncB type="linear" slope="1.2"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="brightness-filter-1" bx:preset="brightness 1 1.2" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.2"/>
+        <feFuncG type="linear" slope="1.2"/>
+        <feFuncB type="linear" slope="1.2"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="outline-filter-2" bx:preset="outline 1 4 #000" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="4"/>
+      <feFlood flood-color="#000" result="flood"/>
+      <feComposite in="flood" in2="dilated" operator="in" result="outline"/>
+      <feMerge>
+        <feMergeNode in="outline"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="filter-2" bx:preset="brightness 1 1.2" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.2"/>
+        <feFuncG type="linear" slope="1.2"/>
+        <feFuncB type="linear" slope="1.2"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="sepia-filter-1" bx:preset="sepia 1 1" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="matrix" values="0.393 0.769 0.189 0 0 0.349 0.686 0.168 0 0 0.272 0.534 0.131 0 0 0 0 0 1 0"/>
+    </filter>
+    <filter id="inner-shadow-filter-16" bx:preset="inner-shadow 1 0 0 1 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="1"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-17" bx:preset="inner-shadow 1 0 0 2 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="2"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-18" bx:preset="inner-shadow 1 0 0 15 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="15"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="saturate-filter-9" bx:preset="saturate 1 0.49" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="0.49"/>
+    </filter>
+    <filter id="inner-shadow-filter-19" bx:preset="inner-shadow 1 0 0 10 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="hue-rotate-filter-0" bx:preset="hue-rotate 1 -35" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="hueRotate" values="-35"/>
+    </filter>
+    <filter id="inner-shadow-filter-20" bx:preset="inner-shadow 1 0 0 22 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="sepia-filter-0" bx:preset="sepia 1 1" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="matrix" values="0.393 0.769 0.189 0 0 0.349 0.686 0.168 0 0 0.272 0.534 0.131 0 0 0 0 0 1 0"/>
+    </filter>
+    <filter id="brightness-filter-2" bx:preset="brightness 1 1.58" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.58"/>
+        <feFuncG type="linear" slope="1.58"/>
+        <feFuncB type="linear" slope="1.58"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="inner-shadow-filter-21" bx:preset="inner-shadow 1 0 0 1 0.37 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="1"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="0.74"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-22" bx:preset="inner-shadow 1 0 0 15 0.58 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="15"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1.16"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="brightness-filter-3" bx:preset="brightness 1 1" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1"/>
+        <feFuncG type="linear" slope="1"/>
+        <feFuncB type="linear" slope="1"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="inner-shadow-filter-23" bx:preset="inner-shadow 1 0 0 25 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="25"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-0" bx:preset="inner-shadow 1 0 0 14 0.39 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="14"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="0.78"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="saturate-filter-1" bx:preset="saturate 1 1" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="1"/>
+    </filter>
+    <filter id="brightness-filter-4" bx:preset="brightness 1 1.2" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.2"/>
+        <feFuncG type="linear" slope="1.2"/>
+        <feFuncB type="linear" slope="1.2"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="brightness-filter-5" bx:preset="brightness 1 1.51" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.51"/>
+        <feFuncG type="linear" slope="1.51"/>
+        <feFuncB type="linear" slope="1.51"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="brightness-filter-6" bx:preset="brightness 1 1.3" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="1.3"/>
+        <feFuncG type="linear" slope="1.3"/>
+        <feFuncB type="linear" slope="1.3"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="inner-shadow-filter-2" bx:preset="inner-shadow 1 0 0 10 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="inner-shadow-filter-3" bx:preset="inner-shadow 1 0 0 20 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="20"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="filter-3" bx:preset="inner-shadow 1 0 0 20 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="20"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="filter-4" bx:preset="inner-shadow 1 0 0 19 0.68 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="19"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1.36"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="brightness-filter-7" bx:preset="brightness 1 0.84" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="0.84"/>
+        <feFuncG type="linear" slope="0.84"/>
+        <feFuncB type="linear" slope="0.84"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="brightness-filter-8" bx:preset="brightness 1 0.4" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="0.4"/>
+        <feFuncG type="linear" slope="0.4"/>
+        <feFuncB type="linear" slope="0.4"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="filter-5" bx:preset="brightness 1 0.4" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="0.4"/>
+        <feFuncG type="linear" slope="0.4"/>
+        <feFuncB type="linear" slope="0.4"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="filter-6" bx:preset="inner-shadow 1 0 0 22 0.5 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer result="choke">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
+      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+    <filter id="brightness-filter-9" bx:preset="brightness 1 0.9" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="0.9"/>
+        <feFuncG type="linear" slope="0.9"/>
+        <feFuncB type="linear" slope="0.9"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="gaussian-blur-filter-0" bx:preset="gaussian-blur 1 3.1" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.1 3.1" edgeMode="none"/>
+    </filter>
+    <filter id="filter-8" bx:preset="gaussian-blur 1 3.1" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.1 3.1" edgeMode="none"/>
+    </filter>
+    <filter id="gaussian-blur-filter-1" bx:preset="gaussian-blur 1 5" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5 5" edgeMode="none"/>
+    </filter>
+    <filter id="gaussian-blur-filter-2" bx:preset="gaussian-blur 1 2.5" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5 2.5" edgeMode="none"/>
+    </filter>
+  </defs>
+  <g style="">
+    <title>uv-map</title>
+    <g transform="matrix(1, 0, 0, 1, 32, 0)" style="filter: url(&quot;#sepia-filter-1&quot;) url(&quot;#hue-rotate-filter-0&quot;) url(&quot;#brightness-filter-9&quot;);">
+      <title>base_head</title>
+      <rect width="128" height="128" style="stroke-width: 16px;" x="512">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: rgb(102, 102, 102); stroke-width: 16px;" x="640">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="stroke-width: 16px;" y="128" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="stroke-width: 16px;" x="640" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: rgb(102, 102, 102); stroke-width: 16px;" x="512" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="stroke-width: 16px;" x="640" y="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAArklEQVQYGWWOMQqEMBREJ7AggpXiDTyBB7Cz8gR26XMGj2ErdrY2Xkas0oZYCUGbuJPFLXan+cP78zMRVVX5KIpwnid+J94S8zz7NE3p/7TvO0Rd1/7ZdF0Hwr7vH4SXUgpFUaBpmi9c1xXLsmDbNohhGEIFLxm8rgtaa7A2VPCTUkpM0wRrbXglyzK0bYtxHCHKsvTOOeR5DgYpLowxiOP4EyBMkiRAeoaP46DFDYHSTi35RdCtAAAAAElFTkSuQmCC" width="128" height="128" x="512" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-22&quot;);">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAXklEQVQYGW2Ouw3AMAhEMZ0lT8OSLOWxLLl08oiIKHwFB8fxaWZ29t7Se5cba4pjDAHJ5AwpoYo0ABrD+pX3GBtwrbXujlf9N6Spcpxw97hFASrTa3POQyMnyUE+/gBCRzp6RxUbbwAAAABJRU5ErkJggg==" width="128" height="128" x="640" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-22&quot;);">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAkElEQVQYGV1PwQnFIBSLpSAFT93CkZzAi5sUxIOX3hzBAZzJkyCe+ongpzTw8JmXF6PQWj/44DiOySilsL8vS9dag3MO53li771PnifFa8AhsZFk3feNEAJijHNQawVrOqxnSBDee0gpYYzBRoL21tq5wZ4ZxhhIKUHknB+mJUnQ5bqu2dNZlFL+33yLqGCeH8GBSCZetpEEAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="128" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-22&quot;);">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAiklEQVQYGT1OsQ0DIAwDqQsSE6dwAO9wAQNfMHAAGys3cBATEmKisqvUA0kcx1iHEN7eWwHWWlY8wukxxltrqVorl+ecvwiNnnM+NBCJUJzg8gEpgEsphWOMkZWC3ru695LAgXNOGWN+gtYaG9jhfwhyzuTwaO/9k2ApJV5jgRzMgAELANaAhET9AtSSSKvSEfKbAAAAAElFTkSuQmCC" width="128" height="128" x="640" y="128" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-22&quot;);">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAASklEQVQYGWPU1NT8z8nJyfD9+3cGbDQTAwGAooCHhwdDOVgBugSMD6KZQPaCAC4axQp08798+cIAVsDOzg6WQ6dBgizI9oEE0PkAsOMPTpWV51cAAAAASUVORK5CYII=" width="128" height="128" x="512" y="256" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-22&quot;);">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAASElEQVQYGWPcs2fPfwYg+PLlC4iCAx4eHjCbCS6Cg0FQAQu60TCDYOKETXj37h1ME1aaoAmMRkZGYG+CtH///h1sCicnJ9w0AB0XE13KOE/SAAAAAElFTkSuQmCC" width="128" height="128" x="640" y="256" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-22&quot;);">
+        <title>_bottom</title>
+      </image>
+      <ellipse style="fill: rgb(209, 92, 61); stroke-width: 8px; stroke: rgb(68, 68, 68);" cx="704" cy="304" rx="32" ry="32">
+        <title>_neck-top</title>
+      </ellipse>
+    </g>
+    <g style="filter: none;" transform="matrix(1, 0, 0, 1, -800, 0)">
+      <title>base_body</title>
+      <path d="M 1312 288 L 1312 384 L 800 384 L 800 288 Z" style="stroke-width: 12px; fill: rgb(51, 51, 51); filter: url(&quot;#filter-6&quot;);">
+        <title>_trousers</title>
+      </path>
+      <path d="M 976 128 L 976 192 L 928 128 L 976 128 Z" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); visibility: hidden;">
+        <title>_triangle</title>
+      </path>
+      <path d="M 1008 128 L 1008 192 L 1056 128 L 1008 128 Z" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); transform-origin: 1032px 160px; visibility: hidden;">
+        <title>_triangle</title>
+      </path>
+      <path d="M 928 0 L 1056 0 L 1056 128 L 1008 128 L 1008 160 L 976 160 L 976 128 L 928 128 Z" style="stroke-width: 12px; alignment-baseline: initial; filter: url(&quot;#inner-shadow-filter-5&quot;) url(&quot;#brightness-filter-3&quot;); fill: rgb(119, 119, 119);">
+        <title>_skin</title>
+      </path>
+      <path d="M 944 32 L 944 128 L 928 128 L 928 0 L 1056 0 L 1056 128 L 1040 128 L 1040 32 L 944 32 Z" style="stroke: rgb(0, 0, 0); fill: rgb(153, 153, 153);"/>
+      <rect width="128" height="160" style="stroke: rgb(255, 255, 255); stroke-width: 8px; filter: url(&quot;#inner-shadow-filter-23&quot;); fill: rgb(119, 119, 119);" y="128" x="800">
+        <title>_left</title>
+      </rect>
+      <rect width="128" height="160" style="alignment-baseline: initial; stroke: rgb(255, 255, 255); stroke-width: 8px; filter: url(&quot;#inner-shadow-filter-23&quot;); fill: rgb(119, 119, 119);" y="128" x="928">
+        <title>_front</title>
+      </rect>
+      <rect width="128" height="160" style="stroke: rgb(255, 255, 255); stroke-width: 8px; filter: url(&quot;#inner-shadow-filter-23&quot;); fill: rgb(119, 119, 119);" y="128" x="1056">
+        <title>_right</title>
+      </rect>
+      <rect width="128" height="160" style="stroke: rgb(255, 255, 255); stroke-width: 8px; filter: url(&quot;#inner-shadow-filter-23&quot;); fill: rgb(119, 119, 119);" y="128" x="1184">
+        <title>_back</title>
+      </rect>
+      <rect width="128" height="128" style="stroke-width: 4px; fill: none; stroke: rgb(0, 0, 0);" x="928">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="stroke-width: 12px; filter: url(&quot;#inner-shadow-filter-20&quot;); fill: none; stroke: rgb(0, 0, 0);" x="1056">
+        <title>bottom</title>
+      </rect>
+      <rect width="128" height="256" style="stroke-width: 12px; filter: url(&quot;#inner-shadow-filter-20&quot;); fill: none; stroke: rgb(0, 0, 0);" y="128" x="800">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="stroke-width: 12px; alignment-baseline: initial; filter: url(&quot;#inner-shadow-filter-20&quot;); fill: none; stroke: rgb(0, 0, 0);" y="128" x="928">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="stroke-width: 12px; filter: url(&quot;#inner-shadow-filter-20&quot;); fill: none; stroke: rgb(0, 0, 0);" y="128" x="1056">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="256" style="stroke-width: 12px; filter: url(&quot;#inner-shadow-filter-20&quot;); fill: none; stroke: rgb(0, 0, 0);" y="128" x="1184">
+        <title>back</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 32, 0)" style="filter: url(&quot;#sepia-filter-0&quot;);">
+      <title>base_head-overlay</title>
+      <rect width="128" height="128" style="fill: none;" x="512" y="416">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="640" y="416">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" y="544" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="640" y="544">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="512" y="672">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="640" y="672">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAN0lEQVQYGWNkAAJXV9f/P3/+ZGBnZ2dApg8dOsQIkh/6AO4NIyOj/9+/fwf7iJOTk+HcuXNgOQDksRQDRyC4RQAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="416" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAASUlEQVQYGWNgoDlgBNlgZGT0//v37wycnJwMyPT169cZmUAKeHh4QBQKDVIMAmAFIAZMAEaDxEAArICdnR3MQafhCkAMbNaAxAHQYg5yElBZUgAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="672" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAIklEQVQYGWNgGBGAEeZLIyOj/9+/fwdzOTk5Gc6dOweWAwBsoQcCxR0CzQAAAABJRU5ErkJggg==" width="128" height="128" x="640" y="672" style="image-rendering: pixelated;">
+        <title>_bottom</title>
+      </image>
+      <g transform="matrix(1, 0, 0, 1, 350.829986572266, -153.599975585937)" style="visibility: hidden;">
+        <title>_eyes</title>
+        <circle style="fill: rgb(255, 255, 255);" cx="193.17" cy="617.6" r="12">
+          <title>_left</title>
+        </circle>
+        <circle style="fill: rgb(255, 255, 255);" cx="257.17" cy="617.6" r="12">
+          <title>_right</title>
+        </circle>
+      </g>
+    </g>
+    <g>
+      <title>base_body-overlay</title>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="128" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="256" y="416">
+        <title>bottom</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0);" y="544">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0); transform-origin: 192px 672px;" y="544" x="128">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0);" y="544" x="256">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0);" y="544" x="384">
+        <title>back</title>
+      </rect>
+      <path d="M 191.816 607.493 C 194.46 607.493 196.598 609.629 196.598 612.275 L 196.598 621.838 L 214.528 621.838 C 220.475 621.838 225.287 626.65 225.287 632.597 L 225.287 673.24 C 225.287 679.188 220.475 683.999 214.528 683.999 L 169.103 683.999 C 163.156 683.999 158.344 679.188 158.344 673.24 L 158.344 632.597 C 158.344 626.65 163.156 621.838 169.103 621.838 L 187.035 621.838 L 187.035 612.275 C 187.035 609.629 189.171 607.493 191.816 607.493 Z M 206.16 651.724 C 210.761 651.724 213.637 646.742 211.336 642.758 C 210.269 640.909 208.296 639.769 206.16 639.769 C 201.559 639.769 198.684 644.75 200.983 648.734 C 202.051 650.584 204.024 651.724 206.16 651.724 Z M 183.448 645.745 C 183.448 641.146 178.468 638.27 174.482 640.569 C 172.633 641.638 171.494 643.611 171.494 645.745 C 171.494 650.346 176.474 653.223 180.459 650.922 C 182.308 649.854 183.448 647.881 183.448 645.745 Z M 203.769 664.872 C 202.454 664.872 201.378 665.947 201.378 667.263 C 201.378 668.577 202.454 669.654 203.769 669.654 L 208.551 669.654 C 209.866 669.654 210.941 668.577 210.941 667.263 C 210.941 665.947 209.866 664.872 208.551 664.872 L 203.769 664.872 Z M 189.425 664.872 C 188.109 664.872 187.035 665.947 187.035 667.263 C 187.035 668.577 188.109 669.654 189.425 669.654 L 194.205 669.654 C 195.52 669.654 196.598 668.577 196.598 667.263 C 196.598 665.947 195.52 664.872 194.205 664.872 L 189.425 664.872 Z M 175.08 664.872 C 173.765 664.872 172.689 665.947 172.689 667.263 C 172.689 668.577 173.765 669.654 175.08 669.654 L 179.862 669.654 C 181.177 669.654 182.252 668.577 182.252 667.263 C 182.252 665.947 181.177 664.872 179.862 664.872 L 175.08 664.872 Z" style="text-wrap-mode: nowrap; stroke-width: 1.54496px; fill: rgb(255, 255, 255); stroke: rgb(0, 0, 0); filter: url(&quot;#outline-filter-1&quot;); visibility: hidden;">
+        <title>_robot-icon</title>
+      </path>
+      <ellipse style="fill-opacity: 0.3;" cx="192" cy="480" rx="48" ry="48"/>
+      <g transform="matrix(0.34375, 0, 0, 1, -275.001831, 41.052002)" style="visibility: hidden;">
+        <title>_belt</title>
+        <path d="M 800 218.948 L 1312 218.948 L 1312 242.662 L 800 242.662 L 800 218.948 Z" style="stroke: rgb(0, 0, 0); stroke-width: 4px; fill: rgb(102, 78, 67);"/>
+        <path d="M 1405.1 218.948 L 2289.46 218.948 L 2289.46 242.948 L 1405.1 242.948 L 1405.1 218.948 Z" style="stroke: rgb(0, 0, 0); stroke-width: 4px; fill: rgb(102, 78, 67);"/>
+        <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAAqADAAQAAAABAAAAAgAAAADtGLyqAAAAG0lEQVQIHWP4///T/3fXwv8z/WNoYXh64DYDAHOGCw5Gmk+GAAAAAElFTkSuQmCC" width="32" height="32" x="176" y="656" style="image-rendering: pixelated; filter: url(&quot;#outline-filter-2&quot;);" transform="matrix(2.909091, 0, 0, 1, 800.00531, -441.052002)">
+          <title>buckle</title>
+        </image>
+      </g>
+    </g>
+    <rect width="128" height="128" style="fill: none;" x="384" y="832">
+      <title>default_breath</title>
+    </rect>
+    <rect width="128" height="32" style="fill: none; stroke: rgb(0, 0, 0);" y="2016">
+      <title>default_label</title>
+    </rect>
+    <rect width="128" height="128" style="fill: none;" x="128" y="832">
+      <title>default_selector</title>
+    </rect>
+    <g>
+      <title>_default</title>
+      <circle style="fill: none; stroke-width: 2px; stroke: rgb(221, 221, 255);" cx="191.999" cy="895.999" r="54">
+        <title>selector</title>
+      </circle>
+      <circle style="fill: none; stroke-width: 4px; stroke: rgb(170, 170, 170);" cx="191.999" cy="895.999" r="50">
+        <title>selector-inner</title>
+      </circle>
+      <circle style="stroke-width: 4px; stroke: rgb(0, 0, 0); stroke-opacity: 0.2; vector-effect: non-scaling-stroke; fill-opacity: 0.3;" cx="448" cy="896" r="50">
+        <title>outer_breath</title>
+      </circle>
+      <circle style="stroke-width: 1.86234px; stroke-opacity: 0.4; fill-opacity: 0.2; stroke: rgb(0, 0, 0);" cx="448" cy="896" r="28">
+        <title>inner_breath</title>
+      </circle>
+      <text style="fill: rgb(255, 255, 255); font-family: Arial, sans-serif; font-size: 18px; font-weight: 700; white-space: pre;" x="5.428" y="2038.69"><title>label-test-text</title>label-test-text</text>
+    </g>
+    <g style="">
+      <title>empty_body</title>
+      <rect width="128" height="256" style="fill: none; stroke-width: 4px;" y="1792" x="1920">
+        <title>front</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, -127.999992, 128)">
+      <title>confused_head-overlay</title>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none;" x="800" y="832">
+        <title>front</title>
+      </rect>
+      <g transform="matrix(1, 0, 0, 1, 638.83, 262.4)">
+        <title>eyes</title>
+        <circle style="stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255);" cx="193.17" cy="617.6" r="12">
+          <title>_left</title>
+        </circle>
+        <circle style="stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255);" cx="257.17" cy="617.6" r="16">
+          <title>_right</title>
+        </circle>
+      </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 160, 32)">
+      <title>small-eyes_head-overlay</title>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none;" x="512" y="800">
+        <title>front</title>
+      </rect>
+      <g transform="matrix(1, 0, 0, 1, 350.83, 230.4)">
+        <title>eyes</title>
+        <circle style="stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255);" cx="193.17" cy="617.6" r="8">
+          <title>_left</title>
+        </circle>
+        <circle style="stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255);" cx="257.17" cy="617.6" r="8">
+          <title>_right</title>
+        </circle>
+      </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 416, 288.000031)" style="">
+      <title>plus-icon_body-overlay</title>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0); transform-origin: 192px 672px;" y="544" x="128">
+        <title>front</title>
+      </rect>
+      <g id="SVGRepo_iconCarrier" transform="matrix(3.55555, 0, 0, 3.55555, 149.333, 604.958)" style="">
+        <title>icon/24/health</title>
+        <desc>Created with Sketch.</desc>
+        <path d="M 19 3 L 5 3 C 3.9 3 3.01 3.9 3.01 5 L 3 19 C 3 20.1 3.9 21 5 21 L 19 21 C 20.1 21 21 20.1 21 19 L 21 5 C 21 3.9 20.1 3 19 3 Z" id="path-1" transform="matrix(1, 0, 0, 1, 0, 0.001)" style="stroke: rgb(255, 255, 255); stroke-width: 1.6875px; fill: rgb(0, 255, 0);"/>
+        <path d="M19,3 L5,3 C3.9,3 3.01,3.9 3.01,5 L3,19 C3,20.1 3.9,21 5,21 L19,21 C20.1,21 21,20.1 21,19 L21,5 C21,3.9 20.1,3 19,3 L19,3 Z M18,14 L14,14 L14,18 L10,18 L10,14 L6,14 L6,10 L10,10 L10,6 L14,6 L14,10 L18,10 L18,14 L18,14 Z" id="path" fill="#000000"/>
+      </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 864, 0)" style="filter: url(&quot;#brightness-filter-6&quot;);">
+      <title>soldier-0_head</title>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAyElEQVQYGWPUMtb4z4AEDncbw3m2pWcZmOA8KAMkCAIwmnH2rJlwE4QEeaHKEBSjuqzU/3AbPQZJEQEGLh5eht+/fgLxL4Zbj14wbDt3i4GpNMyFwTA8i6F94zEGJhYmBmYWZjDbLrGIoSDAjoGJk5ebwd7OkoGLi4tBSFqKQUBCAswGiQlLSTAwzitL+C8sLc3AzMrCwMbFyfD/PxPDn9+/Gf7/+cXw/dNnBpZ/f/8xfPv4EayAkYmJgZGRkeHHly8Mf4HuAAEAfDM7+LEFzCcAAAAASUVORK5CYII=" width="128" height="128" x="512" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-0&quot;) url(&quot;#saturate-filter-1&quot;);">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAUUlEQVQYGWNUM1D5z4AHMOGRA0sxrlu7HMOEd+8+w/UxOpro/xfm5Wd4+/kjAzsrGwMPByeYDRMjaAVOBV9+fAdbg6EAJgFzBFgBuiBMEkQDAIseGqMyiT7eAAAAAElFTkSuQmCC" width="128" height="128" x="640" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAdklEQVQYGWNUM1D5z4AHMOGRA0sxrlu7/L+goAhWde/fv2FgNNXT/C8vLMrw5cd3sCIeDk6Gt58/Mgjz8oNpglaAFfz//58BhLEBFpBgkIMOWG7OlmMMP3//gqv78usXA0tBkAMDKzs7Q/fynXAJEOPL29dgPgD+iCaft+jV7QAAAABJRU5ErkJggg==" width="128" height="128" x="-640" y="128" style="image-rendering: pixelated;" transform="matrix(-1, 0, 0, 1, 0, 0)">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAdklEQVQYGWNUM1D5z4AHMOGRA0sxrlu7/L+goAhWde/fv2FgNNXT/C8vLMrw5cd3sCIeDk6Gt58/Mgjz8oNpglaAFfz//58BhLEBFpBgkIMOWG7OlmMMP3//gqv78usXA0tBkAMDKzs7Q/fynXAJEOPL29dgPgD+iCaft+jV7QAAAABJRU5ErkJggg==" width="128" height="128" x="640" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAF0lEQVQYGWPUMtb4z4AHMOGRA0sNDwUAlHMBlGzAm4YAAAAASUVORK5CYII=" width="128" height="128" x="512" y="256" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-0&quot;) url(&quot;#brightness-filter-5&quot;);">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAU0lEQVQYGWMs9Hf4z4AHsIDk3rz9gFWJiLAAAwsrCzNY8t8/VIOYmBgZQHJMWLUiCeJVwMzExMDEwcaKpB6VCbIC7EiQMMhObACsQFFWApscWAwAEQ0IsEpcjb4AAAAASUVORK5CYII=" width="128" height="128" x="640" y="256" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-0&quot;);">
+        <title>_bottom</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAA6ADAAQAAAABAAAAAgAAAABqvnfpAAAAHElEQVQIHWP4v3vd//+3dv1nAAJGEPH/zAYwBwCseAp16tIQuwAAAABJRU5ErkJggg==" width="48" height="32" x="592" y="224" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-8&quot;);">
+        <title>_left-ear</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAA6ADAAQAAAABAAAAAgAAAABqvnfpAAAAHElEQVQIHWP4v3vd//+3dv1nAAJGEPH/zAYwBwCseAp16tIQuwAAAABJRU5ErkJggg==" width="48" height="32" x="-688" y="224" style="image-rendering: pixelated; filter: url(&quot;#filter-5&quot;);" transform="matrix(-1, 0, 0, 1, 0, 0)">
+        <title>_right-ear</title>
+      </image>
+      <rect width="128" height="128" style="fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="512">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="640">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" y="128" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="640" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="512" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; filter: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="640" y="256">
+        <title>bottom</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, -800, 992)" style="filter: url(&quot;#brightness-filter-4&quot;);">
+      <title>soldier-0_body</title>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAWklEQVQIHY1Nuw6AQAhD4HTzE4xODv7/lzkYvQNNudykg014tpRu3ZabmQlwd6pdjDW9Fgp5ziXolPTPCZwhBT6/BAWmQY/dSETIzGLHjUVF6DSP1A/V9DoLPQ1EIren6sKUAAAAAElFTkSuQmCC" width="4" height="12" x="800" y="544" transform="matrix(32, 0, 0, 15.999965, -24800, -8159.980469)" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-2&quot;) url(&quot;#inner-shadow-filter-21&quot;);">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAWklEQVQIHY1Nuw6AQAhD4HTzE4xODv7/lzkYvQNNudykg014tpRu3ZabmQlwd6pdjDW9Fgp5ziXolPTPCZwhBT6/BAWmQY/dSETIzGLHjUVF6DSP1A/V9DoLPQ1EIren6sKUAAAAAElFTkSuQmCC" width="4" height="12" x="800" y="544" transform="matrix(-32, 0, 0, 15.999965, 26784, -8159.980957)" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-2&quot;) url(&quot;#inner-shadow-filter-21&quot;);">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAAsklEQVQYGX1PywrCQAycfdiTSFGK4M2ToH/g9vPdb/EgSEWh0JLUbNrF4qGBTbKTmdmsOV2OAyRezQf3eEstDqHGplxrbxLBWgvrLJ6PBom9q0owEZgHeKVJSoNqv9UrMUs1ivqsduKSY97/0Dz9qwsE3R2e9b1Rlq3TDkyDLMlYcBhF+ou5S4KZxGFy9u2b4JwDUY8QgspijBNGsJmZ6vyok2DmWp913a7rVZ1TUay0/QLqqlCPV9FApgAAAABJRU5ErkJggg==" width="8" height="12" x="928" y="544" transform="matrix(16, 0, 0, 15.999965, -13920, -8159.980469)" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-2&quot;) url(&quot;#inner-shadow-filter-21&quot;);">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAAkElEQVQYGYWQMQ4CQQhFGcBNbDyC0crC+5/MYpM1sH7YINMYKQb48yDAeDzvO8GYmVg4QnJzcveMNd76FECzBdTKmL861m/1aFY46CNvtYsQdbsfQNNa04ZUQxqGq03+d4jKuUvm8x3Wl5GIkNk7/QEYjhYafFWXDyBmSBBer7dLJtuWR8WGuPyutCwn6Gf6AO09O8jfkhMzAAAAAElFTkSuQmCC" width="8" height="12" x="1184" y="544" transform="matrix(16, 0, 0, 15.999965, -17760, -8159.980469)" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-2&quot;) url(&quot;#inner-shadow-filter-21&quot;);">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAATUlEQVQIHWNU11b8zwAETExMDEzMTCAmw7+//xj+/fsHZgPFIYIgybevP4AxTCFIjgWsDEiAJJ8fPQLmSlrbMPAL8EBMgBkFU4hMg+QAuzoZDeMRjZcAAAAASUVORK5CYII=" width="128" height="64" x="928" y="480" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-2&quot;);">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAAQUlEQVQIHWO0ddD5zwAE37/9BFFwwMnFDmYzMTMzMYAwRACsFsyGiTPBtYAZjKhcII/p799/DCAMtwKoBsSGiQMA4BoXsSvij5oAAAAASUVORK5CYII=" width="128" height="64" x="1056" y="416" transform="matrix(1, 0, 0, 2, 0, -416)" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-2&quot;);">
+        <title>_bottom</title>
+      </image>
+      <rect x="928" y="416" width="128" height="64" style="fill: rgb(43, 48, 37); filter: url(&quot;#brightness-filter-2&quot;);">
+        <title>_top-shoulder</title>
+      </rect>
+      <rect x="800" y="736" width="512" height="64" style="fill: rgb(43, 48, 37); filter: url(&quot;#brightness-filter-2&quot;);">
+        <title>_trouser</title>
+      </rect>
+      <rect width="128" height="256" style="transform-origin: 992px 672px; fill-opacity: 0.3; fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" y="544" x="928">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" y="544" x="1184">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" y="544" x="800">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" y="544" x="1056">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="928" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none; stroke-width: 8px; stroke: rgb(0, 0, 0);" x="1056" y="416">
+        <title>bottom</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 864, 0)" style="filter: url(&quot;#saturate-filter-2&quot;);">
+      <title>soldier-0_head-overlay</title>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="512" y="416">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="640" y="416">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" y="544" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="640" y="544">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="512" y="672">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="640" y="672">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAN0lEQVQYGWNkAAJ9K53/IPr3zz8gCg6unb3ByAKThImCBGFsEM0CItB1gsRggAUmia4TpmAw0ADRiBN6IXkVxQAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="416" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAIUlEQVQYGWNgIAAY9a10/uNTw4RPEiTH8vvnH0JqBlweAEx0BIwY/mXzAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="544" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAI0lEQVQYGWNkAAJ9K53/IBoZ/P75h+Ha2RuMTMiC2NjDQwEAn0IHEN7sTegAAAAASUVORK5CYII=" width="128" height="128" x="512" y="672" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAPklEQVQYGWNkAAItY43/IBoEWNlZIAwgefHYFUZGOA/IAClEVgCSY0JWAGL//vkHjGHiKCbABJGthIkNJA0AEZUM/lKu3zcAAAAASUVORK5CYII=" width="128" height="128" x="640" y="416" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 32, 0)">
+      <title>soldier-0_body-overlay</title>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill-opacity: 0.3; fill: none;" x="928" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill-opacity: 0.3; fill: none;" x="1056" y="416">
+        <title>bottom</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(0, 0, 0); fill-opacity: 0.3; fill: none;" y="544" x="800">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(0, 0, 0); transform-origin: 992px 672px; fill-opacity: 0.3; fill: none;" y="544" x="928">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(0, 0, 0); fill-opacity: 0.3; fill: none;" y="544" x="1056">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(0, 0, 0); fill-opacity: 0.3; fill: none;" y="544" x="1184">
+        <title>back</title>
+      </rect>
+      <g transform="matrix(1, 0, 0, 0.781577, 0, 504.09491)">
+        <title>_belt</title>
+        <path d="M 1296.94 92 L 1222 215.2 L 1312 215.248 L 1312 235.3 L 800 235.3 L 800 214.3 L 1196 214.3 L 1270.94 92 L 1296.94 92 Z" style="fill: rgb(238, 238, 238); stroke: rgb(0, 0, 0); stroke-width: 4px;"/>
+      </g>
+      <g style="filter: none;" transform="matrix(0.333333, 0, 0, 0.390789, 666.000305, 536.921143)">
+        <title>_medal</title>
+        <rect x="1008" y="176" width="48" height="32" style="fill: rgb(153, 0, 0);">
+          <title>medal</title>
+        </rect>
+        <rect x="1104" y="176" width="48" height="32" style="fill: rgb(153, 0, 0);">
+          <title>medal</title>
+        </rect>
+        <rect x="1056" y="176" width="48" height="32" style="fill: rgb(68, 68, 153);">
+          <title>medal</title>
+        </rect>
+        <rect x="1056" y="144" width="48" height="32" style="fill: rgb(153, 153, 119);">
+          <title>medal</title>
+        </rect>
+        <rect x="1008" y="144" width="48" height="32" style="fill: rgb(34, 119, 34);">
+          <title>medal</title>
+        </rect>
+        <rect x="1104" y="144" width="48" height="32" style="fill: rgb(34, 119, 34);">
+          <title>medal</title>
+        </rect>
+      </g>
+      <ellipse style="fill-opacity: 0.3;" cx="992" cy="490" rx="48" ry="48">
+        <title>_shadow</title>
+      </ellipse>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 866, 832)">
+      <title>scientist-0_head</title>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAlklEQVQYGWOMdjP7//TFS4afv/4wsDAzMfz5+w9MMwPZMpISDEyMjIxgBjsbCwMIgBSBAEgSBFgS7XXBDAYGGA3lQimw8uYVuxlAGAaQ+WAF+y8+YDhw6SFMHswGiYEA4962lP8gxr5rCAUgvpOWPIhiYDl48zHDX6DL//77x6AiwgcWvPPmE1gDyCcQp4OFGRhAEugAAA9wNEg89gl3AAAAAElFTkSuQmCC" width="128" height="128" x="510" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAbUlEQVQYGXWNAQ5AMBAEr0f4AonEC/gCX+H/HyCozsUhEpu0md3tXcPYt3HfD0FZprKsm5RFLmR4berKgAdewogud4gJAuYjpYgx3enACO+sloRn1gtP7AsMhYfyGtB56K4ld22ea0qdbQD+dAISZx72mvvwdAAAAABJRU5ErkJggg==" width="128" height="128" x="638" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAdUlEQVQYGWN00JP/z4AEZCQlkHgMDCwgAZgKRqAUiA2iYYAFxmD4/5/hPyNCKtFeFyzF8h8oAQMgaXNFMQYtOXGYEAMTI1QXjIbLQBlMIBomCdINAtcevQTTIIJxb1sK3A5kCZDk6++/GMAmgDgggGw3SBIEAKNgGkixBQEaAAAAAElFTkSuQmCC" width="128" height="128" x="510" y="128" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAgUlEQVQYGWOMcTf//58BARiBzCfPX8AFWP4DpRkZGRlANBgA2TKSEggFSQ56YM78g5cRioAiMFOZYEoT7XUZLJTEYVygCqASIIYrQMhAWCBrQQCu4Nqjl2ABc0UxMA0iQIpYDt58zCDKyQYXBDFA1sEA2ITX33/B+AxackjuAIoCAB87IeWkVj7eAAAAAElFTkSuQmCC" width="128" height="128" x="638" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAYElEQVQYGWWP0QmAMAxEayq6goLgBs7g/hspVuUprwjmo5dcLne0WZf5Sp/a9iP1XVuZgCjlfAjRLbtwEL1WHBKoc3719BS7n4OXin8Co8BpHFLwoDbKXqfqYK6IA/+/AYymJxxpCusGAAAAAElFTkSuQmCC" width="128" height="128" x="510" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAN0lEQVQYGWPc25bynwEPYMIjB5aigoJrj17itAUkR5wV2EyBibGAzH/9/RfDwZuPMawS5WRjAACtXBK5Aei++wAAAABJRU5ErkJggg==" width="128" height="128" x="638" y="256" style="image-rendering: pixelated;">
+        <title>_bottom</title>
+      </image>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px;" x="510">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px;" x="638">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px;" y="128" x="510">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px;" x="638" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px;" x="510" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; filter: none; stroke-width: 8px;" x="638" y="256">
+        <title>bottom</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 864, 832)" style="filter: url(&quot;#filter-1&quot;);">
+      <title>scientist-0_head-overlay</title>
+      <rect width="128" height="128" style="fill: none;" x="512" y="416">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="640" y="416">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" y="544" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="640" y="544">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="512" y="672">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="640" y="672">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAN0lEQVQYGWNkAAJbbdn/IBoEDl99zAhhYSFhCmE0FiVkCDF+3alQj08fE7Ikt/uDRhBGFqOcDQCvQwzArHS7mgAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="406" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAQklEQVQYGWNgAAJbbdn/IAxigwAynwUk8OfvXwYWZmawBIh/+OpjRksNKbAGRpAACIAEQIpAikHg+I1ncDmwwGAmAN4EFZCa0gpyAAAAAElFTkSuQmCC" width="128" height="128" x="640" y="416" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAIUlEQVQYGWNgGHjAiM0J8vLy/9nY2LBJMTCAJLHLkCsKAAi3Asy93578AAAAAElFTkSuQmCC" width="128" height="128" x="512" y="534" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAKElEQVQYGWNgGHjAqKqq+h/kjF+/fjE8fPiQEa+T5OXlwYrxKiJZEgDIJwhe4Vg/RAAAAABJRU5ErkJggg==" width="128" height="128" x="640" y="534" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAXElEQVQYGWNgAAJbbdn/lhpS/2FsEB/EBgFGGOfP379ggeM3nqGIMR2++pgRLAMkWJiZwaYhi4Hl0K2AWQeSZAKrgBIghTDdMEUoCpAVg6zDADAHw2gMBTABZAUAqIgoGqncSp8AAAAASUVORK5CYII=" width="128" height="128" x="512" y="672" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 32, 416)" style="">
+      <title>scientist-0_body-overlay</title>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none;" x="928" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none;" x="1056" y="416">
+        <title>bottom</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none;" y="544" x="800">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="transform-origin: 992px 672px; fill-opacity: 0.3; fill: none;" y="544" x="928">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none;" y="544" x="1056">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none;" y="544" x="1184">
+        <title>back</title>
+      </rect>
+      <g>
+        <title>_lab-coat</title>
+        <path d="M 928 496 L 960 496 L 960 608 L 976 608 L 976 800 L 928 800 Z M 1008 608 L 1024 608 L 1024 496 L 1056 496 L 1056 800 L 1008 800 Z" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <rect x="800" y="608" width="128" height="192" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8; filter: url(&quot;#inner-shadow-filter-7&quot;);"/>
+        <rect x="1056" y="608" width="128" height="192" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8; filter: url(&quot;#inner-shadow-filter-6&quot;);"/>
+        <rect x="880" y="544" width="48" height="64" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <rect x="800" y="544" width="48" height="64" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <rect x="928" y="416" width="48" height="48" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8; filter: url(&quot;#inner-shadow-filter-9&quot;);"/>
+        <rect x="1008" y="416" width="48" height="48" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8; filter: url(&quot;#inner-shadow-filter-9&quot;);"/>
+        <rect x="1056" y="544" width="48" height="64" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <rect x="1136" y="544" width="48" height="64" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <rect x="1184" y="544" width="128" height="256" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8; filter: url(&quot;#inner-shadow-filter-8&quot;);"/>
+        <rect x="848" y="544" width="32" height="64" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <rect x="1104" y="544" width="32" height="64" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.8;"/>
+        <ellipse style="fill-opacity: 0.3; stroke-width: 1;" cx="992" cy="480" rx="48" ry="48">
+          <title>_shadow</title>
+        </ellipse>
+      </g>
+      <g transform="matrix(0.34375, 0, 0, 1, 525, 478)" style="">
+        <title>_belt</title>
+        <path d="M 800 214.948 L 1312 214.948 L 1312 242 L 800 242 L 800 214.948 Z" style="stroke: rgb(0, 0, 0); stroke-width: 4px; fill: rgb(136, 136, 153);"/>
+        <path d="M 1410.91 214.948 L 2289.46 214.948 L 2289.46 242 L 1410.91 242 L 1410.91 214.948 Z" style="stroke: rgb(0, 0, 0); stroke-width: 4px; fill: rgb(136, 136, 153);"/>
+      </g>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAAqADAAQAAAABAAAAAgAAAADtGLyqAAAAGElEQVQIHWOccLrl//fL/xmYQASnLiMDAGGsCKufFtqrAAAAAElFTkSuQmCC" width="32" height="32" x="1104" y="560" style="image-rendering: pixelated; filter: url(&quot;#saturate-filter-0&quot;) url(&quot;#outline-filter-0&quot;);">
+        <title>_badge</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAAqADAAQAAAABAAAAAgAAAADtGLyqAAAAGElEQVQIHWOccLrl//fL/xmYQASnLiMDAGGsCKufFtqrAAAAAElFTkSuQmCC" width="32" height="32" x="848" y="560" style="image-rendering: pixelated; filter: url(&quot;#saturate-filter-0&quot;) url(&quot;#outline-filter-0&quot;);">
+        <title>_badge</title>
+      </image>
+    </g>
+    <g style="filter: none;" transform="matrix(1, 0, 0, 1, 832, 0)">
+      <title>scientist-1_body</title>
+      <rect width="128" height="256" style="stroke: rgb(255, 255, 255); alignment-baseline: initial; stroke-width: 16px;" y="128" x="128">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(255, 255, 255); stroke-width: 16px;" y="128" x="384">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(255, 255, 255); stroke-width: 16px;" y="128">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="stroke: rgb(255, 255, 255); stroke-width: 16px;" y="128" x="256">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="48" style="stroke-width: 4px; filter: url(&quot;#inner-shadow-filter-19&quot;); fill: rgb(217, 217, 217);" x="128">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); stroke-width: 4px;" x="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAA8UlEQVQYGT2QsUoEMRCG/wubZLMgVjYLe4LNvcJVgoVg7ROJjdxzCNr5AFde5QPYXHXFwnHYibjZJMI6M8k6xebP/F/+YWex/9hOoDpr19C7N5ZI1/f4Pr6LVto6EZvngxhssgYW0LZGlYIXoG50MQBLGpiQwoj/BOMqAS+6c1jHACjBQVUmj7CNkWbt8ikAecoUwJGRo+cRlMCANo0I+RXJyB+OZ09JFF1GHxGGJC6f/JpLABazySDXVCJVigNS9Ag+v/7sv0T/Ui/FHxCQ9/D6cIu71Qk3Vz1eSNOeCBhpUQVYLltsnh65j8uulTHs/QFuGlTr2ntpQAAAAABJRU5ErkJggg==" width="8" height="12" x="128" y="128" transform="matrix(16, 0, 0, 21.333334, -1920, -2602.666748)" style="image-rendering: pixelated; visibility: hidden;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAAxklEQVQYGWO8ffv2//rp9xlAYEHYPzCdsIoJTDdmKjIwPnv27D8nJyeDX1AWg4ZNPljixpGJDJvWTWP4/v07AwtIhIODAywJkvj86Q2DqVczWAyuAKwNSOh+ucPw5c8vGBdMg00Asb5+/cTwmEcFbIIWkA0DcAXc3HxwE9iBbBiAKyDbBIiHoeZdBrqB3W8mzHQwjWKFrGEi2LEoKkABBfTvf6Dg/9mzZ/9ftWoVmA0SA8mBTfjx4wcDkAPU/RWsGcQGiYEAAI8lbo1LutvaAAAAAElFTkSuQmCC" width="8" height="12" x="128" y="128" transform="matrix(16, 0, 0, 21.333334, -1920, -2602.666748)" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-17&quot;);">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAArElEQVQYGX1QQQ7DIAwLFXQr6m3//8jescsesZ0q2sIkZodkx0VKCbGNk4bn497lT0Ri6bJImpdBA70HkU/dpZ27TEowkCSSgZsgSGSDkdebnvykOUvZXiBfQaAKyUGo9HBLtajw+4E2ckOPMbEg2GrRBi9eE4utHhh7YFrbhSC3iNI7FLggxwZd6gmRhW7hA/kZE/zVCi+wOTIPDey4ps+hf7Jsb4BMC9uZwi/NvEmnXVnp/AAAAABJRU5ErkJggg==" width="8" height="12" x="384" y="128" transform="matrix(16, 0, 0, 21.333334, -5760, -2602.666748)" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-16&quot;);">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAX0lEQVQIHVWNUQ6AIAxDy+IweP/TeA5/vIhEMEE6RLFf61u7uX1bCwaJza4RnQMENMWBsXxGiPpQTTFuCYKnAVVWBlkip/gi9QuEh0b9KlwIe105He3tByImmp666oMbADgZ1KmPHO4AAAAASUVORK5CYII=" width="4" height="12" y="128" transform="matrix(32, 0, 0, 21.333334, 0, -2602.666748)" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-16&quot;);">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAXUlEQVQIHVWOSxKAMAhDKSNUe//TeA43XsSO6IwSf0V2vECSNE/jQWFY8hBWIra1/oGGC8k9sWh7ES0OpAH8umn5PHarxDETAZwe/RV4s+VCENDJwd0DF0jsYBTbnoPZGNPWZGu1AAAAAElFTkSuQmCC" width="4" height="12" x="256" y="128" transform="matrix(32, 0, 0, 21.333334, -7936, -2602.666748)" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-16&quot;);">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAATUlEQVQIHWN8/ODM/9+/vzNgA6xsnAwsIMmklAqG3z9/Mfz69ROsjo2NnYGNnY1h7pwOBiaQCCM27VAxoIL/YJUgPg8vLxiD2CDdIAAAuHgXVLrLpB8AAAAASUVORK5CYII=" width="8" height="4" x="256" transform="matrix(16, 0, 0, 32, -3840, 0)" style="image-rendering: pixelated;">
+        <title>_bottom</title>
+      </image>
+      <rect x="288" y="256" width="64" height="48" style="fill: rgba(119, 119, 119, 0.404); stroke: rgb(136, 136, 136); stroke-width: 2px; filter: none;"/>
+      <rect x="288" y="-256" width="64" height="16" style="fill: rgba(119, 119, 119, 0.404); stroke: rgb(0, 0, 0); stroke-width: 2px; filter: none;" transform="matrix(1, 0, 0, -1, 0, 0)"/>
+      <rect x="32" y="256" width="64" height="48" style="fill: rgba(119, 119, 119, 0.404); stroke: rgb(136, 136, 136); stroke-width: 2px; filter: none;"/>
+      <rect x="32" y="-256" width="64" height="16" style="fill: rgba(119, 119, 119, 0.404); stroke: rgb(0, 0, 0); stroke-width: 2; filter: none;" transform="matrix(1, 0, 0, -1, 0, 0)"/>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAAPklEQVQIHWO8ffv2f25ubgb+rTMZkMFH73SGr1+/MjAhC/55/4YBhJEBWEFJzxVkMTAbJsaCLMMiKILMBbMB6c8TGTf9wYoAAAAASUVORK5CYII=" width="128" height="64" x="128" y="64" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-18&quot;) url(&quot;#saturate-filter-9&quot;);" transform="matrix(1, 0, 0, 1.25, 0, -32)"/>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 866, 1664)">
+      <title>medic-0_head</title>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAWklEQVQYGWPcleb4nwEPYIHJcQixwZgMP979grMZ/99cjWLC4flzwJK2iSkMu3unMTCAFHgZWP0H0cgYJsYENwsHA8MKdHUETWBZ+t+YQUaMA10jmP/k1Q8GAK5OLpvVY5s4AAAAAElFTkSuQmCC" width="128" height="128" x="510" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-10&quot;);">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAMUlEQVQYGWPcleb4nwEPYMIjB5aiggJGrr9go2A0iIPMJmzF/2/MYBNgNIiDzCZoAgAufgtwcb2X0gAAAABJRU5ErkJggg==" width="128" height="128" x="638" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAXklEQVQYGWPcleb4nwEPYALJMfH8A2Ns6sAKQBL/vsCZKOrgoiBTYEDS1JFBVMcMzAUrQNf95/tXBgN3E4QCmE4Y/frKKTDTtTiLAW4Fuim7e6cxLP1vjFAA041OAwB0EBdpZj+/dwAAAABJRU5ErkJggg==" width="128" height="128" x="510" y="128" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAX0lEQVQYGWPcleb4nwEPYMImx8TzjwGEQQCrgn9fEMJglqiOGYOkqSPcMJhuuAkG7iYMf75/hSsAMWCmMLkWZ4ElXl85haIAxmFZ+t+YQawvGcYH0zDdIA7CNShKEBwAlPoWlIhrQ1kAAAAASUVORK5CYII=" width="128" height="128" x="638" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAZklEQVQYGWPcleb4nwEPYEGW4xTlROYyfH/9nQFFwd9fP8EKfn38B1fIBGKBdLLxg5kMv3//BrNhpoFNABkFAoxcfxlYWVkZICZAxCDawNIQAmQCMgCbANKJDGD8/9+YIY4EMXABAE/0H4GZ6bmcAAAAAElFTkSuQmCC" width="128" height="128" x="510" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAV0lEQVQYGWPcleb4nwEPYAHJPfn4DasSGX4uBpbrch5YJUGC14GYKcaMH6cCkBzYCpAKC2sjFIUnjp4D85mwSSKLMRLyBeOSG/f+y4hxoBgP4zx59YMBABOqFc39A0BKAAAAAElFTkSuQmCC" width="128" height="128" x="638" y="256" style="image-rendering: pixelated;">
+        <title>_bottom</title>
+      </image>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;" x="510">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;" x="638">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;" y="128" x="510">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;" x="638" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;" x="510" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="stroke: rgb(0, 0, 0); fill: none; filter: none; stroke-width: 4px;" x="638" y="256">
+        <title>bottom</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 1154, 0)">
+      <title>medic-0_head-overlay</title>
+      <rect width="128" height="128" style="fill: none;" x="510">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="638">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" y="128" x="510">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="638" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none;" x="510" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; filter: none;" x="638" y="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAVElEQVQYGWNgAIJdaY7/QRjEhgEYnxHEcJu1nxEmAaJhkiA2WAGIgQzQNSDL0YDNuOTGvf8yYhxgo/m5+MD0x2+fwPSTVz8Y4K5HVgiSiNFQAssBAJmzId51mZwwAAAAAElFTkSuQmCC" width="128" height="128" x="510" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAOklEQVQYGWNkQAK70hz/g7hus/YzwthI0phMohRhakMTYUTjw7kw45ngIjgYcNeCXA5SA9OJQz2mMABIfhGG67KaCwAAAABJRU5ErkJggg==" width="128" height="128" x="638" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAATUlEQVQYGWNgIAAY0eV3pTn+RxZjQuZgY7OABGG63Gbth5sIYzPCJJF1wyRBYmATQAxkQZCmV0VzGWI0lOAmgtRggCU37qE4GEMBSAAArjsWBq9v0oAAAAAASUVORK5CYII=" width="128" height="128" x="510" y="128" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAANUlEQVQYGWNgIAR2pTn+B2GQOhiNoQdZEYYkTIBoRTANKPSSG/fAbkARhHHwSeJ0NEwziAYAAhAcE5iEVrIAAAAASUVORK5CYII=" width="128" height="128" x="638" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAI0lEQVQYGWNgQAK70hz/gzCS0NBgMsKcic31brP2Q+TxeQ8AycENgqUT79EAAAAASUVORK5CYII=" width="128" height="128" x="510" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 32, 832)" style="">
+      <title>medic-0_body-overlay</title>
+      <g style="filter: url(&quot;#inner-shadow-filter-11&quot;) url(&quot;#saturate-filter-8&quot;);">
+        <title>_front-and-top</title>
+        <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAAJklEQVQIHWM8/ejRfxZmZgZs4M/fvwxM2CSQxUhToM/+jwGEkQEAKQII/tKfN6sAAAAASUVORK5CYII=" width="128" height="64" x="928" y="478" style="image-rendering: pixelated; opacity: 0.9;" transform="matrix(1, 0, 0, 1.96875, 0, -525.0625)">
+          <title>_top</title>
+        </image>
+        <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAAqElEQVQYGWWPMQ7DIAxFTYrUjUNk6UmyMnCAjJyKKdfIGbp2SC7RkSJXVN/UqKiWwN/2w8Z0P8/6LKV67yszy4FGDjVLX4sxUgiBjDEEfbGtNCngnFNJ0I95llgApfEadl1X8bwsJMCbWRJ6vbZNpN33Bmjh19+Oo0G4MSLnTLVWSULr2L5FKaUD0GryBwQpJVkRH4VWE6A11tToZQSWm6bebNQj/x99ALAvQMvDZIKKAAAAAElFTkSuQmCC" width="128" height="192" x="928" y="544" style="image-rendering: pixelated; filter: none;">
+          <title>_front-1</title>
+        </image>
+        <ellipse style="stroke-width: 1; fill-opacity: 0.2;" cx="992.052" cy="478.615" rx="44" ry="44">
+          <title>_shadow</title>
+        </ellipse>
+      </g>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAMCAYAAACqYHctAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABaADAAQAAAABAAAADAAAAAByun6AAAAAOUlEQVQIHWM8//TpfwYk8O/bNwYmJD6cycTIyAjnwBhM//+j6AaLY9XOws3CAtMFpj8DSawq6SYIAPAhCqI1S+Z3AAAAAElFTkSuQmCC" width="128" height="307.2" x="800" y="544" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-12&quot;);" transform="matrix(1, 0, 0, 0.625, 0, 203.999908)">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAMCAYAAACqYHctAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABaADAAQAAAABAAAADAAAAAByun6AAAAAOUlEQVQIHWM8//TpfwYk8O/bNwYmJD6cycTIyAjnwBhM//+j6AaLY9XOws3CAtMFpj8DSawq6SYIAPAhCqI1S+Z3AAAAAElFTkSuQmCC" width="128" height="307.2" x="800" y="544" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-12&quot;);" transform="matrix(-1, 0, 0, 0.625, 1984, 204.000076)">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAAATUlEQVQYGWM8//Tpf25mZgZs4OvfvwwsIAleAQEGTiYmFDXf//1j+Pr2LQOqKIoSCIdyBSwgB7IBTWNmATsHbgnbr18MIDnKrRgMJgAAhNAO3T+CiXMAAAAASUVORK5CYII=" width="128" height="192" x="1184" y="544" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-13&quot;);">
+        <title>_back</title>
+      </image>
+      <rect width="128" height="256" style="transform-origin: 992px 672px; fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="928">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="1184">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="800">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="1056">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" x="928" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" x="1056" y="416">
+        <title>bottom</title>
+      </rect>
+      <g>
+        <title>_right-lapel</title>
+        <rect x="1056" y="544" width="128" height="48" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.5;"/>
+        <rect x="1104" y="544" width="32" height="48" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.5;"/>
+        <rect x="1024" y="464" width="32" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.5;"/>
+      </g>
+      <g>
+        <title>_left-lapel</title>
+        <rect x="800" y="544" width="128" height="48" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.5;"/>
+        <rect x="848" y="544" width="32" height="48" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.5;"/>
+        <rect x="928" y="464" width="32" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); opacity: 0.5;"/>
+      </g>
+      <path d="M 1116.8 600 H 1123.2 V 612.8 H 1136 V 619.2 H 1123.2 V 632 H 1116.8 V 619.2 H 1104 V 612.8 H 1116.8 Z" bx:shape="cross 1104 600 32 32 6.4 6.4 0.5 1@29c29dc0" style="fill: none; stroke: rgb(189, 107, 107); stroke-width: 4px;"/>
+      <path d="M 862.8 600 H 869.2 V 612.8 H 882 V 619.2 H 869.2 V 632 H 862.8 V 619.2 H 850 V 612.8 H 862.8 Z" bx:shape="cross 850 600 32 32 6.4 6.4 0.5 1@530561a6" style="fill: none; stroke: rgb(189, 107, 107); stroke-width: 4px;"/>
+      <rect x="1152" y="648.178" width="32" height="48" style="fill: rgba(119, 119, 119, 0.404);"/>
+      <rect x="800" y="656" width="39.883" height="48" style="fill: rgba(119, 119, 119, 0.404);"/>
+      <rect x="1184" y="648.614" width="32" height="48" style="fill: rgba(119, 119, 119, 0.404);"/>
+      <rect x="1284" y="648.614" width="32" height="48" style="fill: rgba(119, 119, 119, 0.404);"/>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 1152, 416)">
+      <title>suit-0_head</title>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="512">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="640">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="640" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="512" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="640" y="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAwElEQVQYGWOU1zL+//vbVwYQ+Pf7J8Pf3z8YmFk5GJhY2cFiLCCSlYub4c+vnwzMLGAuAzMnNwMLG1TBz4/vwCpBBEgCBr69eQY2iQVk5KnGJJg4Azs/L5ytXzCRgZGfX+A/TOT24maG/z+/M6iltMGEGJiuT69gWLPlAIMGrwTDny9fGb69+Qhmg8RAciwsPNwMZsYKDA6aogzcUpJgDGKDxH6+52ZgfLas4z+XiAADIxsn3FgQ4/+v70DTPjAAABfMPKCH+ckmAAAAAElFTkSuQmCC" width="128" height="128" x="512" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAfUlEQVQYGW2OwQ6DMAxDQ0kBjT/Yacf9/4dN2mGwUhjrM3SnWUpjJ47q5nq775+cDGz5bW0cxEPs1b1xt7bUvq6/BTM0PUC86w9RrhiCeBllClLlwQToVHo+ZHL+z5NZzQGvyNPLnGAV/3hY0qz0mOAAY50rEaLT6lieVKYvW3tGzXwUj7QAAAAASUVORK5CYII=" width="128" height="128" x="640" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAm0lEQVQYGT1OWwrCMBCc5kHVQP9V8MtPwaN4lHoUPZpfgocoWKxtmrS1sxoHkp2dmd0k2+4P0xQjxuBBDKGDtgvheulgyOzKIbyBzEgLZXPR6ClOx96LQE6kbf5ZwbBRs0iLnE8QNMllZwpRuF1KCRzPV/S+hUkTov6uYdT/4PdXs8EgJ9xmDV/XyItCqqLIk7A7lWJW9wfiq8EHY5tV8yadUn0AAAAASUVORK5CYII=" width="128" height="128" x="512" style="image-rendering: pixelated;" y="128">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAp0lEQVQYGT1OQQ6CQBAr68CqKCTe1MSTR//iMzxy9Q9evPkrE04kPgIjQnAFRDsJNplpk3Y76623u76rK3TNCyN/DML4VplLJLDguEeuhieiZt+2yoYGYeMFPo1TzcWgPw0hrB5C1ATDA8zb1Xr/ejogPSeqhwdkyS7HX8NTx8bz/0dpslFkFiJcLeGKAjaKUJd3BHaiQbabtqyQZzc1N/tETd5nkPgCne9O0Vg31SUAAAAASUVORK5CYII=" width="128" height="128" x="640" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAhElEQVQYGWVPyw6EIAwcFWQfBxOvXj36/5+l2WQ3LIqPTiPExEmg0zKdlqLrhx2CPUZsSyDNqJ5vlMxM7WBfkliHdflrJGeTyXIhdJiDR2UfcE2rT2b1P+iRzgS6hM+oIsM5HEGwiItDnAOyAwXsJPx30sjr5lBLMe1AB/1Flp8kLcj0AA1kPI72H2KiAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAkUlEQVQYGWPk5xf4zwAEbOycIIrh18/vYDaIBgEWkAQrFz+Y8+/3TwY2IIuZlYOBGyj2+9tHBhYQh5GFheF0UwxYEYwwqVrAwMYnzMAEErg2pxQmDqevL6hk+Pv9K0QBXBQLg/HjgYVgR3599hxFmltKEsxn+f/7BwMjyFFQAWRVIDmmb6/fM4AYyADEB2GQHAB55zJyQXRwHAAAAABJRU5ErkJggg==" width="128" height="128" x="640" y="256" style="image-rendering: pixelated;">
+        <title>_bottom</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 1152, 832)">
+      <title>suit-0_head-overlay</title>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="512">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="640">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" y="128" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="640" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="512" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; filter: none; stroke-width: 2px;" x="640" y="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAQUlEQVQYGWNgoBQwIhsgraLz//+fPwzPHtxghLGZQAwpBY3/IIUgyd/fPoL1wNkgSQlpRbACZNNAbFzi6Ooo5AMA7hkd6QpNRKEAAAAASUVORK5CYII=" width="128" height="128" x="512" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAdklEQVQYGWNkAAJpFZ3/IPrv968ML57eZ5RS0Pj/7/dPMJsFxGFhY2f48+snSA0YMLKwMLBzcTNIc3L/ZwGp/P2NgQFE//39A6wAZBIIgDSyMHNyQwS/fWR4/eo5I4gDU/j/zx8GBglpRbD9YFVoBD45NKWUcAEPJy/GsS/RhgAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="128" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAALUlEQVQYGWNgGBGAEeRLaRWd/////GH49/snw4un9xmlFDT+M7KwMDy9c4URAN7NDgIC6YRgAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAQklEQVQYGWNgoBhIKWj8l1bR+Q8yCESD+MiGsvz7/ZOBCSry/88fBhAfBEAKGVlYGFhAnGcPbjAi0yA2skYQn4YAAOVxGBjT7YHUAAAAAElFTkSuQmCC" width="128" height="128" x="640" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAQUlEQVQYGWNgoDlglFbR+f//zx+GZw9uMCLbJqWg8Z+RhYWBCST5+9tHsBxIEKQBxAGJgeRQgKiY5H+QIhRBijkAe2MZj1muyi0AAAAASUVORK5CYII=" width="128" height="128" x="640" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 32, 1248)" style="">
+      <title>suit-0_body-overlay</title>
+      <rect width="128" height="256" style="transform-origin: 992px 672px; fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="928">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="1184">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="800">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" y="544" x="1056">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" x="928" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill-opacity: 0.3; fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" x="1056" y="416">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAYAAABfnvydAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAADAAAAABgBN2SAAABK0lEQVQYGTVQPUsDQRSc3du7vQ9iDoyKd4hCUIIIamtsRBCsxD9gb5//YGedQgt/gWJhYWVjaSPpBW1OTGFygve97j7JwnsM8+Yx8xaraz318faubve21OTpRn0/DtVgfZO4OO4qIV0P5sWXV3gYnOPlM8fp9ZA4YdsQhHRbXopwkTCNXHTC+RkNbtDh8Ql8z8XZYokuy4G6wv7BEYlIYPYYY3j+ajRSNJg1nue/RDqui/6C0TN4QUDzqiwgqqJEppek72MlrNGHhU4UoSpLNHUDbpKaS9L0B9t3rySyHQfCscE5hwjabbI1GbhlYed+RGIpPZiikEJKJEmC6TSlsAYL6VAOttHb1b/lYDIea8+aSJ0TrXaIPMugr8hQFQWC1hxZGIUtXfzzJf4A6YRmYDzp+8YAAAAASUVORK5CYII=" width="128" height="192" x="928" y="544" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <g>
+        <title>_top</title>
+        <path d="M 960 544 L 928 544 L 928 416 L 1056 416 L 1056 544 L 1024 544 L 1024 464 L 960 464 Z" style="stroke: rgb(0, 0, 0); fill: rgb(34, 34, 34);"/>
+        <rect x="960" y="528" width="16" height="16" style="stroke: rgb(0, 0, 0); fill: rgb(68, 68, 68);"/>
+        <rect x="1024" y="448" width="32" height="48" style="stroke: rgb(0, 0, 0); fill: rgb(68, 68, 68);"/>
+        <rect x="928" y="448" width="32" height="48" style="stroke: rgb(0, 0, 0); fill: rgb(68, 68, 68);"/>
+        <rect x="1008" y="528" width="16" height="16" style="stroke: rgb(0, 0, 0); fill: rgb(68, 68, 68);"/>
+        <ellipse style="fill-opacity: 0.2;" cx="991.51" cy="496" rx="32.49" ry="32"/>
+      </g>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAZklEQVQIHTVNWw7AIAxCU+d2kWW/u//BrI/FVRpJQwilJdzPOxGAWgoWhDyBfF6UkWyJDTcsQdiCxgoEmGsjVf3Zjsjo3bXxuhRJiWKd0dh1kg8mvYXSKVZVqlEbvta8lo490aL4AR8YHWHuL959AAAAAElFTkSuQmCC" width="64" height="192" x="800" y="544" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-1&quot;);" transform="matrix(2, 0, 0, 1, -800, 0)">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAZklEQVQIHTVNWw7AIAxCU+d2kWW/u//BrI/FVRpJQwilJdzPOxGAWgoWhDyBfF6UkWyJDTcsQdiCxgoEmGsjVf3Zjsjo3bXxuhRJiWKd0dh1kg8mvYXSKVZVqlEbvta8lo490aL4AR8YHWHuL959AAAAAElFTkSuQmCC" width="64" height="192" x="800" y="544" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-0&quot;);" transform="matrix(2, 0, 0, 1, -544, 0)">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAMCAYAAABFohwTAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAABKADAAQAAAABAAAADAAAAAD1HLXDAAAAZklEQVQIHTVNWw7AIAxCU+d2kWW/u//BrI/FVRpJQwilJdzPOxGAWgoWhDyBfF6UkWyJDTcsQdiCxgoEmGsjVf3Zjsjo3bXxuhRJiWKd0dh1kg8mvYXSKVZVqlEbvta8lo490aL4AR8YHWHuL959AAAAAElFTkSuQmCC" width="64" height="192" x="800" y="544" style="image-rendering: pixelated; filter: url(&quot;#filter-2&quot;);" transform="matrix(2, 0, 0, 1, -416, 0)">
+        <title>_back</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 1152, 1248)" style="filter: url(&quot;#gaussian-blur-filter-1&quot;);">
+      <title>robot-0_head</title>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="512">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="640">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="640" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="512" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" x="640" y="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAO0lEQVQYGWO4d+/e/3///mHFIDlGBgaG/0CMEzDhlIFKEKlg7T8GBhCGASQ+QRMIOxLoFQagN7FikBwAsts+z6oWPDQAAAAASUVORK5CYII=" width="128" height="128" x="512" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAATElEQVQYGa2NQQrAQAgDbelH1F/7N/UpLZFmoXtuLobJgEdE3PLG3VlFVadfJBw5gJuZnBRw9xHsIwDs+Vno7vWhqqavF5k5ABJFSA+p4xVIf8t3/gAAAABJRU5ErkJggg==" width="128" height="128" x="512" style="image-rendering: pixelated;" y="128">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAATklEQVQYGWO8d+/efwYguH//PogCg7t378KYDIxA1n+gIrgATCFMERNIRklJCa5AUVERzgYxwApQRNA4VFKAzZEwm1hgkjDXgyRgPgCxAYCyH3n6NFxLAAAAAElFTkSuQmCC" width="128" height="128" x="640" y="128" style="image-rendering: pixelated;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAVklEQVQYGX1OQQrAMAjrRh+i+Gv/JvqTbQopelnAxibR9lLVZ/1gwxMRtMVmVnx3lZlXVkcF+jQRlQ9tbEgnIiqAowJ4D2IytPPJFN09aeAEMDHc7/ICMI8U3cimOgIAAAAASUVORK5CYII=" width="128" height="128" x="640" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAPUlEQVQYGWOcNWvWfwY8gAmPHFiKsAJlZWWchoDkWECy+BQRtIJFUVERpxUgCbAVIIaCggKIgoMHDx6A2QDIuweBnRKJpQAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAKUlEQVQYGWOcNWvWfwY8gAmPHFiKoAIWZWVlvIYQNIGgAhZFRUXKrAAAQq4DrVLfEC8AAAAASUVORK5CYII=" width="128" height="128" x="640" y="256" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-7&quot;);">
+        <title>_bottom</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAkklEQVQYGWO0sfT+f//BTQYQMDa0AdNnzx8B04oK6gwsb9+9AnNAxItXTxk+f/4A54PkWOA8IOP2nUsM379/ZhAWkoILM8FZQMb7LS8Yfkz4iizEAFbw9PkdiOBlIPUMwoSJga2QllQBiwpWSoCtYECygkVYSIzh06f3YAUS4nJgGsQHaQLJofgCJAACMA0gXwAASFA4CsrOkyIAAAAASUVORK5CYII=" width="128" height="128" x="512" style="image-rendering: pixelated;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAcklEQVQYGWNMjq/4//r1C4Z3718zIAMhQVEGUVEJBhaY5Nt3rxg+fXoPVsPHJwhXywLSiSwJkoEpBLGZ0AVAfBCAKQIrgAhhJ5lAjkG2E6YMJAaSYwK5NCggBkURSBIkBvcFSJewkBgYw0x48eI5A8iHAOkPMMBs/vcYAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="128" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAeUlEQVQYGWO0sfT+f//BTQYQ+Pb9M8OfP78Y+HiFwXxFBXUGlrfvXoE5IOLnz+8M//79gfNBcixwHpDBzs4JNgFZDEUBugkghSgKsJnAhGxcVnoVQ1hwOrIQA4qCFy+eM7x+/QJFAYuwkBjDp0/vwYI3b11GkQTJAQB7wi/W7hspIQAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 1152, 1664)" style="filter: url(&quot;#gaussian-blur-filter-2&quot;);">
+      <title>robot-0_head-overlay</title>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="512">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="640">
+        <title>back</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" y="128" x="512">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="640" y="128">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke-width: 2px;" x="512" y="256">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; filter: none; stroke-width: 2px;" x="640" y="256">
+        <title>bottom</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAL0lEQVQYGWNgAIJ79+79//fvHwoGiYHkGEASYAYWAp8cFuW0E4K7FosVcDl83gQA3ME9UaX4fBkAAAAASUVORK5CYII=" width="128" height="128" x="512" style="image-rendering: pixelated; filter: none;">
+        <title>_front</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAV0lEQVQYGWNkAIJZs2b9B9EgoKysDGEASWdnZ0ZGkGRaWhrj3r17wYoUFRXhCkAMFmQesqSSkhIjSI4JWQE2NuUKUNxw//59sC0gt9y7dw/saLBD8HkTAKGrFw6pKhiWAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="128" style="image-rendering: pixelated; filter: none; visibility: hidden;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAT0lEQVQYGWNkAIK9e/f+B9EgcPfuXQgDSKalpTEy3rt3Dy4Jkrl//z5YAUwhk5KSEiMIg0WBhKKiIowJpplQeFg4lCtgweVImG1gx+HzJgAR3B5EctaKIQAAAABJRU5ErkJggg==" width="128" height="128" x="640" y="128" style="image-rendering: pixelated; filter: none;">
+        <title>_right</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAXklEQVQYGV1PgQnAIAyzY4dUPKW/eJS/Sf1ks4FANaCxSVqslI0xxhd8o/cuQrO1dvhzTtRPVmutJU4GArlbVeFTOyaEs9ZCgBcCZiYUyPzDSyHY3XOJNzq5ye3Gmj8kmxhzC9l2owAAAABJRU5ErkJggg==" width="128" height="128" x="640" style="image-rendering: pixelated; filter: none; visibility: hidden;">
+        <title>_back</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAc0lEQVQYGWNkAIJZs2b9B9HoIC0tjZERJLlTN4VBkpOBQe/UHHQ1DEwgkbXPGBief2dgSElJwVDAuHfv3v93796FS4AUzZkDMUlZWZmBBSQDYiADZD7YCmRJZLaioiID471797D6AFkhA0jRv3//UDBMIwDY1jORcwOTKAAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="256" style="image-rendering: pixelated; filter: none; visibility: hidden;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAQ0lEQVQYGWNkAIJZs2b9B9HoIC0tjZERlyRMMROMgYtmUVZWxiUHFidoAkEFLIqKinitAEveu3fv/79//1AwSAwkCQBLHR7AY6CuGQAAAABJRU5ErkJggg==" width="128" height="128" x="640" y="256" style="image-rendering: pixelated; filter: none; visibility: hidden;">
+        <title>_bottom</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAlklEQVQYGWNgIAAYGdb9/8/wEqjqGQQLrpVg+PPnF8PnL+8ZQXrBhKCA+H+QoKOdP8Ptu1cZnjy9A5IDK2ICmfC+/QVYUlRUgoGfV4hBRlqF4ffvn2BFcBO4OHkZZKWVGT5+fsfw6dN7hpevHwKt+s0IVgBzh3STKlgXSPLfv79A/A+qACjMyyP4H2Tsn7+/4ZJg1YQIAOBSSZqB12JOAAAAAElFTkSuQmCC" width="128" height="128" x="512" y="128" style="image-rendering: pixelated;">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAZ0lEQVQYGXWM0QmAMAxEg7iAQqAZRXACBWdw+xQKdYTqBaLNh/dRHnevIXqyLns7trOBETA68IhnnpiYE9DSswkoUhLfA5uAUeQTeh7ebz9gF3LWMKsqeWdCKTkIGL0zoV4lCBi9uwGPIiKaFO2sEgAAAABJRU5ErkJggg==" width="128" height="128" x="512" y="256" style="image-rendering: pixelated;">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAlklEQVQYGWNgIAAYGdb9/8/wEqjqGQQLrpVg+PPnF8PnL+8ZQXrBhKCA+H+QoKOdP8Ptu1cZnjy9A5IDK2ICmfC+/QVYUlRUgoGfV4hBRlqF4ffvn2BFcBO4OHkZZKWVGT5+fsfw6dN7hpevHwKt+s0IVgBzh3STKlgXSPLfv79A/A+qACjMyyP4H2Tsn7+/4ZJg1YQIAOBSSZqB12JOAAAAAElFTkSuQmCC" width="128" height="128" x="-768" y="128" style="image-rendering: pixelated;" transform="matrix(-1, 0, 0, 1, 0, 0)">
+        <title>_left</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAACAAAAACVhHtSAAAAW0lEQVQYGWNgAAIbS+//IAxigwAynwUk8PbdKxAFB8h8sIJPn97DJUEMZD5Ywbdvn1EUIPOZUGSwcMAKuLh4GUAYBpD5YAV8fIIMIAwDyHywG4SFxGByYBqZDwBFNRmv4bv+agAAAABJRU5ErkJggg==" width="128" height="128" x="640" style="image-rendering: pixelated;">
+        <title>_back</title>
+      </image>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 0, 576)">
+      <title>robot-0_body</title>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="128" y="416">
+        <title>top</title>
+      </rect>
+      <rect width="128" height="128" style="fill: none; stroke: rgb(0, 0, 0);" x="256" y="416">
+        <title>bottom</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0);" y="544">
+        <title>left</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0); transform-origin: 192px 672px;" y="544" x="128">
+        <title>front</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0);" y="544" x="256">
+        <title>right</title>
+      </rect>
+      <rect width="128" height="256" style="fill: none; stroke: rgb(0, 0, 0);" y="544" x="384">
+        <title>back</title>
+      </rect>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAAKElEQVQIHWN88uTJfwY8gAUkJyUlhVXJs2fPGBj//fuH1wQmrFqRBAGwrwqt7pMv1AAAAABJRU5ErkJggg==" width="128" height="64" x="128" y="480" style="image-rendering: pixelated; filter: url(&quot;#inner-shadow-filter-2&quot;);" transform="matrix(1, 0, 0, 2, 0, -544)">
+        <title>_top</title>
+      </image>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAACzzX7wAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAACKADAAQAAAABAAAABAAAAABQdJZTAAAAJ0lEQVQIHWM8duzYfwY8gAlZTk5OjgGEkQFcAbIEMpvxyZMneK0AAHzwCGu5Mz7sAAAAAElFTkSuQmCC" width="8" height="4" x="256" y="416" transform="matrix(16, 0, 0, 32, -3840, -12896)" style="image-rendering: pixelated; filter: none;">
+        <title>_bottom</title>
+      </image>
+      <rect y="544" width="128" height="192" style="stroke: rgb(0, 0, 0); fill: rgb(170, 170, 170); filter: url(&quot;#filter-3&quot;);" x="378">
+        <title>_back</title>
+      </rect>
+      <rect y="544" width="128" height="192" style="stroke: rgb(0, 0, 0); filter: url(&quot;#inner-shadow-filter-3&quot;); fill: rgb(170, 170, 170);">
+        <title>_left</title>
+      </rect>
+      <rect y="544" width="128" height="192" style="stroke: rgb(0, 0, 0); filter: url(&quot;#inner-shadow-filter-3&quot;); fill: rgb(170, 170, 170);" x="256">
+        <title>_right</title>
+      </rect>
+      <rect y="736" width="512" height="64" style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(68, 68, 68);">
+        <title>_trousers</title>
+      </rect>
+      <rect y="544" width="128" height="192" style="stroke: rgb(0, 0, 0); fill: rgb(170, 170, 170); filter: url(&quot;#filter-4&quot;);" x="128">
+        <title>_front</title>
+      </rect>
+      <rect y="584.364" width="74.182" height="151.46" style="stroke: rgb(0, 0, 0); filter: none; fill: rgb(51, 51, 51);" x="154.909">
+        <title>_front</title>
+      </rect>
+      <path d="M 45.792 544.961 L 82.208 544.961 L 82.208 627.041 L 127.114 735.303 L 0.885 734.951 L 45.792 627.041 L 45.792 544.961 Z M 54.6 640.696 L 62.825 640.696 L 73.4 640.696 L 73.4 560.306 L 54.6 560.306 L 54.6 640.696 Z" style="stroke: rgb(0, 0, 0); filter: url(&quot;#gaussian-blur-filter-0&quot;); fill: rgb(51, 51, 51);">
+        <title>_left</title>
+      </path>
+      <path d="M 305.792 544.961 L 342.208 544.961 L 342.208 627.041 L 387.114 735.303 L 260.885 734.951 L 305.792 627.041 L 305.792 544.961 Z M 314.6 640.696 L 322.825 640.696 L 333.4 640.696 L 333.4 560.306 L 314.6 560.306 L 314.6 640.696 Z" style="stroke: rgb(0, 0, 0); filter: url(&quot;#filter-8&quot;); fill: rgb(51, 51, 51);">
+        <title>_right</title>
+      </path>
+    </g>
+  </g>
+</svg>
