@@ -1,4 +1,4 @@
-import { UiContext, type UiInstanceMeta, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import { UiContext, type UiInstanceMeta, uiClassName, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -86,18 +86,17 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   return (
     <div className={cn("flex flex-col size-full overflow-auto font-mono")}>
-      <div className="flex min-h-12 items-center border-b border-outline">
+      <div className={cn("flex min-h-12 items-center border-b border-outline")}>
         {meta.items.map((tab) => (
           <div
             key={tab.id}
             className={cn(
-              "flex gap-2",
               "cursor-pointer px-1 pt-2 -mb-px border-b-2 border-outline font-medium text-sm focus:outline-none",
               meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
             )}
             onClick={() => state.onClickTab(tab)}
           >
-            <div className="flex p-1 border border-on-background/20">
+            <div className={cn(uiClassName, "flex p-1 border border-on-background/20")}>
               <pre className="p-1">{tab.title}</pre>
 
               <BasicPopover
@@ -134,7 +133,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         <button
           ref={newTabButtonRef}
           type="button"
-          className="cursor-pointer p-2"
+          className={cn(uiClassName, "cursor-pointer p-2")}
           onClick={state.onAddNewTab}
         >
           <PlusCircleIcon className="size-5" weight="duotone" />

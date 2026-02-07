@@ -1,3 +1,4 @@
+import { uiClassName } from "@npc-cli/ui-sdk";
 import { useStateRef } from "@npc-cli/util";
 import { Suspense } from "react";
 import Floor from "./Floor";
@@ -14,7 +15,7 @@ export default function World(props: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <WorldView>
+      <WorldView className={uiClassName}>
         <ambientLight intensity={0.5} color="#ffffff" />
         <Floor />
         <Suspense>

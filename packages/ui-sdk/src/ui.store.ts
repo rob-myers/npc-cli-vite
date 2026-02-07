@@ -53,6 +53,7 @@ export const uiStoreApi = {
     uiStoreApi.addUis({ metas: [getDefaultUiMeta()] });
   },
 
+  // 🚧 switch to ref
   uiGrid: {
     /** Must call just after `addUis` if adding to react-grid-layout */
     appendLayoutItems(_items: LayoutItem[]) {
