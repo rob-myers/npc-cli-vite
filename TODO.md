@@ -7,11 +7,13 @@
   - ✅ head and body have correct texture dimensions
     - body should probably be thinner
   - ✅ body has texture
-  - has arms
+  - 🚧 has arms
+    - can dup and flip
 
 - 🚧 investigate blockbench texture conventions
   - can select model face
   - can drag uv square area (not diagonal)
+  - select two objects then can Cmd+Drag create box e.g. of vertices
 
 - towards MapEdit 1
   - some Blockbench symbols e.g. staterooms
@@ -20,6 +22,10 @@
 - towards MapEdit 2
   - MapEdit with react-resizable allows symbol placement
   - induces composite symbol e.g. hull symbol
+
+- ✅ fix diagonal resize: now covered by absolute?
+- fix sporadic disabled toggle (?)
+  - seems to work with "redux" devtools open
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics

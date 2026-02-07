@@ -298,8 +298,9 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               className={cn(
                 state.preventTransition && "[&_.react-grid-item]:transition-none!",
                 (state.resizing || state.dragging || state.contextMenuOpen) && "select-none",
-                "min-h-full! text-on-background/60 [&_.react-resizable-handle::after]:border-on-background!",
-                // "[&_.react-resizable-handle::after]:z-200",
+                "min-h-full! text-on-background/60",
+                "[&_.react-resizable-handle::after]:border-on-background!",
+                "[&_.react-resizable-handle::after]:z-1",
                 // "[&_.react-resizable-handle::after]:size-4!",
                 "[&_.react-grid-placeholder]:bg-gray-500!",
               )}
