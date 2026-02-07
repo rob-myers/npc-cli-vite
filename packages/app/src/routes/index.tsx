@@ -1,14 +1,15 @@
-import { UiContext, type UiContextValue, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import { useThemeName } from "@npc-cli/theme";
+import { uiRegistry } from "@npc-cli/ui-registry";
+import { getFallbackLayoutApi, UiContext, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import { deepClone } from "@npc-cli/util/legacy/generic";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+
+import { UiGrid } from "../components/UiGrid";
+import { UiPortalContainer } from "../components/UiPortalContainer";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import { useThemeName } from "@npc-cli/theme";
-import { uiRegistry } from "@npc-cli/ui-registry";
-import { deepClone } from "@npc-cli/util/legacy/generic";
-import { useMemo, useRef, useState } from "react";
-import { type GridApi, UiGrid } from "../components/UiGrid";
-import { UiPortalContainer } from "../components/UiPortalContainer";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -16,7 +17,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const theme = useThemeName();
-  const gridRef = useRef<GridApi>(null);
 
   const [persistedLayout] = useState(() => {
     // clone avoids immer freeze
@@ -25,18 +25,18 @@ function Index() {
     return persistedLayout; // has ui layout info
   });
 
-  const layoutApi = useMemo(
-    (): UiContextValue["layoutApi"] => ({
-      overrideContextMenu(opts) {
-        gridRef.current?.overrideContextMenu(opts);
-      },
-    }),
-    [],
-  );
+  const [contextValue, setContextValue] = useState(() => ({
+    layoutApi: getFallbackLayoutApi(),
+    theme,
+    uiRegistry,
+  }));
 
   return (
-    <UiContext.Provider value={{ layoutApi, theme, uiRegistry }}>
-      <UiGrid ref={gridRef} persistedLayout={persistedLayout} />
+    <UiContext.Provider value={contextValue}>
+      <UiGrid
+        extendContextValue={(layoutApi) => setContextValue((prev) => ({ ...prev, layoutApi }))}
+        persistedLayout={persistedLayout}
+      />
       <UiPortalContainer />
     </UiContext.Provider>
   );

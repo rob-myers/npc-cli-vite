@@ -23,7 +23,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import { LayoutIcon, LockIcon, PenIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { Suspense, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
 import type { GridConfig, ResizeConfig } from "react-grid-layout/core";
@@ -33,7 +33,7 @@ import { useStore } from "zustand";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-export function UiGrid({ persistedLayout, ref }: Props) {
+export function UiGrid({ extendContextValue, persistedLayout }: Props) {
   const layouts = useRef(persistedLayout.layouts);
 
   const { width, containerRef } = useContainerWidth({
@@ -50,15 +50,6 @@ export function UiGrid({ persistedLayout, ref }: Props) {
       setLayouts((layouts.current = { ...layouts.current }));
     },
   });
-
-  useMemo(() => {
-    // expose react-grid-layout api without additional context
-    uiStoreApi.uiGrid.appendLayoutItems = (ls) => setLayouts({ lg: layouts.current.lg.concat(ls) });
-    uiStoreApi.uiGrid.getUiGridRect = (id) => {
-      const found = layouts.current.lg.find((item) => item.i === id);
-      return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
-    };
-  }, [uiStoreApi, setLayouts, layouts]);
 
   const state = useStateRef(
     (): State => ({
@@ -248,18 +239,24 @@ export function UiGrid({ persistedLayout, ref }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
-  // 🚧 move grid api here again
-  useImperativeHandle(
-    ref,
-    (): GridApi => ({
-      overrideContextMenu({ refObject, addItem }) {
-        state.set({
-          contextMenuOpen: true,
-          overrideContextMenuOpts: { refObject, addItem },
-        });
-      },
-    }),
-    [],
+  useMemo(
+    () =>
+      extendContextValue({
+        appendLayoutItems: (ls) => {
+          setLayouts({ lg: layouts.current.lg.concat(ls) });
+        },
+        getUiGridRect: (id) => {
+          const found = layouts.current.lg.find((item) => item.i === id);
+          return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
+        },
+        overrideContextMenu({ refObject, addItem }) {
+          state.set({
+            contextMenuOpen: true,
+            overrideContextMenuOpts: { refObject, addItem },
+          });
+        },
+      }),
+    [setLayouts],
   );
 
   const byId = useStore(uiStore, (s) => s.byId);
@@ -446,8 +443,8 @@ export function UiGrid({ persistedLayout, ref }: Props) {
 }
 
 type Props = {
+  extendContextValue: (layoutApi: GridApi) => void;
   persistedLayout: UiGridLayout;
-  ref: React.Ref<GridApi>;
 };
 
 /**

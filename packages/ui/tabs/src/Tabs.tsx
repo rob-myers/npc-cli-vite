@@ -57,8 +57,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           const item = draft.byId[tab.id];
           if (item) item.meta.parentId = undefined;
         });
-        uiStoreApi.uiGrid.appendLayoutItems([
-          { i: tab.id, x: 0, y: 0, w: 2, h: 1, ...uiStoreApi.uiGrid.getUiGridRect(id) },
+        layoutApi.appendLayoutItems([
+          { i: tab.id, x: 0, y: 0, w: 2, h: 1, ...layoutApi.getUiGridRect(id) },
         ]);
       },
       onClickTab(tab: UiInstanceMeta) {
