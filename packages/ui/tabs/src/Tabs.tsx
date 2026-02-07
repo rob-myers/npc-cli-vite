@@ -28,25 +28,26 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         layoutApi.overrideContextMenu({
           refObject: newTabButtonRef,
           addItem({ uiMeta }) {
-            // 🚧 also re-parse tabsMeta
             const result = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
-            if (!result.success) {
-              // 🚧 ui reflection
-              return console.error("Failed to parse tab meta", result.error);
-            } else if (result.data.uiKey === "Tabs") {
-              // 🚧 ui reflection
-              return console.error("Nested Tabs unsupported");
-            } else {
-              // portal with parentId won't be displayed in UiGrid
-              result.data.parentId = id;
-              uiStoreApi.addUis({ metas: [result.data] });
 
-              uiStore.setState((draft) => {
-                const tabsMeta = draft.byId[id].meta as TabsUiMeta;
-                tabsMeta.items.push(result.data);
-                tabsMeta.currentTabId = result.data.id;
-              });
+            if (!result.success) {
+              return console.error("Failed to parse tab meta", result.error);
             }
+            if (result.data.uiKey === "Tabs") {
+              return console.error("Nested Tabs unsupported");
+            }
+
+            // portals with parentId not displayed in UiGrid
+            result.data.parentId = id;
+            // inherit disabled to keep in sync
+            result.data.disabled = uiStoreApi.getUi(id)?.meta?.disabled;
+            uiStoreApi.addUis({ metas: [result.data] });
+
+            uiStore.setState((draft) => {
+              const tabsMeta = draft.byId[id].meta as TabsUiMeta;
+              tabsMeta.items.push(result.data.id);
+              tabsMeta.currentTabId = result.data.id;
+            });
           },
         });
       },
@@ -71,9 +72,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
           const rootMeta = draft.byId[id].meta as TabsUiMeta;
-          rootMeta.items = rootMeta.items.filter((item) => item.id !== tab.id);
+          rootMeta.items = rootMeta.items.filter((id) => id !== tab.id);
           if (rootMeta.currentTabId === tab.id) {
-            rootMeta.currentTabId = rootMeta.items[0]?.id;
+            rootMeta.currentTabId = rootMeta.items[0];
           }
           if (!preservePortal) {
             delete draft.byId[tab.id];
@@ -84,10 +85,12 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     { deps: [id, layoutApi, uiStore] },
   );
 
+  const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
+
   return (
     <div className={cn("flex flex-col size-full overflow-auto font-mono")}>
       <div className={cn("flex min-h-12 items-center border-b border-outline")}>
-        {meta.items.map((tab) => (
+        {tabs.map((tab) => (
           <div
             key={tab.id}
             className={cn(
@@ -140,7 +143,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         </button>
       </div>
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
-        {meta.items.map((tab) => (
+        {tabs.map((tab) => (
           <div key={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
             {byId[tab.id] && (
               <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />

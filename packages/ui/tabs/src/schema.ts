@@ -3,7 +3,7 @@ import z from "zod";
 
 export const TabsUiMetaSchema = z.object({
   ...BaseUiMetaSchema.shape,
-  items: z.array(BaseUiMetaSchema).default([]),
+  items: z.array(z.string()).default([]),
   currentTabId: z.string().optional(),
 });
 

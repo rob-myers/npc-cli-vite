@@ -8,6 +8,7 @@ export default function NPCs() {
 
   // Blockbench: Export Groups as Armature
   const gltf = useGLTF(url.testBlockBench5Gltf);
+  // const gltf = useGLTF(url.humanZeroGltf);
   const { actions } = useAnimations(gltf.animations, groupRef);
 
   useEffect(() => {

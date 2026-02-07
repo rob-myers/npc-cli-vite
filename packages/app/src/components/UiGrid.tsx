@@ -545,7 +545,13 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
         type="button"
         data-item-id={meta.id}
         className="p-1 cursor-pointer"
-        onClick={() => uiStoreApi.setUiMeta(meta.id, (draft) => (draft.disabled = !draft.disabled))}
+        onClick={() => {
+          // toggle item disabled and sync sub-uis
+          uiStoreApi.setUiMeta(meta.id, (draft) => (draft.disabled = !draft.disabled));
+          uiStoreApi.getSubUis(meta.id)?.forEach(({ meta: subMeta }) => {
+            uiStoreApi.setUiMeta(subMeta.id, (draft) => (draft.disabled = !draft.disabled));
+          });
+        }}
       >
         {meta.disabled ? (
           <PlayCircleIcon data-icon-type="play" weight="duotone" />

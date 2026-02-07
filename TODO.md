@@ -24,8 +24,7 @@
   - induces composite symbol e.g. hull symbol
 
 - ✅ fix diagonal resize: now covered by absolute?
-- fix sporadic disabled toggle (?)
-  - seems to work with "redux" devtools open
+- ✅ fix disabled toggle inside Tabs
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
