@@ -205,6 +205,7 @@
   - ✅ can we avoid remount on edit ui.store?
     - preserve uiRegistry on hmr (similar to ui.store fix)
 
+- ✅ move uiStoreApi.uiGrid to ref
 - 🚧 addUis supports opts.layoutItems
 - uis have optional play/pause button tied to meta.disabled
 

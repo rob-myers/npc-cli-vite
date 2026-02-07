@@ -1,6 +1,6 @@
 import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft } from "immer";
-import type { Layout, LayoutItem } from "react-grid-layout";
+import type { Layout } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -51,18 +51,6 @@ export const uiStoreApi = {
   resetLayout() {
     uiStoreApi.clearUis();
     uiStoreApi.addUis({ metas: [getDefaultUiMeta()] });
-  },
-
-  // 🚧 switch to ref
-  uiGrid: {
-    /** Must call just after `addUis` if adding to react-grid-layout */
-    appendLayoutItems(_items: LayoutItem[]) {
-      console.warn("uiGrid.appendLayoutItems is not implemented yet");
-    },
-    getUiGridRect(_id: string): null | { x: number; y: number; w: number; h: number } {
-      console.warn("uiGrid.getUiGridRect is not implemented yet");
-      return null;
-    },
   },
 };
 
