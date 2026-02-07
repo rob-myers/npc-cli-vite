@@ -58,7 +58,6 @@ export function UiGrid({ persistedLayout, ref }: Props) {
       const found = layouts.current.lg.find((item) => item.i === id);
       return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
     };
-    // 🚧 provide contextmenu override
   }, [uiStoreApi, setLayouts, layouts]);
 
   const state = useStateRef(
@@ -249,6 +248,7 @@ export function UiGrid({ persistedLayout, ref }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
+  // 🚧 move grid api here again
   useImperativeHandle(
     ref,
     (): GridApi => ({
@@ -324,7 +324,8 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                     key={meta.id}
                     data-item-id={meta.id} // used by getItemToRect
                     className={cn(
-                      "relative border border-on-background/20 *:first:transition-all",
+                      "relative border border-on-background/20",
+                      "*:first:transition-all",
                       state.editMode && allowReactGridDragClassName,
                       state.editMode &&
                         "cursor-move *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-500/60",
@@ -332,6 +333,7 @@ export function UiGrid({ persistedLayout, ref }: Props) {
                   >
                     <portals.OutPortal node={portal.portalNode} />
                     <UiInstanceMenu id={meta.id} state={state} />
+                    <DraggableOverlay />
                   </div>
                 );
               })}
@@ -447,6 +449,14 @@ type Props = {
   persistedLayout: UiGridLayout;
   ref: React.Ref<GridApi>;
 };
+
+/**
+ * Portals do not transmit draggable handles.
+ * Instead, UIs should use `uiClassName` to avoid being covered.
+ */
+const DraggableOverlay = () => (
+  <div className={cn(allowReactGridDragClassName, "absolute z-0 inset-0 cursor-move")} />
+);
 
 export type GridApi = UiContextValue["layoutApi"];
 

@@ -6,7 +6,7 @@ import { CameraControls } from "./CameraControls";
 import type { CameraControls as BaseCameraControls } from "./camera-controls";
 import { WorldContext } from "./world-context";
 
-export function WorldView(props: React.PropsWithChildren) {
+export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
   const w = useContext(WorldContext);
 
   const state = useStateRef<State>(() => ({
@@ -52,7 +52,7 @@ export function WorldView(props: React.PropsWithChildren) {
 
   return (
     <Canvas
-      className="relative"
+      className={props.className}
       ref={state.canvasRef}
       frameloop={state.syncRenderMode()}
       // frameloop="always"
