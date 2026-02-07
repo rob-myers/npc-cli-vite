@@ -212,8 +212,9 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         });
       },
       removeItem(itemId) {
-        // 🚧 remove meta.items too
         uiStore.setState((draft) => {
+          if (!draft.byId[itemId]) return;
+          draft.byId[itemId].meta.items?.forEach((subId) => delete draft.byId[subId]);
           delete draft.byId[itemId];
         });
       },
@@ -519,7 +520,7 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
       )}
     >
       <BasicPopover
-        trigger={<XIcon data-icon-type="remove" weight="duotone" className="grayscale" />}
+        trigger={<XIcon data-icon-type="remove" weight="duotone" className="grayscale size-6" />}
         sideOffset={4}
         side="right"
       >
@@ -538,7 +539,7 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
         data-item-id={meta.id}
         className={cn(allowReactGridDragClassName, "cursor-move p-1")}
       >
-        <LayoutIcon data-icon-type="layout" weight="duotone" />
+        <LayoutIcon data-icon-type="layout" weight="duotone" className="size-5" />
       </button>
 
       <button
@@ -554,9 +555,9 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
         }}
       >
         {meta.disabled ? (
-          <PlayCircleIcon data-icon-type="play" weight="duotone" />
+          <PlayCircleIcon data-icon-type="play" weight="duotone" className="size-5" />
         ) : (
-          <PauseCircleIcon data-icon-type="pause" weight="duotone" />
+          <PauseCircleIcon data-icon-type="pause" weight="duotone" className="size-5" />
         )}
       </button>
     </div>
