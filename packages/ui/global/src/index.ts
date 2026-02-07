@@ -1,8 +1,8 @@
 import { BaseUiMetaSchema, defineUi } from "@npc-cli/ui-sdk";
-import Global from "./Global";
+import { lazy } from "react";
 
 export default defineUi({
-  ui: Global,
+  ui: lazy(() => import("./Global")),
   bootstrap: null,
   schema: BaseUiMetaSchema,
 });

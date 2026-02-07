@@ -203,10 +203,9 @@
       - even when only imported, not fed thru context
     - apparently fixed via preservation over hmr using `import.meta.hot.data.__ZUSTAND_STORE__`
   - ✅ can we avoid remount on edit ui.store?
-    - avoid dynamic import uis for better hmr
-    - use chunk splitting instead
+    - preserve uiRegistry on hmr (similar to ui.store fix)
 
-- addUis supports opts.layoutItems
+- 🚧 addUis supports opts.layoutItems
 - uis have optional play/pause button tied to meta.disabled
 
 - detect responsive tabs change and revert on return (?)
