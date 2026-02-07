@@ -21,17 +21,4 @@ export default defineConfig({
     process.env.USE_HTTPS ? basicSsl() : undefined,
     analyzer(),
   ],
-  build: {
-    rolldownOptions: {
-      output: {
-        advancedChunks: {
-          groups: [
-            { name: "three", test: /three/ },
-            { name: "uis", test: /\/packages\/(ui|ui-registry|ui-sdk)\// },
-            { name: "xterm", test: /xterm/ },
-          ],
-        },
-      },
-    },
-  },
 });
