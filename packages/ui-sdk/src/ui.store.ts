@@ -30,8 +30,11 @@ export const uiStoreApi = {
       draft.byId = {};
     });
   },
-  getAllMetas() {
-    return Object.values(uiStore.getState().byId).flatMap(({ meta }) => meta.items ?? meta);
+  getAllUis() {
+    const { byId } = uiStore.getState();
+    return Object.values(byId).flatMap(
+      (ui) => ui.meta.items?.map((id) => byId[id]).filter(Boolean) ?? ui,
+    );
   },
   /**
    * - For example `blog-1` in case `blog-0` and `blog-2` already exist.
@@ -41,12 +44,19 @@ export const uiStoreApi = {
     const titleRegExp = new RegExp(`^${prefix ?? uiKey.toLowerCase()}-(\\d+)$`);
     const suffices = new Set(
       uiStoreApi
-        .getAllMetas()
-        .flatMap((meta) =>
+        .getAllUis()
+        .flatMap(({ meta }) =>
           meta.uiKey === uiKey && titleRegExp.test(meta.title) ? Number(RegExp.$1) : [],
         ),
     );
     return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
+  },
+  getSubUis(id: string) {
+    const { byId } = uiStore.getState();
+    return byId[id]?.meta.items?.map((subId) => byId[subId]).filter(Boolean) ?? [];
+  },
+  getUi(id: string): UiStoreByIdEntry | null {
+    return uiStore.getState().byId[id] ?? null;
   },
   resetLayout() {
     uiStoreApi.clearUis();

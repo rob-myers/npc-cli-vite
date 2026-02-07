@@ -25,7 +25,7 @@ const FlatBaseUiMetaSchema = z.looseObject({
 export const BaseUiMetaSchema = z.looseObject({
   ...FlatBaseUiMetaSchema.shape,
   /** For sub-uis (Tabs) */
-  items: z.array(FlatBaseUiMetaSchema).optional(),
+  items: z.array(z.string()).optional(),
 });
 
 export type UiInstanceMeta = z.infer<typeof BaseUiMetaSchema>;
