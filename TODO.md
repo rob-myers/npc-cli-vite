@@ -13,7 +13,19 @@
   - https://www.fiverr.com/seanencabo/do-blockbench-models-and-animations
 
 - 🚧 towards MapEdit 1
-  - 🚧 try convert our SVG symbols into Blockbench JSON files
+  - 🚧 try convert our SVG symbols into GLTF importable by Blockbench GLTF import plugin
+    - Migrating from SVG symbols to Blockbench (free as opposed to BoxySVG)
+    - ❌ test generate some valid Blockbench file
+      - unclear format
+      - https://github.com/JannisX11/blockbench-plugins/tree/master/plugins
+        - gltf import plugin didn't work
+    - ❌ try generate OBJ file and import manually
+      - import ignores groups i.e. flat
+    - ✅ try programmatically generate gltf and import into blockbench
+      - https://gltf-transform.dev/
+      - ✅ one cuboid inside a group
+      - `pnpm test-gltf-transform`
+    - 🚧 sketch script to convert an SVG symbol e.g. capture some stuff
   - start migrating scripts for "extracting" and renaming starship symbols
   - parse gltf into e.g. floor, walls, ceiling, cuboids, quads
     - 🤔 maybe can avoid by directly parsing Blockbench JSON
