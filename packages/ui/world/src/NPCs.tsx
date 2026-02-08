@@ -4,6 +4,33 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 export default function NPCs() {
+  return (
+    <group>
+      <WalkingRobotGuyGltfOnlyDemo />
+      {/* <SkinnedMeshWithAnimationDemo /> */}
+    </group>
+  );
+}
+
+export function WalkingRobotGuyGltfOnlyDemo() {
+  const groupRef = useRef<THREE.Group>(null);
+  const gltf = useGLTF(url.walkingRobotGuyGltf);
+  const { actions } = useAnimations(gltf.animations, groupRef);
+  console.log({ gltf, actions });
+
+  useEffect(() => {
+    actions["walk_animation"]?.reset().fadeIn(0.5).play();
+    return () => void actions["walk_animation"]?.fadeOut(0.5);
+  }, [actions]);
+
+  return (
+    <group ref={groupRef}>
+      <primitive object={gltf.scene} />
+    </group>
+  );
+}
+
+export function SkinnedMeshWithAnimationDemo() {
   const groupRef = useRef<THREE.Group>(null);
 
   // Blockbench: Export Groups as Armature
@@ -21,8 +48,6 @@ export default function NPCs() {
 
   return (
     <group ref={groupRef}>
-      {/* <primitive object={gltf.scene} /> */}
-
       <skinnedMesh
         geometry={mesh.geometry}
         // position={mesh.position}
@@ -37,3 +62,4 @@ export default function NPCs() {
     </group>
   );
 }
+0;
