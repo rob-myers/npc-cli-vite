@@ -15,7 +15,6 @@ import type { TabsUiMeta } from "./schema";
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const { layoutApi, uiRegistry } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
-  const id = meta.id;
 
   const byId = useStore(uiStore, (s) => s.byId);
 
@@ -27,8 +26,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
         layoutApi.overrideContextMenu({
           refObject: newTabButtonRef,
-          addItem({ uiMeta }) {
-            const result = uiRegistry[uiMeta.uiKey].schema.safeParse(uiMeta);
+          addItem({ uiMeta: subUiMeta }) {
+            const result = uiRegistry[subUiMeta.uiKey].schema.safeParse(subUiMeta);
 
             if (!result.success) {
               return console.error("Failed to parse tab meta", result.error);
@@ -38,13 +37,13 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             }
 
             // portals with parentId not displayed in UiGrid
-            result.data.parentId = id;
+            result.data.parentId = meta.id;
             // inherit disabled to keep in sync
-            result.data.disabled = uiStoreApi.getUi(id)?.meta?.disabled;
+            result.data.disabled = uiStoreApi.getUi(meta.id)?.meta?.disabled;
             uiStoreApi.addUis({ metas: [result.data] });
 
             uiStore.setState((draft) => {
-              const tabsMeta = draft.byId[id].meta as TabsUiMeta;
+              const tabsMeta = draft.byId[meta.id].meta as TabsUiMeta;
               tabsMeta.items.push(result.data.id);
               tabsMeta.currentTabId = result.data.id;
             });
@@ -59,22 +58,21 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           if (item) item.meta.parentId = undefined;
         });
         layoutApi.appendLayoutItems([
-          { i: tab.id, x: 0, y: 0, w: 2, h: 1, ...layoutApi.getUiGridRect(id) },
+          { i: tab.id, x: 0, y: 0, w: 2, h: 1, ...layoutApi.getUiGridRect(meta.id) },
         ]);
       },
       onClickTab(tab: UiInstanceMeta) {
-        // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
-          (draft.byId[id].meta as TabsUiMeta).currentTabId = tab.id;
+          (draft.byId[meta.id].meta as TabsUiMeta).currentTabId = tab.id;
         });
       },
       onDeleteTab(tab: UiInstanceMeta, { preservePortal }: { preservePortal: boolean }) {
-        // 🚧 reparse tabs meta
         uiStore.setState((draft) => {
-          const rootMeta = draft.byId[id].meta as TabsUiMeta;
+          const rootMeta = draft.byId[meta.id].meta as TabsUiMeta;
+          const prevIndex = rootMeta.items.indexOf(tab.id);
           rootMeta.items = rootMeta.items.filter((id) => id !== tab.id);
           if (rootMeta.currentTabId === tab.id) {
-            rootMeta.currentTabId = rootMeta.items[0];
+            rootMeta.currentTabId = rootMeta.items[prevIndex - 1];
           }
           if (!preservePortal) {
             delete draft.byId[tab.id];
@@ -82,54 +80,57 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         });
       },
     }),
-    { deps: [id, layoutApi, uiStore] },
+    { deps: [meta, layoutApi] },
   );
 
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
     <div className={cn("flex flex-col size-full overflow-auto font-mono")}>
-      <div className={cn("flex min-h-12 items-center border-b border-outline")}>
+      <div className={cn("flex min-h-12 items-end border-b border-outline")}>
         {tabs.map((tab) => (
           <div
             key={tab.id}
             className={cn(
-              "cursor-pointer px-1 pt-2 -mb-px border-b-2 border-outline font-medium text-sm focus:outline-none",
+              uiClassName,
+              "cursor-pointer px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
               meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
             )}
             onClick={() => state.onClickTab(tab)}
           >
-            <div className={cn(uiClassName, "flex p-1 border border-on-background/20")}>
+            <div className={"flex p-1 border border-on-background/20"}>
               <pre className="p-1">{tab.title}</pre>
 
-              <BasicPopover
-                trigger={
-                  <DotsThreeOutlineVerticalIcon
-                    weight="thin"
-                    className="cursor-pointer size-4 text-on-background/80"
-                  />
-                }
-                className="bg-black p-0"
-                arrowClassName="fill-black"
-                side="bottom"
-              >
-                <div className="flex">
-                  <button type="button" className="px-0.5 py-1">
-                    <ArrowUpRightIcon
+              {tab.id === meta.currentTabId && (
+                <BasicPopover
+                  trigger={
+                    <DotsThreeOutlineVerticalIcon
                       weight="thin"
-                      className="cursor-pointer size-5 bg-black/40 text-white"
-                      onPointerDown={() => state.onBreakOutTab(tab)}
+                      className="cursor-pointer size-4 text-on-background/80"
                     />
-                  </button>
-                  <button type="button" className="px-0.5 py-1">
-                    <TrashIcon
-                      weight="thin"
-                      className="cursor-pointer size-5 bg-black/40 text-white"
-                      onPointerDown={() => state.onDeleteTab(tab, { preservePortal: false })}
-                    />
-                  </button>
-                </div>
-              </BasicPopover>
+                  }
+                  className="bg-black p-0"
+                  arrowClassName="fill-black"
+                  side="bottom"
+                >
+                  <div className="flex">
+                    <button type="button" className="px-0.5 py-1">
+                      <ArrowUpRightIcon
+                        weight="thin"
+                        className="cursor-pointer size-5 bg-black/40 text-white"
+                        onPointerDown={() => state.onBreakOutTab(tab)}
+                      />
+                    </button>
+                    <button type="button" className="px-0.5 py-1">
+                      <TrashIcon
+                        weight="thin"
+                        className="cursor-pointer size-5 bg-black/40 text-white"
+                        onPointerDown={() => state.onDeleteTab(tab, { preservePortal: false })}
+                      />
+                    </button>
+                  </div>
+                </BasicPopover>
+              )}
             </div>
           </div>
         ))}
@@ -139,7 +140,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           className={cn(uiClassName, "cursor-pointer p-2")}
           onClick={state.onAddNewTab}
         >
-          <PlusCircleIcon className="size-5" weight="duotone" />
+          <PlusCircleIcon className="size-6" weight="duotone" />
         </button>
       </div>
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
