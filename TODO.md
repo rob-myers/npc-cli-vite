@@ -1,19 +1,22 @@
 # TODO
 
-- 🚧 migrate existing character to Blockbench
+- ❌ migrate existing character to Blockbench
   - head 128x128 (1x1) body 384x128 (3x1)
   - ✅ copy over npc texture svgs
   - ✅ head has texture
   - ✅ head and body have correct texture dimensions
     - body should probably be thinner
   - ✅ body has texture
-  - 🚧 has arms
+  - ❌ has arms
     - can dup and flip
+- 🚧 request third-party
+  - https://www.fiverr.com/seanencabo/do-blockbench-models-and-animations
 
-- 🚧 investigate blockbench texture conventions
+- 🚧 investigate blockbench conventions
   - can select model face
   - can drag uv square area (not diagonal)
   - select two objects then can Cmd+Drag create box e.g. of vertices
+  - z gets to wireframe and back
 
 - towards MapEdit 1
   - some Blockbench symbols e.g. staterooms
