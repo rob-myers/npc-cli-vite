@@ -3,10 +3,13 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "bin": {
-    "scaffold-ui": "./src/bins/scaffold-ui.ts"
+    "scaffold-ui": "./src/bins/scaffold-ui.ts",
+    "test-gltf-transform": "./src/bins/test-gltf-transform.ts"
   },
   "dependencies": {
+    "@gltf-transform/core": "catalog:",
+    "@gltf-transform/extensions": "catalog:",
+    "@gltf-transform/functions": "catalog:",
     "@inquirer/prompts": "catalog:"
-  },
-  "devDependencies": {}
+  }
 }
