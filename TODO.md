@@ -12,15 +12,11 @@
 - 🚧 request third-party
   - https://www.fiverr.com/seanencabo/do-blockbench-models-and-animations
 
-- 🚧 investigate blockbench conventions
-  - can select model face
-  - can drag uv square area (not diagonal)
-  - select two objects then can Cmd+Drag create box e.g. of vertices
-  - z gets to wireframe and back
-
-- towards MapEdit 1
-  - some Blockbench symbols e.g. staterooms
+- 🚧 towards MapEdit 1
+  - 🚧 try convert our SVG symbols into Blockbench JSON files
+  - start migrating scripts for "extracting" and renaming starship symbols
   - parse gltf into e.g. floor, walls, ceiling, cuboids, quads
+    - 🤔 maybe can avoid by directly parsing Blockbench JSON
 
 - towards MapEdit 2
   - MapEdit with react-resizable allows symbol placement
@@ -40,10 +36,8 @@
     - seen profile fail to load too
   - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
 
-
 - future tabs
   - try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - can drag between different tabs components
-
-- detect responsive tabs change and revert on return (?)
+  - detect responsive tabs change and revert on return (?)
