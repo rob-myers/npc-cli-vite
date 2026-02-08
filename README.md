@@ -60,4 +60,12 @@ pnpm -F @npc-cli/parse-sh build:wasm
 
 # Gotchas
 
-Confusing type errors arise when auto-added imports reference other packages via relative paths.
+Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
+
+# Blockbench
+
+Stuff I've noticed
+- can select model face
+- can drag uv square area (not diagonal)
+- select two objects then can Cmd+Drag create box e.g. of vertices
+- z gets to wireframe and back
