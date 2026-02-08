@@ -60,7 +60,9 @@ pnpm -F @npc-cli/parse-sh build:wasm
 
 # Gotchas
 
-Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
+### ⚠️ Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
+
+### ⚠️ Blockbench import GLTF seems to cache file unless you "X it and rechoose"
 
 # Blockbench
 
