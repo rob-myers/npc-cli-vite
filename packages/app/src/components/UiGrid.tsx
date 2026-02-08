@@ -21,14 +21,7 @@ import {
 } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
-import {
-  LayoutIcon,
-  LockIcon,
-  PauseCircleIcon,
-  PenIcon,
-  PlayCircleIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { LayoutIcon, LockIcon, PenIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
@@ -554,11 +547,11 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
           });
         }}
       >
-        {meta.disabled ? (
-          <PlayCircleIcon data-icon-type="play" weight="duotone" className="size-5" />
-        ) : (
-          <PauseCircleIcon data-icon-type="pause" weight="duotone" className="size-5" />
-        )}
+        <PlayCircleIcon
+          data-icon-type="play"
+          weight="duotone"
+          className={cn("size-5", meta.disabled ? "text-gray-500" : "text-green-400")}
+        />
       </button>
     </div>
   );
