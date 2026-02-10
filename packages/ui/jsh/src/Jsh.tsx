@@ -17,7 +17,7 @@ export default function Jsh(props: { meta: JshUiMeta }) {
         sessionKey={props.meta.sessionKey}
         setTabsEnabled={() => {}}
         updateTabMeta={() => {}}
-        disabled={false}
+        disabled={props.meta.disabled}
         env={{}}
         tabKey="my-tab-key"
         onKey={() => {}}
