@@ -13,7 +13,7 @@
   - https://www.fiverr.com/seanencabo/do-blockbench-models-and-animations
 
 - 🚧 towards MapEdit 1
-  - 🚧 try convert our SVG symbols into GLTF importable by Blockbench GLTF import plugin
+  - ❌ try convert our SVG symbols into GLTF importable by Blockbench GLTF import plugin
     - Migrating from SVG symbols to Blockbench (free as opposed to BoxySVG)
     - ❌ test generate some valid Blockbench file
       - unclear format
@@ -25,8 +25,21 @@
       - https://gltf-transform.dev/
       - ✅ one cuboid inside a group
       - `pnpm test-gltf-transform`
-    - 🚧 sketch script to convert an SVG symbol e.g. capture some stuff
-  - start migrating scripts for "extracting" and renaming starship symbols
+    - ❌ generate gltf with a texture
+      - seem pretty hard if we follow gtlf-transform i.e. weird winding-order
+      - instead, try to understand the format exported by blockbench i.e. `cube-exported-from-blockbench`
+      - seems everything is stored in a base64-encoded buffer
+      - ❌ try to decode that buffer
+      - decided against this approach
+  - ❌ try create a starship symbol in blockbench
+    - inability to support references
+  - 🚧 start migrating scripts for "extracting" and renaming starship symbols
+  -  in-browser SVG-based replacement of Boxy SVG editor
+    - react-draggable to move stuff
+    - symbols tree (groups)
+    - implement via svg
+    - more easy to import current files
+  - sketch script to convert an SVG symbol e.g. capture some stuff
   - parse gltf into e.g. floor, walls, ceiling, cuboids, quads
     - 🤔 maybe can avoid by directly parsing Blockbench JSON
 
