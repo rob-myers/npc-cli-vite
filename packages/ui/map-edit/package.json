@@ -1,0 +1,16 @@
+{
+  "name": "@npc-cli/ui__map-edit",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -33,7 +33,8 @@
       - decided against this approach
   - ❌ try create a starship symbol in blockbench
     - inability to support references
-  - 🚧 start migrating scripts for "extracting" and renaming starship symbols
+  - ✅ add placeholder MapEdit ui
+  - start migrating scripts for "extracting" and renaming starship symbols
   -  in-browser SVG-based replacement of Boxy SVG editor
     - react-draggable to move stuff
     - symbols tree (groups)
