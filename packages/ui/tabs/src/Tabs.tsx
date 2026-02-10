@@ -72,7 +72,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           const prevIndex = rootMeta.items.indexOf(tab.id);
           rootMeta.items = rootMeta.items.filter((id) => id !== tab.id);
           if (rootMeta.currentTabId === tab.id) {
-            rootMeta.currentTabId = rootMeta.items[prevIndex - 1];
+            rootMeta.currentTabId = rootMeta.items[prevIndex - 1] ?? rootMeta.items[0];
           }
           if (!preservePortal) {
             delete draft.byId[tab.id];
