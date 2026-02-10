@@ -1,7 +1,7 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
 import { PlusIcon } from "@phosphor-icons/react";
-import { type MouseEvent, useCallback, useRef, useState, type WheelEvent } from "react";
+import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
 
@@ -48,29 +48,34 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     },
   ]);
 
-  const handleWheel = useCallback((e: WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    // Mouse position relative to container center
-    const mouseX = e.clientX - rect.left - rect.width / 2;
-    const mouseY = e.clientY - rect.top - rect.height / 2;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = container.getBoundingClientRect();
+      // Mouse position relative to container center
+      const mouseX = e.clientX - rect.left - rect.width / 2;
+      const mouseY = e.clientY - rect.top - rect.height / 2;
 
-    const currentZoom = zoomRef.current;
-    const currentPan = panRef.current;
-    const delta = e.deltaY > 0 ? 1 - 0.02 : 1 + 0.02;
-    const newZoom = Math.min(Math.max(currentZoom * delta, 0.1), 10);
+      const currentZoom = zoomRef.current;
+      const currentPan = panRef.current;
+      const delta = e.deltaY > 0 ? 1 - 0.02 : 1 + 0.02;
+      const newZoom = Math.min(Math.max(currentZoom * delta, 0.1), 10);
 
-    // Adjust pan to keep the point under the mouse stationary
-    const scaleFactor = newZoom / currentZoom;
-    const newPan = {
-      x: mouseX - (mouseX - currentPan.x) * scaleFactor,
-      y: mouseY - (mouseY - currentPan.y) * scaleFactor,
+      // Adjust pan to keep the point under the mouse stationary
+      const scaleFactor = newZoom / currentZoom;
+      const newPan = {
+        x: mouseX - (mouseX - currentPan.x) * scaleFactor,
+        y: mouseY - (mouseY - currentPan.y) * scaleFactor,
+      };
+      setPan(newPan);
+      setZoom(newZoom);
     };
-    setPan(newPan);
-    setZoom(newZoom);
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
   }, []);
 
   const handleMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
@@ -150,7 +155,6 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       <div
         ref={containerRef}
         className="w-full h-full bg-slate-900 flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing"
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
