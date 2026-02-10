@@ -7,6 +7,7 @@ const mirrored: Record<UiRegistryKey, true> = {
   Blog: true,
   Global: true,
   Jsh: true,
+  MapEdit: true,
   Tabs: true,
   Template: true,
   World: true,

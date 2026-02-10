@@ -13,6 +13,7 @@
     "@npc-cli/ui__blog": "workspace:^",
     "@npc-cli/ui__global": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
+    "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/ui__tabs": "workspace:^",
     "@npc-cli/ui__template": "workspace:^",
     "@npc-cli/ui__world": "workspace:^",
