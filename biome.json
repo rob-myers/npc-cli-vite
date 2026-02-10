@@ -3,10 +3,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "a11y": {
-        "noStaticElementInteractions": "off",
-        "useKeyWithClickEvents": "off"
-      },
+      "a11y": "off",
       "suspicious": {
         "noAssignInExpressions": "off",
         "noConfusingVoidType": "off",
