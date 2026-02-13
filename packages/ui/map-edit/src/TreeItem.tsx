@@ -1,4 +1,5 @@
-// import { SVGElement } from '../types';
+import { uiClassName } from "@npc-cli/ui-sdk";
+import { cn } from "@npc-cli/util";
 import {
   ArrowDownIcon,
   ArrowRightIcon,
@@ -44,7 +45,13 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   return (
     <div>
       <div
-        className={`flex items-center px-2 cursor-pointer hover:bg-slate-700/50 transition-colors group ${isSelected ? "bg-blue-600/40 border-l-2 border-blue-400" : "border-l-2 border-transparent"}`}
+        className={cn(
+          uiClassName,
+          "flex items-center px-2 cursor-pointer hover:bg-slate-700/50 transition-colors group",
+          isSelected
+            ? "bg-blue-600/40 border-l-2 border-blue-400"
+            : "border-l-2 border-transparent",
+        )}
         onClick={() => onSelect(element.id)}
       >
         <span
@@ -70,13 +77,18 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         </span>
 
         <span
-          className={`text-sm truncate flex-grow ${isSelected ? "text-blue-100 font-medium" : "text-slate-300"}`}
+          className={`text-xs truncate flex-grow ${isSelected ? "text-blue-100 font-medium" : "text-slate-300"}`}
         >
           {element.name || element.type}
         </span>
 
         <button
-          className={`ml-2 p-1 rounded hover:bg-slate-600/50 transition-colors ${!element.isVisible ? "text-slate-500" : "text-slate-400 opacity-0 group-hover:opacity-100"}`}
+          className={cn(
+            "cursor-pointer ml-2 p-1 rounded hover:bg-slate-600/50 transition-colors",
+            !element.isVisible
+              ? "text-slate-500"
+              : "text-slate-400 opacity-0 group-hover:opacity-100",
+          )}
           onClick={(e) => {
             e.stopPropagation();
             onToggleVisibility(element.id);
