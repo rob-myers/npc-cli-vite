@@ -64,6 +64,14 @@ pnpm -F @npc-cli/parse-sh build:wasm
 
 ### ⚠️ Blockbench import GLTF seems to cache file unless you "X it and rechoose"
 
+### ⚠️ In Node script saw "Could not find a declaration file for module" on try import from js path
+
+```sh
+# example solution
+cd packages/util/src/legacy
+npx tsc generic.js --declaration --allowJs --emitDeclarationOnly
+```
+
 # Blockbench
 
 Stuff I've noticed

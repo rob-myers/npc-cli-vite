@@ -3,6 +3,7 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "bin": {
+    "get-pngs": "./src/bins/get-pngs.ts",
     "scaffold-ui": "./src/bins/scaffold-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts"
   },
@@ -10,6 +11,9 @@
     "@gltf-transform/core": "catalog:",
     "@gltf-transform/extensions": "catalog:",
     "@gltf-transform/functions": "catalog:",
-    "@inquirer/prompts": "catalog:"
+    "@inquirer/prompts": "catalog:",
+    "@npc-cli/cli": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "json-stringify-pretty-compact": "catalog:"
   }
 }
