@@ -35,7 +35,8 @@
     - inability to support references
   - ✅ add placeholder MapEdit ui
   - 🚧 start migrating scripts for "extracting" and renaming starship symbols
-    - 🚧 towards get-pngs
+    - ✅ towards get-pngs
+    - ✅ `pnpm get-pngs root Symbols symbol-root` worked
   - 🚧 in-browser SVG-based replacement of Boxy SVG editor
     - implement via svg
     - easier to import current files
