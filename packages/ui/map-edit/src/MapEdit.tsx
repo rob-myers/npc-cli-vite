@@ -1,7 +1,7 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn } from "@npc-cli/util";
 import { PlusIcon } from "@phosphor-icons/react";
-import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
 
@@ -82,15 +82,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     return () => container.removeEventListener("wheel", handleWheel);
   }, []);
 
-  const handleMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
+  const handlePanPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
     if (e.button === 0) {
+      (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
       setIsPanning(true);
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
   }, []);
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent<HTMLDivElement>) => {
+  const handlePanPointerMove = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
       if (!isPanning) return;
       const dx = e.clientX - lastMousePos.current.x;
       const dy = e.clientY - lastMousePos.current.y;
@@ -100,11 +101,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     [isPanning],
   );
 
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
+  const handlePanPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
     setIsPanning(false);
   }, []);
 
@@ -194,11 +192,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
       <div
         ref={containerRef}
-        className="w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
+        className="w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none"
+        onPointerDown={handlePanPointerDown}
+        onPointerMove={handlePanPointerMove}
+        onPointerUp={handlePanPointerUp}
       >
         {/* Grid Pattern Background */}
         <div className="absolute inset-0 opacity-10 pointer-events-none" />
