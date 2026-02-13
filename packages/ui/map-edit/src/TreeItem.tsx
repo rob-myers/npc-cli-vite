@@ -49,7 +49,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           uiClassName,
           "h-8 grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
           "bg-background border-b border-b-on-background/10",
-          isSelected && "brightness-125 border-blue-400",
+          isSelected && "brightness-125 border-blue-400/25",
         )}
         onClick={() => onSelect(element.id)}
       >

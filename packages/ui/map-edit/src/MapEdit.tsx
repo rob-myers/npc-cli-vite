@@ -1,6 +1,6 @@
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
-import { CaretLeftIcon, PlusIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon, PlusIcon } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
@@ -8,8 +8,8 @@ import { type SVGElementWrapper, TreeItem } from "./TreeItem";
 export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
 
-  const state = useStateRef<State>(
-    () => ({
+  const state = useStateRef(
+    (): State => ({
       zoom: 1,
       pan: { x: 0, y: 0 },
       isPanning: false,
@@ -19,7 +19,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       lastTouchMid: { x: 0, y: 0 },
 
       selectedId: null,
-      asideWidth: 192,
+      asideWidth: defaultAsideWidth,
+      lastAsideWidth: defaultAsideWidth,
       isResizing: false,
       elements: demoElements,
 
@@ -80,7 +81,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (!state.isResizing) return;
         const dx = e.clientX - state.lastPointerPos.x;
         state.lastPointerPos = { x: e.clientX, y: 0 };
-        state.set({ asideWidth: Math.max(42 - 1, Math.min(400, state.asideWidth + dx)) });
+        state.set({
+          asideWidth: Math.max(minAsideWidth, Math.min(maxAsideWidth, state.asideWidth + dx)),
+        });
       },
       onResizePointerUp(e: PointerEvent<HTMLDivElement>) {
         (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
@@ -141,7 +144,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   return (
     <div className="overflow-auto size-full flex justify-center items-start">
       <aside
-        className="relative  h-full border-r border-slate-800 flex flex-col"
+        className="relative h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
       >
         <div className="grid [grid-template-columns:1fr_auto] items-center px-3 py-3 border-b border-slate-800 bg-slate-900/20">
@@ -159,7 +162,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           </button>
         </div>
 
-        <div className="overflow-y-auto h-full custom-scrollbar">
+        <div className="overflow-y-auto h-full custom-scrollbar bg-background">
           {state.elements.map((el) => (
             <TreeItem
               key={el.id}
@@ -175,7 +178,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         <div
           className={cn(
             uiClassName,
-            "w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
+            "z-2 w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
             "bg-blue-500/50",
           )}
           onPointerDown={state.onResizePointerDown}
@@ -189,8 +192,19 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
               "px-1 h-5 top-[calc(100%-20px)] cursor-pointer bg-slate-700 text-slate-300",
               "hover:text-slate-300 transition-colors",
             )}
+            onClick={() => {
+              state.set({
+                asideWidth:
+                  state.asideWidth <= minAsideWidth ? state.lastAsideWidth : minAsideWidth,
+                lastAsideWidth: state.asideWidth,
+              });
+            }}
           >
-            <CaretLeftIcon className="size-4" />
+            {state.asideWidth <= minAsideWidth ? (
+              <CaretRightIcon className="size-4" />
+            ) : (
+              <CaretLeftIcon className="size-4" />
+            )}
           </button>
         </div>
       </aside>
@@ -253,6 +267,7 @@ type State = {
 
   selectedId: string | null;
   asideWidth: number;
+  lastAsideWidth: number;
   isResizing: boolean;
   elements: SVGElementWrapper[];
 
@@ -313,3 +328,7 @@ const demoElements: SVGElementWrapper[] = [
     ],
   },
 ];
+
+const minAsideWidth = 42 - 1;
+const maxAsideWidth = 300;
+const defaultAsideWidth = 192;
