@@ -1,11 +1,13 @@
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
 import { CaretLeftIcon, PlusIcon } from "@phosphor-icons/react";
-import { type PointerEvent, useEffect } from "react";
+import { type PointerEvent, useContext, useEffect } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
 
 export default function MapEdit(_props: { meta: MapEditUiMeta }) {
+  const { theme } = useContext(UiContext);
+
   const state = useStateRef<State>(
     () => ({
       zoom: 1,
@@ -157,23 +159,17 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           </button>
         </div>
 
-        <div className="overflow-y-auto py-2 h-full custom-scrollbar">
-          {state.elements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-600 px-8 text-center">
-              <p className="text-xs italic">No elements found. Try generating a scene above.</p>
-            </div>
-          ) : (
-            state.elements.map((el) => (
-              <TreeItem
-                key={el.id}
-                element={el}
-                level={0}
-                selectedId={state.selectedId}
-                onSelect={state.onSelect}
-                onToggleVisibility={state.onToggleVisibility}
-              />
-            ))
-          )}
+        <div className="overflow-y-auto h-full custom-scrollbar">
+          {state.elements.map((el) => (
+            <TreeItem
+              key={el.id}
+              element={el}
+              level={0}
+              selectedId={state.selectedId}
+              onSelect={state.onSelect}
+              onToggleVisibility={state.onToggleVisibility}
+            />
+          ))}
         </div>
 
         <div
@@ -203,7 +199,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         ref={state.ref("containerEl")}
         className={cn(
           "w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none",
-          "bg-gray-700/30",
+          theme === "dark" ? "bg-gray-700/30" : "bg-white",
         )}
         onPointerDown={state.onPanPointerDown}
         onPointerMove={state.onPanPointerMove}

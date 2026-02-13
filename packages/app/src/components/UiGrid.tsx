@@ -550,7 +550,7 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
         <PlayCircleIcon
           data-icon-type="play"
           weight="duotone"
-          className={cn("size-5", meta.disabled ? "text-gray-500" : "text-green-400")}
+          className={cn("size-5", meta.disabled ? "text-gray-500" : "text-green-700")}
         />
       </button>
     </div>
