@@ -47,14 +47,15 @@ export const TreeItem: React.FC<TreeItemProps> = ({
       <div
         className={cn(
           uiClassName,
-          "flex items-center px-2 cursor-pointer hover:bg-slate-700/50 transition-colors group",
+          "grid grid-cols-[minmax(auto,1.5rem)_auto_auto] items-center px-2 cursor-pointer hover:bg-slate-700/50 transition-colors group",
+          "h-6 bg-black/30",
           isSelected
             ? "bg-blue-600/40 border-l-2 border-blue-400"
             : "border-l-2 border-transparent",
         )}
         onClick={() => onSelect(element.id)}
       >
-        <span
+        {/* <span
           className="mr-2"
           onClick={(e) => {
             e.stopPropagation();
@@ -63,28 +64,30 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         >
           {isGroup && element.children && element.children.length > 0 ? (
             isExpanded ? (
-              <ArrowDownIcon className="w-3.5 h-3.5" />
+              <ArrowDownIcon className="size-3.5" />
             ) : (
               <ArrowRightIcon className="w-3.5 h-3.5" />
             )
           ) : (
-            <div className="w-3.5 h-3.5" />
+            <div className="w-2" />
           )}
-        </span>
+        </span> */}
 
-        <span className="mr-2 text-slate-400">
-          {isGroup ? <FolderIcon className="w-4 h-4" /> : <BoundingBoxIcon className="w-4 h-4" />}
-        </span>
+        <div className="text-slate-400">{isGroup ? <FolderIcon /> : <BoundingBoxIcon />}</div>
 
-        <span
-          className={`text-xs truncate flex-grow ${isSelected ? "text-blue-100 font-medium" : "text-slate-300"}`}
+        <div
+          className={cn(
+            "text-xs truncate pl-1",
+            isSelected ? "text-blue-100 font-medium" : "text-slate-300",
+          )}
+          style={{ paddingLeft: (1 + level) * 4 }}
         >
           {element.name || element.type}
-        </span>
+        </div>
 
         <button
           className={cn(
-            "cursor-pointer ml-2 p-1 rounded hover:bg-slate-600/50 transition-colors",
+            "cursor-pointer rounded hover:bg-slate-600/50 transition-colors",
             !element.isVisible
               ? "text-slate-500"
               : "text-slate-400 opacity-0 group-hover:opacity-100",
@@ -94,16 +97,17 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             onToggleVisibility(element.id);
           }}
         >
-          {element.isVisible ? (
+          {/* {element.isVisible ? (
             <EyeIcon className="w-4 h-4" />
           ) : (
             <EyeClosedIcon className="w-4 h-4" />
-          )}
+          )} */}
         </button>
       </div>
 
       {isGroup && isExpanded && element.children && (
-        <div className="border-l border-slate-700/50 ml-2">
+        // ml-2
+        <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
             <TreeItem
               key={child.id}
