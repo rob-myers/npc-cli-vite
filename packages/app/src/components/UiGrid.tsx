@@ -68,7 +68,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
       preventTransition: true,
       resizeConfig: {
         editMode: { handles: ["n", "ne", "e", "se", "s", "sw", "w", "nw"] },
-        default: { handles: ["se"] },
+        default: { handles: isTouchDevice() ? [] : ["se"] },
       },
       resizing: false,
       visualViewportRect: null,
@@ -325,9 +325,12 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                     className={cn(
                       "relative border border-on-background/20",
                       "*:first:transition-all",
-                      state.editMode && allowReactGridDragClassName,
-                      state.editMode &&
-                        "cursor-move *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-500/60",
+                      ...(state.editMode
+                        ? [
+                            allowReactGridDragClassName,
+                            "p-4 cursor-move *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-500/60",
+                          ]
+                        : []),
                     )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
