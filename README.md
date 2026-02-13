@@ -58,6 +58,23 @@ We use it to generate WASM (https://tinygo.org/docs/guides/webassembly/) followi
 pnpm -F @npc-cli/parse-sh build:wasm
 ```
 
+### ImageMagick
+
+Needed for e.g. `pnpm get-pngs root Symbols symbol-root`
+
+```sh
+brew install imagemagick
+```
+
+### cwebp
+
+Must use version 1.6.0 (libsharpyuv: 0.4.2).
+
+- https://developers.google.com/speed/webp/docs/precompiled
+- Check version via `cwebp -version`.
+- `brew install webp` may provide old version depending on your OS version.
+
+
 # Gotchas
 
 ### ⚠️ Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
