@@ -23,34 +23,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   const [isResizing, setIsResizing] = useState(false);
   const asideWidthRef = useRef(asideWidth);
   asideWidthRef.current = asideWidth;
-  const [elements, setElements] = useState<SVGElementWrapper[]>([
-    {
-      id: "root-group",
-      name: "Main Illustration",
-      type: "group",
-      props: { fill: "none" },
-      isVisible: true,
-      isLocked: false,
-      children: [
-        {
-          id: "bg-rect",
-          name: "Background",
-          type: "rect",
-          props: { x: 50, y: 50, width: 400, height: 400, fill: "#1e293b", rx: 20 },
-          isVisible: true,
-          isLocked: false,
-        },
-        {
-          id: "sun",
-          name: "Sun",
-          type: "circle",
-          props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
-          isVisible: true,
-          isLocked: false,
-        },
-      ],
-    },
-  ]);
+  const [elements, setElements] = useState<SVGElementWrapper[]>(demoElements);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -156,7 +129,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       >
         <div className="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Layers</h2>
-          <button className="flex text-slate-500 hover:text-slate-300 transition-colors">
+          <button
+            className={cn(
+              uiClassName,
+              "cursor-pointer",
+              "flex text-slate-500 hover:text-slate-300 transition-colors",
+            )}
+          >
             <PlusIcon />
           </button>
         </div>
@@ -242,3 +221,32 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     </div>
   );
 }
+
+const demoElements: SVGElementWrapper[] = [
+  {
+    id: "root-group",
+    name: "Main",
+    type: "group",
+    props: { fill: "none" },
+    isVisible: true,
+    isLocked: false,
+    children: [
+      {
+        id: "bg-rect",
+        name: "Bg",
+        type: "rect",
+        props: { x: 50, y: 50, width: 400, height: 400, fill: "#1e293b", rx: 20 },
+        isVisible: true,
+        isLocked: false,
+      },
+      {
+        id: "sun",
+        name: "Sun",
+        type: "circle",
+        props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
+        isVisible: true,
+        isLocked: false,
+      },
+    ],
+  },
+];
