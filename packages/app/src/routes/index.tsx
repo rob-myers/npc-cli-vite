@@ -32,7 +32,7 @@ function Index() {
   }));
 
   return (
-    <UiContext.Provider value={contextValue}>
+    <UiContext.Provider value={{ ...contextValue, theme }}>
       <UiGrid
         extendContextValue={(layoutApi) => setContextValue((prev) => ({ ...prev, layoutApi }))}
         persistedLayout={persistedLayout}
