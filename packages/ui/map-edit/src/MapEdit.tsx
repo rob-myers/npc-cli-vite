@@ -1,101 +1,110 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
-import { PlusIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, PlusIcon } from "@phosphor-icons/react";
 import { type PointerEvent, useEffect } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
 
 export default function MapEdit(_props: { meta: MapEditUiMeta }) {
-  const state = useStateRef<State>(() => ({
-    zoom: 1,
-    pan: { x: 0, y: 0 },
-    isPanning: false,
-    lastPointerPos: { x: 0, y: 0 },
-    containerEl: null,
-    lastTouchDist: 0,
-    lastTouchMid: { x: 0, y: 0 },
+  const state = useStateRef<State>(
+    () => ({
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+      isPanning: false,
+      lastPointerPos: { x: 0, y: 0 },
+      containerEl: null,
+      lastTouchDist: 0,
+      lastTouchMid: { x: 0, y: 0 },
 
-    selectedId: null,
-    asideWidth: 192,
-    isResizing: false,
-    elements: demoElements,
+      selectedId: null,
+      asideWidth: 192,
+      isResizing: false,
+      elements: demoElements,
 
-    onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
-      if (e.button === 0) {
-        (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
-        state.isPanning = true;
+      onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
+        if (e.button === 0) {
+          (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
+          state.isPanning = true;
+          state.lastPointerPos = { x: e.clientX, y: e.clientY };
+        }
+      },
+      onPanPointerMove(e: PointerEvent<HTMLDivElement>) {
+        if (!state.isPanning) return;
+        const dx = e.clientX - state.lastPointerPos.x;
+        const dy = e.clientY - state.lastPointerPos.y;
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
-      }
-    },
-    onPanPointerMove(e: PointerEvent<HTMLDivElement>) {
-      if (!state.isPanning) return;
-      const dx = e.clientX - state.lastPointerPos.x;
-      const dy = e.clientY - state.lastPointerPos.y;
-      state.lastPointerPos = { x: e.clientX, y: e.clientY };
-      state.set({ pan: { x: state.pan.x + dx, y: state.pan.y + dy } });
-    },
-    onPanPointerUp(e: PointerEvent<HTMLDivElement>) {
-      (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
-      state.isPanning = false;
-    },
+        state.set({ pan: { x: state.pan.x + dx, y: state.pan.y + dy } });
+      },
+      onPanPointerUp(e: PointerEvent<HTMLDivElement>) {
+        (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
+        state.isPanning = false;
+      },
 
-    onTouchMove(e: TouchEvent) {
-      if (e.touches.length !== 2 || !state.containerEl) return;
-      e.preventDefault();
-      const [t0, t1] = [e.touches[0], e.touches[1]];
-      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
-      const mid = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
+      onTouchMove(e: TouchEvent) {
+        if (e.touches.length !== 2 || !state.containerEl) return;
+        e.preventDefault();
+        const [t0, t1] = [e.touches[0], e.touches[1]];
+        const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+        const mid = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
 
-      if (state.lastTouchDist > 0) {
-        const rect = state.containerEl.getBoundingClientRect();
-        const pivot = { x: mid.x - rect.left - rect.width / 2, y: mid.y - rect.top - rect.height / 2 };
-        const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), 0.1), 10);
-        const s = newZoom / state.zoom;
-        state.set({
-          zoom: newZoom,
-          pan: { x: pivot.x - (pivot.x - state.pan.x) * s + mid.x - state.lastTouchMid.x, y: pivot.y - (pivot.y - state.pan.y) * s + mid.y - state.lastTouchMid.y },
-        });
-      }
-      state.lastTouchDist = dist;
-      state.lastTouchMid = mid;
-    },
+        if (state.lastTouchDist > 0) {
+          const rect = state.containerEl.getBoundingClientRect();
+          const pivot = {
+            x: mid.x - rect.left - rect.width / 2,
+            y: mid.y - rect.top - rect.height / 2,
+          };
+          const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), 0.1), 10);
+          const s = newZoom / state.zoom;
+          state.set({
+            zoom: newZoom,
+            pan: {
+              x: pivot.x - (pivot.x - state.pan.x) * s + mid.x - state.lastTouchMid.x,
+              y: pivot.y - (pivot.y - state.pan.y) * s + mid.y - state.lastTouchMid.y,
+            },
+          });
+        }
+        state.lastTouchDist = dist;
+        state.lastTouchMid = mid;
+      },
 
-    onResizePointerDown(e: PointerEvent<HTMLDivElement>) {
-      e.preventDefault();
-      e.stopPropagation();
-      (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
-      state.isResizing = true;
-      state.lastPointerPos = { x: e.clientX, y: 0 };
-    },
-    onResizePointerMove(e: PointerEvent<HTMLDivElement>) {
-      if (!state.isResizing) return;
-      const dx = e.clientX - state.lastPointerPos.x;
-      state.lastPointerPos = { x: e.clientX, y: 0 };
-      state.set({ asideWidth: Math.max(120, Math.min(400, state.asideWidth + dx)) });
-    },
-    onResizePointerUp(e: PointerEvent<HTMLDivElement>) {
-      (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
-      state.isResizing = false;
-    },
+      onResizePointerDown(e: PointerEvent<HTMLDivElement>) {
+        e.preventDefault();
+        e.stopPropagation();
+        (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
+        state.isResizing = true;
+        state.lastPointerPos = { x: e.clientX, y: 0 };
+      },
+      onResizePointerMove(e: PointerEvent<HTMLDivElement>) {
+        if (!state.isResizing) return;
+        const dx = e.clientX - state.lastPointerPos.x;
+        state.lastPointerPos = { x: e.clientX, y: 0 };
+        state.set({ asideWidth: Math.max(42 - 1, Math.min(400, state.asideWidth + dx)) });
+      },
+      onResizePointerUp(e: PointerEvent<HTMLDivElement>) {
+        (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
+        state.isResizing = false;
+      },
 
-    onSelect(id: string) {
-      state.set({ selectedId: id === state.selectedId ? null : id });
-    },
-    onToggleVisibility(id: string) {
-      const toggle = (list: SVGElementWrapper[]): SVGElementWrapper[] => {
-        return list.map((item) => {
-          if (item.id === id) {
-            return { ...item, isVisible: !item.isVisible };
-          }
-          if (item.children) {
-            return { ...item, children: toggle(item.children) };
-          }
-          return item;
-        });
-      };
-      state.set({ elements: toggle(state.elements) });
-    },
-  }));
+      onSelect(id: string) {
+        state.set({ selectedId: id === state.selectedId ? null : id });
+      },
+      onToggleVisibility(id: string) {
+        const toggle = (list: SVGElementWrapper[]): SVGElementWrapper[] => {
+          return list.map((item) => {
+            if (item.id === id) {
+              return { ...item, isVisible: !item.isVisible };
+            }
+            if (item.children) {
+              return { ...item, children: toggle(item.children) };
+            }
+            return item;
+          });
+        };
+        state.set({ elements: toggle(state.elements) });
+      },
+    }),
+    { reset: { elements: false } },
+  );
 
   useEffect(() => {
     const container = state.containerEl;
@@ -130,21 +139,24 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   return (
     <div className="overflow-auto size-full flex justify-center items-start">
       <aside
-        className="h-full border-r border-slate-800 flex flex-col relative"
+        className="relative  h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
       >
-        <div className="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Layers</h2>
+        <div className="grid [grid-template-columns:1fr_auto] items-center px-3 py-3 border-b border-slate-800 bg-slate-900/20">
+          <h2 className="text-ellipsis line-clamp-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+            Layers
+          </h2>
           <button
             className={cn(
               uiClassName,
-              "cursor-pointer",
-              "flex text-slate-500 hover:text-slate-300 transition-colors",
+              "cursor-pointer bg-slate-700 text-slate-300",
+              "hover:text-slate-300 transition-colors",
             )}
           >
-            <PlusIcon />
+            <PlusIcon className="size-4" />
           </button>
         </div>
+
         <div className="overflow-y-auto py-2 h-full custom-scrollbar">
           {state.elements.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-600 px-8 text-center">
@@ -163,21 +175,36 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             ))
           )}
         </div>
+
         <div
           className={cn(
             uiClassName,
-            "absolute right-0 top-0 h-full w-1 cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
-            state.isResizing && "bg-blue-500/50",
+            "w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
+            "bg-blue-500/50",
           )}
           onPointerDown={state.onResizePointerDown}
           onPointerMove={state.onResizePointerMove}
           onPointerUp={state.onResizePointerUp}
-        />
+          onPointerOut={state.onResizePointerUp}
+        >
+          <button
+            className={cn(
+              uiClassName,
+              "px-1 h-5 top-[calc(100%-20px)] cursor-pointer bg-slate-700 text-slate-300",
+              "hover:text-slate-300 transition-colors",
+            )}
+          >
+            <CaretLeftIcon className="size-4" />
+          </button>
+        </div>
       </aside>
 
       <div
         ref={state.ref("containerEl")}
-        className="w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none"
+        className={cn(
+          "w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none",
+          "bg-gray-700/30",
+        )}
         onPointerDown={state.onPanPointerDown}
         onPointerMove={state.onPanPointerMove}
         onPointerUp={state.onPanPointerUp}
@@ -268,6 +295,24 @@ const demoElements: SVGElementWrapper[] = [
         props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
         isVisible: true,
         isLocked: false,
+      },
+      {
+        id: "root-group-2",
+        name: "Main",
+        type: "group",
+        props: { fill: "none" },
+        isVisible: true,
+        isLocked: false,
+        children: [
+          {
+            id: "sun-2",
+            name: "Sun",
+            type: "circle",
+            props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
+            isVisible: true,
+            isLocked: false,
+          },
+        ],
       },
     ],
   },
