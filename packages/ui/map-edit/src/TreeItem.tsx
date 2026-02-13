@@ -44,8 +44,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   return (
     <div>
       <div
-        className={`flex items-center px-2 py-1.5 cursor-pointer hover:bg-slate-700/50 transition-colors group ${isSelected ? "bg-blue-600/40 border-l-2 border-blue-400" : "border-l-2 border-transparent"}`}
-        // style={{ paddingLeft: `${level * 16 + 8}px` }}
+        className={`flex items-center px-2 cursor-pointer hover:bg-slate-700/50 transition-colors group ${isSelected ? "bg-blue-600/40 border-l-2 border-blue-400" : "border-l-2 border-transparent"}`}
         onClick={() => onSelect(element.id)}
       >
         <span

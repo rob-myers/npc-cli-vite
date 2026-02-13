@@ -19,6 +19,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   panRef.current = pan;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [asideWidth, setAsideWidth] = useState(192); // w-48 = 192px
+  const [isResizing, setIsResizing] = useState(false);
+  const asideWidthRef = useRef(asideWidth);
+  asideWidthRef.current = asideWidth;
   const [elements, setElements] = useState<SVGElementWrapper[]>([
     {
       id: "root-group",
@@ -104,6 +108,29 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     setIsPanning(false);
   }, []);
 
+  const handleResizePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
+    setIsResizing(true);
+    lastMousePos.current = { x: e.clientX, y: 0 };
+  }, []);
+
+  const handleResizePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isResizing) return;
+      const dx = e.clientX - lastMousePos.current.x;
+      lastMousePos.current = { x: e.clientX, y: 0 };
+      setAsideWidth((prev) => Math.max(120, Math.min(400, prev + dx)));
+    },
+    [isResizing],
+  );
+
+  const handleResizePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
+    setIsResizing(false);
+  }, []);
+
   const handleSelect = (id: string) => {
     setSelectedId(id === selectedId ? null : id);
   };
@@ -125,14 +152,17 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
   return (
     <div className="overflow-auto size-full flex justify-center items-start">
-      <aside className="w-48 h-full border-r border-slate-800 bg-slate-900/40 flex flex-col">
+      <aside
+        className="h-full border-r border-slate-800 flex flex-col relative"
+        style={{ width: asideWidth }}
+      >
         <div className="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Layers</h2>
-          <button className="flex gap-2 text-slate-500 hover:text-slate-300 transition-colors">
+          <button className="flex text-slate-500 hover:text-slate-300 transition-colors">
             <PlusIcon />
           </button>
         </div>
-        <div className="flex-grow overflow-y-auto py-2 h-full custom-scrollbar">
+        <div className="overflow-y-auto py-2 h-full custom-scrollbar">
           {elements.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-600 px-8 text-center">
               <p className="text-xs italic">No elements found. Try generating a scene above.</p>
@@ -150,11 +180,21 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             ))
           )}
         </div>
+        <div
+          className={cn(
+            uiClassName,
+            "absolute right-0 top-0 h-full w-1 cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
+            isResizing && "bg-blue-500/50",
+          )}
+          onPointerDown={handleResizePointerDown}
+          onPointerMove={handleResizePointerMove}
+          onPointerUp={handleResizePointerUp}
+        />
       </aside>
 
       <div
         ref={containerRef}
-        className="w-full h-full bg-slate-900 flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing"
+        className="w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
