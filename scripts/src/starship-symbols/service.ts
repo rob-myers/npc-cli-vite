@@ -1,8 +1,8 @@
-import { ansi } from "@npc-cli/cli";
+import childProcess from "node:child_process";
+import fs from "node:fs";
+import { ansi } from "@npc-cli/cli/shell/const";
 // relative imports for sucrase-node
-import { assertDefined, info } from "@npc-cli/util/legacy/generic";
-import childProcess from "child_process";
-import fs from "fs";
+import { assertDefined } from "@npc-cli/util/legacy/generic";
 
 function extractGeomorphInfo(info: string): FilenameMeta {
   const is: string[] = [];

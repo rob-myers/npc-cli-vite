@@ -316,7 +316,7 @@ export function isDevelopment() {
 
 /** https://stackoverflow.com/a/11979803/2917822 */
 export function isInsideWebWorker() {
-  return typeof self !== "undefined" && self.document === undefined;
+  return typeof self !== "undefined" && "document" in self && self.document === undefined;
 }
 
 /** @param {string} input  */

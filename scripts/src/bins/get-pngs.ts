@@ -1,3 +1,5 @@
+#!/usr/bin/env node --import=tsx
+
 import { error, info, warn } from "@npc-cli/util/legacy/generic";
 import childProcess from "child_process";
 import fs from "fs";
@@ -5,6 +7,7 @@ import stringify from "json-stringify-pretty-compact";
 import path from "path";
 import {
   altSymbolsFilenameRegex,
+  type FileMeta,
   geomorphsFilenameRegex,
   metaFromAltSymbolFilename,
   metaFromGeomorphFilename,
@@ -14,7 +17,6 @@ import {
   rootFilenameRegex,
   smallCraftFilenameRegex,
   symbolsFilenameRegex,
-  type FileMeta,
 } from "../starship-symbols/service";
 
 /**
@@ -25,37 +27,49 @@ import {
  * Usage:
  * ```sh
  * # {input_type} in ['root', 'geomorph', 'symbol', 'small-craft']
- * # {src_folder} relative to {repo_root}/media
+ * # {src_folder} relative to {repo_root}/packages/media/src/starship-symbols/input
  * # {src_folder} exists
- * # {dst_folder} relative to {repo_root}/media/extracted
- * yarn get-pngs {input_type} {src_folder} {dst_folder}
- * yarn get-pngs-fast {input_type} {src_folder} {dst_folder}
+ * # {dst_folder} relative to {repo_root}/packages/media/src/starship-symbols/output
+ * pnpm get-pngs {input_type} {src_folder} {dst_folder}
+ * pnpm get-pngs {input_type} {src_folder} {dst_folder}
  * ```
  *
  * Examples:
  * ```sh
- * yarn get-pngs-fast root Symbols symbol-root
- * yarn get-pngs-fast geomorph 'Geomorphs/100x50 Edge' geomorph-edge
- * yarn get-pngs-fast geomorph 'Geomorphs/100x100 Core' geomorph-core
- * yarn get-pngs-fast symbol Symbols/Bridge symbol-bridge
- * yarn get-pngs-fast small-craft 'Small Craft' symbol-small-craft
+ * pnpm get-pngs root Symbols symbol-root
+ * pnpm get-pngs geomorph 'Geomorphs/100x50 Edge' geomorph-edge
+ * pnpm get-pngs geomorph 'Geomorphs/100x100 Core' geomorph-core
+ * pnpm get-pngs symbol Symbols/Bridge symbol-bridge
+ * pnpm get-pngs small-craft 'Small Craft' symbol-small-craft
  *
- * yarn get-pngs-fast symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
- * yarn get-pngs-fast symbol 'Symbols/Machinery' symbol-machinery
- * yarn get-pngs-fast symbol 'Symbols/Lab' symbol-lab
- * yarn get-pngs-fast symbol 'Symbols/Battery' symbol-battery
- * yarn get-pngs-fast symbol 'Symbols/Medical' symbol-medical
- * yarn get-pngs-fast symbol 'Symbols/Misc' symbol-misc
- * yarn get-pngs-fast symbol 'Symbols/Offices' symbol-offices
- * yarn get-pngs-fast symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area
- * yarn get-pngs-fast symbol Symbols/Fresher symbol-fresher
- * yarn get-pngs-fast symbol 'Symbols/Galley & Mess' symbol-galley-and-mess
+ * pnpm get-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
+ * pnpm get-pngs symbol 'Symbols/Machinery' symbol-machinery
+ * pnpm get-pngs symbol 'Symbols/Lab' symbol-lab
+ * pnpm get-pngs symbol 'Symbols/Battery' symbol-battery
+ * pnpm get-pngs symbol 'Symbols/Medical' symbol-medical
+ * pnpm get-pngs symbol 'Symbols/Misc' symbol-misc
+ * pnpm get-pngs symbol 'Symbols/Offices' symbol-offices
+ * pnpm get-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area
+ * pnpm get-pngs symbol Symbols/Fresher symbol-fresher
+ * pnpm get-pngs symbol 'Symbols/Galley & Mess' symbol-galley-and-mess
  * ```
  */
+
+const errorMessage = `error: usage: pnpm get-pngs {input_type} {src_folder} {dst_folder} where:
+  - {input_type} in ['root', 'geomorph', 'symbol', 'small-craft']
+  - {src_folder} relative to {repo_root}/packages/media/src/starship-symbols/input
+  - {src_folder} exists
+  - {dst_folder} relative to {repo_root}/packages/media/src/starship-symbols/output
+  `;
+
 const [, , inputType, srcFolder, dstFolder] = process.argv;
-const mediaDir = path.resolve(__dirname, "../media");
-const srcDir = path.resolve(mediaDir, srcFolder);
-const dstDir = path.resolve(mediaDir, "extracted", dstFolder);
+const mediaDir = path.resolve(import.meta.dirname, "../../../packages/media");
+if (!srcFolder || !dstFolder) {
+  error(errorMessage);
+  process.exit(1);
+}
+const srcDir = path.resolve(mediaDir, "./src/starship-symbols/input", srcFolder);
+const dstDir = path.resolve(mediaDir, "./src/starship-symbols/output", dstFolder);
 const manifestPath = path.join(dstDir, "manifest.json");
 
 if (
@@ -70,48 +84,42 @@ if (
   !fs.statSync(srcDir).isDirectory() ||
   !dstFolder
 ) {
-  error(`error: usage: yarn get-pngs {input_type} {src_folder} {dst_folder} where:
-  - {input_type} in ['root', 'geomorph', 'symbol', 'small-craft']
-  - {src_folder} relative to {repo_root}/media
-  - {src_folder} exists
-  - {dst_folder} relative to {repo_root}/media/extracted
-  `);
+  error(errorMessage);
+  console.log({ srcDir, dstDir });
   process.exit(1);
 }
 
-(async function main() {
-  const srcFilenames = fs.readdirSync(srcDir);
-  fs.mkdirSync(dstDir, { recursive: true });
+const srcFilenames = fs.readdirSync(srcDir);
+fs.mkdirSync(dstDir, { recursive: true });
 
-  info("creating manifest:", manifestPath);
+info("creating manifest:", manifestPath);
 
-  const fileMetas = computeFileMetas(srcFilenames);
-  fs.writeFileSync(
-    manifestPath,
-    stringify({
-      parentFolder: path.basename(srcDir),
-      sourceType: inputType,
-      fileMetas,
-    }),
-  );
+const fileMetas = computeFileMetas(srcFilenames);
+fs.writeFileSync(
+  manifestPath,
+  stringify({
+    parentFolder: path.basename(srcDir),
+    sourceType: inputType,
+    fileMetas,
+  }),
+);
 
-  if (!fileMetas.length) {
-    info("no files found");
-    process.exit(0);
-  }
+if (!fileMetas.length) {
+  info("no files found");
+  process.exit(0);
+}
 
-  // saw bad performance with xargs -P 3
-  for (const { srcName, dstName } of fileMetas) {
-    info(`copying ${srcName} to ${dstName}`);
-    const [srcPath, dstPath] = [path.join(srcDir, srcName), path.join(dstDir, dstName)];
-    childProcess.execSync(`cp -f "${srcPath}" "${dstPath}"`);
-    info(`applying ImageMagick \`convert\` to ${dstName}`);
-    childProcess.execSync(`
+// saw bad performance with xargs -P 3
+for (const { srcName, dstName } of fileMetas) {
+  info(`copying ${srcName} to ${dstName}`);
+  const [srcPath, dstPath] = [path.join(srcDir, srcName), path.join(dstDir, dstName)];
+  childProcess.execSync(`cp -f "${srcPath}" "${dstPath}"`);
+  info(`applying ImageMagick \`convert\` to ${dstName}`);
+  childProcess.execSync(`
       convert -fuzz 1% -trim "${dstPath}" "${dstPath}.tmp.png"
       mv "${dstPath}.tmp.png" "${dstPath}"
     `);
-  }
-})();
+}
 
 function computeFileMetas(srcFilenames: string[]): FileMeta[] {
   const fileMetas: FileMeta[] = [];
