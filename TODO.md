@@ -34,12 +34,14 @@
   - ❌ try create a starship symbol in blockbench
     - inability to support references
   - ✅ add placeholder MapEdit ui
-  - start migrating scripts for "extracting" and renaming starship symbols
-  -  in-browser SVG-based replacement of Boxy SVG editor
-    - react-draggable to move stuff
-    - symbols tree (groups)
+  - 🚧 start migrating scripts for "extracting" and renaming starship symbols
+    - 🚧 towards get-pngs
+  - 🚧 in-browser SVG-based replacement of Boxy SVG editor
     - implement via svg
-    - more easy to import current files
+    - easier to import current files
+    - ✅ mock up "tree + svg"
+    - react-draggable to move stuff
+    - symbols tree (groups) works properly
   - sketch script to convert an SVG symbol e.g. capture some stuff
   - parse gltf into e.g. floor, walls, ceiling, cuboids, quads
     - 🤔 maybe can avoid by directly parsing Blockbench JSON
