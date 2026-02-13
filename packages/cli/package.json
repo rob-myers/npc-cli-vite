@@ -6,6 +6,7 @@
     ".": "./src/index.ts",
     "./jsh/modules": "./src/jsh/modules.js",
     "./jsh/scripts": "./src/jsh/scripts.js",
+    "./shell/const": "./src/shell/const.ts",
     "./legacy/npc.d.ts": {
       "types": "./src/legacy/npc.d.ts"
     }
