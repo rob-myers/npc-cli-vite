@@ -508,8 +508,8 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
   return (
     <div
       className={cn(
-        "z-999 absolute bottom-1 left-1 filter backdrop-blur-lg backdrop-brightness-120",
-        "flex rounded text-on-background bg-background/80",
+        "z-999 absolute top-1 right-1 filter backdrop-blur-lg backdrop-brightness-120",
+        "flex flex-row-reverse rounded text-on-background bg-background/80",
       )}
     >
       <BasicPopover
