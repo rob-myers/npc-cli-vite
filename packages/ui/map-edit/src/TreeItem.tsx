@@ -47,11 +47,9 @@ export const TreeItem: React.FC<TreeItemProps> = ({
       <div
         className={cn(
           uiClassName,
-          "grid grid-cols-[minmax(auto,1.5rem)_auto_auto] items-center px-2 cursor-pointer hover:bg-slate-700/50 transition-colors group",
-          "h-6 bg-black/30",
-          isSelected
-            ? "bg-blue-600/40 border-l-2 border-blue-400"
-            : "border-l-2 border-transparent",
+          "h-8 grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
+          "bg-background border-b border-b-on-background/10",
+          isSelected && "brightness-125 border-blue-400",
         )}
         onClick={() => onSelect(element.id)}
       >
@@ -73,19 +71,21 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           )}
         </span> */}
 
-        <div className="text-slate-400">{isGroup ? <FolderIcon /> : <BoundingBoxIcon />}</div>
+        <div className="text-on-background pl-0.5">
+          {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
+        </div>
 
         <div
           className={cn(
-            "text-xs truncate pl-1",
-            isSelected ? "text-blue-100 font-medium" : "text-slate-300",
+            "text-xs truncate pl-1 text-on-background/80",
+            isSelected && "brightness-125 font-medium",
           )}
           style={{ paddingLeft: (1 + level) * 4 }}
         >
           {element.name || element.type}
         </div>
 
-        <button
+        {/* <button
           className={cn(
             "cursor-pointer rounded hover:bg-slate-600/50 transition-colors",
             !element.isVisible
@@ -97,12 +97,12 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             onToggleVisibility(element.id);
           }}
         >
-          {/* {element.isVisible ? (
+          {element.isVisible ? (
             <EyeIcon className="w-4 h-4" />
           ) : (
             <EyeClosedIcon className="w-4 h-4" />
-          )} */}
-        </button>
+          )}
+        </button> */}
       </div>
 
       {isGroup && isExpanded && element.children && (
