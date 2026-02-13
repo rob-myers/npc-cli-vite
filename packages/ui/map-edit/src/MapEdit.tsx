@@ -12,6 +12,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     isPanning: false,
     lastPointerPos: { x: 0, y: 0 },
     containerEl: null,
+    lastTouchDist: 0,
+    lastTouchMid: { x: 0, y: 0 },
 
     selectedId: null,
     asideWidth: 192,
@@ -35,6 +37,27 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     onPanPointerUp(e: PointerEvent<HTMLDivElement>) {
       (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
       state.isPanning = false;
+    },
+
+    onTouchMove(e: TouchEvent) {
+      if (e.touches.length !== 2 || !state.containerEl) return;
+      e.preventDefault();
+      const [t0, t1] = [e.touches[0], e.touches[1]];
+      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      const mid = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
+
+      if (state.lastTouchDist > 0) {
+        const rect = state.containerEl.getBoundingClientRect();
+        const pivot = { x: mid.x - rect.left - rect.width / 2, y: mid.y - rect.top - rect.height / 2 };
+        const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), 0.1), 10);
+        const s = newZoom / state.zoom;
+        state.set({
+          zoom: newZoom,
+          pan: { x: pivot.x - (pivot.x - state.pan.x) * s + mid.x - state.lastTouchMid.x, y: pivot.y - (pivot.y - state.pan.y) * s + mid.y - state.lastTouchMid.y },
+        });
+      }
+      state.lastTouchDist = dist;
+      state.lastTouchMid = mid;
     },
 
     onResizePointerDown(e: PointerEvent<HTMLDivElement>) {
@@ -96,7 +119,12 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
 
     container.addEventListener("wheel", handleWheel, { passive: false });
-    return () => container.removeEventListener("wheel", handleWheel);
+    container.addEventListener("touchmove", state.onTouchMove, { passive: false });
+    container.addEventListener("touchend", () => (state.lastTouchDist = 0));
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchmove", state.onTouchMove);
+    };
   }, [state, state.containerEl]);
 
   return (
@@ -197,6 +225,8 @@ type State = {
   isPanning: boolean;
   lastPointerPos: { x: number; y: number };
   containerEl: HTMLDivElement | null;
+  lastTouchDist: number;
+  lastTouchMid: { x: number; y: number };
 
   selectedId: string | null;
   asideWidth: number;
@@ -206,6 +236,7 @@ type State = {
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerUp: (e: PointerEvent<HTMLDivElement>) => void;
+  onTouchMove: (e: TouchEvent) => void;
   onResizePointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onResizePointerMove: (e: PointerEvent<HTMLDivElement>) => void;
   onResizePointerUp: (e: PointerEvent<HTMLDivElement>) => void;
