@@ -9,8 +9,8 @@ import {
   SquareIcon,
 } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
+import { type MapNode, MapNodeUi, mapElements } from "./MapNodeUi";
 import type { MapEditUiMeta } from "./schema";
-import { mapElements, type SVGElementWrapper, TreeItem } from "./TreeItem";
 
 // ✅ can add group ui
 // ✅ can edit group name
@@ -130,11 +130,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         );
         let nextNum = 1;
         while (usedNums.has(nextNum)) nextNum++;
-        const newGroup: SVGElementWrapper = {
+        const newGroup: MapNode = {
           id: crypto.randomUUID(),
           name: `Group ${nextNum}`,
           type: "group",
-          props: {},
           isVisible: true,
           isLocked: false,
           children: [],
@@ -240,7 +239,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         <div className="overflow-y-auto h-full custom-scrollbar bg-background">
           {state.elements.map((el) => (
-            <TreeItem key={el.id} element={el} level={0} root={state} />
+            <MapNodeUi key={el.id} element={el} level={0} root={state} />
           ))}
         </div>
 
@@ -278,7 +277,7 @@ export type State = {
   asideWidth: number;
   lastAsideWidth: number;
   isResizing: boolean;
-  elements: SVGElementWrapper[];
+  elements: MapNode[];
 
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
@@ -371,12 +370,11 @@ const minAsideWidth = 50 - 1;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 
-const _demoElements: SVGElementWrapper[] = [
+const _demoElements: MapNode[] = [
   {
     id: "root-group",
     name: "Main",
     type: "group",
-    props: { fill: "none" },
     isVisible: true,
     isLocked: false,
     children: [
@@ -384,7 +382,6 @@ const _demoElements: SVGElementWrapper[] = [
         id: "bg-rect",
         name: "Bg",
         type: "rect",
-        props: { x: 50, y: 50, width: 400, height: 400, fill: "#1e293b", rx: 20 },
         isVisible: true,
         isLocked: false,
       },
@@ -392,7 +389,6 @@ const _demoElements: SVGElementWrapper[] = [
         id: "sun",
         name: "Sun",
         type: "circle",
-        props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
         isVisible: true,
         isLocked: false,
       },
@@ -400,7 +396,6 @@ const _demoElements: SVGElementWrapper[] = [
         id: "root-group-2",
         name: "Main",
         type: "group",
-        props: { fill: "none" },
         isVisible: true,
         isLocked: false,
         children: [
@@ -408,7 +403,6 @@ const _demoElements: SVGElementWrapper[] = [
             id: "sun-2",
             name: "Sun",
             type: "circle",
-            props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
             isVisible: true,
             isLocked: false,
           },
