@@ -494,6 +494,9 @@ importers:
 
   packages/ui/map-edit:
     dependencies:
+      '@base-ui/react':
+        specifier: 'catalog:'
+        version: 1.1.0(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk

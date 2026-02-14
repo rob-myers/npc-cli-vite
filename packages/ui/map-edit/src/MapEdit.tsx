@@ -1,6 +1,13 @@
+import { Menu } from "@base-ui/react/menu";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
-import { CaretLeftIcon, CaretRightIcon, PlusIcon } from "@phosphor-icons/react";
+import {
+  CaretLeftIcon,
+  CaretRightIcon,
+  FolderIcon,
+  PlusIcon,
+  SquareIcon,
+} from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
@@ -163,15 +170,43 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           <h2 className="text-ellipsis line-clamp-1 text-xs font-bold uppercase tracking-wider text-slate-500">
             Layers
           </h2>
-          <button
-            className={cn(
-              uiClassName,
-              "cursor-pointer bg-slate-700 text-slate-300",
-              "hover:text-slate-300 transition-colors",
-            )}
-          >
-            <PlusIcon className="size-4" />
-          </button>
+          <Menu.Root>
+            <Menu.Trigger
+              className={cn(
+                uiClassName,
+                "cursor-pointer bg-slate-700 text-slate-300",
+                "hover:text-slate-300 transition-colors",
+              )}
+            >
+              <PlusIcon className="size-4" />
+            </Menu.Trigger>
+            <Menu.Portal>
+              <Menu.Positioner className="z-50" sideOffset={4}>
+                <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+                  <Menu.Item
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => {
+                      console.log("Add Group");
+                    }}
+                  >
+                    <FolderIcon className="size-4" />
+                    Group
+                  </Menu.Item>
+                  <Menu.Item
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => {
+                      console.log("Add Rect");
+                    }}
+                  >
+                    <SquareIcon className="size-4" />
+                    Rect
+                  </Menu.Item>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
         </div>
 
         <div className="overflow-y-auto h-full custom-scrollbar bg-background">
