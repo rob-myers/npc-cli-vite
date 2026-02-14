@@ -5,25 +5,7 @@ import type React from "react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
 
-export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
-
-export interface SVGElementWrapper {
-  id: string;
-  name: string;
-  type: ShapeType;
-  props: Record<string, any>;
-  children?: SVGElementWrapper[];
-  isVisible: boolean;
-  isLocked: boolean;
-}
-
-interface TreeItemProps {
-  element: SVGElementWrapper;
-  level: number;
-  root: MapEditState;
-}
-
-export const TreeItem: React.FC<TreeItemProps> = ({ element, level, root }) => {
+export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => {
   const state = useStateRef(() => ({
     isExpanded: true,
     editValue: element.name,
@@ -132,7 +114,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({ element, level, root }) => {
         // ml-2
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
-            <TreeItem key={child.id} element={child} level={level + 1} root={root} />
+            <MapNodeUi key={child.id} element={child} level={level + 1} root={root} />
           ))}
         </div>
       )}
@@ -140,14 +122,27 @@ export const TreeItem: React.FC<TreeItemProps> = ({ element, level, root }) => {
   );
 };
 
-export function mapElements(
-  list: SVGElementWrapper[],
-  id: string,
-  fn: (el: SVGElementWrapper) => SVGElementWrapper,
-): SVGElementWrapper[] {
+export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
     if (item.children) return { ...item, children: mapElements(item.children, id, fn) };
     return item;
   });
+}
+
+export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
+
+export interface MapNode {
+  id: string;
+  name: string;
+  type: ShapeType;
+  children?: MapNode[];
+  isVisible: boolean;
+  isLocked: boolean;
+}
+
+interface TreeItemProps {
+  element: MapNode;
+  level: number;
+  root: MapEditState;
 }
