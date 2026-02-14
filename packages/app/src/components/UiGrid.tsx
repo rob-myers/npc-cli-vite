@@ -114,11 +114,6 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
 
         state.set({ contextMenuOpen: open });
       },
-      onClickItemDelete(e) {
-        e.stopPropagation();
-        const itemId = e.currentTarget.dataset.itemId as string;
-        state.removeItem(itemId);
-      },
       onClickItemLock(e) {
         e.stopPropagation();
         const itemId = e.currentTarget.dataset.itemId as string;
@@ -202,13 +197,6 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               el.getBoundingClientRect(),
             ]),
           ),
-        });
-      },
-      removeItem(itemId) {
-        uiStore.setState((draft) => {
-          if (!draft.byId[itemId]) return;
-          draft.byId[itemId].meta.items?.forEach((subId) => delete draft.byId[subId]);
-          delete draft.byId[itemId];
         });
       },
       updateNumTouches(e) {
@@ -334,7 +322,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                     )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
-                    <UiInstanceMenu meta={meta} state={state} />
+                    <UiInstanceMenu meta={meta} />
                     <DraggableOverlay />
                   </div>
                 );
@@ -495,7 +483,6 @@ type State = {
   closeContextMenu(): void;
   isGridContainer(el: HTMLElement): boolean;
   onChangeContextMenu(open: boolean, eventDetails: ContextMenu.Root.ChangeEventDetails): void;
-  onClickItemDelete(e: React.MouseEvent<HTMLElement>): void;
   onClickItemLock(e: React.MouseEvent<HTMLButtonElement>): void;
   onContextMenuItem(e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void;
   onDragStart(): void;
@@ -503,11 +490,10 @@ type State = {
   onResizeStart(): void;
   onResizeStop(): void;
   persist(): void;
-  removeItem(itemId: string): void;
   updateNumTouches(e: React.TouchEvent<HTMLElement>): void;
 };
 
-function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State }) {
+function UiInstanceMenu({ meta }: { meta: UiInstanceMeta }) {
   return (
     <div
       className={cn(
@@ -523,7 +509,11 @@ function UiInstanceMenu({ state, meta }: { meta: UiInstanceMeta; state: State })
         <button
           type="button"
           className="cursor-pointer"
-          onPointerDown={state.onClickItemDelete}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            const itemId = e.currentTarget.dataset.itemId as string;
+            uiStoreApi.removeItem(itemId);
+          }}
           data-item-id={meta.id}
         >
           confirm

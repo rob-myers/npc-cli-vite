@@ -58,6 +58,13 @@ export const uiStoreApi = {
   getUi(id: string): UiStoreByIdEntry | null {
     return uiStore.getState().byId[id] ?? null;
   },
+  removeItem(itemId: string) {
+    uiStore.setState((draft) => {
+      if (!draft.byId[itemId]) return;
+      draft.byId[itemId].meta.items?.forEach((subId) => delete draft.byId[subId]);
+      delete draft.byId[itemId];
+    });
+  },
   resetLayout() {
     uiStoreApi.clearUis();
     uiStoreApi.addUis({ metas: [getDefaultUiMeta()] });
