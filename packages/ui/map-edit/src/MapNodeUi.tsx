@@ -10,7 +10,7 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, useDoubleTap, useStateRef } from "@npc-cli/util";
 import { BoundingBoxIcon, FolderIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
@@ -61,7 +61,8 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
     );
   }, [element.id, root, state]);
 
-  // 🚧 contextmenu interrupts dnd?
+  const onDoubleTap = useDoubleTap(() => root.onStartEdit(element.id));
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
@@ -75,17 +76,9 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           state.closestEdge === "bottom" && "border-b-2 border-b-blue-400",
         )}
         style={{ paddingLeft: 8 + level * 2 }}
-        onClick={() => root.onSelect(element.id)}
-        onDoubleClick={() => root.onStartEdit(element.id)}
-        // 🚧 dnd conflict
-        onPointerDown={() => {
-          state.longPressTimeout = setTimeout(() => root.onStartEdit(element.id), 500);
-        }}
-        onPointerUp={() => {
-          if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
-        }}
-        onPointerLeave={() => {
-          if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
+        onClick={(e) => {
+          root.onSelect(element.id);
+          onDoubleTap.onClick(e.nativeEvent);
         }}
       >
         <div className="text-on-background pl-0.5">
