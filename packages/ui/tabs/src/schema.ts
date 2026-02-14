@@ -6,7 +6,7 @@ export const TabsUiMetaSchema = z.object({
   disabled: z.boolean().default(true),
   items: z.array(z.string()).default([]),
   currentTabId: z.string().optional(),
-  customUiInstanceMenu: z.boolean().transform<true>(() => true),
+  customUiInstanceMenu: BaseUiMetaSchema.shape.customUiInstanceMenu.transform<true>(() => true),
 });
 
 export type TabsUiMeta = z.infer<typeof TabsUiMetaSchema>;
