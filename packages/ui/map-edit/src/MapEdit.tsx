@@ -211,7 +211,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
               <PlusIcon className="size-5.5 p-0.5 rounded-lg bg-slate-700 border border-white/10" />
             </Menu.Trigger>
             <Menu.Portal>
-              <Menu.Positioner className="z-50" sideOffset={4} align="end">
+              <Menu.Positioner className="z-50" sideOffset={4} align="start">
                 <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
                   <Menu.Item
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
