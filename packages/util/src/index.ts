@@ -3,6 +3,7 @@ export * from "./components/PopoverArrow";
 export * from "./components/Spinner";
 export * from "./const";
 export * from "./ExhaustiveError";
+export * from "./hooks/use-double-tap";
 export * from "./hooks/use-effect-non-strict";
 export * from "./hooks/use-state-ref";
 export * from "./hooks/use-update";
