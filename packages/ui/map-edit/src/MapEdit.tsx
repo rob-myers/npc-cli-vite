@@ -239,19 +239,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         <div className="overflow-y-auto h-full custom-scrollbar bg-background">
           {state.elements.map((el) => (
-            <TreeItem
-              key={el.id}
-              element={el}
-              level={0}
-              // 🚧 provide `state` instead
-              selectedId={state.selectedId}
-              editingId={state.editingId}
-              onSelect={state.onSelect}
-              onToggleVisibility={state.onToggleVisibility}
-              onRename={state.onRename}
-              onStartEdit={state.onStartEdit}
-              onCancelEdit={state.onCancelEdit}
-            />
+            <TreeItem key={el.id} element={el} level={0} root={state} />
           ))}
         </div>
 
@@ -337,7 +325,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   );
 }
 
-type State = {
+export type State = {
   zoom: number;
   pan: { x: number; y: number };
   isPanning: boolean;

@@ -3,6 +3,7 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { BoundingBoxIcon, FolderIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
+import type { State as MapEditState } from "./MapEdit";
 
 export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
 
@@ -19,26 +20,10 @@ export interface SVGElementWrapper {
 interface TreeItemProps {
   element: SVGElementWrapper;
   level: number;
-  selectedId: string | null;
-  editingId: string | null;
-  onSelect: (id: string) => void;
-  onToggleVisibility: (id: string) => void;
-  onRename: (id: string, newName: string) => void;
-  onStartEdit: (id: string) => void;
-  onCancelEdit: () => void;
+  root: MapEditState;
 }
 
-export const TreeItem: React.FC<TreeItemProps> = ({
-  element,
-  level,
-  selectedId,
-  editingId,
-  onSelect,
-  onToggleVisibility,
-  onRename,
-  onStartEdit,
-  onCancelEdit,
-}) => {
+export const TreeItem: React.FC<TreeItemProps> = ({ element, level, root }) => {
   const state = useStateRef(() => ({
     isExpanded: true,
     editValue: element.name,
@@ -46,8 +31,8 @@ export const TreeItem: React.FC<TreeItemProps> = ({
     longPressTimeout: null as ReturnType<typeof setTimeout> | null,
   }));
 
-  const isSelected = selectedId === element.id;
-  const isEditing = editingId === element.id;
+  const isSelected = root.selectedId === element.id;
+  const isEditing = root.editingId === element.id;
   const isGroup = element.type === "group";
 
   useEffect(() => {
@@ -67,10 +52,10 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
         )}
-        onClick={() => onSelect(element.id)}
-        onDoubleClick={() => onStartEdit(element.id)}
+        onClick={() => root.onSelect(element.id)}
+        onDoubleClick={() => root.onStartEdit(element.id)}
         onPointerDown={() => {
-          state.longPressTimeout = setTimeout(() => onStartEdit(element.id), 500);
+          state.longPressTimeout = setTimeout(() => root.onStartEdit(element.id), 500);
         }}
         onPointerUp={() => {
           if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
@@ -115,12 +100,12 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           onClick={(e) => isEditing && e.stopPropagation()}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              onRename(element.id, e.currentTarget.value);
+              root.onRename(element.id, e.currentTarget.value);
             } else if (e.key === "Escape") {
-              onCancelEdit();
+              root.onCancelEdit();
             }
           }}
-          onBlur={(e) => isEditing && onRename(element.id, e.currentTarget.value)}
+          onBlur={(e) => isEditing && root.onRename(element.id, e.currentTarget.value)}
         />
 
         {/* <button
@@ -147,18 +132,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         // ml-2
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
-            <TreeItem
-              key={child.id}
-              element={child}
-              level={level + 1}
-              selectedId={selectedId}
-              editingId={editingId}
-              onSelect={onSelect}
-              onToggleVisibility={onToggleVisibility}
-              onRename={onRename}
-              onStartEdit={onStartEdit}
-              onCancelEdit={onCancelEdit}
-            />
+            <TreeItem key={child.id} element={child} level={level + 1} root={root} />
           ))}
         </div>
       )}
