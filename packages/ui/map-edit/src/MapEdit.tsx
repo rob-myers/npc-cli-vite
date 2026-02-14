@@ -106,22 +106,23 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       onResizePointerDown(e: PointerEvent<HTMLDivElement>) {
         e.preventDefault();
         e.stopPropagation();
-        (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
         state.isResizing = true;
         state.firstPointerPos = { x: e.clientX, y: e.clientY };
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
+        document.body.addEventListener("pointermove", state.onResizePointerMove);
+        document.body.addEventListener("pointerup", state.onResizePointerUp);
       },
-      onResizePointerMove(e: PointerEvent<HTMLDivElement>) {
-        if (!state.isResizing) return;
+      onResizePointerMove(e: globalThis.PointerEvent) {
         const dx = e.clientX - state.lastPointerPos.x;
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
         state.set({
           asideWidth: Math.max(minAsideWidth, Math.min(maxAsideWidth, state.asideWidth + dx)),
         });
       },
-      onResizePointerUp(e: PointerEvent<HTMLDivElement>) {
-        (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
+      onResizePointerUp() {
         state.isResizing = false;
+        document.body.removeEventListener("pointermove", state.onResizePointerMove);
+        document.body.removeEventListener("pointerup", state.onResizePointerUp);
       },
 
       onSelect(id: string) {
@@ -251,6 +252,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             >
               <PlusIcon className="size-5.5 p-0.5 rounded-lg bg-slate-700 border border-white/10" />
             </Menu.Trigger>
+
             <Menu.Portal>
               <Menu.Positioner className="z-50" sideOffset={4} align="start">
                 <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
@@ -330,8 +332,8 @@ export type State = {
   onPanPointerUp: (e: PointerEvent<HTMLDivElement>) => void;
   onTouchMove: (e: TouchEvent) => void;
   onResizePointerDown: (e: PointerEvent<HTMLDivElement>) => void;
-  onResizePointerMove: (e: PointerEvent<HTMLDivElement>) => void;
-  onResizePointerUp: (e: PointerEvent<HTMLDivElement>) => void;
+  onResizePointerMove: (e: globalThis.PointerEvent) => void;
+  onResizePointerUp: () => void;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
   addGroup: (parent?: GroupMapNode) => void;
@@ -387,9 +389,6 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
         "bg-blue-500/50",
       )}
       onPointerDown={state.onResizePointerDown}
-      onPointerMove={state.onResizePointerMove}
-      onPointerUp={state.onResizePointerUp}
-      onPointerOut={state.onResizePointerUp}
     >
       <button
         className={cn(
@@ -398,9 +397,9 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
           "hover:text-slate-300 transition-colors",
         )}
         onClick={() => {
-          if (state.firstPointerPos.x !== state.lastPointerPos.x) return;
+          if (Math.abs(state.firstPointerPos.x - state.lastPointerPos.x) > 2) return;
           state.set({
-            asideWidth: state.asideWidth <= minAsideWidth ? state.lastAsideWidth : minAsideWidth,
+            asideWidth: state.asideWidth <= minAsideWidth ? maxAsideWidth : minAsideWidth,
             lastAsideWidth: state.asideWidth,
           });
         }}
@@ -415,7 +414,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
   );
 }
 
-const minAsideWidth = 50 - 1;
+const minAsideWidth = 100;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 

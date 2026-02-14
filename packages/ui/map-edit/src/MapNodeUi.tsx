@@ -67,12 +67,13 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
         ref={state.ref("rowEl")}
         className={cn(
           uiClassName,
-          "relative grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
+          "relative grid grid-cols-[minmax(auto,1.5rem)_auto] items-center cursor-pointer hover:brightness-125",
           "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
           state.closestEdge === "top" && "border-t-2 border-t-blue-400",
           state.closestEdge === "bottom" && "border-b-2 border-b-blue-400",
         )}
+        style={{ paddingLeft: 8 + level * 2 }}
         onClick={() => root.onSelect(element.id)}
         onDoubleClick={() => root.onStartEdit(element.id)}
         onPointerDown={() => {
@@ -85,24 +86,6 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
         }}
       >
-        {/* <span
-          className="mr-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
-          }}
-        >
-          {isGroup && element.children && element.children.length > 0 ? (
-            isExpanded ? (
-              <ArrowDownIcon className="size-3.5" />
-            ) : (
-              <ArrowRightIcon className="w-3.5 h-3.5" />
-            )
-          ) : (
-            <div className="w-2" />
-          )}
-        </span> */}
-
         <div className="text-on-background pl-0.5">
           {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
         </div>
@@ -115,7 +98,6 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
             isSelected && "brightness-125 font-medium",
             isEditing ? "bg-slate-700 rounded" : "cursor-pointer",
           )}
-          style={{ borderLeftWidth: level * 2 }}
           defaultValue={element.name || element.type}
           readOnly={!isEditing}
           onClick={(e) => isEditing && e.stopPropagation()}
