@@ -90,7 +90,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({ element, level, root }) => {
           ref={state.ref("inputEl")}
           type="text"
           className={cn(
-            "text-xs pl-1 py-2 text-on-background/80 bg-transparent outline-none w-full",
+            "text-xs pl-1 py-1 my-1 text-on-background/80 bg-transparent outline-none w-full",
             isSelected && "brightness-125 font-medium",
             isEditing && "bg-slate-700 rounded",
           )}
