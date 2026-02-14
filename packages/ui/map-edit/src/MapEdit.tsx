@@ -10,15 +10,17 @@ import {
 } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
 import type { MapEditUiMeta } from "./schema";
-import { type SVGElementWrapper, TreeItem } from "./TreeItem";
+import { mapElements, type SVGElementWrapper, TreeItem } from "./TreeItem";
 
-// 🚧 can add group
+// ✅ can add group ui
+// ✅ can edit group name
+// 🚧 adding group adds a respective <g>
+// 🚧 can edit group/rect/path name
 // 🚧 can add rect
 // 🚧 can drag and resize a rect
 // 🚧 can convert a rect into a path
 // 🚧 unions of rects/paths is another path
 // 🚧 can change colour of rect/path
-// 🚧 can edit group/rect/path name
 // 🚧 can persist via meta and localStorage
 // 🚧 can save file in dev env
 
@@ -37,6 +39,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       lastTouchMid: { x: 0, y: 0 },
 
       selectedId: null,
+      editingId: null,
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
@@ -113,18 +116,45 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.set({ selectedId: id === state.selectedId ? null : id });
       },
       onToggleVisibility(id: string) {
-        const toggle = (list: SVGElementWrapper[]): SVGElementWrapper[] => {
-          return list.map((item) => {
-            if (item.id === id) {
-              return { ...item, isVisible: !item.isVisible };
-            }
-            if (item.children) {
-              return { ...item, children: toggle(item.children) };
-            }
-            return item;
-          });
+        state.set({
+          elements: mapElements(state.elements, id, (el) => ({ ...el, isVisible: !el.isVisible })),
+        });
+      },
+      addGroup() {
+        const usedNums = new Set(
+          state.elements
+            .filter((el) => el.type === "group" && el.name.startsWith("Group "))
+            .map((el) => Number.parseInt(el.name.slice(6), 10))
+            .filter((n) => !Number.isNaN(n)),
+        );
+        let nextNum = 1;
+        while (usedNums.has(nextNum)) nextNum++;
+        const newGroup: SVGElementWrapper = {
+          id: crypto.randomUUID(),
+          name: `Group ${nextNum}`,
+          type: "group",
+          props: {},
+          isVisible: true,
+          isLocked: false,
+          children: [],
         };
-        state.set({ elements: toggle(state.elements) });
+        state.set({
+          elements: [...state.elements, newGroup],
+          selectedId: newGroup.id,
+          editingId: newGroup.id,
+        });
+      },
+      onRename(id: string, newName: string) {
+        state.set({
+          elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
+          editingId: null,
+        });
+      },
+      onStartEdit(id: string) {
+        state.set({ editingId: id });
+      },
+      onCancelEdit() {
+        state.set({ editingId: null });
       },
     }),
     { reset: { elements: false } },
@@ -174,27 +204,25 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             <Menu.Trigger
               className={cn(
                 uiClassName,
-                "cursor-pointer bg-slate-700 text-slate-300",
+                "cursor-pointer text-slate-300",
                 "hover:text-slate-300 transition-colors",
               )}
             >
-              <PlusIcon className="size-4" />
+              <PlusIcon className="size-5.5 p-0.5 rounded-lg bg-slate-700 border border-white/10" />
             </Menu.Trigger>
             <Menu.Portal>
-              <Menu.Positioner className="z-50" sideOffset={4}>
+              <Menu.Positioner className="z-50" sideOffset={4} align="end">
                 <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
                   <Menu.Item
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
-                    onClick={() => {
-                      console.log("Add Group");
-                    }}
+                    onClick={state.addGroup}
                   >
                     <FolderIcon className="size-4" />
                     Group
                   </Menu.Item>
                   <Menu.Item
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
                       console.log("Add Rect");
@@ -215,9 +243,14 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
               key={el.id}
               element={el}
               level={0}
+              // 🚧 provide `state` instead
               selectedId={state.selectedId}
+              editingId={state.editingId}
               onSelect={state.onSelect}
               onToggleVisibility={state.onToggleVisibility}
+              onRename={state.onRename}
+              onStartEdit={state.onStartEdit}
+              onCancelEdit={state.onCancelEdit}
             />
           ))}
         </div>
@@ -315,6 +348,7 @@ type State = {
   lastTouchMid: { x: number; y: number };
 
   selectedId: string | null;
+  editingId: string | null;
   asideWidth: number;
   lastAsideWidth: number;
   isResizing: boolean;
@@ -329,9 +363,13 @@ type State = {
   onResizePointerUp: (e: PointerEvent<HTMLDivElement>) => void;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  addGroup: () => void;
+  onRename: (id: string, newName: string) => void;
+  onStartEdit: (id: string) => void;
+  onCancelEdit: () => void;
 };
 
-const demoElements: SVGElementWrapper[] = [
+const _demoElements: SVGElementWrapper[] = [
   {
     id: "root-group",
     name: "Main",
@@ -378,6 +416,6 @@ const demoElements: SVGElementWrapper[] = [
   },
 ];
 
-const minAsideWidth = 42 - 1;
+const minAsideWidth = 50 - 1;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
