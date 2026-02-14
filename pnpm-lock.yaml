@@ -412,6 +412,9 @@ importers:
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       immer:
         specifier: 'catalog:'
         version: 11.1.3

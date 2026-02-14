@@ -16,10 +16,15 @@ const mirrored: Record<UiRegistryKey, true> = {
 const FlatBaseUiMetaSchema = z.looseObject({
   /** Layout id */
   id: z.string(),
+  /** Should UI render UiInstanceMenu instead? */
+  customUiInstanceMenu: z.boolean().optional(),
+  /** For pausing */
   disabled: z.boolean().optional(),
-  /** For sub-uis (individual tabs) */
+  /** For sub-uis e.g. individual tabs */
   parentId: z.string().optional(),
+  /** e.g. tab header */
   title: z.string(),
+  /** UI class identifier */
   uiKey: z.literal(keys(mirrored)),
 });
 
