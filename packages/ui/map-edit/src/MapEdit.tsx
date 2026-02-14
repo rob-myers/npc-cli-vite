@@ -9,7 +9,7 @@ import {
   SquareIcon,
 } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
-import { type MapNode, MapNodeUi, mapElements } from "./MapNodeUi";
+import { extractNode, type MapNode, MapNodeUi, mapElements, traverseElements } from "./MapNodeUi";
 import type { MapEditUiMeta } from "./schema";
 
 // ✅ can add group ui
@@ -122,14 +122,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
 
       addGroup() {
-        const usedNums = new Set(
-          state.elements
-            .filter((el) => el.type === "group" && el.name.startsWith("Group "))
-            .map((el) => Number.parseInt(el.name.slice(6), 10))
-            .filter((n) => !Number.isNaN(n)),
-        );
-        let nextNum = 1;
-        while (usedNums.has(nextNum)) nextNum++;
+        const nextNum = state.getNextGroupSuffix();
         const newGroup: MapNode = {
           id: crypto.randomUUID(),
           name: `Group ${nextNum}`,
@@ -144,6 +137,18 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           editingId: newGroup.id,
         });
       },
+      getNextGroupSuffix() {
+        const usedNums = new Set<number>();
+        traverseElements(state.elements, (el) => {
+          if (el.type === "group" && el.name.startsWith("Group ")) {
+            const num = Number.parseInt(el.name.slice(6), 10);
+            if (!Number.isNaN(num)) usedNums.add(num);
+          }
+        });
+        let nextNum = 1;
+        while (usedNums.has(nextNum)) nextNum++;
+        return nextNum;
+      },
       onRename(id: string, newName: string) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
@@ -155,6 +160,19 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       onCancelEdit() {
         state.set({ editingId: null });
+      },
+      groupNode(id: string) {
+        const { elements, node } = extractNode(state.elements, id);
+        if (!node) return;
+        const newGroup: MapNode = {
+          id: crypto.randomUUID(),
+          name: `Group ${state.getNextGroupSuffix()}`,
+          type: "group",
+          isVisible: true,
+          isLocked: false,
+          children: [node],
+        };
+        state.set({ elements: [...elements, newGroup], selectedId: newGroup.id });
       },
     }),
     { reset: { elements: false } },
@@ -292,6 +310,8 @@ export type State = {
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
+  getNextGroupSuffix: () => number;
+  groupNode: (id: string) => void;
 };
 
 function MapEditSvg({ state }: { state: UseStateRef<State> }) {

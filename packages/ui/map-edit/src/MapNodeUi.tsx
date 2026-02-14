@@ -1,3 +1,4 @@
+import { ContextMenu } from "@base-ui/react/context-menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
 import { BoundingBoxIcon, FolderIcon } from "@phosphor-icons/react";
@@ -26,8 +27,8 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
   }, [isEditing, element.name, state]);
 
   return (
-    <div>
-      <div
+    <ContextMenu.Root>
+      <ContextMenu.Trigger
         className={cn(
           uiClassName,
           "grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
@@ -72,11 +73,11 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           ref={state.ref("inputEl")}
           type="text"
           className={cn(
-            "text-xs pl-1 py-1 my-1 text-on-background/80 bg-transparent outline-none w-full",
+            "text-xs px-0.5 border-0 border-gray-500/50 my-1 text-on-background/80 bg-transparent outline-none w-full",
             isSelected && "brightness-125 font-medium",
             isEditing && "bg-slate-700 rounded",
           )}
-          style={{ paddingLeft: (1 + level) * 4 }}
+          style={{ borderLeftWidth: level * 2 }}
           defaultValue={element.name || element.type}
           readOnly={!isEditing}
           onClick={(e) => isEditing && e.stopPropagation()}
@@ -89,36 +90,30 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           }}
           onBlur={(e) => isEditing && root.onRename(element.id, e.currentTarget.value)}
         />
+      </ContextMenu.Trigger>
 
-        {/* <button
-          className={cn(
-            "cursor-pointer rounded hover:bg-slate-600/50 transition-colors",
-            !element.isVisible
-              ? "text-slate-500"
-              : "text-slate-400 opacity-0 group-hover:opacity-100",
-          )}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleVisibility(element.id);
-          }}
-        >
-          {element.isVisible ? (
-            <EyeIcon className="w-4 h-4" />
-          ) : (
-            <EyeClosedIcon className="w-4 h-4" />
-          )}
-        </button> */}
-      </div>
+      <ContextMenu.Portal>
+        <ContextMenu.Positioner className="z-50" sideOffset={4}>
+          <ContextMenu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+            <ContextMenu.Item
+              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+              onClick={() => root.groupNode(element.id)}
+            >
+              <FolderIcon className="size-4" />
+              Group node
+            </ContextMenu.Item>
+          </ContextMenu.Popup>
+        </ContextMenu.Positioner>
+      </ContextMenu.Portal>
 
       {isGroup && state.isExpanded && element.children && (
-        // ml-2
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
             <MapNodeUi key={child.id} element={child} level={level + 1} root={root} />
           ))}
         </div>
       )}
-    </div>
+    </ContextMenu.Root>
   );
 };
 
@@ -128,6 +123,37 @@ export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => Ma
     if (item.children) return { ...item, children: mapElements(item.children, id, fn) };
     return item;
   });
+}
+
+export function traverseElements(list: MapNode[], act: (el: MapNode) => void): void {
+  list.forEach((item) => {
+    act(item);
+    if (item.children) traverseElements(item.children, act);
+  });
+}
+
+export function extractNode(
+  nodes: MapNode[],
+  id: string,
+): { elements: MapNode[]; node: MapNode | null } {
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].id === id) {
+      return { elements: [...nodes.slice(0, i), ...nodes.slice(i + 1)], node: nodes[i] };
+    }
+    const children = nodes[i].children;
+    if (children) {
+      const r = extractNode(children, id);
+      if (r.node) {
+        const updated = [
+          ...nodes.slice(0, i),
+          { ...nodes[i], children: r.elements },
+          ...nodes.slice(i + 1),
+        ];
+        return { elements: updated, node: r.node };
+      }
+    }
+  }
+  return { elements: nodes, node: null };
 }
 
 export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
