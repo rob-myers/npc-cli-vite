@@ -1,4 +1,11 @@
-import { UiContext, type UiInstanceMeta, uiClassName, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import {
+  UiContext,
+  UiInstanceMenu,
+  type UiInstanceMeta,
+  uiClassName,
+  uiStore,
+  uiStoreApi,
+} from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -86,62 +93,65 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
-    <div className={cn("flex flex-col size-full overflow-auto font-mono")}>
-      <div className={cn("flex min-h-12 items-end border-b border-outline")}>
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={cn(
-              uiClassName,
-              "cursor-pointer px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
-              meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
-            )}
-            onClick={() => state.onClickTab(tab)}
-          >
-            <div className={"flex p-1 border border-on-background/20"}>
-              <pre className="p-1">{tab.title}</pre>
-
-              {tab.id === meta.currentTabId && (
-                <BasicPopover
-                  trigger={
-                    <DotsThreeOutlineVerticalIcon
-                      weight="thin"
-                      className="cursor-pointer size-4 text-on-background/80"
-                    />
-                  }
-                  className="bg-black p-0"
-                  arrowClassName="fill-black"
-                  side="bottom"
-                >
-                  <div className="flex">
-                    <button type="button" className="px-0.5 py-1">
-                      <ArrowUpRightIcon
-                        weight="thin"
-                        className="cursor-pointer size-5 bg-black/40 text-white"
-                        onPointerDown={() => state.onBreakOutTab(tab)}
-                      />
-                    </button>
-                    <button type="button" className="px-0.5 py-1">
-                      <TrashIcon
-                        weight="thin"
-                        className="cursor-pointer size-5 bg-black/40 text-white"
-                        onPointerDown={() => state.onDeleteTab(tab, { preservePortal: false })}
-                      />
-                    </button>
-                  </div>
-                </BasicPopover>
+    <div className="flex flex-col size-full overflow-auto font-mono">
+      <div className="flex min-h-12 w-full border-b border-outline">
+        <div className="flex items-end overflow-auto [scrollbar-width:thin]">
+          {tabs.map((tab) => (
+            <div
+              key={tab.id}
+              className={cn(
+                uiClassName,
+                "cursor-pointer px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
+                meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
               )}
+              onClick={() => state.onClickTab(tab)}
+            >
+              <div className={"flex p-1 border border-on-background/20"}>
+                <pre className="p-1">{tab.title}</pre>
+
+                {tab.id === meta.currentTabId && (
+                  <BasicPopover
+                    trigger={
+                      <DotsThreeOutlineVerticalIcon
+                        weight="thin"
+                        className="cursor-pointer size-4 text-on-background/80"
+                      />
+                    }
+                    className="bg-black p-0"
+                    arrowClassName="fill-black"
+                    side="bottom"
+                  >
+                    <div className="flex">
+                      <button type="button" className="px-0.5 py-1">
+                        <ArrowUpRightIcon
+                          weight="thin"
+                          className="cursor-pointer size-5 bg-black/40 text-white"
+                          onPointerDown={() => state.onBreakOutTab(tab)}
+                        />
+                      </button>
+                      <button type="button" className="px-0.5 py-1">
+                        <TrashIcon
+                          weight="thin"
+                          className="cursor-pointer size-5 bg-black/40 text-white"
+                          onPointerDown={() => state.onDeleteTab(tab, { preservePortal: false })}
+                        />
+                      </button>
+                    </div>
+                  </BasicPopover>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        <button
-          ref={newTabButtonRef}
-          type="button"
-          className={cn(uiClassName, "cursor-pointer p-2")}
-          onClick={state.onAddNewTab}
-        >
-          <PlusCircleIcon className="size-6" weight="duotone" />
-        </button>
+          ))}
+          <button
+            ref={newTabButtonRef}
+            type="button"
+            className={cn(uiClassName, "cursor-pointer p-2")}
+            onClick={state.onAddNewTab}
+          >
+            <PlusCircleIcon className="size-6" weight="duotone" />
+          </button>
+        </div>
+        <UiInstanceMenu className="flex-1" meta={meta} />
       </div>
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (

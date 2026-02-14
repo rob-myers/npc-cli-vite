@@ -322,7 +322,9 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                     )}
                   >
                     <portals.OutPortal node={portal.portalNode} />
-                    {!meta.customUiInstanceMenu && <UiInstanceMenu meta={meta} />}
+                    {!meta.customUiInstanceMenu && (
+                      <UiInstanceMenu className="z-999 absolute top-1 right-1" meta={meta} />
+                    )}
                     <DraggableOverlay />
                   </div>
                 );

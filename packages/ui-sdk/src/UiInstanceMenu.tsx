@@ -2,11 +2,12 @@ import { type UiInstanceMeta, uiStoreApi } from "@npc-cli/ui-sdk";
 import { allowReactGridDragClassName, BasicPopover, cn } from "@npc-cli/util";
 import { LayoutIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 
-export function UiInstanceMenu({ meta }: { meta: UiInstanceMeta }) {
+export function UiInstanceMenu({ className, meta }: { className?: string; meta: UiInstanceMeta }) {
   return (
     <div
       className={cn(
-        "z-999 absolute top-1 right-1 filter backdrop-blur-lg backdrop-brightness-120",
+        className,
+        "filter backdrop-blur-lg backdrop-brightness-120",
         "flex flex-row-reverse rounded text-on-background bg-background/80",
       )}
     >
