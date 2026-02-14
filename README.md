@@ -89,6 +89,8 @@ cd packages/util/src/legacy
 npx tsc generic.js --declaration --allowJs --emitDeclarationOnly
 ```
 
+### ⚠️ Hot module reload can yield unreachable malformed state on add library.
+
 # Blockbench
 
 Stuff I've noticed

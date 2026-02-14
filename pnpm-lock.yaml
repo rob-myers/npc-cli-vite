@@ -18,6 +18,9 @@ catalogs:
     '@biomejs/biome':
       specifier: ^2.3.11
       version: 2.3.11
+    '@dragdroptouch/drag-drop-touch':
+      specifier: ^2.0.3
+      version: 2.0.3
     '@gltf-transform/core':
       specifier: ^4.3.0
       version: 4.3.0
@@ -509,6 +512,9 @@ importers:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.1.0(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@dragdroptouch/drag-drop-touch':
+        specifier: 'catalog:'
+        version: 2.0.3
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
@@ -892,6 +898,9 @@ packages:
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
+
+  '@dragdroptouch/drag-drop-touch@2.0.3':
+    resolution: {integrity: sha512-4Yv1+S2Yxs/5iYLZyZYobAlCvIJPN6TYBjvJDyI9kH30GfBxA+ffHgKK2l00EyyBlUpB10j8BWAbRsgXRtBbPw==}
 
   '@emnapi/core@1.8.1':
     resolution: {integrity: sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg==}
@@ -3505,6 +3514,8 @@ snapshots:
     optional: true
 
   '@dimforge/rapier3d-compat@0.12.0': {}
+
+  '@dragdroptouch/drag-drop-touch@2.0.3': {}
 
   '@emnapi/core@1.8.1':
     dependencies:
