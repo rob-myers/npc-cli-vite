@@ -12,6 +12,8 @@
 - 🚧 request third-party
   - https://www.fiverr.com/seanencabo/do-blockbench-models-and-animations
 
+- 🚧 can render UiInstanceMenu inside ui e.g. for Tabs
+
 - 🚧 towards MapEdit 1
   - ❌ try convert our SVG symbols into GLTF importable by Blockbench GLTF import plugin
     - Migrating from SVG symbols to Blockbench (free as opposed to BoxySVG)
@@ -43,13 +45,9 @@
     - ✅ mock up "tree + svg"
     - react-draggable to move stuff
     - symbols tree (groups) works properly
-  - sketch script to convert an SVG symbol e.g. capture some stuff
-  - parse gltf into e.g. floor, walls, ceiling, cuboids, quads
+  - ❌ sketch script to convert an SVG symbol e.g. capture some stuff
+  - ❌ parse gltf into e.g. floor, walls, ceiling, cuboids, quads
     - 🤔 maybe can avoid by directly parsing Blockbench JSON
-
-- towards MapEdit 2
-  - MapEdit with react-resizable allows symbol placement
-  - induces composite symbol e.g. hull symbol
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
