@@ -328,7 +328,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                       ...(state.editMode
                         ? [
                             allowReactGridDragClassName,
-                            "cursor-move *:first:p-4 *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-500/60",
+                            "cursor-move *:first:p-5 *:first:pointer-events-none *:first:brightness-50 *:first:grayscale border-blue-500/60",
                           ]
                         : []),
                     )}
