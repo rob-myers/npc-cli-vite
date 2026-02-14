@@ -5,6 +5,16 @@ import { type PointerEvent, useContext, useEffect } from "react";
 import type { MapEditUiMeta } from "./schema";
 import { type SVGElementWrapper, TreeItem } from "./TreeItem";
 
+// 🚧 can add group
+// 🚧 can add rect
+// 🚧 can drag and resize a rect
+// 🚧 can convert a rect into a path
+// 🚧 unions of rects/paths is another path
+// 🚧 can change colour of rect/path
+// 🚧 can edit group/rect/path name
+// 🚧 can persist via meta and localStorage
+// 🚧 can save file in dev env
+
 export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
 
@@ -23,7 +33,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
-      elements: demoElements,
+      elements: [],
 
       onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
         if (e.button === 0) {
