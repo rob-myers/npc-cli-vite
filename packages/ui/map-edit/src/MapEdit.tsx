@@ -13,6 +13,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       zoom: 1,
       pan: { x: 0, y: 0 },
       isPanning: false,
+      firstPointerPos: { x: 0, y: 0 },
       lastPointerPos: { x: 0, y: 0 },
       containerEl: null,
       lastTouchDist: 0,
@@ -75,12 +76,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         e.stopPropagation();
         (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
         state.isResizing = true;
-        state.lastPointerPos = { x: e.clientX, y: 0 };
+        state.firstPointerPos = { x: e.clientX, y: e.clientY };
+        state.lastPointerPos = { x: e.clientX, y: e.clientY };
       },
       onResizePointerMove(e: PointerEvent<HTMLDivElement>) {
         if (!state.isResizing) return;
         const dx = e.clientX - state.lastPointerPos.x;
-        state.lastPointerPos = { x: e.clientX, y: 0 };
+        state.lastPointerPos = { x: e.clientX, y: e.clientY };
         state.set({
           asideWidth: Math.max(minAsideWidth, Math.min(maxAsideWidth, state.asideWidth + dx)),
         });
@@ -193,6 +195,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
               "hover:text-slate-300 transition-colors",
             )}
             onClick={() => {
+              if (state.firstPointerPos.x !== state.lastPointerPos.x) return;
               state.set({
                 asideWidth:
                   state.asideWidth <= minAsideWidth ? state.lastAsideWidth : minAsideWidth,
@@ -260,6 +263,7 @@ type State = {
   zoom: number;
   pan: { x: number; y: number };
   isPanning: boolean;
+  firstPointerPos: { x: number; y: number };
   lastPointerPos: { x: number; y: number };
   containerEl: HTMLDivElement | null;
   lastTouchDist: number;
