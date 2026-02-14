@@ -7,6 +7,7 @@ catalog:
   '@atlaskit/pragmatic-drag-and-drop-hitbox': ^1.1.0
   '@base-ui/react': 1.1.0
   '@biomejs/biome': ^2.3.11
+  '@dragdroptouch/drag-drop-touch': ^2.0.3
   '@gltf-transform/core': ^4.3.0
   '@gltf-transform/extensions': ^4.3.0
   '@gltf-transform/functions': ^4.3.0

@@ -1,4 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
+import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import {
@@ -20,6 +21,8 @@ import {
 } from "./MapNodeUi";
 import type { MapEditUiMeta } from "./schema";
 
+enableDragDropTouch();
+
 // ✅ can add group ui
 // ✅ can edit group name
 
@@ -27,9 +30,10 @@ import type { MapEditUiMeta } from "./schema";
 // ✅ when group selected added group should be child
 
 // 🚧 adding group adds a respective <g>
-// 🚧 can edit group/rect/path name
 // 🚧 can add rect
+// 🚧 can edit group/rect/path name
 // 🚧 can drag and resize a rect
+
 // 🚧 can convert a rect into a path
 // 🚧 unions of rects/paths is another path
 // 🚧 can change colour of rect/path
