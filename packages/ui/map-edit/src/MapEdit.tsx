@@ -120,6 +120,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           elements: mapElements(state.elements, id, (el) => ({ ...el, isVisible: !el.isVisible })),
         });
       },
+
       addGroup() {
         const usedNums = new Set(
           state.elements
@@ -294,53 +295,6 @@ export type State = {
   onCancelEdit: () => void;
 };
 
-const _demoElements: SVGElementWrapper[] = [
-  {
-    id: "root-group",
-    name: "Main",
-    type: "group",
-    props: { fill: "none" },
-    isVisible: true,
-    isLocked: false,
-    children: [
-      {
-        id: "bg-rect",
-        name: "Bg",
-        type: "rect",
-        props: { x: 50, y: 50, width: 400, height: 400, fill: "#1e293b", rx: 20 },
-        isVisible: true,
-        isLocked: false,
-      },
-      {
-        id: "sun",
-        name: "Sun",
-        type: "circle",
-        props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
-        isVisible: true,
-        isLocked: false,
-      },
-      {
-        id: "root-group-2",
-        name: "Main",
-        type: "group",
-        props: { fill: "none" },
-        isVisible: true,
-        isLocked: false,
-        children: [
-          {
-            id: "sun-2",
-            name: "Sun",
-            type: "circle",
-            props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
-            isVisible: true,
-            isLocked: false,
-          },
-        ],
-      },
-    ],
-  },
-];
-
 function MapEditSvg({ state }: { state: UseStateRef<State> }) {
   return (
     <svg
@@ -416,3 +370,50 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 const minAsideWidth = 50 - 1;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
+
+const _demoElements: SVGElementWrapper[] = [
+  {
+    id: "root-group",
+    name: "Main",
+    type: "group",
+    props: { fill: "none" },
+    isVisible: true,
+    isLocked: false,
+    children: [
+      {
+        id: "bg-rect",
+        name: "Bg",
+        type: "rect",
+        props: { x: 50, y: 50, width: 400, height: 400, fill: "#1e293b", rx: 20 },
+        isVisible: true,
+        isLocked: false,
+      },
+      {
+        id: "sun",
+        name: "Sun",
+        type: "circle",
+        props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
+        isVisible: true,
+        isLocked: false,
+      },
+      {
+        id: "root-group-2",
+        name: "Main",
+        type: "group",
+        props: { fill: "none" },
+        isVisible: true,
+        isLocked: false,
+        children: [
+          {
+            id: "sun-2",
+            name: "Sun",
+            type: "circle",
+            props: { cx: 400, cy: 100, r: 40, fill: "#fbbf24" },
+            isVisible: true,
+            isLocked: false,
+          },
+        ],
+      },
+    ],
+  },
+];
