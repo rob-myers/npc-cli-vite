@@ -1,3 +1,13 @@
+import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import {
+  draggable,
+  dropTargetForElements,
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import {
+  attachClosestEdge,
+  type Edge,
+  extractClosestEdge,
+} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
@@ -12,6 +22,8 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
     editValue: element.name,
     inputEl: null as HTMLInputElement | null,
     longPressTimeout: null as ReturnType<typeof setTimeout> | null,
+    rowEl: null as HTMLDivElement | null,
+    closestEdge: null as Edge | null,
   }));
 
   const isSelected = root.selectedId === element.id;
@@ -26,14 +38,40 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
     }
   }, [isEditing, element.name, state]);
 
+  useEffect(() => {
+    const el = state.rowEl;
+    if (!el) return;
+    const id = element.id;
+    return combine(
+      draggable({ element: el, getInitialData: () => ({ type: "map-node", id }) }),
+      dropTargetForElements({
+        element: el,
+        canDrop: ({ source }) => source.data.type === "map-node" && source.data.id !== id,
+        getData: ({ input }) =>
+          attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
+        onDrag: ({ self }) => state.set({ closestEdge: extractClosestEdge(self.data) }),
+        onDragLeave: () => state.set({ closestEdge: null }),
+        onDrop: ({ source, self }) => {
+          const edge = extractClosestEdge(self.data);
+          state.set({ closestEdge: null });
+          if (edge === "top" || edge === "bottom")
+            root.moveNode(source.data.id as string, id, edge);
+        },
+      }),
+    );
+  }, [element.id, root, state]);
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
+        ref={state.ref("rowEl")}
         className={cn(
           uiClassName,
-          "grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
+          "relative grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
           "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
+          state.closestEdge === "top" && "border-t-2 border-t-blue-400",
+          state.closestEdge === "bottom" && "border-b-2 border-b-blue-400",
         )}
         onClick={() => root.onSelect(element.id)}
         onDoubleClick={() => root.onStartEdit(element.id)}
@@ -75,7 +113,7 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           className={cn(
             "text-xs px-0.5 border-0 border-gray-500/50 my-1 text-on-background/80 bg-transparent outline-none w-full",
             isSelected && "brightness-125 font-medium",
-            isEditing && "bg-slate-700 rounded",
+            isEditing ? "bg-slate-700 rounded" : "cursor-pointer",
           )}
           style={{ borderLeftWidth: level * 2 }}
           defaultValue={element.name || element.type}
@@ -120,7 +158,7 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
 export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
-    if (item.children) return { ...item, children: mapElements(item.children, id, fn) };
+    if (item.type === "group") return { ...item, children: mapElements(item.children, id, fn) };
     return item;
   });
 }
@@ -128,7 +166,7 @@ export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => Ma
 export function traverseElements(list: MapNode[], act: (el: MapNode) => void): void {
   list.forEach((item) => {
     act(item);
-    if (item.children) traverseElements(item.children, act);
+    if (item.type === "group") traverseElements(item.children, act);
   });
 }
 
@@ -136,19 +174,14 @@ export function extractNode(
   nodes: MapNode[],
   id: string,
 ): { elements: MapNode[]; node: MapNode | null } {
-  for (let i = 0; i < nodes.length; i++) {
-    if (nodes[i].id === id) {
-      return { elements: [...nodes.slice(0, i), ...nodes.slice(i + 1)], node: nodes[i] };
+  for (const child of nodes) {
+    if (child.id === id) {
+      return { elements: nodes.filter((n) => n.id !== id), node: child };
     }
-    const children = nodes[i].children;
-    if (children) {
-      const r = extractNode(children, id);
+    if (child.type === "group") {
+      const r = extractNode(child.children, id);
       if (r.node) {
-        const updated = [
-          ...nodes.slice(0, i),
-          { ...nodes[i], children: r.elements },
-          ...nodes.slice(i + 1),
-        ];
+        const updated = nodes.map((n) => (n.id === child.id ? { ...n, children: r.elements } : n));
         return { elements: updated, node: r.node };
       }
     }
@@ -156,16 +189,38 @@ export function extractNode(
   return { elements: nodes, node: null };
 }
 
+export function insertNode(
+  nodes: MapNode[],
+  node: MapNode,
+  targetId: string,
+  edge: "top" | "bottom",
+): MapNode[] {
+  for (const [i, child] of nodes.entries()) {
+    if (child.id === targetId) {
+      const idx = edge === "top" ? i : i + 1;
+      return [...nodes.slice(0, idx), node, ...nodes.slice(idx)];
+    }
+
+    if (child.type === "group") {
+      const result = insertNode(child.children, node, targetId, edge);
+      if (result !== child.children) {
+        return [...nodes.slice(0, i), { ...child, children: result }, ...nodes.slice(i + 1)];
+      }
+    }
+  }
+  return nodes;
+}
+
 export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
 
-export interface MapNode {
+export type MapNode = {
   id: string;
   name: string;
-  type: ShapeType;
-  children?: MapNode[];
   isVisible: boolean;
   isLocked: boolean;
-}
+} & ({ type: "group"; children: MapNode[] } | { type: Exclude<ShapeType, "group"> });
+
+export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 
 interface TreeItemProps {
   element: MapNode;

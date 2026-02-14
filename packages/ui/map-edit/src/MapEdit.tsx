@@ -9,11 +9,23 @@ import {
   SquareIcon,
 } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
-import { extractNode, type MapNode, MapNodeUi, mapElements, traverseElements } from "./MapNodeUi";
+import {
+  extractNode,
+  type GroupMapNode,
+  insertNode,
+  type MapNode,
+  MapNodeUi,
+  mapElements,
+  traverseElements,
+} from "./MapNodeUi";
 import type { MapEditUiMeta } from "./schema";
 
 // ✅ can add group ui
 // ✅ can edit group name
+
+// ✅ cannot drag node into descendent
+// ✅ when group selected added group should be child
+
 // 🚧 adding group adds a respective <g>
 // 🚧 can edit group/rect/path name
 // 🚧 can add rect
@@ -121,7 +133,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         });
       },
 
-      addGroup() {
+      addGroup(parent) {
         const nextNum = state.getNextGroupSuffix();
         const newGroup: MapNode = {
           id: crypto.randomUUID(),
@@ -131,11 +143,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           isLocked: false,
           children: [],
         };
-        state.set({
-          elements: [...state.elements, newGroup],
-          selectedId: newGroup.id,
-          editingId: newGroup.id,
-        });
+        if (!parent) {
+          state.set({
+            elements: [...state.elements, newGroup],
+            selectedId: newGroup.id,
+            editingId: newGroup.id,
+          });
+        } else {
+          parent.children.push(newGroup);
+          state.update();
+        }
       },
       getNextGroupSuffix() {
         const usedNums = new Set<number>();
@@ -173,6 +190,12 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           children: [node],
         };
         state.set({ elements: [...elements, newGroup], selectedId: newGroup.id });
+      },
+      moveNode(srcId: string, dstId: string, edge: "top" | "bottom") {
+        const { elements, node } = extractNode(state.elements, srcId);
+        if (!node) return;
+        if (extractNode([node], dstId).node) return; // cannot move into self
+        state.set({ elements: insertNode(elements, node, dstId, edge) });
       },
     }),
     { reset: { elements: false } },
@@ -234,7 +257,12 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                   <Menu.Item
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
-                    onClick={state.addGroup}
+                    onClick={() => {
+                      const parent = state.selectedId
+                        ? extractNode(state.elements, state.selectedId).node
+                        : undefined;
+                      state.addGroup(parent?.type === "group" ? parent : undefined);
+                    }}
                   >
                     <FolderIcon className="size-4" />
                     Group
@@ -306,12 +334,13 @@ export type State = {
   onResizePointerUp: (e: PointerEvent<HTMLDivElement>) => void;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
-  addGroup: () => void;
+  addGroup: (parent?: GroupMapNode) => void;
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
   getNextGroupSuffix: () => number;
   groupNode: (id: string) => void;
+  moveNode: (srcId: string, dstId: string, edge: "top" | "bottom") => void;
 };
 
 function MapEditSvg({ state }: { state: UseStateRef<State> }) {

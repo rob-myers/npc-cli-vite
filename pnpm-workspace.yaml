@@ -3,6 +3,8 @@ packages:
   - packages/**
 
 catalog:
+  '@atlaskit/pragmatic-drag-and-drop': ^1.7.7
+  '@atlaskit/pragmatic-drag-and-drop-hitbox': ^1.1.0
   '@base-ui/react': 1.1.0
   '@biomejs/biome': ^2.3.11
   '@gltf-transform/core': ^4.3.0

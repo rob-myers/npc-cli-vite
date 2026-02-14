@@ -7,6 +7,8 @@
   },
   "scripts": {},
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "catalog:",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "catalog:",
     "@base-ui/react": "catalog:",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
