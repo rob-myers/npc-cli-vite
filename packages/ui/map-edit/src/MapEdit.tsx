@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import {
   CaretLeftIcon,
   CaretRightIcon,
@@ -243,39 +243,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           ))}
         </div>
 
-        <div
-          className={cn(
-            uiClassName,
-            "z-2 w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
-            "bg-blue-500/50",
-          )}
-          onPointerDown={state.onResizePointerDown}
-          onPointerMove={state.onResizePointerMove}
-          onPointerUp={state.onResizePointerUp}
-          onPointerOut={state.onResizePointerUp}
-        >
-          <button
-            className={cn(
-              uiClassName,
-              "px-1 h-5 top-[calc(100%-20px)] cursor-pointer bg-slate-700 text-slate-300",
-              "hover:text-slate-300 transition-colors",
-            )}
-            onClick={() => {
-              if (state.firstPointerPos.x !== state.lastPointerPos.x) return;
-              state.set({
-                asideWidth:
-                  state.asideWidth <= minAsideWidth ? state.lastAsideWidth : minAsideWidth,
-                lastAsideWidth: state.asideWidth,
-              });
-            }}
-          >
-            {state.asideWidth <= minAsideWidth ? (
-              <CaretRightIcon className="size-4" />
-            ) : (
-              <CaretLeftIcon className="size-4" />
-            )}
-          </button>
-        </div>
+        <InspectorResizer state={state} />
       </aside>
 
       <div
@@ -288,38 +256,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         onPointerMove={state.onPanPointerMove}
         onPointerUp={state.onPanPointerUp}
       >
-        <div className="absolute inset-0 opacity-10 pointer-events-none" />
-
-        <svg
-          viewBox="0 0 500 500"
-          className={cn(uiClassName, " drop-shadow-2xl border border-white/20 overflow-visible")}
-          preserveAspectRatio="xMidYMid meet"
-          style={{
-            transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
-            transformOrigin: "center center",
-          }}
-        >
-          <defs>
-            <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path
-                d="M 10 0 L 0 0 0 10"
-                fill="none"
-                stroke="rgba(100, 116, 139, 0.3)"
-                strokeWidth="0.5"
-              />
-            </pattern>
-            <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-              <rect width="50" height="50" fill="url(#smallGrid)" />
-              <path
-                d="M 50 0 L 0 0 0 50"
-                fill="none"
-                stroke="rgba(100, 116, 139, 0.5)"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#grid)" />
-        </svg>
+        <MapEditSvg state={state} />
       </div>
     </div>
   );
@@ -403,6 +340,78 @@ const _demoElements: SVGElementWrapper[] = [
     ],
   },
 ];
+
+function MapEditSvg({ state }: { state: UseStateRef<State> }) {
+  return (
+    <svg
+      viewBox="0 0 500 500"
+      className={cn(uiClassName, " drop-shadow-2xl border border-white/20 overflow-visible")}
+      preserveAspectRatio="xMidYMid meet"
+      style={{
+        transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
+        transformOrigin: "center center",
+      }}
+    >
+      <defs>
+        <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+          <path
+            d="M 10 0 L 0 0 0 10"
+            fill="none"
+            stroke="rgba(100, 116, 139, 0.3)"
+            strokeWidth="0.5"
+          />
+        </pattern>
+        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+          <rect width="50" height="50" fill="url(#smallGrid)" />
+          <path
+            d="M 50 0 L 0 0 0 50"
+            fill="none"
+            stroke="rgba(100, 116, 139, 0.5)"
+            strokeWidth="1"
+          />
+        </pattern>
+      </defs>
+      <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#grid)" />
+    </svg>
+  );
+}
+
+function InspectorResizer({ state }: { state: UseStateRef<State> }) {
+  return (
+    <div
+      className={cn(
+        uiClassName,
+        "z-2 w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
+        "bg-blue-500/50",
+      )}
+      onPointerDown={state.onResizePointerDown}
+      onPointerMove={state.onResizePointerMove}
+      onPointerUp={state.onResizePointerUp}
+      onPointerOut={state.onResizePointerUp}
+    >
+      <button
+        className={cn(
+          uiClassName,
+          "px-1 h-5 top-[calc(100%-20px)] cursor-pointer bg-slate-700 text-slate-300",
+          "hover:text-slate-300 transition-colors",
+        )}
+        onClick={() => {
+          if (state.firstPointerPos.x !== state.lastPointerPos.x) return;
+          state.set({
+            asideWidth: state.asideWidth <= minAsideWidth ? state.lastAsideWidth : minAsideWidth,
+            lastAsideWidth: state.asideWidth,
+          });
+        }}
+      >
+        {state.asideWidth <= minAsideWidth ? (
+          <CaretRightIcon className="size-4" />
+        ) : (
+          <CaretLeftIcon className="size-4" />
+        )}
+      </button>
+    </div>
+  );
+}
 
 const minAsideWidth = 50 - 1;
 const maxAsideWidth = 300;
