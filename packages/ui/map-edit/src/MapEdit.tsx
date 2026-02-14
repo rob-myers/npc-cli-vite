@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
+// import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import {
@@ -21,7 +21,7 @@ import {
 } from "./MapNodeUi";
 import type { MapEditUiMeta } from "./schema";
 
-enableDragDropTouch();
+// enableDragDropTouch();
 
 // ✅ can add group ui
 // ✅ can edit group name

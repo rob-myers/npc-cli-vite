@@ -78,15 +78,15 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
         onClick={() => root.onSelect(element.id)}
         onDoubleClick={() => root.onStartEdit(element.id)}
         // 🚧 dnd conflict
-        // onPointerDown={() => {
-        //   state.longPressTimeout = setTimeout(() => root.onStartEdit(element.id), 500);
-        // }}
-        // onPointerUp={() => {
-        //   if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
-        // }}
-        // onPointerLeave={() => {
-        //   if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
-        // }}
+        onPointerDown={() => {
+          state.longPressTimeout = setTimeout(() => root.onStartEdit(element.id), 500);
+        }}
+        onPointerUp={() => {
+          if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
+        }}
+        onPointerLeave={() => {
+          if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
+        }}
       >
         <div className="text-on-background pl-0.5">
           {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
