@@ -12,7 +12,7 @@
 - 🚧 request third-party
   - https://www.fiverr.com/seanencabo/do-blockbench-models-and-animations
 
-- 🚧 can render UiInstanceMenu inside ui e.g. for Tabs
+- ✅ can render UiInstanceMenu inside ui e.g. for Tabs
 
 - 🚧 towards MapEdit 1
   - ❌ try convert our SVG symbols into GLTF importable by Blockbench GLTF import plugin
