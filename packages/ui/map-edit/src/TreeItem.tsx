@@ -1,15 +1,8 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { cn } from "@npc-cli/util";
-import {
-  ArrowDownIcon,
-  ArrowRightIcon,
-  BoundingBoxIcon,
-  EyeClosedIcon,
-  EyeIcon,
-  FolderIcon,
-} from "@phosphor-icons/react";
+import { cn, useStateRef } from "@npc-cli/util";
+import { BoundingBoxIcon, FolderIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect } from "react";
 
 export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
 
@@ -27,31 +20,64 @@ interface TreeItemProps {
   element: SVGElementWrapper;
   level: number;
   selectedId: string | null;
+  editingId: string | null;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onRename: (id: string, newName: string) => void;
+  onStartEdit: (id: string) => void;
+  onCancelEdit: () => void;
 }
 
 export const TreeItem: React.FC<TreeItemProps> = ({
   element,
   level,
   selectedId,
+  editingId,
   onSelect,
   onToggleVisibility,
+  onRename,
+  onStartEdit,
+  onCancelEdit,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const state = useStateRef(() => ({
+    isExpanded: true,
+    editValue: element.name,
+    inputEl: null as HTMLInputElement | null,
+    longPressTimeout: null as ReturnType<typeof setTimeout> | null,
+  }));
+
   const isSelected = selectedId === element.id;
+  const isEditing = editingId === element.id;
   const isGroup = element.type === "group";
+
+  useEffect(() => {
+    if (isEditing) {
+      state.editValue = element.name;
+      state.inputEl?.focus();
+      state.inputEl?.select();
+    }
+  }, [isEditing, element.name, state]);
 
   return (
     <div>
       <div
         className={cn(
           uiClassName,
-          "h-8 grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
+          "grid grid-cols-[minmax(auto,1.5rem)_auto] items-center px-2 cursor-pointer hover:brightness-125 group",
           "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
         )}
         onClick={() => onSelect(element.id)}
+        onDoubleClick={() => onStartEdit(element.id)}
+        onPointerDown={() => {
+          state.longPressTimeout = setTimeout(() => onStartEdit(element.id), 500);
+        }}
+        onPointerUp={() => {
+          if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
+        }}
+        onPointerLeave={() => {
+          if (state.longPressTimeout) clearTimeout(state.longPressTimeout);
+        }}
       >
         {/* <span
           className="mr-2"
@@ -75,15 +101,27 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
         </div>
 
-        <div
+        <input
+          ref={state.ref("inputEl")}
+          type="text"
           className={cn(
-            "text-xs truncate pl-1 text-on-background/80",
+            "text-xs pl-1 py-2 text-on-background/80 bg-transparent outline-none w-full",
             isSelected && "brightness-125 font-medium",
+            isEditing && "bg-slate-700 rounded",
           )}
           style={{ paddingLeft: (1 + level) * 4 }}
-        >
-          {element.name || element.type}
-        </div>
+          defaultValue={element.name || element.type}
+          readOnly={!isEditing}
+          onClick={(e) => isEditing && e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onRename(element.id, e.currentTarget.value);
+            } else if (e.key === "Escape") {
+              onCancelEdit();
+            }
+          }}
+          onBlur={(e) => isEditing && onRename(element.id, e.currentTarget.value)}
+        />
 
         {/* <button
           className={cn(
@@ -105,7 +143,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         </button> */}
       </div>
 
-      {isGroup && isExpanded && element.children && (
+      {isGroup && state.isExpanded && element.children && (
         // ml-2
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
@@ -114,8 +152,12 @@ export const TreeItem: React.FC<TreeItemProps> = ({
               element={child}
               level={level + 1}
               selectedId={selectedId}
+              editingId={editingId}
               onSelect={onSelect}
               onToggleVisibility={onToggleVisibility}
+              onRename={onRename}
+              onStartEdit={onStartEdit}
+              onCancelEdit={onCancelEdit}
             />
           ))}
         </div>
@@ -123,3 +165,15 @@ export const TreeItem: React.FC<TreeItemProps> = ({
     </div>
   );
 };
+
+export function mapElements(
+  list: SVGElementWrapper[],
+  id: string,
+  fn: (el: SVGElementWrapper) => SVGElementWrapper,
+): SVGElementWrapper[] {
+  return list.map((item) => {
+    if (item.id === id) return fn(item);
+    if (item.children) return { ...item, children: mapElements(item.children, id, fn) };
+    return item;
+  });
+}
