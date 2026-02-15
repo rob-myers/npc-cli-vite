@@ -1,3 +1,7 @@
+import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
+
+enableDragDropTouch();
+
 import { Menu } from "@base-ui/react/menu";
 // import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
