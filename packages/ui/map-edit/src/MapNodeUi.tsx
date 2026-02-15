@@ -16,6 +16,11 @@ import type React from "react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
 
+/**
+ * - Double tap to edit name
+ * - Long press or right click icon for context menu
+ * - Drag to reorder
+ */
 export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => {
   const state = useStateRef(() => ({
     isExpanded: true,
@@ -64,8 +69,8 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
   const onDoubleTap = useDoubleTap(() => root.onStartEdit(element.id));
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger
+    <div>
+      <div
         ref={state.ref("rowEl")}
         className={cn(
           uiClassName,
@@ -81,9 +86,25 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <div className="text-on-background pl-0.5">
-          {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
-        </div>
+        <ContextMenu.Root>
+          <ContextMenu.Trigger className="text-on-background pl-0.5">
+            {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
+          </ContextMenu.Trigger>
+
+          <ContextMenu.Portal>
+            <ContextMenu.Positioner className="z-50" sideOffset={4}>
+              <ContextMenu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+                <ContextMenu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  onClick={() => root.groupNode(element.id)}
+                >
+                  <FolderIcon className="size-4" />
+                  Group node
+                </ContextMenu.Item>
+              </ContextMenu.Popup>
+            </ContextMenu.Positioner>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
 
         <input
           ref={state.ref("inputEl")}
@@ -105,21 +126,7 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           }}
           onBlur={(e) => isEditing && root.onRename(element.id, e.currentTarget.value)}
         />
-      </ContextMenu.Trigger>
-
-      <ContextMenu.Portal>
-        <ContextMenu.Positioner className="z-50" sideOffset={4}>
-          <ContextMenu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
-            <ContextMenu.Item
-              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-              onClick={() => root.groupNode(element.id)}
-            >
-              <FolderIcon className="size-4" />
-              Group node
-            </ContextMenu.Item>
-          </ContextMenu.Popup>
-        </ContextMenu.Positioner>
-      </ContextMenu.Portal>
+      </div>
 
       {isGroup && state.isExpanded && element.children && (
         <div className="border-l border-slate-700/50">
@@ -128,7 +135,7 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           ))}
         </div>
       )}
-    </ContextMenu.Root>
+    </div>
   );
 };
 
