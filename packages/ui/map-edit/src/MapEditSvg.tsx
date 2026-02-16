@@ -13,12 +13,15 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
 
   return (
     <svg
+      ref={root.ref("svgEl")}
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       className={cn(
         uiClassName,
         "size-full drop-shadow-2xl border border-white/20 overflow-visible",
       )}
-      onPointerDown={root.onClickSvg}
+      onPointerDown={root.onSvgPointerDown}
+      onPointerMove={root.onSvgPointerMove}
+      onPointerUp={root.onSvgPointerUp}
       preserveAspectRatio="xMidYMid meet"
     >
       <RenderMapNodes state={root} elements={root.elements} />
@@ -26,6 +29,46 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
     </svg>
   );
 }
+
+const RenderMapNodes = ({
+  state,
+  elements,
+}: {
+  state: UseStateRef<State>;
+  elements: MapNode[];
+}) => {
+  return elements.map((el) => {
+    switch (el.type) {
+      case "group":
+        return (
+          <g key={el.id} data-node-id={el.id} transform={el.transform}>
+            <title>{el.name}</title>
+            <RenderMapNodes state={state} elements={el.children} />
+          </g>
+        );
+      case "rect": {
+        const { rect } = el;
+        return (
+          <rect
+            key={el.id}
+            data-node-id={el.id}
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            fill="rgba(255, 255, 255, 0.5)"
+            stroke={el.id === state.selectedId ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
+            strokeWidth={2}
+          >
+            <title>{el.name}</title>
+          </rect>
+        );
+      }
+      default:
+        return null;
+    }
+  });
+};
 
 const DefsAndGrid = memo(() => (
   <>
@@ -53,43 +96,3 @@ const DefsAndGrid = memo(() => (
     />
   </>
 ));
-
-const RenderMapNodes = ({
-  state,
-  elements,
-}: {
-  state: UseStateRef<State>;
-  elements: MapNode[];
-}) => {
-  return elements.map((el) => {
-    switch (el.type) {
-      case "group":
-        return (
-          <g key={el.id} data-node-id={el.id} transform={el.transform}>
-            <title>{el.name}</title>
-            <RenderMapNodes state={state} elements={el.children} />
-          </g>
-        );
-      case "rect": {
-        const { rect, stroke } = el;
-        return (
-          <rect
-            key={el.id}
-            data-node-id={el.id}
-            x={rect.x}
-            y={rect.y}
-            width={rect.width}
-            height={rect.height}
-            fill="rgba(255, 255, 255, 0.5)"
-            stroke={el.id === state.selectedId ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
-            strokeWidth={2}
-          >
-            <title>{el.name}</title>
-          </rect>
-        );
-      }
-      default:
-        return null;
-    }
-  });
-};
