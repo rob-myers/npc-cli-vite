@@ -13,8 +13,8 @@ import {
   SquareIcon,
 } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
+import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
-import { MapNodeUi } from "./MapNodeUi";
 import {
   findNode,
   insertNodeAt,
@@ -311,7 +311,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         <div className="overflow-y-auto h-full custom-scrollbar bg-background">
           {state.elements.map((el) => (
-            <MapNodeUi key={el.id} element={el} level={0} root={state} />
+            <InspectorNode key={el.id} element={el} level={0} root={state} />
           ))}
         </div>
 
