@@ -20,7 +20,7 @@ import type { MapNode } from "./map-node-api";
 /**
  * - Double tap to edit name
  * - Long press or right click icon for context menu
- * - Drag to reorder
+ * - Drag outside icon to reorder
  */
 export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => {
   const state = useStateRef(() => ({
@@ -76,7 +76,7 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
         className={cn(
           uiClassName,
           "relative grid grid-cols-[minmax(auto,1.5rem)_auto] items-center cursor-pointer hover:brightness-125",
-          "bg-background border-b border-b-on-background/10",
+          "pr-3 bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
           state.closestEdge === "top" && "border-t-2 border-t-blue-400",
           state.closestEdge === "bottom" && "border-b-2 border-b-blue-400",
@@ -111,9 +111,9 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
           ref={state.ref("inputEl")}
           type="text"
           className={cn(
-            "text-xs px-0.5 border-0 border-gray-500/50 my-1 text-on-background/80 bg-transparent outline-none w-full",
+            "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
             isSelected && "brightness-125 font-medium",
-            isEditing ? "bg-slate-700 rounded" : "cursor-pointer",
+            isEditing ? "bg-slate-700 selection:text-white rounded" : "cursor-pointer",
           )}
           defaultValue={element.name || element.type}
           readOnly={!isEditing}
