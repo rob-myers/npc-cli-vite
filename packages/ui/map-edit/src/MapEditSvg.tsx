@@ -1,15 +1,25 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { cn, type UseStateRef } from "@npc-cli/util";
+import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import type React from "react";
 import { memo } from "react";
 import type { State } from "./MapEdit";
 import type { MapNode } from "./map-node-api";
 
-export function MapEditSvg({ state }: { state: UseStateRef<State> }) {
+export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const baseSize = 500;
-  const vbW = baseSize / state.zoom;
-  const vbH = baseSize / state.zoom;
-  const vbX = (baseSize - vbW) / 2 - state.pan.x / state.zoom;
-  const vbY = (baseSize - vbH) / 2 - state.pan.y / state.zoom;
+  const vbW = baseSize / root.zoom;
+  const vbH = baseSize / root.zoom;
+  const vbX = (baseSize - vbW) / 2 - root.pan.x / root.zoom;
+  const vbY = (baseSize - vbH) / 2 - root.pan.y / root.zoom;
+
+  const state = useStateRef(() => ({
+    onClick(e: React.PointerEvent<SVGSVGElement>) {
+      const target = e.target as SVGElement;
+      if (target.dataset.nodeId) {
+        root.set({ selectedId: target.dataset.nodeId });
+      }
+    },
+  }));
 
   return (
     <svg
@@ -18,9 +28,10 @@ export function MapEditSvg({ state }: { state: UseStateRef<State> }) {
         uiClassName,
         "size-full drop-shadow-2xl border border-white/20 overflow-visible",
       )}
+      onPointerDown={state.onClick}
       preserveAspectRatio="xMidYMid meet"
     >
-      <RenderMapNodes state={state} elements={state.elements} />
+      <RenderMapNodes state={root} elements={root.elements} />
       <DefsAndGrid />
     </svg>
   );
@@ -64,7 +75,7 @@ const RenderMapNodes = ({
     switch (el.type) {
       case "group":
         return (
-          <g key={el.id} transform={el.transform}>
+          <g key={el.id} data-node-id={el.id} transform={el.transform}>
             <title>{el.name}</title>
             <RenderMapNodes state={state} elements={el.children} />
           </g>
@@ -73,6 +84,7 @@ const RenderMapNodes = ({
         return (
           <rect
             key={el.id}
+            data-node-id={el.id}
             x={el.rect.x}
             y={el.rect.y}
             width={el.rect.width}
