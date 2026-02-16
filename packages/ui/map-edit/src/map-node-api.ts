@@ -54,7 +54,20 @@ export function insertNode(
   return nodes;
 }
 
-export type ShapeType = "rect" | "circle" | "path" | "group" | "ellipse" | "polygon";
+const mockBaseNode = {
+  id: "mock-id",
+  name: "New Node",
+  isVisible: true,
+  isLocked: false,
+};
+
+export const toTemplateNode = {
+  group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
+  path: { ...mockBaseNode, type: "path" },
+  rect: { ...mockBaseNode, type: "rect", rect: { x: 50, y: 50, width: 100, height: 100 } },
+} satisfies Record<MapNodeType, MapNode>;
+
+export type MapNodeType = "rect" | "path" | "group";
 
 export type BaseMapNode = {
   id: string;
@@ -65,11 +78,15 @@ export type BaseMapNode = {
 
 export type MapNode = BaseMapNode &
   (
-    | { type: "group"; children: MapNode[] }
+    | { type: "group"; children: MapNode[]; transform?: string }
     | { type: "rect"; rect: Rect }
-    | { type: Exclude<ShapeType, "group" | "rect"> }
+    | { type: Exclude<MapNodeType, "group" | "rect"> }
   );
 
 type Rect = { x: number; y: number; width: number; height: number };
 
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
+
+export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
+
+export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
