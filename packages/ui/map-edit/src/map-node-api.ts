@@ -44,11 +44,12 @@ export function insertNodeAt(
   dstArray.splice(idx, 0, srcNode);
 }
 
-export function removeNodeFromParent(parentArray: MapNode[], id: string) {
-  parentArray.splice(
-    parentArray.findIndex((n) => n.id === id),
-    1,
-  );
+/** Returns index of child before it was removed */
+export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
+  const index = parentArray.findIndex((n) => n.id === childId);
+  if (index === -1) throw Error(`Expected id ${childId} in ${JSON.stringify(parentArray)}`);
+  parentArray.splice(index, 1);
+  return index;
 }
 
 const mockBaseNode = {

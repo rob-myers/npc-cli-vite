@@ -161,23 +161,21 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
       },
       getNew<T extends MapNodeType>(type: T) {
+        const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
         return {
           ...toTemplateNode[type],
           id: crypto.randomUUID(),
-          name: `${type.charAt(0).toUpperCase()}${type.slice(1)} ${state.getNextSuffix(type)}`,
+          name: `${prefix}${state.getNextSuffix(type, prefix)}`,
           isVisible: true,
           isLocked: false,
           ...(type === "group" && { children: [] }), // fresh array
         };
       },
-      getNextSuffix(type: MapNodeType) {
+      getNextSuffix(type: MapNodeType, prefix: string) {
         const usedNums = new Set<number>();
         traverseElements(state.elements, (el) => {
-          if (
-            el.type === type &&
-            el.name.startsWith(`${type.charAt(0).toUpperCase()}${type.slice(1)} `)
-          ) {
-            const num = Number.parseInt(el.name.slice(type.length + 1), 10);
+          if (el.type === type && el.name.startsWith(prefix)) {
+            const num = Number(el.name.slice(prefix.length));
             if (!Number.isNaN(num)) usedNums.add(num);
           }
         });
@@ -190,14 +188,17 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const result = findNode(state.elements, state.selectedId);
         return result?.node ?? null;
       },
-      groupNode(id: string) {
-        const result = findNode(state.elements, id);
+      groupNode(nodeId: string) {
+        const result = findNode(state.elements, nodeId);
         if (!result) return;
 
         const newGroup = state.getNew("group");
         newGroup.children.push(result.node);
 
-        removeNodeFromParent(result.parent?.children ?? state.elements, id);
+        const parentArray = result.parent?.children ?? state.elements;
+        const oldChildIndex = removeNodeFromParent(parentArray, nodeId);
+        parentArray.splice(oldChildIndex, 0, newGroup);
+
         state.set({ selectedId: newGroup.id });
       },
       onRename(id: string, newName: string) {
@@ -365,7 +366,7 @@ export type State = {
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
   getNew: <T extends MapNodeType>(type: T) => MapNodeMap[T];
-  getNextSuffix: (type: MapNodeType) => number;
+  getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom") => void;
