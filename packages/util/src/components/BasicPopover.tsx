@@ -22,7 +22,7 @@ export function BasicPopover(
   return (
     <Popover.Root>
       <Popover.Trigger
-        className={cn(preventReactGridDragClassName, "cursor-pointer p-1", props.triggerClassName)}
+        className={cn(preventReactGridDragClassName, "cursor-pointer", props.triggerClassName)}
       >
         {props.trigger}
       </Popover.Trigger>
