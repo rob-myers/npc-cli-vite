@@ -235,10 +235,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       onClickSvg(e) {
         const target = e.target as SVGElement;
         const { nodeId } = target.dataset;
-
-        if (nodeId) {
-          state.set({ selectedId: nodeId });
-        }
+        state.set({ selectedId: nodeId ?? null });
       },
     }),
   );
