@@ -94,7 +94,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   return (
     <div className="flex flex-col size-full overflow-auto font-mono">
-      <div className="flex min-h-12 w-full border-b border-outline">
+      <div className="flex justify-between min-h-12 w-full border-b border-outline">
         <div className="flex items-end overflow-auto [scrollbar-width:thin]">
           {tabs.map((tab) => (
             <div
@@ -151,7 +151,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             <PlusCircleIcon className="size-6" weight="duotone" />
           </button>
         </div>
-        <UiInstanceMenu className="flex-1" meta={meta} />
+        <UiInstanceMenu meta={meta} />
       </div>
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
