@@ -52,11 +52,11 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
   return index;
 }
 
-const mockBaseNode = {
+const mockBaseNode: BaseMapNode = {
   id: "mock-id",
   name: "New Node",
-  isVisible: true,
-  isLocked: false,
+  locked: false,
+  visible: true,
 };
 
 export const toTemplateNode = {
@@ -70,14 +70,14 @@ export type MapNodeType = "rect" | "path" | "group";
 export type BaseMapNode = {
   id: string;
   name: string;
-  isVisible: boolean;
-  isLocked: boolean;
+  locked: boolean;
+  visible: boolean;
 };
 
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[]; transform?: string }
-    | { type: "rect"; rect: Rect }
+    | { type: "rect"; rect: Rect; stroke?: string }
     | { type: Exclude<MapNodeType, "group" | "rect"> }
   );
 

@@ -43,9 +43,9 @@
     - ℹ️ implement via svg
     - ℹ️ easier to import current files
     - ✅ mock up "tree + svg"
-    - @atlaskit/pragmatic-drag-and-drop for inspector dragging
+    - ✅ @atlaskit/pragmatic-drag-and-drop for inspector dragging
+    - 🚧 symbols tree (groups, rects) works properly
     - react-draggable to move stuff
-    - symbols tree (groups) works properly
   - ❌ sketch script to convert an SVG symbol e.g. capture some stuff
   - ❌ parse gltf into e.g. floor, walls, ceiling, cuboids, quads
     - 🤔 maybe can avoid by directly parsing Blockbench JSON

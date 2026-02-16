@@ -39,7 +39,7 @@ import type { MapEditUiMeta } from "./schema";
 // ✅ can edit group/rect/path name
 
 // 🚧 can drag and resize a rect
-// - selected rect has outline
+// - ✅ selected rect has outline
 
 // 🚧 can convert a rect into a path
 // 🚧 unions of rects/paths is another path
@@ -141,7 +141,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       onToggleVisibility(id: string) {
         state.set({
-          elements: mapElements(state.elements, id, (el) => ({ ...el, isVisible: !el.isVisible })),
+          elements: mapElements(state.elements, id, (el) => ({ ...el, visible: !el.visible })),
         });
       },
 
@@ -166,8 +166,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           ...toTemplateNode[type],
           id: crypto.randomUUID(),
           name: `${prefix}${state.getNextSuffix(type, prefix)}`,
-          isVisible: true,
-          isLocked: false,
+          visible: true,
+          locked: false,
           ...(type === "group" && { children: [] }), // fresh array
         };
       },
@@ -218,16 +218,29 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         const srcResult = findNode(state.elements, srcId);
         const dstResult = findNode(state.elements, dstId);
-        // cannot move into self
-        if (!srcResult || !dstResult || findNode([srcResult.node], dstId)) return;
+        if (
+          !srcResult ||
+          !dstResult ||
+          findNode([srcResult.node], dstId) // cannot move into self
+        ) {
+          return;
+        }
 
         removeNodeFromParent(srcResult.parent?.children ?? state.elements, srcId);
         insertNodeAt(srcResult.node, dstResult.parent?.children ?? state.elements, dstId, edge);
 
         state.update();
       },
+
+      onClickSvg(e) {
+        const target = e.target as SVGElement;
+        const { nodeId } = target.dataset;
+
+        if (nodeId) {
+          state.set({ selectedId: nodeId });
+        }
+      },
     }),
-    { reset: { elements: false } },
   );
 
   useEffect(() => {
@@ -370,6 +383,7 @@ export type State = {
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom") => void;
+  onClickSvg(e: React.PointerEvent<SVGSVGElement>): void;
 };
 
 function InspectorResizer({ state }: { state: UseStateRef<State> }) {
