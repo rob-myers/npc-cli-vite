@@ -22,7 +22,7 @@ import type { MapNode } from "./map-node-api";
  * - Long press or right click icon for context menu
  * - Drag outside icon to reorder
  */
-export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => {
+export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root }) => {
   const state = useStateRef(() => ({
     isExpanded: true,
     editValue: element.name,
@@ -132,7 +132,7 @@ export const MapNodeUi: React.FC<TreeItemProps> = ({ element, level, root }) => 
       {isGroup && state.isExpanded && element.children && (
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
-            <MapNodeUi key={child.id} element={child} level={level + 1} root={root} />
+            <InspectorNode key={child.id} element={child} level={level + 1} root={root} />
           ))}
         </div>
       )}
