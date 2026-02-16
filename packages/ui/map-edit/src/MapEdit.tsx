@@ -351,15 +351,20 @@ export type State = {
 };
 
 function MapEditSvg({ state }: { state: UseStateRef<State> }) {
+  const baseSize = 500;
+  const vbW = baseSize / state.zoom;
+  const vbH = baseSize / state.zoom;
+  const vbX = (baseSize - vbW) / 2 - state.pan.x / state.zoom;
+  const vbY = (baseSize - vbH) / 2 - state.pan.y / state.zoom;
+
   return (
     <svg
-      viewBox="0 0 500 500"
-      className={cn(uiClassName, "drop-shadow-2xl border border-white/20 overflow-visible")}
+      viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+      className={cn(
+        uiClassName,
+        "size-full drop-shadow-2xl border border-white/20 overflow-visible",
+      )}
       preserveAspectRatio="xMidYMid meet"
-      style={{
-        transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
-        transformOrigin: "center center",
-      }}
     >
       <RenderMapNodes state={state} elements={state.elements} />
       <DefsAndGrid />
