@@ -12,15 +12,17 @@ import {
   PlusIcon,
   SquareIcon,
 } from "@phosphor-icons/react";
-import { memo, type PointerEvent, useContext, useEffect } from "react";
+import { type PointerEvent, useContext, useEffect } from "react";
 import { MapEditSvg } from "./MapEditSvg";
 import { MapNodeUi } from "./MapNodeUi";
 import {
   extractNode,
-  type GroupMapNode,
   insertNode,
   type MapNode,
+  type MapNodeMap,
+  type MapNodeType,
   mapElements,
+  toTemplateNode,
   traverseElements,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
@@ -31,9 +33,9 @@ import type { MapEditUiMeta } from "./schema";
 // ✅ cannot drag node into descendent
 // ✅ when group selected added group should be child
 
-// 🚧 adding group adds a respective <g>
-// 🚧 can add rect
-// 🚧 can edit group/rect/path name
+// ✅ adding group adds a respective <g>
+// ✅ can add rect
+// ✅ can edit group/rect/path name
 // 🚧 can drag and resize a rect
 
 // 🚧 can convert a rect into a path
@@ -140,38 +142,48 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         });
       },
 
-      addGroup(parent) {
-        const nextNum = state.getNextGroupSuffix();
-        const newGroup: MapNode = {
-          id: crypto.randomUUID(),
-          name: `Group ${nextNum}`,
-          type: "group",
-          isVisible: true,
-          isLocked: false,
-          children: [],
-        };
+      add(type, { selectedGroupParent } = {}) {
+        const selection = selectedGroupParent ? state.getSelectedNode() : null;
+        const parent = selection?.type === "group" ? selection : null;
+        const newItem = state.getNew(type);
         if (!parent) {
           state.set({
-            elements: [...state.elements, newGroup],
-            selectedId: newGroup.id,
-            editingId: newGroup.id,
+            elements: [...state.elements, newItem],
+            selectedId: newItem.id,
+            editingId: newItem.id,
           });
         } else {
-          parent.children.push(newGroup);
+          parent.children.push(newItem);
           state.update();
         }
       },
-      getNextGroupSuffix() {
+      getNew<T extends MapNodeType>(type: T) {
+        return {
+          ...toTemplateNode[type],
+          id: crypto.randomUUID(),
+          name: `${type.charAt(0).toUpperCase()}${type.slice(1)} ${state.getNextSuffix(type)}`,
+          isVisible: true,
+          isLocked: false,
+        };
+      },
+      getNextSuffix(type: MapNodeType) {
         const usedNums = new Set<number>();
         traverseElements(state.elements, (el) => {
-          if (el.type === "group" && el.name.startsWith("Group ")) {
-            const num = Number.parseInt(el.name.slice(6), 10);
+          if (
+            el.type === type &&
+            el.name.startsWith(`${type.charAt(0).toUpperCase()}${type.slice(1)} `)
+          ) {
+            const num = Number.parseInt(el.name.slice(type.length + 1), 10);
             if (!Number.isNaN(num)) usedNums.add(num);
           }
         });
         let nextNum = 1;
         while (usedNums.has(nextNum)) nextNum++;
         return nextNum;
+      },
+      getSelectedNode() {
+        if (!state.selectedId) return null;
+        return extractNode(state.elements, state.selectedId).node;
       },
       onRename(id: string, newName: string) {
         state.set({
@@ -188,14 +200,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       groupNode(id: string) {
         const { elements, node } = extractNode(state.elements, id);
         if (!node) return;
-        const newGroup: MapNode = {
-          id: crypto.randomUUID(),
-          name: `Group ${state.getNextGroupSuffix()}`,
-          type: "group",
-          isVisible: true,
-          isLocked: false,
-          children: [node],
-        };
+        const newGroup = state.getNew("group");
+        newGroup.children.push(node);
         state.set({ elements: [...elements, newGroup], selectedId: newGroup.id });
       },
       moveNode(srcId: string, dstId: string, edge: "top" | "bottom") {
@@ -244,7 +250,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         className="relative h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
       >
-        <div className="grid [grid-template-columns:1fr_auto] items-center px-3 py-3 border-b border-slate-800 bg-slate-900/20">
+        <div className="grid grid-cols-[1fr_auto] items-center px-3 py-3 border-b border-slate-800 bg-slate-900/20">
           <h2 className="text-ellipsis line-clamp-1 text-xs font-bold uppercase tracking-wider text-slate-500">
             Layers
           </h2>
@@ -266,10 +272,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
-                      const parent = state.selectedId
-                        ? extractNode(state.elements, state.selectedId).node
-                        : undefined;
-                      state.addGroup(parent?.type === "group" ? parent : undefined);
+                      state.add("group", { selectedGroupParent: true });
                     }}
                   >
                     <FolderIcon className="size-4" />
@@ -279,7 +282,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
-                      console.log("Add Rect");
+                      state.add("rect", { selectedGroupParent: true });
                     }}
                   >
                     <SquareIcon className="size-4" />
@@ -342,11 +345,13 @@ export type State = {
   onResizePointerUp: () => void;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
-  addGroup: (parent?: GroupMapNode) => void;
+  add: (type: MapNodeType, opts?: { selectedGroupParent?: boolean }) => void;
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
-  getNextGroupSuffix: () => number;
+  getNew: <T extends MapNodeType>(type: T) => MapNodeMap[T];
+  getNextSuffix: (type: MapNodeType) => number;
+  getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom") => void;
 };
@@ -388,46 +393,3 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 const minAsideWidth = 100;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
-
-const _demoElements: MapNode[] = [
-  {
-    id: "root-group",
-    name: "Main",
-    type: "group",
-    isVisible: true,
-    isLocked: false,
-    children: [
-      {
-        id: "bg-rect",
-        name: "Bg",
-        type: "rect",
-        rect: { x: 50, y: 50, width: 200, height: 100 },
-        isVisible: true,
-        isLocked: false,
-      },
-      {
-        id: "sun",
-        name: "Sun",
-        type: "circle",
-        isVisible: true,
-        isLocked: false,
-      },
-      {
-        id: "root-group-2",
-        name: "Main",
-        type: "group",
-        isVisible: true,
-        isLocked: false,
-        children: [
-          {
-            id: "sun-2",
-            name: "Sun",
-            type: "circle",
-            isVisible: true,
-            isLocked: false,
-          },
-        ],
-      },
-    ],
-  },
-];

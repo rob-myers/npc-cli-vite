@@ -64,9 +64,24 @@ const RenderMapNodes = ({
     switch (el.type) {
       case "group":
         return (
-          <g key={el.id}>
+          <g key={el.id} transform={el.transform}>
+            <title>{el.name}</title>
             <RenderMapNodes state={state} elements={el.children} />
           </g>
+        );
+      case "rect":
+        return (
+          <rect
+            key={el.id}
+            x={el.rect.x}
+            y={el.rect.y}
+            width={el.rect.width}
+            height={el.rect.height}
+            fill="rgba(255, 255, 255, 0.5)"
+            stroke="rgba(0, 0, 0, 0.5)"
+          >
+            <title>{el.name}</title>
+          </rect>
         );
       default:
         return null;
