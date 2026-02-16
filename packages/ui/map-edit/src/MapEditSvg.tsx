@@ -1,6 +1,5 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
-import type React from "react";
+import { cn, type UseStateRef } from "@npc-cli/util";
 import { memo } from "react";
 import type { State } from "./MapEdit";
 import type { MapNode } from "./map-node-api";
@@ -12,15 +11,6 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbX = (baseSize - vbW) / 2 - root.pan.x / root.zoom;
   const vbY = (baseSize - vbH) / 2 - root.pan.y / root.zoom;
 
-  const state = useStateRef(() => ({
-    onClick(e: React.PointerEvent<SVGSVGElement>) {
-      const target = e.target as SVGElement;
-      if (target.dataset.nodeId) {
-        root.set({ selectedId: target.dataset.nodeId });
-      }
-    },
-  }));
-
   return (
     <svg
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
@@ -28,7 +18,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
         uiClassName,
         "size-full drop-shadow-2xl border border-white/20 overflow-visible",
       )}
-      onPointerDown={state.onClick}
+      onPointerDown={root.onClickSvg}
       preserveAspectRatio="xMidYMid meet"
     >
       <RenderMapNodes state={root} elements={root.elements} />
@@ -80,21 +70,24 @@ const RenderMapNodes = ({
             <RenderMapNodes state={state} elements={el.children} />
           </g>
         );
-      case "rect":
+      case "rect": {
+        const { rect, stroke } = el;
         return (
           <rect
             key={el.id}
             data-node-id={el.id}
-            x={el.rect.x}
-            y={el.rect.y}
-            width={el.rect.width}
-            height={el.rect.height}
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
             fill="rgba(255, 255, 255, 0.5)"
-            stroke="rgba(0, 0, 0, 0.5)"
+            stroke={el.id === state.selectedId ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
+            strokeWidth={2}
           >
             <title>{el.name}</title>
           </rect>
         );
+      }
       default:
         return null;
     }
