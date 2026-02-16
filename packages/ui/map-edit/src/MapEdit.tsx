@@ -174,7 +174,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           visible: true,
           locked: false,
           // 🔔 deep objects must be fresh
-          ...("children" in template && { children: { ...template.children } }),
+          ...("children" in template && { children: [...template.children] }),
           ...("rect" in template && { rect: { ...template.rect } }),
         };
       },
