@@ -40,9 +40,10 @@
     - ✅ towards get-pngs
     - ✅ `pnpm get-pngs root Symbols symbol-root` worked
   - 🚧 in-browser SVG-based replacement of Boxy SVG editor
-    - implement via svg
-    - easier to import current files
+    - ℹ️ implement via svg
+    - ℹ️ easier to import current files
     - ✅ mock up "tree + svg"
+    - @atlaskit/pragmatic-drag-and-drop for inspector dragging
     - react-draggable to move stuff
     - symbols tree (groups) works properly
   - ❌ sketch script to convert an SVG symbol e.g. capture some stuff

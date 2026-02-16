@@ -3,7 +3,6 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 enableDragDropTouch();
 
 import { Menu } from "@base-ui/react/menu";
-// import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import {
@@ -13,19 +12,17 @@ import {
   PlusIcon,
   SquareIcon,
 } from "@phosphor-icons/react";
-import { type PointerEvent, useContext, useEffect } from "react";
+import { memo, type PointerEvent, useContext, useEffect } from "react";
+import { MapNodeUi } from "./MapNodeUi";
 import {
   extractNode,
   type GroupMapNode,
   insertNode,
   type MapNode,
-  MapNodeUi,
   mapElements,
   traverseElements,
-} from "./MapNodeUi";
+} from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
-
-// enableDragDropTouch();
 
 // ✅ can add group ui
 // ✅ can edit group name
@@ -357,36 +354,66 @@ function MapEditSvg({ state }: { state: UseStateRef<State> }) {
   return (
     <svg
       viewBox="0 0 500 500"
-      className={cn(uiClassName, " drop-shadow-2xl border border-white/20 overflow-visible")}
+      className={cn(uiClassName, "drop-shadow-2xl border border-white/20 overflow-visible")}
       preserveAspectRatio="xMidYMid meet"
       style={{
         transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
         transformOrigin: "center center",
       }}
     >
-      <defs>
-        <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-          <path
-            d="M 10 0 L 0 0 0 10"
-            fill="none"
-            stroke="rgba(100, 116, 139, 0.3)"
-            strokeWidth="0.5"
-          />
-        </pattern>
-        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-          <rect width="50" height="50" fill="url(#smallGrid)" />
-          <path
-            d="M 50 0 L 0 0 0 50"
-            fill="none"
-            stroke="rgba(100, 116, 139, 0.5)"
-            strokeWidth="1"
-          />
-        </pattern>
-      </defs>
-      <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#grid)" />
+      <RenderMapNodes state={state} elements={state.elements} />
+      <DefsAndGrid />
     </svg>
   );
 }
+
+const DefsAndGrid = memo(() => (
+  <>
+    <defs>
+      <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+        <path
+          d="M 10 0 L 0 0 0 10"
+          fill="none"
+          stroke="rgba(100, 116, 139, 0.3)"
+          strokeWidth="0.5"
+        />
+      </pattern>
+      <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+        <rect width="50" height="50" fill="url(#smallGrid)" />
+        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
+      </pattern>
+    </defs>
+    <rect
+      x="-10000"
+      y="-10000"
+      width="20000"
+      height="20000"
+      fill="url(#grid)"
+      className="pointer-events-none"
+    />
+  </>
+));
+
+const RenderMapNodes = ({
+  state,
+  elements,
+}: {
+  state: UseStateRef<State>;
+  elements: MapNode[];
+}) => {
+  return elements.map((el) => {
+    switch (el.type) {
+      case "group":
+        return (
+          <g key={el.id}>
+            <RenderMapNodes state={state} elements={el.children} />
+          </g>
+        );
+      default:
+        return null;
+    }
+  });
+};
 
 function InspectorResizer({ state }: { state: UseStateRef<State> }) {
   return (
@@ -438,6 +465,7 @@ const _demoElements: MapNode[] = [
         id: "bg-rect",
         name: "Bg",
         type: "rect",
+        rect: { x: 50, y: 50, width: 200, height: 100 },
         isVisible: true,
         isLocked: false,
       },
