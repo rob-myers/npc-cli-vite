@@ -16,12 +16,13 @@ import { type PointerEvent, useContext, useEffect } from "react";
 import { MapEditSvg } from "./MapEditSvg";
 import { MapNodeUi } from "./MapNodeUi";
 import {
-  extractNode,
-  insertNode,
+  findNode,
+  insertNodeAt,
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
   mapElements,
+  removeNodeFromParent,
   toTemplateNode,
   traverseElements,
 } from "./map-node-api";
@@ -36,7 +37,9 @@ import type { MapEditUiMeta } from "./schema";
 // ✅ adding group adds a respective <g>
 // ✅ can add rect
 // ✅ can edit group/rect/path name
+
 // 🚧 can drag and resize a rect
+// - selected rect has outline
 
 // 🚧 can convert a rect into a path
 // 🚧 unions of rects/paths is another path
@@ -164,6 +167,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           name: `${type.charAt(0).toUpperCase()}${type.slice(1)} ${state.getNextSuffix(type)}`,
           isVisible: true,
           isLocked: false,
+          ...(type === "group" && { children: [] }), // fresh array
         };
       },
       getNextSuffix(type: MapNodeType) {
@@ -183,7 +187,18 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       getSelectedNode() {
         if (!state.selectedId) return null;
-        return extractNode(state.elements, state.selectedId).node;
+        const result = findNode(state.elements, state.selectedId);
+        return result?.node ?? null;
+      },
+      groupNode(id: string) {
+        const result = findNode(state.elements, id);
+        if (!result) return;
+
+        const newGroup = state.getNew("group");
+        newGroup.children.push(result.node);
+
+        removeNodeFromParent(result.parent?.children ?? state.elements, id);
+        state.set({ selectedId: newGroup.id });
       },
       onRename(id: string, newName: string) {
         state.set({
@@ -197,18 +212,18 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       onCancelEdit() {
         state.set({ editingId: null });
       },
-      groupNode(id: string) {
-        const { elements, node } = extractNode(state.elements, id);
-        if (!node) return;
-        const newGroup = state.getNew("group");
-        newGroup.children.push(node);
-        state.set({ elements: [...elements, newGroup], selectedId: newGroup.id });
-      },
       moveNode(srcId: string, dstId: string, edge: "top" | "bottom") {
-        const { elements, node } = extractNode(state.elements, srcId);
-        if (!node) return;
-        if (extractNode([node], dstId).node) return; // cannot move into self
-        state.set({ elements: insertNode(elements, node, dstId, edge) });
+        if (srcId === dstId) return;
+
+        const srcResult = findNode(state.elements, srcId);
+        const dstResult = findNode(state.elements, dstId);
+        // cannot move into self
+        if (!srcResult || !dstResult || findNode([srcResult.node], dstId)) return;
+
+        removeNodeFromParent(srcResult.parent?.children ?? state.elements, srcId);
+        insertNodeAt(srcResult.node, dstResult.parent?.children ?? state.elements, dstId, edge);
+
+        state.update();
       },
     }),
     { reset: { elements: false } },
@@ -313,7 +328,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         onPointerMove={state.onPanPointerMove}
         onPointerUp={state.onPanPointerUp}
       >
-        <MapEditSvg state={state} />
+        <MapEditSvg root={state} />
       </div>
     </div>
   );
