@@ -38,8 +38,9 @@ import type { MapEditUiMeta } from "./schema";
 // ✅ can add rect
 // ✅ can edit group/rect/path name
 
-// 🚧 can drag and resize a rect
-// - ✅ selected rect has outline
+// ✅ selected rect has outline
+// ✅ can drag a rect
+// 🚧 can resize a rect
 
 // 🚧 can convert a rect into a path
 // 🚧 unions of rects/paths is another path
@@ -67,6 +68,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
       elements: [],
+
+      svgEl: null,
+      dragEl: null,
 
       onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
         if (e.button === 0) {
@@ -162,13 +166,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       getNew<T extends MapNodeType>(type: T) {
         const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
+        const template = toTemplateNode[type];
         return {
-          ...toTemplateNode[type],
+          ...template,
           id: crypto.randomUUID(),
           name: `${prefix}${state.getNextSuffix(type, prefix)}`,
           visible: true,
           locked: false,
-          ...(type === "group" && { children: [] }), // fresh array
+          // 🔔 deep objects must be fresh
+          ...("children" in template && { children: { ...template.children } }),
+          ...("rect" in template && { rect: { ...template.rect } }),
         };
       },
       getNextSuffix(type: MapNodeType, prefix: string) {
@@ -232,10 +239,56 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.update();
       },
 
-      onClickSvg(e) {
+      clientToSvg(clientX: number, clientY: number) {
+        if (!state.svgEl) return { x: 0, y: 0 };
+        const rect = state.svgEl.getBoundingClientRect();
+        const baseSize = 500;
+        const vbW = baseSize / state.zoom;
+        const vbH = baseSize / state.zoom;
+        const vbX = (baseSize - vbW) / 2 - state.pan.x / state.zoom;
+        const vbY = (baseSize - vbH) / 2 - state.pan.y / state.zoom;
+        return {
+          x: vbX + ((clientX - rect.left) / rect.width) * vbW,
+          y: vbY + ((clientY - rect.top) / rect.height) * vbH,
+        };
+      },
+      onSvgPointerDown(e) {
         const target = e.target as SVGElement;
-        const { nodeId } = target.dataset;
+        const nodeId = target.dataset.nodeId;
         state.set({ selectedId: nodeId ?? null });
+
+        if (!nodeId) return;
+        const result = findNode(state.elements, nodeId);
+        if (result?.node.type === "rect") {
+          e.stopPropagation();
+          const svgPos = state.clientToSvg(e.clientX, e.clientY);
+          state.dragEl = {
+            type: "rect",
+            startSvg: svgPos,
+            startRect: { x: result.node.rect.x, y: result.node.rect.y },
+          };
+          (e.target as SVGElement).setPointerCapture(e.pointerId);
+        }
+      },
+      onSvgPointerMove(e) {
+        if (!state.dragEl || !state.selectedId) return;
+        e.stopPropagation();
+        const result = findNode(state.elements, state.selectedId);
+        if (!result || result.node.type !== "rect") return;
+
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        const dx = svgPos.x - state.dragEl.startSvg.x;
+        const dy = svgPos.y - state.dragEl.startSvg.y;
+        result.node.rect.x = state.dragEl.startRect.x + dx;
+        result.node.rect.y = state.dragEl.startRect.y + dy;
+        state.update();
+      },
+      onSvgPointerUp(e) {
+        if (state.dragEl) {
+          e.stopPropagation();
+          (e.target as SVGElement).releasePointerCapture(e.pointerId);
+          state.dragEl = null;
+        }
       },
     }),
   );
@@ -361,6 +414,12 @@ export type State = {
   lastAsideWidth: number;
   isResizing: boolean;
   elements: MapNode[];
+  svgEl: SVGSVGElement | null;
+  dragEl: null | {
+    type: "rect";
+    startSvg: { x: number; y: number };
+    startRect: { x: number; y: number };
+  };
 
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
@@ -380,7 +439,10 @@ export type State = {
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom") => void;
-  onClickSvg(e: React.PointerEvent<SVGSVGElement>): void;
+  clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
+  onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
+  onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
+  onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
 };
 
 function InspectorResizer({ state }: { state: UseStateRef<State> }) {
