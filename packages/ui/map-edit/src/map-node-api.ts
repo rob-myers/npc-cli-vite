@@ -13,45 +13,42 @@ export function traverseElements(list: MapNode[], act: (el: MapNode) => void): v
   });
 }
 
-export function extractNode(
-  nodes: MapNode[],
+/** Find node and its parent */
+export function findNode(
+  /** Either top-level nodes or `group.childrem` */
+  parentArray: MapNode[],
   id: string,
-): { elements: MapNode[]; node: MapNode | null } {
-  for (const child of nodes) {
+  parent: GroupMapNode | null = null,
+): { node: MapNode; parent: null | GroupMapNode } | null {
+  for (const child of parentArray) {
     if (child.id === id) {
-      return { elements: nodes.filter((n) => n.id !== id), node: child };
+      return { node: child, parent };
     }
     if (child.type === "group") {
-      const r = extractNode(child.children, id);
-      if (r.node) {
-        const updated = nodes.map((n) => (n.id === child.id ? { ...n, children: r.elements } : n));
-        return { elements: updated, node: r.node };
-      }
+      const result = findNode(child.children, id, child);
+      if (result) return result;
     }
   }
-  return { elements: nodes, node: null };
+  return null;
 }
 
-export function insertNode(
-  nodes: MapNode[],
-  node: MapNode,
-  targetId: string,
+export function insertNodeAt(
+  srcNode: MapNode,
+  dstArray: MapNode[],
+  dstChildId: string,
   edge: "top" | "bottom",
-): MapNode[] {
-  for (const [i, child] of nodes.entries()) {
-    if (child.id === targetId) {
-      const idx = edge === "top" ? i : i + 1;
-      return [...nodes.slice(0, idx), node, ...nodes.slice(idx)];
-    }
+): void {
+  const index = dstArray.findIndex((n) => n.id === dstChildId);
+  if (index === -1) throw Error(`Expected id ${dstChildId} in ${JSON.stringify(dstArray)}`);
+  const idx = edge === "top" ? index : index + 1;
+  dstArray.splice(idx, 0, srcNode);
+}
 
-    if (child.type === "group") {
-      const result = insertNode(child.children, node, targetId, edge);
-      if (result !== child.children) {
-        return [...nodes.slice(0, i), { ...child, children: result }, ...nodes.slice(i + 1)];
-      }
-    }
-  }
-  return nodes;
+export function removeNodeFromParent(parentArray: MapNode[], id: string) {
+  parentArray.splice(
+    parentArray.findIndex((n) => n.id === id),
+    1,
+  );
 }
 
 const mockBaseNode = {
