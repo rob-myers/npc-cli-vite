@@ -20,5 +20,19 @@ export default defineConfig({
     // pnpm dev-hotspot needs https for crypto
     process.env.USE_HTTPS ? basicSsl() : undefined,
     analyzer(),
+
+    // On close/reopen laptop in Chrome we do not want HMR to break
+    {
+      name: "patch-vite-client",
+      transform(code, id) {
+        if (id.includes("@vite/client") || id.endsWith("client.mjs")) {
+          // Replace specific code or append logic
+          return code.replace(
+            '			if (payload.event === "vite:ws:disconnect") {',
+            '			if (payload.event === "vite:ws:disconnect") {\nconsole.log("[vite] 💔 vite:ws:disconnect reconnecting...");\ntransport.connect(createHMRHandler(handleMessage));return;',
+          );
+        }
+      },
+    },
   ],
 });
