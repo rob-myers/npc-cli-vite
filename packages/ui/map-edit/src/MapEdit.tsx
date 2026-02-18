@@ -292,8 +292,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const dx = svgPos.x - state.dragEl.startSvg.x;
         const dy = svgPos.y - state.dragEl.startSvg.y;
-        result.node.rect.x = state.dragEl.startRect.x + dx;
-        result.node.rect.y = state.dragEl.startRect.y + dy;
+        const increment = 10;
+
+        result.node.rect.x = Math.round((state.dragEl.startRect.x + dx) / increment) * increment;
+        result.node.rect.y = Math.round((state.dragEl.startRect.y + dy) / increment) * increment;
         state.update();
       },
       onSvgPointerUp(e) {
