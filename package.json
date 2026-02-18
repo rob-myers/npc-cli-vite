@@ -25,10 +25,5 @@
   },
   "engines": {
     "node": ">=24.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "npm:rolldown-vite@latest"
-    }
   }
 }
