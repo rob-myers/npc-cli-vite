@@ -56,6 +56,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       zoom: 1,
       pan: { x: 0, y: 0 },
       isPanning: false,
+      isPinching: false,
       firstPointerPos: { x: 0, y: 0 },
       lastPointerPos: { x: 0, y: 0 },
       containerEl: null,
@@ -73,14 +74,14 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       dragEl: null,
 
       onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
-        if (e.button === 0) {
+        if (e.button === 0 && !state.isPinching) {
           (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
           state.isPanning = true;
           state.lastPointerPos = { x: e.clientX, y: e.clientY };
         }
       },
       onPanPointerMove(e: PointerEvent<HTMLDivElement>) {
-        if (!state.isPanning) return;
+        if (!state.isPanning || state.isPinching) return;
         const dx = e.clientX - state.lastPointerPos.x;
         const dy = e.clientY - state.lastPointerPos.y;
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
@@ -91,8 +92,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.isPanning = false;
       },
 
+      onTouchStart(e: TouchEvent) {
+        if (e.touches.length !== 2) return;
+        state.isPinching = true;
+        state.isPanning = false;
+        const [t0, t1] = [e.touches[0], e.touches[1]];
+        state.lastTouchDist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+        state.lastTouchMid = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
+      },
       onTouchMove(e: TouchEvent) {
-        if (e.touches.length !== 2 || !state.containerEl) return;
+        if (!(e.touches.length === 2 && state.containerEl && state.isPinching)) return;
         e.preventDefault();
         const [t0, t1] = [e.touches[0], e.touches[1]];
         const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
@@ -116,6 +125,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         state.lastTouchDist = dist;
         state.lastTouchMid = mid;
+      },
+      onTouchEnd() {
+        state.isPinching = false;
+        state.lastTouchDist = 0;
       },
 
       onResizePointerDown(e: PointerEvent<HTMLDivElement>) {
@@ -315,11 +328,14 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
 
     container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("touchstart", state.onTouchStart, { passive: true });
     container.addEventListener("touchmove", state.onTouchMove, { passive: false });
-    container.addEventListener("touchend", () => (state.lastTouchDist = 0));
+    container.addEventListener("touchend", state.onTouchEnd);
     return () => {
       container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", state.onTouchStart);
       container.removeEventListener("touchmove", state.onTouchMove);
+      container.removeEventListener("touchend", state.onTouchEnd);
     };
   }, [state, state.containerEl]);
 
@@ -402,6 +418,7 @@ export type State = {
   zoom: number;
   pan: { x: number; y: number };
   isPanning: boolean;
+  isPinching: boolean;
   firstPointerPos: { x: number; y: number };
   lastPointerPos: { x: number; y: number };
   containerEl: HTMLDivElement | null;
@@ -424,7 +441,9 @@ export type State = {
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerUp: (e: PointerEvent<HTMLDivElement>) => void;
+  onTouchStart: (e: TouchEvent) => void;
   onTouchMove: (e: TouchEvent) => void;
+  onTouchEnd: () => void;
   onResizePointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onResizePointerMove: (e: globalThis.PointerEvent) => void;
   onResizePointerUp: () => void;
