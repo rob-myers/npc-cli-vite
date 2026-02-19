@@ -17,6 +17,7 @@ import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
 import {
   findNode,
+  findNodeWithDepth,
   insertNodeAt,
   type MapNode,
   type MapNodeMap,
@@ -313,6 +314,31 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         state.set({ selectedIds: new Set([newGroup.id]) });
       },
+      groupSelected() {
+        if (state.selectedIds.size === 0) return;
+        let shallowest: ReturnType<typeof findNodeWithDepth> = null;
+        for (const id of state.selectedIds) {
+          const r = findNodeWithDepth(state.elements, id);
+          if (r && (!shallowest || r.depth < shallowest.depth)) shallowest = r;
+        }
+        if (!shallowest) return;
+
+        const newGroup = state.create("group");
+        const insertArray = shallowest.parent?.children ?? state.elements;
+        const insertIndex = insertArray.indexOf(shallowest.node);
+        const seen = new Set<string>();
+
+        for (const id of state.selectedIds) {
+          if (seen.has(id)) continue;
+          const result = findNode(state.elements, id);
+          if (!result) continue;
+          removeNodeFromParent(result.parent?.children ?? state.elements, id);
+          newGroup.children.push(result.node);
+          traverseElements([result.node], (el) => seen.add(el.id));
+        }
+        insertArray.splice(insertIndex, 0, newGroup);
+        state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
+      },
       moveNode(srcId: string, dstId: string, edge: "top" | "bottom" | "inside") {
         if (srcId === dstId) return;
 
@@ -579,6 +605,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.set({ selectionBox: null });
       } else if (e.key === "d" && state.selectedIds.size > 0) {
         state.duplicateSelected();
+      } else if (e.key === "g" && state.selectedIds.size > 0) {
+        state.groupSelected();
       } else if (e.key === "Backspace" && state.selectedIds.size > 0) {
         state.deleteSelected();
       }
@@ -741,6 +769,7 @@ export type State = {
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
+  groupSelected: () => void;
   deleteSelected: () => void;
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;

@@ -32,6 +32,22 @@ export function findNode(
   return null;
 }
 
+export function findNodeWithDepth(
+  parentArray: MapNode[],
+  id: string,
+  parent: GroupMapNode | null = null,
+  depth = 0,
+): { node: MapNode; parent: null | GroupMapNode; depth: number } | null {
+  for (const child of parentArray) {
+    if (child.id === id) return { node: child, parent, depth };
+    if (child.type === "group") {
+      const result = findNodeWithDepth(child.children, id, child, depth + 1);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
 export function insertNodeAt(
   srcNode: MapNode,
   dstArray: MapNode[],
