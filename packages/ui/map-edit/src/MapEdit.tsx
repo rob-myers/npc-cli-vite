@@ -71,6 +71,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
       elements: [],
+      undoStack: [] as HistoryEntry[],
+      redoStack: [] as HistoryEntry[],
 
       svgEl: null,
       dragEl: null,
@@ -156,6 +158,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
 
       onSelect(id: string, opts?: { add?: boolean }) {
+        state.pushHistory();
         const current = new Set(opts?.add ? state.selectedIds : []);
         if (current.has(id)) {
           current.delete(id);
@@ -206,6 +209,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
 
       add(type, { selectedGroupParent, rect } = {}) {
+        state.pushHistory();
         const selection = selectedGroupParent ? state.getSelectedNode() : null;
         const parent = selection?.type === "group" ? selection : null;
         const newItem = state.create(type);
@@ -257,6 +261,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       deleteSelected() {
         if (state.selectedIds.size === 0) return;
+        if (state.editingId) return;
+        state.pushHistory();
         for (const id of state.selectedIds) {
           const result = findNode(state.elements, id);
           if (result) {
@@ -265,8 +271,34 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
+      pushHistory() {
+        state.undoStack.push({
+          elements: JSON.parse(JSON.stringify(state.elements)),
+          selectedIds: new Set(state.selectedIds),
+        });
+        state.redoStack.length = 0;
+      },
+      undo() {
+        const entry = state.undoStack.pop();
+        if (!entry) return;
+        state.redoStack.push({
+          elements: JSON.parse(JSON.stringify(state.elements)),
+          selectedIds: new Set(state.selectedIds),
+        });
+        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
+      },
+      redo() {
+        const entry = state.redoStack.pop();
+        if (!entry) return;
+        state.undoStack.push({
+          elements: JSON.parse(JSON.stringify(state.elements)),
+          selectedIds: new Set(state.selectedIds),
+        });
+        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
+      },
       duplicateSelected() {
         if (state.selectedIds.size === 0) return;
+        state.pushHistory();
         const seen = new Set<string>();
         const newIds = new Set<string>();
         for (const id of state.selectedIds) {
@@ -316,6 +348,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       groupSelected() {
         if (state.selectedIds.size === 0) return;
+        state.pushHistory();
         let shallowest: ReturnType<typeof findNodeWithDepth> = null;
         for (const id of state.selectedIds) {
           const r = findNodeWithDepth(state.elements, id);
@@ -612,17 +645,29 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       }
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        state.undo();
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        state.redo();
+      }
+    };
+
     container.addEventListener("wheel", handleWheel, { passive: false });
     container.addEventListener("touchstart", state.onTouchStart, { passive: true });
     container.addEventListener("touchmove", state.onTouchMove, { passive: false });
     container.addEventListener("touchend", state.onTouchEnd);
     document.addEventListener("keyup", handleKeyUp);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       container.removeEventListener("wheel", handleWheel);
       container.removeEventListener("touchstart", state.onTouchStart);
       container.removeEventListener("touchmove", state.onTouchMove);
       container.removeEventListener("touchend", state.onTouchEnd);
       document.removeEventListener("keyup", handleKeyUp);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [state, state.containerEl]);
 
@@ -708,6 +753,11 @@ export type SelectionBox = {
   height: number;
 };
 
+type HistoryEntry = {
+  elements: MapNode[];
+  selectedIds: Set<string>;
+};
+
 export type State = {
   zoom: number;
   pan: { x: number; y: number };
@@ -726,6 +776,8 @@ export type State = {
   lastAsideWidth: number;
   isResizing: boolean;
   elements: MapNode[];
+  undoStack: HistoryEntry[];
+  redoStack: HistoryEntry[];
   svgEl: SVGSVGElement | null;
   dragEl:
     | null
@@ -771,6 +823,9 @@ export type State = {
   groupNode: (id: string) => void;
   groupSelected: () => void;
   deleteSelected: () => void;
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
