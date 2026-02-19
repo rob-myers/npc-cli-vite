@@ -482,6 +482,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           startRects,
         };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
+        state.set({ selectionBox: null });
       },
       startResizeRect(e, handle) {
         if (state.selectedIds.size !== 1) return;
