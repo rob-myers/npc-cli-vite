@@ -101,7 +101,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         )}
         style={{ paddingLeft: 8 + level * 2 }}
         onClick={(e) => {
-          root.onSelect(element.id);
+          root.onSelect(element.id, { add: e.shiftKey });
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
