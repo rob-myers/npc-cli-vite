@@ -63,7 +63,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       lastTouchDist: 0,
       lastTouchMid: { x: 0, y: 0 },
 
-      selectedId: null,
+      selectedIds: new Set<string>(),
+      selectionBox: null as SelectionBox | null,
       editingId: null,
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
@@ -153,8 +154,14 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         document.body.removeEventListener("pointerup", state.onResizePointerUp);
       },
 
-      onSelect(id: string) {
-        state.set({ selectedId: id === state.selectedId ? null : id });
+      onSelect(id: string, opts?: { add?: boolean }) {
+        const current = new Set(opts?.add ? state.selectedIds : []);
+        if (current.has(id)) {
+          current.delete(id);
+        } else {
+          current.add(id);
+        }
+        state.set({ selectedIds: current, selectionBox: null });
       },
       onToggleVisibility(id: string) {
         state.set({
@@ -162,19 +169,22 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         });
       },
 
-      add(type, { selectedGroupParent } = {}) {
+      add(type, { selectedGroupParent, rect } = {}) {
         const selection = selectedGroupParent ? state.getSelectedNode() : null;
         const parent = selection?.type === "group" ? selection : null;
         const newItem = state.getNew(type);
+        if (rect && newItem.type === "rect") {
+          newItem.rect = rect;
+        }
         if (!parent) {
           state.set({
             elements: [...state.elements, newItem],
-            selectedId: newItem.id,
+            selectedIds: new Set([newItem.id]),
             editingId: newItem.id,
           });
         } else {
           parent.children.push(newItem);
-          state.update();
+          state.set({ selectedIds: new Set([newItem.id]) });
         }
       },
       getNew<T extends MapNodeType>(type: T) {
@@ -204,8 +214,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         return nextNum;
       },
       getSelectedNode() {
-        if (!state.selectedId) return null;
-        const result = findNode(state.elements, state.selectedId);
+        if (state.selectedIds.size !== 1) return null;
+        const [selectedId] = state.selectedIds;
+        const result = findNode(state.elements, selectedId);
         return result?.node ?? null;
       },
       groupNode(nodeId: string) {
@@ -219,7 +230,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const oldChildIndex = removeNodeFromParent(parentArray, nodeId);
         parentArray.splice(oldChildIndex, 0, newGroup);
 
-        state.set({ selectedId: newGroup.id });
+        state.set({ selectedIds: new Set([newGroup.id]) });
       },
       onRename(id: string, newName: string) {
         state.set({
@@ -251,7 +262,12 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (edge === "inside" && dstResult.node.type === "group") {
           dstResult.node.children.push(srcResult.node);
         } else {
-          insertNodeAt(srcResult.node, dstResult.parent?.children ?? state.elements, dstId, edge === "inside" ? "bottom" : edge);
+          insertNodeAt(
+            srcResult.node,
+            dstResult.parent?.children ?? state.elements,
+            dstId,
+            edge === "inside" ? "bottom" : edge,
+          );
         }
 
         state.update();
@@ -276,9 +292,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         if (resizeHandle) {
           state.startResizeRect(e, resizeHandle);
+        } else if (e.shiftKey) {
+          state.startSelectionBox(e);
         } else {
           const nodeId = target.dataset.nodeId;
-          state.set({ selectedId: nodeId ?? null });
+          state.set({ selectedIds: nodeId ? new Set([nodeId]) : new Set(), selectionBox: null });
           if (nodeId) {
             state.startDragRect(e, nodeId);
           }
@@ -297,7 +315,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
       startResizeRect(e, handle) {
-        const result = state.selectedId ? findNode(state.elements, state.selectedId) : null;
+        if (state.selectedIds.size !== 1) return;
+        const [selectedId] = state.selectedIds;
+        const result = findNode(state.elements, selectedId);
         if (result?.node.type !== "rect") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
@@ -310,10 +330,46 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
-      onSvgPointerMove(e) {
-        if (!state.dragEl || !state.selectedId) return;
+      startSelectionBox(e) {
         e.stopPropagation();
-        const result = findNode(state.elements, state.selectedId);
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        const increment = 10;
+        const snappedX = Math.round(svgPos.x / increment) * increment;
+        const snappedY = Math.round(svgPos.y / increment) * increment;
+        state.dragEl = {
+          type: "selection-box",
+          startSvg: { x: snappedX, y: snappedY },
+        };
+        state.set({
+          selectionBox: { x: snappedX, y: snappedY, width: 0, height: 0 },
+          selectedIds: new Set(),
+        });
+        (e.target as SVGElement).setPointerCapture(e.pointerId);
+      },
+      onSvgPointerMove(e) {
+        if (!state.dragEl) return;
+        e.stopPropagation();
+
+        if (state.dragEl.type === "selection-box") {
+          const svgPos = state.clientToSvg(e.clientX, e.clientY);
+          const increment = 10;
+          const snappedX = Math.round(svgPos.x / increment) * increment;
+          const snappedY = Math.round(svgPos.y / increment) * increment;
+          const { startSvg } = state.dragEl;
+          state.set({
+            selectionBox: {
+              x: Math.min(startSvg.x, snappedX),
+              y: Math.min(startSvg.y, snappedY),
+              width: Math.abs(snappedX - startSvg.x),
+              height: Math.abs(snappedY - startSvg.y),
+            },
+          });
+          return;
+        }
+
+        if (state.selectedIds.size !== 1) return;
+        const [selectedId] = state.selectedIds;
+        const result = findNode(state.elements, selectedId);
         if (!result || result.node.type !== "rect") return;
 
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
@@ -337,7 +393,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
               rect.width = newWidth;
             }
           } else {
-            rect.width = Math.max(minSize, Math.round((startRect.width + dx) / increment) * increment);
+            rect.width = Math.max(
+              minSize,
+              Math.round((startRect.width + dx) / increment) * increment,
+            );
           }
 
           if (handle.includes("n")) {
@@ -348,7 +407,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
               rect.height = newHeight;
             }
           } else {
-            rect.height = Math.max(minSize, Math.round((startRect.height + dy) / increment) * increment);
+            rect.height = Math.max(
+              minSize,
+              Math.round((startRect.height + dy) / increment) * increment,
+            );
           }
         }
         state.update();
@@ -357,6 +419,27 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (state.dragEl) {
           e.stopPropagation();
           (e.target as SVGElement).releasePointerCapture(e.pointerId);
+
+          if (state.dragEl.type === "selection-box" && state.selectionBox) {
+            const selectedIds = new Set<string>();
+            const box = state.selectionBox;
+            traverseElements(state.elements, (el) => {
+              if (el.type === "rect") {
+                const r = el.rect;
+                // Check if rects intersect
+                if (
+                  r.x < box.x + box.width &&
+                  r.x + r.width > box.x &&
+                  r.y < box.y + box.height &&
+                  r.y + r.height > box.y
+                ) {
+                  selectedIds.add(el.id);
+                }
+              }
+            });
+            state.set({ selectedIds });
+          }
+
           state.dragEl = null;
         }
       },
@@ -384,15 +467,29 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       state.set({ pan: newPan, zoom: newZoom });
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (
+        e.key === "r" &&
+        state.selectionBox &&
+        state.selectionBox.width > 0 &&
+        state.selectionBox.height > 0
+      ) {
+        state.add("rect", { rect: state.selectionBox });
+        state.set({ selectionBox: null });
+      }
+    };
+
     container.addEventListener("wheel", handleWheel, { passive: false });
     container.addEventListener("touchstart", state.onTouchStart, { passive: true });
     container.addEventListener("touchmove", state.onTouchMove, { passive: false });
     container.addEventListener("touchend", state.onTouchEnd);
+    document.addEventListener("keyup", handleKeyUp);
     return () => {
       container.removeEventListener("wheel", handleWheel);
       container.removeEventListener("touchstart", state.onTouchStart);
       container.removeEventListener("touchmove", state.onTouchMove);
       container.removeEventListener("touchend", state.onTouchEnd);
+      document.removeEventListener("keyup", handleKeyUp);
     };
   }, [state, state.containerEl]);
 
@@ -471,6 +568,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   );
 }
 
+export type SelectionBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type State = {
   zoom: number;
   pan: { x: number; y: number };
@@ -482,26 +586,35 @@ export type State = {
   lastTouchDist: number;
   lastTouchMid: { x: number; y: number };
 
-  selectedId: string | null;
+  selectedIds: Set<string>;
+  selectionBox: SelectionBox | null;
   editingId: string | null;
   asideWidth: number;
   lastAsideWidth: number;
   isResizing: boolean;
   elements: MapNode[];
   svgEl: SVGSVGElement | null;
-  dragEl: null | {
-    type: "move-rect";
-    startSvg: { x: number; y: number };
-    startRect: { x: number; y: number };
-  } | {
-    type: "resize-rect";
-    handle: ResizeHandle;
-    startSvg: { x: number; y: number };
-    startRect: { x: number; y: number; width: number; height: number };
-  };
+  dragEl:
+    | null
+    | {
+        type: "move-rect";
+        startSvg: { x: number; y: number };
+        startRect: { x: number; y: number };
+      }
+    | {
+        type: "resize-rect";
+        handle: ResizeHandle;
+        startSvg: { x: number; y: number };
+        startRect: { x: number; y: number; width: number; height: number };
+      }
+    | {
+        type: "selection-box";
+        startSvg: { x: number; y: number };
+      };
 
   startDragRect: (e: React.PointerEvent<SVGSVGElement>, nodeId: string) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
+  startSelectionBox: (e: React.PointerEvent<SVGSVGElement>) => void;
 
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
@@ -512,9 +625,9 @@ export type State = {
   onResizePointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onResizePointerMove: (e: globalThis.PointerEvent) => void;
   onResizePointerUp: () => void;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, opts?: { add?: boolean }) => void;
   onToggleVisibility: (id: string) => void;
-  add: (type: MapNodeType, opts?: { selectedGroupParent?: boolean }) => void;
+  add: (type: MapNodeType, opts?: { selectedGroupParent?: boolean; rect?: SelectionBox }) => void;
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;

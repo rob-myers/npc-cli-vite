@@ -27,6 +27,19 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       <DefsAndGrid />
       <Origin />
       <RenderMapNodes state={root} elements={root.elements} />
+      {root.selectionBox !== null && (
+        <rect
+          x={root.selectionBox.x}
+          y={root.selectionBox.y}
+          width={root.selectionBox.width}
+          height={root.selectionBox.height}
+          fill="rgba(100, 150, 255, 0.15)"
+          stroke="rgba(100, 150, 255, 0.8)"
+          strokeWidth={1}
+          strokeDasharray="4 2"
+          className="pointer-events-none"
+        />
+      )}
     </svg>
   );
 }
@@ -49,7 +62,7 @@ const RenderMapNodes = ({
         );
       case "rect": {
         const { rect } = el;
-        const isSelected = el.id === state.selectedId;
+        const isSelected = state.selectedIds.has(el.id);
         return (
           <g key={el.id}>
             <rect
@@ -64,7 +77,7 @@ const RenderMapNodes = ({
             >
               <title>{el.name}</title>
             </rect>
-            {isSelected && <RectResizeHandles rect={rect} />}
+            {isSelected && state.selectedIds.size === 1 && <RectResizeHandles rect={rect} />}
           </g>
         );
       }
