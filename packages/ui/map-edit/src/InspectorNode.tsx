@@ -33,7 +33,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
     dropInside: false,
   }));
 
-  const isSelected = root.selectedId === element.id;
+  const isSelected = root.selectedIds.has(element.id);
   const isEditing = root.editingId === element.id;
   const isGroup = element.type === "group";
 
@@ -131,7 +131,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           className={cn(
             "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
             isSelected && "brightness-125 font-medium",
-            isEditing ? "bg-slate-700 selection:text-white rounded" : "cursor-pointer",
+            isEditing ? "bg-slate-500/50 selection:bg-black/20 rounded" : "cursor-pointer",
           )}
           defaultValue={element.name || element.type}
           readOnly={!isEditing}

@@ -132,7 +132,10 @@ export function TtyMenu(props: Props) {
         )}
         {props.disabled && (
           <div
-            className={cn("cursor-pointer pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
+            className={cn(
+              "cursor-pointer pr-2 pt-1 text-[#777]",
+              !state.spawnBgPaused && "text-[#cc6]",
+            )}
             onClick={state.setSpawnBgPaused.bind(null, undefined)}
             title={
               state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"
