@@ -670,13 +670,15 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       container.removeEventListener("touchmove", state.onTouchMove);
       container.removeEventListener("touchend", state.onTouchEnd);
     };
-  }, [state, state.containerEl]);
+  }, [state.containerEl]);
 
   useEffect(() => {
     const wrapper = state.wrapperEl;
     if (!wrapper) return;
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === "INPUT" || !wrapper.contains(e.target as Element))
+        return;
       if (
         e.key === "r" &&
         state.selectionBox &&
@@ -695,6 +697,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === "INPUT" || !wrapper.contains(e.target as Element))
+        return;
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         state.undo();
@@ -704,13 +708,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       }
     };
 
-    wrapper.addEventListener("keyup", handleKeyUp);
-    wrapper.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      wrapper.removeEventListener("keyup", handleKeyUp);
-      wrapper.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [state, state.wrapperEl]);
+  }, [state.wrapperEl]);
 
   return (
     <div
