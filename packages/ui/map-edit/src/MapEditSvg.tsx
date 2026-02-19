@@ -58,7 +58,7 @@ const RenderMapNodes = ({
               y={rect.y}
               width={rect.width}
               height={rect.height}
-              fill="rgba(255, 255, 255, 0.5)"
+              fill="rgba(0, 0, 0, 0.25)"
               stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
               strokeWidth={2}
             >
@@ -103,10 +103,9 @@ function RectResizeHandles({ rect }: { rect: Rect }) {
             y={pos.y - resizeHandleSize / 2}
             width={resizeHandleSize}
             height={resizeHandleSize}
-            fill="white"
-            stroke="rgba(50, 50, 255, 1)"
+            stroke="rgba(100, 100, 100, 1)"
             strokeWidth={1}
-            className={cn(handleToCursor[handle])}
+            className={cn("fill-background", handleToCursor[handle])}
           />
         );
       })}
