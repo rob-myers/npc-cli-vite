@@ -35,8 +35,8 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
           height={root.selectionBox.height}
           fill="rgba(100, 150, 255, 0.15)"
           stroke="rgba(100, 150, 255, 0.8)"
-          strokeWidth={1}
-          strokeDasharray="4 2"
+          strokeWidth={1 / root.zoom}
+          strokeDasharray={`${4 / root.zoom} ${2 / root.zoom}`}
           className="pointer-events-none"
         />
       )}
