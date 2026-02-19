@@ -88,7 +88,7 @@ const RenderMapNodes = ({
   });
 };
 
-const resizeHandleSize = 8;
+const resizeHandleSize = 4;
 const resizeHandles: { handle: ResizeHandle; getPos: (r: Rect) => { x: number; y: number } }[] = [
   { handle: "nw", getPos: (r) => ({ x: r.x, y: r.y }) },
   { handle: "ne", getPos: (r) => ({ x: r.x + r.width, y: r.y }) },
