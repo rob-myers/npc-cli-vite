@@ -232,6 +232,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         state.set({ selectedIds: new Set([newGroup.id]) });
       },
+      deleteSelected() {
+        if (state.selectedIds.size === 0) return;
+        for (const id of state.selectedIds) {
+          const result = findNode(state.elements, id);
+          if (result) {
+            removeNodeFromParent(result.parent?.children ?? state.elements, id);
+          }
+        }
+        state.set({ selectedIds: new Set(), selectionBox: null });
+      },
       onRename(id: string, newName: string) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
@@ -468,7 +478,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (
+      if (e.key === "Backspace" && state.selectedIds.size > 0) {
+        state.deleteSelected();
+      } else if (
         e.key === "r" &&
         state.selectionBox &&
         state.selectionBox.width > 0 &&
@@ -635,6 +647,7 @@ export type State = {
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
+  deleteSelected: () => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
