@@ -75,6 +75,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       redoStack: [] as HistoryEntry[],
 
       svgEl: null,
+      wrapperEl: null,
       dragEl: null,
 
       onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
@@ -627,6 +628,22 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       state.set({ pan: newPan, zoom: newZoom });
     };
 
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("touchstart", state.onTouchStart, { passive: true });
+    container.addEventListener("touchmove", state.onTouchMove, { passive: false });
+    container.addEventListener("touchend", state.onTouchEnd);
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", state.onTouchStart);
+      container.removeEventListener("touchmove", state.onTouchMove);
+      container.removeEventListener("touchend", state.onTouchEnd);
+    };
+  }, [state, state.containerEl]);
+
+  useEffect(() => {
+    const wrapper = state.wrapperEl;
+    if (!wrapper) return;
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (
         e.key === "r" &&
@@ -655,24 +672,20 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       }
     };
 
-    container.addEventListener("wheel", handleWheel, { passive: false });
-    container.addEventListener("touchstart", state.onTouchStart, { passive: true });
-    container.addEventListener("touchmove", state.onTouchMove, { passive: false });
-    container.addEventListener("touchend", state.onTouchEnd);
-    document.addEventListener("keyup", handleKeyUp);
-    document.addEventListener("keydown", handleKeyDown);
+    wrapper.addEventListener("keyup", handleKeyUp);
+    wrapper.addEventListener("keydown", handleKeyDown);
     return () => {
-      container.removeEventListener("wheel", handleWheel);
-      container.removeEventListener("touchstart", state.onTouchStart);
-      container.removeEventListener("touchmove", state.onTouchMove);
-      container.removeEventListener("touchend", state.onTouchEnd);
-      document.removeEventListener("keyup", handleKeyUp);
-      document.removeEventListener("keydown", handleKeyDown);
+      wrapper.removeEventListener("keyup", handleKeyUp);
+      wrapper.removeEventListener("keydown", handleKeyDown);
     };
-  }, [state, state.containerEl]);
+  }, [state, state.wrapperEl]);
 
   return (
-    <div className="overflow-auto size-full flex justify-center items-start">
+    <div
+      ref={state.ref("wrapperEl")}
+      tabIndex={0}
+      className="overflow-auto size-full flex justify-center items-start outline-none"
+    >
       <aside
         className="relative h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
@@ -779,6 +792,7 @@ export type State = {
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
   svgEl: SVGSVGElement | null;
+  wrapperEl: HTMLDivElement | null;
   dragEl:
     | null
     | {
