@@ -165,6 +165,19 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         const current = new Set(opts?.add ? state.selectedIds : []);
 
+        // Shift+click: select interval in flattened tree
+        if (opts?.add && state.selectedIds.size > 0) {
+          const flat: string[] = [];
+          traverseElements(state.elements, (el) => flat.push(el.id));
+          const i = flat.indexOf(id);
+          const j = flat.findIndex((fid) => state.selectedIds.has(fid));
+          if (i !== -1 && j !== -1) {
+            for (let k = Math.min(i, j); k <= Math.max(i, j); k++) current.add(flat[k]);
+            state.set({ selectedIds: current, selectionBox: null });
+            return;
+          }
+        }
+
         if (result.node.type === "group") {
           const descendantIds: string[] = [];
           traverseElements(result.node.children, (el) => descendantIds.push(el.id));
