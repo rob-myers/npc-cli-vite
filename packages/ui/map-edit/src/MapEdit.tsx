@@ -242,6 +242,32 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
+      cloneNode(node: MapNode, seen: Set<string>): MapNode {
+        seen.add(node.id);
+        const base = { ...node, id: crypto.randomUUID() };
+        if (node.type === "group") {
+          return { ...base, type: "group", children: node.children.map((c) => state.cloneNode(c, seen)) };
+        }
+        if (node.type === "rect") {
+          return { ...base, type: "rect", rect: { ...node.rect } };
+        }
+        return base;
+      },
+      duplicateSelected() {
+        if (state.selectedIds.size === 0) return;
+        const seen = new Set<string>();
+        const newIds = new Set<string>();
+        for (const id of state.selectedIds) {
+          if (seen.has(id)) continue;
+          const result = findNode(state.elements, id);
+          if (result) {
+            const clone = state.cloneNode(result.node, seen);
+            state.elements.push(clone);
+            newIds.add(clone.id);
+          }
+        }
+        state.set({ selectedIds: newIds, selectionBox: null });
+      },
       onRename(id: string, newName: string) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
@@ -492,6 +518,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       ) {
         state.add("rect", { rect: state.selectionBox });
         state.set({ selectionBox: null });
+      } else if (e.key === "d" && state.selectedIds.size > 0) {
+        state.duplicateSelected();
+      } else if (e.key === "Backspace" && state.selectedIds.size > 0) {
+        state.deleteSelected();
       }
     };
 
@@ -652,6 +682,8 @@ export type State = {
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
   deleteSelected: () => void;
+  cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
+  duplicateSelected: () => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
