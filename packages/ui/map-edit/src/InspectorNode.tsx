@@ -30,6 +30,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
     longPressTimeout: null as ReturnType<typeof setTimeout> | null,
     rowEl: null as HTMLDivElement | null,
     closestEdge: null as Edge | null,
+    dropInside: false,
   }));
 
   const isSelected = root.selectedId === element.id;
@@ -55,17 +56,33 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         canDrop: ({ source }) => source.data.type === "map-node" && source.data.id !== id,
         getData: ({ input }) =>
           attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
-        onDrag: ({ self }) => state.set({ closestEdge: extractClosestEdge(self.data) }),
-        onDragLeave: () => state.set({ closestEdge: null }),
-        onDrop: ({ source, self }) => {
+        onDrag: ({ self, location }) => {
           const edge = extractClosestEdge(self.data);
-          state.set({ closestEdge: null });
-          if (edge === "top" || edge === "bottom")
+          // For groups, detect if we're in the center zone to allow dropping inside
+          if (isGroup) {
+            const rect = el.getBoundingClientRect();
+            const y = location.current.input.clientY;
+            const relY = (y - rect.top) / rect.height;
+            const inCenter = relY > 0.25 && relY < 0.75;
+            state.set({ closestEdge: inCenter ? null : edge, dropInside: inCenter });
+          } else {
+            state.set({ closestEdge: edge, dropInside: false });
+          }
+        },
+        onDragLeave: () => state.set({ closestEdge: null, dropInside: false }),
+        onDrop: ({ source }) => {
+          const edge = state.closestEdge;
+          const dropInside = state.dropInside;
+          state.set({ closestEdge: null, dropInside: false });
+          if (dropInside && isGroup) {
+            root.moveNode(source.data.id as string, id, "inside");
+          } else if (edge === "top" || edge === "bottom") {
             root.moveNode(source.data.id as string, id, edge);
+          }
         },
       }),
     );
-  }, [element.id, root, state]);
+  }, [element.id, isGroup, root, state]);
 
   const onDoubleTap = useDoubleTap(() => root.onStartEdit(element.id));
 
@@ -80,6 +97,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           isSelected && "brightness-125 border-blue-400/25",
           state.closestEdge === "top" && "border-t-2 border-t-blue-400",
           state.closestEdge === "bottom" && "border-b-2 border-b-blue-400",
+          state.dropInside && "bg-blue-400/20 ring-1 ring-inset ring-blue-400",
         )}
         style={{ paddingLeft: 8 + level * 2 }}
         onClick={(e) => {

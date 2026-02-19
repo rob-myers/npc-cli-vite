@@ -233,7 +233,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       onCancelEdit() {
         state.set({ editingId: null });
       },
-      moveNode(srcId: string, dstId: string, edge: "top" | "bottom") {
+      moveNode(srcId: string, dstId: string, edge: "top" | "bottom" | "inside") {
         if (srcId === dstId) return;
 
         const srcResult = findNode(state.elements, srcId);
@@ -247,7 +247,12 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
 
         removeNodeFromParent(srcResult.parent?.children ?? state.elements, srcId);
-        insertNodeAt(srcResult.node, dstResult.parent?.children ?? state.elements, dstId, edge);
+
+        if (edge === "inside" && dstResult.node.type === "group") {
+          dstResult.node.children.push(srcResult.node);
+        } else {
+          insertNodeAt(srcResult.node, dstResult.parent?.children ?? state.elements, dstId, edge === "inside" ? "bottom" : edge);
+        }
 
         state.update();
       },
@@ -517,7 +522,7 @@ export type State = {
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
-  moveNode: (srcId: string, dstId: string, edge: "top" | "bottom") => void;
+  moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
