@@ -321,9 +321,30 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const vbH = baseSize / state.zoom;
         const vbX = (baseSize - vbW) / 2 - state.pan.x / state.zoom;
         const vbY = (baseSize - vbH) / 2 - state.pan.y / state.zoom;
+
+        // Account for preserveAspectRatio="xMidYMid meet" centering
+        // The viewBox is square (vbW === vbH), so we need to find the actual rendered size
+        const containerAspect = rect.width / rect.height;
+        const viewBoxAspect = vbW / vbH; // 1 since vbW === vbH
+
+        let renderWidth: number, renderHeight: number, offsetX: number, offsetY: number;
+        if (containerAspect > viewBoxAspect) {
+          // Container is wider - height is the limiting dimension
+          renderHeight = rect.height;
+          renderWidth = rect.height * viewBoxAspect;
+          offsetX = (rect.width - renderWidth) / 2;
+          offsetY = 0;
+        } else {
+          // Container is taller - width is the limiting dimension
+          renderWidth = rect.width;
+          renderHeight = rect.width / viewBoxAspect;
+          offsetX = 0;
+          offsetY = (rect.height - renderHeight) / 2;
+        }
+
         return {
-          x: vbX + ((clientX - rect.left) / rect.width) * vbW,
-          y: vbY + ((clientY - rect.top) / rect.height) * vbH,
+          x: vbX + ((clientX - rect.left - offsetX) / renderWidth) * vbW,
+          y: vbY + ((clientY - rect.top - offsetY) / renderHeight) * vbH,
         };
       },
       onSvgPointerDown(e) {
@@ -417,11 +438,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           const increment = 10;
           const { startSvg } = state.dragEl;
           const snappedX =
-            svgPos.x - startSvg.x > 0
+            svgPos.x - startSvg.x >= 0
               ? Math.ceil(svgPos.x / increment) * increment
               : Math.floor(svgPos.x / increment) * increment;
           const snappedY =
-            svgPos.y - startSvg.y > 0
+            svgPos.y - startSvg.y >= 0
               ? Math.ceil(svgPos.y / increment) * increment
               : Math.floor(svgPos.y / increment) * increment;
           state.set({
