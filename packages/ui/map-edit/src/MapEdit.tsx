@@ -160,8 +160,26 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
       onSelect(id: string, opts?: { add?: boolean }) {
         state.pushHistory();
+        const result = findNode(state.elements, id);
+        if (!result) return;
+
         const current = new Set(opts?.add ? state.selectedIds : []);
-        if (current.has(id)) {
+
+        if (result.node.type === "group") {
+          const descendantIds: string[] = [];
+          traverseElements(result.node.children, (el) => descendantIds.push(el.id));
+          const allDescendantsSelected = descendantIds.every((did) => state.selectedIds.has(did));
+
+          if (state.selectedIds.has(id) && allDescendantsSelected && descendantIds.length > 0) {
+            // All descendants selected -> select only the group
+            for (const did of descendantIds) current.delete(did);
+            current.add(id);
+          } else {
+            // Select group and all descendants
+            current.add(id);
+            for (const did of descendantIds) current.add(did);
+          }
+        } else if (current.has(id)) {
           current.delete(id);
         } else {
           current.add(id);
