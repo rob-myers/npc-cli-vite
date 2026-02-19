@@ -267,21 +267,43 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       onSvgPointerDown(e) {
         const target = e.target as SVGElement;
-        const nodeId = target.dataset.nodeId;
-        state.set({ selectedId: nodeId ?? null });
+        const resizeHandle = target.dataset.resizeHandle as ResizeHandle | undefined;
 
-        if (!nodeId) return;
-        const result = findNode(state.elements, nodeId);
-        if (result?.node.type === "rect") {
-          e.stopPropagation();
-          const svgPos = state.clientToSvg(e.clientX, e.clientY);
-          state.dragEl = {
-            type: "rect",
-            startSvg: svgPos,
-            startRect: { x: result.node.rect.x, y: result.node.rect.y },
-          };
-          (e.target as SVGElement).setPointerCapture(e.pointerId);
+        if (resizeHandle) {
+          state.startResizeRect(e, resizeHandle);
+        } else {
+          const nodeId = target.dataset.nodeId;
+          state.set({ selectedId: nodeId ?? null });
+          if (nodeId) {
+            state.startDragRect(e, nodeId);
+          }
         }
+      },
+      startDragRect(e, nodeId) {
+        const result = findNode(state.elements, nodeId);
+        if (result?.node.type !== "rect") return;
+        e.stopPropagation();
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        state.dragEl = {
+          type: "move-rect",
+          startSvg: svgPos,
+          startRect: { x: result.node.rect.x, y: result.node.rect.y },
+        };
+        (e.target as SVGElement).setPointerCapture(e.pointerId);
+      },
+      startResizeRect(e, handle) {
+        const result = state.selectedId ? findNode(state.elements, state.selectedId) : null;
+        if (result?.node.type !== "rect") return;
+        e.stopPropagation();
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        const { rect } = result.node;
+        state.dragEl = {
+          type: "resize-rect",
+          handle,
+          startSvg: svgPos,
+          startRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        };
+        (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
       onSvgPointerMove(e) {
         if (!state.dragEl || !state.selectedId) return;
@@ -293,9 +315,37 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const dx = svgPos.x - state.dragEl.startSvg.x;
         const dy = svgPos.y - state.dragEl.startSvg.y;
         const increment = 10;
+        const { rect } = result.node;
 
-        result.node.rect.x = Math.round((state.dragEl.startRect.x + dx) / increment) * increment;
-        result.node.rect.y = Math.round((state.dragEl.startRect.y + dy) / increment) * increment;
+        if (state.dragEl.type === "move-rect") {
+          rect.x = Math.round((state.dragEl.startRect.x + dx) / increment) * increment;
+          rect.y = Math.round((state.dragEl.startRect.y + dy) / increment) * increment;
+        } else {
+          const { handle, startRect } = state.dragEl;
+          const minSize = increment;
+
+          if (handle.includes("w")) {
+            const newX = Math.round((startRect.x + dx) / increment) * increment;
+            const newWidth = startRect.width + (startRect.x - newX);
+            if (newWidth >= minSize) {
+              rect.x = newX;
+              rect.width = newWidth;
+            }
+          } else {
+            rect.width = Math.max(minSize, Math.round((startRect.width + dx) / increment) * increment);
+          }
+
+          if (handle.includes("n")) {
+            const newY = Math.round((startRect.y + dy) / increment) * increment;
+            const newHeight = startRect.height + (startRect.y - newY);
+            if (newHeight >= minSize) {
+              rect.y = newY;
+              rect.height = newHeight;
+            }
+          } else {
+            rect.height = Math.max(minSize, Math.round((startRect.height + dy) / increment) * increment);
+          }
+        }
         state.update();
       },
       onSvgPointerUp(e) {
@@ -435,10 +485,18 @@ export type State = {
   elements: MapNode[];
   svgEl: SVGSVGElement | null;
   dragEl: null | {
-    type: "rect";
+    type: "move-rect";
     startSvg: { x: number; y: number };
     startRect: { x: number; y: number };
+  } | {
+    type: "resize-rect";
+    handle: ResizeHandle;
+    startSvg: { x: number; y: number };
+    startRect: { x: number; y: number; width: number; height: number };
   };
+
+  startDragRect: (e: React.PointerEvent<SVGSVGElement>, nodeId: string) => void;
+  startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
 
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
@@ -503,3 +561,5 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 const minAsideWidth = 100;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
+
+export type ResizeHandle = "nw" | "ne" | "sw" | "se";
