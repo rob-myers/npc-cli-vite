@@ -344,8 +344,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const increment = 10;
-        const snappedX = Math.round(svgPos.x / increment) * increment;
-        const snappedY = Math.round(svgPos.y / increment) * increment;
+        const snappedX = Math.trunc(svgPos.x / increment) * increment;
+        const snappedY = Math.trunc(svgPos.y / increment) * increment;
         state.dragEl = {
           type: "selection-box",
           startSvg: { x: snappedX, y: snappedY },
@@ -363,9 +363,15 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (state.dragEl.type === "selection-box") {
           const svgPos = state.clientToSvg(e.clientX, e.clientY);
           const increment = 10;
-          const snappedX = Math.round(svgPos.x / increment) * increment;
-          const snappedY = Math.round(svgPos.y / increment) * increment;
           const { startSvg } = state.dragEl;
+          const snappedX =
+            svgPos.x - startSvg.x > 0
+              ? Math.ceil(svgPos.x / increment) * increment
+              : Math.floor(svgPos.x / increment) * increment;
+          const snappedY =
+            svgPos.y - startSvg.y > 0
+              ? Math.ceil(svgPos.y / increment) * increment
+              : Math.floor(svgPos.y / increment) * increment;
           state.set({
             selectionBox: {
               x: Math.min(startSvg.x, snappedX),
@@ -478,9 +484,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Backspace" && state.selectedIds.size > 0) {
-        state.deleteSelected();
-      } else if (
+      if (
         e.key === "r" &&
         state.selectionBox &&
         state.selectionBox.width > 0 &&
@@ -567,7 +571,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       <div
         ref={state.ref("containerEl")}
         className={cn(
-          "w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none",
+          "w-full h-full flex items-center justify-center overflow-hidden relative active:cursor-grabbing touch-none",
           theme === "dark" ? "bg-gray-700/30" : "bg-white",
         )}
         onPointerDown={state.onPanPointerDown}
