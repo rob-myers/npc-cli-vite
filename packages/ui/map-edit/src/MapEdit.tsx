@@ -246,7 +246,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         seen.add(node.id);
         const base = { ...node, id: crypto.randomUUID() };
         if (node.type === "group") {
-          return { ...base, type: "group", children: node.children.map((c) => state.cloneNode(c, seen)) };
+          return {
+            ...base,
+            type: "group",
+            children: node.children.map((c) => state.cloneNode(c, seen)),
+          };
         }
         if (node.type === "rect") {
           return { ...base, type: "rect", rect: { ...node.rect } };
@@ -499,7 +503,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       const mouseY = e.clientY - rect.top - rect.height / 2;
 
       const delta = e.deltaY > 0 ? 1 - 0.02 : 1 + 0.02;
-      const newZoom = Math.min(Math.max(state.zoom * delta, 0.1), 10);
+      const newZoom = Math.min(Math.max(state.zoom * delta, 0.25), 5);
 
       const scaleFactor = newZoom / state.zoom;
       const newPan = {
