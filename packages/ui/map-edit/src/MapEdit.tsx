@@ -224,7 +224,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       cloneNode(node: MapNode, seen: Set<string>): MapNode {
         seen.add(node.id);
-        const base = { ...node, id: crypto.randomUUID() };
+        const base = {
+          ...node,
+          id: crypto.randomUUID(),
+          name: state.getNextName(node.type),
+        };
         if (node.type === "group") {
           return {
             ...base,
@@ -238,12 +242,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         return base;
       },
       create<T extends MapNodeType>(type: T) {
-        const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
         const template = toTemplateNode[type];
         return {
           ...template,
           id: crypto.randomUUID(),
-          name: `${prefix}${state.getNextSuffix(type, prefix)}`,
+          name: state.getNextName(type),
           visible: true,
           locked: false,
           // 🔔 deep objects must be fresh
@@ -268,13 +271,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         for (const id of state.selectedIds) {
           if (seen.has(id)) continue;
           const result = findNode(state.elements, id);
-          if (result) {
-            const clone = state.cloneNode(result.node, seen);
-            state.elements.push(clone);
-            newIds.add(clone.id);
-          }
+          if (!result) continue;
+          const clone = state.cloneNode(result.node, seen);
+          state.elements.push(clone);
+          newIds.add(clone.id);
         }
         state.set({ selectedIds: newIds, selectionBox: null });
+      },
+      getNextName(type: MapNodeType) {
+        const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
+        return `${prefix}${state.getNextSuffix(type, prefix)}`;
       },
       getNextSuffix(type: MapNodeType, prefix: string) {
         const usedNums = new Set<number>();
@@ -731,6 +737,7 @@ export type State = {
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
   create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
+  getNextName: (type: MapNodeType) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
