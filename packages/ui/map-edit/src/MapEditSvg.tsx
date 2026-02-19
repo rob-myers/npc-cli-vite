@@ -24,8 +24,9 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       onPointerUp={root.onSvgPointerUp}
       preserveAspectRatio="xMidYMid meet"
     >
-      <RenderMapNodes state={root} elements={root.elements} />
       <DefsAndGrid />
+      <Origin />
+      <RenderMapNodes state={root} elements={root.elements} />
     </svg>
   );
 }
@@ -80,6 +81,12 @@ const resizeHandles: { handle: ResizeHandle; getPos: (r: Rect) => { x: number; y
   { handle: "sw", getPos: (r) => ({ x: r.x, y: r.y + r.height }) },
   { handle: "se", getPos: (r) => ({ x: r.x + r.width, y: r.y + r.height }) },
 ];
+const handleToCursor: Record<ResizeHandle, string> = {
+  nw: "cursor-nwse-resize",
+  ne: "cursor-nesw-resize",
+  sw: "cursor-nesw-resize",
+  se: "cursor-nwse-resize",
+};
 
 type Rect = { x: number; y: number; width: number; height: number };
 
@@ -99,13 +106,36 @@ function RectResizeHandles({ rect }: { rect: Rect }) {
             fill="white"
             stroke="rgba(50, 50, 255, 1)"
             strokeWidth={1}
-            className="cursor-pointer"
+            className={cn(handleToCursor[handle])}
           />
         );
       })}
     </>
   );
 }
+
+const originLineLength = 4096;
+const originLineColor = "rgba(255, 0, 0, 0.5)";
+const Origin = memo(() => (
+  <g>
+    <line
+      x1={-originLineLength}
+      y1={0}
+      x2={originLineLength}
+      y2={0}
+      stroke={originLineColor}
+      strokeWidth={1}
+    />
+    <line
+      x1={0}
+      y1={-originLineLength}
+      x2={0}
+      y2={originLineLength}
+      stroke={originLineColor}
+      strokeWidth={1}
+    />
+  </g>
+));
 
 const DefsAndGrid = memo(() => (
   <>
