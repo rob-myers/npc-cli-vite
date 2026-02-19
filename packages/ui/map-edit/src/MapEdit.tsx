@@ -425,8 +425,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const increment = 10;
-        const snappedX = Math.trunc(svgPos.x / increment) * increment;
-        const snappedY = Math.trunc(svgPos.y / increment) * increment;
+        const snappedX = Math.floor(svgPos.x / increment) * increment;
+        const snappedY = Math.floor(svgPos.y / increment) * increment;
         state.dragEl = {
           type: "selection-box",
           startSvg: { x: snappedX, y: snappedY },
