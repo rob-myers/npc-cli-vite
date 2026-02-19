@@ -73,7 +73,8 @@ const RenderMapNodes = ({
               height={rect.height}
               fill="rgba(0, 0, 0, 0.25)"
               stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
-              strokeWidth={2}
+              strokeWidth={0}
+              className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
             >
               <title>{el.name}</title>
             </rect>
