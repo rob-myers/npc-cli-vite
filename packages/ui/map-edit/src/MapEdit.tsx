@@ -329,28 +329,50 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       onSvgPointerDown(e) {
         const target = e.target as SVGElement;
         const resizeHandle = target.dataset.resizeHandle as ResizeHandle | undefined;
+        const nodeId = target.dataset.nodeId;
 
         if (resizeHandle) {
           state.startResizeRect(e, resizeHandle);
+        } else if (e.shiftKey && nodeId) {
+          // Shift+click on item: toggle in selection
+          const newSet = new Set(state.selectedIds);
+          if (newSet.has(nodeId)) {
+            newSet.delete(nodeId);
+          } else {
+            newSet.add(nodeId);
+          }
+          state.set({ selectedIds: newSet, selectionBox: null });
         } else if (e.shiftKey) {
+          // Shift+drag on empty space: draw selection box
           state.startSelectionBox(e);
         } else {
-          const nodeId = target.dataset.nodeId;
-          state.set({ selectedIds: nodeId ? new Set([nodeId]) : new Set(), selectionBox: null });
+          // Keep selection if clicking on already-selected item, otherwise select just this item
+          if (nodeId && !state.selectedIds.has(nodeId)) {
+            state.set({ selectedIds: new Set([nodeId]), selectionBox: null });
+          } else if (!nodeId) {
+            state.set({ selectedIds: new Set(), selectionBox: null });
+          }
           if (nodeId) {
-            state.startDragRect(e, nodeId);
+            state.startDragSelection(e);
           }
         }
       },
-      startDragRect(e, nodeId) {
-        const result = findNode(state.elements, nodeId);
-        if (result?.node.type !== "rect") return;
+      startDragSelection(e) {
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        // Collect start positions for all selected rects
+        const startRects = new Map<string, { x: number; y: number }>();
+        for (const id of state.selectedIds) {
+          const result = findNode(state.elements, id);
+          if (result?.node.type === "rect") {
+            startRects.set(id, { x: result.node.rect.x, y: result.node.rect.y });
+          }
+        }
+        if (startRects.size === 0) return;
         state.dragEl = {
-          type: "move-rect",
+          type: "move-selection",
           startSvg: svgPos,
-          startRect: { x: result.node.rect.x, y: result.node.rect.y },
+          startRects,
         };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
@@ -413,21 +435,25 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           return;
         }
 
-        if (state.selectedIds.size !== 1) return;
-        const [selectedId] = state.selectedIds;
-        const result = findNode(state.elements, selectedId);
-        if (!result || result.node.type !== "rect") return;
-
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const dx = svgPos.x - state.dragEl.startSvg.x;
         const dy = svgPos.y - state.dragEl.startSvg.y;
         const increment = 10;
-        const { rect } = result.node;
 
-        if (state.dragEl.type === "move-rect") {
-          rect.x = Math.round((state.dragEl.startRect.x + dx) / increment) * increment;
-          rect.y = Math.round((state.dragEl.startRect.y + dy) / increment) * increment;
+        if (state.dragEl.type === "move-selection") {
+          for (const [id, startPos] of state.dragEl.startRects) {
+            const result = findNode(state.elements, id);
+            if (result?.node.type === "rect") {
+              result.node.rect.x = Math.round((startPos.x + dx) / increment) * increment;
+              result.node.rect.y = Math.round((startPos.y + dy) / increment) * increment;
+            }
+          }
         } else {
+          if (state.selectedIds.size !== 1) return;
+          const [selectedId] = state.selectedIds;
+          const result = findNode(state.elements, selectedId);
+          if (!result || result.node.type !== "rect") return;
+          const { rect } = result.node;
           const { handle, startRect } = state.dragEl;
           const minSize = increment;
 
@@ -647,9 +673,9 @@ export type State = {
   dragEl:
     | null
     | {
-        type: "move-rect";
+        type: "move-selection";
         startSvg: { x: number; y: number };
-        startRect: { x: number; y: number };
+        startRects: Map<string, { x: number; y: number }>;
       }
     | {
         type: "resize-rect";
@@ -662,7 +688,7 @@ export type State = {
         startSvg: { x: number; y: number };
       };
 
-  startDragRect: (e: React.PointerEvent<SVGSVGElement>, nodeId: string) => void;
+  startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
   startSelectionBox: (e: React.PointerEvent<SVGSVGElement>) => void;
 
