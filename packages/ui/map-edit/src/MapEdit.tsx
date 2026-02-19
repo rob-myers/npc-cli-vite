@@ -40,7 +40,7 @@ import type { MapEditUiMeta } from "./schema";
 
 // ✅ selected rect has outline
 // ✅ can drag a rect
-// 🚧 can resize a rect
+// ✅ can resize a rect
 
 // 🚧 can convert a rect into a path
 // 🚧 unions of rects/paths is another path
@@ -169,150 +169,6 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         });
       },
 
-      add(type, { selectedGroupParent, rect } = {}) {
-        const selection = selectedGroupParent ? state.getSelectedNode() : null;
-        const parent = selection?.type === "group" ? selection : null;
-        const newItem = state.getNew(type);
-        if (rect && newItem.type === "rect") {
-          newItem.rect = rect;
-        }
-        if (!parent) {
-          state.set({
-            elements: [...state.elements, newItem],
-            selectedIds: new Set([newItem.id]),
-            editingId: newItem.id,
-          });
-        } else {
-          parent.children.push(newItem);
-          state.set({ selectedIds: new Set([newItem.id]) });
-        }
-      },
-      getNew<T extends MapNodeType>(type: T) {
-        const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
-        const template = toTemplateNode[type];
-        return {
-          ...template,
-          id: crypto.randomUUID(),
-          name: `${prefix}${state.getNextSuffix(type, prefix)}`,
-          visible: true,
-          locked: false,
-          // 🔔 deep objects must be fresh
-          ...("children" in template && { children: [...template.children] }),
-          ...("rect" in template && { rect: { ...template.rect } }),
-        };
-      },
-      getNextSuffix(type: MapNodeType, prefix: string) {
-        const usedNums = new Set<number>();
-        traverseElements(state.elements, (el) => {
-          if (el.type === type && el.name.startsWith(prefix)) {
-            const num = Number(el.name.slice(prefix.length));
-            if (!Number.isNaN(num)) usedNums.add(num);
-          }
-        });
-        let nextNum = 1;
-        while (usedNums.has(nextNum)) nextNum++;
-        return nextNum;
-      },
-      getSelectedNode() {
-        if (state.selectedIds.size !== 1) return null;
-        const [selectedId] = state.selectedIds;
-        const result = findNode(state.elements, selectedId);
-        return result?.node ?? null;
-      },
-      groupNode(nodeId: string) {
-        const result = findNode(state.elements, nodeId);
-        if (!result) return;
-
-        const newGroup = state.getNew("group");
-        newGroup.children.push(result.node);
-
-        const parentArray = result.parent?.children ?? state.elements;
-        const oldChildIndex = removeNodeFromParent(parentArray, nodeId);
-        parentArray.splice(oldChildIndex, 0, newGroup);
-
-        state.set({ selectedIds: new Set([newGroup.id]) });
-      },
-      deleteSelected() {
-        if (state.selectedIds.size === 0) return;
-        for (const id of state.selectedIds) {
-          const result = findNode(state.elements, id);
-          if (result) {
-            removeNodeFromParent(result.parent?.children ?? state.elements, id);
-          }
-        }
-        state.set({ selectedIds: new Set(), selectionBox: null });
-      },
-      cloneNode(node: MapNode, seen: Set<string>): MapNode {
-        seen.add(node.id);
-        const base = { ...node, id: crypto.randomUUID() };
-        if (node.type === "group") {
-          return {
-            ...base,
-            type: "group",
-            children: node.children.map((c) => state.cloneNode(c, seen)),
-          };
-        }
-        if (node.type === "rect") {
-          return { ...base, type: "rect", rect: { ...node.rect } };
-        }
-        return base;
-      },
-      duplicateSelected() {
-        if (state.selectedIds.size === 0) return;
-        const seen = new Set<string>();
-        const newIds = new Set<string>();
-        for (const id of state.selectedIds) {
-          if (seen.has(id)) continue;
-          const result = findNode(state.elements, id);
-          if (result) {
-            const clone = state.cloneNode(result.node, seen);
-            state.elements.push(clone);
-            newIds.add(clone.id);
-          }
-        }
-        state.set({ selectedIds: newIds, selectionBox: null });
-      },
-      onRename(id: string, newName: string) {
-        state.set({
-          elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
-          editingId: null,
-        });
-      },
-      onStartEdit(id: string) {
-        state.set({ editingId: id });
-      },
-      onCancelEdit() {
-        state.set({ editingId: null });
-      },
-      moveNode(srcId: string, dstId: string, edge: "top" | "bottom" | "inside") {
-        if (srcId === dstId) return;
-
-        const srcResult = findNode(state.elements, srcId);
-        const dstResult = findNode(state.elements, dstId);
-        if (
-          !srcResult ||
-          !dstResult ||
-          findNode([srcResult.node], dstId) // cannot move into self
-        ) {
-          return;
-        }
-
-        removeNodeFromParent(srcResult.parent?.children ?? state.elements, srcId);
-
-        if (edge === "inside" && dstResult.node.type === "group") {
-          dstResult.node.children.push(srcResult.node);
-        } else {
-          insertNodeAt(
-            srcResult.node,
-            dstResult.parent?.children ?? state.elements,
-            dstId,
-            edge === "inside" ? "bottom" : edge,
-          );
-        }
-
-        state.update();
-      },
-
       clientToSvg(clientX: number, clientY: number) {
         if (!state.svgEl) return { x: 0, y: 0 };
         const rect = state.svgEl.getBoundingClientRect();
@@ -347,6 +203,152 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           y: vbY + ((clientY - rect.top - offsetY) / renderHeight) * vbH,
         };
       },
+
+      add(type, { selectedGroupParent, rect } = {}) {
+        const selection = selectedGroupParent ? state.getSelectedNode() : null;
+        const parent = selection?.type === "group" ? selection : null;
+        const newItem = state.create(type);
+        if (rect && newItem.type === "rect") {
+          newItem.rect = rect;
+        }
+        if (!parent) {
+          state.set({
+            elements: [...state.elements, newItem],
+            selectedIds: new Set([newItem.id]),
+            editingId: newItem.id,
+          });
+        } else {
+          parent.children.push(newItem);
+          state.set({ selectedIds: new Set([newItem.id]) });
+        }
+      },
+      cloneNode(node: MapNode, seen: Set<string>): MapNode {
+        seen.add(node.id);
+        const base = { ...node, id: crypto.randomUUID() };
+        if (node.type === "group") {
+          return {
+            ...base,
+            type: "group",
+            children: node.children.map((c) => state.cloneNode(c, seen)),
+          };
+        }
+        if (node.type === "rect") {
+          return { ...base, type: "rect", rect: { ...node.rect } };
+        }
+        return base;
+      },
+      create<T extends MapNodeType>(type: T) {
+        const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
+        const template = toTemplateNode[type];
+        return {
+          ...template,
+          id: crypto.randomUUID(),
+          name: `${prefix}${state.getNextSuffix(type, prefix)}`,
+          visible: true,
+          locked: false,
+          // 🔔 deep objects must be fresh
+          ...("children" in template && { children: [...template.children] }),
+          ...("rect" in template && { rect: { ...template.rect } }),
+        };
+      },
+      deleteSelected() {
+        if (state.selectedIds.size === 0) return;
+        for (const id of state.selectedIds) {
+          const result = findNode(state.elements, id);
+          if (result) {
+            removeNodeFromParent(result.parent?.children ?? state.elements, id);
+          }
+        }
+        state.set({ selectedIds: new Set(), selectionBox: null });
+      },
+      duplicateSelected() {
+        if (state.selectedIds.size === 0) return;
+        const seen = new Set<string>();
+        const newIds = new Set<string>();
+        for (const id of state.selectedIds) {
+          if (seen.has(id)) continue;
+          const result = findNode(state.elements, id);
+          if (result) {
+            const clone = state.cloneNode(result.node, seen);
+            state.elements.push(clone);
+            newIds.add(clone.id);
+          }
+        }
+        state.set({ selectedIds: newIds, selectionBox: null });
+      },
+      getNextSuffix(type: MapNodeType, prefix: string) {
+        const usedNums = new Set<number>();
+        traverseElements(state.elements, (el) => {
+          if (el.type === type && el.name.startsWith(prefix)) {
+            const num = Number(el.name.slice(prefix.length));
+            if (!Number.isNaN(num)) usedNums.add(num);
+          }
+        });
+        let nextNum = 1;
+        while (usedNums.has(nextNum)) nextNum++;
+        return nextNum;
+      },
+      getSelectedNode() {
+        if (state.selectedIds.size !== 1) return null;
+        const [selectedId] = state.selectedIds;
+        const result = findNode(state.elements, selectedId);
+        return result?.node ?? null;
+      },
+      groupNode(nodeId: string) {
+        const result = findNode(state.elements, nodeId);
+        if (!result) return;
+
+        const newGroup = state.create("group");
+        newGroup.children.push(result.node);
+
+        const parentArray = result.parent?.children ?? state.elements;
+        const oldChildIndex = removeNodeFromParent(parentArray, nodeId);
+        parentArray.splice(oldChildIndex, 0, newGroup);
+
+        state.set({ selectedIds: new Set([newGroup.id]) });
+      },
+      moveNode(srcId: string, dstId: string, edge: "top" | "bottom" | "inside") {
+        if (srcId === dstId) return;
+
+        const srcResult = findNode(state.elements, srcId);
+        const dstResult = findNode(state.elements, dstId);
+        if (
+          !srcResult ||
+          !dstResult ||
+          findNode([srcResult.node], dstId) // cannot move into self
+        ) {
+          return;
+        }
+
+        removeNodeFromParent(srcResult.parent?.children ?? state.elements, srcId);
+
+        if (edge === "inside" && dstResult.node.type === "group") {
+          dstResult.node.children.push(srcResult.node);
+        } else {
+          insertNodeAt(
+            srcResult.node,
+            dstResult.parent?.children ?? state.elements,
+            dstId,
+            edge === "inside" ? "bottom" : edge,
+          );
+        }
+
+        state.update();
+      },
+
+      onRename(id: string, newName: string) {
+        state.set({
+          elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
+          editingId: null,
+        });
+      },
+      onStartEdit(id: string) {
+        state.set({ editingId: id });
+      },
+      onCancelEdit() {
+        state.set({ editingId: null });
+      },
+
       onSvgPointerDown(e) {
         const target = e.target as SVGElement;
         const resizeHandle = target.dataset.resizeHandle as ResizeHandle | undefined;
@@ -728,7 +730,7 @@ export type State = {
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
-  getNew: <T extends MapNodeType>(type: T) => MapNodeMap[T];
+  create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupNode: (id: string) => void;
