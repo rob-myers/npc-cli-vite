@@ -130,8 +130,9 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           type="text"
           className={cn(
             "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
+            "selection:bg-blue-400/50",
             isSelected && "brightness-125 font-medium",
-            isEditing ? "bg-slate-500/50 selection:bg-black/20 rounded" : "cursor-pointer",
+            isEditing ? "rounded" : "cursor-pointer",
           )}
           defaultValue={element.name || element.type}
           readOnly={!isEditing}
