@@ -40,8 +40,8 @@ import {
  * pnpm get-pngs root Symbols symbol-root
  * pnpm get-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
  * pnpm get-pngs symbol 'Symbols/Machinery' symbol-machinery
- *
  * pnpm get-pngs geomorph 'Geomorphs/100x50 Edge' geomorph-edge
+ *
  * pnpm get-pngs geomorph 'Geomorphs/100x100 Core' geomorph-core
  * pnpm get-pngs symbol Symbols/Bridge symbol-bridge
  * pnpm get-pngs small-craft 'Small Craft' symbol-small-craft
