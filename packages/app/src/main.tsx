@@ -1,6 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { StrictMode } from "react";
+// https://github.com/facebook/react/issues/29915
+// commented out because we want useEffect to always re-run on edit
+// import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { queryClientApi } from "./query-client";
 import { routeTree } from "./routeTree.gen";
@@ -17,9 +19,9 @@ declare module "@tanstack/react-router" {
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClientApi.queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </StrictMode>,
+  // <StrictMode>
+  <QueryClientProvider client={queryClientApi.queryClient}>
+    <RouterProvider router={router} />
+  </QueryClientProvider>,
+  // </StrictMode>,
 );
