@@ -62,26 +62,26 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       wrapperEl: null,
       dragEl: null,
 
-      onPanPointerDown(e: PointerEvent<HTMLDivElement>) {
+      onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
           (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
           state.isPanning = true;
           state.lastPointerPos = { x: e.clientX, y: e.clientY };
         }
       },
-      onPanPointerMove(e: PointerEvent<HTMLDivElement>) {
+      onPanPointerMove(e) {
         if (!state.isPanning || state.isPinching) return;
         const dx = e.clientX - state.lastPointerPos.x;
         const dy = e.clientY - state.lastPointerPos.y;
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
         state.set({ pan: { x: state.pan.x + dx, y: state.pan.y + dy } });
       },
-      onPanPointerUp(e: PointerEvent<HTMLDivElement>) {
+      onPanPointerUp(e) {
         (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
         state.isPanning = false;
       },
 
-      onTouchStart(e: TouchEvent) {
+      onTouchStart(e) {
         if (e.touches.length !== 2) return;
         state.isPinching = true;
         state.isPanning = false;
@@ -89,7 +89,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.lastTouchDist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
         state.lastTouchMid = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
       },
-      onTouchMove(e: TouchEvent) {
+      onTouchMove(e) {
         if (!(e.touches.length === 2 && state.containerEl && state.isPinching)) return;
         e.preventDefault();
         const [t0, t1] = [e.touches[0], e.touches[1]];
@@ -120,7 +120,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.lastTouchDist = 0;
       },
 
-      onResizePointerDown(e: PointerEvent<HTMLDivElement>) {
+      onResizePointerDown(e) {
         e.preventDefault();
         e.stopPropagation();
         state.isResizing = true;
@@ -129,7 +129,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         document.body.addEventListener("pointermove", state.onResizePointerMove);
         document.body.addEventListener("pointerup", state.onResizePointerUp);
       },
-      onResizePointerMove(e: globalThis.PointerEvent) {
+      onResizePointerMove(e) {
         const dx = e.clientX - state.lastPointerPos.x;
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
         state.set({
@@ -142,15 +142,21 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         document.body.removeEventListener("pointerup", state.onResizePointerUp);
       },
 
-      onSelect(id: string, opts?: { add?: boolean }) {
+      onSelect(id, opts) {
         state.pushHistory();
-        const result = findNode(state.elements, id);
-        if (!result) return;
+        const res = findNode(state.elements, id);
+        if (!res) return;
 
-        const current = new Set(opts?.add ? state.selectedIds : []);
+        const current = new Set(opts?.shiftKey || opts?.metaKey ? state.selectedIds : []);
 
-        // Shift+click: select interval in flattened tree
-        if (opts?.add && state.selectedIds.size > 0) {
+        if (opts?.metaKey) {
+          current.add(id); // extend selection
+          state.set({ selectedIds: current });
+          return;
+        }
+
+        if (opts?.shiftKey && state.selectedIds.size > 0) {
+          // select interval in flattened tree
           const flat: string[] = [];
           traverseElements(state.elements, (el) => flat.push(el.id));
           const i = flat.indexOf(id);
@@ -158,38 +164,38 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           if (i !== -1 && j !== -1) {
             for (let k = Math.min(i, j); k <= Math.max(i, j); k++) current.add(flat[k]);
             state.set({ selectedIds: current, selectionBox: null });
-            return;
           }
+          return;
         }
 
-        if (result.node.type === "group") {
+        if (res.node.type === "group") {
+          // select (a) group and descendants, or (b) only group itself
           const descendantIds: string[] = [];
-          traverseElements(result.node.children, (el) => descendantIds.push(el.id));
+          traverseElements(res.node.children, (el) => descendantIds.push(el.id));
           const allDescendantsSelected = descendantIds.every((did) => state.selectedIds.has(did));
 
           if (state.selectedIds.has(id) && allDescendantsSelected && descendantIds.length > 0) {
-            // All descendants selected -> select only the group
             for (const did of descendantIds) current.delete(did);
             current.add(id);
           } else {
-            // Select group and all descendants
             current.add(id);
             for (const did of descendantIds) current.add(did);
           }
-        } else if (current.has(id)) {
-          current.delete(id);
-        } else {
-          current.add(id);
+          state.set({ selectedIds: current, selectionBox: null });
+          return;
         }
+
+        // toggle selection
+        current.has(id) ? current.delete(id) : current.add(id);
         state.set({ selectedIds: current, selectionBox: null });
       },
-      onToggleVisibility(id: string) {
+      onToggleVisibility(id) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, visible: !el.visible })),
         });
       },
 
-      clientToSvg(clientX: number, clientY: number) {
+      clientToSvg(clientX, clientY) {
         if (!state.svgEl) return { x: 0, y: 0 };
         const rect = state.svgEl.getBoundingClientRect();
         const baseSize = 500;
@@ -243,7 +249,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           state.set({ selectedIds: new Set([newItem.id]) });
         }
       },
-      cloneNode(node: MapNode, seen: Set<string>): MapNode {
+      cloneNode(node, seen) {
         seen.add(node.id);
         const base = {
           ...node,
@@ -262,7 +268,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         return base;
       },
-      create<T extends MapNodeType>(type: T) {
+      create(type) {
         const template = toTemplateNode[type];
         return {
           ...template,
@@ -327,11 +333,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: newIds, selectionBox: null });
       },
-      getNextName(type: MapNodeType) {
+      getNextName(type) {
         const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
         return `${prefix}${state.getNextSuffix(type, prefix)}`;
       },
-      getNextSuffix(type: MapNodeType, prefix: string) {
+      getNextSuffix(type, prefix) {
         const usedNums = new Set<number>();
         traverseElements(state.elements, (el) => {
           if (el.type === type && el.name.startsWith(prefix)) {
@@ -349,7 +355,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const result = findNode(state.elements, selectedId);
         return result?.node ?? null;
       },
-      groupNode(nodeId: string) {
+      groupNode(nodeId) {
         const result = findNode(state.elements, nodeId);
         if (!result) return;
 
@@ -388,7 +394,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
       },
-      moveNode(srcId: string, dstId: string, edge: "top" | "bottom" | "inside") {
+      moveNode(srcId, dstId, edge) {
         if (srcId === dstId) return;
 
         const srcResult = findNode(state.elements, srcId);
@@ -427,13 +433,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
       },
 
-      onRename(id: string, newName: string) {
+      onRename(id, newName) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
           editingId: null,
         });
       },
-      onStartEdit(id: string) {
+      onStartEdit(id) {
         state.set({ editingId: id });
       },
       onCancelEdit() {
@@ -863,7 +869,7 @@ export type State = {
   onResizePointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onResizePointerMove: (e: globalThis.PointerEvent) => void;
   onResizePointerUp: () => void;
-  onSelect: (id: string, opts?: { add?: boolean }) => void;
+  onSelect: (id: string, opts?: { shiftKey?: boolean; metaKey?: boolean }) => void;
   onToggleVisibility: (id: string) => void;
   add: (type: MapNodeType, opts?: { selectedGroupParent?: boolean; rect?: SelectionBox }) => void;
   onRename: (id: string, newName: string) => void;
