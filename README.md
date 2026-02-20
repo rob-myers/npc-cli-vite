@@ -68,6 +68,8 @@ brew install imagemagick
 
 ### cwebp
 
+Needed for e.g. `pnpm pngs-to-webp packages/media/src/starship-symbols/output/symbol-machinery`
+
 Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 - https://developers.google.com/speed/webp/docs/precompiled
