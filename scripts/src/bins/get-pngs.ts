@@ -46,6 +46,7 @@ import {
  * pnpm get-pngs small-craft 'Small Craft' symbol-small-craft
  * pnpm get-pngs symbol 'Symbols/Lab' symbol-lab
  * pnpm get-pngs symbol 'Symbols/Misc' symbol-misc
+ * pnpm get-pngs symbol 'Symbols/Offices' symbol-offices
  *
  * pnpm get-pngs symbol 'Symbols/Battery' symbol-battery
  * pnpm get-pngs symbol 'Symbols/Medical' symbol-medical
