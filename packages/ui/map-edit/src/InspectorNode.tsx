@@ -11,7 +11,7 @@ import {
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { BoundingBoxIcon, FolderIcon } from "@phosphor-icons/react";
+import { FolderIcon, RectangleIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
@@ -107,13 +107,13 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         )}
         style={{ paddingLeft: 8 + level * 2 }}
         onClick={(e) => {
-          root.onSelect(element.id, { add: e.shiftKey });
+          root.onSelect(element.id, { shiftKey: e.shiftKey, metaKey: e.metaKey });
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
         <ContextMenu.Root>
           <ContextMenu.Trigger className="text-on-background pl-0.5">
-            {isGroup ? <FolderIcon /> : <BoundingBoxIcon />}
+            {isGroup ? <FolderIcon /> : <RectangleIcon />}
           </ContextMenu.Trigger>
 
           <ContextMenu.Portal>
