@@ -44,11 +44,11 @@ import {
  * pnpm get-pngs geomorph 'Geomorphs/100x100 Core' geomorph-core
  * pnpm get-pngs symbol Symbols/Bridge symbol-bridge
  * pnpm get-pngs small-craft 'Small Craft' symbol-small-craft
- *
  * pnpm get-pngs symbol 'Symbols/Lab' symbol-lab
+ * pnpm get-pngs symbol 'Symbols/Misc' symbol-misc
+ *
  * pnpm get-pngs symbol 'Symbols/Battery' symbol-battery
  * pnpm get-pngs symbol 'Symbols/Medical' symbol-medical
- * pnpm get-pngs symbol 'Symbols/Misc' symbol-misc
  * pnpm get-pngs symbol 'Symbols/Offices' symbol-offices
  * pnpm get-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area
  * pnpm get-pngs symbol Symbols/Fresher symbol-fresher
