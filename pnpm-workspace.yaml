@@ -29,7 +29,7 @@ catalog:
   '@types/react-resizable': ^3.0.8
   '@types/three': ^0.182.0
   '@vitejs/plugin-basic-ssl': ^2.1.4
-  '@vitejs/plugin-react-swc': ^4.2.2
+  '@vitejs/plugin-react-swc': 4.2.3
   braces: ^3.0.3
   cli-columns: ^4.0.0
   clsx: ^2.1.1
