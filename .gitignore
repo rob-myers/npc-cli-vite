@@ -28,3 +28,4 @@ dist-ssr
 packages/media/src/starship-symbols/input/*
 !packages/media/src/starship-symbols/input/SymbolsHighRes.zip
 !packages/media/src/starship-symbols/input/Geomorphs.zip
+!packages/media/src/starship-symbols/input/SmallCraftHighRes.zip
