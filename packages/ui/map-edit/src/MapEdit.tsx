@@ -791,7 +791,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       <div
         ref={state.ref("containerEl")}
         className={cn(
-          "w-full h-full flex items-center justify-center overflow-hidden relative active:cursor-grabbing touch-none",
+          "w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none",
           theme === "dark" ? "bg-gray-700/30" : "bg-white",
         )}
         onPointerDown={state.onPanPointerDown}
