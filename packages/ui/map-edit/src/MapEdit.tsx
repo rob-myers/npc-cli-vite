@@ -355,19 +355,6 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const result = findNode(state.elements, selectedId);
         return result?.node ?? null;
       },
-      groupNode(nodeId) {
-        const result = findNode(state.elements, nodeId);
-        if (!result) return;
-
-        const newGroup = state.create("group");
-        newGroup.children.push(result.node);
-
-        const parentArray = result.parent?.children ?? state.elements;
-        const oldChildIndex = removeNodeFromParent(parentArray, nodeId);
-        parentArray.splice(oldChildIndex, 0, newGroup);
-
-        state.set({ selectedIds: new Set([newGroup.id]) });
-      },
       groupSelected() {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
@@ -879,7 +866,6 @@ export type State = {
   getNextName: (type: MapNodeType) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
-  groupNode: (id: string) => void;
   groupSelected: () => void;
   deleteSelected: () => void;
   pushHistory: () => void;

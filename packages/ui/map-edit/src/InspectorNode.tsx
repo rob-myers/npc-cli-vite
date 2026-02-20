@@ -8,7 +8,6 @@ import {
   type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { ContextMenu } from "@base-ui/react/context-menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, useDoubleTap, useStateRef } from "@npc-cli/util";
 import { FolderIcon, RectangleIcon } from "@phosphor-icons/react";
@@ -43,7 +42,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
       state.inputEl?.focus();
       state.inputEl?.select();
     }
-  }, [isEditing, element.name, state]);
+  }, [isEditing, element.name]);
 
   useEffect(() => {
     const el = state.rowEl;
@@ -88,7 +87,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         },
       }),
     );
-  }, [element.id, isGroup, root, state]);
+  }, []);
 
   const onDoubleTap = useDoubleTap(() => root.onStartEdit(element.id));
 
@@ -111,25 +110,9 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <ContextMenu.Root>
-          <ContextMenu.Trigger className="text-on-background pl-0.5">
-            {isGroup ? <FolderIcon /> : <RectangleIcon />}
-          </ContextMenu.Trigger>
-
-          <ContextMenu.Portal>
-            <ContextMenu.Positioner className="z-50" sideOffset={4}>
-              <ContextMenu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
-                <ContextMenu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  onClick={() => root.groupNode(element.id)}
-                >
-                  <FolderIcon className="size-4" />
-                  Group node
-                </ContextMenu.Item>
-              </ContextMenu.Popup>
-            </ContextMenu.Positioner>
-          </ContextMenu.Portal>
-        </ContextMenu.Root>
+        <button className="text-on-background pl-0.5">
+          {isGroup ? <FolderIcon /> : <RectangleIcon />}
+        </button>
 
         <input
           ref={state.ref("inputEl")}
