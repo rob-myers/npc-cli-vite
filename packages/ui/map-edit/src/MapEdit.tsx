@@ -677,8 +677,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     if (!wrapper) return;
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === "INPUT" || !wrapper.contains(e.target as Element))
-        return;
+      if (state.editingId || !wrapper.contains(e.target as Element)) return;
       if (
         e.key === "r" &&
         state.selectionBox &&
@@ -697,8 +696,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === "INPUT" || !wrapper.contains(e.target as Element))
-        return;
+      if (state.editingId || !wrapper.contains(e.target as Element)) return;
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         state.undo();
@@ -770,7 +768,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           </Menu.Root>
         </div>
 
-        <div className="overflow-y-auto h-full custom-scrollbar bg-background">
+        <div className={cn(uiClassName, "overflow-y-auto h-full custom-scrollbar bg-background")}>
           {state.elements.map((el) => (
             <InspectorNode key={el.id} element={el} level={0} root={state} />
           ))}
