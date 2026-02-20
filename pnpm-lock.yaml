@@ -67,7 +67,7 @@ catalogs:
       specifier: ^19.2.7
       version: 19.2.7
     '@types/react-beforeunload':
-      specifier: ^2.1.5
+      specifier: 2.1.5
       version: 2.1.5
     '@types/react-dom':
       specifier: ^19.2.3
@@ -115,7 +115,7 @@ catalogs:
       specifier: 19.2.1
       version: 19.2.1
     react-beforeunload:
-      specifier: ^2.7.0
+      specifier: 2.7.0
       version: 2.7.0
     react-dom:
       specifier: ^19.2.0
@@ -524,12 +524,19 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.2.1
+      react-beforeunload:
+        specifier: 'catalog:'
+        version: 2.7.0(react@19.2.1)
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
       zod:
         specifier: 'catalog:'
         version: 4.1.13
+    devDependencies:
+      '@types/react-beforeunload':
+        specifier: 'catalog:'
+        version: 2.1.5
 
   packages/ui/tabs:
     dependencies:

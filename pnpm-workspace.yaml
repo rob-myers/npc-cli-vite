@@ -24,7 +24,7 @@ catalog:
   '@types/braces': ^3.0.5
   '@types/node': ^24.10.4
   '@types/react': ^19.2.7
-  '@types/react-beforeunload': ^2.1.5
+  '@types/react-beforeunload': 2.1.5
   '@types/react-dom': ^19.2.3
   '@types/react-resizable': ^3.0.8
   '@types/three': ^0.182.0
@@ -41,7 +41,7 @@ catalog:
   lodash.clonedeep: ^4.5.0
   maath: ^0.10.8
   react: 19.2.1
-  react-beforeunload: ^2.7.0
+  react-beforeunload: 2.7.0
   react-dom: ^19.2.0
   react-grid-layout: 2.2.2
   react-resizable: ^3.1.3
