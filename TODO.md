@@ -61,6 +61,8 @@
     - ✅ @atlaskit/pragmatic-drag-and-drop for inspector dragging
     - ✅ symbols tree (groups, rects) works properly
 
+- ✅ migrate script to convert png to webp
+
 - 🚧 MapEdit has image node
   - 🚧 provide some images
   - uses imageKey to get image
