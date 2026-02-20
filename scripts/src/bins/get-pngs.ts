@@ -5,6 +5,7 @@ import childProcess from "child_process";
 import fs from "fs";
 import stringify from "json-stringify-pretty-compact";
 import path from "path";
+import { PROJECT_ROOT } from "../const";
 import {
   altSymbolsFilenameRegex,
   type FileMeta,
@@ -37,14 +38,14 @@ import {
  * Examples:
  * ```sh
  * pnpm get-pngs root Symbols symbol-root
- * pnpm get-pngs geomorph 'Geomorphs/100x50 Edge' geomorph-edge
+ * pnpm get-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
+ * pnpm get-pngs symbol 'Symbols/Machinery' symbol-machinery
  *
+ * pnpm get-pngs geomorph 'Geomorphs/100x50 Edge' geomorph-edge
  * pnpm get-pngs geomorph 'Geomorphs/100x100 Core' geomorph-core
  * pnpm get-pngs symbol Symbols/Bridge symbol-bridge
  * pnpm get-pngs small-craft 'Small Craft' symbol-small-craft
  *
- * pnpm get-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
- * pnpm get-pngs symbol 'Symbols/Machinery' symbol-machinery
  * pnpm get-pngs symbol 'Symbols/Lab' symbol-lab
  * pnpm get-pngs symbol 'Symbols/Battery' symbol-battery
  * pnpm get-pngs symbol 'Symbols/Medical' symbol-medical
@@ -64,7 +65,7 @@ const errorMessage = `error: usage: pnpm get-pngs {input_type} {src_folder} {dst
   `;
 
 const [, , inputType, srcFolder, dstFolder] = process.argv;
-const mediaDir = path.resolve(import.meta.dirname, "../../../packages/media");
+const mediaDir = path.resolve(PROJECT_ROOT, "packages/media");
 if (!srcFolder || !dstFolder) {
   error(errorMessage);
   process.exit(1);
