@@ -15,7 +15,11 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "react": "catalog:",
+    "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react-beforeunload": "catalog:"
   }
 }
