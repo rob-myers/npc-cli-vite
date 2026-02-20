@@ -78,10 +78,16 @@ const mockBaseNode: BaseMapNode = {
 export const toTemplateNode = {
   group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
   path: { ...mockBaseNode, type: "path" },
+  image: {
+    ...mockBaseNode,
+    type: "image",
+    imageKey: "mock-image-key",
+    rect: { x: 50, y: 50, width: 100, height: 100 },
+  },
   rect: { ...mockBaseNode, type: "rect", rect: { x: 50, y: 50, width: 100, height: 100 } },
 } satisfies Record<MapNodeType, MapNode>;
 
-export type MapNodeType = "rect" | "path" | "group";
+export type MapNodeType = "group" | "image" | "path" | "rect";
 
 export type BaseMapNode = {
   id: string;
@@ -93,8 +99,9 @@ export type BaseMapNode = {
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[]; transform?: string }
-    | { type: "rect"; rect: Rect; stroke?: string }
-    | { type: Exclude<MapNodeType, "group" | "rect"> }
+    | { type: "image"; imageKey: string; rect: Rect }
+    | { type: "rect"; rect: Rect }
+    | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
 
 type Rect = { x: number; y: number; width: number; height: number };

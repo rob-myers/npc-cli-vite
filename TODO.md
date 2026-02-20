@@ -65,6 +65,7 @@
 
 - 🚧 MapEdit has image node
   - 🚧 provide some images
+  - 🚧 can create node type "image"
   - uses imageKey to get image
 
 - ✅ fix diagonal resize: now covered by absolute?
