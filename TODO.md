@@ -61,7 +61,9 @@
     - ✅ @atlaskit/pragmatic-drag-and-drop for inspector dragging
     - ✅ symbols tree (groups, rects) works properly
 
-- 🚧 towards MapEdit 2
+- 🚧 MapEdit has image node
+  - 🚧 provide some images
+  - uses imageKey to get image
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
