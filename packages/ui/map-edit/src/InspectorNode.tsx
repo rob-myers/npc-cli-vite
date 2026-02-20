@@ -50,7 +50,14 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
     if (!el) return;
     const id = element.id;
     return combine(
-      draggable({ element: el, getInitialData: () => ({ type: "map-node", id }) }),
+      draggable({
+        element: el,
+        getInitialData: () => ({
+          type: "map-node",
+          id,
+          ids: root.selectedIds.has(id) ? [...root.selectedIds] : [id],
+        }),
+      }),
       dropTargetForElements({
         element: el,
         canDrop: ({ source }) => source.data.type === "map-node" && source.data.id !== id,
@@ -58,7 +65,6 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
         onDrag: ({ self, location }) => {
           const edge = extractClosestEdge(self.data);
-          // For groups, detect if we're in the center zone to allow dropping inside
           if (isGroup) {
             const rect = el.getBoundingClientRect();
             const y = location.current.input.clientY;
@@ -74,10 +80,10 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           const edge = state.closestEdge;
           const dropInside = state.dropInside;
           state.set({ closestEdge: null, dropInside: false });
-          if (dropInside && isGroup) {
-            root.moveNode(source.data.id as string, id, "inside");
-          } else if (edge === "top" || edge === "bottom") {
-            root.moveNode(source.data.id as string, id, edge);
+          const ids = source.data.ids as string[];
+          const targetEdge = dropInside && isGroup ? "inside" : edge;
+          if (targetEdge === "top" || targetEdge === "bottom" || targetEdge === "inside") {
+            ids.forEach((srcId) => root.moveNode(srcId, id, targetEdge));
           }
         },
       }),
