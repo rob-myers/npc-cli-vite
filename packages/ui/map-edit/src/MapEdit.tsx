@@ -5,6 +5,7 @@ enableDragDropTouch();
 import { Menu } from "@base-ui/react/menu";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   CaretLeftIcon,
   CaretRightIcon,
@@ -13,6 +14,7 @@ import {
   SquareIcon,
 } from "@phosphor-icons/react";
 import { type PointerEvent, useContext, useEffect } from "react";
+import { useBeforeunload } from "react-beforeunload";
 import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
 import {
@@ -29,8 +31,7 @@ import {
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
 
-// 🚧 can persist via meta and localStorage
-// 🚧 can save file in dev env
+const localStorageKey = "map-edit-tree";
 
 export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
@@ -416,6 +417,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.update();
       },
 
+      save() {
+        tryLocalStorageSet(localStorageKey, JSON.stringify(state.elements));
+      },
+      load() {
+        const elements = tryLocalStorageGetParsed<MapNode[]>(localStorageKey);
+        if (elements) {
+          state.set({ elements, selectedIds: new Set(), selectionBox: null });
+        }
+      },
+
       onRename(id: string, newName: string) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
@@ -623,6 +634,14 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   );
 
   useEffect(() => {
+    state.load();
+  }, []);
+
+  useBeforeunload(() => {
+    state.save();
+  });
+
+  useEffect(() => {
     const container = state.containerEl;
     if (!container) return;
 
@@ -686,6 +705,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       } else if ((e.metaKey || e.ctrlKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
         e.preventDefault();
         state.redo();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        state.save();
       }
     };
 
@@ -860,6 +882,8 @@ export type State = {
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
+  save: () => void;
+  load: () => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
