@@ -5,7 +5,8 @@
   "bin": {
     "get-pngs": "./src/bins/get-pngs.ts",
     "scaffold-ui": "./src/bins/scaffold-ui.ts",
-    "test-gltf-transform": "./src/bins/test-gltf-transform.ts"
+    "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
+    "pngs-to-webp": "./src/bins/pngs-to-webp.ts"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",
@@ -14,6 +15,7 @@
     "@inquirer/prompts": "catalog:",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/util": "workspace:^",
+    "getopts": "catalog:",
     "json-stringify-pretty-compact": "catalog:"
   }
 }
