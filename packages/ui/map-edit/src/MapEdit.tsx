@@ -3,7 +3,7 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 enableDragDropTouch();
 
 import { Menu } from "@base-ui/react/menu";
-import type { StarshipSymbolPngsMetadata } from "@npc-cli/media/starship-symbol";
+import type { StarshipSymbolImageKey, StarshipSymbolPngsMetadata } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -18,6 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect } from "react";
 import { useBeforeunload } from "react-beforeunload";
+import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
 import {
@@ -64,6 +65,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       dragEl: null,
 
       pngsMetadata: null,
+      imagePickerNodeId: null,
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -247,11 +249,15 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           state.set({
             elements: [...state.elements, newItem],
             selectedIds: new Set([newItem.id]),
-            editingId: newItem.id,
+            editingId: newItem.type === "image" ? null : newItem.id,
+            imagePickerNodeId: newItem.type === "image" ? newItem.id : null,
           });
         } else {
           parent.children.push(newItem);
-          state.set({ selectedIds: new Set([newItem.id]) });
+          state.set({
+            selectedIds: new Set([newItem.id]),
+            imagePickerNodeId: newItem.type === "image" ? newItem.id : null,
+          });
         }
       },
       cloneNode(node, seen) {
@@ -413,6 +419,24 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       onCancelEdit() {
         state.set({ editingId: null });
+      },
+      setImageKey(nodeId, imageKey) {
+        state.pushHistory();
+        const result = findNode(state.elements, nodeId);
+        if (result?.node.type === "image") {
+          result.node.imageKey = imageKey;
+          // Update dimensions from metadata
+          if (state.pngsMetadata) {
+            const meta = state.pngsMetadata.byKey[imageKey];
+            if (meta) {
+              const scaleFactor = 0.2;
+              result.node.rect.width = meta.width * scaleFactor;
+              result.node.rect.height = meta.height * scaleFactor;
+            }
+          }
+          state.update();
+        }
+        state.set({ imagePickerNodeId: null });
       },
 
       onSvgPointerDown(e) {
@@ -828,6 +852,18 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       >
         <MapEditSvg root={state} />
       </div>
+
+      <ImagePickerModal
+        open={state.imagePickerNodeId !== null}
+        onOpenChange={(open) => {
+          if (!open) state.set({ imagePickerNodeId: null });
+        }}
+        onSelect={(imageKey) => {
+          if (state.imagePickerNodeId) {
+            state.setImageKey(state.imagePickerNodeId, imageKey);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -884,6 +920,7 @@ export type State = {
         startSvg: { x: number; y: number };
       };
   pngsMetadata: StarshipSymbolPngsMetadata | null;
+  imagePickerNodeId: string | null;
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
@@ -904,6 +941,7 @@ export type State = {
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
+  setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
   create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
   getNextName: (type: MapNodeType) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
