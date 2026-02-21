@@ -1,0 +1,222 @@
+{
+  "parentFolder": "Battery",
+  "sourceType": "symbol",
+  "fileMetas": [
+    {
+      "srcName": "Battery 001 [20x20].png",
+      "dstName": "battery--001--4x4.png",
+      "id": 1,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [1]
+    },
+    {
+      "srcName": "Battery 002 [10x20].png",
+      "dstName": "battery--002--2x4.png",
+      "id": 2,
+      "gridDim": [2, 4],
+      "is": [],
+      "has": [],
+      "ids": [2]
+    },
+    {
+      "srcName": "Battery 003 [20x20].png",
+      "dstName": "battery--003--4x4.png",
+      "id": 3,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [3]
+    },
+    {
+      "srcName": "Battery 004 [3x4].png",
+      "dstName": "battery--004--0.6x0.8.png",
+      "id": 4,
+      "gridDim": [0.6, 0.8],
+      "is": [],
+      "has": [],
+      "ids": [4]
+    },
+    {
+      "srcName": "Battery 005 [3x9].png",
+      "dstName": "battery--005--0.6x1.8.png",
+      "id": 5,
+      "gridDim": [0.6, 1.8],
+      "is": [],
+      "has": [],
+      "ids": [5]
+    },
+    {
+      "srcName": "Battery 006 [6x6].png",
+      "dstName": "battery--006--1.2x1.2.png",
+      "id": 6,
+      "gridDim": [1.2, 1.2],
+      "is": [],
+      "has": [],
+      "ids": [6]
+    },
+    {
+      "srcName": "Battery 007 [5x8].png",
+      "dstName": "battery--007--1x1.6.png",
+      "id": 7,
+      "gridDim": [1, 1.6],
+      "is": [],
+      "has": [],
+      "ids": [7]
+    },
+    {
+      "srcName": "Battery 008 [7x18].png",
+      "dstName": "battery--008--1.4x3.6.png",
+      "id": 8,
+      "gridDim": [1.4, 3.6],
+      "is": [],
+      "has": [],
+      "ids": [8]
+    },
+    {
+      "srcName": "Battery 009 [5x13].png",
+      "dstName": "battery--009--1x2.6.png",
+      "id": 9,
+      "gridDim": [1, 2.6],
+      "is": [],
+      "has": [],
+      "ids": [9]
+    },
+    {
+      "srcName": "Battery 010 [13x13].png",
+      "dstName": "battery--010--2.6x2.6.png",
+      "id": 10,
+      "gridDim": [2.6, 2.6],
+      "is": [],
+      "has": [],
+      "ids": [10]
+    },
+    {
+      "srcName": "Battery 011 [6x18].png",
+      "dstName": "battery--011--1.2x3.6.png",
+      "id": 11,
+      "gridDim": [1.2, 3.6],
+      "is": [],
+      "has": [],
+      "ids": [11]
+    },
+    {
+      "srcName": "Battery 012 [3x13].png",
+      "dstName": "battery--012--0.6x2.6.png",
+      "id": 12,
+      "gridDim": [0.6, 2.6],
+      "is": [],
+      "has": [],
+      "ids": [12]
+    },
+    {
+      "srcName": "Battery 013 [3x23].png",
+      "dstName": "battery--013--0.6x4.6.png",
+      "id": 13,
+      "gridDim": [0.6, 4.6],
+      "is": [],
+      "has": [],
+      "ids": [13]
+    },
+    {
+      "srcName": "Battery 014 [8x8].png",
+      "dstName": "battery--014--1.6x1.6.png",
+      "id": 14,
+      "gridDim": [1.6, 1.6],
+      "is": [],
+      "has": [],
+      "ids": [14]
+    },
+    {
+      "srcName": "Battery 015 [8x13].png",
+      "dstName": "battery--015--1.6x2.6.png",
+      "id": 15,
+      "gridDim": [1.6, 2.6],
+      "is": [],
+      "has": [],
+      "ids": [15]
+    },
+    {
+      "srcName": "Battery 016 [8x18].png",
+      "dstName": "battery--016--1.6x3.6.png",
+      "id": 16,
+      "gridDim": [1.6, 3.6],
+      "is": [],
+      "has": [],
+      "ids": [16]
+    },
+    {
+      "srcName": "Battery 017 [9x9].png",
+      "dstName": "battery--017--1.8x1.8.png",
+      "id": 17,
+      "gridDim": [1.8, 1.8],
+      "is": [],
+      "has": [],
+      "ids": [17]
+    },
+    {
+      "srcName": "Battery 018 [9x14].png",
+      "dstName": "battery--018--1.8x2.8.png",
+      "id": 18,
+      "gridDim": [1.8, 2.8],
+      "is": [],
+      "has": [],
+      "ids": [18]
+    },
+    {
+      "srcName": "Battery 019 [9x19].png",
+      "dstName": "battery--019--1.8x3.8.png",
+      "id": 19,
+      "gridDim": [1.8, 3.8],
+      "is": [],
+      "has": [],
+      "ids": [19]
+    },
+    {
+      "srcName": "Battery 020 [4x24].png",
+      "dstName": "battery--020--0.8x4.8.png",
+      "id": 20,
+      "gridDim": [0.8, 4.8],
+      "is": [],
+      "has": [],
+      "ids": [20]
+    },
+    {
+      "srcName": "Battery 021 [4x14].png",
+      "dstName": "battery--021--0.8x2.8.png",
+      "id": 21,
+      "gridDim": [0.8, 2.8],
+      "is": [],
+      "has": [],
+      "ids": [21]
+    },
+    {
+      "srcName": "Battery 022 [29x29].png",
+      "dstName": "battery--022--5.8x5.8.png",
+      "id": 22,
+      "gridDim": [5.8, 5.8],
+      "is": [],
+      "has": [],
+      "ids": [22]
+    },
+    {
+      "srcName": "Battery 023 [14x19].png",
+      "dstName": "battery--023--2.8x3.8.png",
+      "id": 23,
+      "gridDim": [2.8, 3.8],
+      "is": [],
+      "has": [],
+      "ids": [23]
+    },
+    {
+      "srcName": "Battery 024 [19x19].png",
+      "dstName": "battery--024--3.8x3.8.png",
+      "id": 24,
+      "gridDim": [3.8, 3.8],
+      "is": [],
+      "has": [],
+      "ids": [24]
+    }
+  ]
+}
