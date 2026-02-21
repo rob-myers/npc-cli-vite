@@ -54,6 +54,9 @@ import {
  * pnpm get-pngs symbol 'Symbols/Empty Room' symbol-empty-room
  * pnpm get-pngs symbol 'Symbols/Engineering' symbol-engineering
  * pnpm get-pngs symbol 'Symbols/Fresher' symbol-fresher
+ * pnpm get-pngs symbol 'Symbols/Fuel' symbol-fuel
+ * pnpm get-pngs symbol 'Symbols/Lounge' symbol-lounge
+ * pnpm get-pngs symbol 'Symbols/Low Berth' symbol-low-berth
  *
  * pnpm get-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area
  * pnpm get-pngs symbol Symbols/Fresher symbol-fresher
