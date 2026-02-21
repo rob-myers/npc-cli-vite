@@ -295,31 +295,6 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
-      pushHistory() {
-        state.undoStack.push({
-          elements: JSON.parse(JSON.stringify(state.elements)),
-          selectedIds: new Set(state.selectedIds),
-        });
-        state.redoStack.length = 0;
-      },
-      undo() {
-        const entry = state.undoStack.pop();
-        if (!entry) return;
-        state.redoStack.push({
-          elements: JSON.parse(JSON.stringify(state.elements)),
-          selectedIds: new Set(state.selectedIds),
-        });
-        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
-      },
-      redo() {
-        const entry = state.redoStack.pop();
-        if (!entry) return;
-        state.undoStack.push({
-          elements: JSON.parse(JSON.stringify(state.elements)),
-          selectedIds: new Set(state.selectedIds),
-        });
-        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
-      },
       duplicateSelected() {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
@@ -412,16 +387,6 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.update();
       },
 
-      save() {
-        tryLocalStorageSet(localStorageKey, JSON.stringify(state.elements));
-      },
-      load() {
-        const elements = tryLocalStorageGetParsed<MapNode[]>(localStorageKey);
-        if (elements) {
-          state.set({ elements, selectedIds: new Set(), selectionBox: null });
-        }
-      },
-
       onRename(id, newName) {
         state.set({
           elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
@@ -472,58 +437,6 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           state.set({ selectedIds: new Set(), selectionBox: null });
         }
         state.startDragSelection(e);
-      },
-      startDragSelection(e) {
-        e.stopPropagation();
-        const svgPos = state.clientToSvg(e.clientX, e.clientY);
-
-        /** Collect start positions for all selected rects */
-        const starts = new Map(
-          Array.from(state.selectedIds.values()).flatMap((id) => {
-            const result = findNode(state.elements, id);
-            return result?.node.type === "rect"
-              ? [[id, { x: result.node.rect.x, y: result.node.rect.y }]]
-              : [];
-          }),
-        );
-
-        if (starts.size === 0) return;
-
-        state.dragEl = { type: "move-selection", startSvg: svgPos, starts };
-        (e.target as SVGElement).setPointerCapture(e.pointerId);
-        state.set({ selectionBox: null });
-      },
-      startResizeRect(e, handle) {
-        if (state.selectedIds.size !== 1) return;
-        const [selectedId] = state.selectedIds;
-        const result = findNode(state.elements, selectedId);
-        if (result?.node.type !== "rect") return;
-        e.stopPropagation();
-        const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        const { rect } = result.node;
-        state.dragEl = {
-          type: "resize-rect",
-          handle,
-          startSvg: svgPos,
-          startRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
-        };
-        (e.target as SVGElement).setPointerCapture(e.pointerId);
-      },
-      startSelectionBox(e) {
-        e.stopPropagation();
-        const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        const increment = 10;
-        const snappedX = Math.floor(svgPos.x / increment) * increment;
-        const snappedY = Math.floor(svgPos.y / increment) * increment;
-        state.dragEl = {
-          type: "selection-box",
-          startSvg: { x: snappedX, y: snappedY },
-        };
-        state.set({
-          selectionBox: { x: snappedX, y: snappedY, width: 0, height: 0 },
-          selectedIds: new Set(),
-        });
-        (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
       onSvgPointerMove(e) {
         if (!state.dragEl) return;
@@ -630,6 +543,94 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           }
 
           state.dragEl = null;
+        }
+      },
+      startDragSelection(e) {
+        e.stopPropagation();
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+
+        /** Collect start positions for all selected rects */
+        const starts = new Map(
+          Array.from(state.selectedIds.values()).flatMap((id) => {
+            const result = findNode(state.elements, id);
+            return result?.node.type === "rect"
+              ? [[id, { x: result.node.rect.x, y: result.node.rect.y }]]
+              : [];
+          }),
+        );
+
+        if (starts.size === 0) return;
+
+        state.dragEl = { type: "move-selection", startSvg: svgPos, starts };
+        (e.target as SVGElement).setPointerCapture(e.pointerId);
+        state.set({ selectionBox: null });
+      },
+      startResizeRect(e, handle) {
+        if (state.selectedIds.size !== 1) return;
+        const [selectedId] = state.selectedIds;
+        const result = findNode(state.elements, selectedId);
+        if (result?.node.type !== "rect") return;
+        e.stopPropagation();
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        const { rect } = result.node;
+        state.dragEl = {
+          type: "resize-rect",
+          handle,
+          startSvg: svgPos,
+          startRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        };
+        (e.target as SVGElement).setPointerCapture(e.pointerId);
+      },
+      startSelectionBox(e) {
+        e.stopPropagation();
+        const svgPos = state.clientToSvg(e.clientX, e.clientY);
+        const increment = 10;
+        const snappedX = Math.floor(svgPos.x / increment) * increment;
+        const snappedY = Math.floor(svgPos.y / increment) * increment;
+        state.dragEl = {
+          type: "selection-box",
+          startSvg: { x: snappedX, y: snappedY },
+        };
+        state.set({
+          selectionBox: { x: snappedX, y: snappedY, width: 0, height: 0 },
+          selectedIds: new Set(),
+        });
+        (e.target as SVGElement).setPointerCapture(e.pointerId);
+      },
+
+      pushHistory() {
+        state.undoStack.push({
+          elements: JSON.parse(JSON.stringify(state.elements)),
+          selectedIds: new Set(state.selectedIds),
+        });
+        state.redoStack.length = 0;
+      },
+      undo() {
+        const entry = state.undoStack.pop();
+        if (!entry) return;
+        state.redoStack.push({
+          elements: JSON.parse(JSON.stringify(state.elements)),
+          selectedIds: new Set(state.selectedIds),
+        });
+        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
+      },
+      redo() {
+        const entry = state.redoStack.pop();
+        if (!entry) return;
+        state.undoStack.push({
+          elements: JSON.parse(JSON.stringify(state.elements)),
+          selectedIds: new Set(state.selectedIds),
+        });
+        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
+      },
+
+      save() {
+        tryLocalStorageSet(localStorageKey, JSON.stringify(state.elements));
+      },
+      load() {
+        const elements = tryLocalStorageGetParsed<MapNode[]>(localStorageKey);
+        if (elements) {
+          state.set({ elements, selectedIds: new Set(), selectionBox: null });
         }
       },
     }),
