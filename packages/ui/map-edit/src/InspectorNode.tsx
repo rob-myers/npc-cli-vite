@@ -9,7 +9,7 @@ import {
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { cn, useDoubleTap, useStateRef } from "@npc-cli/util";
+import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import { FolderIcon, RectangleIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
@@ -38,11 +38,10 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
 
   useEffect(() => {
     if (isEditing) {
-      state.editValue = element.name;
       state.inputEl?.focus();
       state.inputEl?.select();
     }
-  }, [isEditing, element.name]);
+  }, [isEditing]);
 
   useEffect(() => {
     const el = state.rowEl;
@@ -110,9 +109,9 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <button className="text-on-background pl-0.5">
+        <div className="text-on-background pl-0.5">
           {isGroup ? <FolderIcon /> : <RectangleIcon />}
-        </button>
+        </div>
 
         <input
           ref={state.ref("inputEl")}
@@ -124,16 +123,13 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
             isEditing ? "rounded" : "cursor-pointer",
           )}
           defaultValue={element.name || element.type}
+          value={element.name}
           readOnly={!isEditing}
-          onClick={(e) => isEditing && e.stopPropagation()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              root.onRename(element.id, e.currentTarget.value);
-            } else if (e.key === "Escape") {
-              root.onCancelEdit();
-            }
+          onChange={(e) => {
+            element.name = e.currentTarget.value;
+            state.update();
           }}
-          onBlur={(e) => isEditing && root.onRename(element.id, e.currentTarget.value)}
+          onClick={(e) => isEditing && e.stopPropagation()}
         />
       </div>
 
@@ -151,5 +147,5 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
 interface TreeItemProps {
   element: MapNode;
   level: number;
-  root: MapEditState;
+  root: UseStateRef<MapEditState>;
 }
