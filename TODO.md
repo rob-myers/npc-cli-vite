@@ -71,6 +71,8 @@
   - 🚧 can choose image
     - uses imageKey to get image
 
+- can restore after rect/image resize
+- fix borders of symbols e.g. zealous trim
 - on add rect or image should appear in current viewport
 
 - ✅ fix diagonal resize: now covered by absolute?
