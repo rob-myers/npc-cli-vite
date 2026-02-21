@@ -1,8 +1,8 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * - Ensure starship symbol PNGs exist in packages/app/public/starship-symbols
- * - Compute packages/app/public/starship-symbols/metadata.json
+ * - Ensure starship symbol PNGs exist in packages/app/public/starship-symbol
+ * - Compute packages/app/public/starship-symbol/metadata.json
  *
  * Usage:
  * pnpm ensure-asset-pngs
@@ -10,17 +10,13 @@
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import {
-  type StarshipSymbolGroup,
-  type StarshipSymbolImageKey,
-  symbolByGroup,
-} from "@npc-cli/media/starship-symbols";
+import { type StarshipSymbolPngsMetadata, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { entries, error, keys, safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { PROJECT_ROOT } from "../const";
 
-const mediaOutputDir = path.join(PROJECT_ROOT, "packages/media/src/starship-symbols/output");
-const assetsOutputDir = path.join(PROJECT_ROOT, "packages/app/public/starship-symbols");
+const mediaOutputDir = path.join(PROJECT_ROOT, "packages/media/src/starship-symbol/output");
+const assetsOutputDir = path.join(PROJECT_ROOT, "packages/app/public/starship-symbol");
 const seen = new Set<string>();
 
 // Verify each {folder}/{file} exists
@@ -46,7 +42,7 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
   }
 }
 
-// - Copy each {folder}/{file} to public/starship-symbols/{file}
+// - Copy each {folder}/{file} to public/starship-symbol/{file}
 mkdirSync(assetsOutputDir, { recursive: true });
 // - Generate metadata.json with dimensions of each image
 const metadata: StarshipSymbolPngsMetadata = {
@@ -72,11 +68,3 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
 }
 
 writeFileSync(path.join(assetsOutputDir, "metadata.json"), safeJsonCompact(metadata));
-
-type StarshipSymbolPngsMetadata = {
-  createdAt: string;
-  byKey: Record<
-    StarshipSymbolImageKey,
-    { group: StarshipSymbolGroup; width: number; height: number }
-  >;
-};

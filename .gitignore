@@ -25,7 +25,7 @@ dist-ssr
 *.sw?
 
 
-packages/media/src/starship-symbols/input/*
-!packages/media/src/starship-symbols/input/SymbolsHighRes.zip
-!packages/media/src/starship-symbols/input/Geomorphs.zip
-!packages/media/src/starship-symbols/input/SmallCraftHighRes.zip
+packages/media/src/starship-symbol/input/*
+!packages/media/src/starship-symbol/input/SymbolsHighRes.zip
+!packages/media/src/starship-symbol/input/Geomorphs.zip
+!packages/media/src/starship-symbol/input/SmallCraftHighRes.zip

@@ -18,7 +18,7 @@ import {
   rootFilenameRegex,
   smallCraftFilenameRegex,
   symbolsFilenameRegex,
-} from "../starship-symbols/service";
+} from "../starship-symbol/service";
 
 /**
  * Rename & trim PNGs
@@ -28,9 +28,9 @@ import {
  * Usage:
  * ```sh
  * # {input_type} in ['root', 'geomorph', 'symbol', 'small-craft']
- * # {src_folder} relative to {repo_root}/packages/media/src/starship-symbols/input
+ * # {src_folder} relative to {repo_root}/packages/media/src/starship-symbol/input
  * # {src_folder} exists
- * # {dst_folder} relative to {repo_root}/packages/media/src/starship-symbols/output
+ * # {dst_folder} relative to {repo_root}/packages/media/src/starship-symbol/output
  * pnpm get-symbol-pngs {input_type} {src_folder} {dst_folder}
  * pnpm get-symbol-pngs {input_type} {src_folder} {dst_folder}
  * ```
@@ -65,9 +65,9 @@ import {
 
 const errorMessage = `error: usage: pnpm get-symbol-pngs {input_type} {src_folder} {dst_folder} where:
   - {input_type} in ['root', 'geomorph', 'symbol', 'small-craft']
-  - {src_folder} relative to {repo_root}/packages/media/src/starship-symbols/input
+  - {src_folder} relative to {repo_root}/packages/media/src/starship-symbol/input
   - {src_folder} exists
-  - {dst_folder} relative to {repo_root}/packages/media/src/starship-symbols/output
+  - {dst_folder} relative to {repo_root}/packages/media/src/starship-symbol/output
   `;
 
 const [, , inputType, srcFolder, dstFolder] = process.argv;
@@ -76,8 +76,8 @@ if (!srcFolder || !dstFolder) {
   error(errorMessage);
   process.exit(1);
 }
-const srcDir = path.resolve(mediaDir, "./src/starship-symbols/input", srcFolder);
-const dstDir = path.resolve(mediaDir, "./src/starship-symbols/output", dstFolder);
+const srcDir = path.resolve(mediaDir, "./src/starship-symbol/input", srcFolder);
+const dstDir = path.resolve(mediaDir, "./src/starship-symbol/output", dstFolder);
 const manifestPath = path.join(dstDir, "manifest.json");
 
 if (

@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./starship-symbols": "./src/starship-symbols/index.ts"
+    "./starship-symbol": "./src/starship-symbol/index.ts"
   },
   "scripts": {},
   "dependencies": {
