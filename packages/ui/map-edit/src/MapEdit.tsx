@@ -473,20 +473,20 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       startDragSelection(e) {
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        // Collect start positions for all selected rects
-        const startRects = new Map<string, { x: number; y: number }>();
-        for (const id of state.selectedIds) {
-          const result = findNode(state.elements, id);
-          if (result?.node.type === "rect") {
-            startRects.set(id, { x: result.node.rect.x, y: result.node.rect.y });
-          }
-        }
-        if (startRects.size === 0) return;
-        state.dragEl = {
-          type: "move-selection",
-          startSvg: svgPos,
-          startRects,
-        };
+
+        /** Collect start positions for all selected rects */
+        const starts = new Map(
+          Array.from(state.selectedIds.values()).flatMap((id) => {
+            const result = findNode(state.elements, id);
+            return result?.node.type === "rect"
+              ? [[id, { x: result.node.rect.x, y: result.node.rect.y }]]
+              : [];
+          }),
+        );
+
+        if (starts.size === 0) return;
+
+        state.dragEl = { type: "move-selection", startSvg: svgPos, starts };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
         state.set({ selectionBox: null });
       },
@@ -555,7 +555,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const increment = 10;
 
         if (state.dragEl.type === "move-selection") {
-          for (const [id, startPos] of state.dragEl.startRects) {
+          for (const [id, startPos] of state.dragEl.starts) {
             const result = findNode(state.elements, id);
             if (result?.node.type === "rect") {
               result.node.rect.x = Math.round((startPos.x + dx) / increment) * increment;
@@ -836,7 +836,7 @@ export type State = {
     | {
         type: "move-selection";
         startSvg: { x: number; y: number };
-        startRects: Map<string, { x: number; y: number }>;
+        starts: Map<string, { x: number; y: number }>;
       }
     | {
         type: "resize-rect";
