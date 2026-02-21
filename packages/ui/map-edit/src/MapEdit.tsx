@@ -3,6 +3,7 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 enableDragDropTouch();
 
 import { Menu } from "@base-ui/react/menu";
+import type { StarshipSymbolPngsMetadata } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -10,9 +11,11 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
   FolderIcon,
+  ImageIcon,
   PlusIcon,
   SquareIcon,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { InspectorNode } from "./InspectorNode";
@@ -30,8 +33,6 @@ import {
   traverseElements,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
-
-const localStorageKey = "map-edit-tree";
 
 export default function MapEdit(_props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
@@ -54,13 +55,15 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
-      elements: [],
+      elements: emptyElements,
       undoStack: [] as HistoryEntry[],
       redoStack: [] as HistoryEntry[],
 
       svgEl: null,
       wrapperEl: null,
       dragEl: null,
+
+      pngsMetadata: null,
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -268,6 +271,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (node.type === "rect") {
           return { ...base, type: "rect", rect: { ...node.rect } };
         }
+        if (node.type === "image") {
+          return { ...base, type: "image", imageKey: node.imageKey, rect: { ...node.rect } };
+        }
         return base;
       },
       create(type) {
@@ -280,7 +286,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           locked: false,
           // 🔔 deep objects must be fresh
           ...("children" in template && { children: [...template.children] }),
-          ...("rect" in template && { rect: { ...template.rect } }),
+          ...("rect" in template &&
+            (() => {
+              const rect = { ...template.rect };
+              if (template.type === "image" && state.pngsMetadata) {
+                const scaleFactor = 0.2; // 🚧 clarify
+                rect.width = state.pngsMetadata.byKey[template.imageKey].width * scaleFactor;
+                rect.height = state.pngsMetadata.byKey[template.imageKey].height * scaleFactor;
+              }
+              return { rect };
+            })()),
         };
       },
       deleteSelected() {
@@ -406,6 +421,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const nodeId = target.dataset.nodeId;
 
         if (resizeHandle) {
+          state.save();
           state.startResizeRect(e, resizeHandle);
           return;
         }
@@ -473,7 +489,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (state.dragEl.type === "move-selection") {
           for (const [id, startPos] of state.dragEl.starts) {
             const result = findNode(state.elements, id);
-            if (result?.node.type === "rect") {
+            if (result?.node.type === "rect" || result?.node.type === "image") {
               result.node.rect.x = Math.round((startPos.x + dx) / increment) * increment;
               result.node.rect.y = Math.round((startPos.y + dy) / increment) * increment;
             }
@@ -482,7 +498,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           if (state.selectedIds.size !== 1) return;
           const [selectedId] = state.selectedIds;
           const result = findNode(state.elements, selectedId);
-          if (!result || result.node.type !== "rect") return;
+          if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
           const { rect } = result.node;
           const { handle, startRect } = state.dragEl;
           const minSize = increment;
@@ -526,7 +542,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             const selectedIds = new Set<string>();
             const box = state.selectionBox;
             traverseElements(state.elements, (el) => {
-              if (el.type === "rect") {
+              if (el.type === "rect" || el.type === "image") {
                 const r = el.rect;
                 // Check if rects intersect
                 if (
@@ -553,7 +569,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const result = findNode(state.elements, id);
-            return result?.node.type === "rect"
+            return result?.node.type === "rect" || result?.node.type === "image"
               ? [[id, { x: result.node.rect.x, y: result.node.rect.y }]]
               : [];
           }),
@@ -569,7 +585,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
         const result = findNode(state.elements, selectedId);
-        if (result?.node.type !== "rect") return;
+        if (result?.node.type !== "rect" && result?.node.type !== "image") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const { rect } = result.node;
@@ -636,14 +652,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     }),
   );
 
-  useEffect(() => {
-    state.load();
-  }, []);
+  useEffect(() => void (state.elements === emptyElements && state.load()), []);
 
-  useBeforeunload(() => {
-    state.save();
+  useQuery({
+    queryKey: ["map-edit-images-metadata"],
+    async queryFn() {
+      state.pngsMetadata = await fetch("/starship-symbol/metadata.json").then((x) => x.json());
+    },
   });
 
+  // Pointer events
   useEffect(() => {
     const container = state.containerEl;
     if (!container) return;
@@ -677,6 +695,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
   }, [state.containerEl]);
 
+  // Key events
   useEffect(() => {
     const wrapper = state.wrapperEl;
     if (!wrapper) return;
@@ -721,6 +740,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [state.wrapperEl]);
+
+  useBeforeunload(state.save);
 
   return (
     <div
@@ -769,6 +790,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                   >
                     <SquareIcon className="size-4" />
                     Rect
+                  </Menu.Item>
+                  <Menu.Item
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => {
+                      state.add("image", { selectedGroupParent: true });
+                    }}
+                  >
+                    <ImageIcon className="size-4" />
+                    Image
                   </Menu.Item>
                 </Menu.Popup>
               </Menu.Positioner>
@@ -852,6 +883,7 @@ export type State = {
         type: "selection-box";
         startSvg: { x: number; y: number };
       };
+  pngsMetadata: StarshipSymbolPngsMetadata | null;
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
@@ -925,6 +957,9 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
     </div>
   );
 }
+
+const emptyElements = [] as MapNode[];
+const localStorageKey = "map-edit-tree";
 
 const minAsideWidth = 100;
 const maxAsideWidth = 300;

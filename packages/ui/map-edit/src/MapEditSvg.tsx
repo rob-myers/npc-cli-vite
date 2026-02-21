@@ -60,6 +60,27 @@ const RenderMapNodes = ({
             <RenderMapNodes state={state} elements={el.children} />
           </g>
         );
+      case "image": {
+        const { rect, imageKey } = el;
+        const isSelected = state.selectedIds.has(el.id);
+        return (
+          <g key={el.id}>
+            <image
+              data-node-id={el.id}
+              href={`/starship-symbol/${imageKey}.png`}
+              x={rect.x}
+              y={rect.y}
+              width={rect.width}
+              height={rect.height}
+              preserveAspectRatio="none"
+              className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
+            >
+              <title>{el.name}</title>
+            </image>
+            {isSelected && state.selectedIds.size === 1 && <RectResizeHandles rect={rect} />}
+          </g>
+        );
+      }
       case "rect": {
         const { rect } = el;
         const isSelected = state.selectedIds.has(el.id);

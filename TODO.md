@@ -67,8 +67,11 @@
   - 🚧 provide some images
     - ✅ symbolByGroup
     - ✅ ensure-asset-pngs script copies files to public
-  - 🚧 can create node type "image"
-  - uses imageKey to get image
+  - ✅ can create node type "image"
+  - 🚧 can choose image
+    - uses imageKey to get image
+
+- on add rect or image should appear in current viewport
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
