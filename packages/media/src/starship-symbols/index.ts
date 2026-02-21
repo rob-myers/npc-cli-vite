@@ -1,7 +1,3 @@
-/**
- * 🚧 Group by folder
- * 🚧 Verify each file exists
- */
 export const symbolByGroup = {
   "geomorph-core": {
     "g-101--multipurpose": true,
@@ -165,29 +161,31 @@ export const symbolByGroup = {
     "stateroom--035--2x3": true,
     "stateroom--036--2x4": true,
   },
+} as const;
 
-  // 🚧
-  extra: {
-    "extra--001--fresher--0.5x0.5": true,
-    "extra--002--fresher--0.5x0.5": true,
-    "extra--003--chair--0.25x0.25": true,
-    "extra--004--desk--0.5x1": true,
-    "extra--005--chair-0.25x0.25": true,
-    "extra--006--desk--0.4x1": true,
-    "extra--007--desk--0.4x0.66": true,
-    "extra--008--desk--0.4x1.33": true,
-    "extra--009--table--4x4": true,
-    "extra--010--machine--2x1": true,
-    "extra--011--machine--1x3": true,
-    "extra--012--battery--3x2": true,
-    "extra--013--privacy-screen--1.5x0.2": true,
-    "extra--014--table--2x3": true,
-    "extra--015--table--3x0.5": true,
-    "extra--016--table--4x0.5": true,
-    "extra--017--table--2x0.5": true,
-    "extra--018--table-0.25x0.25": true,
-    "extra--019--table-0.5x2": true,
-    "extra--020--table-2x0.66": true,
-    "extra--021--screen--0.1x0.5": true,
-  },
+/**
+ * Symbols not directly based on some extracted spaceship symbol PNG.
+ */
+export const extraSymbols = {
+  "extra--001--fresher--0.5x0.5": true,
+  "extra--002--fresher--0.5x0.5": true,
+  "extra--003--chair--0.25x0.25": true,
+  "extra--004--desk--0.5x1": true,
+  "extra--005--chair-0.25x0.25": true,
+  "extra--006--desk--0.4x1": true,
+  "extra--007--desk--0.4x0.66": true,
+  "extra--008--desk--0.4x1.33": true,
+  "extra--009--table--4x4": true,
+  "extra--010--machine--2x1": true,
+  "extra--011--machine--1x3": true,
+  "extra--012--battery--3x2": true,
+  "extra--013--privacy-screen--1.5x0.2": true,
+  "extra--014--table--2x3": true,
+  "extra--015--table--3x0.5": true,
+  "extra--016--table--4x0.5": true,
+  "extra--017--table--2x0.5": true,
+  "extra--018--table-0.25x0.25": true,
+  "extra--019--table-0.5x2": true,
+  "extra--020--table-2x0.66": true,
+  "extra--021--screen--0.1x0.5": true,
 } as const;
