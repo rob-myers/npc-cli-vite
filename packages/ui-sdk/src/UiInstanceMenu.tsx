@@ -1,5 +1,5 @@
 import { type UiInstanceMeta, uiClassName, uiStoreApi } from "@npc-cli/ui-sdk";
-import { BasicPopover, cn } from "@npc-cli/util";
+import { allowReactGridDragClassName, BasicPopover, cn } from "@npc-cli/util";
 import { LayoutIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 
 export function UiInstanceMenu({ className, meta }: { className?: string; meta: UiInstanceMeta }) {
@@ -24,7 +24,11 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
         />
       </button>
 
-      <button type="button" data-item-id={meta.id} className="cursor-move">
+      <button
+        type="button"
+        data-item-id={meta.id}
+        className={cn(allowReactGridDragClassName, "cursor-move")}
+      >
         <LayoutIcon data-icon-type="layout" weight="duotone" className="size-5" />
       </button>
 
