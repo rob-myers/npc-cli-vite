@@ -52,16 +52,16 @@ export const symbolByGroup = {
   },
 
   "symbol-lab": {
-    "lab--012--4x3": true,
+    "lab--012--3x4": true,
     "lab--018--4x4": true,
     "lab--023--4x4": true,
   },
 
   "symbol-machinery": {
     "machinery--155--1.8x3.6": true,
-    "machinery--156--2x4": true,
+    "machinery--156--1.8x3.6": true,
     "machinery--158--1.8x3.6": true,
-    "machinery--357--4x2": true,
+    "machinery--357--2.2x4": true,
   },
 
   "symbol-small-craft": {
@@ -95,8 +95,8 @@ export const symbolByGroup = {
   },
 
   "symbol-medical": {
-    "medical--007--3x2": true,
-    "medical--008--3x2": true,
+    "medical--007--2x3": true,
+    "medical--008--2x3": true,
   },
 
   "symbol-cargo": {
@@ -115,25 +115,25 @@ export const symbolByGroup = {
   },
 
   "symbol-engineering": {
-    "engineering--045--6x4": true,
+    "engineering--045--4x6": true,
     "engineering--047--4x7": true,
   },
 
   "symbol-fresher": {
-    "fresher--002--0.4x0.6": true,
+    "fresher--002--1x1": true,
     "fresher--015--1x2": true,
     "fresher--020--2x2": true,
-    "fresher--025--3x2": true,
-    "fresher--036--4x2": true,
+    "fresher--025--2x3": true,
+    "fresher--036--2x4": true,
   },
 
   "symbol-fuel": {
-    "fuel--010--4x2": true,
+    "fuel--010--2x4": true,
   },
 
   "symbol-lounge": {
-    "lounge--015--4x2": true,
-    "lounge--017--4x2": true,
+    "lounge--015--2x4": true,
+    "lounge--017--2x4": true,
   },
 
   "symbol-low-berth": {
@@ -142,14 +142,14 @@ export const symbolByGroup = {
 
   "symbol-ships-locker": {
     "ships-locker--003--1x1": true,
-    "ships-locker--007--2x1": true,
-    "ships-locker--011--2x1": true,
+    "ships-locker--007--1x2": true,
+    "ships-locker--011--1x2": true,
     "ships-locker--020--2x2": true,
   },
 
   "symbol-shop-repair-area": {
-    "shop--027--1.6x0.4": true,
-    "shop--028--1.6x0.8": true,
+    "shop--027--0.4x1.6": true,
+    "shop--028--0.8x1.6": true,
     "shop--031--0.4x0.8": true,
     "shop--033--0.6x1.6": true,
     "shop--035--0.4x0.8": true,
