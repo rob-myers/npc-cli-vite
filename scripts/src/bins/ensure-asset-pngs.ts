@@ -12,6 +12,7 @@ import { PROJECT_ROOT } from "../const";
 
 const mediaOutputDir = path.join(PROJECT_ROOT, "packages/media/src/starship-symbols/output");
 const assetsOutputDir = path.join(PROJECT_ROOT, "packages/app/public/starship-symbols");
+const seen = new Set<string>();
 
 // Verify each {folder}/{file} exists
 for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
@@ -28,6 +29,11 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
       error(`Missing file: ${filePath}`);
       process.exit(1);
     }
+    if (seen.has(symbolKey)) {
+      error(`Duplicate symbol key: ${symbolKey}`);
+      process.exit(1);
+    }
+    seen.add(symbolKey);
   }
 }
 
@@ -35,12 +41,10 @@ mkdirSync(assetsOutputDir, { recursive: true });
 
 for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
   const mediaSubFolderPath = path.join(mediaOutputDir, folderName);
-  const assetsSubFolderPath = path.join(assetsOutputDir, folderName);
-  mkdirSync(assetsSubFolderPath, { recursive: true });
 
   for (const symbolKey of Object.keys(symbols)) {
     const srcPath = path.join(mediaSubFolderPath, `${symbolKey}.png`);
-    const dstPath = path.join(assetsSubFolderPath, `${symbolKey}.png`);
+    const dstPath = path.join(assetsOutputDir, `${symbolKey}.png`);
     fs.copyFileSync(srcPath, dstPath);
   }
 }
