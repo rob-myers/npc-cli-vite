@@ -440,29 +440,35 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         if (resizeHandle) {
           state.startResizeRect(e, resizeHandle);
-        } else if (e.shiftKey && nodeId) {
-          // Shift+click on item: toggle in selection
-          const newSet = new Set(state.selectedIds);
-          if (newSet.has(nodeId)) {
-            newSet.delete(nodeId);
+          return;
+        }
+
+        if (!nodeId) {
+          if (e.shiftKey) {
+            // shift+drag empty space draws selection box
+            state.startSelectionBox(e);
           } else {
-            newSet.add(nodeId);
-          }
-          state.set({ selectedIds: newSet, selectionBox: null });
-        } else if (e.shiftKey) {
-          // Shift+drag on empty space: draw selection box
-          state.startSelectionBox(e);
-        } else {
-          // Keep selection if clicking on already-selected item, otherwise select just this item
-          if (nodeId && !state.selectedIds.has(nodeId)) {
-            state.set({ selectedIds: new Set([nodeId]), selectionBox: null });
-          } else if (!nodeId) {
+            // clear
             state.set({ selectedIds: new Set(), selectionBox: null });
           }
-          if (nodeId) {
-            state.startDragSelection(e);
-          }
+          return;
         }
+
+        if (e.shiftKey) {
+          // Shift+click on item: toggle in selection
+          const nextSel = new Set(state.selectedIds);
+          nextSel.has(nodeId) ? nextSel.delete(nodeId) : nextSel.add(nodeId);
+          state.set({ selectedIds: nextSel, selectionBox: null });
+          return;
+        }
+
+        // Expand/contract selection
+        if (!state.selectedIds.has(nodeId)) {
+          state.set({ selectedIds: new Set([nodeId]), selectionBox: null });
+        } else if (!nodeId) {
+          state.set({ selectedIds: new Set(), selectionBox: null });
+        }
+        state.startDragSelection(e);
       },
       startDragSelection(e) {
         e.stopPropagation();
