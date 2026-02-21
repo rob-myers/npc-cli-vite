@@ -3,7 +3,10 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 enableDragDropTouch();
 
 import { Menu } from "@base-ui/react/menu";
-import type { StarshipSymbolImageKey, StarshipSymbolPngsMetadata } from "@npc-cli/media/starship-symbol";
+import type {
+  StarshipSymbolImageKey,
+  StarshipSymbolPngsMetadata,
+} from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -331,8 +334,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: newIds, selectionBox: null });
       },
-      getNextName(type) {
-        const prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `;
+      getNextName(type, prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `) {
         return `${prefix}${state.getNextSuffix(type, prefix)}`;
       },
       getNextSuffix(type, prefix) {
@@ -422,21 +424,22 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       setImageKey(nodeId, imageKey) {
         state.pushHistory();
-        const result = findNode(state.elements, nodeId);
-        if (result?.node.type === "image") {
-          result.node.imageKey = imageKey;
-          // Update dimensions from metadata
-          if (state.pngsMetadata) {
-            const meta = state.pngsMetadata.byKey[imageKey];
-            if (meta) {
-              const scaleFactor = 0.2;
-              result.node.rect.width = meta.width * scaleFactor;
-              result.node.rect.height = meta.height * scaleFactor;
-            }
-          }
-          state.update();
-        }
         state.set({ imagePickerNodeId: null });
+
+        const result = findNode(state.elements, nodeId);
+        const meta = state.pngsMetadata?.byKey[imageKey];
+        if (result?.node.type !== "image" || !meta) return;
+
+        // Update dimensions from metadata
+        result.node.imageKey = imageKey;
+        const scaleFactor = 0.2;
+        result.node.rect.width = meta.width * scaleFactor;
+        result.node.rect.height = meta.height * scaleFactor;
+        if (result.node.name.match(/^(Image \d+)$/)) {
+          result.node.name = state.getNextName("image", `${imageKey} `);
+        }
+
+        state.update();
       },
 
       onSvgPointerDown(e) {
@@ -943,7 +946,7 @@ export type State = {
   onCancelEdit: () => void;
   setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
   create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
-  getNextName: (type: MapNodeType) => string;
+  getNextName: (type: MapNodeType, prefix?: string) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupSelected: () => void;
