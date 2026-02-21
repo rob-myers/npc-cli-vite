@@ -1,0 +1,249 @@
+{
+  "parentFolder": "Cargo",
+  "sourceType": "symbol",
+  "fileMetas": [
+    {
+      "srcName": "Cargo 001 [5x5].png",
+      "dstName": "cargo--001--1x1.png",
+      "id": 1,
+      "gridDim": [1, 1],
+      "is": [],
+      "has": [],
+      "ids": [1]
+    },
+    {
+      "srcName": "Cargo 002 [10x10].png",
+      "dstName": "cargo--002--2x2.png",
+      "id": 2,
+      "gridDim": [2, 2],
+      "is": [],
+      "has": [],
+      "ids": [2]
+    },
+    {
+      "srcName": "Cargo 003 [10x20].png",
+      "dstName": "cargo--003--2x4.png",
+      "id": 3,
+      "gridDim": [2, 4],
+      "is": [],
+      "has": [],
+      "ids": [3]
+    },
+    {
+      "srcName": "Cargo 004 [10x95].png",
+      "dstName": "cargo--004--2x19.png",
+      "id": 4,
+      "gridDim": [2, 19],
+      "is": [],
+      "has": [],
+      "ids": [4]
+    },
+    {
+      "srcName": "Cargo 005 [20x40].png",
+      "dstName": "cargo--005--4x8.png",
+      "id": 5,
+      "gridDim": [4, 8],
+      "is": [],
+      "has": [],
+      "ids": [5]
+    },
+    {
+      "srcName": "Cargo 006 [20x20].png",
+      "dstName": "cargo--006--4x4.png",
+      "id": 6,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [6]
+    },
+    {
+      "srcName": "Cargo 007 [20x20].png",
+      "dstName": "cargo--007--4x4.png",
+      "id": 7,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [7]
+    },
+    {
+      "srcName": "Cargo 008 [20x20].png",
+      "dstName": "cargo--008--4x4.png",
+      "id": 8,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [8]
+    },
+    {
+      "srcName": "Cargo 009 [20x30].png",
+      "dstName": "cargo--009--4x6.png",
+      "id": 9,
+      "gridDim": [4, 6],
+      "is": [],
+      "has": [],
+      "ids": [9]
+    },
+    {
+      "srcName": "Cargo 010 [10x20].png",
+      "dstName": "cargo--010--2x4.png",
+      "id": 10,
+      "gridDim": [2, 4],
+      "is": [],
+      "has": [],
+      "ids": [10]
+    },
+    {
+      "srcName": "Cargo 011 [20x20].png",
+      "dstName": "cargo--011--4x4.png",
+      "id": 11,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [11]
+    },
+    {
+      "srcName": "Cargo 012 [20x20].png",
+      "dstName": "cargo--012--4x4.png",
+      "id": 12,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [12]
+    },
+    {
+      "srcName": "Cargo 013 [40x40].png",
+      "dstName": "cargo--013--8x8.png",
+      "id": 13,
+      "gridDim": [8, 8],
+      "is": [],
+      "has": [],
+      "ids": [13]
+    },
+    {
+      "srcName": "Cargo 014 [20x20].png",
+      "dstName": "cargo--014--4x4.png",
+      "id": 14,
+      "gridDim": [4, 4],
+      "is": [],
+      "has": [],
+      "ids": [14]
+    },
+    {
+      "srcName": "Cargo 015 [15x20].png",
+      "dstName": "cargo--015--3x4.png",
+      "id": 15,
+      "gridDim": [3, 4],
+      "is": [],
+      "has": [],
+      "ids": [15]
+    },
+    {
+      "srcName": "Cargo 016 [25x40].png",
+      "dstName": "cargo--016--5x8.png",
+      "id": 16,
+      "gridDim": [5, 8],
+      "is": [],
+      "has": [],
+      "ids": [16]
+    },
+    {
+      "srcName": "Cargo 017 [20x40].png",
+      "dstName": "cargo--017--4x8.png",
+      "id": 17,
+      "gridDim": [4, 8],
+      "is": [],
+      "has": [],
+      "ids": [17]
+    },
+    {
+      "srcName": "Cargo 018 [10x20].png",
+      "dstName": "cargo--018--2x4.png",
+      "id": 18,
+      "gridDim": [2, 4],
+      "is": [],
+      "has": [],
+      "ids": [18]
+    },
+    {
+      "srcName": "Cargo 020 [10x30].png",
+      "dstName": "cargo--020--2x6.png",
+      "id": 20,
+      "gridDim": [2, 6],
+      "is": [],
+      "has": [],
+      "ids": [20]
+    },
+    {
+      "srcName": "Cargo 021 [10x30].png",
+      "dstName": "cargo--021--2x6.png",
+      "id": 21,
+      "gridDim": [2, 6],
+      "is": [],
+      "has": [],
+      "ids": [21]
+    },
+    {
+      "srcName": "Cargo 022 [10x30].png",
+      "dstName": "cargo--022--2x6.png",
+      "id": 22,
+      "gridDim": [2, 6],
+      "is": [],
+      "has": [],
+      "ids": [22]
+    },
+    {
+      "srcName": "Cargo 023 [10x30].png",
+      "dstName": "cargo--023--2x6.png",
+      "id": 23,
+      "gridDim": [2, 6],
+      "is": [],
+      "has": [],
+      "ids": [23]
+    },
+    {
+      "srcName": "Cargo 024 [25x30].png",
+      "dstName": "cargo--024--5x6.png",
+      "id": 24,
+      "gridDim": [5, 6],
+      "is": [],
+      "has": [],
+      "ids": [24]
+    },
+    {
+      "srcName": "Cargo 025 [25x30].png",
+      "dstName": "cargo--025--5x6.png",
+      "id": 25,
+      "gridDim": [5, 6],
+      "is": [],
+      "has": [],
+      "ids": [25]
+    },
+    {
+      "srcName": "Cargo 026 [25x30].png",
+      "dstName": "cargo--026--5x6.png",
+      "id": 26,
+      "gridDim": [5, 6],
+      "is": [],
+      "has": [],
+      "ids": [26]
+    },
+    {
+      "srcName": "Cargo 027 [25x30].png",
+      "dstName": "cargo--027--5x6.png",
+      "id": 27,
+      "gridDim": [5, 6],
+      "is": [],
+      "has": [],
+      "ids": [27]
+    },
+    {
+      "srcName": "Cargo 028 [25x30].png",
+      "dstName": "cargo--028--5x6.png",
+      "id": 28,
+      "gridDim": [5, 6],
+      "is": [],
+      "has": [],
+      "ids": [28]
+    }
+  ]
+}
