@@ -192,6 +192,6 @@ export const extraSymbols = {
   "extra--021--screen--0.1x0.5": true,
 } as const;
 
-type StarshipSymbolGroup = keyof typeof symbolByGroup;
+export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
-export type ImageKey = KeysOfUnion<(typeof symbolByGroup)[StarshipSymbolGroup]>;
+export type StarshipSymbolImageKey = KeysOfUnion<(typeof symbolByGroup)[StarshipSymbolGroup]>;
