@@ -1,3 +1,5 @@
+import type { KeysOfUnion } from "@npc-cli/util/types";
+
 export const symbolByGroup = {
   "geomorph-core": {
     "g-101--multipurpose": true,
@@ -189,3 +191,7 @@ export const extraSymbols = {
   "extra--020--table-2x0.66": true,
   "extra--021--screen--0.1x0.5": true,
 } as const;
+
+type StarshipSymbolGroup = keyof typeof symbolByGroup;
+
+export type ImageKey = KeysOfUnion<(typeof symbolByGroup)[StarshipSymbolGroup]>;
