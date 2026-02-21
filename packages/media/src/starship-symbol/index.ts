@@ -195,3 +195,11 @@ export const extraSymbols = {
 export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
 export type StarshipSymbolImageKey = KeysOfUnion<(typeof symbolByGroup)[StarshipSymbolGroup]>;
+
+export type StarshipSymbolPngsMetadata = {
+  createdAt: string;
+  byKey: Record<
+    StarshipSymbolImageKey,
+    { group: StarshipSymbolGroup; width: number; height: number }
+  >;
+};

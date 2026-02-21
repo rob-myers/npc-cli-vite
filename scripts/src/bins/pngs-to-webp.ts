@@ -2,8 +2,8 @@
 
 /**
  * Usage
- * - pnpm pngs-to-webp packages/media/src/starship-symbols/output/symbol-machinery
- * - pnpm pngs-to-webp --quality=50 packages/media/src/starship-symbols/output/symbol-machinery
+ * - pnpm pngs-to-webp packages/media/src/starship-symbol/output/symbol-machinery
+ * - pnpm pngs-to-webp --quality=50 packages/media/src/starship-symbol/output/symbol-machinery
  *
  * Path to directory is relative to repo root.
  *
