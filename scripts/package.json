@@ -3,7 +3,7 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "bin": {
-    "get-pngs": "./src/bins/get-pngs.ts",
+    "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
     "scaffold-ui": "./src/bins/scaffold-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts"

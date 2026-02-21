@@ -31,39 +31,39 @@ import {
  * # {src_folder} relative to {repo_root}/packages/media/src/starship-symbols/input
  * # {src_folder} exists
  * # {dst_folder} relative to {repo_root}/packages/media/src/starship-symbols/output
- * pnpm get-pngs {input_type} {src_folder} {dst_folder}
- * pnpm get-pngs {input_type} {src_folder} {dst_folder}
+ * pnpm get-symbol-pngs {input_type} {src_folder} {dst_folder}
+ * pnpm get-symbol-pngs {input_type} {src_folder} {dst_folder}
  * ```
  *
  * Examples:
  * ```sh
- * pnpm get-pngs root Symbols symbol-root
- * pnpm get-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
- * pnpm get-pngs symbol 'Symbols/Machinery' symbol-machinery
- * pnpm get-pngs geomorph 'Geomorphs/100x50 Edge' geomorph-edge
- * pnpm get-pngs geomorph 'Geomorphs/100x100 Core' geomorph-core
- * pnpm get-pngs symbol Symbols/Bridge symbol-bridge
- * pnpm get-pngs small-craft 'Small Craft' symbol-small-craft
- * pnpm get-pngs symbol 'Symbols/Lab' symbol-lab
- * pnpm get-pngs symbol 'Symbols/Misc' symbol-misc
- * pnpm get-pngs symbol 'Symbols/Offices' symbol-office
- * pnpm get-pngs symbol 'Symbols/Galley & Mess' symbol-galley-and-mess
- * pnpm get-pngs symbol 'Symbols/Battery' symbol-battery
- * pnpm get-pngs symbol 'Symbols/Medical' symbol-medical
- * pnpm get-pngs symbol 'Symbols/Cargo' symbol-cargo
- * pnpm get-pngs symbol 'Symbols/Empty Room' symbol-empty-room
- * pnpm get-pngs symbol 'Symbols/Engineering' symbol-engineering
- * pnpm get-pngs symbol 'Symbols/Fresher' symbol-fresher
- * pnpm get-pngs symbol 'Symbols/Fuel' symbol-fuel
- * pnpm get-pngs symbol 'Symbols/Lounge' symbol-lounge
- * pnpm get-pngs symbol 'Symbols/Low Berth' symbol-low-berth
- * pnpm get-pngs symbol "Symbols/Ship's Locker" symbol-ships-locker
- * pnpm get-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area
- * pnpm get-pngs symbol 'Symbols/Staterooms' symbol-stateroom
+ * pnpm get-symbol-pngs root Symbols symbol-root
+ * pnpm get-symbol-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment
+ * pnpm get-symbol-pngs symbol 'Symbols/Machinery' symbol-machinery
+ * pnpm get-symbol-pngs geomorph 'Geomorphs/100x50 Edge' geomorph-edge
+ * pnpm get-symbol-pngs geomorph 'Geomorphs/100x100 Core' geomorph-core
+ * pnpm get-symbol-pngs symbol Symbols/Bridge symbol-bridge
+ * pnpm get-symbol-pngs small-craft 'Small Craft' symbol-small-craft
+ * pnpm get-symbol-pngs symbol 'Symbols/Lab' symbol-lab
+ * pnpm get-symbol-pngs symbol 'Symbols/Misc' symbol-misc
+ * pnpm get-symbol-pngs symbol 'Symbols/Offices' symbol-office
+ * pnpm get-symbol-pngs symbol 'Symbols/Galley & Mess' symbol-galley-and-mess
+ * pnpm get-symbol-pngs symbol 'Symbols/Battery' symbol-battery
+ * pnpm get-symbol-pngs symbol 'Symbols/Medical' symbol-medical
+ * pnpm get-symbol-pngs symbol 'Symbols/Cargo' symbol-cargo
+ * pnpm get-symbol-pngs symbol 'Symbols/Empty Room' symbol-empty-room
+ * pnpm get-symbol-pngs symbol 'Symbols/Engineering' symbol-engineering
+ * pnpm get-symbol-pngs symbol 'Symbols/Fresher' symbol-fresher
+ * pnpm get-symbol-pngs symbol 'Symbols/Fuel' symbol-fuel
+ * pnpm get-symbol-pngs symbol 'Symbols/Lounge' symbol-lounge
+ * pnpm get-symbol-pngs symbol 'Symbols/Low Berth' symbol-low-berth
+ * pnpm get-symbol-pngs symbol "Symbols/Ship's Locker" symbol-ships-locker
+ * pnpm get-symbol-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area
+ * pnpm get-symbol-pngs symbol 'Symbols/Staterooms' symbol-stateroom
  * ```
  */
 
-const errorMessage = `error: usage: pnpm get-pngs {input_type} {src_folder} {dst_folder} where:
+const errorMessage = `error: usage: pnpm get-symbol-pngs {input_type} {src_folder} {dst_folder} where:
   - {input_type} in ['root', 'geomorph', 'symbol', 'small-craft']
   - {src_folder} relative to {repo_root}/packages/media/src/starship-symbols/input
   - {src_folder} exists
