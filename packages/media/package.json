@@ -7,6 +7,8 @@
     "./starship-symbols": "./src/starship-symbols/index.ts"
   },
   "scripts": {},
-  "dependencies": {},
+  "dependencies": {
+    "@npc-cli/util": "workspace:^"
+  },
   "devDependencies": {}
 }

@@ -65,7 +65,8 @@
 
 - 🚧 MapEdit has image node
   - 🚧 provide some images
-    - 🚧 symbolByGroup
+    - ✅ symbolByGroup
+    - ✅ ensure-asset-pngs script copies files to public
   - 🚧 can create node type "image"
   - uses imageKey to get image
 

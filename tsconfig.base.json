@@ -14,6 +14,8 @@
     "allowJs": true,
     "checkJs": true,
 
+    "noErrorTruncation": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
