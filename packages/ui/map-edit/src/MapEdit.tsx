@@ -91,7 +91,9 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       onTouchMove(e) {
         if (!(e.touches.length === 2 && state.containerEl && state.isPinching)) return;
+
         e.preventDefault();
+
         const [t0, t1] = [e.touches[0], e.touches[1]];
         const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
         const mid = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
@@ -444,6 +446,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         }
 
         if (!nodeId) {
+          state.dragEl = null; // cancel any pending drag
           if (e.shiftKey) {
             // shift+drag empty space draws selection box
             state.startSelectionBox(e);
