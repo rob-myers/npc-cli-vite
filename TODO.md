@@ -63,15 +63,16 @@
 
 - ✅ migrate script to convert png to webp
 
-- 🚧 MapEdit has image node
-  - 🚧 provide some images
+- ✅ MapEdit has image node
+  - ✅ provide some images
     - ✅ symbolByGroup
     - ✅ ensure-asset-pngs script copies files to public
   - ✅ can create node type "image"
-  - 🚧 can choose image
+  - ✅ can choose image
     - uses imageKey to get image
 
-- can restore after rect/image resize
+- scaling should not snap to grid?
+- ✅ can restore after rect/image resize
 - fix borders of symbols e.g. zealous trim
 - on add rect or image should appear in current viewport
 
