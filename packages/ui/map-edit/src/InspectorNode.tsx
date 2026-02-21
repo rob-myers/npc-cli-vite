@@ -125,6 +125,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           defaultValue={element.name || element.type}
           value={element.name}
           readOnly={!isEditing}
+          onBlur={() => isEditing && root.set({ editingId: null })}
           onChange={(e) => {
             element.name = e.currentTarget.value;
             state.update();

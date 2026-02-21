@@ -729,6 +729,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (state.editingId || !wrapper.contains(e.target as Element)) return;
+
       if (
         e.key === "r" &&
         state.selectionBox &&
