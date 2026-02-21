@@ -78,7 +78,7 @@ export const symbolByGroup = {
     "window--007--0x2.4": true,
   },
 
-  "symbol-offices": {
+  "symbol-office": {
     "office--001--2x2": true,
     "office--004--2x2": true,
     "office--006--2x2": true,
@@ -166,6 +166,7 @@ export const symbolByGroup = {
     "stateroom--036--2x4": true,
   },
 
+  // 🚧
   extra: {
     "extra--001--fresher--0.5x0.5": true,
     "extra--002--fresher--0.5x0.5": true,
