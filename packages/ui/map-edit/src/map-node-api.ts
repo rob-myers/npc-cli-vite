@@ -1,3 +1,5 @@
+import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+
 export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
@@ -81,7 +83,7 @@ export const toTemplateNode = {
   image: {
     ...mockBaseNode,
     type: "image",
-    imageKey: "mock-image-key",
+    imageKey: "bed--003--1x1.6",
     rect: { x: 50, y: 50, width: 100, height: 100 },
   },
   rect: { ...mockBaseNode, type: "rect", rect: { x: 50, y: 50, width: 100, height: 100 } },
@@ -99,7 +101,7 @@ export type BaseMapNode = {
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[]; transform?: string }
-    | { type: "image"; imageKey: string; rect: Rect }
+    | { type: "image"; imageKey: StarshipSymbolImageKey; rect: Rect }
     | { type: "rect"; rect: Rect }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
