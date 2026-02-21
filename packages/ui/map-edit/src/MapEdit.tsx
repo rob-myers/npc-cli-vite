@@ -448,7 +448,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const nodeId = target.dataset.nodeId;
 
         if (resizeHandle) {
-          state.save();
+          state.pushHistory();
           state.startResizeRect(e, resizeHandle);
           return;
         }
@@ -522,40 +522,37 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             }
           }
         } else {
+          // 🚧 clarify below
+
+          // Resize (shift: uniform scale using dx for both)
           if (state.selectedIds.size !== 1) return;
           const [selectedId] = state.selectedIds;
           const result = findNode(state.elements, selectedId);
           if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
           const { rect } = result.node;
           const { handle, startRect } = state.dragEl;
-          const minSize = increment;
+          const snap = (v: number) => Math.round(v / increment) * increment;
+          const isWest = handle.includes("w");
+          const isNorth = handle.includes("n");
+          // shift: uniform scale - for NE/SW handles, negate dx since x/y directions are opposite
+          const uniformDy = e.shiftKey ? (isWest === isNorth ? dx : -dx) : dy;
 
-          if (handle.includes("w")) {
-            const newX = Math.round((startRect.x + dx) / increment) * increment;
-            const newWidth = startRect.width + (startRect.x - newX);
-            if (newWidth >= minSize) {
-              rect.x = newX;
-              rect.width = newWidth;
-            }
-          } else {
-            rect.width = Math.max(
-              minSize,
-              Math.round((startRect.width + dx) / increment) * increment,
-            );
+          const newX = snap(startRect.x + (isWest ? dx : 0));
+          const newWidth = isWest
+            ? startRect.width + startRect.x - newX
+            : snap(startRect.width + dx);
+          if (newWidth >= increment) {
+            rect.x = newX;
+            rect.width = newWidth;
           }
 
-          if (handle.includes("n")) {
-            const newY = Math.round((startRect.y + dy) / increment) * increment;
-            const newHeight = startRect.height + (startRect.y - newY);
-            if (newHeight >= minSize) {
-              rect.y = newY;
-              rect.height = newHeight;
-            }
-          } else {
-            rect.height = Math.max(
-              minSize,
-              Math.round((startRect.height + dy) / increment) * increment,
-            );
+          const newY = snap(startRect.y + (isNorth ? uniformDy : 0));
+          const newHeight = isNorth
+            ? startRect.height + startRect.y - newY
+            : snap(startRect.height + uniformDy);
+          if (newHeight >= increment) {
+            rect.y = newY;
+            rect.height = newHeight;
           }
         }
         state.update();
