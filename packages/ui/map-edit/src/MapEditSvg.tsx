@@ -1,8 +1,8 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import type { MapNode } from "./map-node-api";
+import { findNode, type MapNode } from "./map-node-api";
 
 export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const baseSize = 500;
@@ -10,6 +10,14 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbH = baseSize / root.zoom;
   const vbX = (baseSize - vbW) / 2 - root.pan.x / root.zoom;
   const vbY = (baseSize - vbH) / 2 - root.pan.y / root.zoom;
+
+  // Get rect of single selected element for resize handles
+  const selectedRect = useMemo(() => {
+    if (root.selectedIds.size !== 1) return null;
+    const [selectedId] = root.selectedIds;
+    const result = findNode(root.elements, selectedId);
+    return result?.node.type === "rect" || result?.node.type === "image" ? result.node.rect : null;
+  }, [root.selectedIds]);
 
   return (
     <svg
@@ -40,6 +48,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
           className="pointer-events-none"
         />
       )}
+      {selectedRect && <RectResizeHandles rect={selectedRect} root={root} />}
     </svg>
   );
 }
@@ -64,43 +73,39 @@ const RenderMapNodes = ({
         const { rect, imageKey } = el;
         const isSelected = state.selectedIds.has(el.id);
         return (
-          <g key={el.id}>
-            <image
-              data-node-id={el.id}
-              href={`/starship-symbol/${imageKey}.png`}
-              x={rect.x}
-              y={rect.y}
-              width={rect.width}
-              height={rect.height}
-              preserveAspectRatio="none"
-              className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
-            >
-              <title>{el.name}</title>
-            </image>
-            {isSelected && state.selectedIds.size === 1 && <RectResizeHandles rect={rect} />}
-          </g>
+          <image
+            key={el.id}
+            data-node-id={el.id}
+            href={`/starship-symbol/${imageKey}.png`}
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            preserveAspectRatio="none"
+            className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
+          >
+            <title>{el.name}</title>
+          </image>
         );
       }
       case "rect": {
         const { rect } = el;
         const isSelected = state.selectedIds.has(el.id);
         return (
-          <g key={el.id}>
-            <rect
-              data-node-id={el.id}
-              x={rect.x}
-              y={rect.y}
-              width={rect.width}
-              height={rect.height}
-              fill="rgba(0, 0, 0, 0.25)"
-              stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
-              strokeWidth={0}
-              className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
-            >
-              <title>{el.name}</title>
-            </rect>
-            {isSelected && state.selectedIds.size === 1 && <RectResizeHandles rect={rect} />}
-          </g>
+          <rect
+            key={el.id}
+            data-node-id={el.id}
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            fill="rgba(0, 0, 0, 0.25)"
+            stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
+            strokeWidth={0}
+            className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
+          >
+            <title>{el.name}</title>
+          </rect>
         );
       }
       default:
@@ -125,22 +130,31 @@ const handleToCursor: Record<ResizeHandle, string> = {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-function RectResizeHandles({ rect }: { rect: Rect }) {
+function RectResizeHandles({ rect, root }: { rect: Rect; root: UseStateRef<State> }) {
+  const handleSize = (4 * resizeHandleSize) / root.zoom;
   return (
     <>
+      <rect
+        x={rect.x}
+        y={rect.y}
+        width={rect.width}
+        height={rect.height}
+        strokeWidth={2 / root.zoom}
+        className="stroke-blue-700 fill-none"
+      />
       {resizeHandles.map(({ handle, getPos }) => {
         const pos = getPos(rect);
         return (
           <rect
             key={handle}
             data-resize-handle={handle}
-            x={pos.x - resizeHandleSize / 2}
-            y={pos.y - resizeHandleSize / 2}
-            width={resizeHandleSize}
-            height={resizeHandleSize}
+            x={pos.x - handleSize / 2}
+            y={pos.y - handleSize / 2}
+            width={handleSize}
+            height={handleSize}
             stroke="rgba(100, 100, 100, 1)"
-            strokeWidth={1}
-            className={cn("fill-background", handleToCursor[handle])}
+            strokeWidth={2 / root.zoom}
+            className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
           />
         );
       })}
