@@ -76,8 +76,9 @@
   - ✅ fix borders of symbols e.g. zealous trim
     - ✅ apply to cargo
     - ✅ apply to others
-  - scaling should not snap to grid?
+  - 🚧 scaling snaps to grid but uniform scaling preserves aspect ratio
   - on add rect or image should appear in current viewport
+  - only one selection rectangle e.g. so visible when object occluded
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
