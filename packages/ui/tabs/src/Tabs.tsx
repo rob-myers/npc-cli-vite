@@ -1,3 +1,8 @@
+import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import {
+  draggable,
+  dropTargetForElements,
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   UiContext,
   UiInstanceMenu,
@@ -14,7 +19,7 @@ import {
   PlusCircleIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
-import { useContext, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
@@ -97,50 +102,15 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       <div className="flex justify-between min-h-12 w-full border-b border-outline">
         <div className="flex items-end overflow-auto [scrollbar-width:thin]">
           {tabs.map((tab) => (
-            <div
+            <TabItem
               key={tab.id}
-              className={cn(
-                uiClassName,
-                "cursor-pointer px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
-                meta.currentTabId !== tab.id && "opacity-50 hover:opacity-80",
-              )}
-              onClick={() => state.onClickTab(tab)}
-            >
-              <div className={"flex p-1 border border-on-background/20"}>
-                <pre className="p-1">{tab.title}</pre>
-
-                {tab.id === meta.currentTabId && (
-                  <BasicPopover
-                    trigger={
-                      <DotsThreeOutlineVerticalIcon
-                        weight="thin"
-                        className="cursor-pointer size-4 text-on-background/80"
-                      />
-                    }
-                    className="bg-black p-0"
-                    arrowClassName="fill-black"
-                    side="bottom"
-                  >
-                    <div className="flex">
-                      <button type="button" className="px-0.5 py-1">
-                        <ArrowUpRightIcon
-                          weight="thin"
-                          className="cursor-pointer size-5 bg-black/40 text-white"
-                          onPointerDown={() => state.onBreakOutTab(tab)}
-                        />
-                      </button>
-                      <button type="button" className="px-0.5 py-1">
-                        <TrashIcon
-                          weight="thin"
-                          className="cursor-pointer size-5 bg-black/40 text-white"
-                          onPointerDown={() => state.onDeleteTab(tab, { preservePortal: false })}
-                        />
-                      </button>
-                    </div>
-                  </BasicPopover>
-                )}
-              </div>
-            </div>
+              tab={tab}
+              isCurrentTab={meta.currentTabId === tab.id}
+              onClickTab={() => state.onClickTab(tab)}
+              onBreakOutTab={() => state.onBreakOutTab(tab)}
+              onDeleteTab={() => state.onDeleteTab(tab, { preservePortal: false })}
+              tabsMetaId={meta.id}
+            />
           ))}
           <button
             ref={newTabButtonRef}
@@ -161,6 +131,118 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+interface TabItemProps {
+  tab: UiInstanceMeta;
+  isCurrentTab: boolean;
+  onClickTab: () => void;
+  onBreakOutTab: () => void;
+  onDeleteTab: () => void;
+  tabsMetaId: string;
+}
+
+function TabItem({
+  tab,
+  isCurrentTab,
+  onClickTab,
+  onBreakOutTab,
+  onDeleteTab,
+  tabsMetaId,
+}: TabItemProps) {
+  const state = useStateRef(() => ({
+    tabEl: null as HTMLDivElement | null,
+    isDragging: false,
+    isDropTarget: false,
+  }));
+
+  useEffect(() => {
+    const el = state.tabEl;
+    if (!el) return;
+    const id = tab.id;
+
+    return combine(
+      draggable({
+        element: el,
+        getInitialData: () => ({ type: "tab", id, tabsMetaId }),
+        onDragStart: () => state.set({ isDragging: true }),
+        onDrop: () => state.set({ isDragging: false }),
+      }),
+      dropTargetForElements({
+        element: el,
+        canDrop: ({ source }) =>
+          source.data.type === "tab" &&
+          source.data.tabsMetaId === tabsMetaId &&
+          source.data.id !== id,
+        onDragEnter: () => state.set({ isDropTarget: true }),
+        onDragLeave: () => state.set({ isDropTarget: false }),
+        onDrop: ({ source }) => {
+          state.set({ isDropTarget: false });
+          const draggedId = source.data.id as string;
+          if (draggedId === id) return;
+
+          uiStoreApi.setUiMeta(tabsMetaId, (draft) => {
+            if (!draft.items) return;
+            const draggedIndex = draft.items.indexOf(draggedId);
+            const targetIndex = draft.items.indexOf(id);
+            // Remove dragged item
+            draft.items.splice(draggedIndex, 1);
+            // Insert at target position
+            draft.items.splice(targetIndex, 0, draggedId);
+          });
+        },
+      }),
+    );
+  }, [tab.id, tabsMetaId]);
+
+  return (
+    <div
+      ref={state.ref("tabEl")}
+      className={cn(
+        uiClassName,
+        "cursor-pointer px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
+        !isCurrentTab && "opacity-50 hover:opacity-80",
+        state.isDragging && "opacity-30",
+        state.isDropTarget && "border-l-2 border-l-blue-400",
+      )}
+      onClick={onClickTab}
+    >
+      <div className={"flex p-1 border border-on-background/20"}>
+        <pre className="p-1">{tab.title}</pre>
+
+        {isCurrentTab && (
+          <BasicPopover
+            trigger={
+              <DotsThreeOutlineVerticalIcon
+                weight="thin"
+                className="cursor-pointer size-4 text-on-background/80"
+              />
+            }
+            className="bg-black p-0"
+            arrowClassName="fill-black"
+            side="bottom"
+          >
+            <div className="flex">
+              <button type="button" className="px-0.5 py-1">
+                <ArrowUpRightIcon
+                  weight="thin"
+                  className="cursor-pointer size-5 bg-black/40 text-white"
+                  onPointerDown={onBreakOutTab}
+                />
+              </button>
+              <button type="button" className="px-0.5 py-1">
+                <TrashIcon
+                  weight="thin"
+                  className="cursor-pointer size-5 bg-black/40 text-white"
+                  onPointerDown={onDeleteTab}
+                />
+              </button>
+            </div>
+          </BasicPopover>
+        )}
       </div>
     </div>
   );

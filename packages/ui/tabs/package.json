@@ -7,6 +7,7 @@
   },
   "scripts": {},
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "catalog:",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
