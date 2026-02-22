@@ -130,11 +130,11 @@ for (const { srcName, dstName } of fileMetas) {
     test 1 = $( magick "${dstPath}" -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info: ) &&
       {
         # has fully opaque pixel in top line so just pass through
-        echo "has fully opaque pixel";
+        echo "🤖 fully opaque pixel detected in top line";
         magick "${dstPath}" "${dstPath}.tmp.png";
       } || {
         # assume has transparent border modulo partially transparent corner-pixels
-        echo "has transparent top-line";
+        echo "🤖 no fully opaque pixel in top line";
         magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png";
       }
 
