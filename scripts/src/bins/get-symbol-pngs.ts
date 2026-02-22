@@ -123,11 +123,25 @@ for (const { srcName, dstName } of fileMetas) {
   const [srcPath, dstPath] = [path.join(srcDir, srcName), path.join(dstDir, dstName)];
   childProcess.execSync(`cp -f "${srcPath}" "${dstPath}"`);
   info(`applying ImageMagick \`magick\` to ${dstName}`);
-  // originally `convert -fuzz 1% -trim` worked
-  childProcess.execSync(`
-      magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png"
-      mv "${dstPath}.tmp.png" "${dstPath}"
-    `);
+  // - originally worked: `convert -fuzz 1% -trim`
+  // - loses 1x1 border in some cases: `magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png"`
+  childProcess.execSync(
+    `
+    test 1 = $( magick "${dstPath}" -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info: ) &&
+      {
+        # has fully opaque pixel in top line so just pass through
+        echo "has fully opaque pixel";
+        magick "${dstPath}" "${dstPath}.tmp.png";
+      } || {
+        # assume has transparent border modulo partially transparent corner-pixels
+        echo "has transparent top-line";
+        magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png";
+      }
+
+    mv "${dstPath}.tmp.png" "${dstPath}"
+    `,
+    { stdio: "inherit" },
+  );
 }
 
 function computeFileMetas(srcFilenames: string[]): FileMeta[] {
