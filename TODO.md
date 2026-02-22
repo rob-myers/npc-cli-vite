@@ -78,8 +78,8 @@
     - ✅ apply to others
   - ✅ scaling snaps to grid but uniform scaling preserves aspect ratio
   - ✅ only one selection rectangle e.g. so visible when object occluded
+  - ✅ duplicated object should inherit name prefix
   - on add rect or image should appear in current viewport
-  - duplicated object should inherit name prefix
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
