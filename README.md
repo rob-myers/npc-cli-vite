@@ -66,6 +66,13 @@ Needed for e.g. `pnpm get-symbol-pngs root Symbols symbol-root`
 brew install imagemagick
 ```
 
+```sh
+magick '200x100 Iris Valves.png'  -precision 4 -format "%[pixel:p{0,0}]\n" info:
+
+# does the top line contain a fully opaque pixel?
+magick 'Cargo 007 [20x20].png' -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info:
+```
+
 ### cwebp
 
 Needed for e.g. `pnpm pngs-to-webp packages/media/src/starship-symbol/output/symbol-machinery`
