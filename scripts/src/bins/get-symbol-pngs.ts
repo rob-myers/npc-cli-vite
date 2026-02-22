@@ -123,9 +123,9 @@ for (const { srcName, dstName } of fileMetas) {
   const [srcPath, dstPath] = [path.join(srcDir, srcName), path.join(dstDir, dstName)];
   childProcess.execSync(`cp -f "${srcPath}" "${dstPath}"`);
   info(`applying ImageMagick \`magick\` to ${dstName}`);
-  // originally `convert -fuzz 1% -trim` worked...
+  // originally `convert -fuzz 1% -trim` worked
   childProcess.execSync(`
-      magick "${dstPath}" -bordercolor red -border 1 -fuzz 1% -trim -transparent red "${dstPath}.tmp.png"
+      magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png"
       mv "${dstPath}.tmp.png" "${dstPath}"
     `);
 }
