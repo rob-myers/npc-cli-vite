@@ -5,7 +5,7 @@ import { BasicPopover, cn } from "@npc-cli/util";
 export default function Global() {
   return (
     <div className="flex justify-center items-center h-full overflow-auto">
-      <div className="p-4 grid grid-cols-2 w-48 gap-2">
+      <div className="p-4 grid grid-cols-[minmax(2rem,auto)_minmax(2rem,auto)] w-48 gap-2">
         <button
           type="button"
           className={cn(
