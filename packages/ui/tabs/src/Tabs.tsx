@@ -27,11 +27,13 @@ import type { TabsUiMeta } from "./schema";
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const { layoutApi, uiRegistry } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
+  const tabBarRef = useRef<HTMLDivElement>(null);
 
   const byId = useStore(uiStore, (s) => s.byId);
 
   const state = useStateRef(
     () => ({
+      isDropTarget: false,
       onAddNewTab(e: React.MouseEvent<HTMLElement>) {
         e.stopPropagation();
         pause(30); // avoid immediate select context menu item
@@ -95,12 +97,66 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     { deps: [meta, layoutApi] },
   );
 
+  useEffect(() => {
+    const el = tabBarRef.current;
+    if (!el) return;
+
+    return dropTargetForElements({
+      element: el,
+      canDrop: ({ source }) => source.data.type === "tab",
+      onDragEnter: () => state.set({ isDropTarget: true }),
+      onDragLeave: () => state.set({ isDropTarget: false }),
+      onDrop: ({ source }) => {
+        state.set({ isDropTarget: false });
+        const draggedId = source.data.id as string;
+        const sourceTabsMetaId = source.data.tabsMetaId as string;
+
+        // Don't do anything if dropping within the same Tabs instance
+        if (sourceTabsMetaId === meta.id) return;
+
+        // Move tab from source to end of target Tabs
+        uiStore.setState((draft) => {
+          const sourceMeta = draft.byId[sourceTabsMetaId]?.meta as TabsUiMeta | undefined;
+          const targetMeta = draft.byId[meta.id]?.meta as TabsUiMeta | undefined;
+          const draggedTab = draft.byId[draggedId];
+
+          if (!sourceMeta || !targetMeta || !draggedTab) return;
+
+          // Don't add if already in target (prevents duplicate when TabItem handler already ran)
+          if (targetMeta.items.includes(draggedId)) return;
+
+          // Remove from source Tabs
+          sourceMeta.items = sourceMeta.items.filter((itemId) => itemId !== draggedId);
+          // Update current tab if needed
+          if (sourceMeta.currentTabId === draggedId) {
+            sourceMeta.currentTabId = sourceMeta.items[0];
+          }
+
+          // Add to end of target Tabs
+          targetMeta.items.push(draggedId);
+
+          // Update the tab's parentId
+          draggedTab.meta.parentId = meta.id;
+
+          // Set as current tab in target Tabs
+          targetMeta.currentTabId = draggedId;
+        });
+      },
+    });
+  }, [meta.id]);
+
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
     <div className="flex flex-col size-full overflow-auto font-mono">
       <div className="flex justify-between min-h-12 w-full border-b border-outline">
-        <div className="flex items-end overflow-auto [scrollbar-width:thin]">
+        <div
+          ref={tabBarRef}
+          className={cn(
+            "flex items-end overflow-auto [scrollbar-width:thin]",
+            state.isDropTarget && "bg-blue-400/10",
+          )}
+        >
           {tabs.map((tab) => (
             <TabItem
               key={tab.id}
@@ -173,26 +229,61 @@ function TabItem({
       }),
       dropTargetForElements({
         element: el,
-        canDrop: ({ source }) =>
-          source.data.type === "tab" &&
-          source.data.tabsMetaId === tabsMetaId &&
-          source.data.id !== id,
+        canDrop: ({ source }) => source.data.type === "tab" && source.data.id !== id,
         onDragEnter: () => state.set({ isDropTarget: true }),
         onDragLeave: () => state.set({ isDropTarget: false }),
         onDrop: ({ source }) => {
           state.set({ isDropTarget: false });
           const draggedId = source.data.id as string;
+          const sourceTabsMetaId = source.data.tabsMetaId as string;
           if (draggedId === id) return;
 
-          uiStoreApi.setUiMeta(tabsMetaId, (draft) => {
-            if (!draft.items) return;
-            const draggedIndex = draft.items.indexOf(draggedId);
-            const targetIndex = draft.items.indexOf(id);
-            // Remove dragged item
-            draft.items.splice(draggedIndex, 1);
-            // Insert at target position
-            draft.items.splice(targetIndex, 0, draggedId);
-          });
+          // Check if moving within the same Tabs instance or between different ones
+          if (sourceTabsMetaId === tabsMetaId) {
+            // Reorder within same Tabs instance
+            uiStoreApi.setUiMeta(tabsMetaId, (draft) => {
+              if (!draft.items) return;
+              const draggedIndex = draft.items.indexOf(draggedId);
+              const targetIndex = draft.items.indexOf(id);
+              // Remove dragged item
+              draft.items.splice(draggedIndex, 1);
+              // Insert at target position
+              draft.items.splice(targetIndex, 0, draggedId);
+            });
+          } else {
+            // Move tab between different Tabs instances
+            uiStore.setState((draft) => {
+              const sourceMeta = draft.byId[sourceTabsMetaId]?.meta as TabsUiMeta | undefined;
+              const targetMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
+              const draggedTab = draft.byId[draggedId];
+
+              if (!sourceMeta || !targetMeta || !draggedTab) return;
+
+              // Don't add if already in target (prevents duplicates)
+              if (targetMeta.items.includes(draggedId)) return;
+
+              // Remove from source Tabs
+              sourceMeta.items = sourceMeta.items.filter((itemId) => itemId !== draggedId);
+              // Update current tab if needed
+              if (sourceMeta.currentTabId === draggedId) {
+                sourceMeta.currentTabId = sourceMeta.items[0];
+              }
+
+              // Add to target Tabs at the position of the drop target
+              const targetIndex = targetMeta.items.indexOf(id);
+              if (targetIndex !== -1) {
+                targetMeta.items.splice(targetIndex, 0, draggedId);
+              } else {
+                targetMeta.items.push(draggedId);
+              }
+
+              // Update the tab's parentId
+              draggedTab.meta.parentId = tabsMetaId;
+
+              // Set as current tab in target Tabs
+              targetMeta.currentTabId = draggedId;
+            });
+          }
         },
       }),
     );
