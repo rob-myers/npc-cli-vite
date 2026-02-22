@@ -73,9 +73,9 @@
   - ✅ can restore after rect/image resize
 
 - 🚧 MapEdit improvements
-  - 🚧 fix borders of symbols e.g. zealous trim
+  - ✅ fix borders of symbols e.g. zealous trim
     - ✅ apply to cargo
-    - 🚧 apply to others
+    - ✅ apply to others
   - scaling should not snap to grid?
   - on add rect or image should appear in current viewport
 
