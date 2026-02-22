@@ -4,7 +4,12 @@ import { LayoutIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 
 export function UiInstanceMenu({ className, meta }: { className?: string; meta: UiInstanceMeta }) {
   return (
-    <div className={cn(className, "flex gap-1 p-1 rounded text-on-background bg-background/80")}>
+    <div
+      className={cn(
+        className,
+        "flex gap-1 p-1 rounded text-on-background bg-background/80 border border-white/30  *:p-0.5-1 *:py-1",
+      )}
+    >
       <button
         type="button"
         data-item-id={meta.id}

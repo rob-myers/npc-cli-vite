@@ -177,7 +177,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             <PlusCircleIcon className="size-6" weight="duotone" />
           </button>
         </div>
-        <UiInstanceMenu meta={meta} />
+        <UiInstanceMenu meta={meta} className="self-end" />
       </div>
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
