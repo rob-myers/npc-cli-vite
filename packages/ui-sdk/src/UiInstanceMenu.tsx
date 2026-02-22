@@ -7,7 +7,7 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
     <div
       className={cn(
         className,
-        "flex gap-1 p-1 rounded text-on-background bg-background/80 border border-white/30  *:p-0.5-1 *:py-1",
+        "flex gap-1 p-1 rounded text-on-background bg-background/80 border border-on-background/10  *:p-0.5-1 *:py-1",
       )}
     >
       <button
