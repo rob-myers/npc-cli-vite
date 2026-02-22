@@ -10,11 +10,10 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { FolderIcon, RectangleIcon } from "@phosphor-icons/react";
-import type React from "react";
-import { useEffect } from "react";
+import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
+import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
-import type { MapNode } from "./map-node-api";
+import type { MapNode, MapNodeType } from "./map-node-api";
 
 /**
  * - Double tap to edit name
@@ -109,9 +108,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <div className="text-on-background pl-0.5">
-          {isGroup ? <FolderIcon /> : <RectangleIcon />}
-        </div>
+        <div className="text-on-background pl-0.5">{React.createElement(toIcon[element.type])}</div>
 
         <input
           ref={state.ref("inputEl")}
@@ -150,3 +147,10 @@ interface TreeItemProps {
   level: number;
   root: UseStateRef<MapEditState>;
 }
+
+const toIcon = {
+  group: FolderIcon,
+  rect: RectangleIcon,
+  image: ImageIcon,
+  path: PathIcon,
+} as const satisfies Record<MapNodeType, Icon>;
