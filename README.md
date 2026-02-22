@@ -71,6 +71,9 @@ magick '200x100 Iris Valves.png'  -precision 4 -format "%[pixel:p{0,0}]\n" info:
 
 # does the top line contain a fully opaque pixel?
 magick 'Cargo 007 [20x20].png' -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info:
+
+magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
+# magick: invalid colormap index `Fuel 057 [25x80].png' @ error/colormap-private.h/ConstrainColormapIndex/35.
 ```
 
 ### cwebp
