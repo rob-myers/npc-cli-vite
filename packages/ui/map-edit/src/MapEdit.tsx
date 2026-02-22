@@ -130,26 +130,26 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.lastTouchDist = 0;
       },
 
-      onResizePointerDown(e) {
+      onResizeInspectorPointerDown(e) {
         e.preventDefault();
         e.stopPropagation();
         state.isResizing = true;
         state.firstPointerPos = { x: e.clientX, y: e.clientY };
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
-        document.body.addEventListener("pointermove", state.onResizePointerMove);
-        document.body.addEventListener("pointerup", state.onResizePointerUp);
+        document.body.addEventListener("pointermove", state.onResizeInspectorPointerMove);
+        document.body.addEventListener("pointerup", state.onResizeInspectorPointerUp);
       },
-      onResizePointerMove(e) {
+      onResizeInspectorPointerMove(e) {
         const dx = e.clientX - state.lastPointerPos.x;
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
         state.set({
           asideWidth: Math.max(minAsideWidth, Math.min(maxAsideWidth, state.asideWidth + dx)),
         });
       },
-      onResizePointerUp() {
+      onResizeInspectorPointerUp() {
         state.isResizing = false;
-        document.body.removeEventListener("pointermove", state.onResizePointerMove);
-        document.body.removeEventListener("pointerup", state.onResizePointerUp);
+        document.body.removeEventListener("pointermove", state.onResizeInspectorPointerMove);
+        document.body.removeEventListener("pointerup", state.onResizeInspectorPointerUp);
       },
 
       onSelect(id, opts) {
@@ -522,37 +522,45 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             }
           }
         } else {
-          // 🚧 clarify below
-
-          // Resize (shift: uniform scale using dx for both)
+          // Resize where shift preserves aspect ratio
           if (state.selectedIds.size !== 1) return;
+
           const [selectedId] = state.selectedIds;
           const result = findNode(state.elements, selectedId);
           if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
+
+          const snap = (v: number) => Math.round(v / increment) * increment;
+
           const { rect } = result.node;
           const { handle, startRect } = state.dragEl;
-          const snap = (v: number) => Math.round(v / increment) * increment;
-          const isWest = handle.includes("w");
-          const isNorth = handle.includes("n");
-          // shift: uniform scale - for NE/SW handles, negate dx since x/y directions are opposite
-          const uniformDy = e.shiftKey ? (isWest === isNorth ? dx : -dx) : dy;
+          const [isW, isE, isN, isS] = ["w", "e", "n", "s"].map((d) => handle.includes(d));
+          const aspect = startRect.width / startRect.height;
 
-          const newX = snap(startRect.x + (isWest ? dx : 0));
-          const newWidth = isWest
-            ? startRect.width + startRect.x - newX
-            : snap(startRect.width + dx);
-          if (newWidth >= increment) {
-            rect.x = newX;
-            rect.width = newWidth;
-          }
-
-          const newY = snap(startRect.y + (isNorth ? uniformDy : 0));
-          const newHeight = isNorth
-            ? startRect.height + startRect.y - newY
-            : snap(startRect.height + uniformDy);
-          if (newHeight >= increment) {
-            rect.y = newY;
-            rect.height = newHeight;
+          if (e.shiftKey) {
+            const isCorner = (isW || isE) && (isN || isS);
+            rect.width = snap(startRect.width + (isW ? -dx : dx));
+            rect.height = rect.width / aspect;
+            rect.x = snap(isW ? startRect.x + startRect.width - rect.width : startRect.x);
+            rect.y = snap(
+              isCorner
+                ? isN
+                  ? startRect.y + startRect.height - rect.height
+                  : startRect.y
+                : startRect.y + (startRect.height - rect.height) / 2,
+            );
+          } else {
+            if (isW || isE) {
+              rect.x = snap(isW ? startRect.x + dx : startRect.x);
+              rect.y = snap(rect.y);
+              rect.width = snap(isW ? startRect.width - dx : startRect.width + dx);
+              rect.height = snap(rect.height);
+            }
+            if (isN || isS) {
+              rect.x = snap(rect.x);
+              rect.y = snap(isN ? startRect.y + dy : startRect.y);
+              rect.width = snap(rect.width);
+              rect.height = snap(isN ? startRect.height - dy : startRect.height + dy);
+            }
           }
         }
         state.update();
@@ -932,9 +940,9 @@ export type State = {
   onTouchStart: (e: TouchEvent) => void;
   onTouchMove: (e: TouchEvent) => void;
   onTouchEnd: () => void;
-  onResizePointerDown: (e: PointerEvent<HTMLDivElement>) => void;
-  onResizePointerMove: (e: globalThis.PointerEvent) => void;
-  onResizePointerUp: () => void;
+  onResizeInspectorPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
+  onResizeInspectorPointerMove: (e: globalThis.PointerEvent) => void;
+  onResizeInspectorPointerUp: () => void;
   onSelect: (id: string, opts?: { shiftKey?: boolean; metaKey?: boolean }) => void;
   onToggleVisibility: (id: string) => void;
   add: (type: MapNodeType, opts?: { selectedGroupParent?: boolean; rect?: SelectionBox }) => void;
@@ -970,7 +978,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
         "z-2 w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
         "bg-blue-500/50",
       )}
-      onPointerDown={state.onResizePointerDown}
+      onPointerDown={state.onResizeInspectorPointerDown}
     >
       <button
         className={cn(
