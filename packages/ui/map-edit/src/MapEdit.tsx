@@ -268,7 +268,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const base = {
           ...node,
           id: crypto.randomUUID(),
-          name: state.getNextName(node.type),
+          name: state.getNextName(node.type, `${node.name.split(" ")[0]} `),
         };
         if (node.type === "group") {
           return {
