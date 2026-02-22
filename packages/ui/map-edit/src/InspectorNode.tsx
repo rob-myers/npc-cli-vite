@@ -119,7 +119,6 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
             isSelected && "brightness-125 font-medium",
             isEditing ? "rounded" : "cursor-pointer",
           )}
-          defaultValue={element.name || element.type}
           value={element.name}
           readOnly={!isEditing}
           onBlur={() => isEditing && root.set({ editingId: null })}
