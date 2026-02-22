@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { cn } from "@npc-cli/util";
+import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 
@@ -16,6 +16,9 @@ export function ImagePickerModal({
 }) {
   const groups = Object.entries(symbolByGroup);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(groups[0]?.[0] ?? null);
+  const state = useStateRef(() => ({
+    loadedImages: new Set<string>(),
+  }));
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -65,9 +68,18 @@ export function ImagePickerModal({
                         <img
                           src={`/starship-symbol/${imageKey}.png`}
                           alt={imageKey}
-                          className="w-full h-full object-contain"
-                          loading="lazy"
+                          className={cn(
+                            "size-full object-contain",
+                            !state.loadedImages.has(imageKey) && "hidden",
+                          )}
+                          onLoad={() => {
+                            state.loadedImages.add(imageKey);
+                            state.update();
+                          }}
+                          // loading="lazy"
                         />
+
+                        {!state.loadedImages.has(imageKey) && <Spinner />}
                       </button>
                     ))}
                   </div>
