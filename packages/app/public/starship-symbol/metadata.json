@@ -1,36 +1,36 @@
 {
-  "createdAt": "2026-02-21T16:59:22.502Z",
+  "createdAt": "2026-02-22T16:25:02.741Z",
   "byKey": {
     "g-101--multipurpose": {
       "group": "geomorph-core",
-      "width": 1440,
-      "height": 1440
+      "width": 1212,
+      "height": 1212
     },
     "g-102--research-deck": {
       "group": "geomorph-core",
-      "width": 1440,
-      "height": 1440
+      "width": 1212,
+      "height": 1212
     },
     "g-103--cargo-bay-full": {
       "group": "geomorph-core",
-      "width": 1440,
-      "height": 1440
+      "width": 1212,
+      "height": 1212
     },
-    "g-301--bridge": {"group": "geomorph-edge", "width": 1440, "height": 840},
+    "g-301--bridge": {"group": "geomorph-edge", "width": 1212, "height": 628},
     "g-302--xboat-repair-bay": {
       "group": "geomorph-edge",
-      "width": 1440,
-      "height": 840
+      "width": 1212,
+      "height": 667
     },
     "g-303--passenger-deck": {
       "group": "geomorph-edge",
-      "width": 1440,
-      "height": 840
+      "width": 1212,
+      "height": 613
     },
     "bridge--042--8x9": {
       "group": "symbol-bridge",
-      "width": 3000,
-      "height": 3300
+      "width": 2446,
+      "height": 2790
     },
     "bed--003--1x1.6": {
       "group": "symbol-furniture-consoles-equipment",
@@ -152,9 +152,9 @@
       "width": 269,
       "height": 269
     },
-    "lab--012--3x4": {"group": "symbol-lab", "width": 1800, "height": 1500},
-    "lab--018--4x4": {"group": "symbol-lab", "width": 1800, "height": 1800},
-    "lab--023--4x4": {"group": "symbol-lab", "width": 1800, "height": 1800},
+    "lab--012--3x4": {"group": "symbol-lab", "width": 1233, "height": 920},
+    "lab--018--4x4": {"group": "symbol-lab", "width": 1220, "height": 1243},
+    "lab--023--4x4": {"group": "symbol-lab", "width": 1220, "height": 1233},
     "machinery--155--1.8x3.6": {
       "group": "symbol-machinery",
       "width": 520,
@@ -177,199 +177,171 @@
     },
     "lifeboat--small-craft": {
       "group": "symbol-small-craft",
-      "width": 1200,
-      "height": 1800
+      "width": 643,
+      "height": 1238
     },
     "iris-valves--005--1x1": {
       "group": "symbol-misc",
-      "width": 300,
-      "height": 300
+      "width": 221,
+      "height": 220
     },
     "iris-valves--006--1x1": {
       "group": "symbol-misc",
-      "width": 300,
-      "height": 300
+      "width": 221,
+      "height": 220
     },
     "misc-stellar-cartography--020--10x10": {
       "group": "symbol-misc",
-      "width": 3600,
-      "height": 3600
+      "width": 3020,
+      "height": 3020
     },
     "misc-stellar-cartography--023--4x4": {
       "group": "symbol-misc",
-      "width": 1800,
-      "height": 1800
+      "width": 1220,
+      "height": 1220
     },
-    "window--001--0x1": {"group": "symbol-misc", "width": 900, "height": 600},
-    "window--005--0x2": {"group": "symbol-misc", "width": 1200, "height": 600},
-    "window--007--0x2.4": {
-      "group": "symbol-misc",
-      "width": 1500,
-      "height": 600
-    },
-    "office--001--2x2": {
-      "group": "symbol-office",
-      "width": 1200,
-      "height": 1200
-    },
-    "office--004--2x2": {
-      "group": "symbol-office",
-      "width": 1200,
-      "height": 1200
-    },
-    "office--006--2x2": {
-      "group": "symbol-office",
-      "width": 1200,
-      "height": 1200
-    },
-    "office--026--2x3": {
-      "group": "symbol-office",
-      "width": 1200,
-      "height": 1500
-    },
-    "office--020--2x3": {
-      "group": "symbol-office",
-      "width": 1200,
-      "height": 1500
-    },
-    "office--023--2x3": {
-      "group": "symbol-office",
-      "width": 1200,
-      "height": 1500
-    },
+    "window--001--0x1": {"group": "symbol-misc", "width": 307, "height": 67},
+    "window--005--0x2": {"group": "symbol-misc", "width": 607, "height": 67},
+    "window--007--0x2.4": {"group": "symbol-misc", "width": 907, "height": 67},
+    "office--001--2x2": {"group": "symbol-office", "width": 633, "height": 620},
+    "office--004--2x2": {"group": "symbol-office", "width": 633, "height": 620},
+    "office--006--2x2": {"group": "symbol-office", "width": 633, "height": 620},
+    "office--026--2x3": {"group": "symbol-office", "width": 657, "height": 920},
+    "office--020--2x3": {"group": "symbol-office", "width": 633, "height": 920},
+    "office--023--2x3": {"group": "symbol-office", "width": 620, "height": 934},
     "office--061--3x4": {
       "group": "symbol-office",
-      "width": 1500,
-      "height": 1800
+      "width": 934,
+      "height": 1220
     },
     "office--074--4x4": {
       "group": "symbol-office",
-      "width": 1800,
-      "height": 1800
+      "width": 1233,
+      "height": 1220
     },
     "office--089--4x4": {
       "group": "symbol-office",
-      "width": 1800,
-      "height": 1800
+      "width": 1194,
+      "height": 1195
     },
     "galley-and-mess-halls--006--2x4": {
       "group": "symbol-galley-and-mess",
-      "width": 1800,
-      "height": 1200
+      "width": 1220,
+      "height": 643
     },
     "medical--007--2x3": {
       "group": "symbol-medical",
-      "width": 1500,
-      "height": 1200
+      "width": 920,
+      "height": 633
     },
     "medical--008--2x3": {
       "group": "symbol-medical",
-      "width": 1500,
-      "height": 1200
+      "width": 920,
+      "height": 633
     },
-    "cargo--002--2x2": {"group": "symbol-cargo", "width": 1200, "height": 1200},
-    "cargo--010--2x4": {"group": "symbol-cargo", "width": 1200, "height": 1800},
-    "cargo--003--2x4": {"group": "symbol-cargo", "width": 1200, "height": 1800},
+    "cargo--002--2x2": {"group": "symbol-cargo", "width": 607, "height": 607},
+    "cargo--010--2x4": {"group": "symbol-cargo", "width": 620, "height": 1234},
+    "cargo--003--2x4": {"group": "symbol-cargo", "width": 607, "height": 1207},
     "empty-room--006--2x2": {
       "group": "symbol-empty-room",
-      "width": 1200,
-      "height": 1200
+      "width": 633,
+      "height": 620
     },
     "empty-room--013--2x3": {
       "group": "symbol-empty-room",
-      "width": 1200,
-      "height": 1500
+      "width": 620,
+      "height": 933
     },
     "empty-room--019--2x4": {
       "group": "symbol-empty-room",
-      "width": 1200,
-      "height": 1800
+      "width": 633,
+      "height": 1220
     },
     "empty-room--020--2x4": {
       "group": "symbol-empty-room",
-      "width": 1200,
-      "height": 1800
+      "width": 620,
+      "height": 1233
     },
     "empty-room--039--3x4": {
       "group": "symbol-empty-room",
-      "width": 1500,
-      "height": 1800
+      "width": 934,
+      "height": 1220
     },
     "empty-room--060--4x4": {
       "group": "symbol-empty-room",
-      "width": 1800,
-      "height": 1800
+      "width": 1220,
+      "height": 1220
     },
     "engineering--045--4x6": {
       "group": "symbol-engineering",
-      "width": 2400,
-      "height": 1800
+      "width": 1820,
+      "height": 1233
     },
     "engineering--047--4x7": {
       "group": "symbol-engineering",
-      "width": 1800,
-      "height": 2700
+      "width": 1234,
+      "height": 2120
     },
     "fresher--002--1x1": {
       "group": "symbol-fresher",
-      "width": 900,
-      "height": 900
+      "width": 320,
+      "height": 334
     },
     "fresher--015--1x2": {
       "group": "symbol-fresher",
-      "width": 900,
-      "height": 1200
+      "width": 334,
+      "height": 620
     },
     "fresher--020--2x2": {
       "group": "symbol-fresher",
-      "width": 1200,
-      "height": 1200
+      "width": 634,
+      "height": 620
     },
     "fresher--025--2x3": {
       "group": "symbol-fresher",
-      "width": 1500,
-      "height": 1200
+      "width": 933,
+      "height": 620
     },
     "fresher--036--2x4": {
       "group": "symbol-fresher",
-      "width": 1800,
-      "height": 1200
+      "width": 1220,
+      "height": 633
     },
-    "fuel--010--2x4": {"group": "symbol-fuel", "width": 1800, "height": 1200},
+    "fuel--010--2x4": {"group": "symbol-fuel", "width": 1238, "height": 639},
     "lounge--015--2x4": {
       "group": "symbol-lounge",
-      "width": 1800,
-      "height": 1200
+      "width": 1220,
+      "height": 620
     },
     "lounge--017--2x4": {
       "group": "symbol-lounge",
-      "width": 1800,
-      "height": 1200
+      "width": 1220,
+      "height": 620
     },
     "low-berth--003--1x1": {
       "group": "symbol-low-berth",
-      "width": 900,
-      "height": 900
+      "width": 307,
+      "height": 356
     },
     "ships-locker--003--1x1": {
       "group": "symbol-ships-locker",
-      "width": 900,
-      "height": 900
+      "width": 320,
+      "height": 334
     },
     "ships-locker--007--1x2": {
       "group": "symbol-ships-locker",
-      "width": 1200,
-      "height": 900
+      "width": 620,
+      "height": 334
     },
     "ships-locker--011--1x2": {
       "group": "symbol-ships-locker",
-      "width": 1200,
-      "height": 900
+      "width": 620,
+      "height": 334
     },
     "ships-locker--020--2x2": {
       "group": "symbol-ships-locker",
-      "width": 1200,
-      "height": 1200
+      "width": 620,
+      "height": 634
     },
     "shop--027--0.4x1.6": {
       "group": "symbol-shop-repair-area",
@@ -403,38 +375,38 @@
     },
     "stateroom--012--2x2": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1200
+      "width": 633,
+      "height": 620
     },
     "stateroom--014--2x2": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1200
+      "width": 620,
+      "height": 634
     },
     "stateroom--018--2x3": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1500
+      "width": 633,
+      "height": 920
     },
     "stateroom--019--2x3": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1500
+      "width": 633,
+      "height": 920
     },
     "stateroom--020--2x3": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1500
+      "width": 633,
+      "height": 920
     },
     "stateroom--035--2x3": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1500
+      "width": 620,
+      "height": 934
     },
     "stateroom--036--2x4": {
       "group": "symbol-stateroom",
-      "width": 1200,
-      "height": 1800
+      "width": 620,
+      "height": 1234
     }
   }
 }
