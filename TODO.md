@@ -79,7 +79,10 @@
   - ✅ scaling snaps to grid but uniform scaling preserves aspect ratio
   - ✅ only one selection rectangle e.g. so visible when object occluded
   - ✅ duplicated object should inherit name prefix
-  - on add rect or image should appear in current viewport
+  - ✅ on add rect or image should appear in current viewport
+
+- figure out correct scaling based on geomorph input files
+  - can re-use convention from npc-cli-next
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs

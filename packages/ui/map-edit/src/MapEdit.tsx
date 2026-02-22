@@ -241,13 +241,31 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
 
       add(type, { selectedGroupParent, rect } = {}) {
+        if (!state.svgEl) return;
+
         state.pushHistory();
         const selection = selectedGroupParent ? state.getSelectedNode() : null;
         const parent = selection?.type === "group" ? selection : null;
         const newItem = state.create(type);
-        if (rect && newItem.type === "rect") {
-          newItem.rect = rect;
+
+        if ("rect" in newItem) {
+          if (rect) {
+            newItem.rect = rect;
+          } else {
+            // Place new item centered in viewport
+            const svgRect = state.svgEl.getBoundingClientRect();
+            const center = state.clientToSvg(
+              svgRect.x + svgRect.width / 2,
+              svgRect.y + svgRect.height / 2,
+            );
+            newItem.rect = {
+              ...newItem.rect,
+              x: center.x - newItem.rect.width / 2,
+              y: center.y - newItem.rect.height / 2,
+            };
+          }
         }
+
         if (!parent) {
           state.set({
             elements: [...state.elements, newItem],
@@ -826,7 +844,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
-                      state.add("image", { selectedGroupParent: true });
+                      state.add("image", {
+                        selectedGroupParent: true,
+                        rect: state.selectionBox ?? undefined,
+                      });
                     }}
                   >
                     <ImageIcon className="size-4" />
