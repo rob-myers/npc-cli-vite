@@ -127,18 +127,17 @@ for (const { srcName, dstName } of fileMetas) {
   // - loses 1x1 border in some cases: `magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png"`
   childProcess.execSync(
     `
-    test 1 = $( magick "${dstPath}" -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info: ) &&
+    test 1 = "$( magick "${dstPath}" -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info: )" &&
       {
-        # has fully opaque pixel in top line so just pass through
         echo "🤖 fully opaque pixel detected in top line";
         magick "${dstPath}" "${dstPath}.tmp.png";
       } || {
-        # assume has transparent border modulo partially transparent corner-pixels
         echo "🤖 no fully opaque pixel in top line";
         magick "${dstPath}" -shave 1x1 -fuzz 1% -trim "${dstPath}.tmp.png";
       }
-
-    mv "${dstPath}.tmp.png" "${dstPath}"
+    
+    mv "${dstPath}.tmp.png" "${dstPath}" ||
+      echo "⚠️ ImageMagick failed for ${dstName}"
     `,
     { stdio: "inherit" },
   );
