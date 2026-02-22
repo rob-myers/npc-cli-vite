@@ -430,8 +430,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const meta = state.pngsMetadata?.byKey[imageKey];
         if (result?.node.type !== "image" || !meta) return;
 
-        // Update dimensions from metadata
         result.node.imageKey = imageKey;
+        // Update dimensions from metadata
         const scaleFactor = 0.2;
         result.node.rect.width = meta.width * scaleFactor;
         result.node.rect.height = meta.height * scaleFactor;
@@ -686,11 +686,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
   useEffect(() => void (state.elements === emptyElements && state.load()), []);
 
-  useQuery({
+  state.pngsMetadata = useQuery({
     queryKey: ["map-edit-images-metadata"],
-    queryFn: async () =>
-      (state.pngsMetadata = await fetch("/starship-symbol/metadata.json").then((x) => x.json())),
-  });
+    queryFn: async () => await fetch("/starship-symbol/metadata.json").then((x) => x.json()),
+  }).data;
 
   // Pointer events
   useEffect(() => {
