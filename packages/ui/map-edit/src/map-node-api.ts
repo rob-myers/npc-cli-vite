@@ -77,6 +77,8 @@ const mockBaseNode: BaseMapNode = {
   visible: true,
 };
 
+const defaultRect = { x: 5, y: 5, width: 50, height: 50 };
+
 export const toTemplateNode = {
   group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
   path: { ...mockBaseNode, type: "path" },
@@ -84,9 +86,9 @@ export const toTemplateNode = {
     ...mockBaseNode,
     type: "image",
     imageKey: "bed--003--1x1.6",
-    rect: { x: 50, y: 50, width: 100, height: 100 },
+    rect: { ...defaultRect },
   },
-  rect: { ...mockBaseNode, type: "rect", rect: { x: 50, y: 50, width: 100, height: 100 } },
+  rect: { ...mockBaseNode, type: "rect", rect: { ...defaultRect } },
 } satisfies Record<MapNodeType, MapNode>;
 
 export type MapNodeType = "group" | "image" | "path" | "rect";
