@@ -676,11 +676,12 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
 
       pushHistory() {
+        const elementsJson = JSON.stringify(state.elements);
+        const prev = state.undoStack.at(-1)?.elements;
+        if (prev === elementsJson) return;
+
         state.isDirty = true;
-        state.undoStack.push({
-          elements: JSON.parse(JSON.stringify(state.elements)),
-          selectedIds: new Set(state.selectedIds),
-        });
+        state.undoStack.push({ elements: elementsJson, selectedIds: new Set(state.selectedIds) });
         state.redoStack.length = 0;
         state.update();
       },
@@ -688,19 +689,27 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         const entry = state.undoStack.pop();
         if (!entry) return;
         state.redoStack.push({
-          elements: JSON.parse(JSON.stringify(state.elements)),
+          elements: JSON.stringify(state.elements),
           selectedIds: new Set(state.selectedIds),
         });
-        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
+        state.set({
+          elements: JSON.parse(entry.elements) as MapNode[],
+          selectedIds: entry.selectedIds,
+          selectionBox: null,
+        });
       },
       redo() {
         const entry = state.redoStack.pop();
         if (!entry) return;
         state.undoStack.push({
-          elements: JSON.parse(JSON.stringify(state.elements)),
+          elements: JSON.stringify(state.elements),
           selectedIds: new Set(state.selectedIds),
         });
-        state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
+        state.set({
+          elements: JSON.parse(entry.elements) as MapNode[],
+          selectedIds: entry.selectedIds,
+          selectionBox: null,
+        });
       },
 
       save(filename?: string) {
@@ -955,7 +964,8 @@ export type SelectionBox = {
 };
 
 type HistoryEntry = {
-  elements: MapNode[];
+  /** `MapNode[]` */
+  elements: string;
   selectedIds: Set<string>;
 };
 
