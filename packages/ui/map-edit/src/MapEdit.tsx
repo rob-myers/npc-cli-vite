@@ -933,11 +933,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         className="relative h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
       >
-        <FileMenu state={state} />
-        <div className="grid grid-cols-[1fr_auto] items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
-          <h2 className="text-ellipsis line-clamp-1 text-xs font-bold uppercase tracking-wider text-slate-500">
-            Layers
-          </h2>
+        <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
+          <FileMenu state={state} />
           <Menu.Root>
             <Menu.Trigger
               className={cn(
