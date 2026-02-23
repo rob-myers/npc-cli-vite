@@ -30,8 +30,8 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       onPointerUp={root.onSvgPointerUp}
       preserveAspectRatio="xMidYMid meet"
     >
-      <DefsAndGrid />
-      <Origin />
+      <Defs />
+      <OriginAndGrid />
       <RenderMapNodes state={root} elements={root.elements} />
       {root.selectionBox !== null && (
         <rect
@@ -183,7 +183,7 @@ function RectResizeHandles({
 
 const originLineLength = 4096;
 const originLineColor = "rgba(255, 0, 0, 0.5)";
-const Origin = memo(() => (
+const OriginAndGrid = memo(() => (
   <g>
     <line
       x1={-originLineLength}
@@ -201,25 +201,6 @@ const Origin = memo(() => (
       stroke={originLineColor}
       strokeWidth={1}
     />
-  </g>
-));
-
-const DefsAndGrid = memo(() => (
-  <>
-    <defs>
-      <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-        <path
-          d="M 10 0 L 0 0 0 10"
-          fill="none"
-          stroke="rgba(100, 116, 139, 0.3)"
-          strokeWidth="0.5"
-        />
-      </pattern>
-      <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-        <rect width="60" height="60" fill="url(#smallGrid)" />
-        <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
-      </pattern>
-    </defs>
     <rect
       x="-10000"
       y="-10000"
@@ -228,5 +209,17 @@ const DefsAndGrid = memo(() => (
       fill="url(#grid)"
       className="pointer-events-none"
     />
-  </>
+  </g>
+));
+
+const Defs = memo(() => (
+  <defs>
+    <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(100, 116, 139, 0.3)" strokeWidth="0.5" />
+    </pattern>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <rect width="60" height="60" fill="url(#smallGrid)" />
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
+    </pattern>
+  </defs>
 ));

@@ -81,7 +81,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           props.meta.id
         ] ?? "untitled",
       isDirty: false,
-      savedFiles: getSavedFiles(),
+      savedFiles: getSavedFilenames(),
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -733,20 +733,22 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
 
-      save(filename?: string) {
-        const name = filename ?? state.currentFilename;
-        tryLocalStorageSet(`${localStoragePrefix}${name}`, JSON.stringify(state.elements));
+      save(filename = state.currentFilename) {
+        // save to local storage
+        tryLocalStorageSet(`${localStoragePrefix}${filename}`, JSON.stringify(state.elements));
+        // save current filename for this instance of MapEdit
         tryLocalStorageSet(
           localStorageUiIdToFilenameKey,
           JSON.stringify({
             ...tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey),
-            [props.meta.id]: name,
+            [props.meta.id]: filename,
           }),
         );
-        state.set({ currentFilename: name, savedFiles: getSavedFiles(), isDirty: false });
-        // Also save to filesystem in development
+        state.set({ currentFilename: filename, savedFiles: getSavedFilenames(), isDirty: false });
+
+        // save to filesystem in development
         if (import.meta.env.DEV) {
-          fetch(`/api/map-edit/file/${encodeURIComponent(name)}`, {
+          fetch(`/api/map-edit/file/${encodeURIComponent(filename)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: state.elements }),
@@ -785,8 +787,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       deleteFile(filename: string) {
         localStorage.removeItem(`${localStoragePrefix}${filename}`);
-        state.set({ savedFiles: getSavedFiles() });
-        // Also delete from filesystem in development
+        state.set({ savedFiles: getSavedFilenames().filter((x) => x !== filename) });
+
+        // delete from filesystem in development
         if (import.meta.env.DEV) {
           fetch(`/api/map-edit/file/${encodeURIComponent(filename)}`, {
             method: "DELETE",
@@ -807,9 +810,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   );
 
   useEffect(() => {
-    state.elements === emptyElements && state.load();
-    if (import.meta.env.DEV) {
-      void state.mergeFilesFromFilesystem();
+    if (state.elements === emptyElements) {
+      state.load();
+      import.meta.env.DEV && void state.mergeFilesFromFilesystem();
     }
   }, []);
 
@@ -1166,7 +1169,7 @@ const emptyElements = [] as MapNode[];
 const localStoragePrefix = "map-edit:";
 const localStorageUiIdToFilenameKey = "map-edit-to-current-filename";
 
-function getSavedFiles(): string[] {
+function getSavedFilenames(): string[] {
   const files: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
