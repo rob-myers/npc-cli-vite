@@ -77,7 +77,7 @@ const mockBaseNode: BaseMapNode = {
   visible: true,
 };
 
-const defaultRect = { x: 5, y: 5, width: 50, height: 50 };
+const defaultRect = { x: 60, y: 60, width: 60, height: 60 };
 
 export const toTemplateNode = {
   group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },

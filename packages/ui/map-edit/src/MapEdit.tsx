@@ -22,6 +22,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect } from "react";
 import { useBeforeunload } from "react-beforeunload";
+import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
@@ -71,6 +72,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
       pngsMetadata: null,
       pickImageForId: null,
+
+      currentFilename: "untitled",
+      isDirty: false,
+      savedFiles: getSavedFiles(),
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -589,32 +594,33 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.update();
       },
       onSvgPointerUp(e) {
-        if (state.dragEl) {
-          e.stopPropagation();
-          (e.target as SVGElement).releasePointerCapture(e.pointerId);
+        if (!state.dragEl) return;
+        e.stopPropagation();
 
-          if (state.dragEl.type === "selection-box" && state.selectionBox) {
-            const selectedIds = new Set<string>();
-            const box = state.selectionBox;
-            traverseElements(state.elements, (el) => {
-              if (el.type === "rect" || el.type === "image") {
-                const r = el.rect;
-                // Check if rects intersect
-                if (
-                  r.x < box.x + box.width &&
-                  r.x + r.width > box.x &&
-                  r.y < box.y + box.height &&
-                  r.y + r.height > box.y
-                ) {
-                  selectedIds.add(el.id);
-                }
+        (e.target as SVGElement).releasePointerCapture(e.pointerId);
+
+        if (state.dragEl.type === "selection-box" && state.selectionBox) {
+          const selectedIds = new Set<string>();
+          const box = state.selectionBox;
+          traverseElements(state.elements, (el) => {
+            if (el.type === "rect" || el.type === "image") {
+              const r = el.rect;
+              // Check if rects intersect
+              if (
+                r.x < box.x + box.width &&
+                r.x + r.width > box.x &&
+                r.y < box.y + box.height &&
+                r.y + r.height > box.y
+              ) {
+                selectedIds.add(el.id);
               }
-            });
-            state.set({ selectedIds });
-          }
-
-          state.dragEl = null;
+            }
+          });
+          state.set({ selectedIds });
         }
+
+        state.dragEl = null;
+        state.pushHistory();
       },
       startDragSelection(e) {
         e.stopPropagation();
@@ -670,11 +676,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
 
       pushHistory() {
+        state.isDirty = true;
         state.undoStack.push({
           elements: JSON.parse(JSON.stringify(state.elements)),
           selectedIds: new Set(state.selectedIds),
         });
         state.redoStack.length = 0;
+        state.update();
       },
       undo() {
         const entry = state.undoStack.pop();
@@ -695,14 +703,32 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         state.set({ elements: entry.elements, selectedIds: entry.selectedIds, selectionBox: null });
       },
 
-      save() {
-        tryLocalStorageSet(localStorageKey, JSON.stringify(state.elements));
+      save(filename?: string) {
+        const name = filename ?? state.currentFilename;
+        tryLocalStorageSet(`${localStoragePrefix}${name}`, JSON.stringify(state.elements));
+        state.set({ currentFilename: name, savedFiles: getSavedFiles(), isDirty: false });
       },
-      load() {
-        const elements = tryLocalStorageGetParsed<MapNode[]>(localStorageKey);
-        if (elements) {
-          state.set({ elements, selectedIds: new Set(), selectionBox: null });
+      load(filename?: string) {
+        if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
+          return;
         }
+        const name = filename ?? state.currentFilename;
+        const elements = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
+        if (elements) {
+          state.set({
+            elements,
+            selectedIds: new Set(),
+            selectionBox: null,
+            currentFilename: name,
+            undoStack: [],
+            redoStack: [],
+            isDirty: false,
+          });
+        }
+      },
+      deleteFile(filename: string) {
+        localStorage.removeItem(`${localStoragePrefix}${filename}`);
+        state.set({ savedFiles: getSavedFiles() });
       },
     }),
   );
@@ -764,20 +790,31 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (state.editingId || !wrapper.contains(e.target as Element)) return;
 
-      if (
-        e.key === "r" &&
-        state.selectionBox &&
-        state.selectionBox.width > 0 &&
-        state.selectionBox.height > 0
-      ) {
-        state.add("rect", { rect: state.selectionBox });
-        state.set({ selectionBox: null });
-      } else if (e.key === "d" && state.selectedIds.size > 0) {
-        state.duplicateSelected();
-      } else if (e.key === "g" && state.selectedIds.size > 0) {
-        state.groupSelected();
-      } else if (e.key === "Backspace" && state.selectedIds.size > 0) {
-        state.deleteSelected();
+      switch (e.key) {
+        case "r":
+          if (state.selectionBox && state.selectionBox.width > 0 && state.selectionBox.height > 0) {
+            state.add("rect", { rect: state.selectionBox });
+            state.set({ selectionBox: null });
+          }
+          break;
+        case "d":
+          if (state.selectedIds.size > 0) {
+            state.duplicateSelected();
+          }
+          break;
+        case "g":
+          if (state.selectedIds.size > 0) {
+            state.groupSelected();
+          }
+          break;
+        case "Backspace":
+          if (state.selectedIds.size > 0) {
+            state.deleteSelected();
+          }
+          break;
+        case "s":
+          state.save();
+          break;
       }
     };
 
@@ -803,7 +840,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     };
   }, [state.wrapperEl]);
 
-  useBeforeunload(state.save);
+  useBeforeunload(() => state.save());
 
   return (
     <div
@@ -815,7 +852,8 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         className="relative h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
       >
-        <div className="grid grid-cols-[1fr_auto] items-center px-3 py-3 border-b border-slate-800 bg-slate-900/20">
+        <FileMenu state={state} />
+        <div className="grid grid-cols-[1fr_auto] items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
           <h2 className="text-ellipsis line-clamp-1 text-xs font-bold uppercase tracking-wider text-slate-500">
             Layers
           </h2>
@@ -963,6 +1001,10 @@ export type State = {
   pngsMetadata: StarshipSymbolPngsMetadata | null;
   pickImageForId: string | null;
 
+  currentFilename: string;
+  isDirty: boolean;
+  savedFiles: string[];
+
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
   startSelectionBox: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -995,8 +1037,9 @@ export type State = {
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
-  save: () => void;
-  load: () => void;
+  save: (filename?: string) => void;
+  load: (filename?: string) => void;
+  deleteFile: (filename: string) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -1038,7 +1081,18 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 }
 
 const emptyElements = [] as MapNode[];
-const localStorageKey = "map-edit-tree";
+const localStoragePrefix = "map-edit:";
+
+function getSavedFiles(): string[] {
+  const files: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(localStoragePrefix)) {
+      files.push(key.slice(localStoragePrefix.length));
+    }
+  }
+  return files.sort();
+}
 
 const minAsideWidth = 100;
 const maxAsideWidth = 300;
