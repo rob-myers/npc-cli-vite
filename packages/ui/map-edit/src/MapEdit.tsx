@@ -722,8 +722,16 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = container.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left - rect.width / 2;
-      const mouseY = e.clientY - rect.top - rect.height / 2;
+
+      // Account for preserveAspectRatio="xMidYMid meet" letterboxing
+      const renderSize = Math.min(rect.width, rect.height);
+      const offsetX = (rect.width - renderSize) / 2;
+      const offsetY = (rect.height - renderSize) / 2;
+
+      // Mouse position relative to the rendered SVG center, scaled to pan coordinate system
+      const scale = baseSvgSize / renderSize;
+      const mouseX = (e.clientX - rect.left - offsetX - renderSize / 2) * scale;
+      const mouseY = (e.clientY - rect.top - offsetY - renderSize / 2) * scale;
 
       const delta = e.deltaY > 0 ? 1 - 0.02 : 1 + 0.02;
       const newZoom = Math.min(Math.max(state.zoom * delta, 0.25), 5);
