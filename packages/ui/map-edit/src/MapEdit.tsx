@@ -3,9 +3,10 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 enableDragDropTouch();
 
 import { Menu } from "@base-ui/react/menu";
-import type {
-  StarshipSymbolImageKey,
-  StarshipSymbolPngsMetadata,
+import {
+  type StarshipSymbolImageKey,
+  type StarshipSymbolPngsMetadata,
+  sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
@@ -321,7 +322,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                 state.pngsMetadata &&
                 template.imageKey !== "unset"
               ) {
-                const scaleFactor = 0.2; // 🚧 clarify
+                const scaleFactor = sguScalePngToSvgFactor;
                 rect.width = state.pngsMetadata.byKey[template.imageKey].width * scaleFactor;
                 rect.height = state.pngsMetadata.byKey[template.imageKey].height * scaleFactor;
               }
@@ -454,7 +455,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
 
         result.node.imageKey = imageKey;
         // Update dimensions from metadata
-        const scaleFactor = 0.2;
+        const scaleFactor = sguScalePngToSvgFactor;
         result.node.rect.width = meta.width * scaleFactor;
         result.node.rect.height = meta.height * scaleFactor;
         if (result.node.name.match(/^(Image \d+)$/)) {

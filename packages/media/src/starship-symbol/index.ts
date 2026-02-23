@@ -203,3 +203,9 @@ export type StarshipSymbolPngsMetadata = {
     { group: StarshipSymbolGroup; width: number; height: number }
   >;
 };
+
+/**
+ * - 1 sgu (starship geomorph grid unit) ~ 300x300px in original PNGs
+ * - 1 sgu ~ 60x60 SVG units
+ */
+export const sguScalePngToSvgFactor = 0.2;
