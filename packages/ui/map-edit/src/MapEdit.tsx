@@ -41,7 +41,7 @@ import {
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
 
-export default function MapEdit(_props: { meta: MapEditUiMeta }) {
+export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
 
   const state = useStateRef(
@@ -73,7 +73,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       pngsMetadata: null,
       pickImageForId: null,
 
-      currentFilename: "untitled",
+      currentFilename:
+        tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey)?.[
+          props.meta.id
+        ] ?? "untitled",
       isDirty: false,
       savedFiles: getSavedFiles(),
 
@@ -715,6 +718,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       save(filename?: string) {
         const name = filename ?? state.currentFilename;
         tryLocalStorageSet(`${localStoragePrefix}${name}`, JSON.stringify(state.elements));
+        tryLocalStorageSet(
+          localStorageUiIdToFilenameKey,
+          JSON.stringify({
+            ...tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey),
+            [props.meta.id]: name,
+          }),
+        );
         state.set({ currentFilename: name, savedFiles: getSavedFiles(), isDirty: false });
       },
       load(filename?: string) {
@@ -1092,6 +1102,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 
 const emptyElements = [] as MapNode[];
 const localStoragePrefix = "map-edit:";
+const localStorageUiIdToFilenameKey = "map-edit-to-current-filename";
 
 function getSavedFiles(): string[] {
   const files: string[] = [];
