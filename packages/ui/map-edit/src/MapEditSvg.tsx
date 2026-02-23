@@ -1,15 +1,15 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
+import { QuestionIcon } from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import { findNode, type MapNode } from "./map-node-api";
+import { baseSvgSize, findNode, type MapNode } from "./map-node-api";
 
 export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
-  const baseSize = 500;
-  const vbW = baseSize / root.zoom;
-  const vbH = baseSize / root.zoom;
-  const vbX = (baseSize - vbW) / 2 - root.pan.x / root.zoom;
-  const vbY = (baseSize - vbH) / 2 - root.pan.y / root.zoom;
+  const vbW = baseSvgSize / root.zoom;
+  const vbH = baseSvgSize / root.zoom;
+  const vbX = (baseSvgSize - vbW) / 2 - root.pan.x / root.zoom;
+  const vbY = (baseSvgSize - vbH) / 2 - root.pan.y / root.zoom;
 
   // Get rect of single selected element for resize handles
   const selectedRect = useMemo(() => {
@@ -72,7 +72,7 @@ const RenderMapNodes = ({
       case "image": {
         const { rect, imageKey } = el;
         const isSelected = state.selectedIds.has(el.id);
-        return (
+        return imageKey !== "unset" ? (
           <image
             key={el.id}
             data-node-id={el.id}
@@ -86,6 +86,14 @@ const RenderMapNodes = ({
           >
             <title>{el.name}</title>
           </image>
+        ) : (
+          <QuestionIcon
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            preserveAspectRatio=""
+          />
         );
       }
       case "rect": {
@@ -196,9 +204,9 @@ const DefsAndGrid = memo(() => (
           strokeWidth="0.5"
         />
       </pattern>
-      <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-        <rect width="50" height="50" fill="url(#smallGrid)" />
-        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
+      <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+        <rect width="60" height="60" fill="url(#smallGrid)" />
+        <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
       </pattern>
     </defs>
     <rect
