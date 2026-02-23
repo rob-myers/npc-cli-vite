@@ -88,6 +88,11 @@
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
 
+- more MapEdit
+  - can choose filename to save
+  - can save to file system in dev
+  - towards type `symbol`
+
 - 🚧 shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
@@ -99,7 +104,7 @@
     - seen profile fail to load too
   - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
 
-- future tabs
+- 🚧 future tabs
   - ✅ try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - ✅ can drag between different tabs components
