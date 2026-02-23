@@ -91,6 +91,8 @@
 - 🚧 more MapEdit
   - ✅ can choose filename to save
   - ✅ can save to file system in dev
+  - 🚧 try align source PNGs to grid
+    - ✅ apply `transform` to rect and image instead of changes x, y, width, height
   - 🚧 towards type `symbol`
 
 - 🚧 shell refinement

@@ -77,7 +77,8 @@ const mockBaseNode: BaseMapNode = {
   visible: true,
 };
 
-const defaultRect = { x: 60, y: 60, width: 60, height: 60 };
+const defaultBaseRect: BaseRect = { width: 60, height: 60 };
+const defaultTransform: Transform = { x: 60, y: 60, scale: 1 };
 
 export const toTemplateNode = {
   group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
@@ -86,9 +87,15 @@ export const toTemplateNode = {
     ...mockBaseNode,
     type: "image",
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
-    rect: { ...defaultRect },
+    baseRect: { ...defaultBaseRect },
+    transform: { ...defaultTransform },
   },
-  rect: { ...mockBaseNode, type: "rect", rect: { ...defaultRect } },
+  rect: {
+    ...mockBaseNode,
+    type: "rect",
+    baseRect: { ...defaultBaseRect },
+    transform: { ...defaultTransform },
+  },
 } satisfies Record<MapNodeType, MapNode>;
 
 export type MapNodeType = "group" | "image" | "path" | "rect";
@@ -103,10 +110,24 @@ export type BaseMapNode = {
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[]; transform?: string }
-    | { type: "image"; imageKey: StarshipSymbolImageKey | "unset"; rect: Rect }
-    | { type: "rect"; rect: Rect }
+    | { type: "image"; imageKey: StarshipSymbolImageKey | "unset"; baseRect: BaseRect; transform: Transform }
+    | { type: "rect"; baseRect: BaseRect; transform: Transform }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
+
+export type BaseRect = { width: number; height: number };
+export type Transform = { x: number; y: number; scale: number };
+
+/** Compute the world-space bounds of a rect/image node */
+export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Rect {
+  const { baseRect, transform } = node;
+  return {
+    x: transform.x,
+    y: transform.y,
+    width: baseRect.width * transform.scale,
+    height: baseRect.height * transform.scale,
+  };
+}
 
 type Rect = { x: number; y: number; width: number; height: number };
 
