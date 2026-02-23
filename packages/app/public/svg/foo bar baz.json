@@ -1,0 +1,41 @@
+[
+  {
+    "id": "b7b17ef5-a845-4b7c-98d5-c491eba7ce21",
+    "name": "Rect 1",
+    "locked": false,
+    "visible": true,
+    "type": "rect",
+    "rect": {
+      "x": 10,
+      "y": 0,
+      "width": 60,
+      "height": 60
+    }
+  },
+  {
+    "id": "6e98ec08-be97-4f56-acee-ceb9665018df",
+    "name": "Rect 3",
+    "locked": false,
+    "visible": true,
+    "type": "rect",
+    "rect": {
+      "x": 0,
+      "y": 240,
+      "width": 60,
+      "height": 60
+    }
+  },
+  {
+    "id": "d859a2be-9e5c-414b-9188-5935db3d203e",
+    "name": "Rect 2",
+    "locked": false,
+    "visible": true,
+    "type": "rect",
+    "rect": {
+      "x": 110,
+      "y": 120,
+      "width": 170,
+      "height": 180
+    }
+  }
+]
