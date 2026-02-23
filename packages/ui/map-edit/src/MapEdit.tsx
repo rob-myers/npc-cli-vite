@@ -27,15 +27,18 @@ import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
 import {
+  type BaseRect,
   baseSvgSize,
   findNode,
   findNodeWithDepth,
+  getNodeBounds,
   insertNodeAt,
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
   mapElements,
   removeNodeFromParent,
+  type Transform,
   toTemplateNode,
   traverseElements,
 } from "./map-node-api";
@@ -257,9 +260,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const parent = selection?.type === "group" ? selection : null;
         const newItem = state.create(type);
 
-        if ("rect" in newItem) {
+        if ("baseRect" in newItem) {
           if (rect) {
-            newItem.rect = rect;
+            // Use selection box dimensions
+            newItem.transform = { x: rect.x, y: rect.y, scale: 1 };
+            newItem.baseRect = { width: rect.width, height: rect.height };
           } else {
             // Place new item centered in viewport
             const svgRect = state.svgEl.getBoundingClientRect();
@@ -267,10 +272,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               svgRect.x + svgRect.width / 2,
               svgRect.y + svgRect.height / 2,
             );
-            newItem.rect = {
-              ...newItem.rect,
-              x: center.x - newItem.rect.width / 2,
-              y: center.y - newItem.rect.height / 2,
+            newItem.transform = {
+              ...newItem.transform,
+              x: center.x - (newItem.baseRect.width * newItem.transform.scale) / 2,
+              y: center.y - (newItem.baseRect.height * newItem.transform.scale) / 2,
             };
           }
         }
@@ -292,25 +297,38 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       cloneNode(node, seen) {
         seen.add(node.id);
-        const base = {
-          ...node,
+        const baseProps = {
           id: crypto.randomUUID(),
           name: state.getNextName(node.type, `${node.name.split(" ")[0]} `),
+          locked: node.locked,
+          visible: node.visible,
         };
         if (node.type === "group") {
           return {
-            ...base,
-            type: "group",
+            ...baseProps,
+            type: "group" as const,
             children: node.children.map((c) => state.cloneNode(c, seen)),
+            transform: node.transform,
           };
         }
         if (node.type === "rect") {
-          return { ...base, type: "rect", rect: { ...node.rect } };
+          return {
+            ...baseProps,
+            type: "rect" as const,
+            baseRect: { ...node.baseRect },
+            transform: { ...node.transform },
+          };
         }
         if (node.type === "image") {
-          return { ...base, type: "image", imageKey: node.imageKey, rect: { ...node.rect } };
+          return {
+            ...baseProps,
+            type: "image" as const,
+            imageKey: node.imageKey,
+            baseRect: { ...node.baseRect },
+            transform: { ...node.transform },
+          };
         }
-        return base;
+        return { ...baseProps, type: node.type } as MapNode;
       },
       create(type) {
         const template = toTemplateNode[type];
@@ -322,19 +340,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           locked: false,
           // 🔔 deep objects must be fresh
           ...("children" in template && { children: [...template.children] }),
-          ...("rect" in template &&
+          ...("baseRect" in template &&
             (() => {
-              const rect = { ...template.rect };
+              const baseRect = { ...template.baseRect };
               if (
                 template.type === "image" &&
                 state.pngsMetadata &&
                 template.imageKey !== "unset"
               ) {
                 const scaleFactor = sguScalePngToSvgFactor;
-                rect.width = state.pngsMetadata.byKey[template.imageKey].width * scaleFactor;
-                rect.height = state.pngsMetadata.byKey[template.imageKey].height * scaleFactor;
+                baseRect.width = state.pngsMetadata.byKey[template.imageKey].width * scaleFactor;
+                baseRect.height = state.pngsMetadata.byKey[template.imageKey].height * scaleFactor;
               }
-              return { rect };
+              return { baseRect, transform: { ...template.transform } };
             })()),
         };
       },
@@ -463,8 +481,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         result.node.imageKey = imageKey;
         const scaleFactor = sguScalePngToSvgFactor;
-        result.node.rect.width = meta.width * scaleFactor;
-        result.node.rect.height = meta.height * scaleFactor;
+        result.node.baseRect.width = meta.width * scaleFactor;
+        result.node.baseRect.height = meta.height * scaleFactor;
         if (result.node.name.match(/^(Image \d+)$/)) {
           result.node.name = state.getNextName("image", `${imageKey} `);
         }
@@ -547,8 +565,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           for (const [id, startPos] of state.dragEl.starts) {
             const result = findNode(state.elements, id);
             if (result?.node.type === "rect" || result?.node.type === "image") {
-              result.node.rect.x = Math.round((startPos.x + dx) / increment) * increment;
-              result.node.rect.y = Math.round((startPos.y + dy) / increment) * increment;
+              result.node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
+              result.node.transform.y = Math.round((startPos.y + dy) / increment) * increment;
             }
           }
           state.update();
@@ -557,42 +575,39 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (state.selectedIds.size !== 1) return;
 
-        // Resize optionally preserving aspect ratio
+        // scaling
         const [selectedId] = state.selectedIds;
         const result = findNode(state.elements, selectedId);
         if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
+
+        const { transform, baseRect } = result.node;
+        const { handle, startTransform, startBounds } = state.dragEl;
+        const isW = handle.includes("w");
+        const isN = handle.includes("n");
         const snap = (v: number) => Math.round(v / increment) * increment;
+        const widthDelta = isW ? -dx : dx;
+        const heightDelta = isN ? -dy : dy;
 
-        const { rect } = result.node;
-        const { handle, startRect } = state.dragEl;
-        const [isW, isE, isN, isS] = ["w", "e", "n", "s"].map((d) => handle.includes(d));
-        const aspect = startRect.width / startRect.height;
-
-        if (e.shiftKey) {
-          const isCorner = (isW || isE) && (isN || isS);
-          rect.width = snap(startRect.width + (isW ? -dx : dx));
-          rect.height = rect.width / aspect;
-          rect.x = snap(isW ? startRect.x + startRect.width - rect.width : startRect.x);
-          rect.y = snap(
-            isCorner
-              ? isN
-                ? startRect.y + startRect.height - rect.height
-                : startRect.y
-              : startRect.y + (startRect.height - rect.height) / 2,
-          );
+        if (result.node.type === "rect") {
+          const newWidth = snap(Math.max(increment, startBounds.width + widthDelta));
+          const newHeight = snap(Math.max(increment, startBounds.height + heightDelta));
+          baseRect.width = newWidth;
+          baseRect.height = newHeight;
+          transform.scale = 1;
+          transform.x = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.x;
+          transform.y = isN
+            ? snap(startBounds.y + startBounds.height - newHeight)
+            : startTransform.y;
         } else {
-          if (isW || isE) {
-            rect.x = snap(isW ? startRect.x + dx : startRect.x);
-            rect.y = snap(rect.y);
-            rect.width = snap(isW ? startRect.width - dx : startRect.width + dx);
-            rect.height = snap(rect.height);
-          }
-          if (isN || isS) {
-            rect.x = snap(rect.x);
-            rect.y = snap(isN ? startRect.y + dy : startRect.y);
-            rect.width = snap(rect.width);
-            rect.height = snap(isN ? startRect.height - dy : startRect.height + dy);
-          }
+          const targetWidth = snap(Math.max(increment, startBounds.width + widthDelta));
+          const scaleFactor = targetWidth / startBounds.width;
+          transform.scale = Math.max(0.1, startTransform.scale * scaleFactor);
+          transform.x = isW
+            ? snap(startBounds.x + startBounds.width * (1 - scaleFactor))
+            : startTransform.x;
+          transform.y = isN
+            ? snap(startBounds.y + startBounds.height * (1 - scaleFactor))
+            : startTransform.y;
         }
         state.update();
       },
@@ -607,7 +622,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const box = state.selectionBox;
           traverseElements(state.elements, (el) => {
             if (el.type === "rect" || el.type === "image") {
-              const r = el.rect;
+              const r = getNodeBounds(el);
               // Check if rects intersect
               if (
                 r.x < box.x + box.width &&
@@ -634,7 +649,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const result = findNode(state.elements, id);
             return result?.node.type === "rect" || result?.node.type === "image"
-              ? [[id, { x: result.node.rect.x, y: result.node.rect.y }]]
+              ? [[id, { x: result.node.transform.x, y: result.node.transform.y }]]
               : [];
           }),
         );
@@ -652,12 +667,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (result?.node.type !== "rect" && result?.node.type !== "image") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        const { rect } = result.node;
+        const { transform, baseRect } = result.node;
+        const bounds = getNodeBounds(result.node);
         state.dragEl = {
           type: "resize-rect",
           handle,
           startSvg: svgPos,
-          startRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+          startTransform: { ...transform },
+          startBounds: bounds,
+          baseRect: { ...baseRect },
         };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
@@ -1053,7 +1071,9 @@ export type State = {
         type: "resize-rect";
         handle: ResizeHandle;
         startSvg: { x: number; y: number };
-        startRect: { x: number; y: number; width: number; height: number };
+        startTransform: Transform;
+        startBounds: { x: number; y: number; width: number; height: number };
+        baseRect: BaseRect;
       }
     | {
         type: "selection-box";

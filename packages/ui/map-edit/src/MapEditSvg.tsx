@@ -3,7 +3,7 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import { QuestionIcon } from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import { baseSvgSize, findNode, type MapNode } from "./map-node-api";
+import { baseSvgSize, findNode, getNodeBounds, type MapNode } from "./map-node-api";
 
 export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbW = baseSvgSize / root.zoom;
@@ -11,12 +11,10 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbX = (baseSvgSize - vbW) / 2 - root.pan.x / root.zoom;
   const vbY = (baseSvgSize - vbH) / 2 - root.pan.y / root.zoom;
 
-  // Get rect of single selected element for resize handles
-  const selectedRect = useMemo(() => {
+  const selectedNode = useMemo(() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
-    const result = findNode(root.elements, selectedId);
-    return result?.node.type === "rect" || result?.node.type === "image" ? result.node.rect : null;
+    return findNode(root.elements, selectedId)?.node ?? null;
   }, [root.selectedIds]);
 
   return (
@@ -48,7 +46,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
           className="pointer-events-none"
         />
       )}
-      {selectedRect && <RectResizeHandles rect={selectedRect} root={root} />}
+      {selectedNode && <RectResizeHandles selectedNode={selectedNode} root={root} />}
     </svg>
   );
 }
@@ -70,17 +68,19 @@ const RenderMapNodes = ({
           </g>
         );
       case "image": {
-        const { rect, imageKey } = el;
+        const { baseRect, transform, imageKey } = el;
         const isSelected = state.selectedIds.has(el.id);
+        const svgTransform = `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`;
         return imageKey !== "unset" ? (
           <image
             key={el.id}
             data-node-id={el.id}
             href={`/starship-symbol/${imageKey}.png`}
-            x={rect.x}
-            y={rect.y}
-            width={rect.width}
-            height={rect.height}
+            x={0}
+            y={0}
+            width={baseRect.width}
+            height={baseRect.height}
+            transform={svgTransform}
             preserveAspectRatio="none"
             className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
           >
@@ -88,25 +88,28 @@ const RenderMapNodes = ({
           </image>
         ) : (
           <QuestionIcon
-            x={rect.x}
-            y={rect.y}
-            width={rect.width}
-            height={rect.height}
+            x={0}
+            y={0}
+            width={baseRect.width}
+            height={baseRect.height}
+            transform={svgTransform}
             preserveAspectRatio=""
           />
         );
       }
       case "rect": {
-        const { rect } = el;
+        const { baseRect, transform } = el;
         const isSelected = state.selectedIds.has(el.id);
+        const svgTransform = `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`;
         return (
           <rect
             key={el.id}
             data-node-id={el.id}
-            x={rect.x}
-            y={rect.y}
-            width={rect.width}
-            height={rect.height}
+            x={0}
+            y={0}
+            width={baseRect.width}
+            height={baseRect.height}
+            transform={svgTransform}
             fill="rgba(0, 0, 0, 0.25)"
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0}
@@ -138,7 +141,15 @@ const handleToCursor: Record<ResizeHandle, string> = {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-function RectResizeHandles({ rect, root }: { rect: Rect; root: UseStateRef<State> }) {
+function RectResizeHandles({
+  selectedNode,
+  root,
+}: {
+  selectedNode: MapNode;
+  root: UseStateRef<State>;
+}) {
+  if (selectedNode.type !== "rect" && selectedNode.type !== "image") return null;
+  const rect = getNodeBounds(selectedNode);
   const handleSize = (4 * resizeHandleSize) / root.zoom;
   return (
     <>
