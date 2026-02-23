@@ -10,7 +10,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
       <div
         className={cn(
           uiClassName,
-          "flex flex-1 gap-1 text-sm text-slate-300 truncate cursor-pointer hover:text-slate-100",
+          "flex flex-1 gap-1 text-sm text-on-background/80 truncate cursor-pointer hover:text-on-background",
           state.isDirty && "italic",
         )}
         onClick={() => {
@@ -26,7 +26,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
         <button
           className={cn(
             uiClassName,
-            "p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200",
+            "p-1 rounded hover:bg-background/20 text-on-background/50 hover:text-on-background",
           )}
           onClick={() => state.save()}
           title="Save"
@@ -38,7 +38,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
           <Menu.Trigger
             className={cn(
               uiClassName,
-              "p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200",
+              "p-1 rounded hover:bg-background/20 text-on-background/50 hover:text-on-background",
             )}
             title="Open file..."
           >
