@@ -88,8 +88,8 @@
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
 
-- more MapEdit
-  - can choose filename to save
+- 🚧 more MapEdit
+  - ✅ can choose filename to save
   - can save to file system in dev
   - towards type `symbol`
 
