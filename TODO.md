@@ -72,7 +72,7 @@
     - uses imageKey to get image
   - ✅ can restore after rect/image resize
 
-- 🚧 MapEdit improvements
+- ✅ MapEdit improvements
   - ✅ fix borders of symbols e.g. zealous trim
     - ✅ apply to cargo
     - ✅ apply to others
@@ -81,8 +81,9 @@
   - ✅ duplicated object should inherit name prefix
   - ✅ on add rect or image should appear in current viewport
 
-- figure out correct scaling based on geomorph input files
-  - can re-use convention from npc-cli-next
+- ✅ figure out correct scaling based on geomorph input files
+  - 1x1 sgu (starship geomorph units) ~ 300x300 PNG pixels
+  - we scale by 1/5 so 1x1 sgu ~ 60x60 SVG units
 
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
@@ -99,7 +100,9 @@
   - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
 
 - future tabs
-  - try make basic tabs components with draggable tabs
+  - ✅ try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
-  - can drag between different tabs components
+  - ✅ can drag between different tabs components
+  - can drag into tabs from outer ui
+  - can drag out of tabs to outside (not another tabs)
   - detect responsive tabs change and revert on return (?)

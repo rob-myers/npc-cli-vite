@@ -85,7 +85,7 @@ export const toTemplateNode = {
   image: {
     ...mockBaseNode,
     type: "image",
-    imageKey: "bed--003--1x1.6",
+    imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     rect: { ...defaultRect },
   },
   rect: { ...mockBaseNode, type: "rect", rect: { ...defaultRect } },
@@ -103,7 +103,7 @@ export type BaseMapNode = {
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[]; transform?: string }
-    | { type: "image"; imageKey: StarshipSymbolImageKey; rect: Rect }
+    | { type: "image"; imageKey: StarshipSymbolImageKey | "unset"; rect: Rect }
     | { type: "rect"; rect: Rect }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
@@ -115,3 +115,5 @@ export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
 
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
+
+export const baseSvgSize = 600;

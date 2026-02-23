@@ -25,6 +25,7 @@ import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
 import {
+  baseSvgSize,
   findNode,
   findNodeWithDepth,
   insertNodeAt,
@@ -68,7 +69,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       dragEl: null,
 
       pngsMetadata: null,
-      imagePickerNodeId: null,
+      pickImageForId: null,
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -208,11 +209,10 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       clientToSvg(clientX, clientY) {
         if (!state.svgEl) return { x: 0, y: 0 };
         const rect = state.svgEl.getBoundingClientRect();
-        const baseSize = 500;
-        const vbW = baseSize / state.zoom;
-        const vbH = baseSize / state.zoom;
-        const vbX = (baseSize - vbW) / 2 - state.pan.x / state.zoom;
-        const vbY = (baseSize - vbH) / 2 - state.pan.y / state.zoom;
+        const vbW = baseSvgSize / state.zoom;
+        const vbH = baseSvgSize / state.zoom;
+        const vbX = (baseSvgSize - vbW) / 2 - state.pan.x / state.zoom;
+        const vbY = (baseSvgSize - vbH) / 2 - state.pan.y / state.zoom;
 
         // Account for preserveAspectRatio="xMidYMid meet" centering
         // The viewBox is square (vbW === vbH), so we need to find the actual rendered size
@@ -240,11 +240,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
         };
       },
 
-      add(type, { selectedGroupParent, rect } = {}) {
+      add(type, { selectionAsParent, rect } = {}) {
         if (!state.svgEl) return;
 
         state.pushHistory();
-        const selection = selectedGroupParent ? state.getSelectedNode() : null;
+        const selection = selectionAsParent ? state.getSelectedNode() : null;
         const parent = selection?.type === "group" ? selection : null;
         const newItem = state.create(type);
 
@@ -271,13 +271,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
             elements: [...state.elements, newItem],
             selectedIds: new Set([newItem.id]),
             editingId: newItem.type === "image" ? null : newItem.id,
-            imagePickerNodeId: newItem.type === "image" ? newItem.id : null,
+            pickImageForId: newItem.type === "image" ? newItem.id : null,
           });
         } else {
           parent.children.push(newItem);
           state.set({
             selectedIds: new Set([newItem.id]),
-            imagePickerNodeId: newItem.type === "image" ? newItem.id : null,
+            pickImageForId: newItem.type === "image" ? newItem.id : null,
           });
         }
       },
@@ -316,7 +316,11 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
           ...("rect" in template &&
             (() => {
               const rect = { ...template.rect };
-              if (template.type === "image" && state.pngsMetadata) {
+              if (
+                template.type === "image" &&
+                state.pngsMetadata &&
+                template.imageKey !== "unset"
+              ) {
                 const scaleFactor = 0.2; // 🚧 clarify
                 rect.width = state.pngsMetadata.byKey[template.imageKey].width * scaleFactor;
                 rect.height = state.pngsMetadata.byKey[template.imageKey].height * scaleFactor;
@@ -442,7 +446,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       },
       setImageKey(nodeId, imageKey) {
         state.pushHistory();
-        state.set({ imagePickerNodeId: null });
+        state.set({ pickImageForId: null });
 
         const result = findNode(state.elements, nodeId);
         const meta = state.pngsMetadata?.byKey[imageKey];
@@ -824,7 +828,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
-                      state.add("group", { selectedGroupParent: true });
+                      state.add("group", { selectionAsParent: true });
                     }}
                   >
                     <FolderIcon className="size-4" />
@@ -834,7 +838,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
-                      state.add("rect", { selectedGroupParent: true });
+                      state.add("rect", { selectionAsParent: true });
                     }}
                   >
                     <SquareIcon className="size-4" />
@@ -845,7 +849,7 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
                     closeOnClick
                     onClick={() => {
                       state.add("image", {
-                        selectedGroupParent: true,
+                        selectionAsParent: true,
                         rect: state.selectionBox ?? undefined,
                       });
                     }}
@@ -882,13 +886,13 @@ export default function MapEdit(_props: { meta: MapEditUiMeta }) {
       </div>
 
       <ImagePickerModal
-        open={state.imagePickerNodeId !== null}
+        open={state.pickImageForId !== null}
         onOpenChange={(open) => {
-          if (!open) state.set({ imagePickerNodeId: null });
+          if (!open) state.set({ pickImageForId: null });
         }}
         onSelect={(imageKey) => {
-          if (state.imagePickerNodeId) {
-            state.setImageKey(state.imagePickerNodeId, imageKey);
+          if (state.pickImageForId) {
+            state.setImageKey(state.pickImageForId, imageKey);
           }
         }}
       />
@@ -948,7 +952,7 @@ export type State = {
         startSvg: { x: number; y: number };
       };
   pngsMetadata: StarshipSymbolPngsMetadata | null;
-  imagePickerNodeId: string | null;
+  pickImageForId: string | null;
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
@@ -965,7 +969,7 @@ export type State = {
   onResizeInspectorPointerUp: () => void;
   onSelect: (id: string, opts?: { shiftKey?: boolean; metaKey?: boolean }) => void;
   onToggleVisibility: (id: string) => void;
-  add: (type: MapNodeType, opts?: { selectedGroupParent?: boolean; rect?: SelectionBox }) => void;
+  add: (type: MapNodeType, opts?: { selectionAsParent?: boolean; rect?: SelectionBox }) => void;
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
