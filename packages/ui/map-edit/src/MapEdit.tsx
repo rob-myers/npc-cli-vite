@@ -462,7 +462,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (result?.node.type !== "image" || !meta) return;
 
         result.node.imageKey = imageKey;
-        // Update dimensions from metadata
         const scaleFactor = sguScalePngToSvgFactor;
         result.node.rect.width = meta.width * scaleFactor;
         result.node.rect.height = meta.height * scaleFactor;
@@ -552,46 +551,47 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               result.node.rect.y = Math.round((startPos.y + dy) / increment) * increment;
             }
           }
+          state.update();
+          return;
+        }
+
+        if (state.selectedIds.size !== 1) return;
+
+        // Resize optionally preserving aspect ratio
+        const [selectedId] = state.selectedIds;
+        const result = findNode(state.elements, selectedId);
+        if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
+        const snap = (v: number) => Math.round(v / increment) * increment;
+
+        const { rect } = result.node;
+        const { handle, startRect } = state.dragEl;
+        const [isW, isE, isN, isS] = ["w", "e", "n", "s"].map((d) => handle.includes(d));
+        const aspect = startRect.width / startRect.height;
+
+        if (e.shiftKey) {
+          const isCorner = (isW || isE) && (isN || isS);
+          rect.width = snap(startRect.width + (isW ? -dx : dx));
+          rect.height = rect.width / aspect;
+          rect.x = snap(isW ? startRect.x + startRect.width - rect.width : startRect.x);
+          rect.y = snap(
+            isCorner
+              ? isN
+                ? startRect.y + startRect.height - rect.height
+                : startRect.y
+              : startRect.y + (startRect.height - rect.height) / 2,
+          );
         } else {
-          // Resize where shift preserves aspect ratio
-          if (state.selectedIds.size !== 1) return;
-
-          const [selectedId] = state.selectedIds;
-          const result = findNode(state.elements, selectedId);
-          if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
-
-          const snap = (v: number) => Math.round(v / increment) * increment;
-
-          const { rect } = result.node;
-          const { handle, startRect } = state.dragEl;
-          const [isW, isE, isN, isS] = ["w", "e", "n", "s"].map((d) => handle.includes(d));
-          const aspect = startRect.width / startRect.height;
-
-          if (e.shiftKey) {
-            const isCorner = (isW || isE) && (isN || isS);
-            rect.width = snap(startRect.width + (isW ? -dx : dx));
-            rect.height = rect.width / aspect;
-            rect.x = snap(isW ? startRect.x + startRect.width - rect.width : startRect.x);
-            rect.y = snap(
-              isCorner
-                ? isN
-                  ? startRect.y + startRect.height - rect.height
-                  : startRect.y
-                : startRect.y + (startRect.height - rect.height) / 2,
-            );
-          } else {
-            if (isW || isE) {
-              rect.x = snap(isW ? startRect.x + dx : startRect.x);
-              rect.y = snap(rect.y);
-              rect.width = snap(isW ? startRect.width - dx : startRect.width + dx);
-              rect.height = snap(rect.height);
-            }
-            if (isN || isS) {
-              rect.x = snap(rect.x);
-              rect.y = snap(isN ? startRect.y + dy : startRect.y);
-              rect.width = snap(rect.width);
-              rect.height = snap(isN ? startRect.height - dy : startRect.height + dy);
-            }
+          if (isW || isE) {
+            rect.x = snap(isW ? startRect.x + dx : startRect.x);
+            rect.y = snap(rect.y);
+            rect.width = snap(isW ? startRect.width - dx : startRect.width + dx);
+            rect.height = snap(rect.height);
+          }
+          if (isN || isS) {
+            rect.x = snap(rect.x);
+            rect.y = snap(isN ? startRect.y + dy : startRect.y);
+            rect.width = snap(rect.width);
+            rect.height = snap(isN ? startRect.height - dy : startRect.height + dy);
           }
         }
         state.update();
@@ -819,7 +819,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       const mouseX = (e.clientX - rect.left - offsetX - renderSize / 2) * scale;
       const mouseY = (e.clientY - rect.top - offsetY - renderSize / 2) * scale;
 
-      const delta = e.deltaY > 0 ? 1 - 0.02 : 1 + 0.02;
+      const delta = e.deltaY > 0 ? 1 - 0.04 : 1 + 0.04;
       const newZoom = Math.min(Math.max(state.zoom * delta, 0.25), 5);
 
       const scaleFactor = newZoom / state.zoom;
