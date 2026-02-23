@@ -726,13 +726,33 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           }),
         );
         state.set({ currentFilename: name, savedFiles: getSavedFiles(), isDirty: false });
+        // Also save to filesystem in development
+        if (import.meta.env.DEV) {
+          fetch(`/api/map-edit/file/${encodeURIComponent(name)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: state.elements }),
+          }).catch(console.error);
+        }
       },
-      load(filename?: string) {
+      async load(filename?: string) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
         const name = filename ?? state.currentFilename;
-        const elements = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
+        let elements = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
+        // Try loading from filesystem in development if not in localStorage
+        if (!elements && import.meta.env.DEV) {
+          try {
+            const res = await fetch(`/api/map-edit/file/${encodeURIComponent(name)}`);
+            if (res.ok) {
+              const data = await res.json();
+              elements = data.content;
+            }
+          } catch {
+            // ignore
+          }
+        }
         if (elements) {
           state.set({
             elements,
@@ -748,11 +768,32 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       deleteFile(filename: string) {
         localStorage.removeItem(`${localStoragePrefix}${filename}`);
         state.set({ savedFiles: getSavedFiles() });
+        // Also delete from filesystem in development
+        if (import.meta.env.DEV) {
+          fetch(`/api/map-edit/file/${encodeURIComponent(filename)}`, {
+            method: "DELETE",
+          }).catch(console.error);
+        }
+      },
+      async mergeFilesFromFilesystem() {
+        try {
+          const { files } = (await fetch("/api/map-edit/files").then((x) => x.json())) as {
+            files: string[];
+          };
+          state.set({ savedFiles: [...new Set([...state.savedFiles, ...files])].sort() });
+        } catch (error) {
+          console.error(error);
+        }
       },
     }),
   );
 
-  useEffect(() => void (state.elements === emptyElements && state.load()), []);
+  useEffect(() => {
+    state.elements === emptyElements && state.load();
+    if (import.meta.env.DEV) {
+      void state.mergeFilesFromFilesystem();
+    }
+  }, []);
 
   state.pngsMetadata = useQuery({
     queryKey: ["map-edit-images-metadata"],
@@ -1058,8 +1099,9 @@ export type State = {
   duplicateSelected: () => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (filename?: string) => void;
-  load: (filename?: string) => void;
+  load: (filename?: string) => Promise<void>;
   deleteFile: (filename: string) => void;
+  mergeFilesFromFilesystem: () => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;

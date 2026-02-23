@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
+import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 
@@ -20,6 +21,7 @@ export default defineConfig({
     // pnpm dev-hotspot needs https for crypto
     process.env.USE_HTTPS ? basicSsl() : undefined,
     analyzer(),
+    mapEditApiPlugin(),
 
     // On close/reopen laptop in Chrome we do not want HMR to break
     {

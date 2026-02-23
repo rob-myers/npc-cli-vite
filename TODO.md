@@ -90,8 +90,8 @@
 
 - 🚧 more MapEdit
   - ✅ can choose filename to save
-  - can save to file system in dev
-  - towards type `symbol`
+  - ✅ can save to file system in dev
+  - 🚧 towards type `symbol`
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
