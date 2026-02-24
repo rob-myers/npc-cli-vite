@@ -91,7 +91,7 @@ const RenderMapNodes = ({
             height={baseRect.height}
             transform={svgTransform}
             preserveAspectRatio="none"
-            className={cn("invert outline outline-white/10", isSelected && "outline-blue-500")}
+            className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
           >
             <title>{el.name}</title>
           </image>
