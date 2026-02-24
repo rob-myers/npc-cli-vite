@@ -96,6 +96,7 @@
   - ✅ fix align PNG on scale
     - we prohibit scale of PNG (never scaled them in npc-cli-next)
   - ✅ move dx, dy into image node only
+  - ✅ can manually adjust image node offset
   - towards type `symbol`
   - can choose save directory `"symbol" | "map"`
     - we won't save svgs but rather "flat symbols" or "maps"
