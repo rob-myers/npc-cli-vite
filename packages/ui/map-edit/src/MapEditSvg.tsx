@@ -150,7 +150,7 @@ function RectResizeHandles({
   const rect = getNodeBounds(selectedNode);
   const handleSize = (4 * resizeHandleSize) / root.zoom;
   return (
-    <>
+    <g>
       <rect
         x={rect.x}
         y={rect.y}
@@ -175,7 +175,7 @@ function RectResizeHandles({
           />
         );
       })}
-    </>
+    </g>
   );
 }
 
