@@ -267,7 +267,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if ("baseRect" in newItem) {
           if (rect) {
             // Use selection box dimensions
-            newItem.transform = { x: rect.x, y: rect.y, dx: 0, dy: 0, scale: 1 };
+            newItem.transform = { x: rect.x, y: rect.y, scale: 1 };
             newItem.baseRect = { width: rect.width, height: rect.height };
           } else {
             // Place new item centered in viewport
@@ -329,6 +329,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             type: "image" as const,
             imageKey: node.imageKey,
             baseRect: { ...node.baseRect },
+            offset: { ...node.offset },
           };
         }
         return { ...baseProps, type: node.type } as MapNode;
@@ -473,8 +474,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         const scaleFactor = sguScalePngToSvgFactor;
         // offset image so aligned to grid
-        node.transform.dx = toPrecision(-0.5 * (meta.width % 300) * scaleFactor, 8);
-        node.transform.dy = toPrecision(-0.5 * (meta.height % 300) * scaleFactor, 8);
+        node.offset.x = toPrecision(-0.5 * (meta.width % 300) * scaleFactor, 8);
+        node.offset.y = toPrecision(-0.5 * (meta.height % 300) * scaleFactor, 8);
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;

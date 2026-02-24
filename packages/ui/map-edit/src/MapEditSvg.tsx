@@ -66,19 +66,20 @@ const RenderMapNodes = ({
   elements: MapNode[];
 }) => {
   return elements.map((el) => {
-    const svgTransform = `translate(${el.transform.dx + el.transform.x}, ${el.transform.dy + el.transform.y}) scale(${el.transform.scale})`;
-
     switch (el.type) {
-      case "group":
+      case "group": {
+        const svgTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
         return (
           <g key={el.id} data-node-id={el.id} transform={svgTransform}>
             <title>{el.name}</title>
             <RenderMapNodes state={state} elements={el.children} />
           </g>
         );
+      }
       case "image": {
         const { baseRect, imageKey } = el;
         const isSelected = state.selectedIds.has(el.id);
+        const svgTransform = `translate(${el.offset.x + el.transform.x}, ${el.offset.y + el.transform.y}) scale(${el.transform.scale})`;
         return imageKey !== "unset" ? (
           <image
             key={el.id}
@@ -107,6 +108,7 @@ const RenderMapNodes = ({
       }
       case "rect": {
         const isSelected = state.selectedIds.has(el.id);
+        const svgTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
         return (
           <rect
             key={el.id}

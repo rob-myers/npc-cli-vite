@@ -71,7 +71,7 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
 }
 
 const defaultBaseRect: BaseRect = { width: 60, height: 60 };
-const defaultTransform: Transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
+const defaultTransform: Transform = { x: 0, y: 0, scale: 1 };
 
 const mockBaseNode: BaseMapNode = {
   id: "mock-id",
@@ -89,6 +89,7 @@ export const templateNodeByKey = {
     type: "image",
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     baseRect: { ...defaultBaseRect },
+    offset: { x: 0, y: 0 },
   },
   rect: {
     ...mockBaseNode,
@@ -115,6 +116,8 @@ export type MapNode = BaseMapNode &
         imageKey: StarshipSymbolImageKey | "unset";
         baseRect: BaseRect;
         transform: Transform;
+        /** Align source PNG to grid */
+        offset: Geom.VectJson;
       }
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
@@ -127,8 +130,6 @@ export type Transform = {
   x: number;
   y: number;
   scale: number;
-  dx: number;
-  dy: number;
 };
 
 /** Compute the world-space bounds of a rect/image node */
