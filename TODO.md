@@ -97,7 +97,7 @@
     - we prohibit scale of PNG (never scaled them in npc-cli-next)
   - ✅ move dx, dy into image node only
   - ✅ can manually adjust image node offset
-  - 🚧 can choose save directory `"symbol" | "map"`
+  - ✅ can choose save directory `"symbol" | "map"`
     - we won't save svgs but rather "flat symbols" or "maps"
   - on close image modal without choosing delete image node
   - towards type `symbol`

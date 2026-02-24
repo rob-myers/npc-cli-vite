@@ -267,7 +267,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if ("baseRect" in newItem) {
           if (rect) {
             // Use selection box dimensions
-            newItem.transform = { x: rect.x, y: rect.y, scale: 1 };
+            newItem.transform = { x: rect.x, y: rect.y, scale: 1, degrees: 0 };
             newItem.baseRect = { width: rect.width, height: rect.height };
           } else {
             // Place new item centered in viewport
@@ -375,6 +375,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           newIds.add(clone.id);
         }
         state.set({ selectedIds: newIds, selectionBox: null });
+      },
+      rotateSelected(degrees) {
+        if (state.selectedIds.size === 0) return;
+        state.pushHistory();
+        for (const id of state.selectedIds) {
+          const result = findNode(state.elements, id);
+          if (result?.node.type === "image") {
+            const current = result.node.transform.degrees ?? 0;
+            result.node.transform.degrees = (current + degrees) % 360;
+          }
+        }
+        state.update();
       },
       getNextName(type, prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `) {
         return `${prefix}${state.getNextSuffix(type, prefix)}`;
@@ -868,6 +880,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return;
       }
 
+      if (e.key === "e" || e.key === "q") {
+        if (state.selectedIds.size > 0) state.rotateSelected(e.key === "e" ? 90 : -90);
+        return;
+      }
+
       const modified = e.metaKey || e.ctrlKey;
       if (!modified) return;
 
@@ -1136,6 +1153,7 @@ export type State = {
   redo: () => void;
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;
+  rotateSelected: (degrees: number) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (filename?: string) => void;
   load: (filename?: string) => Promise<void>;
