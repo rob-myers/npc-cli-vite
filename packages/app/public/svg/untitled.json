@@ -1,6 +1,6 @@
 [
   {
-    "id": "650f8a5a-ade2-4410-a0e9-eb4f2cfa1868",
+    "id": "d15386a1-2a8e-47b9-981a-a677d940e4ee",
     "name": "cargo--002--2x2 1",
     "locked": false,
     "visible": true,
@@ -16,6 +16,43 @@
     "baseRect": {
       "width": 121.4,
       "height": 121.4
+    }
+  },
+  {
+    "id": "dd2b19b0-574c-429c-9bfb-f4976bda007e",
+    "name": "cargo--003--2x4 1",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 180,
+      "y": 0,
+      "dx": -0.7,
+      "dy": -0.7,
+      "scale": 1
+    },
+    "type": "image",
+    "imageKey": "cargo--003--2x4",
+    "baseRect": {
+      "width": 121.4,
+      "height": 241.4
+    }
+  },
+  {
+    "id": "00f6b032-b773-4ea7-98c3-51ec589e509d",
+    "name": "Rect 1",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 60,
+      "y": -120,
+      "dx": 0,
+      "dy": 0,
+      "scale": 1
+    },
+    "type": "rect",
+    "baseRect": {
+      "width": 60,
+      "height": 60
     }
   }
 ]

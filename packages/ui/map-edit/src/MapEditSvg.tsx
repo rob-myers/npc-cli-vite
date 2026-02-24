@@ -3,7 +3,13 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import { QuestionIcon } from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import { baseSvgSize, findNode, getNodeBounds, type MapNode } from "./map-node-api";
+import {
+  baseSvgSize,
+  findNode,
+  getNodeBounds,
+  type MapNode,
+  type MapRectNode,
+} from "./map-node-api";
 
 export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbW = baseSvgSize / root.zoom;
@@ -11,10 +17,11 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbX = (baseSvgSize - vbW) / 2 - root.pan.x / root.zoom;
   const vbY = (baseSvgSize - vbH) / 2 - root.pan.y / root.zoom;
 
-  const selectedNode = useMemo(() => {
+  const resizableRectNode = useMemo(() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
-    return findNode(root.elements, selectedId)?.node ?? null;
+    const node = findNode(root.elements, selectedId)?.node ?? null;
+    return node?.type === "rect" ? node : null;
   }, [root.selectedIds]);
 
   return (
@@ -46,7 +53,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
           className="pointer-events-none"
         />
       )}
-      {selectedNode && <RectResizeHandles selectedNode={selectedNode} root={root} />}
+      {resizableRectNode && <RectResizeHandles selectedNode={resizableRectNode} root={root} />}
     </svg>
   );
 }
@@ -144,10 +151,9 @@ function RectResizeHandles({
   selectedNode,
   root,
 }: {
-  selectedNode: MapNode;
+  selectedNode: MapRectNode;
   root: UseStateRef<State>;
 }) {
-  if (selectedNode.type !== "rect" && selectedNode.type !== "image") return null;
   const rect = getNodeBounds(selectedNode);
   const handleSize = (4 * resizeHandleSize) / root.zoom;
   return (
