@@ -840,8 +840,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       const mouseX = (e.clientX - rect.left - offsetX - renderSize / 2) * scale;
       const mouseY = (e.clientY - rect.top - offsetY - renderSize / 2) * scale;
 
-      const delta = e.deltaY > 0 ? 1 - 0.04 : 1 + 0.04;
-      const newZoom = Math.min(Math.max(state.zoom * delta, 0.25), 5);
+      const delta = e.deltaY > 0 ? 1 - zoomDelta : 1 + zoomDelta;
+      const newZoom = Math.min(Math.max(state.zoom * delta, minZoomScale), maxZoomScale);
 
       const scaleFactor = newZoom / state.zoom;
       const newPan = {
@@ -1180,5 +1180,8 @@ function getSavedFilenames(): string[] {
 const minAsideWidth = 100;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
+const zoomDelta = 0.04;
+const minZoomScale = 0.25;
+const maxZoomScale = 20;
 
 export type ResizeHandle = "nw" | "ne" | "sw" | "se";
