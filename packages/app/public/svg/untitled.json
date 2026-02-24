@@ -5,7 +5,7 @@
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 10,
+      "x": -10,
       "y": 0,
       "scale": 1
     },
@@ -16,26 +16,24 @@
       "height": 241.4
     },
     "offset": {
-      "x": -10.7,
+      "x": -0.7,
       "y": -0.7
     }
   },
   {
-    "id": "00f6b032-b773-4ea7-98c3-51ec589e509d",
+    "id": "bb84c0ff-b3e0-4275-bc1e-880941ad43d1",
     "name": "Rect 1",
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 60,
-      "y": -120,
-      "dx": 0,
-      "dy": 0,
+      "x": 0,
+      "y": -60,
       "scale": 1
     },
     "type": "rect",
     "baseRect": {
-      "width": 60,
-      "height": 60
+      "width": 110,
+      "height": 40
     }
   }
 ]

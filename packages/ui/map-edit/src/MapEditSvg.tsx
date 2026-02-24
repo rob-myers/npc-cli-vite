@@ -118,10 +118,13 @@ const RenderMapNodes = ({
             width={el.baseRect.width}
             height={el.baseRect.height}
             transform={svgTransform}
-            fill="rgba(0, 0, 0, 0.25)"
+            // fill="rgba(0, 0, 0, 0.25)"
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0}
-            className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
+            className={cn(
+              "fill-green-700/50 outline outline-black/80",
+              isSelected && "outline-blue-500",
+            )}
           >
             <title>{el.name}</title>
           </rect>

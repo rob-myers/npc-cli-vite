@@ -1168,7 +1168,7 @@ const snap = (v: number) => Math.round(v / increment) * increment;
 const keyShouldPreventDefault = {
   d: true,
   g: true,
-  r: true,
+  // r: true,
   s: true,
   y: true,
   z: true,
