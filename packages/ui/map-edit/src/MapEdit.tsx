@@ -10,7 +10,11 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
-import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import {
+  toPrecision,
+  tryLocalStorageGetParsed,
+  tryLocalStorageSet,
+} from "@npc-cli/util/legacy/generic";
 import {
   CaretLeftIcon,
   CaretRightIcon,
@@ -263,10 +267,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if ("baseRect" in newItem) {
           if (rect) {
             // Use selection box dimensions
-            newItem.transform = { x: rect.x, y: rect.y, scale: 1 };
+            newItem.transform = { x: rect.x, y: rect.y, dx: 0, dy: 0, scale: 1 };
             newItem.baseRect = { width: rect.width, height: rect.height };
           } else {
             // Place new item centered in viewport
+            // newItem.transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
             const svgRect = state.svgEl.getBoundingClientRect();
             const center = state.clientToSvg(
               svgRect.x + svgRect.width / 2,
@@ -458,19 +463,24 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ editingId: null });
       },
       setImageKey(nodeId, imageKey) {
-        state.pushHistory();
         state.set({ pickImageForId: null });
 
-        const result = findNode(state.elements, nodeId);
+        const { node } = findNode(state.elements, nodeId) ?? {};
         const meta = state.pngsMetadata?.byKey[imageKey];
-        if (result?.node.type !== "image" || !meta) return;
+        if (!(node?.type === "image" && meta)) return;
 
-        result.node.imageKey = imageKey;
+        node.imageKey = imageKey;
+
         const scaleFactor = sguScalePngToSvgFactor;
-        result.node.baseRect.width = meta.width * scaleFactor;
-        result.node.baseRect.height = meta.height * scaleFactor;
-        if (result.node.name.match(/^(Image \d+)$/)) {
-          result.node.name = state.getNextName("image", `${imageKey} `);
+        // offset image so aligned to grid
+        node.transform.dx = toPrecision(-0.5 * (meta.width % 300) * scaleFactor, 8);
+        node.transform.dy = toPrecision(-0.5 * (meta.height % 300) * scaleFactor, 8);
+        // scale down so 1 sgu ~ 60px
+        node.baseRect.width = meta.width * scaleFactor;
+        node.baseRect.height = meta.height * scaleFactor;
+
+        if (node.name.match(/^(Image \d+)$/)) {
+          node.name = state.getNextName("image", `${imageKey} `);
         }
 
         state.update();

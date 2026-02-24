@@ -59,7 +59,8 @@ const RenderMapNodes = ({
   elements: MapNode[];
 }) => {
   return elements.map((el) => {
-    const svgTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
+    const svgTransform = `translate(${el.transform.dx + el.transform.x}, ${el.transform.dy + el.transform.y}) scale(${el.transform.scale})`;
+
     switch (el.type) {
       case "group":
         return (

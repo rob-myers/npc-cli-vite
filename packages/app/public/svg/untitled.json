@@ -1,115 +1,21 @@
 [
   {
-    "id": "e1c4fe60-30ff-4adc-b090-b3049b984604",
-    "name": "lab--012--3x4 1",
+    "id": "650f8a5a-ade2-4410-a0e9-eb4f2cfa1868",
+    "name": "cargo--002--2x2 1",
     "locked": false,
     "visible": true,
-    "type": "image",
-    "imageKey": "lab--012--3x4",
-    "baseRect": {
-      "width": 246.60000000000002,
-      "height": 184
-    },
     "transform": {
-      "x": -10,
+      "x": 0,
       "y": 0,
-      "scale": 1.45985401459854
-    }
-  },
-  {
-    "id": "0e8b10dc-5453-4c3a-95b2-70593c543f03",
-    "name": "Rect 1",
-    "locked": false,
-    "visible": true,
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 60
-    },
-    "transform": {
-      "x": 240,
-      "y": -120,
+      "dx": -0.7,
+      "dy": -0.7,
       "scale": 1
-    }
-  },
-  {
-    "id": "2a15bc68-f1bf-4a8a-b6e8-54379ae2f8ad",
-    "name": "Rect 2",
-    "locked": false,
-    "visible": true,
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 60
     },
-    "transform": {
-      "x": 120,
-      "y": -120,
-      "scale": 1
-    }
-  },
-  {
-    "id": "0faa577e-3901-48ca-a965-6e91ac8d2cb5",
-    "name": "Rect 3",
-    "locked": false,
-    "visible": true,
-    "type": "rect",
+    "type": "image",
+    "imageKey": "cargo--002--2x2",
     "baseRect": {
-      "width": 60,
-      "height": 60
-    },
-    "transform": {
-      "x": 0,
-      "y": -120,
-      "scale": 1
-    }
-  },
-  {
-    "id": "ab62e852-2cd9-484a-af8c-c4198fe797cb",
-    "name": "Rect 4",
-    "locked": false,
-    "visible": true,
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 60
-    },
-    "transform": {
-      "x": 240,
-      "y": 300,
-      "scale": 1
-    }
-  },
-  {
-    "id": "7f700e3c-4194-4626-b220-cb5b3bcc8761",
-    "name": "Rect 5",
-    "locked": false,
-    "visible": true,
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 120
-    },
-    "transform": {
-      "x": 120,
-      "y": 300,
-      "scale": 1
-    }
-  },
-  {
-    "id": "ca56ddf6-9b5b-4f99-adc2-670da94bb90a",
-    "name": "Rect 6",
-    "locked": false,
-    "visible": true,
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 120
-    },
-    "transform": {
-      "x": 0,
-      "y": 300,
-      "scale": 1
+      "width": 121.4,
+      "height": 121.4
     }
   }
 ]

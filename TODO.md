@@ -91,9 +91,11 @@
 - 🚧 more MapEdit
   - ✅ can choose filename to save
   - ✅ can save to file system in dev
-  - 🚧 try align source PNGs to grid
+  - ✅ try align source PNGs to grid
     - ✅ apply `transform` to rect and image instead of changes x, y, width, height
-  - 🚧 towards type `symbol`
+  - towards type `symbol`
+  - can choose save directory `"symbol" | "map"`
+    - we won't save svgs but rather "flat symbols" or "maps"
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics

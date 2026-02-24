@@ -71,7 +71,7 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
 }
 
 const defaultBaseRect: BaseRect = { width: 60, height: 60 };
-const defaultTransform: Transform = { x: 0, y: 0, scale: 1 };
+const defaultTransform: Transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
 
 const mockBaseNode: BaseMapNode = {
   id: "mock-id",
@@ -125,8 +125,8 @@ export type Transform = {
   x: number;
   y: number;
   scale: number;
-  dx?: number;
-  dy?: number;
+  dx: number;
+  dy: number;
 };
 
 /** Compute the world-space bounds of a rect/image node */
