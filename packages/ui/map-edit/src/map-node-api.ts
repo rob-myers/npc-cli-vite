@@ -110,7 +110,12 @@ export type BaseMapNode = {
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[]; transform?: string }
-    | { type: "image"; imageKey: StarshipSymbolImageKey | "unset"; baseRect: BaseRect; transform: Transform }
+    | {
+        type: "image";
+        imageKey: StarshipSymbolImageKey | "unset";
+        baseRect: BaseRect;
+        transform: Transform;
+      }
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
