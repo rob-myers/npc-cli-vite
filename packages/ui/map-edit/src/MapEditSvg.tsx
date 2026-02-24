@@ -97,6 +97,7 @@ const RenderMapNodes = ({
           </image>
         ) : (
           <QuestionIcon
+            key={el.id}
             x={0}
             y={0}
             width={baseRect.width}

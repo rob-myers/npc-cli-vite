@@ -152,3 +152,8 @@ export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { typ
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
 
 export const baseSvgSize = 600;
+
+export const toImageOffsetValue = {
+  zero: 0,
+  halfLineWidth: -0.7,
+} as const;
