@@ -95,7 +95,7 @@
     - ✅ apply `transform` to rect and image instead of changes x, y, width, height
   - ✅ fix align PNG on scale
     - we prohibit scale of PNG (never scaled them in npc-cli-next)
-  - move dx, dy into image node only
+  - ✅ move dx, dy into image node only
   - towards type `symbol`
   - can choose save directory `"symbol" | "map"`
     - we won't save svgs but rather "flat symbols" or "maps"
