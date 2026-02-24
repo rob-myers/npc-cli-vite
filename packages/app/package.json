@@ -21,7 +21,7 @@
     "@tanstack/router-plugin": "catalog:",
     "immer": "catalog:",
     "javascript-stringify": "catalog:",
-    "motion": "^12.23.26",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
