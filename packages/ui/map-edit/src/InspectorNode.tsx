@@ -138,7 +138,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           )}
         >
           <label>dx/y</label>
-          <div className="flex-1 flex gap-2">
+          <div className="flex-1 flex flex-wrap gap-2">
             <select
               className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
               value={element.offset.x}
