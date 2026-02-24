@@ -1,5 +1,26 @@
 [
   {
+    "id": "2a7422cd-1ddf-4cdf-b00d-11f6aa07e0c4",
+    "name": "console--005--1.2x4 1",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 10,
+      "y": 0,
+      "scale": 1
+    },
+    "type": "image",
+    "imageKey": "console--005--1.2x4",
+    "baseRect": {
+      "width": 73.4,
+      "height": 241.4
+    },
+    "offset": {
+      "x": -10.7,
+      "y": -0.7
+    }
+  },
+  {
     "id": "00f6b032-b773-4ea7-98c3-51ec589e509d",
     "name": "Rect 1",
     "locked": false,
@@ -15,27 +36,6 @@
     "baseRect": {
       "width": 60,
       "height": 60
-    }
-  },
-  {
-    "id": "4912985c-3af8-4fc1-adaf-e5ff25b22e10",
-    "name": "cargo--002--2x2 1",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 0,
-      "y": 0,
-      "scale": 1
-    },
-    "type": "image",
-    "imageKey": "cargo--002--2x2",
-    "baseRect": {
-      "width": 121.4,
-      "height": 121.4
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
     }
   }
 ]

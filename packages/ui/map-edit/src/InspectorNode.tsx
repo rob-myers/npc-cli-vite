@@ -130,6 +130,49 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         />
       </div>
 
+      {isSelected && element.type === "image" && (
+        <div
+          className={cn(
+            uiClassName,
+            "flex items-center justify-between gap-2 px-2 py-1 bg-background/50 border-b border-slate-700/50 text-xs",
+          )}
+        >
+          <label>dx/y</label>
+          <div className="flex-1 flex gap-2">
+            <select
+              className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
+              value={element.offset.x}
+              onChange={(e) => {
+                element.offset.x = Number(e.target.value) || 0;
+                root.update();
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {imageOffsetValues.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            <select
+              className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
+              value={element.offset.y}
+              onChange={(e) => {
+                element.offset.y = Number(e.target.value) || 0;
+                root.update();
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {imageOffsetValues.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {isGroup && state.isExpanded && element.children && (
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
@@ -146,6 +189,11 @@ interface TreeItemProps {
   level: number;
   root: UseStateRef<MapEditState>;
 }
+
+const imageOffsetValues = [
+  0,
+  -0.7, // half line width
+] as const;
 
 const toIcon = {
   group: FolderIcon,
