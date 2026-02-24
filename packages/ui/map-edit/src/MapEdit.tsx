@@ -80,7 +80,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       currentFilename:
         tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey)?.[
           props.meta.id
-        ] ?? "untitled",
+        ] ?? "symbol/untitled",
       isDirty: false,
       savedFiles: getSavedFilenames(),
 
