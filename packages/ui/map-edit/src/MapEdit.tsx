@@ -849,55 +849,42 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     const wrapper = state.wrapperEl;
     if (!wrapper) return;
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (state.editingId || !wrapper.contains(e.target as Element)) return;
-
-      switch (e.key) {
-        case "r":
-          if (state.selectionBox && state.selectionBox.width > 0 && state.selectionBox.height > 0) {
-            state.add("rect", { rect: state.selectionBox });
-            state.set({ selectionBox: null });
-          }
-          break;
-        case "d":
-          if (state.selectedIds.size > 0) {
-            state.duplicateSelected();
-          }
-          break;
-        case "g":
-          if (state.selectedIds.size > 0) {
-            state.groupSelected();
-          }
-          break;
-        case "Backspace":
-          if (state.selectedIds.size > 0) {
-            state.deleteSelected();
-          }
-          break;
-        case "s":
-          state.save();
-          break;
-      }
-    };
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (state.editingId || !wrapper.contains(e.target as Element)) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
+
+      if (e.key in keyShouldPreventDefault) e.preventDefault();
+
+      if (e.key === "Backspace") {
+        if (state.selectedIds.size > 0) state.deleteSelected();
+        return;
+      }
+
+      if (e.key === "r") {
+        if (state.selectionBox && state.selectionBox.width > 0 && state.selectionBox.height > 0) {
+          state.add("rect", { rect: state.selectionBox });
+          state.set({ selectionBox: null });
+        }
+        return;
+      }
+
+      const modified = e.metaKey || e.ctrlKey;
+      if (!modified) return;
+
+      if (e.key === "z" && !e.shiftKey) {
         state.undo();
-      } else if ((e.metaKey || e.ctrlKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
-        e.preventDefault();
+      } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
         state.redo();
-      } else if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
+      } else if (e.key === "s") {
         state.save();
+      } else if (e.key === "g") {
+        state.selectedIds.size > 0 && state.groupSelected();
+      } else if (e.key === "d") {
+        state.selectedIds.size > 0 && state.duplicateSelected();
       }
     };
 
-    document.addEventListener("keyup", handleKeyUp);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("keyup", handleKeyUp);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [state.wrapperEl]);
@@ -1162,10 +1149,27 @@ const minAsideWidth = 100;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 const zoomDelta = 0.04;
-const minZoomScale = 0.25;
+const minZoomScale = 0.5;
 const maxZoomScale = 20;
 
 export type ResizeHandle = "nw" | "ne" | "sw" | "se";
 
 const increment = 10;
 const snap = (v: number) => Math.round(v / increment) * increment;
+
+/**
+    - d: Duplicate
+    - g: Group
+    - r: Redo
+    - s: Save
+    - y: Undo
+    - z: Undo
+    */
+const keyShouldPreventDefault = {
+  d: true,
+  g: true,
+  r: true,
+  s: true,
+  y: true,
+  z: true,
+} as const;
