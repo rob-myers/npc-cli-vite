@@ -39,7 +39,7 @@ import {
   mapElements,
   removeNodeFromParent,
   type Transform,
-  toTemplateNode,
+  templateNodeByKey,
   traverseElements,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
@@ -302,13 +302,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           name: state.getNextName(node.type, `${node.name.split(" ")[0]} `),
           locked: node.locked,
           visible: node.visible,
+          transform: { ...node.transform },
         };
         if (node.type === "group") {
           return {
             ...baseProps,
             type: "group" as const,
             children: node.children.map((c) => state.cloneNode(c, seen)),
-            transform: node.transform,
           };
         }
         if (node.type === "rect") {
@@ -316,7 +316,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             ...baseProps,
             type: "rect" as const,
             baseRect: { ...node.baseRect },
-            transform: { ...node.transform },
           };
         }
         if (node.type === "image") {
@@ -325,35 +324,22 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             type: "image" as const,
             imageKey: node.imageKey,
             baseRect: { ...node.baseRect },
-            transform: { ...node.transform },
           };
         }
         return { ...baseProps, type: node.type } as MapNode;
       },
       create(type) {
-        const template = toTemplateNode[type];
+        const templateNode = templateNodeByKey[type];
         return {
-          ...template,
+          ...templateNode,
           id: crypto.randomUUID(),
           name: state.getNextName(type),
           visible: true,
           locked: false,
           // 🔔 deep objects must be fresh
-          ...("children" in template && { children: [...template.children] }),
-          ...("baseRect" in template &&
-            (() => {
-              const baseRect = { ...template.baseRect };
-              if (
-                template.type === "image" &&
-                state.pngsMetadata &&
-                template.imageKey !== "unset"
-              ) {
-                const scaleFactor = sguScalePngToSvgFactor;
-                baseRect.width = state.pngsMetadata.byKey[template.imageKey].width * scaleFactor;
-                baseRect.height = state.pngsMetadata.byKey[template.imageKey].height * scaleFactor;
-              }
-              return { baseRect, transform: { ...template.transform } };
-            })()),
+          transform: { ...templateNode.transform },
+          ...("children" in templateNode && { children: [...templateNode.children] }),
+          ...("baseRect" in templateNode && { baseRect: { ...templateNode.baseRect } }),
         };
       },
       deleteSelected() {

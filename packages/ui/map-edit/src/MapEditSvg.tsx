@@ -59,18 +59,18 @@ const RenderMapNodes = ({
   elements: MapNode[];
 }) => {
   return elements.map((el) => {
+    const svgTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
     switch (el.type) {
       case "group":
         return (
-          <g key={el.id} data-node-id={el.id} transform={el.transform}>
+          <g key={el.id} data-node-id={el.id} transform={svgTransform}>
             <title>{el.name}</title>
             <RenderMapNodes state={state} elements={el.children} />
           </g>
         );
       case "image": {
-        const { baseRect, transform, imageKey } = el;
+        const { baseRect, imageKey } = el;
         const isSelected = state.selectedIds.has(el.id);
-        const svgTransform = `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`;
         return imageKey !== "unset" ? (
           <image
             key={el.id}
@@ -98,17 +98,15 @@ const RenderMapNodes = ({
         );
       }
       case "rect": {
-        const { baseRect, transform } = el;
         const isSelected = state.selectedIds.has(el.id);
-        const svgTransform = `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`;
         return (
           <rect
             key={el.id}
             data-node-id={el.id}
             x={0}
             y={0}
-            width={baseRect.width}
-            height={baseRect.height}
+            width={el.baseRect.width}
+            height={el.baseRect.height}
             transform={svgTransform}
             fill="rgba(0, 0, 0, 0.25)"
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
