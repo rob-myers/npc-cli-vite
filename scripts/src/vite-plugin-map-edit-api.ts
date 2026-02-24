@@ -3,15 +3,20 @@ import path from "node:path";
 import type { Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
-const SVG_DIR = path.join(PROJECT_ROOT, "packages/app/public/svg");
+const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
+const ALLOWED_FOLDERS = ["symbol", "map"] as const;
+type AllowedFolder = (typeof ALLOWED_FOLDERS)[number];
 
 export function mapEditApiPlugin(): Plugin {
   return {
     name: "map-edit-api",
     configureServer(server) {
-      // Ensure the svg directory exists
-      if (!fs.existsSync(SVG_DIR)) {
-        fs.mkdirSync(SVG_DIR, { recursive: true });
+      // Ensure folders exist
+      for (const folder of ALLOWED_FOLDERS) {
+        const dir = path.join(PUBLIC_DIR, folder);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
       }
 
       server.middlewares.use(async (req, res, next) => {
@@ -23,27 +28,41 @@ export function mapEditApiPlugin(): Plugin {
         res.setHeader("Content-Type", "application/json");
 
         try {
-          // GET /api/map-edit/files - List all files
+          // GET /api/map-edit/files - List all files from allowed folders
           if (req.url === "/api/map-edit/files" && req.method === "GET") {
-            const files = fs.existsSync(SVG_DIR)
-              ? fs
-                  .readdirSync(SVG_DIR)
-                  .filter((f) => f.endsWith(".json"))
-                  .map((f) => f.replace(/\.json$/, ""))
-                  .sort()
-              : [];
+            const files = ALLOWED_FOLDERS.flatMap(getFilesFromFolder).sort();
             res.end(JSON.stringify({ files }));
             return;
           }
 
-          // File operations: /api/map-edit/file/:filename
+          // GET /api/map-edit/folders - List allowed folders
+          if (req.url === "/api/map-edit/folders" && req.method === "GET") {
+            res.end(JSON.stringify({ folders: ALLOWED_FOLDERS }));
+            return;
+          }
+
+          // File operations: /api/map-edit/file/:folder/:filename
           const fileMatch = req.url.match(/^\/api\/map-edit\/file\/(.+)$/);
           if (fileMatch) {
-            const filename = decodeURIComponent(fileMatch[1]);
-            const filePath = path.join(SVG_DIR, `${filename}.json`);
+            const fullPath = decodeURIComponent(fileMatch[1]);
+            const parts = fullPath.split("/");
+            if (parts.length !== 2) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: "Path must be folder/filename" }));
+              return;
+            }
+            const [folder, filename] = parts;
+            if (!ALLOWED_FOLDERS.includes(folder as AllowedFolder)) {
+              res.statusCode = 400;
+              res.end(
+                JSON.stringify({ error: `Invalid folder. Allowed: ${ALLOWED_FOLDERS.join(", ")}` }),
+              );
+              return;
+            }
+            const filePath = path.join(PUBLIC_DIR, folder, `${filename}.json`);
 
             // Prevent directory traversal
-            if (!filePath.startsWith(SVG_DIR)) {
+            if (!filePath.startsWith(path.join(PUBLIC_DIR, folder))) {
               res.statusCode = 400;
               res.end(JSON.stringify({ error: "Invalid filename" }));
               return;
@@ -92,4 +111,13 @@ export function mapEditApiPlugin(): Plugin {
       });
     },
   };
+}
+
+function getFilesFromFolder(folder: AllowedFolder): string[] {
+  const dir = path.join(PUBLIC_DIR, folder);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => `${folder}/${f.replace(/\.json$/, "")}`);
 }
