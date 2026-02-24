@@ -14,7 +14,7 @@ import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phos
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
-import type { MapNode, MapNodeType } from "./map-node-api";
+import { type MapNode, type MapNodeType, toImageOffsetValue } from "./map-node-api";
 
 /**
  * - Double tap to edit name
@@ -157,7 +157,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {imageOffsetValues.map((value) => (
+                  {Object.values(toImageOffsetValue).map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
@@ -172,7 +172,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {imageOffsetValues.map((value) => (
+                  {Object.values(toImageOffsetValue).map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
@@ -200,12 +200,6 @@ interface TreeItemProps {
   level: number;
   root: UseStateRef<MapEditState>;
 }
-
-const imageOffsetValues = [
-  0,
-  -0.7, // half line width
-  // 🚧 more discrete values
-] as const;
 
 const toIcon = {
   group: FolderIcon,

@@ -40,6 +40,7 @@ import {
   removeNodeFromParent,
   type Transform,
   templateNodeByKey,
+  toImageOffsetValue,
   traverseElements,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
@@ -342,6 +343,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           transform: { ...templateNode.transform },
           ...("children" in templateNode && { children: [...templateNode.children] }),
           ...("baseRect" in templateNode && { baseRect: { ...templateNode.baseRect } }),
+          ...("offset" in templateNode && { offset: { ...templateNode.offset } }),
         };
       },
       deleteSelected() {
@@ -469,9 +471,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.imageKey = imageKey;
 
         const scaleFactor = sguScalePngToSvgFactor;
-        // adjust manually using dx/y UI instead
-        // node.offset.x = toPrecision(-0.5 * (meta.width % 300) * scaleFactor, 8);
-        // node.offset.y = toPrecision(-0.5 * (meta.height % 300) * scaleFactor, 8);
+        node.offset.x = toImageOffsetValue.halfLineWidth;
+        node.offset.y = toImageOffsetValue.halfLineWidth;
+
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;
