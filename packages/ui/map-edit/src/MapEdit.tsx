@@ -531,7 +531,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (state.dragEl.type === "selection-box") {
           const svgPos = state.clientToSvg(e.clientX, e.clientY);
-          const increment = 10;
           const { startSvg } = state.dragEl;
           const snappedX =
             svgPos.x - startSvg.x >= 0
@@ -555,7 +554,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const dx = svgPos.x - state.dragEl.startSvg.x;
         const dy = svgPos.y - state.dragEl.startSvg.y;
-        const increment = 10;
 
         if (state.dragEl.type === "move-selection") {
           for (const [id, startPos] of state.dragEl.starts) {
@@ -570,41 +568,27 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
 
         if (state.selectedIds.size !== 1) return;
-
-        // scaling
         const [selectedId] = state.selectedIds;
         const result = findNode(state.elements, selectedId);
-        if (!result || (result.node.type !== "rect" && result.node.type !== "image")) return;
+        if (result?.node.type !== "rect") return;
 
+        // scale a single rect
         const { transform, baseRect } = result.node;
         const { handle, startTransform, startBounds } = state.dragEl;
         const isW = handle.includes("w");
         const isN = handle.includes("n");
-        const snap = (v: number) => Math.round(v / increment) * increment;
+
         const widthDelta = isW ? -dx : dx;
         const heightDelta = isN ? -dy : dy;
 
-        if (result.node.type === "rect") {
-          const newWidth = snap(Math.max(increment, startBounds.width + widthDelta));
-          const newHeight = snap(Math.max(increment, startBounds.height + heightDelta));
-          baseRect.width = newWidth;
-          baseRect.height = newHeight;
-          transform.scale = 1;
-          transform.x = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.x;
-          transform.y = isN
-            ? snap(startBounds.y + startBounds.height - newHeight)
-            : startTransform.y;
-        } else {
-          const targetWidth = snap(Math.max(increment, startBounds.width + widthDelta));
-          const scaleFactor = targetWidth / startBounds.width;
-          transform.scale = Math.max(0.1, startTransform.scale * scaleFactor);
-          transform.x = isW
-            ? snap(startBounds.x + startBounds.width * (1 - scaleFactor))
-            : startTransform.x;
-          transform.y = isN
-            ? snap(startBounds.y + startBounds.height * (1 - scaleFactor))
-            : startTransform.y;
-        }
+        const newWidth = snap(Math.max(increment, startBounds.width + widthDelta));
+        const newHeight = snap(Math.max(increment, startBounds.height + heightDelta));
+        baseRect.width = newWidth;
+        baseRect.height = newHeight;
+        transform.scale = 1;
+        transform.x = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.x;
+        transform.y = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.y;
+
         state.update();
       },
       onSvgPointerUp(e) {
@@ -678,7 +662,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       startSelectionBox(e) {
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        const increment = 10;
+
         const snappedX = Math.floor(svgPos.x / increment) * increment;
         const snappedY = Math.floor(svgPos.y / increment) * increment;
         state.dragEl = {
@@ -1181,3 +1165,6 @@ const minZoomScale = 0.25;
 const maxZoomScale = 20;
 
 export type ResizeHandle = "nw" | "ne" | "sw" | "se";
+
+const increment = 10;
+const snap = (v: number) => Math.round(v / increment) * increment;

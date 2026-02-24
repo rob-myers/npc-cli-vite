@@ -120,6 +120,8 @@ export type MapNode = BaseMapNode &
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
 
+export type MapRectNode = Extract<MapNode, { type: "rect" }>;
+
 export type BaseRect = { width: number; height: number };
 export type Transform = {
   x: number;
