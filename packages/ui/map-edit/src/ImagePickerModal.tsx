@@ -1,9 +1,12 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
+import {
+  type StarshipSymbolGroup,
+  type StarshipSymbolImageKey,
+  symbolByGroup,
+} from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
-import { useState } from "react";
 
 export function ImagePickerModal({
   open,
@@ -14,11 +17,16 @@ export function ImagePickerModal({
   onOpenChange: (open: boolean) => void;
   onSelect: (imageKey: StarshipSymbolImageKey) => void;
 }) {
-  const groups = Object.entries(symbolByGroup);
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(groups[0]?.[0] ?? null);
-  const state = useStateRef(() => ({
-    loadedImages: new Set<string>(),
-  }));
+  const state = useStateRef(() => {
+    const groups = Object.entries(symbolByGroup);
+    const savedGroup = localStorage.getItem(localStorageKey);
+    const firstGroup = (groups[0]?.[0] ?? null) as StarshipSymbolGroup | null;
+    return {
+      groups,
+      expandedGroup: savedGroup && savedGroup in symbolByGroup ? savedGroup : firstGroup,
+      loadedImages: new Set<string>(),
+    };
+  });
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -42,17 +50,24 @@ export function ImagePickerModal({
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {groups.map(([group, symbols]) => (
+            {state.groups.map(([group, symbols]) => (
               <div key={group} className="mb-4">
                 <button
                   type="button"
                   className="w-full text-left text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 hover:text-slate-200 transition-colors cursor-pointer"
-                  onClick={() => setExpandedGroup(expandedGroup === group ? null : group)}
+                  onClick={() => {
+                    const next = state.expandedGroup === group ? null : group;
+                    state.expandedGroup = next;
+                    if (next !== null) {
+                      localStorage.setItem(localStorageKey, next);
+                    }
+                    state.update();
+                  }}
                 >
                   {group} ({Object.keys(symbols).length})
                 </button>
 
-                {expandedGroup === group && (
+                {state.expandedGroup === group && (
                   <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                     {Object.keys(symbols).map((imageKey) => (
                       <button
@@ -92,3 +107,5 @@ export function ImagePickerModal({
     </Dialog.Root>
   );
 }
+
+const localStorageKey = "imagePickerModal.lastSection";
