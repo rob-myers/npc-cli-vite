@@ -70,17 +70,18 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
   return index;
 }
 
+const defaultBaseRect: BaseRect = { width: 60, height: 60 };
+const defaultTransform: Transform = { x: 0, y: 0, scale: 1 };
+
 const mockBaseNode: BaseMapNode = {
   id: "mock-id",
   name: "New Node",
   locked: false,
   visible: true,
+  transform: { ...defaultTransform },
 };
 
-const defaultBaseRect: BaseRect = { width: 60, height: 60 };
-const defaultTransform: Transform = { x: 60, y: 60, scale: 1 };
-
-export const toTemplateNode = {
+export const templateNodeByKey = {
   group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
   path: { ...mockBaseNode, type: "path" },
   image: {
@@ -88,13 +89,11 @@ export const toTemplateNode = {
     type: "image",
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     baseRect: { ...defaultBaseRect },
-    transform: { ...defaultTransform },
   },
   rect: {
     ...mockBaseNode,
     type: "rect",
     baseRect: { ...defaultBaseRect },
-    transform: { ...defaultTransform },
   },
 } satisfies Record<MapNodeType, MapNode>;
 
@@ -105,11 +104,12 @@ export type BaseMapNode = {
   name: string;
   locked: boolean;
   visible: boolean;
+  transform: Transform;
 };
 
 export type MapNode = BaseMapNode &
   (
-    | { type: "group"; children: MapNode[]; transform?: string }
+    | { type: "group"; children: MapNode[] }
     | {
         type: "image";
         imageKey: StarshipSymbolImageKey | "unset";
@@ -121,7 +121,13 @@ export type MapNode = BaseMapNode &
   );
 
 export type BaseRect = { width: number; height: number };
-export type Transform = { x: number; y: number; scale: number };
+export type Transform = {
+  x: number;
+  y: number;
+  scale: number;
+  dx?: number;
+  dy?: number;
+};
 
 /** Compute the world-space bounds of a rect/image node */
 export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Rect {
