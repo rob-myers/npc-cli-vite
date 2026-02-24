@@ -130,7 +130,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         />
       </div>
 
-      {isSelected && element.type === "image" && (
+      {isSelected && root.selectedIds.size === 1 && element.type === "image" && (
         <div
           className={cn(
             uiClassName,
@@ -193,6 +193,7 @@ interface TreeItemProps {
 const imageOffsetValues = [
   0,
   -0.7, // half line width
+  // 🚧 more discrete values
 ] as const;
 
 const toIcon = {
