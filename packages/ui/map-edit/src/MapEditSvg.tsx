@@ -79,7 +79,9 @@ const RenderMapNodes = ({
       case "image": {
         const { baseRect, imageKey } = el;
         const isSelected = state.selectedIds.has(el.id);
-        const svgTransform = `translate(${el.offset.x + el.transform.x}, ${el.offset.y + el.transform.y}) scale(${el.transform.scale})`;
+        const [cx, cy] = [baseRect.width / 2, baseRect.height / 2];
+        const degrees = el.transform.degrees ?? 0;
+        const svgTransform = `translate(${el.offset.x + el.transform.x}, ${el.offset.y + el.transform.y}) scale(${el.transform.scale}) rotate(${degrees} ${cx} ${cy})`;
         return imageKey !== "unset" ? (
           <image
             key={el.id}
