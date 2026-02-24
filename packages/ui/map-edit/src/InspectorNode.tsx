@@ -11,6 +11,7 @@ import {
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
 import type { MapNode, MapNodeType } from "./map-node-api";
@@ -130,48 +131,58 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         />
       </div>
 
-      {isSelected && root.selectedIds.size === 1 && element.type === "image" && (
-        <div
-          className={cn(
-            uiClassName,
-            "flex items-center justify-between gap-2 px-2 py-1 bg-background/50 border-b border-slate-700/50 text-xs",
-          )}
-        >
-          <label>dx/y</label>
-          <div className="flex-1 flex flex-wrap gap-2">
-            <select
-              className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
-              value={element.offset.x}
-              onChange={(e) => {
-                element.offset.x = Number(e.target.value) || 0;
-                root.update();
-              }}
-              onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {isSelected && root.selectedIds.size === 1 && element.type === "image" && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            <div
+              className={cn(
+                uiClassName,
+                "flex items-center justify-between gap-2 px-2 py-1 bg-background/50 border-b border-slate-700/50 text-xs",
+              )}
             >
-              {imageOffsetValues.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            <select
-              className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
-              value={element.offset.y}
-              onChange={(e) => {
-                element.offset.y = Number(e.target.value) || 0;
-                root.update();
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {imageOffsetValues.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
+              <label>dx/y</label>
+              <div className="flex-1 flex flex-wrap gap-2">
+                <select
+                  className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
+                  value={element.offset.x}
+                  onChange={(e) => {
+                    element.offset.x = Number(e.target.value) || 0;
+                    root.update();
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {imageOffsetValues.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
+                  value={element.offset.y}
+                  onChange={(e) => {
+                    element.offset.y = Number(e.target.value) || 0;
+                    root.update();
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {imageOffsetValues.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isGroup && state.isExpanded && element.children && (
         <div className="border-l border-slate-700/50">

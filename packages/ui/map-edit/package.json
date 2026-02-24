@@ -16,6 +16,7 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
