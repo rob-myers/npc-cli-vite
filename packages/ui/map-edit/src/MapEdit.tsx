@@ -14,10 +14,13 @@ import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/lega
 import {
   CaretLeftIcon,
   CaretRightIcon,
+  FloppyDiskIcon,
   FolderIcon,
+  FolderOpenIcon,
   ImageIcon,
   PlusIcon,
   SquareIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect } from "react";
@@ -947,6 +950,57 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                     <ImageIcon className="size-4" />
                     Image
                   </Menu.Item>
+
+                  <div className="my-1 border-t border-slate-700" />
+
+                  <Menu.Item
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => state.save()}
+                  >
+                    <FloppyDiskIcon className="size-4" />
+                    Save
+                  </Menu.Item>
+
+                  <Menu.SubmenuRoot>
+                    <Menu.SubmenuTrigger className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
+                      <FolderOpenIcon className="size-4" />
+                      Open
+                    </Menu.SubmenuTrigger>
+                    <Menu.Portal>
+                      <Menu.Positioner className="z-50" sideOffset={4}>
+                        <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40 max-h-[300px] overflow-y-auto">
+                          {state.savedFiles.length === 0 ? (
+                            <div className="px-3 py-2 text-xs text-slate-500 italic">
+                              No saved files
+                            </div>
+                          ) : (
+                            state.savedFiles.map((file) => (
+                              <Menu.Item
+                                key={file}
+                                className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer group"
+                                closeOnClick
+                                onClick={() => state.load(file)}
+                              >
+                                <span className="truncate">{file}</span>
+                                <button
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-400"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`Delete "${file}"?`)) {
+                                      state.deleteFile(file);
+                                    }
+                                  }}
+                                >
+                                  <TrashIcon className="size-3" />
+                                </button>
+                              </Menu.Item>
+                            ))
+                          )}
+                        </Menu.Popup>
+                      </Menu.Positioner>
+                    </Menu.Portal>
+                  </Menu.SubmenuRoot>
                 </Menu.Popup>
               </Menu.Positioner>
             </Menu.Portal>
