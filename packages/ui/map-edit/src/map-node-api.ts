@@ -156,4 +156,9 @@ export const baseSvgSize = 600;
 export const toImageOffsetValue = {
   zero: 0,
   halfLineWidth: -0.7,
+  /**
+   * e.g. `console--051--0.4x0.6 1`
+   * > `((150 - 137) / 2) / 5`
+   */
+  centerPoint4InHalfGrid: 1.3,
 } as const;
