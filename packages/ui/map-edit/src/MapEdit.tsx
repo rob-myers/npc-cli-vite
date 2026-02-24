@@ -1196,7 +1196,7 @@ function getSavedFilenames(): string[] {
   return files.sort();
 }
 
-const minAsideWidth = 100;
+const minAsideWidth = 160;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 const zoomDelta = 0.04;

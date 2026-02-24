@@ -146,10 +146,10 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                 "flex items-center justify-between gap-2 px-2 py-1 bg-background/50 border-b border-slate-700/50 text-xs",
               )}
             >
-              <label>dx/y</label>
               <div className="flex-1 flex flex-wrap gap-2">
                 <select
                   className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
+                  title="dx"
                   value={element.offset.x}
                   onChange={(e) => {
                     element.offset.x = Number(e.target.value) || 0;
@@ -165,6 +165,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                 </select>
                 <select
                   className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
+                  title="dy"
                   value={element.offset.y}
                   onChange={(e) => {
                     element.offset.y = Number(e.target.value) || 0;
