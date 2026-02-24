@@ -10,11 +10,7 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
-import {
-  toPrecision,
-  tryLocalStorageGetParsed,
-  tryLocalStorageSet,
-} from "@npc-cli/util/legacy/generic";
+import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   CaretLeftIcon,
   CaretRightIcon,
@@ -473,9 +469,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.imageKey = imageKey;
 
         const scaleFactor = sguScalePngToSvgFactor;
-        // offset image so aligned to grid
-        node.offset.x = toPrecision(-0.5 * (meta.width % 300) * scaleFactor, 8);
-        node.offset.y = toPrecision(-0.5 * (meta.height % 300) * scaleFactor, 8);
+        // adjust manually using dx/y UI instead
+        // node.offset.x = toPrecision(-0.5 * (meta.width % 300) * scaleFactor, 8);
+        // node.offset.y = toPrecision(-0.5 * (meta.height % 300) * scaleFactor, 8);
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;
@@ -880,6 +876,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.selectedIds.size > 0 && state.groupSelected();
       } else if (e.key === "d") {
         state.selectedIds.size > 0 && state.duplicateSelected();
+      } else if (e.key === "i") {
+        state.add("image", { selectionAsParent: true });
       }
     };
 
@@ -941,10 +939,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
-                      state.add("image", {
-                        selectionAsParent: true,
-                        rect: state.selectionBox ?? undefined,
-                      });
+                      state.add("image", { selectionAsParent: true });
                     }}
                   >
                     <ImageIcon className="size-4" />
@@ -1168,6 +1163,7 @@ const snap = (v: number) => Math.round(v / increment) * increment;
 const keyShouldPreventDefault = {
   d: true,
   g: true,
+  i: true,
   // r: true,
   s: true,
   y: true,
