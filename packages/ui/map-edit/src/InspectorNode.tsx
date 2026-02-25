@@ -23,7 +23,12 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
-import { type MapNode, type MapNodeType, toImageOffsetValue } from "./map-node-api";
+import {
+  type MapNode,
+  type MapNodeType,
+  recomputeImageCssTransform,
+  toImageOffsetValue,
+} from "./map-node-api";
 
 /**
  * - Double tap to edit name
@@ -192,6 +197,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                   value={element.offset.x}
                   onChange={(e) => {
                     element.offset.x = Number(e.target.value) || 0;
+                    recomputeImageCssTransform(element);
                     root.update();
                   }}
                   onClick={(e) => e.stopPropagation()}
@@ -208,6 +214,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                   value={element.offset.y}
                   onChange={(e) => {
                     element.offset.y = Number(e.target.value) || 0;
+                    recomputeImageCssTransform(element);
                     root.update();
                   }}
                   onClick={(e) => e.stopPropagation()}

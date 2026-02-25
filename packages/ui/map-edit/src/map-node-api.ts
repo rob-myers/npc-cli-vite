@@ -2,11 +2,8 @@ import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { Mat, Rect as RectClass } from "@npc-cli/util";
 
 /** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
-export function computeImageCssTransform(
-  baseRect: BaseRect,
-  transform: Transform,
-  offset: Geom.VectJson,
-): string {
+export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
+  const { baseRect, transform, offset } = node;
   const { width: W, height: H } = baseRect;
   const { x, y, scale: s, degrees } = transform;
   const [cx, cy] = [W / 2, H / 2];
@@ -16,7 +13,7 @@ export function computeImageCssTransform(
   const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
   const tx = offset.x + x + dx;
   const ty = offset.y + y + dy;
-  return `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`;
+  return (node.cssTransform = `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`);
 }
 
 export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
@@ -109,7 +106,8 @@ export const templateNodeByKey = {
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     baseRect: { ...defaultBaseRect },
     offset: { x: 0, y: 0 },
-    cssTransform: computeImageCssTransform(defaultBaseRect, defaultTransform, { x: 0, y: 0 }),
+    cssTransform:
+      "translate(0px, 0px) scale(1) translate(30px, 30px) rotate(0deg) translate(-30px, -30px)",
   },
   rect: {
     ...mockBaseNode,

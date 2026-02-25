@@ -33,7 +33,6 @@ import { MapEditSvg } from "./MapEditSvg";
 import {
   type BaseRect,
   baseSvgSize,
-  computeImageCssTransform,
   findNode,
   findNodeWithDepth,
   getNodeBounds,
@@ -42,6 +41,7 @@ import {
   type MapNodeMap,
   type MapNodeType,
   mapElements,
+  recomputeImageCssTransform,
   removeNodeFromParent,
   type Transform,
   templateNodeByKey,
@@ -332,7 +332,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             imageKey: node.imageKey,
             baseRect: { ...node.baseRect },
             offset: { ...node.offset },
-            cssTransform: computeImageCssTransform(node.baseRect, baseProps.transform, node.offset),
+            cssTransform: recomputeImageCssTransform(node),
           };
         }
         return { ...baseProps, type: node.type } as MapNode;
@@ -394,11 +394,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             const current = node.transform.degrees ?? 0;
             const nextDegrees = (current + degrees) % 360;
             node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
-            node.cssTransform = computeImageCssTransform(
-              node.baseRect,
-              node.transform,
-              node.offset,
-            );
+            recomputeImageCssTransform(node);
           }
         }
         state.update();
@@ -507,7 +503,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;
-        node.cssTransform = computeImageCssTransform(node.baseRect, node.transform, node.offset);
+        recomputeImageCssTransform(node);
 
         if (node.name.match(/^(Image \d+)$/)) {
           node.name = state.getNextName("image", `${imageKey} `);
@@ -593,11 +589,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
               node.transform.y = Math.round((startPos.y + dy) / increment) * increment;
               if (node.type === "image") {
-                node.cssTransform = computeImageCssTransform(
-                  node.baseRect,
-                  node.transform,
-                  node.offset,
-                );
+                recomputeImageCssTransform(node);
               }
             }
           }
