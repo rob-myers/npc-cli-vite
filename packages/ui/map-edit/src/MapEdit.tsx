@@ -872,7 +872,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return;
       }
 
-      if (e.key === "r") {
+      if (e.key === "r" && !e.metaKey) {
+        e.preventDefault();
         if (state.selectionBox && state.selectionBox.width > 0 && state.selectionBox.height > 0) {
           state.add("rect", { rect: state.selectionBox });
           state.set({ selectionBox: null });
