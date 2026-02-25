@@ -385,19 +385,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: seenDuringClone, selectionBox: null });
       },
+      rotate(nodeId, degrees) {
+        const result = findNode(state.elements, nodeId);
+        if (result?.node.type !== "image") return;
+        const node = result.node;
+        const current = node.transform.degrees ?? 0;
+        const nextDegrees = (current + degrees) % 360;
+        node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
+        recomputeImageCssTransform(node);
+      },
       rotateSelected(degrees) {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
-        for (const id of state.selectedIds) {
-          const result = findNode(state.elements, id);
-          if (result?.node.type === "image") {
-            const node = result.node;
-            const current = node.transform.degrees ?? 0;
-            const nextDegrees = (current + degrees) % 360;
-            node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
-            recomputeImageCssTransform(node);
-          }
-        }
+        for (const id of state.selectedIds) state.rotate(id, degrees);
         state.update();
       },
       getNextName(type, prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `) {
@@ -1208,6 +1208,7 @@ export type State = {
   /** Must manually update state to see changes. */
   duplicate: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
+  rotate: (nodeId: string, degrees: -90 | 90) => void;
   rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (filename?: string) => void;
