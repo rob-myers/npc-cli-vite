@@ -1,14 +1,14 @@
 [
   {
-    "id": "c3897a69-de49-400d-9891-adf7f39e9a1b",
+    "id": "08df29b3-4c11-4a46-8312-7e77b49d95c5",
     "name": "bed--003--1x1.6 1",
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 0,
-      "y": 0,
+      "x": 60,
+      "y": 180,
       "scale": 1,
-      "degrees": 90
+      "degrees": 270
     },
     "type": "image",
     "imageKey": "bed--003--1x1.6",
@@ -19,16 +19,17 @@
     "offset": {
       "x": -0.7,
       "y": -0.7
-    }
+    },
+    "svgTransform": "translate(39.8px, 198.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(270deg) translate(-50.2px, -30.700000000000003px)"
   },
   {
-    "id": "1c180e55-2938-48a5-b8ce-ddd177cae087",
+    "id": "bd3b3ecc-d8eb-41fa-9c43-9d1987ee6fd5",
     "name": "bed--003--1x1.6 2",
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 120,
-      "y": 0,
+      "x": 60,
+      "y": 310,
       "scale": 1,
       "degrees": 90
     },
@@ -41,85 +42,7 @@
     "offset": {
       "x": -0.7,
       "y": -0.7
-    }
-  },
-  {
-    "id": "dff2cce6-9ffe-49fc-a71b-e8041d755570",
-    "name": "bed--003--1x1.6 3",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 0,
-      "y": 120,
-      "scale": 1,
-      "degrees": 270
     },
-    "type": "image",
-    "imageKey": "bed--003--1x1.6",
-    "baseRect": {
-      "width": 100.4,
-      "height": 61.400000000000006
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
-    }
-  },
-  {
-    "id": "65a91254-5bdf-4edc-a4b7-1712106e5617",
-    "name": "bed--003--1x1.6 4",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 0,
-      "y": 160,
-      "scale": 1,
-      "degrees": 270
-    },
-    "type": "image",
-    "imageKey": "bed--003--1x1.6",
-    "baseRect": {
-      "width": 100.4,
-      "height": 61.400000000000006
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
-    },
-    "svgTransform": "translate(-20.2, 178.8) scale(1) rotate(270 50.2 30.700000000000003)"
-  },
-  {
-    "id": "3e6bbfb2-bf15-412e-8f18-3632f563de93",
-    "name": "Rect 1",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": -120,
-      "y": 0,
-      "scale": 1,
-      "degrees": 0
-    },
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 60
-    }
-  },
-  {
-    "id": "5f4fbf3f-4cc7-4a87-bd52-5761853e5708",
-    "name": "Rect 2",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": -120,
-      "y": 120,
-      "scale": 1,
-      "degrees": 0
-    },
-    "type": "rect",
-    "baseRect": {
-      "width": 60,
-      "height": 60
-    }
+    "svgTransform": "translate(39.8px, 328.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(90deg) translate(-50.2px, -30.700000000000003px)"
   }
 ]

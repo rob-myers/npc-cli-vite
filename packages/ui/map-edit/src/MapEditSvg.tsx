@@ -68,16 +68,16 @@ const RenderMapNodes = ({
   return elements.map((el) => {
     switch (el.type) {
       case "group": {
-        const svgTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
+        const cssTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
         return (
-          <g key={el.id} data-node-id={el.id} transform={svgTransform}>
+          <g key={el.id} data-node-id={el.id} transform={cssTransform}>
             <title>{el.name}</title>
             <RenderMapNodes state={state} elements={el.children} />
           </g>
         );
       }
       case "image": {
-        const { baseRect, imageKey, svgTransform } = el;
+        const { baseRect, imageKey, cssTransform } = el;
         const isSelected = state.selectedIds.has(el.id);
 
         return imageKey !== "unset" ? (
@@ -89,7 +89,7 @@ const RenderMapNodes = ({
             y={0}
             width={baseRect.width}
             height={baseRect.height}
-            transform={svgTransform}
+            style={{ transform: cssTransform }}
             preserveAspectRatio="none"
             className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
           >
@@ -102,14 +102,14 @@ const RenderMapNodes = ({
             y={0}
             width={baseRect.width}
             height={baseRect.height}
-            transform={svgTransform}
+            transform={cssTransform}
             preserveAspectRatio=""
           />
         );
       }
       case "rect": {
         const isSelected = state.selectedIds.has(el.id);
-        const svgTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
+        const cssTransform = `translate(${el.transform.x}px, ${el.transform.y}px) scale(${el.transform.scale})`;
         return (
           <rect
             key={el.id}
@@ -118,7 +118,7 @@ const RenderMapNodes = ({
             y={0}
             width={el.baseRect.width}
             height={el.baseRect.height}
-            transform={svgTransform}
+            style={{ transform: cssTransform }}
             // fill="rgba(0, 0, 0, 0.25)"
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0}
