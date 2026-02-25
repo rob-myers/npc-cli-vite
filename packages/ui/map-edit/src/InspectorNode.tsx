@@ -116,15 +116,15 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <Menu.Root modal>
+        <Menu.Root>
           <Menu.Trigger
-            className="text-on-background pl-0.5 hover:text-blue-400 cursor-pointer"
+            className="text-on-background pl-0.5 py-0.5 hover:text-blue-400 cursor-pointer"
             onClick={(e) => e.stopPropagation()}
           >
             {React.createElement(toIcon[element.type])}
           </Menu.Trigger>
           <Menu.Portal>
-            <Menu.Positioner className="z-50" sideOffset={4} align="start">
+            <Menu.Positioner className="z-50" align="start">
               <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[100px]">
                 <Menu.Item
                   className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
