@@ -132,62 +132,6 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         />
       </div>
 
-      <AnimatePresence>
-        {isSelected && root.selectedIds.size === 1 && element.type === "image" && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            <div
-              className={cn(
-                uiClassName,
-                "flex items-center justify-between gap-2 px-2 py-1 bg-background/50 border-b border-slate-700/50 text-xs",
-              )}
-            >
-              <div className="flex-1 flex flex-wrap gap-2">
-                <select
-                  className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
-                  title="dx"
-                  value={element.offset.x}
-                  onChange={(e) => {
-                    element.offset.x = Number(e.target.value) || 0;
-                    recomputeImageCssTransform(element);
-                    root.update();
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {imageOffsetValues.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-xs"
-                  title="dy"
-                  value={element.offset.y}
-                  onChange={(e) => {
-                    element.offset.y = Number(e.target.value) || 0;
-                    recomputeImageCssTransform(element);
-                    root.update();
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {imageOffsetValues.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {isGroup === true && state.isExpanded === true && (
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
@@ -195,6 +139,67 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           ))}
         </div>
       )}
+
+      <AnimatePresence>
+        {isSelected && root.selectedIds.size === 1 && element.type === "image" && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className={cn(
+              uiClassName,
+              "z-2 overflow-hidden absolute bottom-0",
+              "w-full flex items-center gap-1 px-2 py-1 bg-background/50 border-b border-slate-700/50 text-xs",
+            )}
+          >
+            <label className="flex h-6">
+              <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
+                dx
+              </div>
+              <select
+                className="px-1 bg-slate-700 border border-slate-600  text-slate-200 text-xs"
+                title="dx"
+                value={element.offset.x}
+                onChange={(e) => {
+                  element.offset.x = Number(e.target.value) || 0;
+                  recomputeImageCssTransform(element);
+                  root.update();
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {imageOffsetValues.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex h-6">
+              <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
+                dy
+              </div>
+              <select
+                className="px-1  bg-slate-700 border border-slate-600 text-slate-200 text-xs"
+                title="dy"
+                value={element.offset.y}
+                onChange={(e) => {
+                  element.offset.y = Number(e.target.value) || 0;
+                  recomputeImageCssTransform(element);
+                  root.update();
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {imageOffsetValues.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
