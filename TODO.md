@@ -100,6 +100,8 @@
   - ✅ can choose save directory `"symbol" | "map"`
     - we won't save svgs but rather "flat symbols" or "maps"
   - ✅ on close image modal without choosing delete image node
+  - ✅ dx/dy ui is at top-level
+  - can scroll inspector properly
   - 🚧 towards type `symbol`
 
 - 🚧 shell refinement
