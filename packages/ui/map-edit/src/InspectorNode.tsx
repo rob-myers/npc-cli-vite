@@ -8,18 +8,9 @@ import {
   type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import {
-  CopyIcon,
-  FolderIcon,
-  type Icon,
-  ImageIcon,
-  PathIcon,
-  RectangleIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
@@ -32,15 +23,13 @@ import {
 
 /**
  * - Double tap to edit name
- * - Long press or right click icon for context menu
- * - Drag outside icon to reorder
+ * - Drag to reorder
  */
 export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root }) => {
   const state = useStateRef(() => ({
     isExpanded: true,
     editValue: element.name,
     inputEl: null as HTMLInputElement | null,
-    longPressTimeout: null as ReturnType<typeof setTimeout> | null,
     rowEl: null as HTMLDivElement | null,
     closestEdge: null as Edge | null,
     dropInside: false,
@@ -116,49 +105,17 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <Menu.Root>
-          <Menu.Trigger
-            className="text-on-background pl-0.5 py-0.5 hover:text-blue-400 cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {React.createElement(toIcon[element.type])}
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Positioner className="z-50" align="start">
-              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[100px]">
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    root.duplicate(element.id);
-                    root.update();
-                  }}
-                >
-                  <CopyIcon size={14} />
-                  Duplicate
-                </Menu.Item>
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-red-400 hover:bg-slate-700 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    root.delete([element.id]);
-                    root.update();
-                  }}
-                >
-                  <TrashIcon size={14} />
-                  Remove
-                </Menu.Item>
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
+        <span className="text-on-background pl-0.5 py-0.5">
+          {React.createElement(toIcon[element.type])}
+        </span>
 
         <input
           ref={state.ref("inputEl")}
           type="text"
           className={cn(
             "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
-            isSelected && "brightness-125 font-medium text-blue-500/80",
+            "selection:text-white selection:bg-black",
+            isSelected && "brightness-125 font-medium text-blue-700/80",
             isEditing ? "italic" : "cursor-pointer",
           )}
           value={element.name}

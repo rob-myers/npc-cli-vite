@@ -15,6 +15,7 @@ import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/lega
 import {
   CaretLeftIcon,
   CaretRightIcon,
+  CopyIcon,
   FloppyDiskIcon,
   FolderIcon,
   FolderOpenIcon,
@@ -960,6 +961,29 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               <Menu.Portal>
                 <Menu.Positioner className="z-50" sideOffset={4} align="start">
                   <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+                    {state.selectedIds.size > 0 && (
+                      <>
+                        <div className="my-1 border-t border-slate-700" />
+                        <Menu.Item
+                          className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                          closeOnClick
+                          onClick={() => state.duplicateSelected()}
+                        >
+                          <CopyIcon className="size-4" />
+                          Duplicate
+                        </Menu.Item>
+                        <Menu.Item
+                          className="flex items-center gap-2 px-2 py-1 text-xs text-red-400 hover:bg-slate-700 cursor-pointer"
+                          closeOnClick
+                          onClick={() => state.deleteSelected()}
+                        >
+                          <TrashIcon className="size-4" />
+                          Delete
+                        </Menu.Item>
+                      </>
+                    )}
+                    <div className="my-1 border-t border-slate-700" />
+
                     <Menu.Item
                       className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                       closeOnClick
