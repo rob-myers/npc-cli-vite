@@ -36,6 +36,7 @@ import {
   baseSvgSize,
   findNode,
   findNodeWithDepth,
+  getAllNodeIds,
   getNodeBounds,
   imageOffsetValues,
   insertNodeAt,
@@ -380,11 +381,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
         const seenDuringClone = new Set<string>();
+        const duplicatedIds = new Set<string>();
         for (const id of state.selectedIds) {
           if (seenDuringClone.has(id)) continue;
-          state.duplicate(id, seenDuringClone);
+          const clone = state.duplicate(id, seenDuringClone);
+          if (clone) getAllNodeIds([clone]).forEach((id) => duplicatedIds.add(id));
         }
-        state.set({ selectedIds: seenDuringClone, selectionBox: null });
+        state.set({ selectedIds: duplicatedIds, selectionBox: null });
       },
       rotate(nodeId, degrees) {
         const result = findNode(state.elements, nodeId);
@@ -921,9 +924,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       } else if (e.key === "i") {
         state.add("image", { selectionAsParent: true });
       } else if (e.key === "a") {
-        const allIds = new Set<string>();
-        traverseElements(state.elements, (el) => allIds.add(el.id));
-        state.set({ selectedIds: allIds });
+        state.set({ selectedIds: getAllNodeIds(state.elements) });
       }
     };
 

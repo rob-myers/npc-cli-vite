@@ -66,6 +66,12 @@ export function findNodeWithDepth(
   return null;
 }
 
+export function getAllNodeIds(nodes: MapNode[]) {
+  const ids = new Set<string>();
+  traverseElements(nodes, (node) => ids.add(node.id));
+  return ids;
+}
+
 export function insertNodeAt(
   srcNode: MapNode,
   dstArray: MapNode[],
