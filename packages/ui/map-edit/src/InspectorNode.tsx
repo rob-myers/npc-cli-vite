@@ -10,7 +10,6 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
@@ -116,13 +115,13 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           value={element.name}
           readOnly={!isEditing}
           onBlur={() => isEditing && root.set({ editingId: null })}
-          onFocus={() => !isTouchDevice() && root.onStartEdit(element.id)}
           onChange={(e) => {
             element.name = e.currentTarget.value;
             state.update();
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === "Escape") root.set({ editingId: null });
+            if (e.key === "Enter") root.onStartEdit(element.id);
+            if (e.key === "Escape") root.set({ editingId: null });
           }}
         />
       </div>
