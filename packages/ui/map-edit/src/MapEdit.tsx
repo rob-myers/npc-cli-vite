@@ -10,7 +10,6 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
-import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   CaretLeftIcon,
@@ -1086,55 +1085,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         </div>
 
         {selectedImageNode && (
-          <div
-            className={cn(
-              uiClassName,
-              "flex items-center gap-1 px-2 py-1 border-t border-slate-700/50 text-xs",
-            )}
-          >
-            <label className="flex h-6">
-              <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
-                dx
-              </div>
-              <select
-                className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
-                title="dx"
-                value={selectedImageNode.offset.x}
-                onChange={(e) => {
-                  selectedImageNode.offset.x = Number(e.target.value) || 0;
-                  recomputeImageCssTransform(selectedImageNode);
-                  state.update();
-                }}
-              >
-                {imageOffsetValues.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex h-6">
-              <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
-                dy
-              </div>
-              <select
-                className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
-                title="dy"
-                value={selectedImageNode.offset.y}
-                onChange={(e) => {
-                  selectedImageNode.offset.y = Number(e.target.value) || 0;
-                  recomputeImageCssTransform(selectedImageNode);
-                  state.update();
-                }}
-              >
-                {imageOffsetValues.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <SelectedImageNodeUI selectedImageNode={selectedImageNode} state={state} />
         )}
 
         <InspectorResizer state={state} />
@@ -1143,7 +1094,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       <div
         ref={state.ref("containerEl")}
         className={cn(
-          "w-full h-full flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing touch-none",
+          "w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing touch-none",
           theme === "dark" ? "bg-gray-700/30" : "bg-white",
         )}
         onPointerDown={state.onPanPointerDown}
@@ -1280,6 +1231,66 @@ export type State = {
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
 };
 
+function SelectedImageNodeUI({
+  selectedImageNode,
+  state,
+}: {
+  selectedImageNode: Extract<MapNode, { type: "image" }>;
+  state: UseStateRef<State>;
+}) {
+  return (
+    <div
+      className={cn(
+        uiClassName,
+        "overflow-auto flex items-center gap-1 px-2 py-1 border-t border-slate-700/50 text-xs",
+      )}
+    >
+      <label className="flex h-6">
+        <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
+          dx
+        </div>
+        <select
+          className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
+          title="dx"
+          value={selectedImageNode.offset.x}
+          onChange={(e) => {
+            selectedImageNode.offset.x = Number(e.target.value) || 0;
+            recomputeImageCssTransform(selectedImageNode);
+            state.update();
+          }}
+        >
+          {imageOffsetValues.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex h-6">
+        <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
+          dy
+        </div>
+        <select
+          className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
+          title="dy"
+          value={selectedImageNode.offset.y}
+          onChange={(e) => {
+            selectedImageNode.offset.y = Number(e.target.value) || 0;
+            recomputeImageCssTransform(selectedImageNode);
+            state.update();
+          }}
+        >
+          {imageOffsetValues.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 function InspectorResizer({ state }: { state: UseStateRef<State> }) {
   return (
     <div
@@ -1329,7 +1340,7 @@ function getSavedFilenames(): string[] {
   return files.sort();
 }
 
-const minAsideWidth = isTouchDevice() ? 0 : 160;
+const minAsideWidth = 0;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 const zoomDelta = 0.04;
