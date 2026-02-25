@@ -1,35 +1,12 @@
 [
   {
-    "id": "08df29b3-4c11-4a46-8312-7e77b49d95c5",
+    "id": "581a9208-9a25-4710-9b31-ee7c9d7184c0",
     "name": "bed--003--1x1.6 1",
     "locked": false,
     "visible": true,
     "transform": {
       "x": 60,
-      "y": 180,
-      "scale": 1,
-      "degrees": 270
-    },
-    "type": "image",
-    "imageKey": "bed--003--1x1.6",
-    "baseRect": {
-      "width": 100.4,
-      "height": 61.400000000000006
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
-    },
-    "svgTransform": "translate(39.8px, 198.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(270deg) translate(-50.2px, -30.700000000000003px)"
-  },
-  {
-    "id": "bd3b3ecc-d8eb-41fa-9c43-9d1987ee6fd5",
-    "name": "bed--003--1x1.6 2",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 60,
-      "y": 310,
+      "y": 120,
       "scale": 1,
       "degrees": 90
     },
@@ -43,6 +20,52 @@
       "x": -0.7,
       "y": -0.7
     },
-    "svgTransform": "translate(39.8px, 328.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(90deg) translate(-50.2px, -30.700000000000003px)"
+    "cssTransform": "translate(39.8px, 138.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(90deg) translate(-50.2px, -30.700000000000003px)"
+  },
+  {
+    "id": "4fde823b-3abc-4678-9705-5d315dd1e5b9",
+    "name": "bed--003--1x1.6 2",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 60,
+      "y": 240,
+      "scale": 1,
+      "degrees": 90
+    },
+    "type": "image",
+    "imageKey": "bed--003--1x1.6",
+    "baseRect": {
+      "width": 100.4,
+      "height": 61.400000000000006
+    },
+    "offset": {
+      "x": -0.7,
+      "y": -0.7
+    },
+    "cssTransform": "translate(39.8px, 258.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(90deg) translate(-50.2px, -30.700000000000003px)"
+  },
+  {
+    "id": "cf5f5280-05c1-4f9c-a77d-4ecdad758770",
+    "name": "bed--003--1x1.6 3",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 60,
+      "y": 360,
+      "scale": 1,
+      "degrees": 90
+    },
+    "type": "image",
+    "imageKey": "bed--003--1x1.6",
+    "baseRect": {
+      "width": 100.4,
+      "height": 61.400000000000006
+    },
+    "offset": {
+      "x": -0.7,
+      "y": -0.7
+    },
+    "cssTransform": "translate(39.8px, 378.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(90deg) translate(-50.2px, -30.700000000000003px)"
   }
 ]

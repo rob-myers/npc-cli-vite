@@ -302,8 +302,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           });
         }
       },
-      cloneNode(node, seen) {
-        seen.add(node.id);
+      cloneNode(node, seenDuringClone) {
+        seenDuringClone?.add(node.id);
         const baseProps = {
           id: crypto.randomUUID(),
           name: state.getNextName(node.type, `${node.name.split(" ")[0]} `),
@@ -315,7 +315,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return {
             ...baseProps,
             type: "group" as const,
-            children: node.children.map((c) => state.cloneNode(c, seen)),
+            children: node.children.map((c) => state.cloneNode(c, seenDuringClone)),
           };
         }
         if (node.type === "rect") {
@@ -367,20 +367,22 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.delete(Array.from(state.selectedIds));
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
+      duplicate(rootNodeId, seenDuringClone) {
+        const result = findNode(state.elements, rootNodeId);
+        if (!result) return null;
+        const clone = state.cloneNode(result.node, seenDuringClone);
+        state.elements.push(clone);
+        return clone;
+      },
       duplicateSelected() {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
-        const seen = new Set<string>();
-        const newIds = new Set<string>();
+        const seenDuringClone = new Set<string>();
         for (const id of state.selectedIds) {
-          if (seen.has(id)) continue;
-          const result = findNode(state.elements, id);
-          if (!result) continue;
-          const clone = state.cloneNode(result.node, seen);
-          state.elements.push(clone);
-          newIds.add(clone.id);
+          if (seenDuringClone.has(id)) continue;
+          state.duplicate(id, seenDuringClone);
         }
-        state.set({ selectedIds: newIds, selectionBox: null });
+        state.set({ selectedIds: seenDuringClone, selectionBox: null });
       },
       rotateSelected(degrees) {
         if (state.selectedIds.size === 0) return;
@@ -1180,13 +1182,16 @@ export type State = {
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
   groupSelected: () => void;
+  /** Must manually update state to see changes. */
+  delete: (nodeIds: string[]) => void;
   deleteSelected: () => void;
   pushHistory: () => void;
   undo: () => void;
   redo: () => void;
-  cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
+  cloneNode: (node: MapNode, seenDuringClone?: Set<string>) => MapNode;
+  /** Must manually update state to see changes. */
+  duplicate: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
-  delete: (nodeIds: string[]) => void;
   rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (filename?: string) => void;

@@ -8,9 +8,18 @@ import {
   type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
+import {
+  CopyIcon,
+  FolderIcon,
+  type Icon,
+  ImageIcon,
+  PathIcon,
+  RectangleIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
@@ -102,7 +111,42 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <div className="text-on-background pl-0.5">{React.createElement(toIcon[element.type])}</div>
+        <Menu.Root>
+          <Menu.Trigger
+            className="text-on-background pl-0.5 hover:text-blue-400 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {React.createElement(toIcon[element.type])}
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Positioner className="z-50" sideOffset={4} align="start">
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[100px]">
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    root.duplicate(element.id);
+                    root.update();
+                  }}
+                >
+                  <CopyIcon size={14} />
+                  Duplicate
+                </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-red-400 hover:bg-slate-700 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    root.delete([element.id]);
+                    root.update();
+                  }}
+                >
+                  <TrashIcon size={14} />
+                  Remove
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
 
         <input
           ref={state.ref("inputEl")}
