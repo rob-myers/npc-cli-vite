@@ -903,6 +903,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.selectedIds.size > 0 && state.duplicateSelected();
       } else if (e.key === "i") {
         state.add("image", { selectionAsParent: true });
+      } else if (e.key === "a") {
+        const allIds = new Set<string>();
+        traverseElements(state.elements, (el) => allIds.add(el.id));
+        state.set({ selectedIds: allIds });
       }
     };
 
@@ -1238,6 +1242,7 @@ const snap = (v: number) => Math.round(v / increment) * increment;
     - z: Undo
     */
 const keyShouldPreventDefault = {
+  a: true,
   d: true,
   g: true,
   i: true,
