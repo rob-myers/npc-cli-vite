@@ -77,20 +77,8 @@ const RenderMapNodes = ({
         );
       }
       case "image": {
-        // 🚧 cache calculation
-        const { baseRect, imageKey } = el;
+        const { baseRect, imageKey, svgTransform } = el;
         const isSelected = state.selectedIds.has(el.id);
-        const [cx, cy] = [baseRect.width / 2, baseRect.height / 2];
-        const degrees = el.transform.degrees ?? 0;
-        const { width: W, height: H } = baseRect;
-        const s = el.transform.scale;
-        // Correction to preserve bounding box top-left after rotation around center
-        const needsCorrection = degrees === 90 || degrees === 270;
-        const dx = needsCorrection ? (s * (H - W)) / 2 : 0;
-        const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
-        const tx = el.offset.x + el.transform.x + dx;
-        const ty = el.offset.y + el.transform.y + dy;
-        const svgTransform = `translate(${tx}, ${ty}) scale(${s}) rotate(${degrees} ${cx} ${cy})`;
 
         return imageKey !== "unset" ? (
           <image
