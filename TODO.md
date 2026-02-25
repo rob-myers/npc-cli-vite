@@ -99,8 +99,8 @@
   - ✅ can manually adjust image node offset
   - ✅ can choose save directory `"symbol" | "map"`
     - we won't save svgs but rather "flat symbols" or "maps"
-  - on close image modal without choosing delete image node
-  - towards type `symbol`
+  - ✅ on close image modal without choosing delete image node
+  - 🚧 towards type `symbol`
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics

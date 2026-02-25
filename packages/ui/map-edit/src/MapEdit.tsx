@@ -350,16 +350,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           ...("offset" in templateNode && { offset: { ...templateNode.offset } }),
         };
       },
-      deleteSelected() {
-        if (state.selectedIds.size === 0) return;
-        if (state.editingId) return;
-        state.pushHistory();
-        for (const id of state.selectedIds) {
+      delete(nodeIds) {
+        for (const id of nodeIds) {
           const result = findNode(state.elements, id);
           if (result) {
             removeNodeFromParent(result.parent?.children ?? state.elements, id);
           }
         }
+      },
+      deleteSelected() {
+        if (state.selectedIds.size === 0) return;
+        if (state.editingId) return;
+        state.pushHistory();
+        state.delete(Array.from(state.selectedIds));
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
       duplicateSelected() {
@@ -1059,7 +1062,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       <ImagePickerModal
         open={state.pickImageForId !== null}
         onOpenChange={(open) => {
-          if (!open) state.set({ pickImageForId: null });
+          if (!open) {
+            state.pickImageForId && state.delete([state.pickImageForId]);
+            state.set({ pickImageForId: null });
+          }
         }}
         onSelect={(imageKey) => {
           if (state.pickImageForId) {
@@ -1163,6 +1169,7 @@ export type State = {
   redo: () => void;
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;
+  delete: (nodeIds: string[]) => void;
   rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (filename?: string) => void;
