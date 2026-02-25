@@ -185,8 +185,13 @@ export const toImageOffsetValue = {
   zero: 0,
   halfLineWidth: -0.7,
   /**
+   * East align `bed--004--0.8x1.4 1`
+   * > `-22 / 5 + 0.7`
+   */
+  eastAlignBed004: -3.7,
+  /**
    * e.g. `console--051--0.4x0.6 1`
    * > `((150 - 137) / 2) / 5`
    */
-  centerPoint4InHalfGrid: 1.3,
+  centerXConsole051: 1.3,
 } as const;

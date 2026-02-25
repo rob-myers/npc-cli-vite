@@ -44,6 +44,13 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
     rowEl: null as HTMLDivElement | null,
     closestEdge: null as Edge | null,
     dropInside: false,
+    menuOpen: false,
+    clearLongPress() {
+      if (state.longPressTimeout) {
+        clearTimeout(state.longPressTimeout);
+        state.longPressTimeout = null;
+      }
+    },
   }));
 
   const isSelected = root.selectedIds.has(element.id);
@@ -116,10 +123,16 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <Menu.Root>
+        <Menu.Root open={state.menuOpen} onOpenChange={(open) => state.set({ menuOpen: open })}>
           <Menu.Trigger
             className="text-on-background pl-0.5 hover:text-blue-400 cursor-pointer"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={() => {
+              state.clearLongPress();
+              state.longPressTimeout = setTimeout(() => state.set({ menuOpen: true }), 500);
+            }}
+            onTouchEnd={() => state.clearLongPress()}
+            onTouchCancel={() => state.clearLongPress()}
           >
             {React.createElement(toIcon[element.type])}
           </Menu.Trigger>
