@@ -67,5 +67,28 @@
       "y": -0.7
     },
     "cssTransform": "translate(39.8px, 378.8px) scale(1) translate(50.2px, 30.700000000000003px) rotate(90deg) translate(-50.2px, -30.700000000000003px)"
+  },
+  {
+    "id": "0244b4e8-5af4-40b2-b509-c201d184d53a",
+    "name": "console--033--0.4x0.6 1",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 170,
+      "y": 170,
+      "scale": 1,
+      "degrees": 270
+    },
+    "type": "image",
+    "imageKey": "console--033--0.4x0.6",
+    "baseRect": {
+      "width": 26.8,
+      "height": 32.2
+    },
+    "offset": {
+      "x": -0.7,
+      "y": -0.7
+    },
+    "cssTransform": "translate(172.7px, 166.60000000000002px) scale(1) translate(13.4px, 16.1px) rotate(270deg) translate(-13.4px, -16.1px)"
   }
 ]
