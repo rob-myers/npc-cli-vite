@@ -109,7 +109,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           type="text"
           className={cn(
             "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
-            isSelected && "brightness-125 font-medium",
+            isSelected && "brightness-125 font-medium text-blue-500/80",
             isEditing ? "italic" : "cursor-pointer",
           )}
           value={element.name}

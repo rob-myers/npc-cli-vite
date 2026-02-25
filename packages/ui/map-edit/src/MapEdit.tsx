@@ -10,6 +10,7 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   CaretLeftIcon,
@@ -928,107 +929,109 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         className="relative h-full border-r border-slate-800 flex flex-col"
         style={{ width: state.asideWidth }}
       >
-        <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
-          <FileMenu state={state} />
-          <Menu.Root>
-            <Menu.Trigger
-              className={cn(
-                uiClassName,
-                "cursor-pointer text-slate-300",
-                "hover:text-slate-300 transition-colors",
-              )}
-            >
-              <ListIcon className="size-5.5 p-0.5 bg-slate-700 border border-white/10" />
-            </Menu.Trigger>
+        <div className="overflow-y-auto ">
+          <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
+            <FileMenu state={state} />
+            <Menu.Root>
+              <Menu.Trigger
+                className={cn(
+                  uiClassName,
+                  "cursor-pointer text-slate-300",
+                  "hover:text-slate-300 transition-colors",
+                )}
+              >
+                <ListIcon className="size-5.5 p-0.5 bg-slate-700 border border-white/10" />
+              </Menu.Trigger>
 
-            <Menu.Portal>
-              <Menu.Positioner className="z-50" sideOffset={4} align="start">
-                <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
-                  <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                    closeOnClick
-                    onClick={() => {
-                      state.add("group", { selectionAsParent: true });
-                    }}
-                  >
-                    <FolderIcon className="size-4" />
-                    Group
-                  </Menu.Item>
-                  <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                    closeOnClick
-                    onClick={() => {
-                      state.add("rect", { selectionAsParent: true });
-                    }}
-                  >
-                    <SquareIcon className="size-4" />
-                    Rect
-                  </Menu.Item>
-                  <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                    closeOnClick
-                    onClick={() => {
-                      state.add("image", { selectionAsParent: true });
-                    }}
-                  >
-                    <ImageIcon className="size-4" />
-                    Image
-                  </Menu.Item>
+              <Menu.Portal>
+                <Menu.Positioner className="z-50" sideOffset={4} align="start">
+                  <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+                    <Menu.Item
+                      className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                      closeOnClick
+                      onClick={() => {
+                        state.add("group", { selectionAsParent: true });
+                      }}
+                    >
+                      <FolderIcon className="size-4" />
+                      Group
+                    </Menu.Item>
+                    <Menu.Item
+                      className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                      closeOnClick
+                      onClick={() => {
+                        state.add("rect", { selectionAsParent: true });
+                      }}
+                    >
+                      <SquareIcon className="size-4" />
+                      Rect
+                    </Menu.Item>
+                    <Menu.Item
+                      className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                      closeOnClick
+                      onClick={() => {
+                        state.add("image", { selectionAsParent: true });
+                      }}
+                    >
+                      <ImageIcon className="size-4" />
+                      Image
+                    </Menu.Item>
 
-                  <div className="my-1 border-t border-slate-700" />
+                    <div className="my-1 border-t border-slate-700" />
 
-                  <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                    closeOnClick
-                    onClick={() => state.save()}
-                  >
-                    <FloppyDiskIcon className="size-4" />
-                    Save
-                  </Menu.Item>
+                    <Menu.Item
+                      className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                      closeOnClick
+                      onClick={() => state.save()}
+                    >
+                      <FloppyDiskIcon className="size-4" />
+                      Save
+                    </Menu.Item>
 
-                  <Menu.SubmenuRoot>
-                    <Menu.SubmenuTrigger className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
-                      <FolderOpenIcon className="size-4" />
-                      Open
-                    </Menu.SubmenuTrigger>
-                    <Menu.Portal>
-                      <Menu.Positioner className="z-50" sideOffset={4}>
-                        <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40 max-h-[300px] overflow-y-auto">
-                          {state.savedFiles.length === 0 ? (
-                            <div className="px-3 py-2 text-xs text-slate-500 italic">
-                              No saved files
-                            </div>
-                          ) : (
-                            state.savedFiles.map((file) => (
-                              <Menu.Item
-                                key={file}
-                                className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer group"
-                                closeOnClick
-                                onClick={() => state.load(file)}
-                              >
-                                <span className="truncate">{file}</span>
-                                <button
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-400"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm(`Delete "${file}"?`)) {
-                                      state.deleteFile(file);
-                                    }
-                                  }}
+                    <Menu.SubmenuRoot>
+                      <Menu.SubmenuTrigger className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
+                        <FolderOpenIcon className="size-4" />
+                        Open
+                      </Menu.SubmenuTrigger>
+                      <Menu.Portal>
+                        <Menu.Positioner className="z-50" sideOffset={4}>
+                          <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40 max-h-[300px] overflow-y-auto">
+                            {state.savedFiles.length === 0 ? (
+                              <div className="px-3 py-2 text-xs text-slate-500 italic">
+                                No saved files
+                              </div>
+                            ) : (
+                              state.savedFiles.map((file) => (
+                                <Menu.Item
+                                  key={file}
+                                  className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer group"
+                                  closeOnClick
+                                  onClick={() => state.load(file)}
                                 >
-                                  <TrashIcon className="size-3" />
-                                </button>
-                              </Menu.Item>
-                            ))
-                          )}
-                        </Menu.Popup>
-                      </Menu.Positioner>
-                    </Menu.Portal>
-                  </Menu.SubmenuRoot>
-                </Menu.Popup>
-              </Menu.Positioner>
-            </Menu.Portal>
-          </Menu.Root>
+                                  <span className="truncate">{file}</span>
+                                  <button
+                                    className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-400"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm(`Delete "${file}"?`)) {
+                                        state.deleteFile(file);
+                                      }
+                                    }}
+                                  >
+                                    <TrashIcon className="size-3" />
+                                  </button>
+                                </Menu.Item>
+                              ))
+                            )}
+                          </Menu.Popup>
+                        </Menu.Positioner>
+                      </Menu.Portal>
+                    </Menu.SubmenuRoot>
+                  </Menu.Popup>
+                </Menu.Positioner>
+              </Menu.Portal>
+            </Menu.Root>
+          </div>
         </div>
 
         <div className={cn(uiClassName, "overflow-y-auto h-full custom-scrollbar bg-background")}>
@@ -1221,7 +1224,7 @@ function getSavedFilenames(): string[] {
   return files.sort();
 }
 
-const minAsideWidth = 160;
+const minAsideWidth = isTouchDevice() ? 0 : 160;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 const zoomDelta = 0.04;
