@@ -33,6 +33,7 @@ import { MapEditSvg } from "./MapEditSvg";
 import {
   type BaseRect,
   baseSvgSize,
+  computeImageSvgTransform,
   findNode,
   findNodeWithDepth,
   getNodeBounds,
@@ -331,6 +332,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             imageKey: node.imageKey,
             baseRect: { ...node.baseRect },
             offset: { ...node.offset },
+            svgTransform: computeImageSvgTransform(node.baseRect, baseProps.transform, node.offset),
           };
         }
         return { ...baseProps, type: node.type } as MapNode;
@@ -386,9 +388,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         for (const id of state.selectedIds) {
           const result = findNode(state.elements, id);
           if (result?.node.type === "image") {
-            const current = result.node.transform.degrees ?? 0;
+            const node = result.node;
+            const current = node.transform.degrees ?? 0;
             const nextDegrees = (current + degrees) % 360;
-            result.node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
+            node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
+            node.svgTransform = computeImageSvgTransform(
+              node.baseRect,
+              node.transform,
+              node.offset,
+            );
           }
         }
         state.update();
@@ -497,6 +505,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;
+        node.svgTransform = computeImageSvgTransform(node.baseRect, node.transform, node.offset);
 
         if (node.name.match(/^(Image \d+)$/)) {
           node.name = state.getNextName("image", `${imageKey} `);
@@ -578,8 +587,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           for (const [id, startPos] of state.dragEl.starts) {
             const result = findNode(state.elements, id);
             if (result?.node.type === "rect" || result?.node.type === "image") {
-              result.node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
-              result.node.transform.y = Math.round((startPos.y + dy) / increment) * increment;
+              const node = result.node;
+              node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
+              node.transform.y = Math.round((startPos.y + dy) / increment) * increment;
+              if (node.type === "image") {
+                node.svgTransform = computeImageSvgTransform(
+                  node.baseRect,
+                  node.transform,
+                  node.offset,
+                );
+              }
             }
           }
           state.update();

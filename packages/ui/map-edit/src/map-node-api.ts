@@ -1,5 +1,23 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 
+/** Compute SVG transform string for an image node, preserving bounding box top-left on rotation */
+export function computeImageSvgTransform(
+  baseRect: BaseRect,
+  transform: Transform,
+  offset: Geom.VectJson,
+): string {
+  const { width: W, height: H } = baseRect;
+  const { x, y, scale: s, degrees } = transform;
+  const [cx, cy] = [W / 2, H / 2];
+  // Correction to preserve bounding box top-left after rotation around center
+  const needsCorrection = degrees === 90 || degrees === 270;
+  const dx = needsCorrection ? (s * (H - W)) / 2 : 0;
+  const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
+  const tx = offset.x + x + dx;
+  const ty = offset.y + y + dy;
+  return `translate(${tx}, ${ty}) scale(${s}) rotate(${degrees} ${cx} ${cy})`;
+}
+
 export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
@@ -90,6 +108,7 @@ export const templateNodeByKey = {
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     baseRect: { ...defaultBaseRect },
     offset: { x: 0, y: 0 },
+    svgTransform: computeImageSvgTransform(defaultBaseRect, defaultTransform, { x: 0, y: 0 }),
   },
   rect: {
     ...mockBaseNode,
@@ -118,6 +137,8 @@ export type MapNode = BaseMapNode &
         transform: Transform;
         /** Align source PNG to grid */
         offset: Geom.VectJson;
+        /** Precomputed SVG transform string */
+        svgTransform: string;
       }
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
