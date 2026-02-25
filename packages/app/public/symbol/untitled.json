@@ -1,7 +1,7 @@
 [
   {
-    "id": "af0463a2-41de-4606-a04a-7f5b7ed30603",
-    "name": "console--033--0.4x0.6 1",
+    "id": "b3ccaa28-a5d4-4923-bd0e-5d04fca4d95a",
+    "name": "bed--005--0.6x1.2 1",
     "locked": false,
     "visible": true,
     "transform": {
@@ -11,38 +11,15 @@
       "degrees": 0
     },
     "type": "image",
-    "imageKey": "console--033--0.4x0.6",
+    "imageKey": "bed--005--0.6x1.2",
     "baseRect": {
-      "width": 26.8,
-      "height": 32.2
+      "width": 76.4,
+      "height": 40.400000000000006
     },
     "offset": {
-      "x": 0,
-      "y": 0
+      "x": -0.7,
+      "y": -0.7
     },
-    "cssTransform": "translate(0px, 0px) scale(1) translate(13.4px, 16.1px) rotate(0deg) translate(-13.4px, -16.1px)"
-  },
-  {
-    "id": "7cc1c0f8-6d05-4797-be50-5a8bfab56618",
-    "name": "console--033--0.4x0.6 2",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 30,
-      "y": 0,
-      "scale": 1,
-      "degrees": 180
-    },
-    "type": "image",
-    "imageKey": "console--033--0.4x0.6",
-    "baseRect": {
-      "width": 26.8,
-      "height": 32.2
-    },
-    "offset": {
-      "x": 0,
-      "y": 0
-    },
-    "cssTransform": "translate(30px, 0px) scale(1) translate(13.4px, 16.1px) rotate(180deg) translate(-13.4px, -16.1px)"
+    "cssTransform": "translate(-0.7px, -0.7px) scale(1) translate(38.2px, 20.200000000000003px) rotate(0deg) translate(-38.2px, -20.200000000000003px)"
   }
 ]
