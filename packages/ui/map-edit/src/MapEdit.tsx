@@ -383,7 +383,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const result = findNode(state.elements, id);
           if (result?.node.type === "image") {
             const current = result.node.transform.degrees ?? 0;
-            result.node.transform.degrees = (current + degrees) % 360;
+            const nextDegrees = (current + degrees) % 360;
+            result.node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
           }
         }
         state.update();
@@ -1155,7 +1156,7 @@ export type State = {
   redo: () => void;
   cloneNode: (node: MapNode, seen: Set<string>) => MapNode;
   duplicateSelected: () => void;
-  rotateSelected: (degrees: number) => void;
+  rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (filename?: string) => void;
   load: (filename?: string) => Promise<void>;
