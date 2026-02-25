@@ -10,6 +10,7 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
@@ -35,13 +36,6 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
   const isSelected = root.selectedIds.has(element.id);
   const isEditing = root.editingId === element.id;
   const isGroup = element.type === "group";
-
-  useEffect(() => {
-    if (isEditing) {
-      state.inputEl?.focus();
-      state.inputEl?.select();
-    }
-  }, [isEditing]);
 
   useEffect(() => {
     const el = state.rowEl;
@@ -116,18 +110,20 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           type="text"
           className={cn(
             "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
-            "selection:bg-blue-400/50",
             isSelected && "brightness-125 font-medium",
-            isEditing ? "rounded" : "cursor-pointer",
+            isEditing ? "italic" : "cursor-pointer",
           )}
           value={element.name}
           readOnly={!isEditing}
           onBlur={() => isEditing && root.set({ editingId: null })}
+          onFocus={() => !isTouchDevice() && root.onStartEdit(element.id)}
           onChange={(e) => {
             element.name = e.currentTarget.value;
             state.update();
           }}
-          onClick={(e) => isEditing && e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Escape") root.set({ editingId: null });
+          }}
         />
       </div>
 
@@ -185,7 +181,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         )}
       </AnimatePresence>
 
-      {isGroup && state.isExpanded && element.children && (
+      {isGroup === true && state.isExpanded === true && (
         <div className="border-l border-slate-700/50">
           {element.children.map((child) => (
             <InspectorNode key={child.id} element={child} level={level + 1} root={root} />

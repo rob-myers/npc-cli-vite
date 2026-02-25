@@ -869,6 +869,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       if (e.key === "Backspace") {
         if (state.selectedIds.size > 0) state.deleteSelected();
+        state.wrapperEl?.focus();
         return;
       }
 
