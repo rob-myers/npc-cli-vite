@@ -15,10 +15,10 @@ import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
 import {
+  imageOffsetValues,
   type MapNode,
   type MapNodeType,
   recomputeImageCssTransform,
-  toImageOffsetValue,
 } from "./map-node-api";
 
 /**
@@ -159,7 +159,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {Object.values(toImageOffsetValue).map((value) => (
+                  {imageOffsetValues.map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
@@ -176,7 +176,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {Object.values(toImageOffsetValue).map((value) => (
+                  {imageOffsetValues.map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>

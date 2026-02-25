@@ -38,6 +38,7 @@ import {
   findNodeWithDepth,
   getNodeBounds,
   insertNodeAt,
+  labelledImageOffsetValue,
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
@@ -46,7 +47,6 @@ import {
   removeNodeFromParent,
   type Transform,
   templateNodeByKey,
-  toImageOffsetValue,
   traverseElements,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
@@ -498,8 +498,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.imageKey = imageKey;
 
         const scaleFactor = sguScalePngToSvgFactor;
-        node.offset.x = toImageOffsetValue.halfLineWidth;
-        node.offset.y = toImageOffsetValue.halfLineWidth;
+        node.offset.x = labelledImageOffsetValue.halfLineWidth;
+        node.offset.y = labelledImageOffsetValue.halfLineWidth;
 
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
