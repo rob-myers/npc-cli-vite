@@ -1,7 +1,8 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import { Mat, Rect as RectClass } from "@npc-cli/util";
 
-/** Compute SVG transform string for an image node, preserving bounding box top-left on rotation */
-export function computeImageSvgTransform(
+/** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
+export function computeImageCssTransform(
   baseRect: BaseRect,
   transform: Transform,
   offset: Geom.VectJson,
@@ -15,7 +16,7 @@ export function computeImageSvgTransform(
   const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
   const tx = offset.x + x + dx;
   const ty = offset.y + y + dy;
-  return `translate(${tx}, ${ty}) scale(${s}) rotate(${degrees} ${cx} ${cy})`;
+  return `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`;
 }
 
 export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
@@ -108,7 +109,7 @@ export const templateNodeByKey = {
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     baseRect: { ...defaultBaseRect },
     offset: { x: 0, y: 0 },
-    svgTransform: computeImageSvgTransform(defaultBaseRect, defaultTransform, { x: 0, y: 0 }),
+    cssTransform: computeImageCssTransform(defaultBaseRect, defaultTransform, { x: 0, y: 0 }),
   },
   rect: {
     ...mockBaseNode,
@@ -137,8 +138,8 @@ export type MapNode = BaseMapNode &
         transform: Transform;
         /** Align source PNG to grid */
         offset: Geom.VectJson;
-        /** Precomputed SVG transform string */
-        svgTransform: string;
+        /** Precomputed CSS transform string */
+        cssTransform: string;
       }
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
     | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
@@ -157,13 +158,19 @@ export type Transform = {
 
 /** Compute the world-space bounds of a rect/image node */
 export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Rect {
-  const { baseRect, transform } = node;
-  return {
-    x: transform.x,
-    y: transform.y,
-    width: baseRect.width * transform.scale,
-    height: baseRect.height * transform.scale,
-  };
+  if (node.type === "rect") {
+    return {
+      x: node.transform.x,
+      y: node.transform.y,
+      width: node.baseRect.width * node.transform.scale,
+      height: node.baseRect.height * node.transform.scale,
+    };
+  } else {
+    const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
+    const m = new Mat([a, b, c, d, e, f]);
+    const baseRect = new RectClass(0, 0, node.baseRect.width, node.baseRect.height);
+    return baseRect.applyMatrix(m);
+  }
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
