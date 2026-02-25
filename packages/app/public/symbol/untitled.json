@@ -5,9 +5,10 @@
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 0,
-      "y": 60,
-      "scale": 1
+      "x": -20,
+      "y": 20,
+      "scale": 1,
+      "degrees": 90
     },
     "type": "image",
     "imageKey": "bed--003--1x1.6",
@@ -26,9 +27,10 @@
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 0,
-      "y": 130,
-      "scale": 1
+      "x": 230,
+      "y": 20,
+      "scale": 1,
+      "degrees": -90
     },
     "type": "image",
     "imageKey": "bed--004--0.8x1.4",
@@ -47,9 +49,10 @@
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 170,
-      "y": 60,
-      "scale": 1
+      "x": 80,
+      "y": 20,
+      "scale": 1,
+      "degrees": 90
     },
     "type": "image",
     "imageKey": "bed--003--1x1.6",
@@ -81,6 +84,138 @@
     "offset": {
       "x": -0.7,
       "y": -0.7
+    }
+  },
+  {
+    "id": "2ae5d314-e735-47b9-b593-3b55745a020f",
+    "name": "console--051--0.4x0.6 1",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 0,
+      "y": 150,
+      "scale": 1,
+      "degrees": 180
+    },
+    "type": "image",
+    "imageKey": "console--051--0.4x0.6",
+    "baseRect": {
+      "width": 27.400000000000002,
+      "height": 31
+    },
+    "offset": {
+      "x": 1.3,
+      "y": 0
+    }
+  },
+  {
+    "id": "7a40610c-9ee7-4323-ae12-38c00f7f71ae",
+    "name": "console--051--0.4x0.6 2",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 60,
+      "y": 150,
+      "scale": 1,
+      "degrees": 180
+    },
+    "type": "image",
+    "imageKey": "console--051--0.4x0.6",
+    "baseRect": {
+      "width": 27.400000000000002,
+      "height": 31
+    },
+    "offset": {
+      "x": 1.3,
+      "y": 0
+    }
+  },
+  {
+    "id": "81c9e799-7605-4ee5-839c-1fee4f33581f",
+    "name": "console--051--0.4x0.6 3",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 120,
+      "y": 150,
+      "scale": 1,
+      "degrees": 180
+    },
+    "type": "image",
+    "imageKey": "console--051--0.4x0.6",
+    "baseRect": {
+      "width": 27.400000000000002,
+      "height": 31
+    },
+    "offset": {
+      "x": 1.3,
+      "y": 0
+    }
+  },
+  {
+    "id": "89c8aac0-f1ae-4098-9216-5acaed30de68",
+    "name": "console--051--0.4x0.6 4",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 0,
+      "y": 210,
+      "scale": 1,
+      "degrees": 0
+    },
+    "type": "image",
+    "imageKey": "console--051--0.4x0.6",
+    "baseRect": {
+      "width": 27.400000000000002,
+      "height": 31
+    },
+    "offset": {
+      "x": 1.3,
+      "y": 0
+    }
+  },
+  {
+    "id": "a94b2f26-7b41-4bf7-a392-c85a97b835fc",
+    "name": "console--051--0.4x0.6 5",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 60,
+      "y": 210,
+      "scale": 1,
+      "degrees": 0
+    },
+    "type": "image",
+    "imageKey": "console--051--0.4x0.6",
+    "baseRect": {
+      "width": 27.400000000000002,
+      "height": 31
+    },
+    "offset": {
+      "x": 1.3,
+      "y": 0
+    }
+  },
+  {
+    "id": "8d25b1db-60c5-46f4-a159-a19ace077255",
+    "name": "console--051--0.4x0.6 6",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 120,
+      "y": 210,
+      "scale": 1,
+      "degrees": 0
+    },
+    "type": "image",
+    "imageKey": "console--051--0.4x0.6",
+    "baseRect": {
+      "width": 27.400000000000002,
+      "height": 31
+    },
+    "offset": {
+      "x": 1.3,
+      "y": 0
     }
   }
 ]
