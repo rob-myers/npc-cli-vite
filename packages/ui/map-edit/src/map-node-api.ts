@@ -181,7 +181,7 @@ export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
 
 export const baseSvgSize = 600;
 
-export const toImageOffsetValue = {
+export const labelledImageOffsetValue = {
   zero: 0,
   halfLineWidth: -0.7,
   /**
@@ -195,3 +195,7 @@ export const toImageOffsetValue = {
    */
   centerXConsole051: 1.3,
 } as const;
+
+export const imageOffsetValues = Object.values(labelledImageOffsetValue)
+  .flatMap((x) => (x === 0 ? 0 : [Math.abs(x), -Math.abs(x)]))
+  .sort();
