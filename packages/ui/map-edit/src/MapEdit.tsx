@@ -18,7 +18,7 @@ import {
   FolderIcon,
   FolderOpenIcon,
   ImageIcon,
-  PlusIcon,
+  ListIcon,
   SquareIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
@@ -931,7 +931,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                 "hover:text-slate-300 transition-colors",
               )}
             >
-              <PlusIcon className="size-5.5 p-0.5 rounded-lg bg-slate-700 border border-white/10" />
+              <ListIcon className="size-5.5 p-0.5 bg-slate-700 border border-white/10" />
             </Menu.Trigger>
 
             <Menu.Portal>
