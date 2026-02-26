@@ -1055,7 +1055,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                               >
                                 <span className="truncate">{file}</span>
                                 <button
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-400"
+                                  className="group-hover:opacity-100 p-0.5 hover:text-red-400"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (confirm(`Delete "${file}"?`)) {
