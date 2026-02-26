@@ -101,8 +101,11 @@
     - we won't save svgs but rather "flat symbols" or "maps"
   - ✅ on close image modal without choosing delete image node
   - ✅ dx/dy ui is at top-level
-  - can scroll inspector properly
-  - 🚧 towards type `symbol`
+  - ✅ can scroll inspector properly
+  - fix editing id preventing e.g. create rect via `r`
+    - seem to happen when select via rectangular area
+    - can see node because it remains italic
+  - towards type `symbol`
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
