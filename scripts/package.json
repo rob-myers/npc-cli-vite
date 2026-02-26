@@ -10,7 +10,12 @@
     "ensure-asset-pngs": "./src/bins/ensure-asset-pngs.ts",
     "scaffold-ui": "./src/bins/scaffold-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
-    "pngs-to-webp": "./src/bins/pngs-to-webp.ts"
+    "pngs-to-webp": "./src/bins/pngs-to-webp.ts",
+    "watch-symbol-thumbs": "./src/bins/watch-symbol-thumbs.ts",
+    "run-forever": "./src/bins/run-forever.sh"
+  },
+  "scripts": {
+    "forever-symbol-thumbs": "pnpm run-forever watch-symbol-thumbs"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",
@@ -23,5 +28,8 @@
     "getopts": "catalog:",
     "image-size": "catalog:",
     "json-stringify-pretty-compact": "catalog:"
+  },
+  "devDependencies": {
+    "nodemon": "catalog:"
   }
 }
