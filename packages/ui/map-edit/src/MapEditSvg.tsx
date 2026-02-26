@@ -39,7 +39,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
     >
       <Defs />
       <OriginAndGrid />
-      <RenderMapNodes state={root} elements={root.elements} />
+      <RenderMapNodes selectedIds={root.selectedIds} elements={root.elements} />
       {root.selectionBox !== null && (
         <rect
           x={root.selectionBox.x}
@@ -59,11 +59,11 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
 }
 
 const RenderMapNodes = ({
-  state,
   elements,
+  selectedIds,
 }: {
-  state: UseStateRef<State>;
   elements: MapNode[];
+  selectedIds: Set<string>;
 }) => {
   return elements.map((el) => {
     switch (el.type) {
@@ -72,13 +72,13 @@ const RenderMapNodes = ({
         return (
           <g key={el.id} data-node-id={el.id} transform={cssTransform}>
             <title>{el.name}</title>
-            <RenderMapNodes state={state} elements={el.children} />
+            <RenderMapNodes selectedIds={selectedIds} elements={el.children} />
           </g>
         );
       }
       case "image": {
         const { baseRect, imageKey, cssTransform } = el;
-        const isSelected = state.selectedIds.has(el.id);
+        const isSelected = selectedIds.has(el.id);
 
         return imageKey !== "unset" ? (
           <image
@@ -108,7 +108,7 @@ const RenderMapNodes = ({
         );
       }
       case "rect": {
-        const isSelected = state.selectedIds.has(el.id);
+        const isSelected = selectedIds.has(el.id);
         const cssTransform = `translate(${el.transform.x}px, ${el.transform.y}px) scale(${el.transform.scale})`;
         return (
           <rect
