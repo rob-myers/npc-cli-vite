@@ -293,7 +293,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.set({
             elements: [...state.elements, newItem],
             selectedIds: new Set([newItem.id]),
-            editingId: newItem.type === "image" ? null : newItem.id,
+            editingId: null,
             pickImageForId: newItem.type === "image" ? newItem.id : null,
           });
         } else {
