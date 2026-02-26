@@ -109,6 +109,7 @@
 - 🚧 towards type `symbol`
   - need to creates thumbnail for each symbol
   - ✅ organise script into `watch-symbol-thumbs.ts`, `run-forever.sh` and `pnpm -F scripts forever-symbol-thumbs  forever script watches public/symbol`
+  - ✅ script watches public/symbol and executes on change
   - can render node as SVG string
   - script watches public/symbol and creates thumbnail for each symbol
 
