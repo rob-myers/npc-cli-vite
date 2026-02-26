@@ -107,5 +107,22 @@
       "width": 10,
       "height": 180
     }
+  },
+  {
+    "id": "c663d225-f743-4fda-a014-6b2c829b6735",
+    "name": "Rect 2",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 0,
+      "y": 0,
+      "scale": 1,
+      "degrees": 0
+    },
+    "type": "rect",
+    "baseRect": {
+      "width": 100,
+      "height": 10
+    }
   }
 ]
