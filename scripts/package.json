@@ -8,6 +8,7 @@
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
     "ensure-asset-pngs": "./src/bins/ensure-asset-pngs.ts",
+    "gen-symbol-thumbs": "./src/bins/gen-symbol-thumbs.ts",
     "scaffold-ui": "./src/bins/scaffold-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts",
@@ -16,7 +17,7 @@
     "run-forever": "./src/bins/run-forever.sh"
   },
   "scripts": {
-    "watch-symbol-thumbs": "pnpm run-forever watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop"
+    "watch-symbol-thumbs": "pnpm run-forever watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-symbol-thumbs"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",
