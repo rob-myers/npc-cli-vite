@@ -65,7 +65,7 @@ async function onRestart(nodemonFiles = [] as string[]) {
 
   // Run the script
   // console.log({ changedFiles });
-  await labelledSpawn("pnpm", opts.pnpmBin, `--changedFiles=${JSON.stringify(changedFiles)}`);
+  await labelledSpawn(opts.pnpmBin, opts.pnpmBin, `--changedFiles=${JSON.stringify(changedFiles)}`);
 
   const seconds = ((Date.now() - startEpochMs) / 1000).toFixed(2);
   info(`took ${seconds}s`);
