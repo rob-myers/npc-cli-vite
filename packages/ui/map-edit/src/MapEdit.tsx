@@ -20,6 +20,7 @@ import {
   FolderOpenIcon,
   ImageIcon,
   ListIcon,
+  SelectionAllIcon,
   SquareIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
@@ -970,7 +971,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                 <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
                   {state.selectedIds.size > 0 && (
                     <>
-                      <div className="my-1 border-t border-slate-700" />
                       <Menu.Item
                         className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                         closeOnClick
@@ -987,9 +987,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                         <TrashIcon className="size-4" />
                         Delete
                       </Menu.Item>
+                      <div className="my-1 border-t border-slate-700" />
                     </>
                   )}
-                  <div className="my-1 border-t border-slate-700" />
 
                   <Menu.Item
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
@@ -1024,6 +1024,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
                   <div className="my-1 border-t border-slate-700" />
 
+                  <Menu.Item
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => {
+                      state.set({ selectedIds: getAllNodeIds(state.elements) });
+                    }}
+                  >
+                    <SelectionAllIcon className="size-4" />
+                    Select All
+                  </Menu.Item>
+
+                  <div className="my-1 border-t border-slate-700" />
                   <Menu.Item
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
