@@ -63,10 +63,8 @@ async function onRestart(nodemonFiles = [] as string[]) {
   const startEpochMs = Date.now();
   const changedFiles = Array.from(changed.keys());
 
-  // 🚧 generate a thumbnail for each changed file
-  // 🚧 also generate all initially
-  console.log({ changedFiles });
   // Run the script
+  // console.log({ changedFiles });
   await labelledSpawn("pnpm", opts.pnpmBin, `--changedFiles=${JSON.stringify(changedFiles)}`);
 
   const seconds = ((Date.now() - startEpochMs) / 1000).toFixed(2);

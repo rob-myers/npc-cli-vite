@@ -112,7 +112,7 @@
   - ✅ script watches public/symbol and executes on change
   - ✅ make generic watch-files script i.e.
   > `pnpm run-forever watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
-  - can render node as SVG string
+  - 🚧 can render node as SVG string
   - script watches public/symbol and creates thumbnail for each symbol
 
 - 🚧 shell refinement
