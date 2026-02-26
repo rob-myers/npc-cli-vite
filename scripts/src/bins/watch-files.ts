@@ -1,10 +1,33 @@
 #!/usr/bin/env node --import=tsx
 
-import { info } from "@npc-cli/util/legacy/generic";
+// USAGE:
+// pnpm watch-files --globs='["packages/app/public/symbol/*.json"]' --pnpmBin=noop
+
+import { error, info, safeJsonParse } from "@npc-cli/util/legacy/generic";
+//@ts-expect-error
+import getopts from "getopts";
 import nodemon, { type NodemonEventQuit } from "nodemon";
 import { PROJECT_ROOT } from "../const";
+import { labelledSpawn } from "../starship-symbol/service";
 
-// import { labelledSpawn } from "../starship-symbol/service";
+const opts = getopts(process.argv, { string: ["globs", "pnpmBin"] });
+
+const globs = safeJsonParse(opts.globs) as string[];
+if (!Array.isArray(globs) || globs.some((glob) => typeof glob !== "string")) {
+  error("Invalid --globs argument. Must be a JSON array of strings.");
+  process.exit(1);
+}
+
+if (
+  !opts.pnpmBin ||
+  typeof opts.pnpmBin !== "string" ||
+  !/^[-a-z0-9]+$/.test(opts.pnpmBin as string)
+) {
+  error("Invalid --pnpmBin argument. Must be a non-empty lowercase alphanumeric string.");
+  process.exit(1);
+}
+
+// console.log(opts);
 
 /** Is the script currently running? */
 let running = false;
@@ -17,9 +40,10 @@ nodemon({
   delay: 0.1,
   ext: "json",
   runOnChangeOnly: true,
-  script: "scripts/src/noop.js", // 🔔 must override default behaviour
+  script: "scripts/src/bins/noop.js", // 🔔 must override default behaviour
   cwd: PROJECT_ROOT,
-  watch: ["packages/app/public/symbol/*.json"],
+  // watch: ["packages/app/public/symbol/*.json"],
+  watch: globs,
   exitCrash: true,
 })
   .on("restart", onRestart)
@@ -43,13 +67,7 @@ async function onRestart(nodemonFiles = [] as string[]) {
   // 🚧 also generate all initially
   console.log({ changedFiles });
   // Run the script
-  // await labelledSpawn(
-  //   "assets",
-  //   // 'sucrase-node',
-  //   "bun",
-  //   "scripts/assets",
-  //   `--changedFiles=${JSON.stringify(changedFiles)}`,
-  // );
+  await labelledSpawn("pnpm", opts.pnpmBin, `--changedFiles=${JSON.stringify(changedFiles)}`);
 
   const seconds = ((Date.now() - startEpochMs) / 1000).toFixed(2);
   info(`took ${seconds}s`);

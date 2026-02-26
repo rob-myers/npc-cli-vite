@@ -114,5 +114,5 @@ Stuff I've noticed
 # Dev scripts
 
 ```sh
-pnpm -F scripts forever-symbol-thumbs
+pnpm -F scripts watch-symbol-thumbs
 ```
