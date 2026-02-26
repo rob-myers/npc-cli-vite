@@ -57,8 +57,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
   const state = useStateRef(
     (): State => ({
-      zoom: 1,
-      pan: { x: 0, y: 0 },
+      zoom: 3,
+      pan: { x: baseSvgSize, y: 1.25 * baseSvgSize },
       isPanning: false,
       isPinching: false,
       firstPointerPos: { x: 0, y: 0 },
