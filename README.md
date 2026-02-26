@@ -110,3 +110,9 @@ Stuff I've noticed
 - can drag uv square area (not diagonal)
 - select two objects then can Cmd+Drag create box e.g. of vertices
 - z gets to wireframe and back
+
+# Dev scripts
+
+```sh
+pnpm -F scripts forever-symbol-thumbs
+```

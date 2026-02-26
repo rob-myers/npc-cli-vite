@@ -88,7 +88,7 @@
 - ✅ fix diagonal resize: now covered by absolute?
 - ✅ fix disabled toggle inside Tabs
 
-- 🚧 more MapEdit
+- ✅ more MapEdit
   - ✅ can choose filename to save
   - ✅ can save to file system in dev
   - ✅ try align source PNGs to grid
@@ -102,10 +102,15 @@
   - ✅ on close image modal without choosing delete image node
   - ✅ dx/dy ui is at top-level
   - ✅ can scroll inspector properly
-  - fix editing id preventing e.g. create rect via `r`
+  - ✅ fix editing id preventing e.g. create rect via `r`
     - seem to happen when select via rectangular area
     - can see node because it remains italic
-  - towards type `symbol`
+
+- 🚧 towards type `symbol`
+  - need to creates thumbnail for each symbol
+  - ✅ organise script into `watch-symbol-thumbs.ts`, `run-forever.sh` and `pnpm -F scripts forever-symbol-thumbs  forever script watches public/symbol`
+  - can render node as SVG string
+  - script watches public/symbol and creates thumbnail for each symbol
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
