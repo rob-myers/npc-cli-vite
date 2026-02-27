@@ -9,7 +9,7 @@ import {
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
-import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
@@ -303,31 +303,34 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           visible: node.visible,
           transform: { ...node.transform },
         };
-        if (node.type === "group") {
-          return {
-            ...baseProps,
-            type: "group" as const,
-            children: node.children.map((c) => state.cloneNode(c, seenDuringClone)),
-          };
+        switch (node.type) {
+          case "group": {
+            return {
+              ...baseProps,
+              type: "group" as const,
+              children: node.children.map((c) => state.cloneNode(c, seenDuringClone)),
+            };
+          }
+          case "rect": {
+            return {
+              ...baseProps,
+              type: "rect" as const,
+              baseRect: { ...node.baseRect },
+            };
+          }
+          case "image": {
+            return {
+              ...baseProps,
+              type: "image" as const,
+              imageKey: node.imageKey,
+              baseRect: { ...node.baseRect },
+              offset: { ...node.offset },
+              cssTransform: recomputeImageCssTransform(node),
+            };
+          }
+          default:
+            throw new ExhaustiveError(node);
         }
-        if (node.type === "rect") {
-          return {
-            ...baseProps,
-            type: "rect" as const,
-            baseRect: { ...node.baseRect },
-          };
-        }
-        if (node.type === "image") {
-          return {
-            ...baseProps,
-            type: "image" as const,
-            imageKey: node.imageKey,
-            baseRect: { ...node.baseRect },
-            offset: { ...node.offset },
-            cssTransform: recomputeImageCssTransform(node),
-          };
-        }
-        return { ...baseProps, type: node.type } as MapNode;
       },
       create(type) {
         const templateNode = templateNodeByKey[type];

@@ -709,6 +709,9 @@ importers:
       '@npc-cli/media':
         specifier: workspace:^
         version: link:../packages/media
+      '@npc-cli/ui__map-edit':
+        specifier: workspace:^
+        version: link:../packages/ui/map-edit
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../packages/util

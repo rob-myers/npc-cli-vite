@@ -105,7 +105,6 @@ const mockBaseNode: BaseMapNode = {
 
 export const templateNodeByKey = {
   group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
-  path: { ...mockBaseNode, type: "path" },
   image: {
     ...mockBaseNode,
     type: "image",
@@ -120,9 +119,12 @@ export const templateNodeByKey = {
     type: "rect",
     baseRect: { ...defaultBaseRect },
   },
+  // path: { ...mockBaseNode, type: "path" },
 } satisfies Record<MapNodeType, MapNode>;
 
-export type MapNodeType = "group" | "image" | "path" | "rect";
+// 🚧 symbol
+// 🚧 path
+export type MapNodeType = "group" | "image" | "rect";
 
 export type BaseMapNode = {
   id: string;
@@ -146,7 +148,6 @@ export type MapNode = BaseMapNode &
         cssTransform: string;
       }
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
-    | { type: Exclude<MapNodeType, "group" | "rect" | "image"> }
   );
 
 export type MapRectNode = Extract<MapNode, { type: "rect" }>;
