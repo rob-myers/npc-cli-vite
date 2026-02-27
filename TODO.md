@@ -111,8 +111,8 @@
   - ✅ organise script into `watch-symbol-thumbs.ts`, `restart-on-fail.sh` and `pnpm -F scripts watch-symbol-thumbs  forever script watches public/symbol`
   - ✅ script watches public/symbol and executes on change
   - ✅ make generic watch-files script i.e.
-  > `pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
-  - 🚧 can render node as SVG string
+    > `pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
+  - try render SVG preview on MapEdit save
   - script watches public/symbol and creates thumbnail for each symbol
 
 - 🚧 shell refinement
