@@ -4,7 +4,7 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import type { State } from "./MapEdit";
 
 export function FileMenu({ state }: { state: UseStateRef<State> }) {
-  const { folder, filename } = parseFilePath(state.currentFilename);
+  const { folder, filename } = parseFilePath(state.currentFilepath);
 
   return (
     <div className="flex flex-wrap items-center gap-1 py-1.5 border-b border-slate-800">
@@ -21,7 +21,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
         <Menu.Portal>
           <Menu.Positioner className="z-50" align="start" sideOffset={4}>
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-              {ALLOWED_FOLDERS.map((f) => (
+              {ALLOWED_MAP_EDIT_FOLDERS.map((f) => (
                 <Menu.Item
                   key={f}
                   className={cn(
@@ -33,7 +33,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                   closeOnClick
                   onClick={() => {
                     if (f !== folder) {
-                      state.set({ currentFilename: `${f}/${filename}`, isDirty: true });
+                      state.set({ currentFilepath: `${f}/${filename}`, isDirty: true });
                     }
                   }}
                 >
@@ -65,12 +65,17 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
   );
 }
 
-const ALLOWED_FOLDERS = ["symbol", "map"] as const;
-
-function parseFilePath(filePath: string): { folder: string; filename: string } {
+export function parseFilePath(filePath: string): {
+  folder: AllowedMapEditFolder;
+  filename: string;
+} {
   const parts = filePath.split("/");
-  if (parts.length === 2) {
-    return { folder: parts[0], filename: parts[1] };
+  if (parts.length !== 2 || !ALLOWED_MAP_EDIT_FOLDERS.find((f) => f === parts[0]) || !parts[1]) {
+    throw new Error(`Invalid file path: ${filePath}`);
   }
-  return { folder: "symbol", filename: filePath };
+  return { folder: parts[0] as AllowedMapEditFolder, filename: parts[1] };
 }
+
+export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
+
+export type AllowedMapEditFolder = (typeof ALLOWED_MAP_EDIT_FOLDERS)[number];

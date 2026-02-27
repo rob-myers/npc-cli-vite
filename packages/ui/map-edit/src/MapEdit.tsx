@@ -1,4 +1,5 @@
 import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
+import type { OnSaveRequest } from "@npc-cli/scripts/types";
 
 enableDragDropTouch();
 
@@ -15,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { EditMenu } from "./EditMenu";
-import { FileMenu } from "./FileMenu";
+import { FileMenu, parseFilePath } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MapEditSvg } from "./MapEditSvg";
@@ -73,7 +74,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       pngsMetadata: null,
       pickImageForId: null,
 
-      currentFilename:
+      currentFilepath:
         tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey)?.[
           props.meta.id
         ] ?? "symbol/untitled",
@@ -736,44 +737,49 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
 
-      save(filename = state.currentFilename) {
+      save(filepath = state.currentFilepath) {
         // save to local storage
-        tryLocalStorageSet(`${localStoragePrefix}${filename}`, JSON.stringify(state.elements));
+        tryLocalStorageSet(`${localStoragePrefix}${filepath}`, JSON.stringify(state.elements));
+
         // save current filename for this instance of MapEdit
         tryLocalStorageSet(
           localStorageUiIdToFilenameKey,
           JSON.stringify({
             ...tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey),
-            [props.meta.id]: filename,
+            [props.meta.id]: filepath,
           }),
         );
-        state.set({ currentFilename: filename, savedFiles: getSavedFilenames(), isDirty: false });
+
+        state.set({ currentFilepath: filepath, savedFiles: getSavedFilenames(), isDirty: false });
 
         // save to filesystem in development
         if (import.meta.env.DEV) {
-          fetch(`/api/map-edit/file/${encodeURIComponent(filename)}`, {
+          fetch(`/api/map-edit/file/${encodeURIComponent(filepath)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: state.elements }),
           }).catch(console.error);
         }
 
-        if (state.svgEl) {
-          const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
-          console.log({ svgAsString });
-          // 🚧 dev only endpoint
-          fetch("/api/map-edit/save-thumbnail", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename, svg: svgAsString }),
-          }).catch(console.error);
-        }
+        if (!state.svgEl) return;
+
+        const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
+        console.log({ svgAsString });
+
+        // 🚧 dev only endpoint for both symbol/* and map/*
+        const { filename, folder } = parseFilePath(filepath);
+        const payload: OnSaveRequest = { type: folder, filename, svg: svgAsString };
+        fetch("/api/map-edit/on-save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).catch(console.error);
       },
       async load(filename?: string) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
-        const name = filename ?? state.currentFilename;
+        const name = filename ?? state.currentFilepath;
         let elements = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
         // Try loading from filesystem in development if not in localStorage
         if (!elements && import.meta.env.DEV) {
@@ -792,7 +798,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             elements,
             selectedIds: new Set(),
             selectionBox: null,
-            currentFilename: name,
+            currentFilepath: name,
             undoStack: [],
             redoStack: [],
             isDirty: false,
@@ -1058,7 +1064,8 @@ export type State = {
   pngsMetadata: StarshipSymbolPngsMetadata | null;
   pickImageForId: string | null;
 
-  currentFilename: string;
+  /** {folder}/{filename} */
+  currentFilepath: string;
   isDirty: boolean;
   savedFiles: string[];
 

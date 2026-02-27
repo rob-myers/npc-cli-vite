@@ -23,6 +23,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/react-beforeunload": "catalog:"
+    "@types/react-beforeunload": "catalog:",
+    "@npc-cli/scripts": "workspace:^"
   }
 }
