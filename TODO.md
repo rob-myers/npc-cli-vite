@@ -108,10 +108,10 @@
 
 - 🚧 towards type `symbol`
   - need to creates thumbnail for each symbol
-  - ✅ organise script into `watch-symbol-thumbs.ts`, `run-forever.sh` and `pnpm -F scripts watch-symbol-thumbs  forever script watches public/symbol`
+  - ✅ organise script into `watch-symbol-thumbs.ts`, `restart-on-fail.sh` and `pnpm -F scripts watch-symbol-thumbs  forever script watches public/symbol`
   - ✅ script watches public/symbol and executes on change
   - ✅ make generic watch-files script i.e.
-  > `pnpm run-forever watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
+  > `pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
   - 🚧 can render node as SVG string
   - script watches public/symbol and creates thumbnail for each symbol
 

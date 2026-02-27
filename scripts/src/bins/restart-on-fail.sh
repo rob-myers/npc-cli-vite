@@ -8,7 +8,7 @@
 # Needed because we're using nodemon programmatically (not from CLI).
 
 PNPM_SCRIPT_NAME=$1
-COMMAND="pnpm run-forever ${PNPM_SCRIPT_NAME}"
+COMMAND="pnpm restart-on-fail ${PNPM_SCRIPT_NAME}"
 shift 1
 
 while true; do
