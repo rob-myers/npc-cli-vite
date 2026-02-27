@@ -14,10 +14,10 @@
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts",
     "noop": "./src/bins/noop.js",
     "watch-files": "./src/bins/watch-files.ts",
-    "run-forever": "./src/bins/run-forever.sh"
+    "restart-on-fail": "./src/bins/restart-on-fail.sh"
   },
   "scripts": {
-    "watch-symbol-thumbs": "pnpm run-forever watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-symbol-thumbs"
+    "watch-symbol-thumbs": "pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-symbol-thumbs"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",
