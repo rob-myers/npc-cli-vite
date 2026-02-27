@@ -2,6 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import {
+  ArrowRightIcon,
   CopyIcon,
   FloppyDiskIcon,
   FolderIcon,
@@ -15,7 +16,7 @@ import {
 import type { State } from "./MapEdit";
 import { getAllNodeIds } from "./map-node-api";
 
-export function EditMenu({ state }: { state: UseStateRef<State> }) {
+export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
     <Menu.Root>
       <Menu.Trigger
@@ -41,9 +42,12 @@ export function EditMenu({ state }: { state: UseStateRef<State> }) {
             </Menu.Item>
 
             <Menu.SubmenuRoot>
-              <Menu.SubmenuTrigger className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
-                <FolderOpenIcon className="size-4" />
-                Open
+              <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
+                <div className="flex items-center gap-2">
+                  <FolderOpenIcon className="size-4" />
+                  Open
+                </div>
+                <ArrowRightIcon className="size-4" />
               </Menu.SubmenuTrigger>
               <Menu.Portal>
                 <Menu.Positioner className="z-50" sideOffset={4}>
