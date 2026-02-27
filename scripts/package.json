@@ -11,7 +11,7 @@
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
     "asset-pngs": "./src/bins/asset-pngs.ts",
-    "process-symbols": "./src/bins/process-symbols.ts",
+    "process-symbols": "./src/bins/process-symbols.tsx",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts",
@@ -33,7 +33,9 @@
     "@npc-cli/ui__map-edit": "workspace:^",
     "getopts": "catalog:",
     "image-size": "catalog:",
-    "json-stringify-pretty-compact": "catalog:"
+    "json-stringify-pretty-compact": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "nodemon": "catalog:"
