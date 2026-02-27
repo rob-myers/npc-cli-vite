@@ -58,7 +58,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   );
 }
 
-const RenderMapNodes = ({
+export const RenderMapNodes = ({
   elements,
   selectedIds,
 }: {
