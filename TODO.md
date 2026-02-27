@@ -112,7 +112,9 @@
   - ✅ script watches public/symbol and executes on change
   - ✅ make generic watch-files script i.e.
     > `pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
-  - try render SVG preview on MapEdit save
+  - 🚧 try render SVG preview on MapEdit save
+    - ✅ use dev endpoint POST /api/map-edit/save-thumbnail receives SVG text
+    - 🚧 dev endpoint renders SVG as thumbnail and saves
   - script watches public/symbol and creates thumbnail for each symbol
 
 - 🚧 shell refinement

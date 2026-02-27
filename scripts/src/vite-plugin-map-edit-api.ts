@@ -83,9 +83,7 @@ export function mapEditApiPlugin(): Plugin {
             // POST - Save file
             if (req.method === "POST") {
               let body = "";
-              for await (const chunk of req) {
-                body += chunk;
-              }
+              for await (const chunk of req) body += chunk;
               const { content } = JSON.parse(body);
               fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
               res.end(JSON.stringify({ success: true }));
@@ -102,6 +100,15 @@ export function mapEditApiPlugin(): Plugin {
             }
           }
 
+          if (req.url === "/api/map-edit/save-thumbnail" && req.method === "POST") {
+            let body = "";
+            for await (const chunk of req) body += chunk;
+            const saveThumbnailPayload = JSON.parse(body);
+            // 🚧
+            console.info({ saveThumbnailPayload });
+            return;
+          }
+
           res.statusCode = 404;
           res.end(JSON.stringify({ error: "Not found" }));
         } catch (error) {
@@ -114,10 +121,7 @@ export function mapEditApiPlugin(): Plugin {
 }
 
 function getFilesFromFolder(folder: AllowedFolder): string[] {
-  const dir = path.join(PUBLIC_DIR, folder);
-  if (!fs.existsSync(dir)) return [];
   return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => `${folder}/${f.replace(/\.json$/, "")}`);
+    .globSync(path.join(PUBLIC_DIR, folder, "*.json"))
+    .map((filePath) => `${folder}/${path.basename(filePath, ".json")}`);
 }

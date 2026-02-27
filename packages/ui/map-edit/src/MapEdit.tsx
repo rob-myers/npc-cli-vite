@@ -10,10 +10,7 @@ import {
 import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import {
-  CaretLeftIcon,
-  CaretRightIcon,
-} from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
@@ -758,6 +755,17 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: state.elements }),
+          }).catch(console.error);
+        }
+
+        if (state.svgEl) {
+          const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
+          console.log({ svgAsString });
+          // 🚧 dev only endpoint
+          fetch("/api/map-edit/save-thumbnail", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename, svg: svgAsString }),
           }).catch(console.error);
         }
       },
