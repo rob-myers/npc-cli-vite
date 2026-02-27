@@ -5,7 +5,7 @@
  * - Compute packages/app/public/starship-symbol/metadata.json
  *
  * Usage:
- * pnpm ensure-asset-pngs
+ * pnpm asset-pngs
  */
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
