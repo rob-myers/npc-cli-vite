@@ -10,7 +10,7 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { FolderIcon, type Icon, ImageIcon, PathIcon, RectangleIcon } from "@phosphor-icons/react";
+import { FolderIcon, type Icon, ImageIcon, RectangleIcon } from "@phosphor-icons/react";
 import React, { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
 import type { MapNode, MapNodeType } from "./map-node-api";
@@ -147,5 +147,4 @@ const toIcon = {
   group: FolderIcon,
   rect: RectangleIcon,
   image: ImageIcon,
-  path: PathIcon,
 } as const satisfies Record<MapNodeType, Icon>;
