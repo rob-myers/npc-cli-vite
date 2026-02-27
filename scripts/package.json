@@ -3,7 +3,10 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "exports": {
-    "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts"
+    "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
+    "./types": {
+      "types": "./src/types.ts"
+    }
   },
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",

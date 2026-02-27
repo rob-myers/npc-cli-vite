@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
+import type { OnSaveRequest } from "./types.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const ALLOWED_FOLDERS = ["symbol", "map"] as const;
@@ -100,12 +101,12 @@ export function mapEditApiPlugin(): Plugin {
             }
           }
 
-          if (req.url === "/api/map-edit/save-thumbnail" && req.method === "POST") {
+          if (req.url === "/api/map-edit/on-save" && req.method === "POST") {
             let body = "";
             for await (const chunk of req) body += chunk;
-            const saveThumbnailPayload = JSON.parse(body);
+            const received = JSON.parse(body) as OnSaveRequest;
             // 🚧
-            console.info({ saveThumbnailPayload });
+            console.info({ onSavePayload: received });
             return;
           }
 
