@@ -10,7 +10,7 @@
   },
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
-    "ensure-asset-pngs": "./src/bins/ensure-asset-pngs.ts",
+    "asset-pngs": "./src/bins/asset-pngs.ts",
     "gen-deep-symbols": "./src/bins/gen-deep-symbols.ts",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
