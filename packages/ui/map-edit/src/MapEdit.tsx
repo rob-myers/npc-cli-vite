@@ -15,10 +15,10 @@ import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
-import { EditMenu } from "./EditMenu";
 import { FileMenu, parseFilePath } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
+import { MainMenu } from "./MainMenu";
 import { MapEditSvg } from "./MapEditSvg";
 import {
   type BaseRect,
@@ -960,7 +960,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       >
         <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
           <FileMenu state={state} />
-          <EditMenu state={state} />
+          <MainMenu state={state} />
         </div>
 
         <div className={cn(uiClassName, "h-full bg-background")}>
