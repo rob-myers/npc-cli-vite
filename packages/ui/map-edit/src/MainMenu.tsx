@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import {
-  ArrowRightIcon,
+  CaretRightIcon,
   CopyIcon,
   FloppyDiskIcon,
   FolderIcon,
@@ -47,7 +47,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                   <FolderOpenIcon className="size-4" />
                   Open
                 </div>
-                <ArrowRightIcon className="size-4" />
+                <CaretRightIcon className="size-4" />
               </Menu.SubmenuTrigger>
               <Menu.Portal>
                 <Menu.Positioner className="z-50" sideOffset={4}>
