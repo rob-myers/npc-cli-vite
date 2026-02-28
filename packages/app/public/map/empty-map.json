@@ -1,1 +1,7 @@
-[]
+{
+  "type": "map",
+  "filename": "empty-map",
+  "width": 600,
+  "height": 600,
+  "nodes": []
+}

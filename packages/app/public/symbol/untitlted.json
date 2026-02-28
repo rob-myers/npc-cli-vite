@@ -1,0 +1,100 @@
+{
+  "type": "symbol",
+  "filename": "untitlted",
+  "width": 600,
+  "height": 600,
+  "nodes": [
+    {
+      "id": "6bc56422-950d-4361-8bcb-122d44bc1719",
+      "name": "bed--005--0.6x1.2 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "image",
+      "imageKey": "bed--005--0.6x1.2",
+      "baseRect": {
+        "width": 76.4,
+        "height": 40.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(-0.7px, -0.7px) scale(1) translate(38.2px, 20.200000000000003px) rotate(0deg) translate(-38.2px, -20.200000000000003px)"
+    },
+    {
+      "id": "23186c8b-25ea-464f-add6-174bbd48917d",
+      "name": "bed--005--0.6x1.2 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 0,
+        "y": 80,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "image",
+      "imageKey": "bed--005--0.6x1.2",
+      "baseRect": {
+        "width": 76.4,
+        "height": 40.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(-0.7px, 79.3px) scale(1) translate(38.2px, 20.200000000000003px) rotate(0deg) translate(-38.2px, -20.200000000000003px)"
+    },
+    {
+      "id": "dadd1291-95d2-4ab5-b801-eeae3b3ac4ce",
+      "name": "bed--005--0.6x1.2 3",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 120,
+        "y": 0,
+        "scale": 1,
+        "degrees": 180
+      },
+      "type": "image",
+      "imageKey": "bed--005--0.6x1.2",
+      "baseRect": {
+        "width": 76.4,
+        "height": 40.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(119.3px, -0.7px) scale(1) translate(38.2px, 20.200000000000003px) rotate(180deg) translate(-38.2px, -20.200000000000003px)"
+    },
+    {
+      "id": "d076bf01-824b-488f-8205-c81e8b797883",
+      "name": "bed--005--0.6x1.2 4",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 120,
+        "y": 80,
+        "scale": 1,
+        "degrees": 180
+      },
+      "type": "image",
+      "imageKey": "bed--005--0.6x1.2",
+      "baseRect": {
+        "width": 76.4,
+        "height": 40.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(119.3px, 79.3px) scale(1) translate(38.2px, 20.200000000000003px) rotate(180deg) translate(-38.2px, -20.200000000000003px)"
+    }
+  ]
+}
