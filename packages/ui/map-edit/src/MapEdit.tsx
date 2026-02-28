@@ -33,12 +33,12 @@ import {
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
-  mapElements,
+  mapNodes,
   recomputeImageCssTransform,
   removeNodeFromParent,
   type Transform,
   templateNodeByKey,
-  traverseElements,
+  traverseNodes,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
 
@@ -61,13 +61,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       svgWidth: baseSvgSize,
       svgHeight: baseSvgSize,
 
+      nodes: emptyNodes,
       selectedIds: new Set<string>(),
       selectionBox: null as SelectionBox | null,
       editingId: null,
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
-      elements: emptyElements,
       undoStack: [] as HistoryEntry[],
       redoStack: [] as HistoryEntry[],
 
@@ -170,7 +170,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       onSelect(id, opts) {
         state.pushHistory();
-        const res = findNode(state.elements, id);
+        const res = findNode(state.nodes, id);
         if (!res) return;
 
         const current = new Set(opts?.shiftKey || opts?.metaKey ? state.selectedIds : []);
@@ -184,7 +184,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (opts?.shiftKey && state.selectedIds.size > 0) {
           // select interval in flattened tree
           const flat: string[] = [];
-          traverseElements(state.elements, (el) => flat.push(el.id));
+          traverseNodes(state.nodes, (el) => flat.push(el.id));
           const i = flat.indexOf(id);
           const j = flat.findIndex((fid) => state.selectedIds.has(fid));
           if (i !== -1 && j !== -1) {
@@ -197,7 +197,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (res.node.type === "group") {
           // select (a) group and descendants, or (b) only group itself
           const descendantIds: string[] = [];
-          traverseElements(res.node.children, (el) => descendantIds.push(el.id));
+          traverseNodes(res.node.children, (el) => descendantIds.push(el.id));
           const allDescendantsSelected = descendantIds.every((did) => state.selectedIds.has(did));
 
           if (state.selectedIds.has(id) && allDescendantsSelected && descendantIds.length > 0) {
@@ -217,7 +217,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       onToggleVisibility(id) {
         state.set({
-          elements: mapElements(state.elements, id, (el) => ({ ...el, visible: !el.visible })),
+          nodes: mapNodes(state.nodes, id, (el) => ({ ...el, visible: !el.visible })),
         });
       },
 
@@ -286,7 +286,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (!parent) {
           state.set({
-            elements: [...state.elements, newItem],
+            nodes: [...state.nodes, newItem],
             selectedIds: new Set([newItem.id]),
             editingId: null,
             pickImageForId: newItem.type === "image" ? newItem.id : null,
@@ -354,9 +354,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       delete(nodeIds) {
         for (const id of nodeIds) {
-          const result = findNode(state.elements, id);
+          const result = findNode(state.nodes, id);
           if (result) {
-            removeNodeFromParent(result.parent?.children ?? state.elements, id);
+            removeNodeFromParent(result.parent?.children ?? state.nodes, id);
           }
         }
       },
@@ -368,10 +368,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
       duplicate(rootNodeId, seenDuringClone) {
-        const result = findNode(state.elements, rootNodeId);
+        const result = findNode(state.nodes, rootNodeId);
         if (!result) return null;
         const clone = state.cloneNode(result.node, seenDuringClone);
-        state.elements.push(clone);
+        state.nodes.push(clone);
         return clone;
       },
       duplicateSelected() {
@@ -387,7 +387,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
       },
       rotate(nodeId, degrees) {
-        const result = findNode(state.elements, nodeId);
+        const result = findNode(state.nodes, nodeId);
         if (result?.node.type !== "image") return;
         const node = result.node;
         const current = node.transform.degrees ?? 0;
@@ -406,7 +406,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       getNextSuffix(type, prefix) {
         const usedNums = new Set<number>();
-        traverseElements(state.elements, (el) => {
+        traverseNodes(state.nodes, (el) => {
           if (el.type === type && el.name.startsWith(prefix)) {
             const num = Number(el.name.slice(prefix.length));
             if (!Number.isNaN(num)) usedNums.add(num);
@@ -419,7 +419,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       getSelectedNode() {
         if (state.selectedIds.size !== 1) return null;
         const [selectedId] = state.selectedIds;
-        const result = findNode(state.elements, selectedId);
+        const result = findNode(state.nodes, selectedId);
         return result?.node ?? null;
       },
       groupSelected() {
@@ -427,23 +427,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.pushHistory();
         let shallowest: ReturnType<typeof findNodeWithDepth> = null;
         for (const id of state.selectedIds) {
-          const r = findNodeWithDepth(state.elements, id);
+          const r = findNodeWithDepth(state.nodes, id);
           if (r && (!shallowest || r.depth < shallowest.depth)) shallowest = r;
         }
         if (!shallowest) return;
 
         const newGroup = state.create("group");
-        const insertArray = shallowest.parent?.children ?? state.elements;
+        const insertArray = shallowest.parent?.children ?? state.nodes;
         const insertIndex = insertArray.indexOf(shallowest.node);
         const seen = new Set<string>();
 
         for (const id of state.selectedIds) {
           if (seen.has(id)) continue;
-          const result = findNode(state.elements, id);
+          const result = findNode(state.nodes, id);
           if (!result) continue;
-          removeNodeFromParent(result.parent?.children ?? state.elements, id);
+          removeNodeFromParent(result.parent?.children ?? state.nodes, id);
           newGroup.children.push(result.node);
-          traverseElements([result.node], (el) => seen.add(el.id));
+          traverseNodes([result.node], (el) => seen.add(el.id));
         }
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
@@ -451,8 +451,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       moveNode(srcId, dstId, edge) {
         if (srcId === dstId) return;
 
-        const srcResult = findNode(state.elements, srcId);
-        const dstResult = findNode(state.elements, dstId);
+        const srcResult = findNode(state.nodes, srcId);
+        const dstResult = findNode(state.nodes, dstId);
         if (
           !srcResult ||
           !dstResult ||
@@ -461,14 +461,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
-        removeNodeFromParent(srcResult.parent?.children ?? state.elements, srcId);
+        removeNodeFromParent(srcResult.parent?.children ?? state.nodes, srcId);
 
         if (edge === "inside" && dstResult.node.type === "group") {
           dstResult.node.children.push(srcResult.node);
         } else {
           insertNodeAt(
             srcResult.node,
-            dstResult.parent?.children ?? state.elements,
+            dstResult.parent?.children ?? state.nodes,
             dstId,
             edge === "inside" ? "bottom" : edge,
           );
@@ -479,7 +479,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       onRename(id, newName) {
         state.set({
-          elements: mapElements(state.elements, id, (el) => ({ ...el, name: newName })),
+          nodes: mapNodes(state.nodes, id, (el) => ({ ...el, name: newName })),
           editingId: null,
         });
       },
@@ -492,7 +492,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       setImageKey(nodeId, imageKey) {
         state.set({ pickImageForId: null });
 
-        const { node } = findNode(state.elements, nodeId) ?? {};
+        const { node } = findNode(state.nodes, nodeId) ?? {};
         const meta = state.pngsMetadata?.byKey[imageKey];
         if (!(node?.type === "image" && meta)) return;
 
@@ -585,7 +585,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (state.dragEl.type === "move-selection") {
           for (const [id, startPos] of state.dragEl.starts) {
-            const result = findNode(state.elements, id);
+            const result = findNode(state.nodes, id);
             if (result?.node.type === "rect" || result?.node.type === "image") {
               const node = result.node;
               node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
@@ -601,7 +601,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
-        const result = findNode(state.elements, selectedId);
+        const result = findNode(state.nodes, selectedId);
         if (result?.node.type !== "rect") return;
 
         // scale a single rect
@@ -632,7 +632,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.dragEl.type === "selection-box" && state.selectionBox) {
           const selectedIds = new Set<string>();
           const box = state.selectionBox;
-          traverseElements(state.elements, (el) => {
+          traverseNodes(state.nodes, (el) => {
             if (el.type === "rect" || el.type === "image") {
               const r = getNodeBounds(el);
               // Check if rects intersect
@@ -659,7 +659,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         /** Collect start positions for all selected rects */
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
-            const result = findNode(state.elements, id);
+            const result = findNode(state.nodes, id);
             return result?.node.type === "rect" || result?.node.type === "image"
               ? [[id, { x: result.node.transform.x, y: result.node.transform.y }]]
               : [];
@@ -675,7 +675,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       startResizeRect(e, handle) {
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
-        const result = findNode(state.elements, selectedId);
+        const result = findNode(state.nodes, selectedId);
         if (result?.node.type !== "rect" && result?.node.type !== "image") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
@@ -709,12 +709,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
 
       pushHistory() {
-        const elementsJson = JSON.stringify(state.elements);
-        const prev = state.undoStack.at(-1)?.elements;
-        if (prev === elementsJson) return;
+        const nodesJson = JSON.stringify(state.nodes);
+        const prev = state.undoStack.at(-1)?.nodes;
+        if (prev === nodesJson) return;
 
         state.isDirty = true;
-        state.undoStack.push({ elements: elementsJson, selectedIds: new Set(state.selectedIds) });
+        state.undoStack.push({ nodes: nodesJson, selectedIds: new Set(state.selectedIds) });
         state.redoStack.length = 0;
         state.update();
       },
@@ -722,11 +722,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const entry = state.undoStack.pop();
         if (!entry) return;
         state.redoStack.push({
-          elements: JSON.stringify(state.elements),
+          nodes: JSON.stringify(state.nodes),
           selectedIds: new Set(state.selectedIds),
         });
         state.set({
-          elements: JSON.parse(entry.elements) as MapNode[],
+          nodes: JSON.parse(entry.nodes) as MapNode[],
           selectedIds: entry.selectedIds,
           selectionBox: null,
         });
@@ -735,11 +735,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const entry = state.redoStack.pop();
         if (!entry) return;
         state.undoStack.push({
-          elements: JSON.stringify(state.elements),
+          nodes: JSON.stringify(state.nodes),
           selectedIds: new Set(state.selectedIds),
         });
         state.set({
-          elements: JSON.parse(entry.elements) as MapNode[],
+          nodes: JSON.parse(entry.nodes) as MapNode[],
           selectedIds: entry.selectedIds,
           selectionBox: null,
         });
@@ -747,7 +747,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       save(filepath = state.currentFilepath) {
         // save to local storage
-        tryLocalStorageSet(`${localStoragePrefix}${filepath}`, JSON.stringify(state.elements));
+        tryLocalStorageSet(`${localStoragePrefix}${filepath}`, JSON.stringify(state.nodes));
 
         // save current filename for this instance of MapEdit
         tryLocalStorageSet(
@@ -765,7 +765,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           fetch(`/api/map-edit/file/${encodeURIComponent(filepath)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: state.elements }),
+            body: JSON.stringify({ content: state.nodes }),
           }).catch(console.error);
 
           if (!state.svgEl) return;
@@ -788,22 +788,22 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
         const name = filename ?? state.currentFilepath;
-        let elements = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
+        let nodes = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
         // Try loading from filesystem in development if not in localStorage
-        if (!elements && import.meta.env.DEV) {
+        if (!nodes && import.meta.env.DEV) {
           try {
             const res = await fetch(`/api/map-edit/file/${encodeURIComponent(name)}`);
             if (res.ok) {
               const data = await res.json();
-              elements = data.content;
+              nodes = data.content;
             }
           } catch {
             // ignore
           }
         }
-        if (elements) {
+        if (nodes) {
           state.set({
-            elements,
+            nodes: nodes,
             selectedIds: new Set(),
             selectionBox: null,
             currentFilepath: name,
@@ -839,7 +839,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   state.theme = theme;
 
   useEffect(() => {
-    if (state.elements === emptyElements) {
+    if (state.nodes === emptyNodes) {
       state.load();
       import.meta.env.DEV && void state.mergeFilesFromFilesystem();
     }
@@ -938,7 +938,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       } else if (e.key === "i") {
         state.add("image", { selectionAsParent: true });
       } else if (e.key === "a") {
-        state.set({ selectedIds: getAllNodeIds(state.elements) });
+        state.set({ selectedIds: getAllNodeIds(state.nodes) });
       }
     };
 
@@ -953,9 +953,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
     const [id] = state.selectedIds;
-    const result = findNode(state.elements, id);
+    const result = findNode(state.nodes, id);
     return result?.node.type === "image" ? result.node : null;
-  }, [state.selectedIds, state.elements]);
+  }, [state.selectedIds, state.nodes]);
 
   return (
     <div
@@ -973,7 +973,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         </div>
 
         <div className={cn(uiClassName, "overflow-auto h-full bg-background")}>
-          {state.elements.map((el) => (
+          {state.nodes.map((el) => (
             <InspectorNode key={el.id} element={el} level={0} root={state} />
           ))}
         </div>
@@ -1025,7 +1025,7 @@ export type SelectionBox = {
 
 type HistoryEntry = {
   /** `MapNode[]` */
-  elements: string;
+  nodes: string;
   selectedIds: Set<string>;
 };
 
@@ -1050,7 +1050,7 @@ export type State = {
   asideWidth: number;
   lastAsideWidth: number;
   isResizing: boolean;
-  elements: MapNode[];
+  nodes: MapNode[];
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
   svgEl: SVGSVGElement | null;
@@ -1224,7 +1224,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
   );
 }
 
-const emptyElements = [] as MapNode[];
+const emptyNodes = [] as MapNode[];
 const localStoragePrefix = "map-edit:";
 const localStorageUiIdToFilenameKey = "map-edit-to-current-filename";
 

@@ -179,7 +179,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
               closeOnClick
               onClick={() => {
-                state.set({ selectedIds: getAllNodeIds(state.elements) });
+                state.set({ selectedIds: getAllNodeIds(state.nodes) });
               }}
             >
               <SelectionAllIcon className="size-4" />

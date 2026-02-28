@@ -20,7 +20,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const resizableRectNode = useMemo(() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
-    const node = findNode(root.elements, selectedId)?.node ?? null;
+    const node = findNode(root.nodes, selectedId)?.node ?? null;
     return node?.type === "rect" ? node : null;
   }, [root.selectedIds]);
 
@@ -42,7 +42,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       <Defs />
       <OriginAndGrid />
       <SvgBoundingBox width={root.svgWidth} height={root.svgHeight} zoom={root.zoom} />
-      <RenderMapNodes selectedIds={root.selectedIds} elements={root.elements} />
+      <RenderMapNodes selectedIds={root.selectedIds} nodes={root.nodes} />
       {root.selectionBox !== null && (
         <rect
           x={root.selectionBox.x}
@@ -62,20 +62,20 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
 }
 
 export const RenderMapNodes = ({
-  elements,
+  nodes,
   selectedIds,
 }: {
-  elements: MapNode[];
+  nodes: MapNode[];
   selectedIds: Set<string>;
 }) => {
-  return elements.map((el) => {
+  return nodes.map((el) => {
     switch (el.type) {
       case "group": {
         const cssTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
         return (
           <g key={el.id} data-node-id={el.id} transform={cssTransform}>
             <title>{el.name}</title>
-            <RenderMapNodes selectedIds={selectedIds} elements={el.children} />
+            <RenderMapNodes selectedIds={selectedIds} nodes={el.children} />
           </g>
         );
       }

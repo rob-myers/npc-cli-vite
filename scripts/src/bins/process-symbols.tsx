@@ -39,7 +39,7 @@ for (const file of fs.globSync("packages/app/public/symbol/**/*.json")) {
   // 🚧 need: width, height (maybe viewBox)
   const svgMarkup = ReactDOM.renderToStaticMarkup(
     <svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-      <RenderMapNodes elements={elements} selectedIds={emptyStringsSet} />
+      <RenderMapNodes nodes={elements} selectedIds={emptyStringsSet} />
     </svg>,
   );
 

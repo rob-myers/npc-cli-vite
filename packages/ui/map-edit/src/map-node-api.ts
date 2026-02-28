@@ -1,5 +1,5 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
-import { Mat, Rect as RectClass } from "@npc-cli/util";
+import { Mat, Rect } from "@npc-cli/util";
 
 /** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
 export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
@@ -16,18 +16,18 @@ export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image
   return (node.cssTransform = `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`);
 }
 
-export function mapElements(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
+export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
-    if (item.type === "group") return { ...item, children: mapElements(item.children, id, fn) };
+    if (item.type === "group") return { ...item, children: mapNodes(item.children, id, fn) };
     return item;
   });
 }
 
-export function traverseElements(list: MapNode[], act: (el: MapNode) => void): void {
+export function traverseNodes(list: MapNode[], act: (el: MapNode) => void): void {
   list.forEach((item) => {
     act(item);
-    if (item.type === "group") traverseElements(item.children, act);
+    if (item.type === "group") traverseNodes(item.children, act);
   });
 }
 
@@ -68,7 +68,7 @@ export function findNodeWithDepth(
 
 export function getAllNodeIds(nodes: MapNode[]) {
   const ids = new Set<string>();
-  traverseElements(nodes, (node) => ids.add(node.id));
+  traverseNodes(nodes, (node) => ids.add(node.id));
   return ids;
 }
 
@@ -122,18 +122,7 @@ export const templateNodeByKey = {
   // path: { ...mockBaseNode, type: "path" },
 } satisfies Record<MapNodeType, MapNode>;
 
-// 🚧 symbol
-// 🚧 path
-export type MapNodeType = "group" | "image" | "rect";
-
-export type BaseMapNode = {
-  id: string;
-  name: string;
-  locked: boolean;
-  visible: boolean;
-  transform: Transform;
-};
-
+// 🚧 symbol, path
 export type MapNode = BaseMapNode &
   (
     | { type: "group"; children: MapNode[] }
@@ -149,6 +138,16 @@ export type MapNode = BaseMapNode &
       }
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
   );
+
+export type MapNodeType = MapNode["type"];
+
+export type BaseMapNode = {
+  id: string;
+  name: string;
+  locked: boolean;
+  visible: boolean;
+  transform: Transform;
+};
 
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
@@ -173,7 +172,7 @@ export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): G
   } else {
     const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
     const m = new Mat([a, b, c, d, e, f]);
-    const baseRect = new RectClass(0, 0, node.baseRect.width, node.baseRect.height);
+    const baseRect = new Rect(0, 0, node.baseRect.width, node.baseRect.height);
     return baseRect.applyMatrix(m);
   }
 }
@@ -201,3 +200,17 @@ export const labelledImageOffsetValue = {
 export const imageOffsetValues = Object.values(labelledImageOffsetValue)
   .flatMap((x) => (x === 0 ? 0 : [Math.abs(x), -Math.abs(x)]))
   .sort();
+
+export type SavedSymbol = {
+  key: StarshipSymbolImageKey;
+  width: number;
+  height: number;
+  nodes: MapNode[];
+};
+
+export type SavedMap = {
+  key: string;
+  width: number;
+  height: number;
+  nodes: MapNode[];
+};
