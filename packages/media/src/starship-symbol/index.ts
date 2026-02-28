@@ -1,4 +1,5 @@
-import type { KeysOfUnion } from "@npc-cli/util/types";
+import { keys } from "@npc-cli/util/legacy/generic";
+import z from "zod";
 
 export const symbolByGroup = {
   "geomorph-core": {
@@ -194,7 +195,11 @@ export const extraSymbols = {
 
 export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
-export type StarshipSymbolImageKey = KeysOfUnion<(typeof symbolByGroup)[StarshipSymbolGroup]>;
+export const StarShipSymbolImageKeySchema = z.literal(
+  Object.values(symbolByGroup).flatMap((group) => keys(group)),
+);
+
+export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;
 
 export type StarshipSymbolPngsMetadata = {
   createdAt: string;

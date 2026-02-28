@@ -117,7 +117,7 @@
     - 🚧 symbol/map manifest created on start dev server
       - ✅ server-side svg render
       - ✅ can set width/height in MapEdit
-      - 🚧 save width/height in file
+      - ✅ save width/height in file
       - store svg markup in manifest
     - 🚧 dev endpoint updates manifest
   - script watches public/symbol and creates thumbnail for each symbol

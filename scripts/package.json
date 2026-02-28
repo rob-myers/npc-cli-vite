@@ -3,10 +3,7 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "exports": {
-    "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
-    "./types": {
-      "types": "./src/types.ts"
-    }
+    "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts"
   },
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
@@ -35,7 +32,8 @@
     "image-size": "catalog:",
     "json-stringify-pretty-compact": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "nodemon": "catalog:"

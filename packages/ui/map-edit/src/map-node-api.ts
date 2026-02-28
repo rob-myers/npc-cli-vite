@@ -1,6 +1,7 @@
-import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
 import { Mat, Rect } from "@npc-cli/util";
 import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import z from "zod";
 
 /** Find node and its parent */
 export function findNode(
@@ -139,34 +140,48 @@ export const templateNodeByKey = {
   // path: { ...mockBaseNode, type: "path" },
 } satisfies Record<MapNodeType, MapNode>;
 
-// 🚧 symbol, path
-export type MapNode = BaseMapNode &
-  (
-    | { type: "group"; children: MapNode[] }
-    | {
-        type: "image";
-        imageKey: StarshipSymbolImageKey | "unset";
-        baseRect: BaseRect;
-        transform: Transform;
-        /** Align source PNG to grid */
-        offset: Geom.VectJson;
-        /** Precomputed CSS transform string */
-        cssTransform: string;
-      }
-    | { type: "rect"; baseRect: BaseRect; transform: Transform }
-  );
+const TransformSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  scale: z.number(),
+  degrees: z.number(),
+});
+
+const BaseNodeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  locked: z.boolean(),
+  visible: z.boolean(),
+  transform: TransformSchema,
+});
+export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
+
+const MapNodeSchema = z.union([
+  // 🚧 symbol, path
+  BaseNodeSchema.extend({
+    type: z.literal("group"),
+    get children() {
+      return z.array(MapNodeSchema);
+    },
+  }),
+  BaseNodeSchema.extend({
+    type: z.literal("image"),
+    imageKey: z.union([z.literal("unset"), StarShipSymbolImageKeySchema]), // 🚧
+    baseRect: z.object({ width: z.number(), height: z.number() }),
+    offset: z.object({ x: z.number(), y: z.number() }),
+    cssTransform: z.string(),
+  }),
+  BaseNodeSchema.extend({
+    type: z.literal("rect"),
+    baseRect: z.object({ width: z.number(), height: z.number() }),
+  }),
+]);
+export type MapNode = z.infer<typeof MapNodeSchema>;
 
 export type MapNodeType = MapNode["type"];
 
-export type BaseMapNode = {
-  id: string;
-  name: string;
-  locked: boolean;
-  visible: boolean;
-  transform: Transform;
-};
-
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
+
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 
 export type BaseRect = { width: number; height: number };
@@ -205,7 +220,8 @@ export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 
 export type MapEditSavedSymbol = {
   type: "symbol";
-  key: StarshipSymbolImageKey;
+  /** 🚧 enforce StarshipSymbolImageKey?  */
+  filename: string;
   width: number;
   height: number;
   nodes: MapNode[];
@@ -213,7 +229,7 @@ export type MapEditSavedSymbol = {
 
 export type MapEditSavedMap = {
   type: "map";
-  key: string;
+  filename: string;
   width: number;
   height: number;
   nodes: MapNode[];
@@ -252,12 +268,10 @@ export function extendCurrentFileSpecifierMapping(
 export const LOCAL_STORAGE_PREFIX = "map-edit:";
 export const LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER = "map-edit-to-current-file";
 
-export type OnMapEditSaveRequest = {
-  type: "symbol" | "map";
-  filename: string;
-  svg: string;
-};
+//#region dev api
 
-export type MapEditListFileResponse = {
+export type MapEditListFilesResponse = {
   files: MapEditFileSpecifier[];
 };
+
+//#endregion

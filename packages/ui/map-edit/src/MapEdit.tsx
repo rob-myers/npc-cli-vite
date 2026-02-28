@@ -36,12 +36,12 @@ import {
   LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
   labelledImageOffsetValue,
   type MapEditFileSpecifier,
-  type MapEditListFileResponse,
+  type MapEditListFilesResponse,
+  type MapEditSavedFile,
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
   mapNodes,
-  type OnMapEditSaveRequest,
   recomputeImageCssTransform,
   removeNodeFromParent,
   type Transform,
@@ -94,7 +94,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         filename: "untitled",
       },
       isDirty: false,
-      savedFiles: getLocalStorageSavedFiles(), // in dev we mergeFilesystemInDev
+      savedFileSpecifiers: getLocalStorageSavedFiles(), // in dev we mergeFilesystemInDev
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -756,10 +756,20 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
 
       save(file = state.currentFile) {
-        // save to local storage
-        tryLocalStorageSet(getFileSpecifierLocalStorageKey(file), JSON.stringify(state.nodes));
+        const savedFile: MapEditSavedFile = {
+          type: file.type,
+          filename: file.filename,
+          width: state.svgWidth,
+          height: state.svgHeight,
+          nodes: state.nodes,
+        };
 
-        // save current filename for this MapEdit instance
+        // save to local storage
+        // - prod: only way to "save"
+        // - dev: provides auto-saved "draft"
+        tryLocalStorageSet(getFileSpecifierLocalStorageKey(file), JSON.stringify(savedFile));
+
+        // remember current file for this MapEdit instance
         tryLocalStorageSet(
           LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
           JSON.stringify(extendCurrentFileSpecifierMapping(props.meta.id, file)),
@@ -767,70 +777,79 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         state.set({
           currentFile: file,
-          savedFiles: state.savedFiles
+          savedFileSpecifiers: state.savedFileSpecifiers
             .filter((other) => !areFileSpecifiersEqual(other, file))
             .concat(file),
           isDirty: false,
         });
 
-        // save to filesystem in development
         if (import.meta.env.DEV) {
+          // save to filesystem in development
           fetch(`/api/map-edit/file/${file.type}/${file.filename}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: state.nodes }),
+            body: JSON.stringify(savedFile),
           }).catch(console.error);
 
-          if (!state.svgEl) return;
+          // if (!state.svgEl) return;
+          // const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
+          // console.log({ svgAsString }); // 🚧 compute server side?
 
-          const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
-          console.log({ svgAsString }); // 🚧 compute server side?
-
-          // 🚧 dev only endpoint for both symbol/* and map/*
-          // 🚧 currently NOOP
-          const payload: OnMapEditSaveRequest = {
-            type: file.type,
-            filename: file.filename,
-            svg: svgAsString,
-          };
-          fetch("/api/map-edit/on-save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }).catch(console.error);
+          // const payload: MapEditSaveRequest = {
+          //   type: file.type,
+          //   filename: file.filename,
+          //   svg: svgAsString,
+          // };
+          // fetch("/api/map-edit/on-save", {
+          //   method: "POST",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify(payload),
+          // }).catch(console.error);
         }
       },
       async load(file = state.currentFile) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
-        let nodes = tryLocalStorageGetParsed<MapNode[]>(`${LOCAL_STORAGE_PREFIX}${name}`);
+
+        // 🚧 better approach e.g. useMutation
+        let savedFile = tryLocalStorageGetParsed<MapEditSavedFile>(
+          `${LOCAL_STORAGE_PREFIX}${name}`,
+        );
+
         try {
           // Try loading from filesystem in development if not in localStorage
-          if (!nodes && import.meta.env.DEV) {
+          if (!savedFile && import.meta.env.DEV) {
             const res = await fetch(`/api/map-edit/file/${file.type}/${file.filename}`);
-            if (res.ok) {
-              const data = await res.json();
-              nodes = data.content;
+            if (!res.ok) {
+              warn(
+                `Failed to load file ${JSON.stringify(file)} from filesystem: ${res.status} ${res.statusText}`,
+              );
+              return;
             }
+            // 🚧 zod parser for MapEditSavedFile
+            savedFile = (await res.json()) as MapEditSavedFile;
           }
         } catch {}
-        if (nodes) {
+
+        if (savedFile) {
           state.set({
-            nodes: nodes,
+            nodes: savedFile.nodes,
             selectedIds: new Set(),
             selectionBox: null,
             currentFile: file,
             undoStack: [],
             redoStack: [],
             isDirty: false,
+            svgWidth: savedFile.width,
+            svgHeight: savedFile.height,
           });
         }
       },
       deleteFile(file) {
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
         state.set({
-          savedFiles: getLocalStorageSavedFiles().filter(
+          savedFileSpecifiers: getLocalStorageSavedFiles().filter(
             (other) => !areFileSpecifiersEqual(file, other),
           ),
         });
@@ -847,8 +866,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           if (!import.meta.env.DEV) return;
           const { files } = (await fetch("/api/map-edit/files").then((x) =>
             x.json(),
-          )) as MapEditListFileResponse;
-          state.set({ savedFiles: [...new Set([...state.savedFiles, ...files])].sort() });
+          )) as MapEditListFilesResponse;
+          state.set({
+            savedFileSpecifiers: [...new Set([...state.savedFileSpecifiers, ...files])].sort(),
+          });
         } catch (error) {
           console.error(error);
         }
@@ -1099,7 +1120,7 @@ export type State = {
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
   isDirty: boolean;
-  savedFiles: MapEditFileSpecifier[];
+  savedFileSpecifiers: MapEditFileSpecifier[];
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
