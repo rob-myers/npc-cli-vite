@@ -836,7 +836,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
     }),
   );
-
   state.theme = theme;
 
   useEffect(() => {
@@ -970,7 +969,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       >
         <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
           <FileMenu state={state} />
-          {/* 🚧 can edit width/height */}
           <MainMenu state={state} />
         </div>
 
@@ -1143,11 +1141,11 @@ function SelectedImageNodeUI({
     <div
       className={cn(
         uiClassName,
-        "overflow-auto flex items-center gap-1 px-2 py-1 border-t border-slate-700/50 text-xs",
+        "overflow-auto flex items-center justify-start gap-1 px-2 py-1 border-t border-slate-700/50 text-xs",
       )}
     >
       <label className="flex h-6">
-        <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
+        <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none text-white bg-black">
           dx
         </div>
         <select
@@ -1168,7 +1166,7 @@ function SelectedImageNodeUI({
         </select>
       </label>
       <label className="flex h-6">
-        <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none bg-black">
+        <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none text-white bg-black">
           dy
         </div>
         <select
