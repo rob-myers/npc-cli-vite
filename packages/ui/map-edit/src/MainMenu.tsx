@@ -9,6 +9,7 @@ import {
   FolderOpenIcon,
   ImageIcon,
   ListIcon,
+  MapTrifoldIcon,
   RulerIcon,
   SelectionAllIcon,
   SquareIcon,
@@ -59,17 +60,24 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                     ) : (
                       state.savedFiles.map((file) => (
                         <Menu.Item
-                          key={file}
+                          key={`${file.type}/${file.filename}`}
                           className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer group"
                           closeOnClick
                           onClick={() => state.load(file)}
                         >
-                          <span className="truncate">{file}</span>
+                          <div className="truncate flex gap-2">
+                            {file.type === "map" ? (
+                              <MapTrifoldIcon className="size-4" />
+                            ) : (
+                              <ImageIcon className="size-4 mr-1" />
+                            )}
+                            {file.filename}
+                          </div>
                           <button
                             className="group-hover:opacity-100 p-0.5 hover:text-red-400"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (confirm(`Delete "${file}"?`)) {
+                              if (confirm(`Delete "${file.filename}"?`)) {
                                 state.deleteFile(file);
                               }
                             }}

@@ -2,10 +2,9 @@ import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import type { State } from "./MapEdit";
+import { ALLOWED_MAP_EDIT_FOLDERS, type MapEditSavableFileType } from "./map-node-api";
 
 export function FileMenu({ state }: { state: UseStateRef<State> }) {
-  const { folder, filename } = parseFilePath(state.currentFilepath);
-
   return (
     <div className="flex flex-wrap items-center gap-1 py-1.5 border-b border-slate-800">
       <Menu.Root>
@@ -16,28 +15,32 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
           )}
           title="Change folder"
         >
-          {folder.slice(0, 3)}
+          {state.currentFile.type.slice(0, 3)}
         </Menu.Trigger>
         <Menu.Portal>
           <Menu.Positioner className="z-50" align="start" sideOffset={4}>
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-              {ALLOWED_MAP_EDIT_FOLDERS.map((f) => (
+              {ALLOWED_MAP_EDIT_FOLDERS.map((type) => (
                 <Menu.Item
-                  key={f}
+                  key={type}
                   className={cn(
                     "px-2 py-1 text-xs cursor-pointer",
-                    f === folder
+                    type === state.currentFile.type
                       ? "text-blue-400 bg-slate-700"
                       : "text-slate-300 hover:bg-slate-700",
                   )}
                   closeOnClick
                   onClick={() => {
-                    if (f !== folder) {
-                      state.set({ currentFilepath: `${f}/${filename}`, isDirty: true });
+                    if (type !== state.currentFile.type) {
+                      // 🚧 weird preservation of filename while switching folders
+                      state.set({
+                        currentFile: { type: type, filename: state.currentFile.filename },
+                        isDirty: true,
+                      });
                     }
                   }}
                 >
-                  {f}
+                  {type}
                 </Menu.Item>
               ))}
             </Menu.Popup>
@@ -54,28 +57,24 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
           state.isDirty && "italic",
         )}
         onClick={() => {
-          const name = prompt("Save as:", filename);
-          if (name?.trim()) state.save(`${folder}/${name.trim()}`);
+          const name = prompt("Save as:", state.currentFile.filename);
+          if (name?.trim()) state.save({ type: state.currentFile.type, filename: name.trim() });
         }}
         title="Click to save as..."
       >
-        {filename}
+        {state.currentFile.filename}
       </div>
     </div>
   );
 }
 
 export function parseFilePath(filePath: string): {
-  folder: AllowedMapEditFolder;
+  folder: MapEditSavableFileType;
   filename: string;
 } {
   const parts = filePath.split("/");
   if (parts.length !== 2 || !ALLOWED_MAP_EDIT_FOLDERS.find((f) => f === parts[0]) || !parts[1]) {
     throw new Error(`Invalid file path: ${filePath}`);
   }
-  return { folder: parts[0] as AllowedMapEditFolder, filename: parts[1] };
+  return { folder: parts[0] as MapEditSavableFileType, filename: parts[1] };
 }
-
-export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
-
-export type AllowedMapEditFolder = (typeof ALLOWED_MAP_EDIT_FOLDERS)[number];

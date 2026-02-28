@@ -1,5 +1,6 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { Mat, Rect } from "@npc-cli/util";
+import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 
 /** Find node and its parent */
 export function findNode(
@@ -200,16 +201,63 @@ export const imageOffsetValues = Object.values(labelledImageOffsetValue)
   .flatMap((x) => (x === 0 ? 0 : [Math.abs(x), -Math.abs(x)]))
   .sort();
 
-export type SavedSymbol = {
+export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
+
+export type MapEditSavedSymbol = {
+  type: "symbol";
   key: StarshipSymbolImageKey;
   width: number;
   height: number;
   nodes: MapNode[];
 };
 
-export type SavedMap = {
+export type MapEditSavedMap = {
+  type: "map";
   key: string;
   width: number;
   height: number;
   nodes: MapNode[];
+};
+
+export type MapEditSavedFile = MapEditSavedSymbol | MapEditSavedMap;
+
+export type MapEditSavableFileType = MapEditSavedFile["type"];
+
+export function isSavableFileType(type: string): type is MapEditSavableFileType {
+  return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavableFileType);
+}
+
+export type MapEditFileSpecifier = { type: MapEditSavableFileType; filename: string };
+
+export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
+  return `${LOCAL_STORAGE_PREFIX}${file.type}:${file.filename}`;
+}
+
+export function areFileSpecifiersEqual(a: MapEditFileSpecifier, b: MapEditFileSpecifier): boolean {
+  return a.type === b.type && a.filename === b.filename;
+}
+
+export type UiIdToCurrentFileSpecifer = Record<string, MapEditFileSpecifier>;
+
+export function extendCurrentFileSpecifierMapping(
+  uiId: string,
+  fileSpecifier: MapEditFileSpecifier,
+): UiIdToCurrentFileSpecifer {
+  return {
+    ...tryLocalStorageGetParsed<UiIdToCurrentFileSpecifer>(LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER),
+    [uiId]: fileSpecifier,
+  };
+}
+
+export const LOCAL_STORAGE_PREFIX = "map-edit:";
+export const LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER = "map-edit-to-current-file";
+
+export type OnMapEditSaveRequest = {
+  type: "symbol" | "map";
+  filename: string;
+  svg: string;
+};
+
+export type MapEditListFileResponse = {
+  files: MapEditFileSpecifier[];
 };
