@@ -150,19 +150,19 @@ export type MapNode = BaseMapNode &
     | { type: "rect"; baseRect: BaseRect; transform: Transform }
   );
 
-export type MapRectNode = Extract<MapNode, { type: "rect" }>;
+export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
+export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 
 export type BaseRect = { width: number; height: number };
 export type Transform = {
   x: number;
   y: number;
   scale: number;
-  /** Rotation in degrees (0, 90, 180, 270) */
   degrees: number;
 };
 
 /** Compute the world-space bounds of a rect/image node */
-export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Rect {
+export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Geom.RectJson {
   if (node.type === "rect") {
     return {
       x: node.transform.x,
@@ -178,12 +178,7 @@ export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): R
   }
 }
 
-type Rect = { x: number; y: number; width: number; height: number };
-
-export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
-
 export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
-
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
 
 export const baseSvgSize = 600;
