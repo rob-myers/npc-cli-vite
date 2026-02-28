@@ -109,8 +109,8 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           className={cn(
             "w-full my-1 px-0.5 text-xs border-0 border-gray-500/50 text-on-background/80 bg-transparent outline-none",
             "selection:text-white selection:bg-black",
-            isSelected && "brightness-125 font-medium text-blue-700/80",
             isEditing ? "italic" : "cursor-pointer",
+            isSelected && (root.theme === "dark" ? "text-blue-400/80" : "text-blue-900/80"),
           )}
           value={element.name}
           readOnly={!isEditing}
@@ -120,8 +120,9 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
             state.update();
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") root.onStartEdit(element.id);
-            if (e.key === "Escape") root.set({ editingId: null });
+            if (e.key === "Enter")
+              root.editingId === null ? root.onStartEdit(element.id) : root.onCancelEdit();
+            if (e.key === "Escape") root.onCancelEdit();
           }}
         />
       </div>

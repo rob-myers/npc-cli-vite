@@ -8,7 +8,7 @@ import {
   type StarshipSymbolPngsMetadata,
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
-import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
+import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
@@ -47,13 +47,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
   const state = useStateRef(
     (): State => ({
-      zoom: 3,
-      pan: { x: baseSvgSize, y: 1.25 * baseSvgSize },
+      theme,
+
       isPanning: false,
       isPinching: false,
+      pan: { x: baseSvgSize, y: 1.25 * baseSvgSize },
+      zoom: 3,
       firstPointerPos: { x: 0, y: 0 },
       lastPointerPos: { x: 0, y: 0 },
-      containerEl: null,
       lastTouchDist: 0,
       lastTouchMid: { x: 0, y: 0 },
 
@@ -70,9 +71,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       undoStack: [] as HistoryEntry[],
       redoStack: [] as HistoryEntry[],
 
+      containerEl: null,
+      dragEl: null,
       svgEl: null,
       wrapperEl: null,
-      dragEl: null,
 
       pngsMetadata: null,
       pickImageForId: null,
@@ -835,6 +837,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     }),
   );
 
+  state.theme = theme;
+
   useEffect(() => {
     if (state.elements === emptyElements) {
       state.load();
@@ -1028,6 +1032,7 @@ type HistoryEntry = {
 };
 
 export type State = {
+  theme: ThemeName;
   zoom: number;
   pan: { x: number; y: number };
   isPanning: boolean;
