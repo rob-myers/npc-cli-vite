@@ -4,9 +4,9 @@ import path from "node:path";
 import type {
   ALLOWED_MAP_EDIT_FOLDERS,
   MapEditFileSpecifier,
-  MapEditListFileResponse,
+  MapEditListFilesResponse,
   MapEditSavableFileType,
-  OnMapEditSaveRequest,
+  MapEditSavedFile,
 } from "@npc-cli/ui__map-edit";
 import type { Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
@@ -37,7 +37,7 @@ export function mapEditApiPlugin(): Plugin {
           // GET /api/map-edit/files - List all files from allowed folders
           if (req.url === "/api/map-edit/files" && req.method === "GET") {
             const files = MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.flatMap(getFilesFromFolder).sort();
-            const response: MapEditListFileResponse = { files };
+            const response: MapEditListFilesResponse = { files };
             res.end(JSON.stringify({ files }));
             return;
           }
@@ -84,8 +84,10 @@ export function mapEditApiPlugin(): Plugin {
                 res.end(JSON.stringify({ error: "File not found" }));
                 return;
               }
-              const content = fs.readFileSync(filePath, "utf-8");
-              res.end(JSON.stringify({ content: JSON.parse(content) }));
+
+              // 🚧 zod parser for MapEditSavedFile
+              const response = JSON.parse(fs.readFileSync(filePath, "utf-8")) as MapEditSavedFile;
+              res.end(JSON.stringify(response));
               return;
             }
 
@@ -93,8 +95,9 @@ export function mapEditApiPlugin(): Plugin {
             if (req.method === "POST") {
               let body = "";
               for await (const chunk of req) body += chunk;
-              const { content } = JSON.parse(body);
-              fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+              // 🚧 zod parser for MapEditSavedFile
+              const savedFile = JSON.parse(body) as MapEditSavedFile;
+              fs.writeFileSync(filePath, JSON.stringify(savedFile, null, 2));
               res.end(JSON.stringify({ success: true }));
               return;
             }
@@ -107,15 +110,6 @@ export function mapEditApiPlugin(): Plugin {
               res.end(JSON.stringify({ success: true }));
               return;
             }
-          }
-
-          if (req.url === "/api/map-edit/on-save" && req.method === "POST") {
-            let body = "";
-            for await (const chunk of req) body += chunk;
-            const received = JSON.parse(body) as OnMapEditSaveRequest;
-            // 🚧
-            console.info({ onSavePayload: received });
-            return;
           }
 
           res.statusCode = 404;

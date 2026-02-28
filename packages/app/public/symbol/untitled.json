@@ -1,185 +1,191 @@
-[
-  {
-    "id": "61eaf591-9ddc-41ed-8a69-01319bb041df",
-    "name": "console--031--1x1.2 2",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 110,
-      "y": 20,
-      "scale": 1,
-      "degrees": 180
+{
+  "type": "symbol",
+  "filename": "untitled",
+  "width": 600,
+  "height": 600,
+  "nodes": [
+    {
+      "id": "61eaf591-9ddc-41ed-8a69-01319bb041df",
+      "name": "console--031--1x1.2 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 110,
+        "y": 30,
+        "scale": 1,
+        "degrees": 180
+      },
+      "type": "image",
+      "imageKey": "console--031--1x1.2",
+      "baseRect": {
+        "width": 75.4,
+        "height": 61.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(109.3px, 29.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(180deg) translate(-37.7px, -30.700000000000003px)"
     },
-    "type": "image",
-    "imageKey": "console--031--1x1.2",
-    "baseRect": {
-      "width": 75.4,
-      "height": 61.400000000000006
+    {
+      "id": "7f69add6-b289-42ec-b05c-7d3f8d48df6d",
+      "name": "console--031--1x1.2 3",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 10,
+        "y": 220,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "image",
+      "imageKey": "console--031--1x1.2",
+      "baseRect": {
+        "width": 75.4,
+        "height": 61.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(9.3px, 219.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
     },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
+    {
+      "id": "1ca3d8ca-9077-4746-9bcb-8ccae250afa1",
+      "name": "Rect 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 90,
+        "y": 10,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 10,
+        "height": 180
+      }
     },
-    "cssTransform": "translate(109.3px, 19.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(180deg) translate(-37.7px, -30.700000000000003px)"
-  },
-  {
-    "id": "7f69add6-b289-42ec-b05c-7d3f8d48df6d",
-    "name": "console--031--1x1.2 3",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 10,
-      "y": 210,
-      "scale": 1,
-      "degrees": 0
+    {
+      "id": "c663d225-f743-4fda-a014-6b2c829b6735",
+      "name": "Rect 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 0,
+        "y": 10,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 100,
+        "height": 10
+      }
     },
-    "type": "image",
-    "imageKey": "console--031--1x1.2",
-    "baseRect": {
-      "width": 75.4,
-      "height": 61.400000000000006
+    {
+      "id": "86019d37-d417-4f00-9708-5276f3ba988d",
+      "name": "Rect 3",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 280,
+        "y": 10,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 10,
+        "height": 180
+      }
     },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
+    {
+      "id": "c3565a6f-6e2c-4225-9f8c-d12cee2a7ca5",
+      "name": "Rect 4",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 190,
+        "y": 10,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 100,
+        "height": 10
+      }
     },
-    "cssTransform": "translate(9.3px, 209.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
-  },
-  {
-    "id": "1ca3d8ca-9077-4746-9bcb-8ccae250afa1",
-    "name": "Rect 1",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 90,
-      "y": 0,
-      "scale": 1,
-      "degrees": 0
+    {
+      "id": "c30fde6e-2200-486d-a888-ff5cac27f9ae",
+      "name": "counter--009--0.4x0.4 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 230,
+        "y": 110,
+        "scale": 1,
+        "degrees": 90
+      },
+      "type": "image",
+      "imageKey": "counter--009--0.4x0.4",
+      "baseRect": {
+        "width": 20.6,
+        "height": 21.6
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(229.8px, 108.8px) scale(1) translate(10.3px, 10.8px) rotate(90deg) translate(-10.3px, -10.8px)"
     },
-    "type": "rect",
-    "baseRect": {
-      "width": 10,
-      "height": 180
+    {
+      "id": "bd048b6f-f129-4de3-839f-954cb2977dec",
+      "name": "counter--009--0.4x0.4 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 230,
+        "y": 60,
+        "scale": 1,
+        "degrees": 90
+      },
+      "type": "image",
+      "imageKey": "counter--009--0.4x0.4",
+      "baseRect": {
+        "width": 20.6,
+        "height": 21.6
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(229.8px, 58.8px) scale(1) translate(10.3px, 10.8px) rotate(90deg) translate(-10.3px, -10.8px)"
+    },
+    {
+      "id": "739ddc12-cfa3-4e79-8a25-568c508e8721",
+      "name": "console--031--1x1.2 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "x": 10,
+        "y": 30,
+        "scale": 1,
+        "degrees": 0
+      },
+      "type": "image",
+      "imageKey": "console--031--1x1.2",
+      "baseRect": {
+        "width": 75.4,
+        "height": 61.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "translate(9.3px, 29.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
     }
-  },
-  {
-    "id": "c663d225-f743-4fda-a014-6b2c829b6735",
-    "name": "Rect 2",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 0,
-      "y": 0,
-      "scale": 1,
-      "degrees": 0
-    },
-    "type": "rect",
-    "baseRect": {
-      "width": 100,
-      "height": 10
-    }
-  },
-  {
-    "id": "86019d37-d417-4f00-9708-5276f3ba988d",
-    "name": "Rect 3",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 280,
-      "y": 0,
-      "scale": 1,
-      "degrees": 0
-    },
-    "type": "rect",
-    "baseRect": {
-      "width": 10,
-      "height": 180
-    }
-  },
-  {
-    "id": "c3565a6f-6e2c-4225-9f8c-d12cee2a7ca5",
-    "name": "Rect 4",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 190,
-      "y": 0,
-      "scale": 1,
-      "degrees": 0
-    },
-    "type": "rect",
-    "baseRect": {
-      "width": 100,
-      "height": 10
-    }
-  },
-  {
-    "id": "c30fde6e-2200-486d-a888-ff5cac27f9ae",
-    "name": "counter--009--0.4x0.4 1",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 230,
-      "y": 100,
-      "scale": 1,
-      "degrees": 90
-    },
-    "type": "image",
-    "imageKey": "counter--009--0.4x0.4",
-    "baseRect": {
-      "width": 20.6,
-      "height": 21.6
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
-    },
-    "cssTransform": "translate(229.8px, 98.8px) scale(1) translate(10.3px, 10.8px) rotate(90deg) translate(-10.3px, -10.8px)"
-  },
-  {
-    "id": "bd048b6f-f129-4de3-839f-954cb2977dec",
-    "name": "counter--009--0.4x0.4 2",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 230,
-      "y": 50,
-      "scale": 1,
-      "degrees": 90
-    },
-    "type": "image",
-    "imageKey": "counter--009--0.4x0.4",
-    "baseRect": {
-      "width": 20.6,
-      "height": 21.6
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
-    },
-    "cssTransform": "translate(229.8px, 48.8px) scale(1) translate(10.3px, 10.8px) rotate(90deg) translate(-10.3px, -10.8px)"
-  },
-  {
-    "id": "739ddc12-cfa3-4e79-8a25-568c508e8721",
-    "name": "console--031--1x1.2 1",
-    "locked": false,
-    "visible": true,
-    "transform": {
-      "x": 10,
-      "y": 20,
-      "scale": 1,
-      "degrees": 0
-    },
-    "type": "image",
-    "imageKey": "console--031--1x1.2",
-    "baseRect": {
-      "width": 75.4,
-      "height": 61.400000000000006
-    },
-    "offset": {
-      "x": -0.7,
-      "y": -0.7
-    },
-    "cssTransform": "translate(9.3px, 19.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
-  }
-]
+  ]
+}

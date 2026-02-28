@@ -8,7 +8,8 @@
   },
   "scripts": {},
   "dependencies": {
-    "@npc-cli/util": "workspace:^"
+    "@npc-cli/util": "workspace:^",
+    "zod": "catalog:"
   },
   "devDependencies": {}
 }
