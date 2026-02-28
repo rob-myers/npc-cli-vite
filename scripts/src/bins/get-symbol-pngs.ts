@@ -18,7 +18,7 @@ import {
   rootFilenameRegex,
   smallCraftFilenameRegex,
   symbolsFilenameRegex,
-} from "../starship-symbol/service";
+} from "../service/rename-starship-symbols";
 
 /**
  * Rename & trim PNGs
