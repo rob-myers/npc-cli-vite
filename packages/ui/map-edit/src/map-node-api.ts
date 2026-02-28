@@ -1,36 +1,6 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { Mat, Rect } from "@npc-cli/util";
 
-/** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
-export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
-  const { baseRect, transform, offset } = node;
-  const { width: W, height: H } = baseRect;
-  const { x, y, scale: s, degrees } = transform;
-  const [cx, cy] = [W / 2, H / 2];
-  // Correction to preserve bounding box top-left after rotation around center
-  const needsCorrection = degrees === 90 || degrees === 270;
-  const dx = needsCorrection ? (s * (H - W)) / 2 : 0;
-  const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
-  const tx = offset.x + x + dx;
-  const ty = offset.y + y + dy;
-  return (node.cssTransform = `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`);
-}
-
-export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
-  return list.map((item) => {
-    if (item.id === id) return fn(item);
-    if (item.type === "group") return { ...item, children: mapNodes(item.children, id, fn) };
-    return item;
-  });
-}
-
-export function traverseNodes(list: MapNode[], act: (el: MapNode) => void): void {
-  list.forEach((item) => {
-    act(item);
-    if (item.type === "group") traverseNodes(item.children, act);
-  });
-}
-
 /** Find node and its parent */
 export function findNode(
   /** Either top-level nodes or `group.childrem` */
@@ -72,6 +42,23 @@ export function getAllNodeIds(nodes: MapNode[]) {
   return ids;
 }
 
+/** Compute the world-space bounds of a rect/image node */
+export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Geom.RectJson {
+  if (node.type === "rect") {
+    return {
+      x: node.transform.x,
+      y: node.transform.y,
+      width: node.baseRect.width * node.transform.scale,
+      height: node.baseRect.height * node.transform.scale,
+    };
+  } else {
+    const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
+    const m = new Mat([a, b, c, d, e, f]);
+    const baseRect = new Rect(0, 0, node.baseRect.width, node.baseRect.height);
+    return baseRect.applyMatrix(m);
+  }
+}
+
 export function insertNodeAt(
   srcNode: MapNode,
   dstArray: MapNode[],
@@ -84,12 +71,41 @@ export function insertNodeAt(
   dstArray.splice(idx, 0, srcNode);
 }
 
+export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
+  return list.map((item) => {
+    if (item.id === id) return fn(item);
+    if (item.type === "group") return { ...item, children: mapNodes(item.children, id, fn) };
+    return item;
+  });
+}
+/** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
+export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
+  const { baseRect, transform, offset } = node;
+  const { width: W, height: H } = baseRect;
+  const { x, y, scale: s, degrees } = transform;
+  const [cx, cy] = [W / 2, H / 2];
+  // Correction to preserve bounding box top-left after rotation around center
+  const needsCorrection = degrees === 90 || degrees === 270;
+  const dx = needsCorrection ? (s * (H - W)) / 2 : 0;
+  const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
+  const tx = offset.x + x + dx;
+  const ty = offset.y + y + dy;
+  return (node.cssTransform = `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`);
+}
+
 /** Returns index of child before it was removed */
 export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
   const index = parentArray.findIndex((n) => n.id === childId);
   if (index === -1) throw Error(`Expected id ${childId} in ${JSON.stringify(parentArray)}`);
   parentArray.splice(index, 1);
   return index;
+}
+
+export function traverseNodes(list: MapNode[], act: (el: MapNode) => void): void {
+  list.forEach((item) => {
+    act(item);
+    if (item.type === "group") traverseNodes(item.children, act);
+  });
 }
 
 const defaultBaseRect: BaseRect = { width: 60, height: 60 };
@@ -159,23 +175,6 @@ export type Transform = {
   scale: number;
   degrees: number;
 };
-
-/** Compute the world-space bounds of a rect/image node */
-export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Geom.RectJson {
-  if (node.type === "rect") {
-    return {
-      x: node.transform.x,
-      y: node.transform.y,
-      width: node.baseRect.width * node.transform.scale,
-      height: node.baseRect.height * node.transform.scale,
-    };
-  } else {
-    const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
-    const m = new Mat([a, b, c, d, e, f]);
-    const baseRect = new Rect(0, 0, node.baseRect.width, node.baseRect.height);
-    return baseRect.applyMatrix(m);
-  }
-}
 
 export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };

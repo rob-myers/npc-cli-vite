@@ -13,6 +13,7 @@ import {
   SelectionAllIcon,
   SquareIcon,
   TrashIcon,
+  WarningIcon,
 } from "@phosphor-icons/react";
 import type { State } from "./MapEdit";
 import { getAllNodeIds } from "./map-node-api";
@@ -184,6 +185,35 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
             >
               <SelectionAllIcon className="size-4" />
               Select All
+            </Menu.Item>
+
+            <div className="my-1 border-t border-slate-700" />
+
+            <Menu.Item
+              className="flex items-center gap-2 px-2 py-1 text-on-background text-xs hover:bg-slate-700 cursor-pointer"
+              closeOnClick
+              onClick={() => {
+                if (
+                  confirm(
+                    "Clear all localStorage maps and symbols?\n\nThis will delete all saved files from localStorage (not from filesystem). This action cannot be undone.",
+                  )
+                ) {
+                  const keysToRemove: string[] = [];
+                  for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key?.startsWith("map-edit:")) {
+                      keysToRemove.push(key);
+                    }
+                  }
+                  keysToRemove.forEach((key) => localStorage.removeItem(key));
+                  localStorage.removeItem("map-edit-to-current-filename");
+                  state.set({ savedFiles: [] });
+                  void state.mergeFilesystemInDev();
+                }
+              }}
+            >
+              <WarningIcon className="size-4 text-red-400" />
+              Clear localStorage
             </Menu.Item>
           </Menu.Popup>
         </Menu.Positioner>
