@@ -274,4 +274,8 @@ export type MapEditListFilesResponse = {
   files: MapEditFileSpecifier[];
 };
 
+export type MapEditListFoldersResponse = {
+  folders: readonly string[];
+};
+
 //#endregion

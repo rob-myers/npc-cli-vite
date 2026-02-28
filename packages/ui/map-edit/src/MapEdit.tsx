@@ -790,21 +790,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(savedFile),
           }).catch(console.error);
-
-          // if (!state.svgEl) return;
-          // const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
-          // console.log({ svgAsString }); // 🚧 compute server side?
-
-          // const payload: MapEditSaveRequest = {
-          //   type: file.type,
-          //   filename: file.filename,
-          //   svg: svgAsString,
-          // };
-          // fetch("/api/map-edit/on-save", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify(payload),
-          // }).catch(console.error);
         }
       },
       async load(file = state.currentFile) {

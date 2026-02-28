@@ -112,16 +112,18 @@
   - ✅ script watches public/symbol and executes on change
   - ✅ make generic watch-files script i.e.
     > `pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=noop`
-  - 🚧 try render SVG preview on MapEdit save
+  - ❌ try render SVG preview on MapEdit save
     - ✅ use dev endpoint POST /api/map-edit/on-save receives SVG text
-    - 🚧 symbol/map manifest created on start dev server
+    - ❌ symbol/map manifest created on start dev server
       - ✅ server-side svg render
       - ✅ can set width/height in MapEdit
       - ✅ save width/height in file
-      - store svg markup in manifest
-    - 🚧 dev endpoint updates manifest
+      - ❌ store svg markup in manifest
+
+  - 🚧 on /api/map-edit/file/symbol/:filename render a PNG review
   - script watches public/symbol and creates thumbnail for each symbol
 
+- onchange filename do not save immediately
 - restart vite onchange map-edit plugin
 
 - 🚧 shell refinement
