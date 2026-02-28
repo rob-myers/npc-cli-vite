@@ -14,6 +14,8 @@ export const UiContext = createContext<UiContextValue>({
   uiRegistry: {} as UiRegistry,
 });
 
+export type { ThemeName } from "@npc-cli/theme";
+
 export type UiContextValue = {
   layoutApi: LayoutApi;
   theme: ThemeName;
