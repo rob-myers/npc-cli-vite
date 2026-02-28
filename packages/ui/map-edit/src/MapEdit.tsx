@@ -824,8 +824,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           }).catch(console.error);
         }
       },
-      async mergeFilesFromFilesystem() {
+      async mergeFilesystemInDev() {
         try {
+          if (!import.meta.env.DEV) return;
           const { files } = (await fetch("/api/map-edit/files").then((x) => x.json())) as {
             files: string[];
           };
@@ -841,7 +842,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   useEffect(() => {
     if (state.nodes === emptyNodes) {
       state.load();
-      import.meta.env.DEV && void state.mergeFilesFromFilesystem();
+      void state.mergeFilesystemInDev();
     }
   }, []);
 
@@ -1123,8 +1124,8 @@ export type State = {
   save: (filename?: string) => void;
   load: (filename?: string) => Promise<void>;
   deleteFile: (filename: string) => void;
-  mergeFilesFromFilesystem: () => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
+  mergeFilesystemInDev: () => void;
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
