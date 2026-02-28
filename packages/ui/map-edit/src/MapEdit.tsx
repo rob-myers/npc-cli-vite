@@ -762,21 +762,21 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: state.elements }),
           }).catch(console.error);
+
+          if (!state.svgEl) return;
+
+          const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
+          console.log({ svgAsString });
+
+          // 🚧 dev only endpoint for both symbol/* and map/*
+          const { filename, folder } = parseFilePath(filepath);
+          const payload: OnSaveRequest = { type: folder, filename, svg: svgAsString };
+          fetch("/api/map-edit/on-save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }).catch(console.error);
         }
-
-        if (!state.svgEl) return;
-
-        const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
-        console.log({ svgAsString });
-
-        // 🚧 dev only endpoint for both symbol/* and map/*
-        const { filename, folder } = parseFilePath(filepath);
-        const payload: OnSaveRequest = { type: folder, filename, svg: svgAsString };
-        fetch("/api/map-edit/on-save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch(console.error);
       },
       async load(filename?: string) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
@@ -963,10 +963,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       >
         <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
           <FileMenu state={state} />
+          {/* 🚧 can edit width/height */}
           <MainMenu state={state} />
         </div>
 
-        <div className={cn(uiClassName, "h-full bg-background")}>
+        <div className={cn(uiClassName, "overflow-auto h-full bg-background")}>
           {state.elements.map((el) => (
             <InspectorNode key={el.id} element={el} level={0} root={state} />
           ))}
