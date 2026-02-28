@@ -10,5 +10,4 @@ export default defineUi({
   schema: MapEditUiMetaSchema,
 });
 
-export { RenderMapNodes } from "./MapEditSvg";
 export * from "./map-node-api";

@@ -31,8 +31,6 @@
     "getopts": "catalog:",
     "image-size": "catalog:",
     "json-stringify-pretty-compact": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
