@@ -1,5 +1,5 @@
 import { ExhaustiveError } from "@npc-cli/util";
-import { jsStringify, warn } from "@npc-cli/util/legacy/generic";
+import { jsStringify, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import type { Terminal } from "@xterm/xterm";
 import debounce from "debounce";
 import { ansi, scrollback } from "./const";
@@ -583,7 +583,9 @@ export class TtyXterm {
             },
           ]);
         } else {
-          const stringifiedTail = jsStringify(other).slice(-this.maxStringifyLength);
+          const stringifiedTail = (jsStringify(other) || safeJsonCompact(other)).slice(
+            -this.maxStringifyLength,
+          );
           const highlighted =
             stringifiedTail.length > this.maxHighlightLength
               ? `${ansi.Yellow}${stringifiedTail}`
