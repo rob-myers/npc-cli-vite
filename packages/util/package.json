@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./types": "./src/types.ts",
+    "./geom": "./src/geom/index.ts",
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js"
   },

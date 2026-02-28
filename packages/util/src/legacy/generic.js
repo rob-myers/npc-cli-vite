@@ -1,7 +1,7 @@
 // import safeStableStringify from "safe-stable-stringify";
 import { stringify as javascriptStringify } from "javascript-stringify";
 import prettyCompact from "json-stringify-pretty-compact";
-import "./global.d";
+import "./global.d.ts";
 
 /**
  * @template {{ key: string }} LookupItem

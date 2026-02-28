@@ -1,5 +1,5 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
-import { Mat, Rect } from "@npc-cli/util";
+import { Mat, Rect } from "@npc-cli/util/geom";
 import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
