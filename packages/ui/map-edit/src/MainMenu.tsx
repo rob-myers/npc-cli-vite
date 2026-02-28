@@ -17,7 +17,7 @@ import {
   WarningIcon,
 } from "@phosphor-icons/react";
 import type { State } from "./MapEdit";
-import { getAllNodeIds } from "./map-node-api";
+import { getAllNodeIds, LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER } from "./map-node-api";
 
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
@@ -214,7 +214,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                     }
                   }
                   keysToRemove.forEach((key) => localStorage.removeItem(key));
-                  localStorage.removeItem("map-edit-to-current-filename");
+                  localStorage.removeItem(LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER);
                   state.set({ savedFileSpecifiers: [] });
                   void state.mergeFilesystemInDev();
                 }

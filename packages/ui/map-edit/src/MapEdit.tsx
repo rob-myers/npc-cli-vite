@@ -848,11 +848,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       deleteFile(file) {
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
+
         state.set({
           savedFileSpecifiers: getLocalStorageSavedFiles().filter(
             (other) => !areFileSpecifiersEqual(file, other),
           ),
         });
+        void state.mergeFilesystemInDev();
 
         // delete from filesystem in development
         if (import.meta.env.DEV) {
