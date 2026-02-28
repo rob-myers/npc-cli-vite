@@ -6,9 +6,10 @@ export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol)
   const { width, height, filename, nodes } = savedFile;
   const canvas = new Canvas(width, height);
   const _ct = canvas.getContext("2d");
-  console.log({ filename });
+  console.log("🚧 createSavedSymbolPreviewPng", { filename });
+
   traverseNodes(nodes, (node) => {
-    console.log(node.type, node);
+    // console.log(node.type, node);
     switch (node.type) {
       case "rect": {
         // 🚧 CSS transform text -> Matrix
@@ -25,5 +26,5 @@ export async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
   const { width, height, filename, nodes } = savedFile;
   const canvas = new Canvas(width, height);
   const _ct = canvas.getContext("2d");
-  console.log({ filename });
+  console.log("🚧 createSavedMapPreviewPng", { filename });
 }
