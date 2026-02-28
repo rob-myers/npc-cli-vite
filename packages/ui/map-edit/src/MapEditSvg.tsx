@@ -8,7 +8,7 @@ import {
   findNode,
   getNodeBounds,
   type MapNode,
-  type MapRectNode,
+  type RectMapNode,
 } from "./map-node-api";
 
 export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
@@ -160,7 +160,7 @@ function RectResizeHandles({
   selectedNode,
   root,
 }: {
-  selectedNode: MapRectNode;
+  selectedNode: RectMapNode;
   root: UseStateRef<State>;
 }) {
   const rect = getNodeBounds(selectedNode);
