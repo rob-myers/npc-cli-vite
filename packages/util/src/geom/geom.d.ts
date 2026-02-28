@@ -52,7 +52,7 @@ declare namespace Geom {
   /** 'n' | 'e' | 's' | 'w' */
   type Direction = 0 | 1 | 2 | 3;
 
-  type DirectionString = 'n' | 'e' | 's' | 'w';
+  type DirectionString = "n" | "e" | "s" | "w";
 
   interface ClosestOnOutlineResult {
     point: Geom.VectJson;
@@ -62,5 +62,4 @@ declare namespace Geom {
   }
 
   type SixTuple = [number, number, number, number, number, number];
-
 }
