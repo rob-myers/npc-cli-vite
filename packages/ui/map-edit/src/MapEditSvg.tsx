@@ -28,6 +28,8 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
     <svg
       ref={root.ref("svgEl")}
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+      width={root.svgWidth}
+      height={root.svgHeight}
       className={cn(
         uiClassName,
         "size-full drop-shadow-2xl border border-white/20 overflow-visible",
@@ -39,6 +41,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
     >
       <Defs />
       <OriginAndGrid />
+      <SvgBoundingBox width={root.svgWidth} height={root.svgHeight} zoom={root.zoom} />
       <RenderMapNodes selectedIds={root.selectedIds} elements={root.elements} />
       {root.selectionBox !== null && (
         <rect
@@ -222,6 +225,22 @@ const OriginAndGrid = memo(() => (
     />
   </g>
 ));
+
+const SvgBoundingBox = memo(
+  ({ width, height, zoom }: { width: number; height: number; zoom: number }) => (
+    <rect
+      x={0}
+      y={0}
+      width={width}
+      height={height}
+      fill="none"
+      stroke="rgba(255, 165, 0, 0.6)"
+      strokeWidth={2 / zoom}
+      strokeDasharray={`${8 / zoom} ${4 / zoom}`}
+      className="pointer-events-none"
+    />
+  ),
+);
 
 const Defs = memo(() => (
   <defs>
