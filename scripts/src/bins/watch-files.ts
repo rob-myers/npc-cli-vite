@@ -8,7 +8,7 @@ import { error, info, safeJsonParse } from "@npc-cli/util/legacy/generic";
 import getopts from "getopts";
 import nodemon, { type NodemonEventQuit } from "nodemon";
 import { PROJECT_ROOT } from "../const";
-import { labelledSpawn } from "../starship-symbol/service";
+import { labelledSpawn } from "../service/rename-starship-symbols";
 
 const opts = getopts(process.argv, { string: ["globs", "pnpmBin"] });
 
