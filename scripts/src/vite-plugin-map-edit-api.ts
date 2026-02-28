@@ -1,14 +1,16 @@
 import fs from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 // ⚠️ non-type import breaks vite dev env
 import type {
   ALLOWED_MAP_EDIT_FOLDERS,
   MapEditFileSpecifier,
   MapEditListFilesResponse,
+  MapEditListFoldersResponse,
   MapEditSavableFileType,
   MapEditSavedFile,
 } from "@npc-cli/ui__map-edit";
-import type { Plugin } from "vite";
+import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
@@ -20,9 +22,7 @@ export function mapEditApiPlugin(): Plugin {
       // Ensure folders exist
       for (const folder of MIRRORED_ALLOWED_MAP_EDIT_FOLDERS) {
         const dir = path.join(PUBLIC_DIR, folder);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       }
 
       server.middlewares.use(async (req, res, next) => {
@@ -30,86 +30,22 @@ export function mapEditApiPlugin(): Plugin {
           return next();
         }
 
-        // Set JSON content type for all responses
         res.setHeader("Content-Type", "application/json");
 
         try {
           // GET /api/map-edit/files - List all files from allowed folders
           if (req.url === "/api/map-edit/files" && req.method === "GET") {
-            const files = MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.flatMap(getFilesFromFolder).sort();
-            const response: MapEditListFilesResponse = { files };
-            res.end(JSON.stringify({ files }));
-            return;
+            return onGetApiMapEditFiles(res);
           }
 
           // GET /api/map-edit/folders - List allowed folders
           if (req.url === "/api/map-edit/folders" && req.method === "GET") {
-            res.end(JSON.stringify({ folders: MIRRORED_ALLOWED_MAP_EDIT_FOLDERS }));
-            return;
+            return onGetApiMapEditFolders(res);
           }
 
           // File operations: /api/map-edit/file/:folder/:filename
-          const fileMatch = req.url.match(/^\/api\/map-edit\/file\/(.+)$/);
-          if (fileMatch) {
-            const fullPath = decodeURIComponent(fileMatch[1]);
-            const parts = fullPath.split("/");
-            if (parts.length !== 2) {
-              res.statusCode = 400;
-              res.end(JSON.stringify({ error: "Path must be folder/filename" }));
-              return;
-            }
-            const [folder, filename] = parts;
-            if (!MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.includes(folder as MapEditSavableFileType)) {
-              res.statusCode = 400;
-              res.end(
-                JSON.stringify({
-                  error: `Invalid folder. Allowed: ${MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.join(", ")}`,
-                }),
-              );
-              return;
-            }
-            const filePath = path.join(PUBLIC_DIR, folder, `${filename}.json`);
-
-            // Prevent directory traversal
-            if (!filePath.startsWith(path.join(PUBLIC_DIR, folder))) {
-              res.statusCode = 400;
-              res.end(JSON.stringify({ error: "Invalid filename" }));
-              return;
-            }
-
-            // GET - Read file
-            if (req.method === "GET") {
-              if (!fs.existsSync(filePath)) {
-                res.statusCode = 404;
-                res.end(JSON.stringify({ error: "File not found" }));
-                return;
-              }
-
-              // 🚧 zod parser for MapEditSavedFile
-              const response = JSON.parse(fs.readFileSync(filePath, "utf-8")) as MapEditSavedFile;
-              res.end(JSON.stringify(response));
-              return;
-            }
-
-            // POST - Save file
-            if (req.method === "POST") {
-              let body = "";
-              for await (const chunk of req) body += chunk;
-              // 🚧 zod parser for MapEditSavedFile
-              const savedFile = JSON.parse(body) as MapEditSavedFile;
-              fs.writeFileSync(filePath, JSON.stringify(savedFile, null, 2));
-              res.end(JSON.stringify({ success: true }));
-              return;
-            }
-
-            // DELETE - Delete file
-            if (req.method === "DELETE") {
-              if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-              }
-              res.end(JSON.stringify({ success: true }));
-              return;
-            }
+          if (await handleApiMapEditFile(req, res)) {
+            return;
           }
 
           res.statusCode = 404;
@@ -121,6 +57,86 @@ export function mapEditApiPlugin(): Plugin {
       });
     },
   };
+}
+
+function onGetApiMapEditFiles(res: ServerResponse<IncomingMessage>) {
+  const files = MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.flatMap(getFilesFromFolder).sort();
+  const response: MapEditListFilesResponse = { files };
+  res.end(JSON.stringify(response));
+}
+
+function onGetApiMapEditFolders(res: ServerResponse<IncomingMessage>) {
+  const response: MapEditListFoldersResponse = { folders: MIRRORED_ALLOWED_MAP_EDIT_FOLDERS };
+  res.end(JSON.stringify(response));
+}
+
+async function handleApiMapEditFile(
+  req: Connect.IncomingMessage,
+  res: ServerResponse<IncomingMessage>,
+) {
+  const fileMatch = req.url?.match(/^\/api\/map-edit\/file\/(.+)$/);
+  if (!fileMatch) return;
+
+  const fullPath = decodeURIComponent(fileMatch[1]);
+  const parts = fullPath.split("/");
+  if (parts.length !== 2) {
+    res.statusCode = 400;
+    res.end(JSON.stringify({ error: "Path must be folder/filename" }));
+    return;
+  }
+  const [folder, filename] = parts;
+  if (!MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.includes(folder as MapEditSavableFileType)) {
+    res.statusCode = 400;
+    res.end(
+      JSON.stringify({
+        error: `Invalid folder. Allowed: ${MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.join(", ")}`,
+      }),
+    );
+    return;
+  }
+
+  const filePath = path.join(PUBLIC_DIR, folder, `${filename}.json`);
+
+  // Prevent directory traversal
+  if (!filePath.startsWith(path.join(PUBLIC_DIR, folder))) {
+    res.statusCode = 400;
+    res.end(JSON.stringify({ error: "Invalid filename" }));
+    return true;
+  }
+
+  // GET - Read file
+  if (req.method === "GET") {
+    if (!fs.existsSync(filePath)) {
+      res.statusCode = 404;
+      res.end(JSON.stringify({ error: "File not found" }));
+      return true;
+    }
+
+    // 🚧 zod parser for MapEditSavedFile
+    const response = JSON.parse(fs.readFileSync(filePath, "utf-8")) as MapEditSavedFile;
+    res.end(JSON.stringify(response));
+    return true;
+  }
+
+  // POST - Save file
+  if (req.method === "POST") {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    // 🚧 zod parser for MapEditSavedFile
+    const savedFile = JSON.parse(body) as MapEditSavedFile;
+    fs.writeFileSync(filePath, JSON.stringify(savedFile, null, 2));
+    res.end(JSON.stringify({ success: true }));
+    return true;
+  }
+
+  // DELETE - Delete file
+  if (req.method === "DELETE") {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    res.end(JSON.stringify({ success: true }));
+    return true;
+  }
 }
 
 function getFilesFromFolder(folder: MapEditSavableFileType): MapEditFileSpecifier[] {
