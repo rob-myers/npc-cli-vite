@@ -545,7 +545,12 @@ export function removeFromLookup(itemKey, lookup) {
  */
 export function safeJsonCompact(input) {
   // return prettyCompact(JSON.parse(safeStableStringify(input) ?? ''));
-  return prettyCompact(parseJsArg(javascriptStringify(input) ?? ""));
+  const jsString = javascriptStringify(input);
+  if (jsString === undefined) {
+    return prettyCompact(input);
+  } else {
+    return prettyCompact(parseJsArg(jsString));
+  }
 }
 
 /** @param {string} input */
