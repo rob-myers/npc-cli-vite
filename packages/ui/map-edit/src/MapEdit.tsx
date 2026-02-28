@@ -57,6 +57,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       lastTouchDist: 0,
       lastTouchMid: { x: 0, y: 0 },
 
+      svgWidth: baseSvgSize,
+      svgHeight: baseSvgSize,
+
       selectedIds: new Set<string>(),
       selectionBox: null as SelectionBox | null,
       editingId: null,
@@ -1034,6 +1037,9 @@ export type State = {
   containerEl: HTMLDivElement | null;
   lastTouchDist: number;
   lastTouchMid: { x: number; y: number };
+
+  svgWidth: number;
+  svgHeight: number;
 
   selectedIds: Set<string>;
   selectionBox: SelectionBox | null;

@@ -326,8 +326,8 @@
     "locked": false,
     "visible": true,
     "transform": {
-      "x": 110,
-      "y": 120,
+      "x": 120,
+      "y": 230,
       "scale": 1,
       "degrees": 180
     },
@@ -341,7 +341,7 @@
       "x": -0.7,
       "y": -0.7
     },
-    "cssTransform": "translate(109.3px, 119.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(180deg) translate(-37.7px, -30.700000000000003px)"
+    "cssTransform": "translate(119.3px, 229.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(180deg) translate(-37.7px, -30.700000000000003px)"
   },
   {
     "id": "4e2bc2c5-34d6-4376-a1a8-1683f024ff3b",

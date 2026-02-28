@@ -116,7 +116,8 @@
     - ✅ use dev endpoint POST /api/map-edit/on-save receives SVG text
     - 🚧 symbol/map manifest created on start dev server
       - ✅ server-side svg render
-      - 🚧 can set width/height in MapEdit and forward to server
+      - ✅ can set width/height in MapEdit
+      - 🚧 save width/height in file
       - store svg markup in manifest
     - 🚧 dev endpoint updates manifest
   - script watches public/symbol and creates thumbnail for each symbol
@@ -131,6 +132,7 @@
   - 🚧 STOP bug: appears initially in e.g. 3rd tty
     - seen profile fail to load too
   - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
+  - sometimes on hot reload need to ctrl-c
 
 - 🚧 future tabs
   - ✅ try make basic tabs components with draggable tabs

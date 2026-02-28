@@ -82,6 +82,40 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               </Menu.Portal>
             </Menu.SubmenuRoot>
 
+            <Menu.Item
+              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+              closeOnClick={false}
+            >
+              <div className="flex flex-col gap-2 py-1">
+                <label className="flex items-center gap-2 text-xs text-slate-300">
+                  w
+                  <input
+                    type="text"
+                    value={state.svgWidth}
+                    onChange={(e) => {
+                      state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    className="px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded w-20"
+                  />
+                </label>
+                <label className="flex items-center gap-2 text-xs text-slate-300">
+                  h
+                  <input
+                    type="text"
+                    value={state.svgHeight}
+                    onChange={(e) => {
+                      state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    className="px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded w-20"
+                  />
+                </label>
+              </div>
+            </Menu.Item>
+
             <div className="my-1 border-t border-slate-700" />
 
             {state.selectedIds.size > 0 && (
@@ -126,6 +160,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               <SquareIcon className="size-4" />
               Rect
             </Menu.Item>
+
             <Menu.Item
               className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
               closeOnClick
@@ -136,7 +171,6 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               <ImageIcon className="size-4" />
               Image
             </Menu.Item>
-
             <div className="my-1 border-t border-slate-700" />
 
             <Menu.Item
