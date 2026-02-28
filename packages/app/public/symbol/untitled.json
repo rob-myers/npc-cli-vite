@@ -6,7 +6,7 @@
     "visible": true,
     "transform": {
       "x": 110,
-      "y": 10,
+      "y": 20,
       "scale": 1,
       "degrees": 180
     },
@@ -20,7 +20,7 @@
       "x": -0.7,
       "y": -0.7
     },
-    "cssTransform": "translate(109.3px, 9.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(180deg) translate(-37.7px, -30.700000000000003px)"
+    "cssTransform": "translate(109.3px, 19.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(180deg) translate(-37.7px, -30.700000000000003px)"
   },
   {
     "id": "7f69add6-b289-42ec-b05c-7d3f8d48df6d",
@@ -29,7 +29,7 @@
     "visible": true,
     "transform": {
       "x": 10,
-      "y": 120,
+      "y": 210,
       "scale": 1,
       "degrees": 0
     },
@@ -43,7 +43,7 @@
       "x": -0.7,
       "y": -0.7
     },
-    "cssTransform": "translate(9.3px, 119.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
+    "cssTransform": "translate(9.3px, 209.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
   },
   {
     "id": "1ca3d8ca-9077-4746-9bcb-8ccae250afa1",
@@ -158,5 +158,28 @@
       "y": -0.7
     },
     "cssTransform": "translate(229.8px, 48.8px) scale(1) translate(10.3px, 10.8px) rotate(90deg) translate(-10.3px, -10.8px)"
+  },
+  {
+    "id": "739ddc12-cfa3-4e79-8a25-568c508e8721",
+    "name": "console--031--1x1.2 1",
+    "locked": false,
+    "visible": true,
+    "transform": {
+      "x": 10,
+      "y": 20,
+      "scale": 1,
+      "degrees": 0
+    },
+    "type": "image",
+    "imageKey": "console--031--1x1.2",
+    "baseRect": {
+      "width": 75.4,
+      "height": 61.400000000000006
+    },
+    "offset": {
+      "x": -0.7,
+      "y": -0.7
+    },
+    "cssTransform": "translate(9.3px, 19.3px) scale(1) translate(37.7px, 30.700000000000003px) rotate(0deg) translate(-37.7px, -30.700000000000003px)"
   }
 ]

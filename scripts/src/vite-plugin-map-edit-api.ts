@@ -1,19 +1,24 @@
 import fs from "node:fs";
 import path from "node:path";
+// ⚠️ non-type import breaks vite dev env
+import type {
+  ALLOWED_MAP_EDIT_FOLDERS,
+  MapEditFileSpecifier,
+  MapEditListFileResponse,
+  MapEditSavableFileType,
+  OnMapEditSaveRequest,
+} from "@npc-cli/ui__map-edit";
 import type { Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
-import type { OnSaveRequest } from "./types.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
-const ALLOWED_FOLDERS = ["symbol", "map"] as const;
-type AllowedFolder = (typeof ALLOWED_FOLDERS)[number];
 
 export function mapEditApiPlugin(): Plugin {
   return {
     name: "map-edit-api",
     configureServer(server) {
       // Ensure folders exist
-      for (const folder of ALLOWED_FOLDERS) {
+      for (const folder of MIRRORED_ALLOWED_MAP_EDIT_FOLDERS) {
         const dir = path.join(PUBLIC_DIR, folder);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
@@ -31,14 +36,15 @@ export function mapEditApiPlugin(): Plugin {
         try {
           // GET /api/map-edit/files - List all files from allowed folders
           if (req.url === "/api/map-edit/files" && req.method === "GET") {
-            const files = ALLOWED_FOLDERS.flatMap(getFilesFromFolder).sort();
+            const files = MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.flatMap(getFilesFromFolder).sort();
+            const response: MapEditListFileResponse = { files };
             res.end(JSON.stringify({ files }));
             return;
           }
 
           // GET /api/map-edit/folders - List allowed folders
           if (req.url === "/api/map-edit/folders" && req.method === "GET") {
-            res.end(JSON.stringify({ folders: ALLOWED_FOLDERS }));
+            res.end(JSON.stringify({ folders: MIRRORED_ALLOWED_MAP_EDIT_FOLDERS }));
             return;
           }
 
@@ -53,10 +59,12 @@ export function mapEditApiPlugin(): Plugin {
               return;
             }
             const [folder, filename] = parts;
-            if (!ALLOWED_FOLDERS.includes(folder as AllowedFolder)) {
+            if (!MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.includes(folder as MapEditSavableFileType)) {
               res.statusCode = 400;
               res.end(
-                JSON.stringify({ error: `Invalid folder. Allowed: ${ALLOWED_FOLDERS.join(", ")}` }),
+                JSON.stringify({
+                  error: `Invalid folder. Allowed: ${MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.join(", ")}`,
+                }),
               );
               return;
             }
@@ -104,7 +112,7 @@ export function mapEditApiPlugin(): Plugin {
           if (req.url === "/api/map-edit/on-save" && req.method === "POST") {
             let body = "";
             for await (const chunk of req) body += chunk;
-            const received = JSON.parse(body) as OnSaveRequest;
+            const received = JSON.parse(body) as OnMapEditSaveRequest;
             // 🚧
             console.info({ onSavePayload: received });
             return;
@@ -121,8 +129,10 @@ export function mapEditApiPlugin(): Plugin {
   };
 }
 
-function getFilesFromFolder(folder: AllowedFolder): string[] {
+function getFilesFromFolder(folder: MapEditSavableFileType): MapEditFileSpecifier[] {
   return fs
     .globSync(path.join(PUBLIC_DIR, folder, "*.json"))
-    .map((filePath) => `${folder}/${path.basename(filePath, ".json")}`);
+    .map((filePath) => ({ type: folder, filename: path.basename(filePath, ".json") }));
 }
+
+export const MIRRORED_ALLOWED_MAP_EDIT_FOLDERS: typeof ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"];

@@ -122,6 +122,8 @@
     - 🚧 dev endpoint updates manifest
   - script watches public/symbol and creates thumbnail for each symbol
 
+- restart vite onchange map-edit plugin
+
 - 🚧 shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`

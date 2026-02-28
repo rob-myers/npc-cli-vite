@@ -1,5 +1,4 @@
 import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
-import type { OnSaveRequest } from "@npc-cli/scripts/types";
 
 enableDragDropTouch();
 
@@ -10,30 +9,39 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
-import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
-import { FileMenu, parseFilePath } from "./FileMenu";
+import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MainMenu } from "./MainMenu";
 import { MapEditSvg } from "./MapEditSvg";
 import {
+  areFileSpecifiersEqual,
   type BaseRect,
   baseSvgSize,
+  extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
   getAllNodeIds,
+  getFileSpecifierLocalStorageKey,
   getNodeBounds,
   imageOffsetValues,
   insertNodeAt,
+  isSavableFileType,
+  LOCAL_STORAGE_PREFIX,
+  LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
   labelledImageOffsetValue,
+  type MapEditFileSpecifier,
+  type MapEditListFileResponse,
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
   mapNodes,
+  type OnMapEditSaveRequest,
   recomputeImageCssTransform,
   removeNodeFromParent,
   type Transform,
@@ -79,12 +87,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       pngsMetadata: null,
       pickImageForId: null,
 
-      currentFilepath:
-        tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey)?.[
-          props.meta.id
-        ] ?? "symbol/untitled",
+      currentFile: tryLocalStorageGetParsed<{ [uiId: string]: MapEditFileSpecifier }>(
+        LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
+      )?.[props.meta.id] ?? {
+        type: "symbol",
+        filename: "untitled",
+      },
       isDirty: false,
-      savedFiles: getSavedFilenames(),
+      savedFiles: getLocalStorageSavedFiles(), // in dev we mergeFilesystemInDev
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -745,24 +755,27 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
 
-      save(filepath = state.currentFilepath) {
+      save(file = state.currentFile) {
         // save to local storage
-        tryLocalStorageSet(`${localStoragePrefix}${filepath}`, JSON.stringify(state.nodes));
+        tryLocalStorageSet(getFileSpecifierLocalStorageKey(file), JSON.stringify(state.nodes));
 
-        // save current filename for this instance of MapEdit
+        // save current filename for this MapEdit instance
         tryLocalStorageSet(
-          localStorageUiIdToFilenameKey,
-          JSON.stringify({
-            ...tryLocalStorageGetParsed<Record<string, string>>(localStorageUiIdToFilenameKey),
-            [props.meta.id]: filepath,
-          }),
+          LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
+          JSON.stringify(extendCurrentFileSpecifierMapping(props.meta.id, file)),
         );
 
-        state.set({ currentFilepath: filepath, savedFiles: getSavedFilenames(), isDirty: false });
+        state.set({
+          currentFile: file,
+          savedFiles: state.savedFiles
+            .filter((other) => !areFileSpecifiersEqual(other, file))
+            .concat(file),
+          isDirty: false,
+        });
 
         // save to filesystem in development
         if (import.meta.env.DEV) {
-          fetch(`/api/map-edit/file/${encodeURIComponent(filepath)}`, {
+          fetch(`/api/map-edit/file/${file.type}/${file.filename}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: state.nodes }),
@@ -771,11 +784,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           if (!state.svgEl) return;
 
           const svgAsString = new XMLSerializer().serializeToString(state.svgEl);
-          console.log({ svgAsString });
+          console.log({ svgAsString }); // 🚧 compute server side?
 
           // 🚧 dev only endpoint for both symbol/* and map/*
-          const { filename, folder } = parseFilePath(filepath);
-          const payload: OnSaveRequest = { type: folder, filename, svg: svgAsString };
+          // 🚧 currently NOOP
+          const payload: OnMapEditSaveRequest = {
+            type: file.type,
+            filename: file.filename,
+            svg: svgAsString,
+          };
           fetch("/api/map-edit/on-save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -783,43 +800,44 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           }).catch(console.error);
         }
       },
-      async load(filename?: string) {
+      async load(file = state.currentFile) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
-        const name = filename ?? state.currentFilepath;
-        let nodes = tryLocalStorageGetParsed<MapNode[]>(`${localStoragePrefix}${name}`);
-        // Try loading from filesystem in development if not in localStorage
-        if (!nodes && import.meta.env.DEV) {
-          try {
-            const res = await fetch(`/api/map-edit/file/${encodeURIComponent(name)}`);
+        let nodes = tryLocalStorageGetParsed<MapNode[]>(`${LOCAL_STORAGE_PREFIX}${name}`);
+        try {
+          // Try loading from filesystem in development if not in localStorage
+          if (!nodes && import.meta.env.DEV) {
+            const res = await fetch(`/api/map-edit/file/${file.type}/${file.filename}`);
             if (res.ok) {
               const data = await res.json();
               nodes = data.content;
             }
-          } catch {
-            // ignore
           }
-        }
+        } catch {}
         if (nodes) {
           state.set({
             nodes: nodes,
             selectedIds: new Set(),
             selectionBox: null,
-            currentFilepath: name,
+            currentFile: file,
             undoStack: [],
             redoStack: [],
             isDirty: false,
           });
         }
       },
-      deleteFile(filename: string) {
-        localStorage.removeItem(`${localStoragePrefix}${filename}`);
-        state.set({ savedFiles: getSavedFilenames().filter((x) => x !== filename) });
+      deleteFile(file) {
+        localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
+        state.set({
+          savedFiles: getLocalStorageSavedFiles().filter(
+            (other) => !areFileSpecifiersEqual(file, other),
+          ),
+        });
 
         // delete from filesystem in development
         if (import.meta.env.DEV) {
-          fetch(`/api/map-edit/file/${encodeURIComponent(filename)}`, {
+          fetch(`/api/map-edit/file/${file.type}/${encodeURIComponent(file.filename)}`, {
             method: "DELETE",
           }).catch(console.error);
         }
@@ -827,9 +845,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       async mergeFilesystemInDev() {
         try {
           if (!import.meta.env.DEV) return;
-          const { files } = (await fetch("/api/map-edit/files").then((x) => x.json())) as {
-            files: string[];
-          };
+          const { files } = (await fetch("/api/map-edit/files").then((x) =>
+            x.json(),
+          )) as MapEditListFileResponse;
           state.set({ savedFiles: [...new Set([...state.savedFiles, ...files])].sort() });
         } catch (error) {
           console.error(error);
@@ -1079,9 +1097,9 @@ export type State = {
   pickImageForId: string | null;
 
   /** {folder}/{filename} */
-  currentFilepath: string;
+  currentFile: MapEditFileSpecifier;
   isDirty: boolean;
-  savedFiles: string[];
+  savedFiles: MapEditFileSpecifier[];
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
@@ -1121,9 +1139,9 @@ export type State = {
   rotate: (nodeId: string, degrees: -90 | 90) => void;
   rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
-  save: (filename?: string) => void;
-  load: (filename?: string) => Promise<void>;
-  deleteFile: (filename: string) => void;
+  save: (file?: MapEditFileSpecifier) => void;
+  load: (file?: MapEditFileSpecifier) => Promise<void>;
+  deleteFile: (file: MapEditFileSpecifier) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   mergeFilesystemInDev: () => void;
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -1226,18 +1244,18 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 }
 
 const emptyNodes = [] as MapNode[];
-const localStoragePrefix = "map-edit:";
-const localStorageUiIdToFilenameKey = "map-edit-to-current-filename";
 
-function getSavedFilenames(): string[] {
-  const files: string[] = [];
+function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
+  const files: MapEditFileSpecifier[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key?.startsWith(localStoragePrefix)) {
-      files.push(key.slice(localStoragePrefix.length));
+    if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
+      const [type, filename] = key.slice(LOCAL_STORAGE_PREFIX.length).split("/", 2);
+      if (isSavableFileType(type) && filename) files.push({ type, filename });
+      else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`); // 🚧 dev only
     }
   }
-  return files.sort();
+  return files.sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
 const minAsideWidth = 100;
