@@ -9,6 +9,7 @@ import {
   FolderOpenIcon,
   ImageIcon,
   ListIcon,
+  RulerIcon,
   SelectionAllIcon,
   SquareIcon,
   TrashIcon,
@@ -86,31 +87,32 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
               closeOnClick={false}
             >
-              <div className="flex flex-col gap-2 py-1">
+              <RulerIcon className="size-4" />
+              <div className="flex gap-2 py-1">
                 <label className="flex items-center gap-2 text-xs text-slate-300">
-                  w
                   <input
                     type="text"
+                    title="width"
                     value={state.svgWidth}
                     onChange={(e) => {
                       state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
                     }}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
-                    className="px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded w-20"
+                    className=" w-12 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
                   />
                 </label>
                 <label className="flex items-center gap-2 text-xs text-slate-300">
-                  h
                   <input
                     type="text"
+                    title="height"
                     value={state.svgHeight}
                     onChange={(e) => {
                       state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
                     }}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
-                    className="px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded w-20"
+                    className=" w-12 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
                   />
                 </label>
               </div>
