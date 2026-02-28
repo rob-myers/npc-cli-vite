@@ -26,11 +26,12 @@
     "@inquirer/prompts": "catalog:",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/media": "workspace:^",
-    "@npc-cli/util": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
+    "@npc-cli/util": "workspace:^",
     "getopts": "catalog:",
     "image-size": "catalog:",
     "json-stringify-pretty-compact": "catalog:",
+    "skia-canvas": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

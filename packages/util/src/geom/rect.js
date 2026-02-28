@@ -1,4 +1,4 @@
-import { Vect } from "./vect";
+import { Vect } from "./vect.js";
 
 /**
  * A two dimensional rectangle where `(x, y)` is viewed as top left.

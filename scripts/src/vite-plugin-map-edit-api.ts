@@ -12,6 +12,7 @@ import type {
 } from "@npc-cli/ui__map-edit";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
+import { createSavedMapPreviewPng, createSavedSymbolPreviewPng } from "./service/render-symbol.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 
@@ -111,8 +112,7 @@ async function handleApiMapEditFile(
       res.end(JSON.stringify({ error: "File not found" }));
       return true;
     }
-
-    // 🚧 zod parser for MapEditSavedFile
+    // 🚧 use zod parser
     const response = JSON.parse(fs.readFileSync(filePath, "utf-8")) as MapEditSavedFile;
     res.end(JSON.stringify(response));
     return true;
@@ -122,9 +122,19 @@ async function handleApiMapEditFile(
   if (req.method === "POST") {
     let body = "";
     for await (const chunk of req) body += chunk;
-    // 🚧 zod parser for MapEditSavedFile
-    const savedFile = JSON.parse(body) as MapEditSavedFile;
-    fs.writeFileSync(filePath, JSON.stringify(savedFile, null, 2));
+
+    // 🚧 use zod parser
+    const fileToSave = JSON.parse(body) as MapEditSavedFile;
+    fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
+
+    // create PNG preview
+    if (fileToSave.type === "symbol") {
+      await createSavedSymbolPreviewPng(fileToSave);
+    }
+    if (fileToSave.type === "map") {
+      await createSavedMapPreviewPng(fileToSave);
+    }
+
     res.end(JSON.stringify({ success: true }));
     return true;
   }

@@ -51,6 +51,7 @@ catalog:
   react-reverse-portal: 2.3.0
   rxjs: ^7.8.2
   short-uuid: ^6.0.3
+  skia-canvas: ^3.0.8
   tailwind-merge: ^3.4.0
   tailwindcss: ^4.1.17
   three: ^0.182.0
@@ -63,6 +64,9 @@ catalog:
   zustand: ^5.0.9
 
 catalogMode: strict
+
+onlyBuiltDependencies:
+  - skia-canvas
 
 publicHoistPattern:
   - react-resizable

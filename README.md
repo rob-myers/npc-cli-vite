@@ -89,11 +89,11 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
-### ⚠️ Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
+#### ⚠️ Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
 
-### ⚠️ Blockbench import GLTF seems to cache file unless you "X it and rechoose"
+#### ⚠️ Blockbench import GLTF seems to cache file unless you "X it and rechoose"
 
-### ⚠️ In Node script saw "Could not find a declaration file for module" on try import from js path
+#### ⚠️ In Node script saw "Could not find a declaration file for module" on try import from js path
 
 ```sh
 # example solution
@@ -101,7 +101,12 @@ cd packages/util/src/legacy
 npx tsc generic.js --declaration --allowJs --emitDeclarationOnly
 ```
 
-### ⚠️ Hot module reload can yield unreachable malformed state on add library.
+#### ⚠️ Hot module reload can yield unreachable malformed state on add library.
+
+#### pnpm approve-builds
+
+Needed for `skia-canvas`.
+> https://www.npmjs.com/package/skia-canvas
 
 # Blockbench
 
