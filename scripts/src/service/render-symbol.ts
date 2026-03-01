@@ -22,8 +22,9 @@ export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol)
         const image = await loadImage(
           path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.imageKey}.png`),
         );
-        ct.setTransform(...new Mat(node.cssTransform).toArray());
-        ct.scale(scale, scale);
+        ct.setTransform(
+          ...new Mat(node.cssTransform).postMultiply([scale, 0, 0, scale, scale, scale]).toArray(),
+        );
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }

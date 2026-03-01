@@ -6,7 +6,6 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
-import vitePluginRestart from "vite-plugin-restart";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -22,13 +21,6 @@ export default defineConfig({
     // pnpm dev-hotspot needs https for crypto
     process.env.USE_HTTPS ? basicSsl() : undefined,
     analyzer(),
-    vitePluginRestart({
-      restart: [
-        // 🚧 might not refresh mapEditApiPlugin
-        "../../scripts/src/vite-plugin-map-edit-api.ts",
-        "../../scripts/src/service/render-symbol.ts",
-      ],
-    }),
     mapEditApiPlugin(),
 
     // On close/reopen laptop in Chrome we do not want HMR to break
