@@ -46,7 +46,7 @@ import {
   removeNodeFromParent,
   type Transform,
   templateNodeByKey,
-  traverseNodes,
+  traverseNodesSync,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
 
@@ -194,7 +194,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (opts?.shiftKey && state.selectedIds.size > 0) {
           // select interval in flattened tree
           const flat: string[] = [];
-          traverseNodes(state.nodes, (el) => void flat.push(el.id));
+          traverseNodesSync(state.nodes, (el) => void flat.push(el.id));
           const i = flat.indexOf(id);
           const j = flat.findIndex((fid) => state.selectedIds.has(fid));
           if (i !== -1 && j !== -1) {
@@ -207,7 +207,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (res.node.type === "group") {
           // select (a) group and descendants, or (b) only group itself
           const descendantIds: string[] = [];
-          traverseNodes(res.node.children, (el) => void descendantIds.push(el.id));
+          traverseNodesSync(res.node.children, (el) => void descendantIds.push(el.id));
           const allDescendantsSelected = descendantIds.every((did) => state.selectedIds.has(did));
 
           if (state.selectedIds.has(id) && allDescendantsSelected && descendantIds.length > 0) {
@@ -429,7 +429,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       getNextSuffix(type, prefix) {
         const usedNums = new Set<number>();
-        traverseNodes(state.nodes, (el) => {
+        traverseNodesSync(state.nodes, (el) => {
           if (el.type === type && el.name.startsWith(prefix)) {
             const num = Number(el.name.slice(prefix.length));
             if (!Number.isNaN(num)) usedNums.add(num);
@@ -466,7 +466,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           if (!result) continue;
           removeNodeFromParent(result.parent?.children ?? state.nodes, id);
           newGroup.children.push(result.node);
-          traverseNodes([result.node], (el) => void seen.add(el.id));
+          traverseNodesSync([result.node], (el) => void seen.add(el.id));
         }
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
@@ -654,7 +654,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.dragEl.type === "selection-box" && state.selectionBox) {
           const selectedIds = new Set<string>();
           const box = state.selectionBox;
-          traverseNodes(state.nodes, (el) => {
+          traverseNodesSync(state.nodes, (el) => {
             if (el.type === "rect" || el.type === "image") {
               const r = getNodeBounds(el);
               // Check if rects intersect
