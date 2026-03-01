@@ -1,5 +1,6 @@
 import type { MapEditSavedMap, MapEditSavedSymbol } from "@npc-cli/ui__map-edit";
 import { traverseNodes } from "@npc-cli/ui__map-edit/map-node-api";
+import { Mat } from "@npc-cli/util/geom";
 import { Canvas } from "skia-canvas";
 
 export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
@@ -10,15 +11,24 @@ export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol)
 
   traverseNodes(nodes, (node) => {
     // console.log(node.type, node);
+
+    // 🚧 draw into canvas
+
     switch (node.type) {
+      case "image": {
+        console.log({
+          imageName: node.name,
+          cssTransform: node.cssTransform,
+          matrix: new Mat(node.cssTransform).toArray(),
+        });
+        break;
+      }
       case "rect": {
-        // 🚧 CSS transform text -> Matrix
-        // console.log({
-        //   cssTransform: node.,
-        // })
-        // ct.fillStyle = '#f00';
-        // ct.transform(node.transform);
-        // ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
+        console.log({
+          rectName: node.name,
+          cssTransform: node.cssTransform,
+          matrix: new Mat(node.cssTransform).toArray(),
+        });
         break;
       }
     }
