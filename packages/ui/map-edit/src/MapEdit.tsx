@@ -23,6 +23,7 @@ import {
   areFileSpecifiersEqual,
   type BaseRect,
   baseSvgSize,
+  computeNodeCssTransform,
   extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
@@ -42,7 +43,6 @@ import {
   type MapNodeMap,
   type MapNodeType,
   mapNodes,
-  recomputeImageCssTransform,
   removeNodeFromParent,
   type Transform,
   templateNodeByKey,
@@ -278,6 +278,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             // Use selection box dimensions
             newItem.transform = { x: rect.x, y: rect.y, scale: 1, degrees: 0 };
             newItem.baseRect = { width: rect.width, height: rect.height };
+            newItem.cssTransform = computeNodeCssTransform(newItem);
           } else {
             // Place new item centered in viewport
             // newItem.transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
@@ -331,6 +332,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               ...baseProps,
               type: "rect" as const,
               baseRect: { ...node.baseRect },
+              cssTransform: computeNodeCssTransform(node),
             };
           }
           case "image": {
@@ -340,7 +342,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               imageKey: node.imageKey,
               baseRect: { ...node.baseRect },
               offset: { ...node.offset },
-              cssTransform: recomputeImageCssTransform(node),
+              cssTransform: computeNodeCssTransform(node),
             };
           }
           default:
@@ -403,7 +405,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const current = node.transform.degrees ?? 0;
         const nextDegrees = (current + degrees) % 360;
         node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
-        recomputeImageCssTransform(node);
+        node.cssTransform = computeNodeCssTransform(node);
       },
       rotateSelected(degrees) {
         if (state.selectedIds.size === 0) return;
@@ -515,7 +517,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;
-        recomputeImageCssTransform(node);
+        node.cssTransform = computeNodeCssTransform(node);
 
         if (node.name.match(/^(Image \d+)$/)) {
           node.name = state.getNextName("image", `${imageKey} `);
@@ -600,9 +602,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               const node = result.node;
               node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
               node.transform.y = Math.round((startPos.y + dy) / increment) * increment;
-              if (node.type === "image") {
-                recomputeImageCssTransform(node);
-              }
+              node.cssTransform = computeNodeCssTransform(node);
             }
           }
           state.update();
@@ -630,6 +630,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         transform.scale = 1;
         transform.x = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.x;
         transform.y = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.y;
+
+        result.node.cssTransform = computeNodeCssTransform(result.node);
 
         state.update();
       },
@@ -686,7 +688,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
         const result = findNode(state.nodes, selectedId);
-        if (result?.node.type !== "rect" && result?.node.type !== "image") return;
+        if (result?.node.type !== "rect") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const { transform, baseRect } = result.node;
@@ -1181,7 +1183,7 @@ function SelectedImageNodeUI({
           value={selectedImageNode.offset.x}
           onChange={(e) => {
             selectedImageNode.offset.x = Number(e.target.value) || 0;
-            recomputeImageCssTransform(selectedImageNode);
+            selectedImageNode.cssTransform = computeNodeCssTransform(selectedImageNode);
             state.update();
           }}
         >
@@ -1202,7 +1204,7 @@ function SelectedImageNodeUI({
           value={selectedImageNode.offset.y}
           onChange={(e) => {
             selectedImageNode.offset.y = Number(e.target.value) || 0;
-            recomputeImageCssTransform(selectedImageNode);
+            selectedImageNode.cssTransform = computeNodeCssTransform(selectedImageNode);
             state.update();
           }}
         >

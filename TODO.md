@@ -119,8 +119,7 @@
       - ✅ can set width/height in MapEdit
       - ✅ save width/height in file
       - ❌ store svg markup in manifest
-
-  - 🚧 on /api/map-edit/file/symbol/:filename render a PNG review
+  - 🚧 /api/map-edit/file/symbol/:filename renders a PNG review
   - script watches public/symbol and creates thumbnail for each symbol
 
 - onchange filename do not save immediately
