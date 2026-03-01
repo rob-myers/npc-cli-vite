@@ -7,7 +7,8 @@ import { PROJECT_ROOT } from "../const.ts";
 
 export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
   const { width, height, filename, nodes } = savedFile;
-  const canvas = new Canvas(width, height);
+  const scale = 200 / width;
+  const canvas = new Canvas(width * scale, height * scale);
   const ct = canvas.getContext("2d");
   console.log("🚧 createSavedSymbolPreviewPng", { filename });
 
@@ -18,46 +19,35 @@ export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol)
 
     switch (node.type) {
       case "image": {
-        console.log({
-          imageName: node.name,
-          cssTransform: node.cssTransform,
-          matrix: new Mat(node.cssTransform).toArray(),
-        });
-
-        const imagePath = path.resolve(
-          PROJECT_ROOT,
-          "packages/app/public/starship-symbol",
-          `${node.imageKey}.png`,
+        const image = await loadImage(
+          path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.imageKey}.png`),
         );
-        const image = await loadImage(imagePath);
-
         ct.setTransform(...new Mat(node.cssTransform).toArray());
+        ct.scale(scale, scale);
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
       case "rect": {
-        console.log({
-          rectName: node.name,
-          cssTransform: node.cssTransform,
-          matrix: new Mat(node.cssTransform).toArray(),
-        });
-
         ct.setTransform(...new Mat(node.cssTransform).toArray());
+        ct.scale(scale, scale);
         ct.fillStyle = "red";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
-
         break;
       }
     }
   });
 
-  const dstPath = path.resolve(PROJECT_ROOT, "packages/app/public/test", `${filename}.thumb.png`);
+  const dstPath = path.resolve(
+    PROJECT_ROOT,
+    "packages/app/public/symbol",
+    `${filename}.thumbnail.png`,
+  );
   await canvas.toFile(dstPath);
 }
 
 export async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
   const { width, height, filename, nodes } = savedFile;
-  const canvas = new Canvas(width, height);
+  const canvas = new Canvas(200, 200 * (height / width));
   const _ct = canvas.getContext("2d");
   console.log("🚧 createSavedMapPreviewPng", { filename });
 }

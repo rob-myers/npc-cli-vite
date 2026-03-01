@@ -119,11 +119,12 @@
       - ✅ can set width/height in MapEdit
       - ✅ save width/height in file
       - ❌ store svg markup in manifest
-  - 🚧 /api/map-edit/file/symbol/:filename renders a PNG review
-  - script watches public/symbol and creates thumbnail for each symbol
+  - ✅ /api/map-edit/file/symbol/:filename renders a PNG preview
 
 - onchange filename do not save immediately
 - restart vite onchange map-edit plugin
+- script watches public/symbol and "flattens" symbols
+  - extend saved symbol first e.g. walls, doors
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
