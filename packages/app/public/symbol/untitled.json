@@ -5,7 +5,32 @@
   "height": 600,
   "nodes": [
     {
-      "id": "df7b1faf-b42d-4d80-bbdb-f1d8b50208a0",
+      "id": "f6227489-5b9e-4808-b89f-e767770ab7d1",
+      "name": "cargo--002--2x2 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 60,
+        "f": 60
+      },
+      "type": "image",
+      "imageKey": "cargo--002--2x2",
+      "baseRect": {
+        "width": 121.4,
+        "height": 121.4
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 59.3, 59.3)"
+    },
+    {
+      "id": "a3d6f44c-2da6-425a-bfa0-9e43e0e0ee86",
       "name": "Rect 1",
       "locked": false,
       "visible": true,
@@ -15,39 +40,14 @@
         "c": 0,
         "d": 1,
         "e": 60,
-        "f": 70
+        "f": 0
       },
       "type": "rect",
       "baseRect": {
-        "width": 50,
-        "height": 120
+        "width": 110,
+        "height": 20
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 60, 70)"
-    },
-    {
-      "id": "e31e5e14-b64f-407e-b5ab-4b977a248c8d",
-      "name": "console--018--1x1 1",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": 60,
-        "f": 61.400001525878906
-      },
-      "type": "image",
-      "imageKey": "console--018--1x1",
-      "baseRect": {
-        "width": 61.400000000000006,
-        "height": 61.400000000000006
-      },
-      "offset": {
-        "x": 0.7,
-        "y": -0.7
-      },
-      "cssTransform": "matrix(0, -1, 1, 0, 60.7, 60.7000015258789)"
+      "cssTransform": "matrix(1, 0, 0, 1, 60, 0)"
     }
   ]
 }
