@@ -92,40 +92,51 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               </Menu.Portal>
             </Menu.SubmenuRoot>
 
-            <Menu.Item
-              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-              closeOnClick={false}
-            >
-              <RulerIcon className="size-4" />
-              <div className="flex gap-2 py-1">
-                <label className="flex items-center gap-2 text-xs text-slate-300">
-                  <input
-                    type="text"
-                    title="width"
-                    value={state.svgWidth}
-                    onChange={(e) => {
-                      state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    className=" w-12 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
-                  />
-                </label>
-                <label className="flex items-center gap-2 text-xs text-slate-300">
-                  <input
-                    type="text"
-                    title="height"
-                    value={state.svgHeight}
-                    onChange={(e) => {
-                      state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    className=" w-12 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
-                  />
-                </label>
-              </div>
-            </Menu.Item>
+            <Menu.SubmenuRoot>
+              <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
+                <div className="flex items-center gap-2">
+                  <RulerIcon className="size-4" />
+                  SVG Size
+                </div>
+                <CaretRightIcon className="size-4" />
+              </Menu.SubmenuTrigger>
+              <Menu.Portal>
+                <Menu.Positioner className="z-50" side="bottom" sideOffset={4}>
+                  <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-2 px-3 min-w-40">
+                    <div className="flex flex-col gap-2">
+                      <label className="flex items-center gap-2 text-xs text-slate-300">
+                        <span className="w-12">Width:</span>
+                        <input
+                          type="text"
+                          title="width"
+                          value={state.svgWidth}
+                          onChange={(e) => {
+                            state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="w-20 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-slate-300">
+                        <span className="w-12">Height:</span>
+                        <input
+                          type="text"
+                          title="height"
+                          value={state.svgHeight}
+                          onChange={(e) => {
+                            state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="w-20 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
+                        />
+                      </label>
+                    </div>
+                  </Menu.Popup>
+                </Menu.Positioner>
+              </Menu.Portal>
+            </Menu.SubmenuRoot>
 
             <div className="my-1 border-t border-slate-700" />
 
