@@ -28,7 +28,6 @@
     "@npc-cli/media": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/util": "workspace:^",
-    "@thednp/dommatrix": "catalog:",
     "getopts": "catalog:",
     "image-size": "catalog:",
     "json-stringify-pretty-compact": "catalog:",

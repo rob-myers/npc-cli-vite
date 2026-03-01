@@ -48,10 +48,11 @@ export function getAllNodeIds(nodes: MapNode[]) {
 export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Geom.RectJson {
   if (node.type === "rect") {
     return {
-      x: node.transform.x,
-      y: node.transform.y,
-      width: node.baseRect.width * node.transform.scale,
-      height: node.baseRect.height * node.transform.scale,
+      x: node.transform.e,
+      y: node.transform.f,
+      // (a,0,0,d,e,f) since rotation not allowed
+      width: node.baseRect.width * node.transform.a,
+      height: node.baseRect.height * node.transform.d,
     };
   } else {
     const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
@@ -91,23 +92,16 @@ export function computeNodeCssTransform(node: MapNode): string {
   }
 }
 
-/** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
+/**
+ * Compute CSS transform string for an image node.
+ */
 function computeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
-  const { baseRect, transform, offset } = node;
-  const { width: W, height: H } = baseRect;
-  const { x, y, scale: s, degrees } = transform;
-  const [cx, cy] = [W / 2, H / 2];
-  // Correction to preserve bounding box top-left after rotation around center
-  const needsCorrection = degrees === 90 || degrees === 270;
-  const dx = needsCorrection ? (s * (H - W)) / 2 : 0;
-  const dy = needsCorrection ? (s * (W - H)) / 2 : 0;
-  const tx = offset.x + x + dx;
-  const ty = offset.y + y + dy;
-  return (node.cssTransform = `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`);
+  const { transform, offset } = node;
+  return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${transform.e + offset.x}, ${transform.f + offset.y})`;
 }
 
 function computeRectCssTransform(node: Extract<MapNode, { type: "rect" }>): string {
-  return `translate(${node.transform.x}px, ${node.transform.y}px) scale(${node.transform.scale})`;
+  return `matrix(1, 0, 0, 1, ${node.transform.e}, ${node.transform.f})`;
 }
 
 /** Returns index of child before it was removed */
@@ -126,14 +120,14 @@ export function traverseNodes(list: MapNode[], act: (el: MapNode) => void): void
 }
 
 const defaultBaseRect: BaseRect = { width: 60, height: 60 };
-const defaultTransform: Transform = { x: 0, y: 0, scale: 1, degrees: 0 };
+const idTransform: Transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
 const mockBaseNode: BaseMapNode = {
   id: "mock-id",
   name: "New Node",
   locked: false,
   visible: true,
-  transform: { ...defaultTransform },
+  transform: { ...idTransform },
 };
 
 export const templateNodeByKey = {
@@ -144,8 +138,7 @@ export const templateNodeByKey = {
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
     baseRect: { ...defaultBaseRect },
     offset: { x: 0, y: 0 },
-    cssTransform:
-      "translate(0px, 0px) scale(1) translate(30px, 30px) rotate(0deg) translate(-30px, -30px)",
+    cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
   },
   rect: {
     ...mockBaseNode,
@@ -153,14 +146,15 @@ export const templateNodeByKey = {
     baseRect: { ...defaultBaseRect },
     cssTransform: "translate(0px, 0px) scale(1)",
   },
-  // path: { ...mockBaseNode, type: "path" },
 } satisfies Record<MapNodeType, MapNode>;
 
 const TransformSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-  scale: z.number(),
-  degrees: z.number(),
+  a: z.number(),
+  b: z.number(),
+  c: z.number(),
+  d: z.number(),
+  e: z.number(),
+  f: z.number(),
 });
 
 const BaseNodeSchema = z.object({
@@ -200,12 +194,7 @@ export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 
 export type BaseRect = { width: number; height: number };
-export type Transform = {
-  x: number;
-  y: number;
-  scale: number;
-  degrees: number;
-};
+export type Transform = z.infer<typeof TransformSchema>;
 
 export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
