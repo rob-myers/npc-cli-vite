@@ -27,7 +27,6 @@
     "react-dom": "catalog:",
     "react-grid-layout": "catalog:",
     "react-reverse-portal": "catalog:",
-    "vite-plugin-restart": "catalog:",
     "zustand": "catalog:"
   },
   "devDependencies": {
