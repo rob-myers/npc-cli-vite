@@ -40,7 +40,7 @@ export function findNodeWithDepth(
 
 export function getAllNodeIds(nodes: MapNode[]) {
   const ids = new Set<string>();
-  traverseNodes(nodes, (node) => void ids.add(node.id));
+  traverseNodesSync(nodes, (node) => void ids.add(node.id));
   return ids;
 }
 
@@ -112,10 +112,17 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
   return index;
 }
 
-export async function traverseNodes(list: MapNode[], act: (el: MapNode) => void | Promise<void>) {
+export function traverseNodesSync(list: MapNode[], act: (el: MapNode) => void) {
+  for (const item of list) {
+    act(item);
+    if (item.type === "group") traverseNodesSync(item.children, act);
+  }
+}
+
+export async function traverseNodesAsync(list: MapNode[], act: (el: MapNode) => Promise<void>) {
   for (const item of list) {
     await act(item);
-    if (item.type === "group") await traverseNodes(item.children, act);
+    if (item.type === "group") await traverseNodesAsync(item.children, act);
   }
 }
 
