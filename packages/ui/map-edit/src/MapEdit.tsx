@@ -11,9 +11,10 @@ import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
+import z from "zod";
 import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
@@ -40,6 +41,7 @@ import {
   type MapEditFileSpecifier,
   type MapEditListFilesResponse,
   type MapEditSavedFile,
+  MapEditSavedFileSchema,
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
@@ -55,6 +57,27 @@ const CAN_SAVE_TO_FILESYSTEM_IN_DEV = true;
 
 export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
+
+  const { mutateAsync: loadMapEditFile } = useMutation({
+    mutationKey: ["map-edit-load"],
+    async mutationFn(file: MapEditFileSpecifier) {
+      if (!import.meta.env.DEV) return;
+
+      const response = await fetch(`/api/map-edit/file/${file.type}/${file.filename}`);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load ${JSON.stringify(file)}: ${response.status} ${response.statusText}`,
+        );
+      }
+      const result = MapEditSavedFileSchema.safeParse(await response.json());
+      if (!result.success) {
+        throw new Error(
+          `Failed to parse ${JSON.stringify(file)}: ${JSON.stringify(z.flattenError(result.error))}`,
+        );
+      }
+      return result.data;
+    },
+  });
 
   const state = useStateRef(
     (): State => ({
@@ -779,9 +802,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           nodes: state.nodes,
         };
 
-        // save to local storage
-        // - prod: only way to "save"
-        // - dev: provides auto-saved "draft"
+        // save to local storage: (prod) only way to "save", (dev) provides "draft"
         tryLocalStorageSet(getFileSpecifierLocalStorageKey(file), JSON.stringify(savedFile));
 
         // remember current file for this MapEdit instance
@@ -790,11 +811,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           JSON.stringify(extendCurrentFileSpecifierMapping(props.meta.id, file)),
         );
 
+        if (!state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, file))) {
+          state.savedFileSpecifiers.push(file);
+        }
         state.set({
           currentFile: file,
-          savedFileSpecifiers: state.savedFileSpecifiers
-            .filter((other) => !areFileSpecifiersEqual(other, file))
-            .concat(file),
+          savedFileSpecifiers: state.savedFileSpecifiers,
           isDirty: false,
         });
 
@@ -812,39 +834,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
-        // 🚧 better approach e.g. useMutation
-        let savedFile = tryLocalStorageGetParsed<MapEditSavedFile>(
-          getFileSpecifierLocalStorageKey(file),
-        );
+        const savedFile =
+          tryLocalStorageGetParsed<MapEditSavedFile>(getFileSpecifierLocalStorageKey(file)) ??
+          (await loadMapEditFile(file));
 
-        try {
-          // Try loading from filesystem in development if not in localStorage
-          if (!savedFile && import.meta.env.DEV) {
-            const res = await fetch(`/api/map-edit/file/${file.type}/${file.filename}`);
-            if (!res.ok) {
-              warn(
-                `Failed to load file ${JSON.stringify(file)} from filesystem: ${res.status} ${res.statusText}`,
-              );
-              return;
-            }
-            // 🚧 zod parser for MapEditSavedFile
-            savedFile = (await res.json()) as MapEditSavedFile;
-          }
-        } catch {}
+        if (!savedFile) return;
 
-        if (savedFile) {
-          state.set({
-            nodes: savedFile.nodes,
-            selectedIds: new Set(),
-            selectionBox: null,
-            currentFile: file,
-            undoStack: [],
-            redoStack: [],
-            isDirty: false,
-            svgWidth: savedFile.width,
-            svgHeight: savedFile.height,
-          });
-        }
+        state.set({
+          nodes: savedFile.nodes,
+          selectedIds: new Set(),
+          selectionBox: null,
+          currentFile: file,
+          undoStack: [],
+          redoStack: [],
+          isDirty: false,
+          svgWidth: savedFile.width,
+          svgHeight: savedFile.height,
+        });
       },
       deleteFile(file) {
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
@@ -879,6 +885,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
       },
     }),
+    { deps: [loadMapEditFile] },
   );
   state.theme = theme;
 
