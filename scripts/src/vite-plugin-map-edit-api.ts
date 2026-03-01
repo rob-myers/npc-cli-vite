@@ -2,14 +2,15 @@ import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 // ⚠️ non-type import breaks vite dev env
-import type {
-  ALLOWED_MAP_EDIT_FOLDERS,
-  MapEditFileSpecifier,
-  MapEditListFilesResponse,
-  MapEditListFoldersResponse,
-  MapEditSavableFileType,
-  MapEditSavedFile,
-} from "@npc-cli/ui__map-edit";
+import {
+  type ALLOWED_MAP_EDIT_FOLDERS,
+  type MapEditFileSpecifier,
+  type MapEditListFilesResponse,
+  type MapEditListFoldersResponse,
+  type MapEditSavableFileType,
+  MapEditSavedFileSchema,
+} from "@npc-cli/ui__map-edit/map-node-api";
+import { jsonParser } from "@npc-cli/util/json-parser";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 import { createSavedMapPreviewPng, createSavedSymbolPreviewPng } from "./service/render-symbol.ts";
@@ -34,17 +35,20 @@ export function mapEditApiPlugin(): Plugin {
         res.setHeader("Content-Type", "application/json");
 
         try {
-          // GET /api/map-edit/files - List all files from allowed folders
+          // GET /api/map-edit/files
+          // List all files from allowed folders
           if (req.url === "/api/map-edit/files" && req.method === "GET") {
             return onGetApiMapEditFiles(res);
           }
 
-          // GET /api/map-edit/folders - List allowed folders
+          // GET /api/map-edit/folders
+          // List allowed folders
           if (req.url === "/api/map-edit/folders" && req.method === "GET") {
             return onGetApiMapEditFolders(res);
           }
 
-          // File operations: /api/map-edit/file/:folder/:filename
+          // GET POST DELETE /api/map-edit/file/:folder/:filename
+          // File operations
           if (await handleApiMapEditFile(req, res)) {
             return;
           }
@@ -53,7 +57,8 @@ export function mapEditApiPlugin(): Plugin {
           res.end(JSON.stringify({ error: "Not found" }));
         } catch (error) {
           res.statusCode = 500;
-          res.end(JSON.stringify({ error: String(error) }));
+          res.end(JSON.stringify({ error }));
+          console.error(error);
         }
       });
     },
@@ -112,9 +117,10 @@ async function handleApiMapEditFile(
       res.end(JSON.stringify({ error: "File not found" }));
       return true;
     }
-    // 🚧 use zod parser
-    const response = JSON.parse(fs.readFileSync(filePath, "utf-8")) as MapEditSavedFile;
-    res.end(JSON.stringify(response));
+    const savedFile = jsonParser
+      .pipe(MapEditSavedFileSchema)
+      .parse(fs.readFileSync(filePath, "utf-8"));
+    res.end(JSON.stringify(savedFile));
     return true;
   }
 
@@ -123,8 +129,7 @@ async function handleApiMapEditFile(
     let body = "";
     for await (const chunk of req) body += chunk;
 
-    // 🚧 use zod parser
-    const fileToSave = JSON.parse(body) as MapEditSavedFile;
+    const fileToSave = jsonParser.pipe(MapEditSavedFileSchema).parse(body);
     fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
 
     // create PNG preview
