@@ -13,6 +13,9 @@ export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol)
     switch (node.type) {
       case "rect": {
         // 🚧 CSS transform text -> Matrix
+        // console.log({
+        //   cssTransform: node.,
+        // })
         // ct.fillStyle = '#f00';
         // ct.transform(node.transform);
         // ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);

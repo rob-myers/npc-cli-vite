@@ -80,8 +80,19 @@ export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNo
     return item;
   });
 }
+
+export function computeNodeCssTransform(node: MapNode): string {
+  if (node.type === "rect") {
+    return computeRectCssTransform(node);
+  } else if (node.type === "image") {
+    return computeImageCssTransform(node);
+  } else {
+    return ""; // NOOP
+  }
+}
+
 /** Compute CSS transform string for an image node, preserving bounding box top-left on rotation */
-export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
+function computeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
   const { baseRect, transform, offset } = node;
   const { width: W, height: H } = baseRect;
   const { x, y, scale: s, degrees } = transform;
@@ -93,6 +104,10 @@ export function recomputeImageCssTransform(node: Extract<MapNode, { type: "image
   const tx = offset.x + x + dx;
   const ty = offset.y + y + dy;
   return (node.cssTransform = `translate(${tx}px, ${ty}px) scale(${s}) translate(${cx}px, ${cy}px) rotate(${degrees}deg) translate(${-cx}px, ${-cy}px)`);
+}
+
+function computeRectCssTransform(node: Extract<MapNode, { type: "rect" }>): string {
+  return `translate(${node.transform.x}px, ${node.transform.y}px) scale(${node.transform.scale})`;
 }
 
 /** Returns index of child before it was removed */
@@ -136,6 +151,7 @@ export const templateNodeByKey = {
     ...mockBaseNode,
     type: "rect",
     baseRect: { ...defaultBaseRect },
+    cssTransform: "translate(0px, 0px) scale(1)",
   },
   // path: { ...mockBaseNode, type: "path" },
 } satisfies Record<MapNodeType, MapNode>;
@@ -174,6 +190,7 @@ export const MapNodeSchema = z.union([
   BaseNodeSchema.extend({
     type: z.literal("rect"),
     baseRect: z.object({ width: z.number(), height: z.number() }),
+    cssTransform: z.string(),
   }),
 ]);
 

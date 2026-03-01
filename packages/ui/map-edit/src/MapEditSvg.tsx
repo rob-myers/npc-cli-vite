@@ -68,25 +68,25 @@ export const RenderMapNodes = ({
   nodes: MapNode[];
   selectedIds: Set<string>;
 }) => {
-  return nodes.map((el) => {
-    switch (el.type) {
+  return nodes.map((node) => {
+    switch (node.type) {
       case "group": {
-        const cssTransform = `translate(${el.transform.x}, ${el.transform.y}) scale(${el.transform.scale})`;
+        // groups do not support transform i.e. folders only
         return (
-          <g key={el.id} data-node-id={el.id} transform={cssTransform}>
-            <title>{el.name}</title>
-            <RenderMapNodes selectedIds={selectedIds} nodes={el.children} />
+          <g key={node.id} data-node-id={node.id}>
+            <title>{node.name}</title>
+            <RenderMapNodes selectedIds={selectedIds} nodes={node.children} />
           </g>
         );
       }
       case "image": {
-        const { baseRect, imageKey, cssTransform } = el;
-        const isSelected = selectedIds.has(el.id);
+        const { baseRect, imageKey, cssTransform } = node;
+        const isSelected = selectedIds.has(node.id);
 
         return imageKey !== "unset" ? (
           <image
-            key={el.id}
-            data-node-id={el.id}
+            key={node.id}
+            data-node-id={node.id}
             href={`/starship-symbol/${imageKey}.png`}
             x={0}
             y={0}
@@ -96,11 +96,11 @@ export const RenderMapNodes = ({
             preserveAspectRatio="none"
             className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
           >
-            <title>{el.name}</title>
+            <title>{node.name}</title>
           </image>
         ) : (
           <QuestionIcon
-            key={el.id}
+            key={node.id}
             x={0}
             y={0}
             width={baseRect.width}
@@ -111,17 +111,16 @@ export const RenderMapNodes = ({
         );
       }
       case "rect": {
-        const isSelected = selectedIds.has(el.id);
-        const cssTransform = `translate(${el.transform.x}px, ${el.transform.y}px) scale(${el.transform.scale})`;
+        const isSelected = selectedIds.has(node.id);
         return (
           <rect
-            key={el.id}
-            data-node-id={el.id}
+            key={node.id}
+            data-node-id={node.id}
             x={0}
             y={0}
-            width={el.baseRect.width}
-            height={el.baseRect.height}
-            style={{ transform: cssTransform }}
+            width={node.baseRect.width}
+            height={node.baseRect.height}
+            style={{ transform: node.cssTransform }}
             // fill="rgba(0, 0, 0, 0.25)"
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0}
@@ -130,7 +129,7 @@ export const RenderMapNodes = ({
               isSelected && "outline-blue-500",
             )}
           >
-            <title>{el.name}</title>
+            <title>{node.name}</title>
           </rect>
         );
       }

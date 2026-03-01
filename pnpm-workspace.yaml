@@ -21,6 +21,7 @@ catalog:
   '@tanstack/react-router': ^1.140.1
   '@tanstack/react-router-devtools': ^1.140.1
   '@tanstack/router-plugin': ^1.140.1
+  '@thednp/dommatrix': ^3.0.2
   '@types/braces': ^3.0.5
   '@types/node': ^24.10.4
   '@types/react': ^19.2.7
