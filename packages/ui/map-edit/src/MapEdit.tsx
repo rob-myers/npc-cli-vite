@@ -194,7 +194,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (opts?.shiftKey && state.selectedIds.size > 0) {
           // select interval in flattened tree
           const flat: string[] = [];
-          traverseNodes(state.nodes, (el) => flat.push(el.id));
+          traverseNodes(state.nodes, (el) => void flat.push(el.id));
           const i = flat.indexOf(id);
           const j = flat.findIndex((fid) => state.selectedIds.has(fid));
           if (i !== -1 && j !== -1) {
@@ -207,7 +207,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (res.node.type === "group") {
           // select (a) group and descendants, or (b) only group itself
           const descendantIds: string[] = [];
-          traverseNodes(res.node.children, (el) => descendantIds.push(el.id));
+          traverseNodes(res.node.children, (el) => void descendantIds.push(el.id));
           const allDescendantsSelected = descendantIds.every((did) => state.selectedIds.has(did));
 
           if (state.selectedIds.has(id) && allDescendantsSelected && descendantIds.length > 0) {
@@ -466,7 +466,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           if (!result) continue;
           removeNodeFromParent(result.parent?.children ?? state.nodes, id);
           newGroup.children.push(result.node);
-          traverseNodes([result.node], (el) => seen.add(el.id));
+          traverseNodes([result.node], (el) => void seen.add(el.id));
         }
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
