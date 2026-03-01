@@ -6,6 +6,7 @@
     ".": "./src/index.ts",
     "./types": "./src/types.ts",
     "./geom": "./src/geom/index.ts",
+    "./json-parser": "./src/service/json-parser.ts",
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js"
   },
