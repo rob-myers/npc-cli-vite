@@ -261,6 +261,11 @@ export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
   return `${LOCAL_STORAGE_PREFIX}${file.type}:${file.filename}`;
 }
 
+export function decodeFileSpecifierLocalStorageKey(localStorageKey: string) {
+  const [, type, filename] = localStorageKey.split(/[:]/);
+  return { type: type as MapEditSavableFileType, filename };
+}
+
 export function areFileSpecifiersEqual(a: MapEditFileSpecifier, b: MapEditFileSpecifier): boolean {
   return a.type === b.type && a.filename === b.filename;
 }
