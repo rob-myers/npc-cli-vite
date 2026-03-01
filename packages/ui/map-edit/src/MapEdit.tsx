@@ -276,9 +276,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if ("baseRect" in newItem) {
           if (rect) {
             // Use selection box dimensions
-            newItem.transform = { x: rect.x, y: rect.y, scale: 1, degrees: 0 };
+            newItem.transform = { a: 1, b: 0, c: 0, d: 1, e: rect.x, f: rect.y };
             newItem.baseRect = { width: rect.width, height: rect.height };
-            newItem.cssTransform = computeNodeCssTransform(newItem);
           } else {
             // Place new item centered in viewport
             // newItem.transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
@@ -289,10 +288,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             );
             newItem.transform = {
               ...newItem.transform,
-              x: center.x - (newItem.baseRect.width * newItem.transform.scale) / 2,
-              y: center.y - (newItem.baseRect.height * newItem.transform.scale) / 2,
+              e: center.x - newItem.baseRect.width / 2,
+              f: center.y - newItem.baseRect.height / 2,
             };
           }
+          newItem.cssTransform = computeNodeCssTransform(newItem);
         }
 
         if (!parent) {
@@ -398,13 +398,24 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
       },
-      rotate(nodeId, degrees) {
+      rotate(nodeId, deltaDegrees) {
         const result = findNode(state.nodes, nodeId);
-        if (result?.node.type !== "image") return;
+        if (result?.node.type !== "image") return; // can only rotate images
+
         const node = result.node;
-        const current = node.transform.degrees ?? 0;
-        const nextDegrees = (current + degrees) % 360;
-        node.transform.degrees = nextDegrees < 0 ? nextDegrees + 360 : nextDegrees;
+        const { width: W, height: H } = node.baseRect;
+        const [cx, cy] = [W / 2, H / 2];
+        const { a, b, c, d, e, f } = node.transform;
+
+        const m = new DOMMatrix([a, b, c, d, e, f]);
+        m.translateSelf(cx, cy).rotateSelf(deltaDegrees).translateSelf(-cx, -cy);
+        node.transform.a = m.a;
+        node.transform.b = m.b;
+        node.transform.c = m.c;
+        node.transform.d = m.d;
+        node.transform.e = m.e;
+        node.transform.f = m.f;
+
         node.cssTransform = computeNodeCssTransform(node);
       },
       rotateSelected(degrees) {
@@ -600,8 +611,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             const result = findNode(state.nodes, id);
             if (result?.node.type === "rect" || result?.node.type === "image") {
               const node = result.node;
-              node.transform.x = Math.round((startPos.x + dx) / increment) * increment;
-              node.transform.y = Math.round((startPos.y + dy) / increment) * increment;
+              node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
+              node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
               node.cssTransform = computeNodeCssTransform(node);
             }
           }
@@ -627,9 +638,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const newHeight = snap(Math.max(increment, startBounds.height + heightDelta));
         baseRect.width = newWidth;
         baseRect.height = newHeight;
-        transform.scale = 1;
-        transform.x = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.x;
-        transform.y = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.y;
+        transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.e;
+        transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.f;
 
         result.node.cssTransform = computeNodeCssTransform(result.node);
 
@@ -673,7 +683,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const result = findNode(state.nodes, id);
             return result?.node.type === "rect" || result?.node.type === "image"
-              ? [[id, { x: result.node.transform.x, y: result.node.transform.y }]]
+              ? [[id, { x: result.node.transform.e, y: result.node.transform.f }]]
               : [];
           }),
         );
