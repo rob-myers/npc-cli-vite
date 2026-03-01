@@ -24,6 +24,7 @@ import {
   type BaseRect,
   baseSvgSize,
   computeNodeCssTransform,
+  decodeFileSpecifierLocalStorageKey,
   extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
@@ -49,6 +50,8 @@ import {
   traverseNodesSync,
 } from "./map-node-api";
 import type { MapEditUiMeta } from "./schema";
+
+const CAN_SAVE_TO_FILESYSTEM_IN_DEV = true;
 
 export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
@@ -795,7 +798,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: false,
         });
 
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && CAN_SAVE_TO_FILESYSTEM_IN_DEV) {
           // save to filesystem in development
           fetch(`/api/map-edit/file/${file.type}/${file.filename}`, {
             method: "POST",
@@ -811,7 +814,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         // 🚧 better approach e.g. useMutation
         let savedFile = tryLocalStorageGetParsed<MapEditSavedFile>(
-          `${LOCAL_STORAGE_PREFIX}${name}`,
+          getFileSpecifierLocalStorageKey(file),
         );
 
         try {
@@ -866,9 +869,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const { files } = (await fetch("/api/map-edit/files").then((x) =>
             x.json(),
           )) as MapEditListFilesResponse;
-          state.set({
-            savedFileSpecifiers: [...new Set([...state.savedFileSpecifiers, ...files])].sort(),
-          });
+
+          const mapping = new Map<string, MapEditFileSpecifier>();
+          state.savedFileSpecifiers.forEach((f) => mapping.set(`${f.type}/${f.filename}`, f));
+          files.forEach((file) => mapping.set(`${file.type}/${file.filename}`, file));
+          state.set({ savedFileSpecifiers: Array.from(mapping.values()) });
         } catch (error) {
           console.error(error);
         }
@@ -1270,9 +1275,9 @@ function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
-      const [type, filename] = key.slice(LOCAL_STORAGE_PREFIX.length).split("/", 2);
+      const { type, filename } = decodeFileSpecifierLocalStorageKey(key);
       if (isSavableFileType(type) && filename) files.push({ type, filename });
-      else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`); // 🚧 dev only
+      else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`);
     }
   }
   return files.sort((a, b) => a.filename.localeCompare(b.filename));
