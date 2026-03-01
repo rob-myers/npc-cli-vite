@@ -1,14 +1,26 @@
 #!/usr/bin/env node --import=tsx
 
-// USAGE:
-// pnpm process-symbols --changedFiles='["packages/app/public/symbol/untitled.json"]'
-
+/**
+ * 🚧 TODO
+ * - ensure symbols flattened i.e. recursively unwind sub-symbols
+ * - arrange as stratified directed graph
+ * - create layouts i.e. hull symbol wrappers
+ *
+ * USAGE:
+ * ```sh
+ * pnpm process-symbols
+ * pnpm process-symbols --changedFiles='["packages/app/public/symbol/untitled.json"]'
+ * ```
+ *
+ */
 import fs from "node:fs";
 import { ansi } from "@npc-cli/cli/shell/const";
-import type { MapNode } from "@npc-cli/ui__map-edit";
-import { info, safeJsonParse, warn } from "@npc-cli/util/legacy/generic";
+import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import { jsonParser } from "@npc-cli/util/json-parser";
+import { error, info, safeJsonCompact, safeJsonParse } from "@npc-cli/util/legacy/generic";
 //@ts-expect-error
 import getopts from "getopts";
+import z from "zod";
 
 const opts = getopts(process.argv, { string: ["changedFiles"] });
 const changedFiles = safeJsonParse(opts.changedFiles || "[]") as string[];
@@ -21,14 +33,17 @@ info(
   `changedFiles: ${JSON.stringify(changedFiles)}`,
 );
 
-// 🚧 take account of changedFiles
+// 🚧 account for changedFiles
 for (const file of fs.globSync("packages/app/public/symbol/**/*.json")) {
-  const elements = safeJsonParse(fs.readFileSync(file, "utf-8")) as MapNode[];
-  if (elements === null) {
-    warn(`${file}: skipping invalid JSON`);
+  const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
+  if (!result.success) {
+    error(
+      `${file}: skipping invalid MapEditSavedFile JSON: ${safeJsonCompact(z.flattenError(result.error))}`,
+    );
     continue;
   }
 
   // 🚧 recursively construct flattened symbols
-  console.log({ file, elements });
+  const savedFile = result.data;
+  console.log({ file, savedFile });
 }

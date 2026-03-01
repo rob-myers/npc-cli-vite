@@ -156,8 +156,8 @@ const BaseNodeSchema = z.object({
 });
 export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
 
-const MapNodeSchema = z.union([
-  // 🚧 symbol, path
+// 🚧 symbol, path
+export const MapNodeSchema = z.union([
   BaseNodeSchema.extend({
     type: z.literal("group"),
     get children() {
@@ -176,12 +176,10 @@ const MapNodeSchema = z.union([
     baseRect: z.object({ width: z.number(), height: z.number() }),
   }),
 ]);
+
 export type MapNode = z.infer<typeof MapNodeSchema>;
-
 export type MapNodeType = MapNode["type"];
-
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
-
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 
 export type BaseRect = { width: number; height: number };
@@ -218,25 +216,26 @@ export const imageOffsetValues = Object.values(labelledImageOffsetValue)
 
 export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 
-export type MapEditSavedSymbol = {
-  type: "symbol";
+export const MapEditSavedSymbolSchema = z.object({
   /** 🚧 enforce StarshipSymbolImageKey?  */
-  filename: string;
-  width: number;
-  height: number;
-  nodes: MapNode[];
-};
+  type: z.literal("symbol"),
+  filename: z.string(),
+  width: z.number(),
+  height: z.number(),
+  nodes: z.array(MapNodeSchema),
+});
+export const MapEditSavedMapSchema = z.object({
+  type: z.literal("map"),
+  filename: z.string(),
+  width: z.number(),
+  height: z.number(),
+  nodes: z.array(MapNodeSchema),
+});
+export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
-export type MapEditSavedMap = {
-  type: "map";
-  filename: string;
-  width: number;
-  height: number;
-  nodes: MapNode[];
-};
-
-export type MapEditSavedFile = MapEditSavedSymbol | MapEditSavedMap;
-
+export type MapEditSavedSymbol = z.infer<typeof MapEditSavedSymbolSchema>;
+export type MapEditSavedMap = z.infer<typeof MapEditSavedMapSchema>;
+export type MapEditSavedFile = z.infer<typeof MapEditSavedFileSchema>;
 export type MapEditSavableFileType = MapEditSavedFile["type"];
 
 export function isSavableFileType(type: string): type is MapEditSavableFileType {
