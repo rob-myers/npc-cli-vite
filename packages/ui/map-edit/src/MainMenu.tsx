@@ -5,22 +5,22 @@ import {
   CaretRightIcon,
   CopyIcon,
   FloppyDiskIcon,
-  FolderIcon,
   FolderOpenIcon,
   ImageIcon,
   ListIcon,
   MapTrifoldIcon,
   RulerIcon,
   SelectionAllIcon,
-  SquareIcon,
   TrashIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
+import { toIcon } from "./InspectorNode";
 import type { State } from "./MapEdit";
 import {
   getAllNodeIds,
   LOCAL_STORAGE_PREFIX,
   LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
+  mapNodeTypes,
 } from "./map-node-api";
 
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
@@ -166,37 +166,19 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               </>
             )}
 
-            <Menu.Item
-              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-              closeOnClick
-              onClick={() => {
-                state.add("group", { selectionAsParent: true });
-              }}
-            >
-              <FolderIcon className="size-4" />
-              Group
-            </Menu.Item>
-            <Menu.Item
-              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-              closeOnClick
-              onClick={() => {
-                state.add("rect", { selectionAsParent: true });
-              }}
-            >
-              <SquareIcon className="size-4" />
-              Rect
-            </Menu.Item>
+            {mapNodeTypes.map((type) => (
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick
+                onClick={() => {
+                  state.add(type, { selectionAsParent: true });
+                }}
+              >
+                {toIcon[type]}
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </Menu.Item>
+            ))}
 
-            <Menu.Item
-              className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-              closeOnClick
-              onClick={() => {
-                state.add("image", { selectionAsParent: true });
-              }}
-            >
-              <ImageIcon className="size-4" />
-              Image
-            </Menu.Item>
             <div className="my-1 border-t border-slate-700" />
 
             <Menu.Item

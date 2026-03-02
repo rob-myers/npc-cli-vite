@@ -372,6 +372,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               cssTransform: computeNodeCssTransform(node),
             };
           }
+          case "symbol": {
+            return {
+              ...baseProps,
+              type: "symbol" as const,
+              symbolKey: node.symbolKey,
+              baseRect: { ...node.baseRect },
+              offset: { ...node.offset },
+              cssTransform: computeNodeCssTransform(node),
+            };
+          }
           default:
             throw new ExhaustiveError(node);
         }
