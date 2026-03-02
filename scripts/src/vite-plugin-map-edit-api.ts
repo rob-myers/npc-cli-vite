@@ -132,22 +132,12 @@ async function handleApiMapEditFile(
     fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
 
     // create PNG preview
-    if (fileToSave.type === "symbol") {
-      // hot reloading via cache busting
-      await import(`./service/render-symbol.ts?t=${Date.now()}`).then(
-        ({ createSavedSymbolPreviewPng }) => {
-          createSavedSymbolPreviewPng(fileToSave);
-        },
-      );
-    }
-    if (fileToSave.type === "map") {
-      // 🚧 unify
-      await import(`./service/render-symbol.ts?t=${Date.now()}`).then(
-        ({ createSavedMapPreviewPng }) => {
-          createSavedMapPreviewPng(fileToSave);
-        },
-      );
-    }
+    // hot reloading via cache busting
+    await import(`./service/render-symbol.ts?t=${Date.now()}`).then(
+      ({ createSavedFilePreview }) => {
+        createSavedFilePreview(fileToSave);
+      },
+    );
 
     res.end(JSON.stringify({ success: true }));
     return true;
