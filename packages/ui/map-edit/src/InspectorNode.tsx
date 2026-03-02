@@ -10,8 +10,9 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { FolderIcon, type Icon, ImageIcon, RectangleIcon } from "@phosphor-icons/react";
-import React, { useEffect } from "react";
+import { FolderIcon, ImageIcon, RectangleIcon, StampIcon } from "@phosphor-icons/react";
+import type React from "react";
+import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
 import type { MapNode, MapNodeType } from "./map-node-api";
 
@@ -99,9 +100,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <span className="text-on-background pl-0.5 py-0.5">
-          {React.createElement(toIcon[element.type])}
-        </span>
+        <span className="text-on-background pl-0.5 py-0.5">{toIcon[element.type]}</span>
 
         <input
           ref={state.ref("inputEl")}
@@ -144,8 +143,9 @@ interface TreeItemProps {
   root: UseStateRef<MapEditState>;
 }
 
-const toIcon = {
-  group: FolderIcon,
-  rect: RectangleIcon,
-  image: ImageIcon,
-} as const satisfies Record<MapNodeType, Icon>;
+export const toIcon = {
+  group: <FolderIcon className="size-4" />,
+  rect: <RectangleIcon className="size-4" />,
+  image: <ImageIcon className="size-4" />,
+  symbol: <StampIcon className="size-4" />,
+} as const satisfies Record<MapNodeType, React.ReactNode>;

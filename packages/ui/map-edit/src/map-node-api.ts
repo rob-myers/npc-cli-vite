@@ -1,6 +1,6 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
 import { Mat, Rect } from "@npc-cli/util/geom";
-import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { keys, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
 /** Find node and its parent */
@@ -127,6 +127,7 @@ export async function traverseNodesAsync(list: MapNode[], act: (el: MapNode) => 
 }
 
 const defaultBaseRect: BaseRect = { width: 60, height: 60 };
+const defaultPoint: Geom.VectJson = { x: 0, y: 0 };
 const idTransform: Transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
 const mockBaseNode: BaseMapNode = {
@@ -143,15 +144,23 @@ export const templateNodeByKey = {
     ...mockBaseNode,
     type: "image",
     imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
-    baseRect: { ...defaultBaseRect },
-    offset: { x: 0, y: 0 },
+    baseRect: defaultBaseRect,
+    offset: defaultPoint,
     cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
   },
   rect: {
     ...mockBaseNode,
     type: "rect",
-    baseRect: { ...defaultBaseRect },
+    baseRect: defaultBaseRect,
     cssTransform: "translate(0px, 0px) scale(1)",
+  },
+  symbol: {
+    ...mockBaseNode,
+    type: "symbol",
+    symbolKey: "unset",
+    baseRect: defaultBaseRect,
+    offset: defaultPoint,
+    cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
   },
 } satisfies Record<MapNodeType, MapNode>;
 
@@ -173,7 +182,6 @@ const BaseNodeSchema = z.object({
 });
 export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
 
-// 🚧 symbol, path
 export const MapNodeSchema = z.union([
   BaseNodeSchema.extend({
     type: z.literal("group"),
@@ -183,7 +191,7 @@ export const MapNodeSchema = z.union([
   }),
   BaseNodeSchema.extend({
     type: z.literal("image"),
-    imageKey: z.union([z.literal("unset"), StarShipSymbolImageKeySchema]), // 🚧
+    imageKey: z.union([z.literal("unset"), StarShipSymbolImageKeySchema]),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     offset: z.object({ x: z.number(), y: z.number() }),
     cssTransform: z.string(),
@@ -193,12 +201,27 @@ export const MapNodeSchema = z.union([
     baseRect: z.object({ width: z.number(), height: z.number() }),
     cssTransform: z.string(),
   }),
+  BaseNodeSchema.extend({
+    type: z.literal("symbol"),
+    // 🚧 enforce StarShipSymbolImageKeySchema; currently permit foo.json
+    symbolKey: z.string(),
+    baseRect: z.object({ width: z.number(), height: z.number() }),
+    offset: z.object({ x: z.number(), y: z.number() }),
+    cssTransform: z.string(),
+  }),
 ]);
 
 export type MapNode = z.infer<typeof MapNodeSchema>;
 export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
+
+export const mapNodeTypes = keys({
+  group: true,
+  image: true,
+  rect: true,
+  symbol: true,
+} satisfies Record<MapNodeType, true>);
 
 export type BaseRect = { width: number; height: number };
 export type Transform = z.infer<typeof TransformSchema>;
