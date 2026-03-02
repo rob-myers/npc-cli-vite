@@ -79,15 +79,22 @@ export const RenderMapNodes = ({
           </g>
         );
       }
-      case "image": {
-        const { baseRect, imageKey, cssTransform } = node;
+      case "image":
+      case "symbol": {
+        const { baseRect, cssTransform } = node;
         const isSelected = selectedIds.has(node.id);
 
-        return imageKey !== "unset" ? (
+        const key = node.type === "image" ? node.imageKey : node.symbolKey;
+        const href =
+          node.type === "image"
+            ? `/starship-symbol/${node.imageKey}.png`
+            : `/symbol/${node.symbolKey}.thumbnail.png`;
+
+        return key !== "unset" ? (
           <image
             key={node.id}
             data-node-id={node.id}
-            href={`/starship-symbol/${imageKey}.png`}
+            href={href}
             x={0}
             y={0}
             width={baseRect.width}
