@@ -13,7 +13,6 @@ import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/uti
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
-import { useBeforeunload } from "react-beforeunload";
 import z from "zod";
 import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
@@ -117,7 +116,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
       )?.[props.meta.id] ?? {
         type: "symbol",
-        filename: "untitled",
+        filename: "untitled.json",
       },
       isDirty: false,
       savedFileSpecifiers: getLocalStorageSavedFiles(), // in dev we mergeFilesystemInDev
@@ -999,7 +998,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     };
   }, [state.wrapperEl]);
 
-  useBeforeunload(() => state.save());
+  // useBeforeunload(() => state.save());
 
   const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;

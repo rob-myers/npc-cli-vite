@@ -120,6 +120,7 @@
       - ✅ save width/height in file
       - ❌ store svg markup in manifest
   - ✅ /api/map-edit/file/symbol/:filename renders a PNG preview
+  - symbol node with modal with thumbnails
 
 - onchange filename do not save immediately
 - restart vite onchange map-edit plugin

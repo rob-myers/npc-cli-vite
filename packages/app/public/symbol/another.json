@@ -1,0 +1,53 @@
+{
+  "type": "symbol",
+  "filename": "another.json",
+  "width": 600,
+  "height": 600,
+  "nodes": [
+    {
+      "id": "a3d6f44c-2da6-425a-bfa0-9e43e0e0ee86",
+      "name": "Rect 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 60,
+        "f": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 120,
+        "height": 20
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 60, 0)"
+    },
+    {
+      "id": "3162f3b8-4ee3-454d-84ec-b131cd46d9e3",
+      "name": "fresher--015--1x2 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 60,
+        "f": 60
+      },
+      "type": "image",
+      "imageKey": "fresher--015--1x2",
+      "baseRect": {
+        "width": 66.8,
+        "height": 124
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 59.3, 59.3)"
+    }
+  ]
+}

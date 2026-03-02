@@ -1,6 +1,6 @@
 {
   "type": "symbol",
-  "filename": "untitled",
+  "filename": "untitled.json",
   "width": 600,
   "height": 600,
   "nodes": [
@@ -50,31 +50,6 @@
       "cssTransform": "matrix(1, 0, 0, 1, 59.3, 239.3)"
     },
     {
-      "id": "ff1a07b0-d91d-417d-8ea2-ee1a42ffb2a1",
-      "name": "cargo--002--2x2 3",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 240,
-        "f": 240
-      },
-      "type": "image",
-      "imageKey": "cargo--002--2x2",
-      "baseRect": {
-        "width": 121.4,
-        "height": 121.4
-      },
-      "offset": {
-        "x": -0.7,
-        "y": -0.7
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, 239.3, 239.3)"
-    },
-    {
       "id": "666a8667-eb00-4eb2-b01d-93ad9de4b99e",
       "name": "cargo--002--2x2 1",
       "locked": false,
@@ -100,31 +75,6 @@
       "cssTransform": "matrix(1, 0, 0, 1, 59.3, 59.3)"
     },
     {
-      "id": "e297f865-6e78-45e1-8052-b6b88be7dddb",
-      "name": "cargo--002--2x2 4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 240,
-        "f": 60
-      },
-      "type": "image",
-      "imageKey": "cargo--002--2x2",
-      "baseRect": {
-        "width": 121.4,
-        "height": 121.4
-      },
-      "offset": {
-        "x": -0.7,
-        "y": -0.7
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, 239.3, 59.3)"
-    },
-    {
       "id": "4228bde3-0c26-432f-80a4-79453a441339",
       "name": "cargo--002--2x2 5",
       "locked": false,
@@ -148,6 +98,56 @@
         "y": -0.7
       },
       "cssTransform": "matrix(1, 0, 0, 1, 429.3, 239.3)"
+    },
+    {
+      "id": "f7a9cbbd-e5ce-4424-83e9-96c3aa8020e5",
+      "name": "cargo--002--2x2 3",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 240,
+        "f": 240
+      },
+      "type": "image",
+      "imageKey": "cargo--002--2x2",
+      "baseRect": {
+        "width": 121.4,
+        "height": 121.4
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 239.3, 239.3)"
+    },
+    {
+      "id": "27358336-dbb2-41d3-b346-030ab1de2da6",
+      "name": "cargo--002--2x2 4",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 240,
+        "f": 60
+      },
+      "type": "image",
+      "imageKey": "cargo--002--2x2",
+      "baseRect": {
+        "width": 121.4,
+        "height": 121.4
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 239.3, 59.3)"
     }
   ]
 }

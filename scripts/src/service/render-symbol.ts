@@ -46,7 +46,7 @@ export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol)
   const dstPath = path.resolve(
     PROJECT_ROOT,
     "packages/app/public/symbol",
-    `${filename}.thumbnail.png`,
+    `${path.basename(filename, ".json")}.thumbnail.png`,
   );
   await canvas.toFile(dstPath);
 }
