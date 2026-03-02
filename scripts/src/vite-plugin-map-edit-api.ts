@@ -13,7 +13,6 @@ import {
 import { jsonParser } from "@npc-cli/util/json-parser";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
-import { createSavedMapPreviewPng, createSavedSymbolPreviewPng } from "./service/render-symbol.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 
@@ -134,10 +133,20 @@ async function handleApiMapEditFile(
 
     // create PNG preview
     if (fileToSave.type === "symbol") {
-      await createSavedSymbolPreviewPng(fileToSave);
+      // hot reloading via cache busting
+      await import(`./service/render-symbol.ts?t=${Date.now()}`).then(
+        ({ createSavedSymbolPreviewPng }) => {
+          createSavedSymbolPreviewPng(fileToSave);
+        },
+      );
     }
     if (fileToSave.type === "map") {
-      await createSavedMapPreviewPng(fileToSave);
+      // 🚧 unify
+      await import(`./service/render-symbol.ts?t=${Date.now()}`).then(
+        ({ createSavedMapPreviewPng }) => {
+          createSavedMapPreviewPng(fileToSave);
+        },
+      );
     }
 
     res.end(JSON.stringify({ success: true }));
