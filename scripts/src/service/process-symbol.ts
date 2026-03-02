@@ -5,7 +5,7 @@ import { Mat } from "@npc-cli/util/geom";
 import { Canvas, loadImage } from "skia-canvas";
 import { PROJECT_ROOT } from "../const.ts";
 
-export async function createSavedFilePreview(savedFile: MapEditSavedFile) {
+export async function processSavedFile(savedFile: MapEditSavedFile) {
   if (savedFile.type === "symbol") {
     await createSavedSymbolPreviewPng(savedFile);
   }
