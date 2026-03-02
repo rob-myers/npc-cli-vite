@@ -9,6 +9,7 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -101,6 +102,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
       isResizing: false,
+      isAsideCollapsed: false,
       undoStack: [] as HistoryEntry[],
       redoStack: [] as HistoryEntry[],
 
@@ -893,6 +895,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       state.load();
       void state.mergeFilesystemInDev();
     }
+    isTouchDevice() && state.set({ isAsideCollapsed: true });
   }, []);
 
   state.pngsMetadata = useQuery({
@@ -1007,14 +1010,56 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     return result?.node.type === "image" ? result.node : null;
   }, [state.selectedIds, state.nodes]);
 
+  const isMobile = isTouchDevice();
+
   return (
     <div
       ref={state.ref("wrapperEl")}
       tabIndex={0}
-      className="overflow-auto size-full flex justify-center items-start outline-none"
+      className="overflow-auto size-full flex justify-center items-start outline-none relative"
     >
+      {/* Mobile toggle button */}
+      {isMobile && (
+        <>
+          <button
+            className={cn(
+              uiClassName,
+              "md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-800 border border-slate-700 rounded-md shadow-lg",
+              "hover:bg-slate-700 transition-colors",
+            )}
+            onClick={() => state.set({ isAsideCollapsed: !state.isAsideCollapsed })}
+          >
+            {state.isAsideCollapsed ? (
+              <CaretRightIcon className="size-5" />
+            ) : (
+              <CaretLeftIcon className="size-5" />
+            )}
+          </button>
+
+          {!state.isAsideCollapsed && (
+            <div
+              className={cn(
+                uiClassName,
+                "md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity",
+              )}
+              onClick={() => state.set({ isAsideCollapsed: true })}
+            />
+          )}
+        </>
+      )}
+
       <aside
-        className="relative h-full border-r border-slate-800 flex flex-col"
+        className={cn(
+          "relative h-full border-r border-slate-800 flex flex-col bg-background",
+          ...(isMobile
+            ? [
+                "md:relative md:translate-x-0",
+                "max-md:absolute max-md:top-0 max-md:left-0 max-md:z-40 max-md:shadow-2xl",
+                "transition-transform duration-300",
+                state.isAsideCollapsed && "max-md:-translate-x-full",
+              ]
+            : []),
+        )}
         style={{ width: state.asideWidth, minWidth: state.asideWidth }}
       >
         <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
@@ -1100,6 +1145,7 @@ export type State = {
   asideWidth: number;
   lastAsideWidth: number;
   isResizing: boolean;
+  isAsideCollapsed: boolean;
   nodes: MapNode[];
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
@@ -1247,6 +1293,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
         uiClassName,
         "z-2 w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
         "bg-blue-500/50",
+        "max-md:hidden", // Hide on mobile
       )}
       onPointerDown={state.onResizeInspectorPointerDown}
     >
@@ -1289,7 +1336,7 @@ function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
   return files.sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
-const minAsideWidth = 100;
+const minAsideWidth = 200;
 const maxAsideWidth = 300;
 const defaultAsideWidth = 192;
 const zoomDelta = 0.04;
