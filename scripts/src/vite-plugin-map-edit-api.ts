@@ -100,7 +100,8 @@ async function handleApiMapEditFile(
     return;
   }
 
-  const filePath = path.join(PUBLIC_DIR, folder, `${filename}.json`);
+  // extension should .json
+  const filePath = path.join(PUBLIC_DIR, folder, filename);
 
   // Prevent directory traversal
   if (!filePath.startsWith(path.join(PUBLIC_DIR, folder))) {
@@ -156,7 +157,7 @@ async function handleApiMapEditFile(
 function getFilesFromFolder(folder: MapEditSavableFileType): MapEditFileSpecifier[] {
   return fs
     .globSync(path.join(PUBLIC_DIR, folder, "*.json"))
-    .map((filePath) => ({ type: folder, filename: path.basename(filePath, ".json") }));
+    .map((filePath) => ({ type: folder, filename: path.basename(filePath) }));
 }
 
 export const MIRRORED_ALLOWED_MAP_EDIT_FOLDERS: typeof ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"];
