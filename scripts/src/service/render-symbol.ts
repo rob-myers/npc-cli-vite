@@ -1,22 +1,27 @@
 import path from "node:path";
-import type { MapEditSavedMap, MapEditSavedSymbol } from "@npc-cli/ui__map-edit";
+import type { MapEditSavedFile, MapEditSavedMap, MapEditSavedSymbol } from "@npc-cli/ui__map-edit";
 import { traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat } from "@npc-cli/util/geom";
 import { Canvas, loadImage } from "skia-canvas";
 import { PROJECT_ROOT } from "../const.ts";
 
+export async function createSavedFilePreview(savedFile: MapEditSavedFile) {
+  if (savedFile.type === "symbol") {
+    await createSavedSymbolPreviewPng(savedFile);
+  }
+  if (savedFile.type === "map") {
+    await createSavedMapPreviewPng(savedFile);
+  }
+}
+
 export async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
   const { width, height, filename, nodes } = savedFile;
-  const scale = 200 / width;
+  // const scale = 200 / width;
+  const scale = 1;
   const canvas = new Canvas(width * scale, height * scale);
   const ct = canvas.getContext("2d");
-  console.log("🚧 createSavedSymbolPreviewPng", { filename });
 
   await traverseNodesAsync(nodes, async (node) => {
-    // console.log(node.type, node);
-
-    // 🚧 draw into canvas
-
     switch (node.type) {
       case "image": {
         const image = await loadImage(
