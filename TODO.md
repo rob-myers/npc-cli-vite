@@ -121,6 +121,7 @@
       - ❌ store svg markup in manifest
   - ✅ /api/map-edit/file/symbol/:filename renders a PNG preview
   - 🚧 node of type `symbol`
+    - 🚧 POST /api/map-edit/file/:type/:filename updates public/symbol/metdata.json
     - modal with symbol thumbnails
 
 - onchange filename do not save immediately

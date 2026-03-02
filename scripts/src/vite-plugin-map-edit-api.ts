@@ -134,9 +134,9 @@ async function handleApiMapEditFile(
 
     // create PNG preview
     // hot reloading via cache busting
-    await import(`./service/render-symbol.ts?t=${Date.now()}`).then(
-      ({ createSavedFilePreview }) => {
-        createSavedFilePreview(fileToSave);
+    await import(`./service/process-symbol.ts?t=${Date.now()}`).then(
+      ({ processSavedFile }: typeof import("./service/process-symbol")) => {
+        processSavedFile(fileToSave);
       },
     );
 
