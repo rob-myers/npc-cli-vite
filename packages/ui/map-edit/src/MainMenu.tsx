@@ -100,13 +100,13 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
                 <div className="flex items-center gap-2">
                   <RulerIcon className="size-4" />
-                  SVG Size
+                  Symbol Size
                 </div>
                 <CaretRightIcon className="size-4" />
               </Menu.SubmenuTrigger>
               <Menu.Portal>
                 <Menu.Positioner className="z-50" side="bottom" sideOffset={4}>
-                  <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-2 px-3 min-w-40">
+                  <Menu.Popup className="bg-gray-900 border border-slate-700 rounded-md shadow-lg py-2 px-3 min-w-40">
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center gap-2 text-xs text-slate-300">
                         <span className="w-12">Width:</span>
