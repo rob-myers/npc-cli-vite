@@ -1,11 +1,11 @@
 {
-  "createdAt": "2026-03-03T17:04:44.200Z",
+  "createdAt": "2026-03-03T18:36:44.219Z",
   "byFilename": {
     "another.json": {
       "filename": "another.json",
       "thumbnailFilename": "another.thumbnail.png",
-      "width": 200,
-      "height": 200
+      "width": 600,
+      "height": 600
     },
     "untitled.json": {
       "filename": "untitled.json",
