@@ -319,3 +319,18 @@ export type MapEditListFoldersResponse = {
 };
 
 //#endregion
+
+export const SymbolsMetadataSchema = z.object({
+  createdAt: z.string(),
+  byKey: z.record(
+    z.string(), // 🚧 refine
+    z.object({
+      filename: z.string(), // 🚧 refine
+      thumbnailFilename: z.string(),
+      width: z.number(),
+      height: z.number(),
+    }),
+  ),
+});
+
+export type SymbolsMetadata = z.infer<typeof SymbolsMetadataSchema>;
