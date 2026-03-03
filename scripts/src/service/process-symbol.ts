@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import type {
   MapEditSavedFile,
@@ -6,7 +6,11 @@ import type {
   MapEditSavedSymbol,
   SymbolsMetadata,
 } from "@npc-cli/ui__map-edit";
-import { SymbolsMetadataSchema, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
+import {
+  MapEditSavedFileSchema,
+  SymbolsMetadataSchema,
+  traverseNodesAsync,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error } from "@npc-cli/util/legacy/generic";
@@ -92,29 +96,33 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
     }
   }
 
-  // 🚧 add missing + overwrite changedFiles
   const symbolFilePaths = fs
     .globSync(path.resolve(PROJECT_ROOT, "packages/app/public/symbol/*.json"))
     .filter((x) => x !== metadataFilePath);
 
-  // if changedFiles null, regenerate all
+  // if changedFiles null then regenerate all
   const changedFilenames =
     changedFiles?.map((x) => x.filename) ?? symbolFilePaths.map((x) => path.basename(x));
 
   for (const symbolFilePath of symbolFilePaths) {
     const filename = path.basename(symbolFilePath);
     if (!nextMetadata.byFilename[filename] || changedFilenames.includes(filename)) {
-      nextMetadata.byFilename[filename] = {
-        filename,
-        thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
-        // 🚧 infer from starship-symbol/metadata.json?
-        width: 200,
-        height: 200,
-      };
+      const result = jsonParser
+        .pipe(MapEditSavedFileSchema)
+        .safeParse(readFileSync(symbolFilePath, "utf-8"));
+      if (result.success) {
+        nextMetadata.byFilename[filename] = {
+          filename,
+          thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
+          width: result.data.width,
+          height: result.data.height,
+        };
+      } else {
+        error(`Failed to parse existing symbol: ${filename}`, z.prettifyError(result.error));
+      }
     }
   }
 
-  console.log({ changedFiles, symbolFiles: symbolFilePaths });
-
+  // console.log({ changedFiles, symbolFiles: symbolFilePaths });
   fs.writeFileSync(metadataFilePath, JSON.stringify(nextMetadata, null, 2));
 }
