@@ -322,7 +322,7 @@ export type MapEditListFoldersResponse = {
 
 export const SymbolsMetadataSchema = z.object({
   createdAt: z.string(),
-  byKey: z.record(
+  byFilename: z.record(
     z.string(), // 🚧 refine
     z.object({
       filename: z.string(), // 🚧 refine

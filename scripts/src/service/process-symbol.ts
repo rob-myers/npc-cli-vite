@@ -78,7 +78,7 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
 
   const nextMetadata: SymbolsMetadata = {
     createdAt: new Date().toISOString(),
-    byKey: {},
+    byFilename: {},
   };
 
   if (fs.existsSync(metadataFilePath)) {
@@ -86,15 +86,35 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
       .pipe(SymbolsMetadataSchema)
       .safeParse(fs.readFileSync(metadataFilePath, "utf-8"));
     if (result.success) {
-      nextMetadata.byKey = result.data.byKey;
+      nextMetadata.byFilename = result.data.byFilename;
     } else {
       error("Failed to parse existing symbols/metadata.json", z.prettifyError(result.error));
     }
   }
 
   // 🚧 add missing + overwrite changedFiles
-  const symbolFiles = fs.globSync("packages/app/public/symbol/*.json");
-  console.log({ changedFiles, symbolFiles });
+  const symbolFilePaths = fs
+    .globSync(path.resolve(PROJECT_ROOT, "packages/app/public/symbol/*.json"))
+    .filter((x) => x !== metadataFilePath);
+
+  // if changedFiles null, regenerate all
+  const changedFilenames =
+    changedFiles?.map((x) => x.filename) ?? symbolFilePaths.map((x) => path.basename(x));
+
+  for (const symbolFilePath of symbolFilePaths) {
+    const filename = path.basename(symbolFilePath);
+    if (!nextMetadata.byFilename[filename] || changedFilenames.includes(filename)) {
+      nextMetadata.byFilename[filename] = {
+        filename,
+        thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
+        // 🚧 infer from starship-symbol/metadata.json?
+        width: 200,
+        height: 200,
+      };
+    }
+  }
+
+  console.log({ changedFiles, symbolFiles: symbolFilePaths });
 
   fs.writeFileSync(metadataFilePath, JSON.stringify(nextMetadata, null, 2));
 }
