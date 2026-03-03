@@ -1,4 +1,17 @@
 {
-  "createdAt": "2026-03-03T10:03:42.207Z",
-  "byKey": {}
+  "createdAt": "2026-03-03T17:04:44.200Z",
+  "byFilename": {
+    "another.json": {
+      "filename": "another.json",
+      "thumbnailFilename": "another.thumbnail.png",
+      "width": 200,
+      "height": 200
+    },
+    "untitled.json": {
+      "filename": "untitled.json",
+      "thumbnailFilename": "untitled.thumbnail.png",
+      "width": 200,
+      "height": 200
+    }
+  }
 }
