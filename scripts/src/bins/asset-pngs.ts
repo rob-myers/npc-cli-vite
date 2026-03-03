@@ -44,6 +44,7 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
 
 // - Copy each {folder}/{file} to public/starship-symbol/{file}
 mkdirSync(assetsOutputDir, { recursive: true });
+
 // - Generate metadata.json with dimensions of each image
 const metadata: StarshipSymbolPngsMetadata = {
   createdAt: new Date().toISOString(),
