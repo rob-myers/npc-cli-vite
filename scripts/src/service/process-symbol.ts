@@ -1,16 +1,7 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import type {
-  MapEditSavedFile,
-  MapEditSavedMap,
-  MapEditSavedSymbol,
-  SymbolsMetadata,
-} from "@npc-cli/ui__map-edit";
-import {
-  MapEditSavedFileSchema,
-  SymbolsMetadataSchema,
-  traverseNodesAsync,
-} from "@npc-cli/ui__map-edit/map-node-api";
+import type { MapEditSavedFile, MapEditSavedMap, MapEditSavedSymbol, SymbolsManifest } from "@npc-cli/ui__map-edit";
+import { MapEditSavedFileSchema, SymbolsManifestSchema, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error } from "@npc-cli/util/legacy/generic";
@@ -26,7 +17,7 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
     await createSavedMapPreviewPng(savedFile);
   }
 
-  ensureSymbolsMetadata({ changedFiles: [savedFile] });
+  ensureSymbolsManifest({ changedFiles: [savedFile] });
 }
 
 async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
@@ -42,9 +33,7 @@ async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
         const image = await loadImage(
           path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.imageKey}.png`),
         );
-        ct.setTransform(
-          ...new Mat(node.cssTransform).postMultiply([scale, 0, 0, scale, scale, scale]).toArray(),
-        );
+        ct.setTransform(...new Mat(node.cssTransform).postMultiply([scale, 0, 0, scale, scale, scale]).toArray());
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
@@ -73,24 +62,19 @@ async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
   console.log("🚧 createSavedMapPreviewPng", { filename });
 }
 
-function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditSavedFile[] }) {
-  const manifestFilePath = path.resolve(
-    PROJECT_ROOT,
-    "packages/app/public/symbol",
-    "manifest.json",
-  );
+function ensureSymbolsManifest({ changedFiles }: { changedFiles: null | MapEditSavedFile[] }) {
+  const manifestFilePath = path.resolve(PROJECT_ROOT, "packages/app/public/symbol", "manifest.json");
 
-  const nextMetadata: SymbolsMetadata = {
+  const nextManifest: SymbolsManifest = {
     createdAt: new Date().toISOString(),
     byFilename: {},
   };
 
   if (fs.existsSync(manifestFilePath)) {
-    const result = jsonParser
-      .pipe(SymbolsMetadataSchema)
-      .safeParse(fs.readFileSync(manifestFilePath, "utf-8"));
+    // might be running script sans dev-server, so avoid fetchParsed
+    const result = jsonParser.pipe(SymbolsManifestSchema).safeParse(fs.readFileSync(manifestFilePath, "utf-8"));
     if (result.success) {
-      nextMetadata.byFilename = result.data.byFilename;
+      nextManifest.byFilename = result.data.byFilename;
     } else {
       error("Failed to parse existing symbols/manifest.json", z.prettifyError(result.error));
     }
@@ -101,17 +85,14 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
     .filter((x) => x !== manifestFilePath);
 
   // if changedFiles null then regenerate all
-  const changedFilenames =
-    changedFiles?.map((x) => x.filename) ?? symbolFilePaths.map((x) => path.basename(x));
+  const changedFilenames = changedFiles?.map((x) => x.filename) ?? symbolFilePaths.map((x) => path.basename(x));
 
   for (const symbolFilePath of symbolFilePaths) {
     const filename = path.basename(symbolFilePath);
-    if (!nextMetadata.byFilename[filename] || changedFilenames.includes(filename)) {
-      const result = jsonParser
-        .pipe(MapEditSavedFileSchema)
-        .safeParse(readFileSync(symbolFilePath, "utf-8"));
+    if (!nextManifest.byFilename[filename] || changedFilenames.includes(filename)) {
+      const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(symbolFilePath, "utf-8"));
       if (result.success) {
-        nextMetadata.byFilename[filename] = {
+        nextManifest.byFilename[filename] = {
           filename,
           thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
           width: result.data.width,
@@ -124,5 +105,5 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
   }
 
   // console.log({ changedFiles, symbolFiles: symbolFilePaths });
-  fs.writeFileSync(manifestFilePath, JSON.stringify(nextMetadata, null, 2));
+  fs.writeFileSync(manifestFilePath, JSON.stringify(nextManifest, null, 2));
 }

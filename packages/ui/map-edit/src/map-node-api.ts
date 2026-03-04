@@ -1,6 +1,6 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
 import { Mat, Rect } from "@npc-cli/util/geom";
-import { keys, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
 /** Find node and its parent */
@@ -62,12 +62,7 @@ export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): G
   }
 }
 
-export function insertNodeAt(
-  srcNode: MapNode,
-  dstArray: MapNode[],
-  dstChildId: string,
-  edge: "top" | "bottom",
-): void {
+export function insertNodeAt(srcNode: MapNode, dstArray: MapNode[], dstChildId: string, edge: "top" | "bottom"): void {
   const index = dstArray.findIndex((n) => n.id === dstChildId);
   if (index === -1) throw Error(`Expected id ${dstChildId} in ${JSON.stringify(dstArray)}`);
   const idx = edge === "top" ? index : index + 1;
@@ -289,6 +284,31 @@ export function decodeFileSpecifierLocalStorageKey(localStorageKey: string) {
   return { type: type as MapEditSavableFileType, filename };
 }
 
+export function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
+  const files: MapEditFileSpecifier[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
+      const { type, filename } = decodeFileSpecifierLocalStorageKey(key);
+      if (isSavableFileType(type) && filename) files.push({ type, filename });
+      else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`);
+    }
+  }
+  return files.sort((a, b) => a.filename.localeCompare(b.filename));
+}
+
+export function clearLocalStorage() {
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+  localStorage.removeItem(LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER);
+}
+
 export function areFileSpecifiersEqual(a: MapEditFileSpecifier, b: MapEditFileSpecifier): boolean {
   return a.type === b.type && a.filename === b.filename;
 }
@@ -320,7 +340,7 @@ export type MapEditListFoldersResponse = {
 
 //#endregion
 
-export const SymbolsMetadataSchema = z.object({
+export const SymbolsManifestSchema = z.object({
   createdAt: z.string(),
   byFilename: z.record(
     z.string(), // 🚧 refine
@@ -333,4 +353,4 @@ export const SymbolsMetadataSchema = z.object({
   ),
 });
 
-export type SymbolsMetadata = z.infer<typeof SymbolsMetadataSchema>;
+export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;

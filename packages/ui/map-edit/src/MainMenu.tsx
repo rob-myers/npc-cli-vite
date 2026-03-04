@@ -16,22 +16,13 @@ import {
 } from "@phosphor-icons/react";
 import { toIcon } from "./InspectorNode";
 import type { State } from "./MapEdit";
-import {
-  getAllNodeIds,
-  LOCAL_STORAGE_PREFIX,
-  LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
-  mapNodeTypes,
-} from "./map-node-api";
+import { clearLocalStorage, getAllNodeIds, mapNodeTypes } from "./map-node-api";
 
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
     <Menu.Root>
       <Menu.Trigger
-        className={cn(
-          uiClassName,
-          "cursor-pointer text-slate-300",
-          "hover:text-slate-300 transition-colors",
-        )}
+        className={cn(uiClassName, "cursor-pointer text-slate-300", "hover:text-slate-300 transition-colors")}
       >
         <ListIcon className="size-5.5 p-0.5 bg-slate-700 border border-white/10" />
       </Menu.Trigger>
@@ -105,7 +96,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                 <CaretRightIcon className="size-4" />
               </Menu.SubmenuTrigger>
               <Menu.Portal>
-                <Menu.Positioner className="z-50" side="bottom" sideOffset={4}>
+                <Menu.Positioner className="z-50" sideOffset={4}>
                   <Menu.Popup className="bg-gray-900 border border-slate-700 rounded-md shadow-lg py-2 px-3 min-w-40">
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center gap-2 text-xs text-slate-300">
@@ -115,6 +106,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                           title="width"
                           value={state.svgWidth}
                           onChange={(e) => {
+                            state.pushHistory();
                             state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -129,6 +121,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                           title="height"
                           value={state.svgHeight}
                           onChange={(e) => {
+                            state.pushHistory();
                             state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -168,6 +161,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
 
             {mapNodeTypes.map((type) => (
               <Menu.Item
+                key={type}
                 className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                 closeOnClick
                 onClick={() => {
@@ -203,17 +197,8 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                     "Clear all localStorage maps and symbols?\n\nThis will delete all saved files from localStorage (not from filesystem). This action cannot be undone.",
                   )
                 ) {
-                  const keysToRemove: string[] = [];
-                  for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
-                      keysToRemove.push(key);
-                    }
-                  }
-                  keysToRemove.forEach((key) => localStorage.removeItem(key));
-                  localStorage.removeItem(LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER);
-                  state.set({ savedFileSpecifiers: [] });
-                  void state.mergeFilesystemInDev();
+                  clearLocalStorage();
+                  state.updateSavedFileSpecifiers([]);
                 }
               }}
             >

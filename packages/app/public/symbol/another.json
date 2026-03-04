@@ -104,7 +104,7 @@
         "b": 0,
         "c": 0,
         "d": 1,
-        "e": 120,
+        "e": 60,
         "f": 300
       },
       "type": "image",
@@ -117,7 +117,32 @@
         "x": -0.7,
         "y": -0.7
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 119.3, 299.3)"
+      "cssTransform": "matrix(1, 0, 0, 1, 59.3, 299.3)"
+    },
+    {
+      "id": "4aeaedf1-925e-41b3-ba6f-e9c41e3db3ee",
+      "name": "office--004--2x2 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 240,
+        "f": 300
+      },
+      "type": "image",
+      "imageKey": "office--004--2x2",
+      "baseRect": {
+        "width": 126.60000000000001,
+        "height": 124
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 239.3, 299.3)"
     }
   ]
 }

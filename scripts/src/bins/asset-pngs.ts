@@ -10,7 +10,7 @@
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { type StarshipSymbolPngsMetadata, symbolByGroup } from "@npc-cli/media/starship-symbol";
+import { type StarshipSymbolPngsManifest, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { entries, error, keys, safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { PROJECT_ROOT } from "../const";
@@ -46,9 +46,9 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
 mkdirSync(assetsOutputDir, { recursive: true });
 
 // - Generate manifest.json with dimensions of each image
-const manifest: StarshipSymbolPngsMetadata = {
+const manifest: StarshipSymbolPngsManifest = {
   createdAt: new Date().toISOString(),
-  byKey: {} as StarshipSymbolPngsMetadata["byKey"],
+  byKey: {} as StarshipSymbolPngsManifest["byKey"],
 };
 
 for (const [folderName, symbols] of entries(symbolByGroup)) {

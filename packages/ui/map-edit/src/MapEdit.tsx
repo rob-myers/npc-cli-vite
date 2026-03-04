@@ -4,17 +4,20 @@ enableDragDropTouch();
 
 import {
   type StarshipSymbolImageKey,
-  type StarshipSymbolPngsMetadata,
+  type StarshipSymbolPngsManifest,
+  StarshipSymbolPngsManifestSchema,
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
-import z from "zod";
+import { useBeforeunload } from "react-beforeunload";
+
 import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
@@ -25,21 +28,18 @@ import {
   type BaseRect,
   baseSvgSize,
   computeNodeCssTransform,
-  decodeFileSpecifierLocalStorageKey,
   extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
   getAllNodeIds,
   getFileSpecifierLocalStorageKey,
+  getLocalStorageSavedFiles,
   getNodeBounds,
   imageOffsetValues,
   insertNodeAt,
-  isSavableFileType,
-  LOCAL_STORAGE_PREFIX,
   LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
   labelledImageOffsetValue,
   type MapEditFileSpecifier,
-  type MapEditListFilesResponse,
   type MapEditSavedFile,
   MapEditSavedFileSchema,
   type MapNode,
@@ -47,6 +47,8 @@ import {
   type MapNodeType,
   mapNodes,
   removeNodeFromParent,
+  type SymbolsManifest,
+  SymbolsManifestSchema,
   type Transform,
   templateNodeByKey,
   traverseNodesSync,
@@ -61,21 +63,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { mutateAsync: loadMapEditFile } = useMutation({
     mutationKey: ["map-edit-load"],
     async mutationFn(file: MapEditFileSpecifier) {
-      if (!import.meta.env.DEV) return;
+      return fetchParsed(`/${file.type}/${file.filename}`, MapEditSavedFileSchema);
+    },
+  });
 
-      const response = await fetch(`/api/map-edit/file/${file.type}/${file.filename}`);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to load ${JSON.stringify(file)}: ${response.status} ${response.statusText}`,
-        );
-      }
-      const result = MapEditSavedFileSchema.safeParse(await response.json());
-      if (!result.success) {
-        throw new Error(
-          `Failed to parse ${JSON.stringify(file)}: ${JSON.stringify(z.flattenError(result.error))}`,
-        );
-      }
-      return result.data;
+  const { mutateAsync: deleteMapEditFile } = useMutation({
+    mutationKey: ["map-edit-delete"],
+    async mutationFn(file: MapEditFileSpecifier) {
+      await fetch(`/api/map-edit/file/${file.type}/${file.filename}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess(_data, _vars, _onMutateResult, context) {
+      context.client.invalidateQueries({ exact: true, queryKey: ["map-edit-symbols-manifest"] });
     },
   });
 
@@ -111,8 +111,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       svgEl: null,
       wrapperEl: null,
 
-      pngsMetadata: null,
+      pngsManifest: null,
       pickImageForId: null,
+      symbolsManifest: null,
 
       currentFile: tryLocalStorageGetParsed<{ [uiId: string]: MapEditFileSpecifier }>(
         LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
@@ -121,7 +122,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         filename: "untitled.json",
       },
       isDirty: false,
-      savedFileSpecifiers: getLocalStorageSavedFiles(), // in dev we mergeFilesystemInDev
+
+      // will extend with symbol/manifest.json
+      savedFileSpecifiers: getLocalStorageSavedFiles(),
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -309,10 +312,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             // Place new item centered in viewport
             // newItem.transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
             const svgRect = state.svgEl.getBoundingClientRect();
-            const center = state.clientToSvg(
-              svgRect.x + svgRect.width / 2,
-              svgRect.y + svgRect.height / 2,
-            );
+            const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
             newItem.transform = {
               ...newItem.transform,
               e: center.x - newItem.baseRect.width / 2,
@@ -553,7 +553,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ pickImageForId: null });
 
         const { node } = findNode(state.nodes, nodeId) ?? {};
-        const meta = state.pngsMetadata?.byKey[imageKey];
+        const meta = state.pngsManifest?.byKey[imageKey];
         if (!(node?.type === "image" && meta)) return;
 
         node.imageKey = imageKey;
@@ -773,7 +773,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (prev === nodesJson) return;
 
         state.isDirty = true;
-        state.undoStack.push({ nodes: nodesJson, selectedIds: new Set(state.selectedIds) });
+        state.undoStack.push({
+          nodes: nodesJson,
+          selectedIds: new Set(state.selectedIds),
+          width: state.svgWidth,
+          height: state.svgHeight,
+        });
         state.redoStack.length = 0;
         state.update();
       },
@@ -783,11 +788,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.redoStack.push({
           nodes: JSON.stringify(state.nodes),
           selectedIds: new Set(state.selectedIds),
+          width: state.svgWidth,
+          height: state.svgHeight,
         });
         state.set({
           nodes: JSON.parse(entry.nodes) as MapNode[],
           selectedIds: entry.selectedIds,
           selectionBox: null,
+          svgWidth: entry.width,
+          svgHeight: entry.height,
         });
       },
       redo() {
@@ -796,11 +805,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.undoStack.push({
           nodes: JSON.stringify(state.nodes),
           selectedIds: new Set(state.selectedIds),
+          width: state.svgWidth,
+          height: state.svgHeight,
         });
         state.set({
           nodes: JSON.parse(entry.nodes) as MapNode[],
           selectedIds: entry.selectedIds,
           selectionBox: null,
+          svgWidth: entry.width,
+          svgHeight: entry.height,
         });
       },
 
@@ -845,6 +858,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
+        // localStorage (draft) takes precedence
         const savedFile =
           tryLocalStorageGetParsed<MapEditSavedFile>(getFileSpecifierLocalStorageKey(file)) ??
           (await loadMapEditFile(file));
@@ -863,55 +877,65 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           svgHeight: savedFile.height,
         });
       },
-      deleteFile(file) {
+      async deleteFile(file) {
+        // remove draft
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
 
+        // prod: clear drafts with no corresponding file in manifest
+        // dev: unnecessary because deleteMapEditFile will trigger updateSavedFileSpecifiers
+        state.updateSavedFileSpecifiers(getLocalStorageSavedFiles());
+
+        // in dev actually delete from filesystem
+        if (import.meta.env.DEV) {
+          await deleteMapEditFile(file);
+        }
+      },
+      updateSavedFileSpecifiers(drafts) {
+        if (!state.symbolsManifest) {
+          return warn("symbolsManifest is not ready");
+        }
+
         state.set({
-          savedFileSpecifiers: getLocalStorageSavedFiles().filter(
-            (other) => !areFileSpecifiersEqual(file, other),
+          savedFileSpecifiers: Array.from(
+            new Map<string, MapEditFileSpecifier>([
+              ...Object.values(state.symbolsManifest.byFilename).map(
+                (f) => [`symbol/${f.filename}`, { type: "symbol", filename: f.filename }] as const,
+              ),
+              // 🚧 mapsManifest
+              // ...Object.values(state.mapsManifest.byFilename).map((f) => [`map/${f.filename}`, { type: "map", filename: f.filename }] as const)
+              ...drafts.map((f) => [`${f.type}/${f.filename}`, f] as const),
+            ]).values(),
           ),
         });
-        void state.mergeFilesystemInDev();
-
-        // delete from filesystem in development
-        if (import.meta.env.DEV) {
-          fetch(`/api/map-edit/file/${file.type}/${encodeURIComponent(file.filename)}`, {
-            method: "DELETE",
-          }).catch(console.error);
-        }
-      },
-      async mergeFilesystemInDev() {
-        try {
-          if (!import.meta.env.DEV) return;
-          const { files } = (await fetch("/api/map-edit/files").then((x) =>
-            x.json(),
-          )) as MapEditListFilesResponse;
-
-          const mapping = new Map<string, MapEditFileSpecifier>();
-          state.savedFileSpecifiers.forEach((f) => mapping.set(`${f.type}/${f.filename}`, f));
-          files.forEach((file) => mapping.set(`${file.type}/${file.filename}`, file));
-          state.set({ savedFileSpecifiers: Array.from(mapping.values()) });
-        } catch (error) {
-          console.error(error);
-        }
       },
     }),
-    { deps: [loadMapEditFile] },
+    { deps: [loadMapEditFile, deleteMapEditFile] },
   );
   state.theme = theme;
 
   useEffect(() => {
     if (state.nodes === emptyNodes) {
       state.load();
-      void state.mergeFilesystemInDev();
     }
     isTouchDevice() && state.set({ isAsideCollapsed: true });
   }, []);
 
-  state.pngsMetadata = useQuery({
-    queryKey: ["map-edit-images-manifest"],
-    queryFn: async () => await fetch("/starship-symbol/manifest.json").then((x) => x.json()),
-  }).data;
+  state.pngsManifest =
+    useQuery({
+      queryKey: ["map-edit-images-manifest"],
+      queryFn: () => fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema),
+    }).data ?? null;
+
+  // 🚧 get both symbol and map manifests here
+  state.symbolsManifest =
+    useQuery({
+      queryKey: ["map-edit-symbols-manifest"],
+      queryFn: () => fetchParsed("/symbol/manifest.json", SymbolsManifestSchema),
+    }).data ?? null;
+
+  useEffect(() => {
+    if (state.symbolsManifest) state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
+  }, [state.symbolsManifest]);
 
   // Pointer events
   useEffect(() => {
@@ -1011,7 +1035,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     };
   }, [state.wrapperEl]);
 
-  // useBeforeunload(() => state.save());
+  // save draft in both dev/prod
+  useBeforeunload(() => state.save());
 
   const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
@@ -1039,19 +1064,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             )}
             onClick={() => state.set({ isAsideCollapsed: !state.isAsideCollapsed })}
           >
-            {state.isAsideCollapsed ? (
-              <CaretRightIcon className="size-5" />
-            ) : (
-              <CaretLeftIcon className="size-5" />
-            )}
+            {state.isAsideCollapsed ? <CaretRightIcon className="size-5" /> : <CaretLeftIcon className="size-5" />}
           </button>
 
           {!state.isAsideCollapsed && (
             <div
-              className={cn(
-                uiClassName,
-                "md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity",
-              )}
+              className={cn(uiClassName, "md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity")}
               onClick={() => state.set({ isAsideCollapsed: true })}
             />
           )}
@@ -1083,9 +1101,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           ))}
         </div>
 
-        {selectedImageNode && (
-          <SelectedImageNodeUI selectedImageNode={selectedImageNode} state={state} />
-        )}
+        {selectedImageNode && <SelectedImageNodeUI selectedImageNode={selectedImageNode} state={state} />}
 
         <InspectorResizer state={state} />
       </aside>
@@ -1132,6 +1148,8 @@ type HistoryEntry = {
   /** `MapNode[]` */
   nodes: string;
   selectedIds: Set<string>;
+  width: number;
+  height: number;
 };
 
 export type State = {
@@ -1180,8 +1198,9 @@ export type State = {
         type: "selection-box";
         startSvg: { x: number; y: number };
       };
-  pngsMetadata: StarshipSymbolPngsMetadata | null;
+  pngsManifest: StarshipSymbolPngsManifest | null;
   pickImageForId: string | null;
+  symbolsManifest: SymbolsManifest | null;
 
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
@@ -1229,8 +1248,8 @@ export type State = {
   save: (file?: MapEditFileSpecifier) => void;
   load: (file?: MapEditFileSpecifier) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
+  updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
-  mergeFilesystemInDev: () => void;
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -1332,19 +1351,6 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 }
 
 const emptyNodes = [] as MapNode[];
-
-function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
-  const files: MapEditFileSpecifier[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
-      const { type, filename } = decodeFileSpecifierLocalStorageKey(key);
-      if (isSavableFileType(type) && filename) files.push({ type, filename });
-      else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`);
-    }
-  }
-  return files.sort((a, b) => a.filename.localeCompare(b.filename));
-}
 
 const minAsideWidth = 200;
 const maxAsideWidth = 300;
