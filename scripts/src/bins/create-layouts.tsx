@@ -8,8 +8,8 @@
  *
  * USAGE:
  * ```sh
- * pnpm process-symbols
- * pnpm process-symbols --changedFiles='["packages/app/public/symbol/untitled.json"]'
+ * pnpm create-layouts
+ * pnpm create-layouts --changedFiles='["packages/app/public/symbol/untitled.json"]'
  * ```
  *
  */
@@ -18,6 +18,8 @@ import { ansi } from "@npc-cli/cli/shell/const";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, info, safeJsonCompact, safeJsonParse } from "@npc-cli/util/legacy/generic";
+
+// 🚧 use node parseArgs
 //@ts-expect-error
 import getopts from "getopts";
 import z from "zod";
@@ -28,18 +30,13 @@ if (!Array.isArray(changedFiles) || !changedFiles.every((file) => typeof file ==
   throw new Error("If present --changedFiles must be a JSON array of strings.");
 }
 
-info(
-  `[${ansi.Yellow}process-symbols${ansi.Reset}]`,
-  `changedFiles: ${JSON.stringify(changedFiles)}`,
-);
+info(`[${ansi.Yellow}create-layouts${ansi.Reset}]`, `changedFiles: ${JSON.stringify(changedFiles)}`);
 
 // 🚧 account for changedFiles
 for (const file of fs.globSync("packages/app/public/symbol/**/*.json")) {
   const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
   if (!result.success) {
-    error(
-      `${file}: skipping invalid MapEditSavedFile JSON: ${safeJsonCompact(z.flattenError(result.error))}`,
-    );
+    error(`${file}: skipping invalid MapEditSavedFile JSON: ${safeJsonCompact(z.flattenError(result.error))}`);
     continue;
   }
 
