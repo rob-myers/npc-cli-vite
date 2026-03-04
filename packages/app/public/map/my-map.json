@@ -5,8 +5,8 @@
   "height": 600,
   "nodes": [
     {
-      "id": "9f4f3655-d873-4985-a37f-de0546f82824",
-      "name": "Rect 1",
+      "id": "1936b804-89ae-4b7a-937d-d52cdd87e3ab",
+      "name": "Rect 3",
       "locked": false,
       "visible": true,
       "transform": {
@@ -14,15 +14,15 @@
         "b": 0,
         "c": 0,
         "d": 1,
-        "e": 50,
-        "f": 110
+        "e": 0,
+        "f": 590
       },
       "type": "rect",
       "baseRect": {
-        "width": 250,
+        "width": 600,
         "height": 10
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 50, 110)"
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 590)"
     },
     {
       "id": "8b1ab63b-9b01-47d1-abe0-4cd7f9de819b",
@@ -34,15 +34,35 @@
         "b": 0,
         "c": 0,
         "d": 1,
-        "e": 120,
-        "f": 10
+        "e": 0,
+        "f": 0
       },
       "type": "rect",
       "baseRect": {
-        "width": 70,
-        "height": 50
+        "width": 600,
+        "height": 10
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 120, 10)"
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "ebe14c5b-d026-4c2a-b4e0-1d00ffe99465",
+      "name": "Rect 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 590,
+        "f": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 10,
+        "height": 600
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 590, 0)"
     }
   ]
 }
