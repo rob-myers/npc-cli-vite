@@ -77,7 +77,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       });
     },
     onSuccess(_data, _vars, _onMutateResult, context) {
-      context.client.invalidateQueries({ exact: true, queryKey: ["map-edit-symbols-manifest"] });
+      context.client.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
     },
   });
 
@@ -404,7 +404,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           ...("offset" in templateNode && { offset: { ...templateNode.offset } }),
         };
       },
-      delete(nodeIds) {
+      deleteNodes(nodeIds) {
         for (const id of nodeIds) {
           const result = findNode(state.nodes, id);
           if (result) {
@@ -412,11 +412,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           }
         }
       },
-      deleteSelected() {
+      deleteSelectedNodes() {
         if (state.selectedIds.size === 0) return;
         if (state.editingId) return;
         state.pushHistory();
-        state.delete(Array.from(state.selectedIds));
+        state.deleteNodes(Array.from(state.selectedIds));
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
       duplicate(rootNodeId, seenDuringClone) {
@@ -884,13 +884,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         // remove draft
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
 
-        // prod: clear drafts with no corresponding file in manifest
-        // dev: unnecessary because deleteMapEditFile will trigger updateSavedFileSpecifiers
+        // useful in prod: clears drafts with no corresponding file in manifest
         state.updateSavedFileSpecifiers(getLocalStorageSavedFiles());
 
         // in dev actually delete from filesystem
         if (import.meta.env.DEV) {
           await deleteMapEditFile(file);
+        }
+
+        if (areFileSpecifiersEqual(state.currentFile, file)) {
+          state.load(state.savedFileSpecifiers.find((f) => !areFileSpecifiersEqual(f, file)));
         }
       },
       updateSavedFileSpecifiers(drafts) {
@@ -995,7 +998,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       if (e.key in keyShouldPreventDefault) e.preventDefault();
 
       if (e.key === "Backspace") {
-        if (state.selectedIds.size > 0) state.deleteSelected();
+        if (state.selectedIds.size > 0) state.deleteSelectedNodes();
         state.wrapperEl?.focus();
         return;
       }
@@ -1128,7 +1131,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         open={state.pickImageForId !== null}
         onOpenChange={(open) => {
           if (!open) {
-            state.pickImageForId && state.delete([state.pickImageForId]);
+            state.pickImageForId && state.deleteNodes([state.pickImageForId]);
             state.set({ pickImageForId: null });
           }
         }}
@@ -1239,8 +1242,8 @@ export type State = {
   getSelectedNode: () => MapNode | null;
   groupSelected: () => void;
   /** Must manually update state to see changes. */
-  delete: (nodeIds: string[]) => void;
-  deleteSelected: () => void;
+  deleteNodes: (nodeIds: string[]) => void;
+  deleteSelectedNodes: () => void;
   pushHistory: () => void;
   undo: () => void;
   redo: () => void;

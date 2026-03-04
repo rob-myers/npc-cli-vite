@@ -126,11 +126,15 @@
 
 - ✅ list files via manifest not dev server
 - ✅ generate/get maps manifest too
+- ✅ on delete file switch to another file
+- ✅ on delete symbol/map update manifest and remove thumbnail
+- map needs thumbnail too
 
 - onchange filename do not save immediately
 - restart vite onchange map-edit plugin
 - script watches public/symbol and "flattens" symbols
   - extend saved symbol first e.g. walls, doors
+- in production, delete file should be "reset file"
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
