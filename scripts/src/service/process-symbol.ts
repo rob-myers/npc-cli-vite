@@ -1,13 +1,6 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import type {
-  MapEditFileSpecifier,
-  MapEditSavedFile,
-  MapEditSavedMap,
-  MapEditSavedSymbol,
-  MapsManifest,
-  SymbolsManifest,
-} from "@npc-cli/ui__map-edit";
+import type { MapEditFileSpecifier, MapEditSavedFile, MapsManifest, SymbolsManifest } from "@npc-cli/ui__map-edit";
 import {
   MapEditSavedFileSchema,
   MapsManifestSchema,
@@ -26,12 +19,8 @@ export async function deleteSavedFile({ type, filename }: MapEditFileSpecifier) 
 }
 
 export async function processSavedFile(savedFile: MapEditSavedFile) {
-  if (savedFile.type === "symbol") {
-    await createSavedSymbolPreviewPng(savedFile);
-  }
-  if (savedFile.type === "map") {
-    await createSavedMapPreviewPng(savedFile);
-  }
+  // currently same for symbol or map
+  await createSavedFilePreviewPng(savedFile);
 
   // ensure both manifests
   await ensureManifests("symbol", SymbolsManifestSchema, {
@@ -40,7 +29,7 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
   await ensureManifests("map", MapsManifestSchema, { changedFiles: [savedFile].filter((x) => x.type === "map") });
 }
 
-async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
+async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const { width, height, filename, nodes } = savedFile;
   // const scale = 200 / width;
   const scale = 1;
@@ -67,19 +56,13 @@ async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
     }
   });
 
-  const dstPath = path.resolve(
-    PROJECT_ROOT,
-    "packages/app/public/symbol",
-    `${path.basename(filename, ".json")}.thumbnail.png`,
+  await canvas.toFile(
+    path.resolve(
+      PROJECT_ROOT,
+      `packages/app/public/${savedFile.type}`,
+      `${path.basename(filename, ".json")}.thumbnail.png`,
+    ),
   );
-  await canvas.toFile(dstPath);
-}
-
-async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
-  const { width, height, filename, nodes } = savedFile;
-  const canvas = new Canvas(200, 200 * (height / width));
-  const _ct = canvas.getContext("2d");
-  console.log("🚧 createSavedMapPreviewPng", { filename });
 }
 
 type ProcessFileOpts = {

@@ -128,7 +128,7 @@
 - ✅ generate/get maps manifest too
 - ✅ on delete file switch to another file
 - ✅ on delete symbol/map update manifest and remove thumbnail
-- map needs thumbnail too
+- ✅ map needs thumbnail too
 
 - onchange filename do not save immediately
 - restart vite onchange map-edit plugin
