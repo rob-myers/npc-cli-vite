@@ -201,7 +201,7 @@ export const StarShipSymbolImageKeySchema = z.literal(
 
 export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;
 
-export const StarshipSymbolPngsMetadataSchema = z.object({
+export const StarshipSymbolPngsManifestSchema = z.object({
   createdAt: z.string(),
   byKey: z.record(
     StarShipSymbolImageKeySchema,
@@ -213,7 +213,7 @@ export const StarshipSymbolPngsMetadataSchema = z.object({
   ),
 });
 
-export type StarshipSymbolPngsMetadata = z.infer<typeof StarshipSymbolPngsMetadataSchema>;
+export type StarshipSymbolPngsManifest = z.infer<typeof StarshipSymbolPngsManifestSchema>;
 
 /**
  * - 1 sgu (starship geomorph grid unit) ~ 300x300px in original PNGs

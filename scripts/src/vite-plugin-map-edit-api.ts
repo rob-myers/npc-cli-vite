@@ -9,12 +9,16 @@ import {
   type MapEditListFoldersResponse,
   type MapEditSavableFileType,
   MapEditSavedFileSchema,
+  SymbolsManifestSchema,
 } from "@npc-cli/ui__map-edit/map-node-api";
+import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
+import { error, warn } from "@npc-cli/util/legacy/generic";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
+const PUBLIC_SYMBOL_DIR = path.join(PROJECT_ROOT, "packages/app/public/symbol");
 
 export function mapEditApiPlugin(): Plugin {
   return {
@@ -75,10 +79,7 @@ function onGetApiMapEditFolders(res: ServerResponse<IncomingMessage>) {
   res.end(JSON.stringify(response));
 }
 
-async function handleApiMapEditFile(
-  req: Connect.IncomingMessage,
-  res: ServerResponse<IncomingMessage>,
-) {
+async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerResponse<IncomingMessage>) {
   const fileMatch = req.url?.match(/^\/api\/map-edit\/file\/(.+)$/);
   if (!fileMatch) return;
 
@@ -117,9 +118,7 @@ async function handleApiMapEditFile(
       res.end(JSON.stringify({ error: "File not found" }));
       return true;
     }
-    const savedFile = jsonParser
-      .pipe(MapEditSavedFileSchema)
-      .parse(fs.readFileSync(filePath, "utf-8"));
+    const savedFile = jsonParser.pipe(MapEditSavedFileSchema).parse(fs.readFileSync(filePath, "utf-8"));
     res.end(JSON.stringify(savedFile));
     return true;
   }
@@ -132,7 +131,6 @@ async function handleApiMapEditFile(
     const fileToSave = jsonParser.pipe(MapEditSavedFileSchema).parse(body);
     fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
 
-    // create PNG preview
     // hot reloading via cache busting
     await import(`./service/process-symbol.ts?t=${Date.now()}`).then(
       ({ processSavedFile }: typeof import("./service/process-symbol")) => {
@@ -144,11 +142,28 @@ async function handleApiMapEditFile(
     return true;
   }
 
-  // DELETE - Delete file
+  // DELETE - Delete manifest entry, file, thumbnail
   if (req.method === "DELETE") {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // prefer fetchParsed when readi json in plugin (dev-server exists)
+    const symbolManifest = await fetchParsed(
+      `http://localhost:${process.env.DEV_PORT}/symbol/manifest.json`,
+      SymbolsManifestSchema,
+    );
+    const entry = symbolManifest.byFilename[filename];
+
+    if (entry) {
+      await fs.promises.unlink(path.resolve(PUBLIC_SYMBOL_DIR, entry.filename)).catch(error);
+      await fs.promises.unlink(path.resolve(PUBLIC_SYMBOL_DIR, entry.thumbnailFilename)).catch(error);
+
+      delete symbolManifest.byFilename[filename];
+      await fs.promises.writeFile(
+        path.join(PUBLIC_SYMBOL_DIR, "manifest.json"),
+        JSON.stringify(symbolManifest, null, 2),
+      );
+    } else {
+      warn(`File ${filename} not in manifest, skipping symbol deletion`);
     }
+
     res.end(JSON.stringify({ success: true }));
     return true;
   }
