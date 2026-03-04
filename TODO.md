@@ -125,6 +125,8 @@
     - modal with symbol thumbnails
 
 - ✅ list files via manifest not dev server
+- ✅ generate/get maps manifest too
+
 - onchange filename do not save immediately
 - restart vite onchange map-edit plugin
 - script watches public/symbol and "flattens" symbols

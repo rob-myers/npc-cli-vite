@@ -354,3 +354,18 @@ export const SymbolsManifestSchema = z.object({
 });
 
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
+
+export const MapsManifestSchema = z.object({
+  createdAt: z.string(),
+  byFilename: z.record(
+    z.string(),
+    z.object({
+      filename: z.string(),
+      thumbnailFilename: z.string(),
+      width: z.number(),
+      height: z.number(),
+    }),
+  ),
+});
+
+export type MapsManifest = z.infer<typeof MapsManifestSchema>;
