@@ -2,7 +2,7 @@
 
 /**
  * - Ensure starship symbol PNGs exist in packages/app/public/starship-symbol
- * - Compute packages/app/public/starship-symbol/metadata.json
+ * - Compute packages/app/public/starship-symbol/manifest.json
  *
  * Usage:
  * pnpm asset-pngs
@@ -45,8 +45,8 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
 // - Copy each {folder}/{file} to public/starship-symbol/{file}
 mkdirSync(assetsOutputDir, { recursive: true });
 
-// - Generate metadata.json with dimensions of each image
-const metadata: StarshipSymbolPngsMetadata = {
+// - Generate manifest.json with dimensions of each image
+const manifest: StarshipSymbolPngsMetadata = {
   createdAt: new Date().toISOString(),
   byKey: {} as StarshipSymbolPngsMetadata["byKey"],
 };
@@ -60,7 +60,7 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
     fs.copyFileSync(srcPath, dstPath);
 
     const dimensions = await imageSizeFromFile(dstPath);
-    metadata.byKey[symbolKey] = {
+    manifest.byKey[symbolKey] = {
       group: folderName,
       width: dimensions.width,
       height: dimensions.height,
@@ -68,4 +68,4 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
   }
 }
 
-writeFileSync(path.join(assetsOutputDir, "metadata.json"), safeJsonCompact(metadata));
+writeFileSync(path.join(assetsOutputDir, "manifest.json"), safeJsonCompact(manifest));
