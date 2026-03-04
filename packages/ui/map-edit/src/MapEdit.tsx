@@ -1017,6 +1017,24 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return;
       }
 
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
+        e.preventDefault();
+        state.pushHistory();
+        const dx = e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0;
+        const dy = e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0;
+        for (const id of state.selectedIds) {
+          const result = findNode(state.nodes, id);
+          if (result?.node.type === "rect" || result?.node.type === "image") {
+            const node = result.node;
+            node.transform.e += dx;
+            node.transform.f += dy;
+            node.cssTransform = computeNodeCssTransform(node);
+          }
+        }
+        state.set({ nodes: state.nodes });
+        return;
+      }
+
       const modified = e.metaKey || e.ctrlKey;
       if (!modified) return;
 
