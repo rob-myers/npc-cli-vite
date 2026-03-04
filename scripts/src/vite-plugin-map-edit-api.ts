@@ -4,21 +4,18 @@ import path from "node:path";
 // ⚠️ non-type import breaks vite dev env
 import {
   type ALLOWED_MAP_EDIT_FOLDERS,
+  isSavableFileType,
   type MapEditFileSpecifier,
   type MapEditListFilesResponse,
   type MapEditListFoldersResponse,
   type MapEditSavableFileType,
   MapEditSavedFileSchema,
-  SymbolsManifestSchema,
 } from "@npc-cli/ui__map-edit/map-node-api";
-import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { error, warn } from "@npc-cli/util/legacy/generic";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
-const PUBLIC_SYMBOL_DIR = path.join(PROJECT_ROOT, "packages/app/public/symbol");
 
 export function mapEditApiPlugin(): Plugin {
   return {
@@ -91,7 +88,7 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
     return;
   }
   const [folder, filename] = parts;
-  if (!MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.includes(folder as MapEditSavableFileType)) {
+  if (!isSavableFileType(folder)) {
     res.statusCode = 400;
     res.end(
       JSON.stringify({
@@ -133,36 +130,19 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
 
     // hot reloading via cache busting
     await import(`./service/process-symbol.ts?t=${Date.now()}`).then(
-      ({ processSavedFile }: typeof import("./service/process-symbol")) => {
-        processSavedFile(fileToSave);
-      },
+      ({ processSavedFile }: typeof import("./service/process-symbol")) => processSavedFile(fileToSave),
     );
 
     res.end(JSON.stringify({ success: true }));
     return true;
   }
 
-  // DELETE - Delete manifest entry, file, thumbnail
+  // DELETE - Delete file and related cache
   if (req.method === "DELETE") {
-    // prefer fetchParsed when readi json in plugin (dev-server exists)
-    const symbolManifest = await fetchParsed(
-      `http://localhost:${process.env.DEV_PORT}/symbol/manifest.json`,
-      SymbolsManifestSchema,
+    // hot reloading via cache busting
+    await import(`./service/process-symbol.ts?t=${Date.now()}`).then(
+      ({ deleteSavedFile }: typeof import("./service/process-symbol")) => deleteSavedFile({ type: folder, filename }),
     );
-    const entry = symbolManifest.byFilename[filename];
-
-    if (entry) {
-      await fs.promises.unlink(path.resolve(PUBLIC_SYMBOL_DIR, entry.filename)).catch(error);
-      await fs.promises.unlink(path.resolve(PUBLIC_SYMBOL_DIR, entry.thumbnailFilename)).catch(error);
-
-      delete symbolManifest.byFilename[filename];
-      await fs.promises.writeFile(
-        path.join(PUBLIC_SYMBOL_DIR, "manifest.json"),
-        JSON.stringify(symbolManifest, null, 2),
-      );
-    } else {
-      warn(`File ${filename} not in manifest, skipping symbol deletion`);
-    }
 
     res.end(JSON.stringify({ success: true }));
     return true;

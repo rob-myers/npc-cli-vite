@@ -150,7 +150,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                 <Menu.Item
                   className="flex items-center gap-2 px-2 py-1 text-xs text-red-400 hover:bg-slate-700 cursor-pointer"
                   closeOnClick
-                  onClick={() => state.deleteSelected()}
+                  onClick={() => state.deleteSelectedNodes()}
                 >
                   <TrashIcon className="size-4" />
                   Delete

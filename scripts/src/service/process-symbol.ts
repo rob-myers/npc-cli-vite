@@ -1,6 +1,7 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import type {
+  MapEditFileSpecifier,
   MapEditSavedFile,
   MapEditSavedMap,
   MapEditSavedSymbol,
@@ -20,6 +21,10 @@ import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 
+export async function deleteSavedFile({ type, filename }: MapEditFileSpecifier) {
+  await ensureManifests(type, SymbolsManifestSchema, { changedFiles: [], removedFiles: [{ type, filename }] });
+}
+
 export async function processSavedFile(savedFile: MapEditSavedFile) {
   if (savedFile.type === "symbol") {
     await createSavedSymbolPreviewPng(savedFile);
@@ -28,16 +33,11 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
     await createSavedMapPreviewPng(savedFile);
   }
 
-  await ensureManifests(
-    "symbol",
-    SymbolsManifestSchema,
-    [savedFile].filter((x) => x.type === "symbol"),
-  );
-  await ensureManifests(
-    "map",
-    MapsManifestSchema,
-    [savedFile].filter((x) => x.type === "map"),
-  );
+  // ensure both manifests
+  await ensureManifests("symbol", SymbolsManifestSchema, {
+    changedFiles: [savedFile].filter((x) => x.type === "symbol"),
+  });
+  await ensureManifests("map", MapsManifestSchema, { changedFiles: [savedFile].filter((x) => x.type === "map") });
 }
 
 async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
@@ -82,14 +82,19 @@ async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
   console.log("🚧 createSavedMapPreviewPng", { filename });
 }
 
+type ProcessFileOpts = {
+  changedFiles?: MapEditSavedFile[];
+  removedFiles?: MapEditFileSpecifier[];
+};
+
 /**
- * - if `changedFiles` null then regenerate all
+ * - if `changedFiles` undefined then regenerate all
  * - otherwise ensure `changedFiles` and also missing files
  */
 async function ensureManifests<T extends SymbolsManifest | MapsManifest>(
   type: "symbol" | "map",
   schema: z.ZodType<T>,
-  changedFiles: null | MapEditSavedFile[],
+  opts: ProcessFileOpts,
 ) {
   const manifestPath = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`, "manifest.json");
   const createdAt = new Date().toISOString();
@@ -100,26 +105,37 @@ async function ensureManifests<T extends SymbolsManifest | MapsManifest>(
       byFilename: {},
     } as T);
 
-  const filePaths = fs
-    .globSync(path.resolve(PROJECT_ROOT, `packages/app/public/${type}/*.json`))
-    .filter((x) => path.basename(x) !== "manifest.json");
+  const directory = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`);
+  const filePaths = fs.globSync(path.resolve(directory, "*.json")).filter((x) => path.basename(x) !== "manifest.json");
 
-  const changedFilenames = changedFiles?.map((x) => x.filename) ?? filePaths.map((x) => path.basename(x));
+  const changedFilenames = opts.changedFiles?.map((x) => x.filename) ?? filePaths.map((x) => path.basename(x));
 
   for (const filePath of filePaths) {
     const filename = path.basename(filePath);
-    if (nextManifest.byFilename[filename] && !changedFilenames.includes(filename)) continue;
 
-    const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
-    if (result.success) {
-      nextManifest.byFilename[filename] = {
-        filename,
-        thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
-        width: result.data.width,
-        height: result.data.height,
-      };
-    } else {
-      error(`Failed to parse existing ${type}: ${filename}`, z.prettifyError(result.error));
+    if (!nextManifest.byFilename[filename] || changedFilenames.includes(filename)) {
+      const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
+      if (result.success) {
+        nextManifest.byFilename[filename] = {
+          filename,
+          thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
+          width: result.data.width,
+          height: result.data.height,
+        };
+      } else {
+        error(`Failed to parse existing ${type}: ${filename}`, z.prettifyError(result.error));
+      }
+    }
+
+    if (opts.removedFiles?.some((x) => x.filename === filename)) {
+      const entry = nextManifest.byFilename[filename];
+      if (entry) {
+        delete nextManifest.byFilename[filename];
+        await fs.promises.unlink(path.resolve(directory, entry.filename)).catch(warn);
+        await fs.promises.unlink(path.resolve(directory, entry.thumbnailFilename)).catch(warn);
+      } else {
+        error(`Failed to remove ${type}: ${filename} (no entry in manifest)`);
+      }
     }
   }
 
