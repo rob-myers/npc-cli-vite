@@ -45,6 +45,8 @@ import {
   type MapNode,
   type MapNodeMap,
   type MapNodeType,
+  type MapsManifest,
+  MapsManifestSchema,
   mapNodes,
   removeNodeFromParent,
   type SymbolsManifest,
@@ -111,6 +113,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       svgEl: null,
       wrapperEl: null,
 
+      mapsManifest: null,
       pngsManifest: null,
       pickImageForId: null,
       symbolsManifest: null,
@@ -891,8 +894,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
       },
       updateSavedFileSpecifiers(drafts) {
-        if (!state.symbolsManifest) {
-          return warn("symbolsManifest is not ready");
+        if (!state.symbolsManifest || !state.mapsManifest) {
+          return warn("manifests not ready");
         }
 
         state.set({
@@ -901,8 +904,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               ...Object.values(state.symbolsManifest.byFilename).map(
                 (f) => [`symbol/${f.filename}`, { type: "symbol", filename: f.filename }] as const,
               ),
-              // 🚧 mapsManifest
-              // ...Object.values(state.mapsManifest.byFilename).map((f) => [`map/${f.filename}`, { type: "map", filename: f.filename }] as const)
+              ...Object.values(state.mapsManifest.byFilename).map(
+                (f) => [`map/${f.filename}`, { type: "map", filename: f.filename }] as const,
+              ),
               ...drafts.map((f) => [`${f.type}/${f.filename}`, f] as const),
             ]).values(),
           ),
@@ -916,26 +920,27 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   useEffect(() => {
     if (state.nodes === emptyNodes) {
       state.load();
+      isTouchDevice() && state.set({ isAsideCollapsed: true });
     }
-    isTouchDevice() && state.set({ isAsideCollapsed: true });
   }, []);
 
-  state.pngsManifest =
-    useQuery({
-      queryKey: ["map-edit-images-manifest"],
-      queryFn: () => fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema),
-    }).data ?? null;
+  useQuery({
+    queryKey: ["map-edit-images-manifest"],
+    queryFn: async () => {
+      state.pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
+      return null;
+    },
+  });
 
-  // 🚧 get both symbol and map manifests here
-  state.symbolsManifest =
-    useQuery({
-      queryKey: ["map-edit-symbols-manifest"],
-      queryFn: () => fetchParsed("/symbol/manifest.json", SymbolsManifestSchema),
-    }).data ?? null;
-
-  useEffect(() => {
-    if (state.symbolsManifest) state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
-  }, [state.symbolsManifest]);
+  useQuery({
+    queryKey: ["map-edit-manifests"],
+    queryFn: async () => {
+      state.symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);
+      state.mapsManifest = await fetchParsed("/map/manifest.json", MapsManifestSchema);
+      state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
+      return null;
+    },
+  });
 
   // Pointer events
   useEffect(() => {
@@ -1200,6 +1205,7 @@ export type State = {
       };
   pngsManifest: StarshipSymbolPngsManifest | null;
   pickImageForId: string | null;
+  mapsManifest: MapsManifest | null;
   symbolsManifest: SymbolsManifest | null;
 
   /** {folder}/{filename} */

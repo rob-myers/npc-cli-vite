@@ -1,10 +1,21 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import type { MapEditSavedFile, MapEditSavedMap, MapEditSavedSymbol, SymbolsManifest } from "@npc-cli/ui__map-edit";
-import { MapEditSavedFileSchema, SymbolsManifestSchema, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
+import type {
+  MapEditSavedFile,
+  MapEditSavedMap,
+  MapEditSavedSymbol,
+  MapsManifest,
+  SymbolsManifest,
+} from "@npc-cli/ui__map-edit";
+import {
+  MapEditSavedFileSchema,
+  MapsManifestSchema,
+  SymbolsManifestSchema,
+  traverseNodesAsync,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { error } from "@npc-cli/util/legacy/generic";
+import { error, warn } from "@npc-cli/util/legacy/generic";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
@@ -17,7 +28,16 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
     await createSavedMapPreviewPng(savedFile);
   }
 
-  ensureSymbolsManifest({ changedFiles: [savedFile] });
+  await ensureManifests(
+    "symbol",
+    SymbolsManifestSchema,
+    [savedFile].filter((x) => x.type === "symbol"),
+  );
+  await ensureManifests(
+    "map",
+    MapsManifestSchema,
+    [savedFile].filter((x) => x.type === "map"),
+  );
 }
 
 async function createSavedSymbolPreviewPng(savedFile: MapEditSavedSymbol) {
@@ -62,48 +82,46 @@ async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
   console.log("🚧 createSavedMapPreviewPng", { filename });
 }
 
-function ensureSymbolsManifest({ changedFiles }: { changedFiles: null | MapEditSavedFile[] }) {
-  const manifestFilePath = path.resolve(PROJECT_ROOT, "packages/app/public/symbol", "manifest.json");
+/**
+ * - if `changedFiles` null then regenerate all
+ * - otherwise ensure `changedFiles` and also missing files
+ */
+async function ensureManifests<T extends SymbolsManifest | MapsManifest>(
+  type: "symbol" | "map",
+  schema: z.ZodType<T>,
+  changedFiles: null | MapEditSavedFile[],
+) {
+  const manifestPath = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`, "manifest.json");
+  const createdAt = new Date().toISOString();
+  const nextManifest: T =
+    jsonParser.pipe(schema).safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data ??
+    ({
+      createdAt,
+      byFilename: {},
+    } as T);
 
-  const nextManifest: SymbolsManifest = {
-    createdAt: new Date().toISOString(),
-    byFilename: {},
-  };
+  const filePaths = fs
+    .globSync(path.resolve(PROJECT_ROOT, `packages/app/public/${type}/*.json`))
+    .filter((x) => path.basename(x) !== "manifest.json");
 
-  if (fs.existsSync(manifestFilePath)) {
-    // might be running script sans dev-server, so avoid fetchParsed
-    const result = jsonParser.pipe(SymbolsManifestSchema).safeParse(fs.readFileSync(manifestFilePath, "utf-8"));
+  const changedFilenames = changedFiles?.map((x) => x.filename) ?? filePaths.map((x) => path.basename(x));
+
+  for (const filePath of filePaths) {
+    const filename = path.basename(filePath);
+    if (nextManifest.byFilename[filename] && !changedFilenames.includes(filename)) continue;
+
+    const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
     if (result.success) {
-      nextManifest.byFilename = result.data.byFilename;
+      nextManifest.byFilename[filename] = {
+        filename,
+        thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
+        width: result.data.width,
+        height: result.data.height,
+      };
     } else {
-      error("Failed to parse existing symbols/manifest.json", z.prettifyError(result.error));
+      error(`Failed to parse existing ${type}: ${filename}`, z.prettifyError(result.error));
     }
   }
 
-  const symbolFilePaths = fs
-    .globSync(path.resolve(PROJECT_ROOT, "packages/app/public/symbol/*.json"))
-    .filter((x) => x !== manifestFilePath);
-
-  // if changedFiles null then regenerate all
-  const changedFilenames = changedFiles?.map((x) => x.filename) ?? symbolFilePaths.map((x) => path.basename(x));
-
-  for (const symbolFilePath of symbolFilePaths) {
-    const filename = path.basename(symbolFilePath);
-    if (!nextManifest.byFilename[filename] || changedFilenames.includes(filename)) {
-      const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(symbolFilePath, "utf-8"));
-      if (result.success) {
-        nextManifest.byFilename[filename] = {
-          filename,
-          thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
-          width: result.data.width,
-          height: result.data.height,
-        };
-      } else {
-        error(`Failed to parse existing symbol: ${filename}`, z.prettifyError(result.error));
-      }
-    }
-  }
-
-  // console.log({ changedFiles, symbolFiles: symbolFilePaths });
-  fs.writeFileSync(manifestFilePath, JSON.stringify(nextManifest, null, 2));
+  fs.writeFileSync(manifestPath, JSON.stringify(nextManifest, null, 2));
 }
