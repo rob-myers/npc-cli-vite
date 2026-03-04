@@ -438,30 +438,46 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
       },
-      rotate(nodeId, deltaDegrees) {
+      rotateNode(nodeId, deltaDegrees) {
         const result = findNode(state.nodes, nodeId);
-        if (result?.node.type !== "image") return; // can only rotate images
+        if (!result) return;
 
-        const node = result.node;
-        const { width: W, height: H } = node.baseRect;
-        const [cx, cy] = [W / 2, H / 2];
-        const { a, b, c, d, e, f } = node.transform;
+        if (result.node.type === "image") {
+          const node = result.node;
+          const { width: W, height: H } = node.baseRect;
+          const [cx, cy] = [W / 2, H / 2];
+          const { a, b, c, d, e, f } = node.transform;
 
-        const m = new DOMMatrix([a, b, c, d, e, f]);
-        m.translateSelf(cx, cy).rotateSelf(deltaDegrees).translateSelf(-cx, -cy);
-        node.transform.a = m.a;
-        node.transform.b = m.b;
-        node.transform.c = m.c;
-        node.transform.d = m.d;
-        node.transform.e = m.e;
-        node.transform.f = m.f;
+          const m = new DOMMatrix([a, b, c, d, e, f]);
+          m.translateSelf(cx, cy).rotateSelf(deltaDegrees).translateSelf(-cx, -cy);
+          node.transform.a = m.a;
+          node.transform.b = m.b;
+          node.transform.c = m.c;
+          node.transform.d = m.d;
+          node.transform.e = m.e;
+          node.transform.f = m.f;
 
-        node.cssTransform = computeNodeCssTransform(node);
+          node.cssTransform = computeNodeCssTransform(node);
+        } else if (result.node.type === "rect") {
+          const node = result.node;
+          const { width: W, height: H } = node.baseRect;
+          const { e, f } = node.transform;
+
+          // Swap width and height
+          node.baseRect.width = H;
+          node.baseRect.height = W;
+
+          // Adjust translation to keep center in same place
+          node.transform.e = e + W / 2 - H / 2;
+          node.transform.f = f + H / 2 - W / 2;
+
+          node.cssTransform = computeNodeCssTransform(node);
+        }
       },
       rotateSelected(degrees) {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
-        for (const id of state.selectedIds) state.rotate(id, degrees);
+        for (const id of state.selectedIds) state.rotateNode(id, degrees);
         state.update();
       },
       getNextName(type, prefix = `${type.charAt(0).toUpperCase()}${type.slice(1)} `) {
@@ -1269,7 +1285,7 @@ export type State = {
   /** Must manually update state to see changes. */
   duplicate: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
-  rotate: (nodeId: string, degrees: -90 | 90) => void;
+  rotateNode: (nodeId: string, degrees: -90 | 90) => void;
   rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   save: (file?: MapEditFileSpecifier) => void;
