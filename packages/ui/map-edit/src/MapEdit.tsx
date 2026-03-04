@@ -909,8 +909,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   }, []);
 
   state.pngsMetadata = useQuery({
-    queryKey: ["map-edit-images-metadata"],
-    queryFn: async () => await fetch("/starship-symbol/metadata.json").then((x) => x.json()),
+    queryKey: ["map-edit-images-manifest"],
+    queryFn: async () => await fetch("/starship-symbol/manifest.json").then((x) => x.json()),
   }).data;
 
   // Pointer events

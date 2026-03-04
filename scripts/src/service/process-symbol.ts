@@ -74,10 +74,10 @@ async function createSavedMapPreviewPng(savedFile: MapEditSavedMap) {
 }
 
 function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditSavedFile[] }) {
-  const metadataFilePath = path.resolve(
+  const manifestFilePath = path.resolve(
     PROJECT_ROOT,
     "packages/app/public/symbol",
-    "metadata.json",
+    "manifest.json",
   );
 
   const nextMetadata: SymbolsMetadata = {
@@ -85,20 +85,20 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
     byFilename: {},
   };
 
-  if (fs.existsSync(metadataFilePath)) {
+  if (fs.existsSync(manifestFilePath)) {
     const result = jsonParser
       .pipe(SymbolsMetadataSchema)
-      .safeParse(fs.readFileSync(metadataFilePath, "utf-8"));
+      .safeParse(fs.readFileSync(manifestFilePath, "utf-8"));
     if (result.success) {
       nextMetadata.byFilename = result.data.byFilename;
     } else {
-      error("Failed to parse existing symbols/metadata.json", z.prettifyError(result.error));
+      error("Failed to parse existing symbols/manifest.json", z.prettifyError(result.error));
     }
   }
 
   const symbolFilePaths = fs
     .globSync(path.resolve(PROJECT_ROOT, "packages/app/public/symbol/*.json"))
-    .filter((x) => x !== metadataFilePath);
+    .filter((x) => x !== manifestFilePath);
 
   // if changedFiles null then regenerate all
   const changedFilenames =
@@ -124,5 +124,5 @@ function ensureSymbolsMetadata({ changedFiles }: { changedFiles: null | MapEditS
   }
 
   // console.log({ changedFiles, symbolFiles: symbolFilePaths });
-  fs.writeFileSync(metadataFilePath, JSON.stringify(nextMetadata, null, 2));
+  fs.writeFileSync(manifestFilePath, JSON.stringify(nextMetadata, null, 2));
 }
