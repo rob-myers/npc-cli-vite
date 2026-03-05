@@ -20,7 +20,7 @@
       "type": "rect",
       "baseRect": {
         "width": 120,
-        "height": 20
+        "height": 10
       },
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
@@ -39,7 +39,7 @@
       },
       "type": "rect",
       "baseRect": {
-        "width": 20,
+        "width": 10,
         "height": 120
       },
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"

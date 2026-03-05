@@ -28,6 +28,31 @@
         "y": -0.7
       },
       "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+    },
+    {
+      "id": "67f91b3a-a5a7-411d-8a90-833d3bcd0c4d",
+      "name": "stateroom--012--2x2 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "image",
+      "imageKey": "stateroom--012--2x2",
+      "baseRect": {
+        "width": 126.60000000000001,
+        "height": 124
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
     }
   ]
 }
