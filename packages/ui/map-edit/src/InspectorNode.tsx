@@ -7,7 +7,7 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { FolderIcon, ImageIcon, RectangleIcon, StampIcon } from "@phosphor-icons/react";
+import { FolderIcon, ImageIcon, LockIcon, LockOpenIcon, RectangleIcon, StampIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
@@ -83,7 +83,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         ref={state.ref("rowEl")}
         className={cn(
           uiClassName,
-          "relative grid grid-cols-[minmax(auto,1.5rem)_auto] items-center cursor-pointer hover:brightness-125",
+          "relative grid grid-cols-[minmax(auto,1.5rem)_auto_auto] items-center cursor-pointer hover:brightness-125",
           "pr-3 bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
           state.closestEdge === "top" && "border-t-2 border-t-blue-400",
@@ -119,6 +119,21 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
             if (e.key === "Escape") root.onCancelEdit();
           }}
         />
+
+        <button
+          className={cn(
+            "flex items-center justify-center px-1 text-on-background/50 hover:text-on-background",
+            element.locked && "text-on-background/80",
+          )}
+          title={element.locked ? "Unlock" : "Lock"}
+          onClick={(e) => {
+            e.stopPropagation();
+            element.locked = !element.locked;
+            root.update();
+          }}
+        >
+          {element.locked ? <LockIcon className="size-3" /> : <LockOpenIcon className="size-3" />}
+        </button>
       </div>
 
       {isGroup === true && state.isExpanded === true && (

@@ -124,14 +124,17 @@
     - 🚧 POST /api/map-edit/file/:type/:filename updates public/symbol/metdata.json
     - modal with symbol thumbnails
 
+- ✅ can lock nodes
+- can set image nodes opacity
+
 - ✅ list files via manifest not dev server
 - ✅ generate/get maps manifest too
 - ✅ on delete file switch to another file
 - ✅ on delete symbol/map update manifest and remove thumbnail
 - ✅ map needs thumbnail too
 
-- onchange filename do not save immediately
-- restart vite onchange map-edit plugin
+- ❌ restart vite onchange map-edit plugin
+  - but we do cache bust imports
 - script watches public/symbol and "flattens" symbols
   - extend saved symbol first e.g. walls, doors
 - in production, delete file should be "reset file"
