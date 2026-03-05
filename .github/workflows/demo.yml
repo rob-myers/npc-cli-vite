@@ -1,0 +1,8 @@
+name: GitHub Actions Demo
+on: [push] # Triggers on every push
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest # The virtual machine type
+    steps:
+      - uses: actions/checkout@v4 # Clones your code to the runner
+      - run: echo "Hello World!"
