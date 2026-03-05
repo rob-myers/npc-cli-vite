@@ -1,11 +1,11 @@
 {
   "createdAt": "2026-03-04T15:28:13.828Z",
   "byFilename": {
-    "another.json": {
-      "filename": "another.json",
-      "thumbnailFilename": "another.thumbnail.png",
-      "width": 600,
-      "height": 600
+    "stateroom--012--2x2.json": {
+      "filename": "stateroom--012--2x2.json",
+      "thumbnailFilename": "stateroom--012--2x2.thumbnail.png",
+      "width": 120,
+      "height": 120
     }
   }
 }
