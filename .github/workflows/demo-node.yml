@@ -1,5 +1,7 @@
 name: Run a demo Node script
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+  push: # temp register workflow (not on main branch)
 
 jobs:
   execute-script:
