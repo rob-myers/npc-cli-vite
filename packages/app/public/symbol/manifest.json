@@ -6,6 +6,12 @@
       "thumbnailFilename": "stateroom--012--2x2.thumbnail.png",
       "width": 120,
       "height": 120
+    },
+    "stateroom--019--2x3.json": {
+      "filename": "stateroom--019--2x3.json",
+      "thumbnailFilename": "stateroom--019--2x3.thumbnail.png",
+      "width": 120,
+      "height": 120
     }
   }
 }

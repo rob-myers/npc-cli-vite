@@ -37,9 +37,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                   key={folderType}
                   className={cn(
                     "px-2 py-1 text-xs cursor-pointer",
-                    folderType === type
-                      ? "text-blue-400 bg-slate-700"
-                      : "text-slate-300 hover:bg-slate-700",
+                    folderType === type ? "text-blue-400 bg-slate-700" : "text-slate-300 hover:bg-slate-700",
                   )}
                   closeOnClick
                   onClick={() => {
@@ -61,23 +59,14 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
         </Menu.Portal>
       </Menu.Root>
 
-      {type === "symbol" ? (
-        <SymbolFileSelect state={state} />
-      ) : (
-        <MapFileSelect state={state} />
-      )}
+      {type === "symbol" ? <SymbolFileSelect state={state} /> : <MapFileSelect state={state} />}
     </div>
   );
 }
 
 function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
   const savedFilenames = useMemo(
-    () =>
-      new Set(
-        state.savedFileSpecifiers
-          .filter((f) => f.type === "symbol")
-          .map((f) => f.filename),
-      ),
+    () => new Set(state.savedFileSpecifiers.filter((f) => f.type === "symbol").map((f) => f.filename)),
     [state.savedFileSpecifiers],
   );
 
@@ -87,7 +76,19 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
       onValueChange={(filename) => {
         if (filename && filename !== state.currentFile.filename) {
           const file = { type: "symbol" as const, filename };
-          state.load(file);
+          if (savedFilenames.has(filename)) {
+            state.load(file);
+          } else {
+            state.set({
+              nodes: [],
+              selectedIds: new Set(),
+              selectionBox: null,
+              currentFile: file,
+              undoStack: [],
+              redoStack: [],
+              isDirty: true,
+            });
+          }
         }
       }}
     >
