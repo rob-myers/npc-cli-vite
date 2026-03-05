@@ -1,22 +1,24 @@
 import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
+import { MapTrifoldIcon, StampIcon } from "@phosphor-icons/react";
 import type { State } from "./MapEdit";
 import { ALLOWED_MAP_EDIT_FOLDERS, type MapEditSavableFileType } from "./map-node-api";
 
 export function FileMenu({ state }: { state: UseStateRef<State> }) {
   return (
-    <div className="flex flex-wrap items-center gap-1 py-1.5 border-b border-slate-800">
+    <div className="flex flex-wrap items-center gap-0.5 py-1 border-b border-slate-800">
       <Menu.Root>
         <Menu.Trigger
           className={cn(
             uiClassName,
-            "px-1 py-0.5 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer",
+            "text-on-background px-1 py-0.5 text-xs rounded hover:bg-slate-600 cursor-pointer",
           )}
           title="Change folder"
         >
-          {state.currentFile.type.slice(0, 3)}
+          {state.currentFile.type === "map" ? <MapTrifoldIcon className="size-4" /> : <StampIcon className="size-4" />}
         </Menu.Trigger>
+
         <Menu.Portal>
           <Menu.Positioner className="z-50" align="start" sideOffset={4}>
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
@@ -47,8 +49,6 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
-
-      <span className="text-slate-500">/</span>
 
       <div
         className={cn(

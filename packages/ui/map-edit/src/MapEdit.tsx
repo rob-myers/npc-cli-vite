@@ -1132,12 +1132,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         )}
         style={{ width: state.asideWidth, minWidth: state.asideWidth }}
       >
-        <div className="grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
-          <FileMenu state={state} />
+        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center px-3 py-2 border-b border-slate-800 bg-slate-900/20">
           <MainMenu state={state} />
+          <FileMenu state={state} />
         </div>
 
-        <div className={cn(uiClassName, "overflow-auto h-full bg-background")}>
+        <div className={cn(uiClassName, "h-full bg-background")}>
           {state.nodes.map((el) => (
             <InspectorNode key={el.id} element={el} level={0} root={state} />
           ))}
@@ -1397,7 +1397,7 @@ const emptyNodes = [] as MapNode[];
 
 const minAsideWidth = 200;
 const maxAsideWidth = 300;
-const defaultAsideWidth = 192;
+const defaultAsideWidth = minAsideWidth;
 const zoomDelta = 0.04;
 const minZoomScale = 0.5;
 const maxZoomScale = 20;
@@ -1408,13 +1408,13 @@ const increment = 10;
 const snap = (v: number) => Math.round(v / increment) * increment;
 
 /**
-    - d: Duplicate
-    - g: Group
-    - r: Redo
-    - s: Save
-    - y: Undo
-    - z: Undo
-    */
+- d: Duplicate
+- g: Group
+- r: Redo
+- s: Save
+- y: Undo
+- z: Undo
+*/
 const keyShouldPreventDefault = {
   a: true,
   d: true,
