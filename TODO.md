@@ -1,5 +1,21 @@
 # TODO
 
+# Github Actions Branch
+
+- ✅ demo.yaml runs on push
+- ✅ demo-node.yaml: runs on push, installs node/pnpm, runs pnpm noop
+
+- 🚧 run cypress locally
+- get cypress running on github action
+  - https://docs.cypress.io/app/continuous-integration/github-actions
+
+- first draft of challenge working locally
+  - https://portal.mvp.bafin.de/database/AnteileInfo/?locale=en_GB
+  - Export total
+  - Export options: CSV
+
+---
+
 - ❌ migrate existing character to Blockbench
   - head 128x128 (1x1) body 384x128 (3x1)
   - ✅ copy over npc texture svgs
