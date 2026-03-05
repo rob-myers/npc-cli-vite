@@ -3,13 +3,7 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import { QuestionIcon } from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import {
-  baseSvgSize,
-  findNode,
-  getNodeBounds,
-  type MapNode,
-  type RectMapNode,
-} from "./map-node-api";
+import { baseSvgSize, findNode, getNodeBounds, type MapNode, type RectMapNode } from "./map-node-api";
 
 export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const vbW = baseSvgSize / root.zoom;
@@ -30,10 +24,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width={root.svgWidth}
       height={root.svgHeight}
-      className={cn(
-        uiClassName,
-        "size-full drop-shadow-2xl border border-white/20 overflow-visible",
-      )}
+      className={cn(uiClassName, "size-full drop-shadow-2xl border border-white/20 overflow-visible")}
       onPointerDown={root.onSvgPointerDown}
       onPointerMove={root.onSvgPointerMove}
       onPointerUp={root.onSvgPointerUp}
@@ -61,19 +52,13 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   );
 }
 
-export const RenderMapNodes = ({
-  nodes,
-  selectedIds,
-}: {
-  nodes: MapNode[];
-  selectedIds: Set<string>;
-}) => {
+export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selectedIds: Set<string> }) => {
   return nodes.map((node) => {
     switch (node.type) {
       case "group": {
         // groups do not support transform i.e. folders only
         return (
-          <g key={node.id} data-node-id={node.id}>
+          <g key={node.id} data-node-id={node.id} className={cn(node.locked && "pointer-events-none")}>
             <title>{node.name}</title>
             <RenderMapNodes selectedIds={selectedIds} nodes={node.children} />
           </g>
@@ -82,13 +67,9 @@ export const RenderMapNodes = ({
       case "image":
       case "symbol": {
         const { baseRect, cssTransform } = node;
-        const isSelected = selectedIds.has(node.id);
-
         const key = node.type === "image" ? node.imageKey : node.symbolKey;
         const href =
-          node.type === "image"
-            ? `/starship-symbol/${node.imageKey}.png`
-            : `/symbol/${node.symbolKey}.thumbnail.png`;
+          node.type === "image" ? `/starship-symbol/${node.imageKey}.png` : `/symbol/${node.symbolKey}.thumbnail.png`;
 
         return key !== "unset" ? (
           <image
@@ -101,7 +82,11 @@ export const RenderMapNodes = ({
             height={baseRect.height}
             style={{ transform: cssTransform }}
             preserveAspectRatio="none"
-            className={cn("outline outline-white/10", isSelected && "outline-blue-500")}
+            className={cn(
+              "outline outline-white/10",
+              selectedIds.has(node.id) && "outline-blue-500",
+              cn(node.locked && "pointer-events-none"),
+            )}
           >
             <title>{node.name}</title>
           </image>
@@ -134,6 +119,7 @@ export const RenderMapNodes = ({
             className={cn(
               "fill-green-700/50 outline outline-black/80",
               isSelected && "outline-blue-500",
+              cn(node.locked && "pointer-events-none"),
             )}
           >
             <title>{node.name}</title>
@@ -162,13 +148,7 @@ const handleToCursor: Record<ResizeHandle, string> = {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-function RectResizeHandles({
-  selectedNode,
-  root,
-}: {
-  selectedNode: RectMapNode;
-  root: UseStateRef<State>;
-}) {
+function RectResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode; root: UseStateRef<State> }) {
   const rect = getNodeBounds(selectedNode);
   const handleSize = (4 * resizeHandleSize) / root.zoom;
   return (
@@ -205,48 +185,25 @@ const originLineLength = 4096;
 const originLineColor = "rgba(255, 0, 0, 0.5)";
 const OriginAndGrid = memo(() => (
   <g>
-    <line
-      x1={-originLineLength}
-      y1={0}
-      x2={originLineLength}
-      y2={0}
-      stroke={originLineColor}
-      strokeWidth={1}
-    />
-    <line
-      x1={0}
-      y1={-originLineLength}
-      x2={0}
-      y2={originLineLength}
-      stroke={originLineColor}
-      strokeWidth={1}
-    />
-    <rect
-      x="-10000"
-      y="-10000"
-      width="20000"
-      height="20000"
-      fill="url(#grid)"
-      className="pointer-events-none"
-    />
+    <line x1={-originLineLength} y1={0} x2={originLineLength} y2={0} stroke={originLineColor} strokeWidth={1} />
+    <line x1={0} y1={-originLineLength} x2={0} y2={originLineLength} stroke={originLineColor} strokeWidth={1} />
+    <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#grid)" className="pointer-events-none" />
   </g>
 ));
 
-const SvgBoundingBox = memo(
-  ({ width, height, zoom }: { width: number; height: number; zoom: number }) => (
-    <rect
-      x={0}
-      y={0}
-      width={width}
-      height={height}
-      fill="none"
-      stroke="rgba(255, 165, 0, 0.6)"
-      strokeWidth={2 / zoom}
-      strokeDasharray={`${8 / zoom} ${4 / zoom}`}
-      className="pointer-events-none"
-    />
-  ),
-);
+const SvgBoundingBox = memo(({ width, height, zoom }: { width: number; height: number; zoom: number }) => (
+  <rect
+    x={0}
+    y={0}
+    width={width}
+    height={height}
+    fill="none"
+    stroke="rgba(255, 165, 0, 0.6)"
+    strokeWidth={2 / zoom}
+    strokeDasharray={`${8 / zoom} ${4 / zoom}`}
+    className="pointer-events-none"
+  />
+));
 
 const Defs = memo(() => (
   <defs>
