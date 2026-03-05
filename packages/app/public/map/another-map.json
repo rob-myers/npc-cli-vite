@@ -1,0 +1,48 @@
+{
+  "type": "map",
+  "filename": "another-map.json",
+  "width": 120,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "6a020f81-519b-46f1-96ef-5030c0f24d21",
+      "name": "Rect 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 120,
+        "height": 20
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "39c73252-4625-48c4-b60a-3a391fe33b37",
+      "name": "Rect 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 20,
+        "height": 120
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ]
+}

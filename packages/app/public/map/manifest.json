@@ -6,6 +6,12 @@
       "thumbnailFilename": "my-map.thumbnail.png",
       "width": 600,
       "height": 600
+    },
+    "another-map.json": {
+      "filename": "another-map.json",
+      "thumbnailFilename": "another-map.thumbnail.png",
+      "width": 120,
+      "height": 120
     }
   }
 }
