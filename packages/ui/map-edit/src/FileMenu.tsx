@@ -44,10 +44,12 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                   closeOnClick
                   onClick={() => {
                     if (folderType !== type) {
-                      state.set({
-                        currentFile: { type: folderType, filename: state.currentFile.filename },
-                        isDirty: true,
-                      });
+                      const existing = state.savedFileSpecifiers.find((f) => f.type === folderType);
+                      const file = existing ?? {
+                        type: folderType,
+                        filename: folderType === "map" ? "empty-map.json" : `${allSymbolKeys[0]}.json`,
+                      };
+                      state.load(file);
                     }
                   }}
                 >
