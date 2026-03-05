@@ -57,8 +57,9 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
           state.isDirty && "italic",
         )}
         onClick={() => {
-          const name = prompt("Save as:", state.currentFile.filename);
-          if (name?.trim()) state.save({ type: state.currentFile.type, filename: name.trim() });
+          const { type, filename } = state.currentFile;
+          const name = prompt("Save as:", filename)?.trim();
+          if (name) state.save({ type, filename: name });
         }}
         title="Click to save as..."
       >
