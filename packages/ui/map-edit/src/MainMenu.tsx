@@ -64,7 +64,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                             {file.type === "map" ? (
                               <MapTrifoldIcon className="size-4" />
                             ) : (
-                              <ImageIcon className="size-4 mr-1" />
+                              <ImageIcon className="size-4" />
                             )}
                             {file.filename}
                           </div>
