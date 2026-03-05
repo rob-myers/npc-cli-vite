@@ -3,6 +3,10 @@
 Install pnpm
 > https://pnpm.io/installation
 
+# Architecture Overview
+
+- 🚧 WIP
+
 ## `packages/app`
 
 ### react-grid-layout
