@@ -1137,7 +1137,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           <FileMenu state={state} />
         </div>
 
-        <div className={cn(uiClassName, "h-full bg-background")}>
+        {/* inspector must scroll */}
+        <div className={cn(uiClassName, "overflow-auto bg-background")}>
           {state.nodes.map((el) => (
             <InspectorNode key={el.id} element={el} level={0} root={state} />
           ))}

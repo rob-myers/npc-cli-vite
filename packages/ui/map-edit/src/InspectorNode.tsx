@@ -1,8 +1,5 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import {
-  draggable,
-  dropTargetForElements,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   attachClosestEdge,
   type Edge,
@@ -50,8 +47,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
       dropTargetForElements({
         element: el,
         canDrop: ({ source }) => source.data.type === "map-node" && source.data.id !== id,
-        getData: ({ input }) =>
-          attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
+        getData: ({ input }) => attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
         onDrag: ({ self, location }) => {
           const edge = extractClosestEdge(self.data);
           if (isGroup) {
@@ -119,8 +115,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
             state.update();
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter")
-              root.editingId === null ? root.onStartEdit(element.id) : root.onCancelEdit();
+            if (e.key === "Enter") root.editingId === null ? root.onStartEdit(element.id) : root.onCancelEdit();
             if (e.key === "Escape") root.onCancelEdit();
           }}
         />
