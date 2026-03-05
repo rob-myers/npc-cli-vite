@@ -24,7 +24,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
       <Menu.Trigger
         className={cn(uiClassName, "cursor-pointer text-slate-300", "hover:text-slate-300 transition-colors")}
       >
-        <ListIcon className="size-5.5 p-0.5 bg-slate-700 border border-white/10" />
+        <ListIcon className="size-5 border border-white/50" />
       </Menu.Trigger>
 
       <Menu.Portal>
