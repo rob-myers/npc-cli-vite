@@ -7,6 +7,7 @@
     "./types": "./src/types.ts",
     "./geom": "./src/geom/index.ts",
     "./json-parser": "./src/service/json-parser.ts",
+    "./exhaustive-error": "./src/ExhaustiveError.ts",
     "./fetch-parsed": "./src/service/fetchParsed.ts",
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js"

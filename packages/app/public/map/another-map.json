@@ -1,5 +1,4 @@
 {
-  "type": "map",
   "filename": "another-map.json",
   "width": 120,
   "height": 120,
@@ -44,5 +43,12 @@
       },
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
-  ]
+  ],
+  "actualBounds": {
+    "x": 0,
+    "y": 0,
+    "width": 120,
+    "height": 120
+  },
+  "type": "map"
 }

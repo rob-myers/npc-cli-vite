@@ -121,17 +121,20 @@
       - ❌ store svg markup in manifest
   - ✅ /api/map-edit/file/symbol/:filename renders a PNG preview
   - 🚧 node of type `symbol`
-    - 🚧 POST /api/map-edit/file/:type/:filename updates public/symbol/metdata.json
+    - ✅ POST /api/map-edit/file/:type/:filename updates public/symbol/manifest.json
+    - PNG preview should include full bounds, manifest needs "offset"
     - modal with symbol thumbnails
 
 - ✅ can lock nodes
-- can set image nodes opacity
+- ✅ locked image/symbol nodes have 25% opacity
 
 - ✅ list files via manifest not dev server
 - ✅ generate/get maps manifest too
 - ✅ on delete file switch to another file
 - ✅ on delete symbol/map update manifest and remove thumbnail
 - ✅ map needs thumbnail too
+
+- strategy for extending MapEditSavedFile schemas...
 
 - ❌ restart vite onchange map-edit plugin
   - but we do cache bust imports

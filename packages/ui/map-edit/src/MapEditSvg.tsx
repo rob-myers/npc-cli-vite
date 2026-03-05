@@ -85,7 +85,7 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             className={cn(
               "outline outline-white/10",
               selectedIds.has(node.id) && "outline-blue-500",
-              cn(node.locked && "pointer-events-none"),
+              cn(node.locked && "pointer-events-none opacity-25"),
             )}
           >
             <title>{node.name}</title>
@@ -119,7 +119,7 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             className={cn(
               "fill-green-700/50 outline outline-black/80",
               isSelected && "outline-blue-500",
-              cn(node.locked && "pointer-events-none"),
+              cn(node.locked && "pointer-events-none opacity-25"),
             )}
           >
             <title>{node.name}</title>
