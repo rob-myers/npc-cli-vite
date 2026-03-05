@@ -1,4 +1,5 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
+import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
@@ -45,20 +46,33 @@ export function getAllNodeIds(nodes: MapNode[]) {
 }
 
 /** Compute the world-space bounds of a rect/image node */
-export function getNodeBounds(node: Extract<MapNode, { baseRect: BaseRect }>): Geom.RectJson {
-  if (node.type === "rect") {
-    return {
-      x: node.transform.e,
-      y: node.transform.f,
-      // (a,0,0,d,e,f) since rotation not allowed
-      width: node.baseRect.width * node.transform.a,
-      height: node.baseRect.height * node.transform.d,
-    };
-  } else {
-    const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
-    const m = new Mat([a, b, c, d, e, f]);
-    const baseRect = new Rect(0, 0, node.baseRect.width, node.baseRect.height);
-    return baseRect.applyMatrix(m);
+export function getNodeBounds(...nodes: MapNode[]): Geom.RectJson {
+  if (nodes.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+
+  const node = nodes.length === 1 ? nodes[0] : ({ type: "group", children: nodes } as GroupMapNode);
+
+  switch (node.type) {
+    case "group": {
+      return node.children.reduce((bounds, child) => bounds.union(getNodeBounds(child)), new Rect()).json;
+    }
+    case "rect": {
+      return {
+        x: node.transform.e,
+        y: node.transform.f,
+        // (a,0,0,d,e,f) since rotation not allowed
+        width: node.baseRect.width * node.transform.a,
+        height: node.baseRect.height * node.transform.d,
+      };
+    }
+    case "image":
+    case "symbol": {
+      const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
+      const m = new Mat([a, b, c, d, e, f]);
+      const baseRect = new Rect(0, 0, node.baseRect.width, node.baseRect.height);
+      return baseRect.applyMatrix(m).json;
+    }
+    default:
+      throw new ExhaustiveError(node);
   }
 }
 
@@ -159,6 +173,16 @@ export const templateNodeByKey = {
   },
 } satisfies Record<MapNodeType, MapNode>;
 
+const PointSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+});
+const RectSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
 const TransformSchema = z.object({
   a: z.number(),
   b: z.number(),
@@ -188,7 +212,7 @@ export const MapNodeSchema = z.union([
     type: z.literal("image"),
     imageKey: z.union([z.literal("unset"), StarShipSymbolImageKeySchema]),
     baseRect: z.object({ width: z.number(), height: z.number() }),
-    offset: z.object({ x: z.number(), y: z.number() }),
+    offset: PointSchema,
     cssTransform: z.string(),
   }),
   BaseNodeSchema.extend({
@@ -201,7 +225,7 @@ export const MapNodeSchema = z.union([
     // 🚧 enforce StarShipSymbolImageKeySchema; currently permit foo.json
     symbolKey: z.string(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
-    offset: z.object({ x: z.number(), y: z.number() }),
+    offset: PointSchema,
     cssTransform: z.string(),
   }),
 ]);
@@ -239,6 +263,7 @@ export const labelledImageOffsetValue = {
    * > `((150 - 137) / 2) / 5`
    */
   centerXConsole051: 1.3,
+  centerYStateRoom012: 2,
 } as const;
 
 export const imageOffsetValues = Object.values(labelledImageOffsetValue)
@@ -247,20 +272,20 @@ export const imageOffsetValues = Object.values(labelledImageOffsetValue)
 
 export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 
-export const MapEditSavedSymbolSchema = z.object({
-  /** 🚧 enforce StarshipSymbolImageKey?  */
-  type: z.literal("symbol"),
+const MapEditSavedBaseSchema = z.object({
   filename: z.string(),
   width: z.number(),
   height: z.number(),
   nodes: z.array(MapNodeSchema),
+  actualBounds: RectSchema,
 });
-export const MapEditSavedMapSchema = z.object({
+
+export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend({
+  /** 🚧 enforce StarshipSymbolImageKey  */
+  type: z.literal("symbol"),
+});
+export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend({
   type: z.literal("map"),
-  filename: z.string(),
-  width: z.number(),
-  height: z.number(),
-  nodes: z.array(MapNodeSchema),
 });
 export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
@@ -340,15 +365,19 @@ export type MapEditListFoldersResponse = {
 
 //#endregion
 
+const BaseManifestItemSchema = z.object({
+  filename: z.string(),
+  thumbnailFilename: z.string(),
+  width: z.number(),
+  height: z.number(),
+});
+
 export const SymbolsManifestSchema = z.object({
   createdAt: z.string(),
   byFilename: z.record(
     z.string(), // 🚧 refine
-    z.object({
-      filename: z.string(), // 🚧 refine
-      thumbnailFilename: z.string(),
-      width: z.number(),
-      height: z.number(),
+    BaseManifestItemSchema.extend({
+      // 🚧 refine filename
     }),
   ),
 });
@@ -357,15 +386,7 @@ export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 
 export const MapsManifestSchema = z.object({
   createdAt: z.string(),
-  byFilename: z.record(
-    z.string(),
-    z.object({
-      filename: z.string(),
-      thumbnailFilename: z.string(),
-      width: z.number(),
-      height: z.number(),
-    }),
-  ),
+  byFilename: z.record(z.string(), BaseManifestItemSchema.extend({})),
 });
 
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;

@@ -1,5 +1,4 @@
 {
-  "type": "symbol",
   "filename": "stateroom--012--2x2.json",
   "width": 120,
   "height": 120,
@@ -7,7 +6,7 @@
     {
       "id": "a57c34e3-5b21-4f8c-a127-061fdb60a7a9",
       "name": "stateroom--012--2x2 1",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 1,
@@ -24,35 +23,17 @@
         "height": 124
       },
       "offset": {
-        "x": -0.7,
-        "y": -0.7
+        "x": -2,
+        "y": -2
       },
-      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
-    },
-    {
-      "id": "67f91b3a-a5a7-411d-8a90-833d3bcd0c4d",
-      "name": "stateroom--012--2x2 2",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
-      "type": "image",
-      "imageKey": "stateroom--012--2x2",
-      "baseRect": {
-        "width": 126.60000000000001,
-        "height": 124
-      },
-      "offset": {
-        "x": -0.7,
-        "y": -0.7
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     }
-  ]
+  ],
+  "actualBounds": {
+    "x": -2,
+    "y": -2,
+    "width": 126.6,
+    "height": 124
+  },
+  "type": "symbol"
 }

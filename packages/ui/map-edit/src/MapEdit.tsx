@@ -9,7 +9,7 @@ import {
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
-import { cn, ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
@@ -843,6 +843,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
+          actualBounds: Rect.fromJson(getNodeBounds(...state.nodes)).precision(6).json,
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"

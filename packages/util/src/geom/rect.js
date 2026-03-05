@@ -154,12 +154,7 @@ export class Rect {
 
   /** @param {Rect} _ */
   covers({ x, y, width, height }) {
-    return (
-      this.x <= x &&
-      x + width <= this.x + this.width &&
-      this.y <= y &&
-      y + height <= this.y + this.height
-    );
+    return this.x <= x && x + width <= this.x + this.width && this.y <= y && y + height <= this.y + this.height;
   }
 
   /**
@@ -258,10 +253,7 @@ export class Rect {
    * @param {number} [height] Defaults to `width`.
    */
   intersectsCentered(cx, cy, width, height = width) {
-    return (
-      Math.abs(this.cx - cx) * 2 <= this.width + width &&
-      Math.abs(this.cy - cy) * 2 <= this.height + height
-    );
+    return Math.abs(this.cx - cx) * 2 <= this.width + width && Math.abs(this.cy - cy) * 2 <= this.height + height;
   }
 
   /**
@@ -369,5 +361,22 @@ export class Rect {
 
   toString() {
     return `${this.x},${this.y},${this.width},${this.height}`;
+  }
+
+  /**
+   * Mutates `this`.
+   * @param {Geom.RectJson} other
+   * @returns {this}
+   */
+  union(other) {
+    const x1 = Math.min(this.x, other.x);
+    const y1 = Math.min(this.y, other.y);
+    const x2 = Math.max(this.x + this.width, other.x + other.width);
+    const y2 = Math.max(this.y + this.height, other.y + other.height);
+    this.x = x1;
+    this.y = y1;
+    this.width = x2 - x1;
+    this.height = y2 - y1;
+    return this;
   }
 }

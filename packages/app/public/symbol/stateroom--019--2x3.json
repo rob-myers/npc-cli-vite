@@ -1,7 +1,13 @@
 {
-  "type": "symbol",
   "filename": "stateroom--019--2x3.json",
   "width": 120,
   "height": 120,
-  "nodes": []
+  "nodes": [],
+  "actualBounds": {
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  "type": "symbol"
 }
