@@ -11,8 +11,9 @@ import {
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
+import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
+import { tryLocalStorageGet, tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
@@ -843,7 +844,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
-          actualBounds: Rect.fromJson(getNodeBounds(...state.nodes)).round().json,
+          bounds: Rect.fromJson(getNodeBounds(...state.nodes)).round().json,
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"
@@ -877,11 +878,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
-
         // localStorage (draft) takes precedence
-        const savedFile =
-          tryLocalStorageGetParsed<MapEditSavedFile>(getFileSpecifierLocalStorageKey(file)) ??
-          (await loadMapEditFile(file));
+        const localStorageResult = jsonParser
+          .pipe(MapEditSavedFileSchema)
+          .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
+        const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
 
         if (!savedFile) return;
 
