@@ -1,18 +1,17 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import type { MapEditFileSpecifier, MapEditSavedFile, MapsManifest, SymbolsManifest } from "@npc-cli/ui__map-edit";
-import {
-  MapEditSavedFileSchema,
-  MapsManifestSchema,
-  SymbolsManifestSchema,
-  traverseNodesAsync,
-} from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, warn } from "@npc-cli/util/legacy/generic";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
+
+// ⚠️ fix stale schemas via cache busting
+const { MapEditSavedFileSchema, MapsManifestSchema, SymbolsManifestSchema, traverseNodesAsync } = (await import(
+  `../../../packages/ui/map-edit/src/map-node-api.ts?t=${Date.now()}`
+)) as typeof import("@npc-cli/ui__map-edit/map-node-api");
 
 export async function deleteSavedFile({ type, filename }: MapEditFileSpecifier) {
   await ensureManifests(type, SymbolsManifestSchema, { changedFiles: [], removedFiles: [{ type, filename }] });
@@ -110,6 +109,7 @@ async function ensureManifests<T extends SymbolsManifest | MapsManifest>(
           thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
           width: result.data.width,
           height: result.data.height,
+          bounds: result.data.bounds,
         };
       } else {
         error(`Failed to parse existing ${type}: ${filename}`, z.prettifyError(result.error));
