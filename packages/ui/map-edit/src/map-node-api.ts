@@ -370,6 +370,7 @@ const BaseManifestItemSchema = z.object({
   thumbnailFilename: z.string(),
   width: z.number(),
   height: z.number(),
+  bounds: RectSchema,
 });
 
 export const SymbolsManifestSchema = z.object({

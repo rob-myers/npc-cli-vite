@@ -1,17 +1,29 @@
 {
-  "createdAt": "2026-03-05T17:52:07.273Z",
+  "createdAt": "2026-03-06T12:18:38.000Z",
   "byFilename": {
     "another-map.json": {
       "filename": "another-map.json",
       "thumbnailFilename": "another-map.thumbnail.png",
       "width": 120,
-      "height": 120
+      "height": 120,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      }
     },
     "my-map.json": {
       "filename": "my-map.json",
       "thumbnailFilename": "my-map.thumbnail.png",
       "width": 600,
-      "height": 600
+      "height": 600,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 600,
+        "height": 600
+      }
     }
   }
 }

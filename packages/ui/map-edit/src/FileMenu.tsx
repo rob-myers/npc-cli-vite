@@ -7,7 +7,7 @@ import { keys } from "@npc-cli/util/legacy/generic";
 import { CheckIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import type { State } from "./MapEdit";
-import { ALLOWED_MAP_EDIT_FOLDERS, type MapEditSavableFileType } from "./map-node-api";
+import { ALLOWED_MAP_EDIT_FOLDERS } from "./map-node-api";
 
 const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
 
@@ -192,15 +192,4 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
       </Select.Portal>
     </Select.Root>
   );
-}
-
-export function parseFilePath(filePath: string): {
-  folder: MapEditSavableFileType;
-  filename: string;
-} {
-  const parts = filePath.split("/");
-  if (parts.length !== 2 || !ALLOWED_MAP_EDIT_FOLDERS.find((f) => f === parts[0]) || !parts[1]) {
-    throw new Error(`Invalid file path: ${filePath}`);
-  }
-  return { folder: parts[0] as MapEditSavableFileType, filename: parts[1] };
 }
