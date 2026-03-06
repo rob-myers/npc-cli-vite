@@ -23,17 +23,17 @@
         "height": 184
       },
       "offset": {
-        "x": -0.7,
-        "y": -0.7
+        "x": -2,
+        "y": -2
       },
-      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     }
   ],
   "bounds": {
     "width": 127,
     "height": 184,
-    "x": -1,
-    "y": -1
+    "x": -2,
+    "y": -2
   },
   "type": "symbol"
 }

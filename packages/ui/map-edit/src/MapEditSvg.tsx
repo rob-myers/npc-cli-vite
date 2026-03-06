@@ -14,7 +14,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   const resizableRectNode = useMemo(() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
-    const node = findNode(root.nodes, selectedId)?.node ?? null;
+    const [node] = findNode(root.nodes, selectedId);
     return node?.type === "rect" ? node : null;
   }, [root.selectedIds]);
 
