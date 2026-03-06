@@ -539,7 +539,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (
           !srcNode ||
           !dstNode ||
-          findNode([srcNode], dstId) // cannot move into self
+          findNode([srcNode], dstId)[0] // cannot move into self
         ) {
           return;
         }
