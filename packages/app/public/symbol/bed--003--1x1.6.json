@@ -1,0 +1,39 @@
+{
+  "filename": "bed--003--1x1.6.json",
+  "width": 100,
+  "height": 60,
+  "nodes": [
+    {
+      "id": "8b95a929-8f98-4d45-9960-3b78537063db",
+      "name": "bed--003--1x1.6 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "image",
+      "srcKey": "bed--003--1x1.6",
+      "baseRect": {
+        "width": 100.4,
+        "height": 61.400000000000006
+      },
+      "offset": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+    }
+  ],
+  "bounds": {
+    "width": 101,
+    "height": 62,
+    "x": -1,
+    "y": -1
+  },
+  "type": "symbol"
+}

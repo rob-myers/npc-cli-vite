@@ -36,6 +36,18 @@
         "x": 0,
         "y": -1
       }
+    },
+    "bed--003--1x1.6.json": {
+      "filename": "bed--003--1x1.6.json",
+      "thumbnailFilename": "bed--003--1x1.6.thumbnail.png",
+      "width": 100,
+      "height": 60,
+      "bounds": {
+        "width": 101,
+        "height": 62,
+        "x": -1,
+        "y": -1
+      }
     }
   }
 }
