@@ -89,13 +89,13 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
                 <div className="flex items-center gap-2">
                   <RulerIcon className="size-4" />
-                  Symbol Size
+                  Size
                 </div>
                 <CaretRightIcon className="size-4" />
               </Menu.SubmenuTrigger>
               <Menu.Portal>
                 <Menu.Positioner className="z-50" sideOffset={4}>
-                  <Menu.Popup className="bg-gray-900 border border-slate-700 rounded-md shadow-lg py-2 px-3 min-w-40">
+                  <Menu.Popup className="bg-gray-900 border border-slate-700 rounded-md shadow-lg py-2 px-3 min-w-30">
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center gap-2 text-xs text-slate-300">
                         <span className="w-12">Width:</span>
@@ -109,7 +109,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                           }}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
-                          className="w-20 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
+                          className="w-12 text-center px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
                         />
                       </label>
                       <label className="flex items-center gap-2 text-xs text-slate-300">
@@ -124,7 +124,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                           }}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
-                          className="w-20 px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
+                          className="w-12 text-center px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
                         />
                       </label>
                     </div>

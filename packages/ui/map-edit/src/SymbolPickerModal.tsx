@@ -1,9 +1,9 @@
 import { Dialog } from "@base-ui/react/dialog";
+import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
-
-import type { SymbolsManifest } from "./map-node-api";
+import { type SymbolsManifest, symbolKeyFilenameToSymbolKey } from "./map-node-api";
 
 export function SymbolPickerModal({
   open,
@@ -13,7 +13,7 @@ export function SymbolPickerModal({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (symbolKey: string) => void;
+  onSelect: (symbolKey: StarshipSymbolImageKey) => void;
   symbolsManifest: SymbolsManifest | null;
 }) {
   const state = useStateRef(() => ({
@@ -52,7 +52,7 @@ export function SymbolPickerModal({
                     type="button"
                     className="flex flex-col items-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors cursor-pointer"
                     onClick={() => {
-                      onSelect(entry.filename.replace(/\.json$/, ""));
+                      onSelect(symbolKeyFilenameToSymbolKey(entry.filename));
                       onOpenChange(false);
                     }}
                     title={entry.filename}

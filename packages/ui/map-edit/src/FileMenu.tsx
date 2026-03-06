@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
-import { symbolByGroup } from "@npc-cli/media/starship-symbol";
+import { type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
@@ -41,13 +41,18 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                   )}
                   closeOnClick
                   onClick={() => {
-                    if (folderType !== type) {
-                      const existing = state.savedFileSpecifiers.find((f) => f.type === folderType);
-                      const file = existing ?? {
+                    if (folderType === type) return;
+
+                    const existing = state.savedFileSpecifiers.find((f) => f.type === folderType);
+
+                    if (existing) {
+                      state.load(existing);
+                    } else {
+                      const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
+                      state.openFresh({
                         type: folderType,
-                        filename: folderType === "map" ? "empty-map.json" : `${allSymbolKeys[0]}.json`,
-                      };
-                      state.load(file);
+                        filename: folderType === "map" ? "empty-map.json" : `${defaultSymbolKey}.json`,
+                      });
                     }
                   }}
                 >
@@ -79,15 +84,7 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
           if (savedFilenames.has(filename)) {
             state.load(file);
           } else {
-            state.set({
-              nodes: [],
-              selectedIds: new Set(),
-              selectionBox: null,
-              currentFile: file,
-              undoStack: [],
-              redoStack: [],
-              isDirty: true,
-            });
+            state.openFresh(file);
           }
         }
       }}

@@ -4,7 +4,7 @@
   "height": 120,
   "nodes": [
     {
-      "id": "a57c34e3-5b21-4f8c-a127-061fdb60a7a9",
+      "id": "c690d8ba-0d82-43ca-b081-449f4b31b4e2",
       "name": "stateroom--012--2x2 1",
       "locked": true,
       "visible": true,
@@ -17,7 +17,7 @@
         "f": 0
       },
       "type": "image",
-      "imageKey": "stateroom--012--2x2",
+      "srcKey": "stateroom--012--2x2",
       "baseRect": {
         "width": 126.60000000000001,
         "height": 124
@@ -30,10 +30,10 @@
     }
   ],
   "bounds": {
-    "x": -2,
-    "y": -2,
     "width": 127,
-    "height": 124
+    "height": 124,
+    "x": -2,
+    "y": -2
   },
   "type": "symbol"
 }

@@ -4,9 +4,9 @@
   "height": 180,
   "nodes": [
     {
-      "id": "35978154-814c-41b6-9ab9-5df6172c3ddb",
+      "id": "651c38bc-7ced-4b2b-9fbc-6d52a50e83b0",
       "name": "stateroom--019--2x3 1",
-      "locked": true,
+      "locked": false,
       "visible": true,
       "transform": {
         "a": 1,
@@ -17,48 +17,23 @@
         "f": 0
       },
       "type": "image",
-      "imageKey": "stateroom--019--2x3",
+      "srcKey": "stateroom--019--2x3",
       "baseRect": {
         "width": 126.60000000000001,
         "height": 184
       },
       "offset": {
-        "x": -2,
-        "y": -2
+        "x": -0.7,
+        "y": -0.7
       },
-      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
-    },
-    {
-      "id": "22b68de9-6fe4-4c6d-b790-db093fcc8f73",
-      "name": "stateroom--019--2x3 1",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 120,
-        "f": 90
-      },
-      "type": "symbol",
-      "symbolKey": "stateroom--019--2x3.json",
-      "baseRect": {
-        "width": 120,
-        "height": 180
-      },
-      "offset": {
-        "x": -2,
-        "y": -2
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, 118, 88)"
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
     }
   ],
   "bounds": {
-    "x": -2,
-    "y": -2,
-    "width": 240,
-    "height": 270
+    "width": 127,
+    "height": 184,
+    "x": -1,
+    "y": -1
   },
   "type": "symbol"
 }

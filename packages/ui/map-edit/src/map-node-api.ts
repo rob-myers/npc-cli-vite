@@ -1,4 +1,4 @@
-import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
+import { StarShipSymbolImageKeySchema, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
@@ -153,7 +153,7 @@ export const templateNodeByKey = {
   image: {
     ...mockBaseNode,
     type: "image",
-    imageKey: "unset" as Extract<MapNode, { type: "image" }>["imageKey"],
+    srcKey: null,
     baseRect: defaultBaseRect,
     offset: defaultPoint,
     cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
@@ -167,7 +167,7 @@ export const templateNodeByKey = {
   symbol: {
     ...mockBaseNode,
     type: "symbol",
-    symbolKey: "unset",
+    srcKey: null,
     baseRect: defaultBaseRect,
     offset: defaultPoint,
     cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
@@ -178,12 +178,11 @@ const PointSchema = z.object({
   x: z.number(),
   y: z.number(),
 });
-const RectSchema = z.object({
-  x: z.number(),
-  y: z.number(),
+const BaseRectSchema = z.object({
   width: z.number(),
   height: z.number(),
 });
+const RectSchema = BaseRectSchema.extend(PointSchema.shape);
 const TransformSchema = z.object({
   a: z.number(),
   b: z.number(),
@@ -210,21 +209,20 @@ export const MapNodeSchema = z.union([
     },
   }),
   BaseNodeSchema.extend({
-    type: z.literal("image"),
-    imageKey: z.union([z.literal("unset"), StarShipSymbolImageKeySchema]),
-    baseRect: z.object({ width: z.number(), height: z.number() }),
-    offset: PointSchema,
-    cssTransform: z.string(),
-  }),
-  BaseNodeSchema.extend({
     type: z.literal("rect"),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     cssTransform: z.string(),
   }),
   BaseNodeSchema.extend({
+    type: z.literal("image"),
+    srcKey: StarShipSymbolImageKeySchema.nullable(),
+    baseRect: z.object({ width: z.number(), height: z.number() }),
+    offset: PointSchema,
+    cssTransform: z.string(),
+  }),
+  BaseNodeSchema.extend({
     type: z.literal("symbol"),
-    // 🚧 enforce StarShipSymbolImageKeySchema; currently permit foo.json
-    symbolKey: z.string(),
+    srcKey: StarShipSymbolImageKeySchema.nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     offset: PointSchema,
     cssTransform: z.string(),
@@ -366,6 +364,9 @@ export type MapEditListFoldersResponse = {
 
 //#endregion
 
+export const SymbolJsonFilenameSchema = z.templateLiteral([StarShipSymbolImageKeySchema, ".json"]);
+export const MapJsonFilenameSchema = z.string().endsWith(".json");
+
 const BaseManifestItemSchema = z.object({
   filename: z.string(),
   thumbnailFilename: z.string(),
@@ -376,19 +377,30 @@ const BaseManifestItemSchema = z.object({
 
 export const SymbolsManifestSchema = z.object({
   createdAt: z.string(),
-  byFilename: z.record(
-    z.string(), // 🚧 refine
+  byFilename: z.partialRecord(
+    SymbolJsonFilenameSchema,
     BaseManifestItemSchema.extend({
       // 🚧 refine filename
+      filename: SymbolJsonFilenameSchema,
+    }),
+  ),
+});
+
+export const MapsManifestSchema = z.object({
+  createdAt: z.string(),
+  byFilename: z.record(
+    MapJsonFilenameSchema,
+    BaseManifestItemSchema.extend({
+      filename: MapJsonFilenameSchema,
     }),
   ),
 });
 
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
-
-export const MapsManifestSchema = z.object({
-  createdAt: z.string(),
-  byFilename: z.record(z.string(), BaseManifestItemSchema.extend({})),
-});
-
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
+
+export function symbolKeyFilenameToSymbolKey(
+  filename: z.infer<typeof SymbolJsonFilenameSchema>,
+): StarshipSymbolImageKey {
+  return filename.replace(/\.json$/, "") as StarshipSymbolImageKey;
+}

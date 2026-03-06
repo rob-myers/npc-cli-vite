@@ -138,9 +138,13 @@
 - ✅ on delete symbol/map update manifest and remove thumbnail
 - ✅ map needs thumbnail too
 
-- strategy for extending MapEditSavedFile schemas
+- 🚧 strategy for extending MapEditSavedFile schemas
   - ✅ parse localStorage before load
   - ✅ vite plugin does not use stale schemas i.e. import cache bust
+  - 🚧 suppose we change schema of nodes, how to migrate saved file?
+    - ask Jason
+    - https://www.jcore.io/articles/schema-versioning-with-zod
+
 
 - ❌ restart vite onchange map-edit plugin
   - but we do cache bust imports
