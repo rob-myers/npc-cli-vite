@@ -55,6 +55,7 @@ import {
   type Transform,
   templateNodeByKey,
   traverseNodesSync,
+  isNodeTransformable,
 } from "./map-node-api";
 import { SymbolPickerModal } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
@@ -457,35 +458,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       rotateNode(nodeId, deltaDegrees) {
         const [node] = findNode(state.nodes, nodeId);
-        if (!node) return;
+        if (!isNodeTransformable(node)) return;
 
         if (node.type === "image" || node.type === "symbol") {
           const { width: W, height: H } = node.baseRect;
           const [cx, cy] = [W / 2, H / 2];
           const { a, b, c, d, e, f } = node.transform;
-
           const m = new DOMMatrix([a, b, c, d, e, f]);
           m.translateSelf(cx, cy).rotateSelf(deltaDegrees).translateSelf(-cx, -cy);
-          node.transform.a = m.a;
-          node.transform.b = m.b;
-          node.transform.c = m.c;
-          node.transform.d = m.d;
-          node.transform.e = m.e;
-          node.transform.f = m.f;
-
+          Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
           node.cssTransform = computeNodeCssTransform(node);
-        } else if (node.type === "rect") {
+        }
+        if (node.type === "rect") {
           const { width: W, height: H } = node.baseRect;
-          const { e, f } = node.transform;
-
-          // Swap width and height
           node.baseRect.width = H;
           node.baseRect.height = W;
-
-          // Adjust translation to keep center in same place
-          node.transform.e = e + W / 2 - H / 2;
-          node.transform.f = f + H / 2 - W / 2;
-
+          node.transform.e = node.transform.e + W / 2 - H / 2;
+          node.transform.f = node.transform.f + H / 2 - W / 2;
           node.cssTransform = computeNodeCssTransform(node);
         }
       },
@@ -699,7 +688,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.dragEl.type === "move-selection") {
           for (const [id, startPos] of state.dragEl.starts) {
             const [node] = findNode(state.nodes, id);
-            if (!node || (node.type !== "rect" && node.type !== "image" && node.type !== "symbol")) continue;
+            if (!isNodeTransformable(node)) continue;
             node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
             node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
             node.cssTransform = computeNodeCssTransform(node);
@@ -721,7 +710,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         const widthDelta = isW ? -dx : dx;
         const heightDelta = isN ? -dy : dy;
-
         const newWidth = snap(Math.max(increment, startBounds.width + widthDelta));
         const newHeight = snap(Math.max(increment, startBounds.height + heightDelta));
         baseRect.width = newWidth;
@@ -743,7 +731,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const selectedIds = new Set<string>();
           const box = state.selectionBox;
           traverseNodesSync(state.nodes, (el) => {
-            if (el.type === "rect" || el.type === "image" || el.type === "symbol") {
+            if (isNodeTransformable(el)) {
               const r = getNodeBounds(el);
               // Check if rects intersect
               if (
@@ -770,7 +758,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const [node] = findNode(state.nodes, id);
-            return node && (node.type === "rect" ||  node.type === "image" ||  node.type === "symbol")
+            return isNodeTransformable(node)
               ? [[id, { x: node.transform.e, y: node.transform.f }]]
               : [];
           }),
@@ -1084,7 +1072,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const dy = e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0;
         for (const id of state.selectedIds) {
           const [node] = findNode(state.nodes, id);
-          if (node && (node.type === "rect" || node.type === "image" || node.type === "symbol")) {
+          if (isNodeTransformable(node)) {
             node.transform.e += dx;
             node.transform.f += dy;
             node.cssTransform = computeNodeCssTransform(node);

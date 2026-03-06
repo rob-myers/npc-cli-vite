@@ -82,6 +82,10 @@ export function insertNodeAt(srcNode: MapNode, dstArray: MapNode[], dstChildId: 
   dstArray.splice(idx, 0, srcNode);
 }
 
+export function isNodeTransformable(node: MapNode | null): node is TransformableMapNode {
+  return node !== null && node.type !== "group";
+}
+
 export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
@@ -90,14 +94,15 @@ export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNo
   });
 }
 
-export function computeNodeCssTransform(node: MapNode): string {
-  if (node.type === "rect") {
-    return computeRectCssTransform(node);
-  } else if (node.type === "image" || node.type === "symbol") {
-    return computeImageCssTransform(node);
-  } else {
-    warn(`computeNodeCssTransform not implemented for node type ${node.type}`);
-    return ""; // NOOP
+export function computeNodeCssTransform(node: TransformableMapNode): string {
+  switch (node.type) {
+    case "rect":
+      return computeRectCssTransform(node);
+    case "image":
+    case "symbol":
+      return computeImageCssTransform(node);
+    default:
+      throw new ExhaustiveError(node);
   }
 }
 
@@ -232,6 +237,8 @@ export type MapNode = z.infer<typeof MapNodeSchema>;
 export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
+
+export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" }>;
 
 export const mapNodeTypes = keys({
   group: true,
