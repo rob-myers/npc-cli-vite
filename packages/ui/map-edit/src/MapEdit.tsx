@@ -1076,6 +1076,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.selectedIds.size > 0) state.rotateSelected(e.key === "e" ? 90 : -90);
         return;
       }
+      if (e.key === "E" || e.key === "Q") {
+        if (state.selectedIds.size > 0) state.rotateSelected(e.key === "E" ? 15 : -15);
+        return;
+      }
 
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
         e.preventDefault();
@@ -1350,8 +1354,8 @@ export type State = {
   /** Must manually update state to see changes. */
   duplicate: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
-  rotateNode: (nodeId: string, degrees: -90 | 90) => void;
-  rotateSelected: (degrees: -90 | 90) => void;
+  rotateNode: (nodeId: string, degrees: -90 | 90 | -15 | 15) => void;
+  rotateSelected: (degrees: -90 | 90 | -15 | 15) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier) => void;

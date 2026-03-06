@@ -83,9 +83,9 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0",
-              selectedIds.has(node.id) === true && "outline-blue-500",
+              node.type === "symbol" && "opacity-75 outline-green-500/50 outline-dotted",
+              selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
               node.locked === true && "pointer-events-none opacity-25",
-              // node.type === "s"
             )}
           >
             <title>{node.name}</title>

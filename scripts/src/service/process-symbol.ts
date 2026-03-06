@@ -61,7 +61,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
         ct.setTransform(...new Mat(node.cssTransform).toArray());
         ct.scale(scale, scale);
         ct.translate(-bounds.x, -bounds.y);
-        ct.fillStyle = "red";
+        ct.fillStyle = "rgba(0,255,0,0.2)";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
