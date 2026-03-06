@@ -30,7 +30,7 @@
     },
     {
       "id": "97c92355-8ddc-4a72-9fef-2d9a171510a1",
-      "name": "Rect 1",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -39,18 +39,18 @@
         "c": 0,
         "d": 1,
         "e": 117.5,
-        "f": -2.5
+        "f": 0
       },
       "type": "rect",
       "baseRect": {
         "width": 5,
         "height": 122.5
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 117.5, -2.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 117.5, 0)"
     },
     {
       "id": "339c2043-8b8e-4814-ae85-44c2f5f8c920",
-      "name": "Rect 2",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -70,7 +70,7 @@
     },
     {
       "id": "eaf7b9db-f6f9-4630-adb6-e83f7dbc8008",
-      "name": "Rect 3",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -90,7 +90,7 @@
     },
     {
       "id": "2b645eed-019a-4506-a924-9cd84a4ac9c0",
-      "name": "Rect 4",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
