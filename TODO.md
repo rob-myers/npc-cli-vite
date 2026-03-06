@@ -106,7 +106,7 @@
     - seem to happen when select via rectangular area
     - can see node because it remains italic
 
-- 🚧 towards type `symbol`
+- ✅ towards type `symbol`
   - need to creates thumbnail for each symbol
   - ✅ organise script into `watch-symbol-thumbs.ts`, `restart-on-fail.sh` and `pnpm -F scripts watch-symbol-thumbs  forever script watches public/symbol`
   - ✅ script watches public/symbol and executes on change
@@ -121,13 +121,13 @@
       - ❌ store svg markup in manifest
   - ✅ /api/map-edit/file/symbol/:filename renders a PNG preview
   
-  - 🚧 node of type `symbol`
+  - ✅ node of type `symbol`
     - ✅ POST /api/map-edit/file/:type/:filename updates public/symbol/manifest.json
     - ✅ PNG preview should include full bounds, manifest needs bounds too for "offset"
     - ✅ modal with symbol thumbnails
-    - 🚧 clean
+    - ✅ clean
       - ✅ symbolKey should be typed
-      - `rect | image | symbol` e.g. "draggable"
+      - ✅ `rect | image | symbol` e.g. "draggable"
 
 - ✅ can lock nodes
 - ✅ locked image/symbol nodes have 25% opacity
