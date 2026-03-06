@@ -21,10 +21,8 @@ import { clearLocalStorage, getAllNodeIds, mapNodeTypes } from "./map-node-api";
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
     <Menu.Root>
-      <Menu.Trigger
-        className={cn(uiClassName, "cursor-pointer text-slate-300", "hover:text-slate-300 transition-colors")}
-      >
-        <ListIcon className="size-5 border border-white/50" />
+      <Menu.Trigger className={cn(uiClassName, "cursor-pointer")}>
+        <ListIcon className="size-5 text-on-background border" />
       </Menu.Trigger>
 
       <Menu.Portal>
