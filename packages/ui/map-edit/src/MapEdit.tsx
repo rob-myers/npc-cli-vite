@@ -56,6 +56,7 @@ import {
   templateNodeByKey,
   traverseNodesSync,
 } from "./map-node-api";
+import { SymbolPickerModal } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
 
 const CAN_SAVE_TO_FILESYSTEM_IN_DEV = true;
@@ -117,6 +118,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       mapsManifest: null,
       pngsManifest: null,
       pickImageForId: null,
+      pickSymbolForId: null,
       symbolsManifest: null,
 
       currentFile: tryLocalStorageGetParsed<{ [uiId: string]: MapEditFileSpecifier }>(
@@ -332,12 +334,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             selectedIds: new Set([newItem.id]),
             editingId: null,
             pickImageForId: newItem.type === "image" ? newItem.id : null,
+            pickSymbolForId: newItem.type === "symbol" ? newItem.id : null,
           });
         } else {
           parent.children.push(newItem);
           state.set({
             selectedIds: new Set([newItem.id]),
             pickImageForId: newItem.type === "image" ? newItem.id : null,
+            pickSymbolForId: newItem.type === "symbol" ? newItem.id : null,
           });
         }
       },
@@ -443,7 +447,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const result = findNode(state.nodes, nodeId);
         if (!result) return;
 
-        if (result.node.type === "image") {
+        if (result.node.type === "image" || result.node.type === "symbol") {
           const node = result.node;
           const { width: W, height: H } = node.baseRect;
           const [cx, cy] = [W / 2, H / 2];
@@ -593,6 +597,25 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         state.update();
       },
+      setSymbolKey(nodeId, symbolKey) {
+        state.set({ pickSymbolForId: null });
+
+        const { node } = findNode(state.nodes, nodeId) ?? {};
+        const meta = state.symbolsManifest?.byFilename[`${symbolKey}.json`];
+        if (!(node?.type === "symbol" && meta)) return;
+
+        node.symbolKey = symbolKey;
+        node.baseRect.width = meta.width;
+        node.baseRect.height = meta.height;
+        node.cssTransform = computeNodeCssTransform(node);
+        node.offset = { x: meta.bounds.x, y: meta.bounds.y };
+
+        if (node.name.match(/^(Symbol \d+)$/)) {
+          node.name = state.getNextName("symbol", symbolKey);
+        }
+
+        state.update();
+      },
 
       onSvgPointerDown(e) {
         const target = e.target as SVGElement;
@@ -665,13 +688,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (state.dragEl.type === "move-selection") {
           for (const [id, startPos] of state.dragEl.starts) {
-            const result = findNode(state.nodes, id);
-            if (result?.node.type === "rect" || result?.node.type === "image") {
-              const node = result.node;
-              node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
-              node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
-              node.cssTransform = computeNodeCssTransform(node);
-            }
+            const node = findNode(state.nodes, id)?.node;
+            if (!node || (node.type !== "rect" && node.type !== "image" && node.type !== "symbol")) continue;
+            node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
+            node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
+            node.cssTransform = computeNodeCssTransform(node);
           }
           state.update();
           return;
@@ -712,7 +733,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const selectedIds = new Set<string>();
           const box = state.selectionBox;
           traverseNodesSync(state.nodes, (el) => {
-            if (el.type === "rect" || el.type === "image") {
+            if (el.type === "rect" || el.type === "image" || el.type === "symbol") {
               const r = getNodeBounds(el);
               // Check if rects intersect
               if (
@@ -739,7 +760,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const result = findNode(state.nodes, id);
-            return result?.node.type === "rect" || result?.node.type === "image"
+            return result?.node.type === "rect" || result?.node.type === "image" || result?.node.type === "symbol"
               ? [[id, { x: result.node.transform.e, y: result.node.transform.f }]]
               : [];
           }),
@@ -1042,7 +1063,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const dy = e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0;
         for (const id of state.selectedIds) {
           const result = findNode(state.nodes, id);
-          if (result?.node.type === "rect" || result?.node.type === "image") {
+          if (result?.node.type === "rect" || result?.node.type === "image" || result?.node.type === "symbol") {
             const node = result.node;
             node.transform.e += dx;
             node.transform.f += dy;
@@ -1178,6 +1199,22 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           }
         }}
       />
+
+      <SymbolPickerModal
+        open={state.pickSymbolForId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            state.pickSymbolForId && state.deleteNodes([state.pickSymbolForId]);
+            state.set({ pickSymbolForId: null });
+          }
+        }}
+        onSelect={(symbolKey) => {
+          if (state.pickSymbolForId) {
+            state.setSymbolKey(state.pickSymbolForId, symbolKey);
+          }
+        }}
+        symbolsManifest={state.symbolsManifest}
+      />
     </div>
   );
 }
@@ -1245,6 +1282,7 @@ export type State = {
       };
   pngsManifest: StarshipSymbolPngsManifest | null;
   pickImageForId: string | null;
+  pickSymbolForId: string | null;
   mapsManifest: MapsManifest | null;
   symbolsManifest: SymbolsManifest | null;
 
@@ -1273,6 +1311,7 @@ export type State = {
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
   setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
+  setSymbolKey: (nodeId: string, symbolKey: string) => void;
   create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
   getNextName: (type: MapNodeType, prefix?: string) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;

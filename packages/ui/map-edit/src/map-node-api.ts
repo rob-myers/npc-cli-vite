@@ -94,9 +94,10 @@ export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNo
 export function computeNodeCssTransform(node: MapNode): string {
   if (node.type === "rect") {
     return computeRectCssTransform(node);
-  } else if (node.type === "image") {
+  } else if (node.type === "image" || node.type === "symbol") {
     return computeImageCssTransform(node);
   } else {
+    warn(`computeNodeCssTransform not implemented for node type ${node.type}`);
     return ""; // NOOP
   }
 }
@@ -104,7 +105,7 @@ export function computeNodeCssTransform(node: MapNode): string {
 /**
  * Compute CSS transform string for an image node.
  */
-function computeImageCssTransform(node: Extract<MapNode, { type: "image" }>): string {
+function computeImageCssTransform(node: Extract<MapNode, { type: "image" | "symbol" }>): string {
   const { transform, offset } = node;
   return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${transform.e + offset.x}, ${transform.f + offset.y})`;
 }
