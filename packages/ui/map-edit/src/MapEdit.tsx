@@ -1130,11 +1130,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   // save draft in both dev/prod
   useBeforeunload(() => state.save());
 
-  const selectedImageNode = useMemo(() => {
+  const selectedNodeWithOffset = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
     const [id] = state.selectedIds;
     const result = findNode(state.nodes, id);
-    return result?.node.type === "image" ? result.node : null;
+    if (!result) return;
+    return result.node.type === "image" || result.node.type === "symbol" ? result.node : null;
   }, [state.selectedIds, state.nodes]);
 
   const isMobile = isTouchDevice();
@@ -1194,7 +1195,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           ))}
         </div>
 
-        {selectedImageNode && <SelectedImageNodeUI selectedImageNode={selectedImageNode} state={state} />}
+        {selectedNodeWithOffset && <SelectedOffsetNodeUI node={selectedNodeWithOffset} state={state} />}
 
         <InspectorResizer state={state} />
       </aside>
@@ -1368,11 +1369,11 @@ export type State = {
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
 };
 
-function SelectedImageNodeUI({
-  selectedImageNode,
+function SelectedOffsetNodeUI({
+  node,
   state,
 }: {
-  selectedImageNode: Extract<MapNode, { type: "image" }>;
+  node: Extract<MapNode, { type: "image" | "symbol" }>;
   state: UseStateRef<State>;
 }) {
   return (
@@ -1389,10 +1390,10 @@ function SelectedImageNodeUI({
         <select
           className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
           title="dx"
-          value={selectedImageNode.offset.x}
+          value={node.offset.x}
           onChange={(e) => {
-            selectedImageNode.offset.x = Number(e.target.value) || 0;
-            selectedImageNode.cssTransform = computeNodeCssTransform(selectedImageNode);
+            node.offset.x = Number(e.target.value) || 0;
+            node.cssTransform = computeNodeCssTransform(node);
             state.update();
           }}
         >
@@ -1410,10 +1411,10 @@ function SelectedImageNodeUI({
         <select
           className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
           title="dy"
-          value={selectedImageNode.offset.y}
+          value={node.offset.y}
           onChange={(e) => {
-            selectedImageNode.offset.y = Number(e.target.value) || 0;
-            selectedImageNode.cssTransform = computeNodeCssTransform(selectedImageNode);
+            node.offset.y = Number(e.target.value) || 0;
+            node.cssTransform = computeNodeCssTransform(node);
             state.update();
           }}
         >

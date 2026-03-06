@@ -126,8 +126,8 @@
     - ✅ PNG preview should include full bounds, manifest needs bounds too for "offset"
     - ✅ modal with symbol thumbnails
     - 🚧 clean
+      - ✅ symbolKey should be typed
       - `rect | image | symbol` e.g. "draggable"
-      - symbolKey should be typed
 
 - ✅ can lock nodes
 - ✅ locked image/symbol nodes have 25% opacity
@@ -145,6 +145,8 @@
     - ask Jason
     - https://www.jcore.io/articles/schema-versioning-with-zod
 
+- can copy/paste nodes between instances
+- can sync symbols in other instances?
 
 - ❌ restart vite onchange map-edit plugin
   - but we do cache bust imports
