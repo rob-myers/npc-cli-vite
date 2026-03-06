@@ -27,13 +27,38 @@
         "y": -2
       },
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "22b68de9-6fe4-4c6d-b790-db093fcc8f73",
+      "name": "stateroom--019--2x3 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 120,
+        "f": 90
+      },
+      "type": "symbol",
+      "symbolKey": "stateroom--019--2x3.json",
+      "baseRect": {
+        "width": 120,
+        "height": 180
+      },
+      "offset": {
+        "x": -2,
+        "y": -2
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 118, 88)"
     }
   ],
   "bounds": {
     "x": -2,
     "y": -2,
-    "width": 127,
-    "height": 184
+    "width": 240,
+    "height": 270
   },
   "type": "symbol"
 }

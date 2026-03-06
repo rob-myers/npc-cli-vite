@@ -120,10 +120,14 @@
       - ✅ save width/height in file
       - ❌ store svg markup in manifest
   - ✅ /api/map-edit/file/symbol/:filename renders a PNG preview
+  
   - 🚧 node of type `symbol`
     - ✅ POST /api/map-edit/file/:type/:filename updates public/symbol/manifest.json
-    - PNG preview should include full bounds, manifest needs "offset"
-    - modal with symbol thumbnails
+    - ✅ PNG preview should include full bounds, manifest needs bounds too for "offset"
+    - ✅ modal with symbol thumbnails
+    - 🚧 clean
+      - `rect | image | symbol` e.g. "draggable"
+      - symbolKey should be typed
 
 - ✅ can lock nodes
 - ✅ locked image/symbol nodes have 25% opacity
