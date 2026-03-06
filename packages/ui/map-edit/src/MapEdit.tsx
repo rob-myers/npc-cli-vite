@@ -890,7 +890,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
-          bounds: Rect.fromJson(getNodeBounds(...state.nodes)).round().json,
+          bounds: Rect.fromJson(getNodeBounds(...state.nodes)).integerOrds().json,
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"
@@ -1112,6 +1112,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.add("image", { selectionAsParent: true });
       } else if (e.key === "a") {
         state.set({ selectedIds: getAllNodeIds(state.nodes) });
+      } else if (e.key === "m") {
+        state.add("symbol", { selectionAsParent: true });
       }
     };
 
@@ -1485,6 +1487,7 @@ const keyShouldPreventDefault = {
   g: true,
   i: true,
   // r: true,
+  m: true,
   s: true,
   y: true,
   z: true,

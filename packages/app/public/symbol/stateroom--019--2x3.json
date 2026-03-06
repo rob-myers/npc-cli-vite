@@ -6,7 +6,7 @@
     {
       "id": "651c38bc-7ced-4b2b-9fbc-6d52a50e83b0",
       "name": "stateroom--019--2x3 1",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 1,

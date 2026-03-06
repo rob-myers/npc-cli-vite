@@ -1,0 +1,39 @@
+{
+  "filename": "console--051--0.4x0.6.json",
+  "width": 30,
+  "height": 30,
+  "nodes": [
+    {
+      "id": "78e58bc5-9c7b-4f61-b4e7-948b13fe58bf",
+      "name": "console--051--0.4x0.6 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "image",
+      "srcKey": "console--051--0.4x0.6",
+      "baseRect": {
+        "width": 27.400000000000002,
+        "height": 31
+      },
+      "offset": {
+        "x": 1.3,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 1.3, -0.7)"
+    }
+  ],
+  "bounds": {
+    "width": 28,
+    "height": 31,
+    "x": 1,
+    "y": -1
+  },
+  "type": "symbol"
+}
