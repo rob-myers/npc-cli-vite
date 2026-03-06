@@ -1065,8 +1065,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
         e.preventDefault();
         state.pushHistory();
-        const dx = e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0;
-        const dy = e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0;
+        const delta = increment * (e.shiftKey ? 4 : 1);
+        const dx = e.key === "ArrowLeft" ? -delta : e.key === "ArrowRight" ? delta : 0;
+        const dy = e.key === "ArrowUp" ? -delta : e.key === "ArrowDown" ? delta : 0;
         for (const id of state.selectedIds) {
           const [node] = findNode(state.nodes, id);
           if (isNodeTransformable(node)) {
@@ -1096,7 +1097,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.add("image", { selectionAsParent: true });
       } else if (e.key === "a") {
         state.set({ selectedIds: getAllNodeIds(state.nodes) });
-      } else if (e.key === "m") {
+      } else if (e.key === "o") {
         state.add("symbol", { selectionAsParent: true });
       }
     };
@@ -1472,7 +1473,7 @@ const keyShouldPreventDefault = {
   g: true,
   i: true,
   // r: true,
-  m: true,
+  o: true,
   s: true,
   y: true,
   z: true,
