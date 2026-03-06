@@ -14,7 +14,7 @@ import {
   TrashIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
-import { toIcon } from "./InspectorNode";
+import { NodeIcon } from "./InspectorNode";
 import type { State } from "./MapEdit";
 import { clearLocalStorage, getAllNodeIds, mapNodeTypes } from "./map-node-api";
 
@@ -168,7 +168,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                   state.add(type, { selectionAsParent: true });
                 }}
               >
-                {toIcon[type]}
+                <NodeIcon type={type} />
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </Menu.Item>
             ))}
