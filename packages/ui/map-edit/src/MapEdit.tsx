@@ -230,8 +230,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       onSelect(id, opts) {
         state.pushHistory();
-        const res = findNode(state.nodes, id);
-        if (!res) return;
+        const [node] = findNode(state.nodes, id);
+        if (!node) return;
 
         const current = new Set(opts?.shiftKey || opts?.metaKey ? state.selectedIds : []);
 
@@ -254,10 +254,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
-        if (res.node.type === "group") {
+        if (node.type === "group") {
           // select (a) group and descendants, or (b) only group itself
           const descendantIds: string[] = [];
-          traverseNodesSync(res.node.children, (el) => void descendantIds.push(el.id));
+          traverseNodesSync(node.children, (el) => void descendantIds.push(el.id));
           const allDescendantsSelected = descendantIds.every((did) => state.selectedIds.has(did));
 
           if (state.selectedIds.has(id) && allDescendantsSelected && descendantIds.length > 0) {
@@ -425,10 +425,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       deleteNodes(nodeIds) {
         for (const id of nodeIds) {
-          const result = findNode(state.nodes, id);
-          if (result) {
-            removeNodeFromParent(result.parent?.children ?? state.nodes, id);
-          }
+          const [node, parent] = findNode(state.nodes, id);
+          node !== null && removeNodeFromParent(parent?.children ?? state.nodes, id);
         }
       },
       deleteSelectedNodes() {
@@ -439,9 +437,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
       duplicate(rootNodeId, seenDuringClone) {
-        const result = findNode(state.nodes, rootNodeId);
-        if (!result) return null;
-        const clone = state.cloneNode(result.node, seenDuringClone);
+        const [node] = findNode(state.nodes, rootNodeId);
+        if (!node) return null;
+        const clone = state.cloneNode(node, seenDuringClone);
         state.nodes.push(clone);
         return clone;
       },
@@ -458,11 +456,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
       },
       rotateNode(nodeId, deltaDegrees) {
-        const result = findNode(state.nodes, nodeId);
-        if (!result) return;
+        const [node] = findNode(state.nodes, nodeId);
+        if (!node) return;
 
-        if (result.node.type === "image" || result.node.type === "symbol") {
-          const node = result.node;
+        if (node.type === "image" || node.type === "symbol") {
           const { width: W, height: H } = node.baseRect;
           const [cx, cy] = [W / 2, H / 2];
           const { a, b, c, d, e, f } = node.transform;
@@ -477,8 +474,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           node.transform.f = m.f;
 
           node.cssTransform = computeNodeCssTransform(node);
-        } else if (result.node.type === "rect") {
-          const node = result.node;
+        } else if (node.type === "rect") {
           const { width: W, height: H } = node.baseRect;
           const { e, f } = node.transform;
 
@@ -517,8 +513,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       getSelectedNode() {
         if (state.selectedIds.size !== 1) return null;
         const [selectedId] = state.selectedIds;
-        const result = findNode(state.nodes, selectedId);
-        return result?.node ?? null;
+        const [node] = findNode(state.nodes, selectedId);
+        return node;
       },
       groupSelected() {
         if (state.selectedIds.size === 0) return;
@@ -537,11 +533,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         for (const id of state.selectedIds) {
           if (seen.has(id)) continue;
-          const result = findNode(state.nodes, id);
-          if (!result) continue;
-          removeNodeFromParent(result.parent?.children ?? state.nodes, id);
-          newGroup.children.push(result.node);
-          traverseNodesSync([result.node], (el) => void seen.add(el.id));
+          const [node, parent] = findNode(state.nodes, id);
+          if (!node) continue;
+          removeNodeFromParent(parent?.children ?? state.nodes, id);
+          newGroup.children.push(node);
+          traverseNodesSync([node], (el) => void seen.add(el.id));
         }
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
@@ -549,24 +545,24 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       moveNode(srcId, dstId, edge) {
         if (srcId === dstId) return;
 
-        const srcResult = findNode(state.nodes, srcId);
-        const dstResult = findNode(state.nodes, dstId);
+        const [srcNode, srcParent] = findNode(state.nodes, srcId);
+        const [dstNode, dstParent] = findNode(state.nodes, dstId);
         if (
-          !srcResult ||
-          !dstResult ||
-          findNode([srcResult.node], dstId) // cannot move into self
+          !srcNode ||
+          !dstNode ||
+          findNode([srcNode], dstId) // cannot move into self
         ) {
           return;
         }
 
-        removeNodeFromParent(srcResult.parent?.children ?? state.nodes, srcId);
+        removeNodeFromParent(srcParent?.children ?? state.nodes, srcId);
 
-        if (edge === "inside" && dstResult.node.type === "group") {
-          dstResult.node.children.push(srcResult.node);
+        if (edge === "inside" && dstNode.type === "group") {
+          dstNode.children.push(srcNode);
         } else {
           insertNodeAt(
-            srcResult.node,
-            dstResult.parent?.children ?? state.nodes,
+            srcNode,
+            dstParent?.children ?? state.nodes,
             dstId,
             edge === "inside" ? "bottom" : edge,
           );
@@ -590,7 +586,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       setImageKey(nodeId, imageKey) {
         state.set({ pickImageForId: null });
 
-        const { node } = findNode(state.nodes, nodeId) ?? {};
+        const [node] = findNode(state.nodes, nodeId) ?? {};
         const meta = state.pngsManifest?.byKey[imageKey];
         if (!(node?.type === "image" && meta)) return;
 
@@ -614,7 +610,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       setSymbolKey(nodeId, symbolKey) {
         state.set({ pickSymbolForId: null });
 
-        const { node } = findNode(state.nodes, nodeId) ?? {};
+        const [node] = findNode(state.nodes, nodeId) ?? {};
         const meta = state.symbolsManifest?.byFilename[`${symbolKey}.json`];
         if (!(node?.type === "symbol" && meta)) return;
 
@@ -702,7 +698,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (state.dragEl.type === "move-selection") {
           for (const [id, startPos] of state.dragEl.starts) {
-            const node = findNode(state.nodes, id)?.node;
+            const [node] = findNode(state.nodes, id);
             if (!node || (node.type !== "rect" && node.type !== "image" && node.type !== "symbol")) continue;
             node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
             node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
@@ -712,13 +708,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
+        // scale a single rect
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
-        const result = findNode(state.nodes, selectedId);
-        if (result?.node.type !== "rect") return;
+        const [node] = findNode(state.nodes, selectedId);
+        if (node?.type !== "rect") return;
 
-        // scale a single rect
-        const { transform, baseRect } = result.node;
+        const { transform, baseRect } = node;
         const { handle, startTransform, startBounds } = state.dragEl;
         const isW = handle.includes("w");
         const isN = handle.includes("n");
@@ -733,7 +729,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.e;
         transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.f;
 
-        result.node.cssTransform = computeNodeCssTransform(result.node);
+        node.cssTransform = computeNodeCssTransform(node);
 
         state.update();
       },
@@ -773,9 +769,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         /** Collect start positions for all selected rects */
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
-            const result = findNode(state.nodes, id);
-            return result?.node.type === "rect" || result?.node.type === "image" || result?.node.type === "symbol"
-              ? [[id, { x: result.node.transform.e, y: result.node.transform.f }]]
+            const [node] = findNode(state.nodes, id);
+            return node && (node.type === "rect" ||  node.type === "image" ||  node.type === "symbol")
+              ? [[id, { x: node.transform.e, y: node.transform.f }]]
               : [];
           }),
         );
@@ -789,12 +785,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       startResizeRect(e, handle) {
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
-        const result = findNode(state.nodes, selectedId);
-        if (result?.node.type !== "rect") return;
+        const [node] = findNode(state.nodes, selectedId);
+        if (node?.type !== "rect") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        const { transform, baseRect } = result.node;
-        const bounds = getNodeBounds(result.node);
+        const { transform, baseRect } = node;
+        const bounds = getNodeBounds(node);
         state.dragEl = {
           type: "resize-rect",
           handle,
@@ -1087,9 +1083,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const dx = e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0;
         const dy = e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0;
         for (const id of state.selectedIds) {
-          const result = findNode(state.nodes, id);
-          if (result?.node.type === "rect" || result?.node.type === "image" || result?.node.type === "symbol") {
-            const node = result.node;
+          const [node] = findNode(state.nodes, id);
+          if (node && (node.type === "rect" || node.type === "image" || node.type === "symbol")) {
             node.transform.e += dx;
             node.transform.f += dy;
             node.cssTransform = computeNodeCssTransform(node);
@@ -1133,9 +1128,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const selectedNodeWithOffset = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
     const [id] = state.selectedIds;
-    const result = findNode(state.nodes, id);
-    if (!result) return;
-    return result.node.type === "image" || result.node.type === "symbol" ? result.node : null;
+    const [node] = findNode(state.nodes, id);
+    return node && (node.type === "image" || node.type === "symbol") ? node : null;
   }, [state.selectedIds, state.nodes]);
 
   const isMobile = isTouchDevice();

@@ -10,17 +10,16 @@ export function findNode(
   parentArray: MapNode[],
   id: string,
   parent: GroupMapNode | null = null,
-): { node: MapNode; parent: null | GroupMapNode } | null {
+): [node: MapNode | null, parent: null | GroupMapNode] {
   for (const child of parentArray) {
     if (child.id === id) {
-      return { node: child, parent };
+      return [child, parent];
     }
     if (child.type === "group") {
-      const result = findNode(child.children, id, child);
-      if (result) return result;
+      return findNode(child.children, id, child);
     }
   }
-  return null;
+  return [null, null];
 }
 
 export function findNodeWithDepth(
