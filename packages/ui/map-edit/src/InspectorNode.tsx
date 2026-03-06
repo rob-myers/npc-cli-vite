@@ -142,7 +142,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
             root.update();
           }}
         >
-          {node.locked ? <LockIcon className="size-3" /> : <LockOpenIcon className="size-3" />}
+          {node.locked ? <LockIcon className="size-3 text-red-400" /> : <LockOpenIcon className="size-3" />}
         </button>
       </div>
 

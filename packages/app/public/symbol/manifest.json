@@ -24,6 +24,18 @@
         "x": -1,
         "y": -1
       }
+    },
+    "console--051--0.4x0.6.json": {
+      "filename": "console--051--0.4x0.6.json",
+      "thumbnailFilename": "console--051--0.4x0.6.thumbnail.png",
+      "width": 30,
+      "height": 30,
+      "bounds": {
+        "width": 28,
+        "height": 31,
+        "x": 1,
+        "y": -1
+      }
     }
   }
 }

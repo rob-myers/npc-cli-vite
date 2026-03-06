@@ -82,7 +82,7 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             style={{ transform: cssTransform }}
             preserveAspectRatio="none"
             className={cn(
-              "outline outline-white/10",
+              "outline-1 outline-white/0",
               selectedIds.has(node.id) === true && "outline-blue-500",
               node.locked === true && "pointer-events-none opacity-25",
               // node.type === "s"
@@ -185,8 +185,8 @@ const originLineLength = 4096;
 const originLineColor = "rgba(255, 0, 0, 0.5)";
 const OriginAndGrid = memo(() => (
   <g>
-    <line x1={-originLineLength} y1={0} x2={originLineLength} y2={0} stroke={originLineColor} strokeWidth={1} />
-    <line x1={0} y1={-originLineLength} x2={0} y2={originLineLength} stroke={originLineColor} strokeWidth={1} />
+    {/* <line x1={-originLineLength} y1={0} x2={originLineLength} y2={0} stroke={originLineColor} strokeWidth={1} />
+    <line x1={0} y1={-originLineLength} x2={0} y2={originLineLength} stroke={originLineColor} strokeWidth={1} /> */}
     <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#grid)" className="pointer-events-none" />
   </g>
 ));

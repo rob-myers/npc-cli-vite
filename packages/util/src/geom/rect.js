@@ -302,10 +302,6 @@ export class Rect {
     );
   }
 
-  round() {
-    return this.set(Math.floor(this.x), Math.floor(this.y), Math.ceil(this.width), Math.ceil(this.height));
-  }
-
   /**
    * @param {number} kx
    * @param {number} [ky]
