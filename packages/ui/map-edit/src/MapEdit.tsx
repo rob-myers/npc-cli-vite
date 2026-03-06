@@ -1474,7 +1474,8 @@ const maxZoomScale = 20;
 
 export type ResizeHandle = "nw" | "ne" | "sw" | "se";
 
-const increment = 10;
+const increment = 2.5;
+
 const snap = (v: number) => Math.round(v / increment) * increment;
 
 /**
