@@ -277,7 +277,7 @@ const MapEditSavedBaseSchema = z.object({
   width: z.number(),
   height: z.number(),
   nodes: z.array(MapNodeSchema),
-  actualBounds: RectSchema,
+  bounds: RectSchema,
 });
 
 export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend({

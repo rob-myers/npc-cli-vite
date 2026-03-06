@@ -1,7 +1,8 @@
+// ⚠️ this plugin does not hot-reload, so we use imports and cache bust them
+
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-// ⚠️ non-type import breaks vite dev env
 import {
   type ALLOWED_MAP_EDIT_FOLDERS,
   isSavableFileType,
@@ -9,9 +10,7 @@ import {
   type MapEditListFilesResponse,
   type MapEditListFoldersResponse,
   type MapEditSavableFileType,
-  MapEditSavedFileSchema,
 } from "@npc-cli/ui__map-edit/map-node-api";
-import { jsonParser } from "@npc-cli/util/json-parser";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
@@ -115,7 +114,13 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
       res.end(JSON.stringify({ error: "File not found" }));
       return true;
     }
-    const savedFile = jsonParser.pipe(MapEditSavedFileSchema).parse(fs.readFileSync(filePath, "utf-8"));
+
+    // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
+    const { parseRawMapEdit } = (await import(
+      `./service/process-symbol.ts?t=${Date.now()}`
+    )) as typeof import("./service/process-symbol");
+
+    const savedFile = parseRawMapEdit(fs.readFileSync(filePath, "utf-8")); // throws on error
     res.end(JSON.stringify(savedFile));
     return true;
   }
@@ -125,13 +130,14 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
     let body = "";
     for await (const chunk of req) body += chunk;
 
-    const fileToSave = jsonParser.pipe(MapEditSavedFileSchema).parse(body);
-    fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
+    // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
+    const { parseRawMapEdit, processSavedFile } = (await import(
+      `./service/process-symbol.ts?t=${Date.now()}`
+    )) as typeof import("./service/process-symbol");
 
-    // hot reloading via cache busting
-    await import(`./service/process-symbol.ts?t=${Date.now()}`).then(
-      ({ processSavedFile }: typeof import("./service/process-symbol")) => processSavedFile(fileToSave),
-    );
+    const fileToSave = parseRawMapEdit(body); // throws on error
+    fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
+    processSavedFile(fileToSave);
 
     res.end(JSON.stringify({ success: true }));
     return true;
@@ -139,10 +145,11 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
 
   // DELETE - Delete file and related cache
   if (req.method === "DELETE") {
-    // hot reloading via cache busting
-    await import(`./service/process-symbol.ts?t=${Date.now()}`).then(
-      ({ deleteSavedFile }: typeof import("./service/process-symbol")) => deleteSavedFile({ type: folder, filename }),
-    );
+    // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
+    const { deleteSavedFile } = (await import(
+      `./service/process-symbol.ts?t=${Date.now()}`
+    )) as typeof import("./service/process-symbol");
+    deleteSavedFile({ type: folder, filename });
 
     res.end(JSON.stringify({ success: true }));
     return true;

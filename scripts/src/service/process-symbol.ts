@@ -18,6 +18,10 @@ export async function deleteSavedFile({ type, filename }: MapEditFileSpecifier) 
   await ensureManifests(type, SymbolsManifestSchema, { changedFiles: [], removedFiles: [{ type, filename }] });
 }
 
+export function parseRawMapEdit(rawFileString: string) {
+  return jsonParser.pipe(MapEditSavedFileSchema).parse(rawFileString);
+}
+
 export async function processSavedFile(savedFile: MapEditSavedFile) {
   // currently same for symbol or map
   await createSavedFilePreviewPng(savedFile);
@@ -30,9 +34,9 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
 }
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
-  const { filename, nodes, actualBounds } = savedFile;
+  const { filename, nodes, bounds } = savedFile;
   const scale = 1;
-  const canvas = new Canvas(actualBounds.width * scale, actualBounds.height * scale);
+  const canvas = new Canvas(bounds.width * scale, bounds.height * scale);
   const ct = canvas.getContext("2d");
 
   await traverseNodesAsync(nodes, async (node) => {
@@ -43,14 +47,14 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
         );
         ct.setTransform(...new Mat(node.cssTransform).toArray());
         ct.scale(scale, scale);
-        ct.translate(-actualBounds.x, -actualBounds.y);
+        ct.translate(-bounds.x, -bounds.y);
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
       case "rect": {
         ct.setTransform(...new Mat(node.cssTransform).toArray());
         ct.scale(scale, scale);
-        ct.translate(-actualBounds.x, -actualBounds.y);
+        ct.translate(-bounds.x, -bounds.y);
         ct.fillStyle = "red";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
         break;

@@ -29,7 +29,7 @@
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     }
   ],
-  "actualBounds": {
+  "bounds": {
     "x": -2,
     "y": -2,
     "width": 127,

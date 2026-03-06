@@ -44,7 +44,7 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "actualBounds": {
+  "bounds": {
     "x": 0,
     "y": 0,
     "width": 120,
