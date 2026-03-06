@@ -1,6 +1,6 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import type { MapEditFileSpecifier, MapEditSavedFile, MapsManifest, SymbolsManifest } from "@npc-cli/ui__map-edit";
+import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit";
 import { Mat } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, warn } from "@npc-cli/util/legacy/generic";
@@ -9,12 +9,19 @@ import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 
 // ⚠️ fix stale schemas via cache busting
-const { MapEditSavedFileSchema, MapsManifestSchema, SymbolsManifestSchema, traverseNodesAsync } = (await import(
+const {
+  MapEditSavedFileSchema,
+  MapsManifestSchema,
+  SymbolsManifestSchema,
+  traverseNodesAsync,
+  SymbolJsonFilenameSchema,
+  MapJsonFilenameSchema,
+} = (await import(
   `../../../packages/ui/map-edit/src/map-node-api.ts?t=${Date.now()}`
 )) as typeof import("@npc-cli/ui__map-edit/map-node-api");
 
 export async function deleteSavedFile({ type, filename }: MapEditFileSpecifier) {
-  await ensureManifests(type, SymbolsManifestSchema, { changedFiles: [], removedFiles: [{ type, filename }] });
+  await ensureManifests(type, { changedFiles: [], removedFiles: [{ type, filename }] });
 }
 
 export function parseRawMapEdit(rawFileString: string) {
@@ -26,10 +33,10 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
   await createSavedFilePreviewPng(savedFile);
 
   // ensure both manifests
-  await ensureManifests("symbol", SymbolsManifestSchema, {
+  await ensureManifests("symbol", {
     changedFiles: [savedFile].filter((x) => x.type === "symbol"),
   });
-  await ensureManifests("map", MapsManifestSchema, { changedFiles: [savedFile].filter((x) => x.type === "map") });
+  await ensureManifests("map", { changedFiles: [savedFile].filter((x) => x.type === "map") });
 }
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
@@ -42,7 +49,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
     switch (node.type) {
       case "image": {
         const image = await loadImage(
-          path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.imageKey}.png`),
+          path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
         );
         ct.setTransform(...new Mat(node.cssTransform).toArray());
         ct.scale(scale, scale);
@@ -60,6 +67,11 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       }
     }
   });
+
+  if (canvas.width === 0 || canvas.height === 0) {
+    warn(`Skipping thumbnail generation for ${filename} due to zero width or height`);
+    return;
+  }
 
   await canvas.toFile(
     path.resolve(
@@ -79,40 +91,44 @@ type ProcessFileOpts = {
  * - if `changedFiles` undefined then regenerate all
  * - otherwise ensure `changedFiles` and also missing files
  */
-async function ensureManifests<T extends SymbolsManifest | MapsManifest>(
-  type: "symbol" | "map",
-  schema: z.ZodType<T>,
-  opts: ProcessFileOpts,
-) {
-  const manifestPath = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`, "manifest.json");
+async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
+  const schema =
+    type === "symbol"
+      ? ({ manifest: SymbolsManifestSchema, filename: SymbolJsonFilenameSchema } as const)
+      : ({ manifest: MapsManifestSchema, filename: MapJsonFilenameSchema } as const);
+
   const createdAt = new Date().toISOString();
-  const nextManifest: T =
-    jsonParser.pipe(schema).safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data ??
-    ({
-      createdAt,
-      byFilename: {},
-    } as T);
-
   const directory = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`);
-  const filePaths = fs.globSync(path.resolve(directory, "*.json")).filter((x) => path.basename(x) !== "manifest.json");
+  const manifestPath = path.resolve(directory, "manifest.json");
+  const nextManifest = jsonParser
+    .pipe(schema.manifest)
+    .safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data ?? { createdAt, byFilename: {} };
+  type ManifestItemFilename = keyof typeof nextManifest.byFilename | "manifest.json";
 
-  const changedFilenames = opts.changedFiles?.map((x) => x.filename) ?? filePaths.map((x) => path.basename(x));
+  const filePaths = fs.globSync(path.resolve(directory, "*.json"));
+  const changedFilenames =
+    opts.changedFiles?.map((x) => x.filename) ?? filePaths.map((filePath) => path.basename(filePath));
 
   for (const filePath of filePaths) {
-    const filename = path.basename(filePath);
+    const filename = path.basename(filePath) as ManifestItemFilename;
+    if (filename === "manifest.json") continue;
+    if (!schema.filename.safeParse(filename).success) {
+      warn(`Skipping file "${filename}" with invalid name in directory "${type}"`);
+      continue;
+    }
 
     if (!nextManifest.byFilename[filename] || changedFilenames.includes(filename)) {
-      const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
-      if (result.success) {
+      const savedFileResult = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
+      if (savedFileResult.success) {
         nextManifest.byFilename[filename] = {
           filename,
           thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
-          width: result.data.width,
-          height: result.data.height,
-          bounds: result.data.bounds,
+          width: savedFileResult.data.width,
+          height: savedFileResult.data.height,
+          bounds: savedFileResult.data.bounds,
         };
       } else {
-        error(`Failed to parse existing ${type}: ${filename}`, z.prettifyError(result.error));
+        error(`Failed to parse existing ${type}: ${filename}`, z.prettifyError(savedFileResult.error));
       }
     }
 

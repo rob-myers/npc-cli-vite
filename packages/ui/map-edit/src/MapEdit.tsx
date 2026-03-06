@@ -83,6 +83,20 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     },
   });
 
+  const { mutateAsync: saveMapEditFile } = useMutation({
+    mutationKey: ["map-edit-save"],
+    async mutationFn(file: MapEditFileSpecifier) {
+      await fetch(`/api/map-edit/file/${file.type}/${file.filename}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(file),
+      });
+    },
+    onSuccess(_data, _vars, _onMutateResult, context) {
+      context.client.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+    },
+  });
+
   const state = useStateRef(
     (): State => ({
       theme,
@@ -374,7 +388,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             return {
               ...baseProps,
               type: "image" as const,
-              imageKey: node.imageKey,
+              srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
               offset: { ...node.offset },
               cssTransform: computeNodeCssTransform(node),
@@ -384,7 +398,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             return {
               ...baseProps,
               type: "symbol" as const,
-              symbolKey: node.symbolKey,
+              srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
               offset: { ...node.offset },
               cssTransform: computeNodeCssTransform(node),
@@ -580,7 +594,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const meta = state.pngsManifest?.byKey[imageKey];
         if (!(node?.type === "image" && meta)) return;
 
-        node.imageKey = imageKey;
+        node.srcKey = imageKey;
 
         const scaleFactor = sguScalePngToSvgFactor;
         node.offset.x = labelledImageOffsetValue.halfLineWidth;
@@ -604,7 +618,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const meta = state.symbolsManifest?.byFilename[`${symbolKey}.json`];
         if (!(node?.type === "symbol" && meta)) return;
 
-        node.symbolKey = symbolKey;
+        node.srcKey = symbolKey;
         node.baseRect.width = meta.width;
         node.baseRect.height = meta.height;
         node.cssTransform = computeNodeCssTransform(node);
@@ -858,6 +872,17 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
 
+      openFresh(file) {
+        state.set({
+          nodes: [],
+          selectedIds: new Set(),
+          selectionBox: null,
+          currentFile: file,
+          undoStack: [],
+          redoStack: [],
+          isDirty: true,
+        });
+      },
       save(file = state.currentFile) {
         const savedFile: MapEditSavedFile = {
           type: file.type,
@@ -888,11 +913,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         if (import.meta.env.DEV && CAN_SAVE_TO_FILESYSTEM_IN_DEV) {
           // save to filesystem in development
-          fetch(`/api/map-edit/file/${file.type}/${file.filename}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(savedFile),
-          }).catch(console.error);
+          void saveMapEditFile(savedFile);
         }
       },
       async load(file = state.currentFile) {
@@ -1311,7 +1332,7 @@ export type State = {
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
   setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
-  setSymbolKey: (nodeId: string, symbolKey: string) => void;
+  setSymbolKey: (nodeId: string, symbolKey: StarshipSymbolImageKey) => void;
   create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
   getNextName: (type: MapNodeType, prefix?: string) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
@@ -1330,6 +1351,7 @@ export type State = {
   rotateNode: (nodeId: string, degrees: -90 | 90) => void;
   rotateSelected: (degrees: -90 | 90) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
+  openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier) => void;
   load: (file?: MapEditFileSpecifier) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;

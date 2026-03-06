@@ -67,11 +67,10 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
       case "image":
       case "symbol": {
         const { baseRect, cssTransform } = node;
-        const key = node.type === "image" ? node.imageKey : node.symbolKey;
         const href =
-          node.type === "image" ? `/starship-symbol/${node.imageKey}.png` : `/symbol/${node.symbolKey}.thumbnail.png`;
+          node.type === "image" ? `/starship-symbol/${node.srcKey}.png` : `/symbol/${node.srcKey}.thumbnail.png`;
 
-        return key !== "unset" ? (
+        return node.srcKey !== null ? (
           <image
             key={node.id}
             data-node-id={node.id}
@@ -84,8 +83,9 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             preserveAspectRatio="none"
             className={cn(
               "outline outline-white/10",
-              selectedIds.has(node.id) && "outline-blue-500",
-              cn(node.locked && "pointer-events-none opacity-25"),
+              selectedIds.has(node.id) === true && "outline-blue-500",
+              node.locked === true && "pointer-events-none opacity-25",
+              // node.type === "s"
             )}
           >
             <title>{node.name}</title>
