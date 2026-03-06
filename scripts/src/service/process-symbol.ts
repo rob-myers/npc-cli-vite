@@ -30,10 +30,9 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
 }
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
-  const { width, height, filename, nodes } = savedFile;
-  // const scale = 200 / width;
+  const { filename, nodes, actualBounds } = savedFile;
   const scale = 1;
-  const canvas = new Canvas(width * scale, height * scale);
+  const canvas = new Canvas(actualBounds.width * scale, actualBounds.height * scale);
   const ct = canvas.getContext("2d");
 
   await traverseNodesAsync(nodes, async (node) => {
@@ -42,13 +41,16 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
         const image = await loadImage(
           path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.imageKey}.png`),
         );
-        ct.setTransform(...new Mat(node.cssTransform).postMultiply([scale, 0, 0, scale, scale, scale]).toArray());
+        ct.setTransform(...new Mat(node.cssTransform).toArray());
+        ct.scale(scale, scale);
+        ct.translate(-actualBounds.x, -actualBounds.y);
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
       case "rect": {
         ct.setTransform(...new Mat(node.cssTransform).toArray());
         ct.scale(scale, scale);
+        ct.translate(-actualBounds.x, -actualBounds.y);
         ct.fillStyle = "red";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
         break;
