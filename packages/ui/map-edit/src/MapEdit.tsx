@@ -1141,8 +1141,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         {/* inspector must scroll */}
         <div className={cn(uiClassName, "overflow-auto bg-background")}>
-          {state.nodes.map((el) => (
-            <InspectorNode key={el.id} element={el} level={0} root={state} />
+          {state.nodes.map((node) => (
+            <InspectorNode key={node.id} node={node} level={0} root={state} />
           ))}
         </div>
 

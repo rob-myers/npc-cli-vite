@@ -7,7 +7,15 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
-import { FolderIcon, ImageIcon, LockIcon, LockOpenIcon, RectangleIcon, StampIcon } from "@phosphor-icons/react";
+import {
+  FolderIcon,
+  ImageIcon,
+  LockIcon,
+  LockOpenIcon,
+  QuestionIcon,
+  RectangleIcon,
+  StampIcon,
+} from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
@@ -17,24 +25,24 @@ import type { MapNode, MapNodeType } from "./map-node-api";
  * - Double tap to edit name
  * - Drag to reorder
  */
-export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root }) => {
+export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) => {
   const state = useStateRef(() => ({
     isExpanded: true,
-    editValue: element.name,
+    editValue: node.name,
     inputEl: null as HTMLInputElement | null,
     rowEl: null as HTMLDivElement | null,
     closestEdge: null as Edge | null,
     dropInside: false,
   }));
 
-  const isSelected = root.selectedIds.has(element.id);
-  const isEditing = root.editingId === element.id;
-  const isGroup = element.type === "group";
+  const isSelected = root.selectedIds.has(node.id);
+  const isEditing = root.editingId === node.id;
+  const isGroup = node.type === "group";
 
   useEffect(() => {
     const el = state.rowEl;
     if (!el) return;
-    const id = element.id;
+    const id = node.id;
     return combine(
       draggable({
         element: el,
@@ -75,7 +83,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
     );
   }, []);
 
-  const onDoubleTap = useDoubleTap(() => root.onStartEdit(element.id));
+  const onDoubleTap = useDoubleTap(() => root.onStartEdit(node.id));
 
   return (
     <div>
@@ -92,11 +100,13 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         )}
         style={{ paddingLeft: 8 + level * 2 }}
         onClick={(e) => {
-          root.onSelect(element.id, { shiftKey: e.shiftKey, metaKey: e.metaKey });
+          root.onSelect(node.id, { shiftKey: e.shiftKey, metaKey: e.metaKey });
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <span className="text-on-background pl-0.5 py-0.5">{toIcon[element.type]}</span>
+        <span className="text-on-background pl-0.5 py-0.5">
+          <NodeIcon type={node.type} />
+        </span>
 
         <input
           ref={state.ref("inputEl")}
@@ -107,15 +117,15 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
             isEditing ? "italic" : "cursor-pointer",
             isSelected && (root.theme === "dark" ? "text-blue-400/80" : "text-blue-900/80"),
           )}
-          value={element.name}
+          value={node.name}
           readOnly={!isEditing}
           onBlur={() => isEditing && root.set({ editingId: null })}
           onChange={(e) => {
-            element.name = e.currentTarget.value;
+            node.name = e.currentTarget.value;
             state.update();
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") root.editingId === null ? root.onStartEdit(element.id) : root.onCancelEdit();
+            if (e.key === "Enter") root.editingId === null ? root.onStartEdit(node.id) : root.onCancelEdit();
             if (e.key === "Escape") root.onCancelEdit();
           }}
         />
@@ -123,23 +133,23 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
         <button
           className={cn(
             "flex items-center justify-center px-1 text-on-background/50 hover:text-on-background",
-            element.locked && "text-on-background/80",
+            node.locked && "text-on-background/80",
           )}
-          title={element.locked ? "Unlock" : "Lock"}
+          title={node.locked ? "Unlock" : "Lock"}
           onClick={(e) => {
             e.stopPropagation();
-            element.locked = !element.locked;
+            node.locked = !node.locked;
             root.update();
           }}
         >
-          {element.locked ? <LockIcon className="size-3" /> : <LockOpenIcon className="size-3" />}
+          {node.locked ? <LockIcon className="size-3" /> : <LockOpenIcon className="size-3" />}
         </button>
       </div>
 
       {isGroup === true && state.isExpanded === true && (
         <div className="border-l border-slate-700/50">
-          {element.children.map((child) => (
-            <InspectorNode key={child.id} element={child} level={level + 1} root={root} />
+          {node.children.map((child) => (
+            <InspectorNode key={child.id} node={child} level={level + 1} root={root} />
           ))}
         </div>
       )}
@@ -148,14 +158,22 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ element, level, root })
 };
 
 interface TreeItemProps {
-  element: MapNode;
+  node: MapNode;
   level: number;
   root: UseStateRef<MapEditState>;
 }
 
-export const toIcon = {
-  group: <FolderIcon className="size-4" />,
-  rect: <RectangleIcon className="size-4" />,
-  image: <ImageIcon className="size-4" />,
-  symbol: <StampIcon className="size-4" />,
-} as const satisfies Record<MapNodeType, React.ReactNode>;
+export function NodeIcon(props: { type: MapNodeType }) {
+  switch (props.type) {
+    case "group":
+      return <FolderIcon className="size-4" />;
+    case "rect":
+      return <RectangleIcon className="size-4" />;
+    case "image":
+      return <ImageIcon className="size-4" />;
+    case "symbol":
+      return <StampIcon className="size-4" />;
+    default:
+      return <QuestionIcon className="size-4" />;
+  }
+}
