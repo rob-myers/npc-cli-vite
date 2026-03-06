@@ -364,7 +364,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         seenDuringClone?.add(node.id);
         const baseProps = {
           id: crypto.randomUUID(),
-          name: state.getNextName(node.type, `${node.name.split(" ")[0]} `),
+          name: node.type === "symbol" ? node.name : state.getNextName(node.type, `${node.name.split(" ")[0]} `),
           locked: node.locked,
           visible: node.visible,
           transform: { ...node.transform },
@@ -437,7 +437,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.deleteNodes(Array.from(state.selectedIds));
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
-      duplicate(rootNodeId, seenDuringClone) {
+      duplicateNode(rootNodeId, seenDuringClone) {
         const [node] = findNode(state.nodes, rootNodeId);
         if (!node) return null;
         const clone = state.cloneNode(node, seenDuringClone);
@@ -451,7 +451,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const duplicatedIds = new Set<string>();
         for (const id of state.selectedIds) {
           if (seenDuringClone.has(id)) continue;
-          const clone = state.duplicate(id, seenDuringClone);
+          const clone = state.duplicateNode(id, seenDuringClone);
           if (clone) getAllNodeIds([clone]).forEach((id) => duplicatedIds.add(id));
         }
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
@@ -608,10 +608,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.baseRect.height = meta.height;
         node.cssTransform = computeNodeCssTransform(node);
         node.offset = { x: meta.bounds.x, y: meta.bounds.y };
-
-        if (node.name.match(/^(Symbol \d+)$/)) {
-          node.name = state.getNextName("symbol", symbolKey);
-        }
+        node.name = symbolKey;
 
         state.update();
       },
@@ -1335,7 +1332,7 @@ export type State = {
   redo: () => void;
   cloneNode: (node: MapNode, seenDuringClone?: Set<string>) => MapNode;
   /** Must manually update state to see changes. */
-  duplicate: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
+  duplicateNode: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
   rotateNode: (nodeId: string, degrees: -90 | 90 | -15 | 15) => void;
   rotateSelected: (degrees: -90 | 90 | -15 | 15) => void;
