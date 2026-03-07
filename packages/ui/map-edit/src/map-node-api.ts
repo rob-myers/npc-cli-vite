@@ -4,6 +4,7 @@ import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
+// 🚧 fast lookup
 /** Find node and its parent */
 export function findNode(
   /** Either top-level nodes or `group.childrem` */
@@ -38,10 +39,10 @@ export function findNodeWithDepth(
   return null;
 }
 
-export function getAllNodeIds(nodes: MapNode[]) {
-  const ids = new Set<string>();
-  traverseNodesSync(nodes, (node) => void ids.add(node.id));
-  return ids;
+export function getRecursiveNodes(nodes: MapNode[]) {
+  const recursiveNodes = new Set<MapNode>();
+  traverseNodesSync(nodes, (node) => void recursiveNodes.add(node));
+  return recursiveNodes;
 }
 
 /** Compute the world-space bounds of a rect/image node */
