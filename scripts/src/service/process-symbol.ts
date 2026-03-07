@@ -1,7 +1,11 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
-import type { MapEditFileSpecifier, MapEditSavableFileType, MapEditSavedFile } from "@npc-cli/ui__map-edit";
+// must import type, use cache-busting import for values
+import type {
+  MapEditFileSpecifier,
+  MapEditSavedFile,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, warn } from "@npc-cli/util/legacy/generic";
@@ -32,7 +36,7 @@ export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
-export function parseMapEditFileSpecifier(fileSpecifier: { type: MapEditSavableFileType; filename: string }) {
+export function parseMapEditFileSpecifier(fileSpecifier: { type: MapEditSavedFile["type"]; filename: string }) {
   return MapEditFileSpecifierSchema.parse(fileSpecifier);
 }
 

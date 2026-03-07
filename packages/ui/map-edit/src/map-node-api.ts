@@ -2,7 +2,9 @@ import { StarShipSymbolImageKeySchema, type StarshipSymbolImageKey } from "@npc-
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
+import type { DistributedPick } from "@npc-cli/util/types";
 import z from "zod"; /** Find node and its parent */
+
 export function findNode(
   /** Either top-level nodes or `group.childrem` */
   parentArray: MapNode[],
@@ -235,7 +237,6 @@ export type MapNode = z.infer<typeof MapNodeSchema>;
 export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
-
 export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" }>;
 
 export const mapNodeTypes = keys({
@@ -296,19 +297,14 @@ export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend(MapEditSym
 export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend(MapEditMapFileSpecifierSchema.shape);
 export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
-export type MapEditSavedSymbol = z.infer<typeof MapEditSavedSymbolSchema>;
-export type MapEditSavedMap = z.infer<typeof MapEditSavedMapSchema>;
 export type MapEditSavedFile = z.infer<typeof MapEditSavedFileSchema>;
-export type MapEditSavableFileType = MapEditSavedFile["type"];
 
-export function isSavableFileType(type: string): type is MapEditSavableFileType {
-  return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavableFileType);
+export function isSavableFileType(type: string): type is MapEditSavedFile["type"] {
+  return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavedFile["type"]);
 }
 
 export const MapEditFilenameSchema = z.union([SymbolJsonFilenameSchema, MapJsonFilenameSchema]);
-export type MapEditFileSpecifier = Pretty<
-  Pick<MapEditSavedSymbol, "type" | "filename" | "key"> | Pick<MapEditSavedMap, "type" | "filename" | "key">
->;
+export type MapEditFileSpecifier = Pretty<DistributedPick<MapEditSavedFile, "type" | "filename" | "key">>;
 
 export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
   return `${LOCAL_STORAGE_PREFIX}${file.type}:${file.filename}`;
