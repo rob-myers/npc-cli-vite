@@ -1,9 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog";
-import {
-  type StarshipSymbolGroup,
-  type StarshipSymbolImageKey,
-  symbolByGroup,
-} from "@npc-cli/media/starship-symbol";
+import { type StarshipSymbolGroup, type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
@@ -41,9 +37,7 @@ export function ImagePickerModal({
           )}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-            <Dialog.Title className="text-sm font-semibold text-slate-200">
-              Select Image
-            </Dialog.Title>
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Select Image</Dialog.Title>
             <Dialog.Close className="p-1 hover:bg-slate-700 rounded transition-colors cursor-pointer">
               <XIcon className="size-5 text-slate-400" />
             </Dialog.Close>
@@ -68,7 +62,10 @@ export function ImagePickerModal({
                 </button>
 
                 {state.expandedGroup === group && (
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                  <div
+                    ref={(el) => el?.scrollIntoView({ block: "center", behavior: "smooth" })}
+                    className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
+                  >
                     {Object.keys(symbols).map((imageKey) => (
                       <button
                         key={imageKey}
@@ -83,10 +80,7 @@ export function ImagePickerModal({
                         <img
                           src={`/starship-symbol/${imageKey}.png`}
                           alt={imageKey}
-                          className={cn(
-                            "size-full object-contain",
-                            !state.loadedImages.has(imageKey) && "hidden",
-                          )}
+                          className={cn("size-full object-contain", !state.loadedImages.has(imageKey) && "hidden")}
                           onLoad={() => {
                             state.loadedImages.add(imageKey);
                             state.update();
