@@ -1,0 +1,39 @@
+{
+  "filename": "extra--003--chair--0.25x0.25.json",
+  "width": 20,
+  "height": 20,
+  "nodes": [
+    {
+      "id": "3c3e5ea6-dee8-419d-9b8e-6b4281fba211",
+      "name": "extra--003--chair--0.25x0.25 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "image",
+      "srcKey": "extra--003--chair--0.25x0.25",
+      "baseRect": {
+        "width": 19.400000000000002,
+        "height": 20.6
+      },
+      "offset": {
+        "x": 0.3,
+        "y": -0.3
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 0.3, -0.3)"
+    }
+  ],
+  "bounds": {
+    "width": 19.4,
+    "height": 20.6,
+    "x": 0.3,
+    "y": -0.3
+  },
+  "type": "symbol"
+}

@@ -60,6 +60,30 @@
         "x": -0.5,
         "y": -0.7
       }
+    },
+    "console--033--0.4x0.6.json": {
+      "filename": "console--033--0.4x0.6.json",
+      "thumbnailFilename": "console--033--0.4x0.6.thumbnail.png",
+      "width": 30,
+      "height": 30,
+      "bounds": {
+        "width": 26.8,
+        "height": 32.2,
+        "x": 2,
+        "y": -1.3
+      }
+    },
+    "extra--003--chair--0.25x0.25.json": {
+      "filename": "extra--003--chair--0.25x0.25.json",
+      "thumbnailFilename": "extra--003--chair--0.25x0.25.thumbnail.png",
+      "width": 20,
+      "height": 20,
+      "bounds": {
+        "width": 19.4,
+        "height": 20.6,
+        "x": 0.3,
+        "y": -0.3
+      }
     }
   }
 }
