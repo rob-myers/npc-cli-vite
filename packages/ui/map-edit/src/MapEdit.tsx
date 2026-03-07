@@ -22,7 +22,7 @@ import {
 } from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type PointerEvent, useContext, useEffect, useMemo } from "react";
+import { type PointerEvent, useCallback, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import z from "zod";
 
@@ -66,7 +66,7 @@ import {
   templateNodeByKey,
   traverseNodesSync,
 } from "./map-node-api";
-import { SymbolPickerModal } from "./SymbolPickerModal";
+import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
 
 const CAN_SAVE_TO_FILESYSTEM_IN_DEV = true;
@@ -1039,18 +1039,20 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   useQuery({
     queryKey: ["map-edit-images-manifest"],
     queryFn: async () => {
-      state.pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
-      return null;
+      const pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
+      state.set({ pngsManifest });
+      return pngsManifest;
     },
   });
 
   useQuery({
     queryKey: ["map-edit-manifests"],
     queryFn: async () => {
-      state.symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);
-      state.mapsManifest = await fetchParsed("/map/manifest.json", MapsManifestSchema);
+      const symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);
+      const mapsManifest = await fetchParsed("/map/manifest.json", MapsManifestSchema);
+      state.set({ symbolsManifest, mapsManifest });
       state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
-      return null;
+      return symbolsManifest;
     },
   });
 
@@ -1300,19 +1302,25 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }}
       />
 
-      <SymbolPickerModal
+      <SymbolPickerModalMemo
         open={state.pickSymbolForId !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            state.pickSymbolForId && state.deleteNodes([state.pickSymbolForId]);
-            state.set({ pickSymbolForId: null });
-          }
-        }}
-        onSelect={(symbolKey) => {
-          if (state.pickSymbolForId) {
-            state.setSymbolKey(state.pickSymbolForId, symbolKey);
-          }
-        }}
+        onOpenChange={useCallback(
+          (open) => {
+            if (!open) {
+              state.pickSymbolForId && state.deleteNodes([state.pickSymbolForId]);
+              state.set({ pickSymbolForId: null });
+            }
+          },
+          [state],
+        )}
+        onSelect={useCallback(
+          (symbolKey) => {
+            if (state.pickSymbolForId) {
+              state.setSymbolKey(state.pickSymbolForId, symbolKey);
+            }
+          },
+          [state],
+        )}
         symbolsManifest={state.symbolsManifest}
       />
     </div>
