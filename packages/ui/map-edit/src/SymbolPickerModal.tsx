@@ -3,9 +3,12 @@ import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
+import { memo, useEffect } from "react";
 import { type SymbolsManifest, symbolKeyFilenameToSymbolKey } from "./map-node-api";
 
-export function SymbolPickerModal({
+export const SymbolPickerModalMemo = memo(SymbolPickerModal);
+
+function SymbolPickerModal({
   open,
   onOpenChange,
   onSelect,
@@ -17,8 +20,15 @@ export function SymbolPickerModal({
   symbolsManifest: SymbolsManifest | null;
 }) {
   const state = useStateRef(() => ({
+    cachedBustingQuery: `t=${Date.now()}`,
     loadedImages: new Set<string>(),
+    updateCacheBustingQuery() {
+      this.cachedBustingQuery = `t=${Date.now()}`;
+    },
   }));
+  useEffect(() => {
+    if (open && import.meta.env.DEV) state.updateCacheBustingQuery();
+  }, [open]);
 
   const entries = symbolsManifest ? Object.values(symbolsManifest.byFilename) : [];
 
@@ -59,7 +69,7 @@ export function SymbolPickerModal({
                   >
                     <div className="w-full aspect-square flex items-center justify-center overflow-hidden">
                       <img
-                        src={invalidateImageCacheInDev(`/symbol/${entry.thumbnailFilename}`)}
+                        src={`/symbol/${entry.thumbnailFilename}?${state.cachedBustingQuery}`}
                         alt={entry.filename}
                         className={cn(
                           "max-w-full max-h-full object-contain",
@@ -84,8 +94,4 @@ export function SymbolPickerModal({
       </Dialog.Portal>
     </Dialog.Root>
   );
-}
-
-function invalidateImageCacheInDev(url: string) {
-  return `${url}?t=${Date.now()}`;
 }
