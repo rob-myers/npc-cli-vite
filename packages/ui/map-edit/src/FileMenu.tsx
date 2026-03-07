@@ -105,7 +105,7 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
       </Select.Trigger>
 
       <Select.Portal>
-        <Select.Positioner className="z-50" sideOffset={4}>
+        <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
               {allSymbolKeys.map((key) => {
