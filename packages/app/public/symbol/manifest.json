@@ -88,13 +88,13 @@
     "g-301--bridge.json": {
       "filename": "g-301--bridge.json",
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
-      "width": 240,
-      "height": 120,
+      "width": 1200,
+      "height": 600,
       "bounds": {
-        "width": 242.4,
-        "height": 125.6,
-        "x": -1.2,
-        "y": -4.3
+        "width": 1212,
+        "height": 628,
+        "x": -5.5,
+        "y": -22
       }
     }
   }

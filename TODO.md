@@ -154,7 +154,9 @@
 
 - ⚠️ renaming imports from process-symbol breaks vite plugin
 
-- 🚧 make symbol for `extra--004--desk--0.5x1`
+- ✅ make symbol for `extra--004--desk--0.5x1`
+- ✅ hull symbols "image" should not be scaled down
+
 - 🚧 can extend symbol lookup without restarting vite plugin
 
 - ✅ can copy/paste nodes between instances
