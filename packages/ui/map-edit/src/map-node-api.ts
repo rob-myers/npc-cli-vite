@@ -258,17 +258,10 @@ export const baseSvgSize = 600;
 export const labelledImageOffsetValue = {
   zero: 0,
   halfLineWidth: -0.7,
-  /**
-   * East align `bed--004--0.8x1.4 1`
-   * > `-22 / 5 + 0.7`
-   */
   eastAlignBed004: -3.7,
-  /**
-   * e.g. `console--051--0.4x0.6 1`
-   * > `((150 - 137) / 2) / 5`
-   */
   centerXConsole051: 1.3,
   centerYStateRoom012: 2,
+  centerXExtra004: -3,
 } as const;
 
 export const imageOffsetValues = Object.values(labelledImageOffsetValue)
@@ -280,6 +273,16 @@ export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 export const SymbolJsonFilenameSchema = z.templateLiteral([StarShipSymbolImageKeySchema, ".json"]);
 export const MapJsonFilenameSchema = z.string().endsWith(".json");
 
+export const MapEditSymbolFileSpecifierSchema = z.object({
+  type: z.literal("symbol"),
+  filename: SymbolJsonFilenameSchema,
+});
+export const MapEditMapFileSpecifierSchema = z.object({
+  type: z.literal("map"),
+  filename: MapJsonFilenameSchema,
+});
+export const MapEditFileSpecifierSchema = z.union([MapEditSymbolFileSpecifierSchema, MapEditMapFileSpecifierSchema]);
+
 const MapEditSavedBaseSchema = z.object({
   filename: z.string(),
   width: z.number(),
@@ -288,14 +291,8 @@ const MapEditSavedBaseSchema = z.object({
   bounds: RectSchema,
 });
 
-export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend({
-  type: z.literal("symbol"),
-  filename: SymbolJsonFilenameSchema,
-});
-export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend({
-  type: z.literal("map"),
-  filename: MapJsonFilenameSchema,
-});
+export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend(MapEditSymbolFileSpecifierSchema.shape);
+export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend(MapEditMapFileSpecifierSchema.shape);
 export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
 export type MapEditSavedSymbol = z.infer<typeof MapEditSavedSymbolSchema>;
@@ -307,6 +304,7 @@ export function isSavableFileType(type: string): type is MapEditSavableFileType 
   return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavableFileType);
 }
 
+export const MapEditFilenameSchema = z.union([SymbolJsonFilenameSchema, MapJsonFilenameSchema]);
 export type MapEditFileSpecifier = Pretty<
   Pick<MapEditSavedSymbol, "type" | "filename"> | Pick<MapEditSavedMap, "type" | "filename">
 >;
@@ -363,18 +361,6 @@ export function extendCurrentFileSpecifierMapping(
 
 export const LOCAL_STORAGE_PREFIX = "map-edit:";
 export const LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER = "map-edit-to-current-file";
-
-//#region dev api
-
-export type MapEditListFilesResponse = {
-  files: MapEditFileSpecifier[];
-};
-
-export type MapEditListFoldersResponse = {
-  folders: readonly string[];
-};
-
-//#endregion
 
 const BaseManifestItemSchema = z.object({
   filename: z.string(),

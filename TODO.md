@@ -151,6 +151,11 @@
   - ✅ `pnpm starship-pngs-to-public` ensures and extends manifest
   - ✅ can add image to MapEdit
 
+- ⚠️ renaming imports from process-symbol breaks vite plugin
+
+- 🚧 make symbol for `extra--004--desk--0.5x1`
+- 🚧 can extend symbol lookup without restarting vite plugin
+
 - ✅ can copy/paste nodes between instances
 - ❌ sync files in other instances?
   - can load again in other instance
