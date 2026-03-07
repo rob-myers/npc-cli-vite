@@ -1,13 +1,18 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
-import { type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
+import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { CheckIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import type { State } from "./MapEdit";
-import { ALLOWED_MAP_EDIT_FOLDERS } from "./map-node-api";
+import {
+  ALLOWED_MAP_EDIT_FOLDERS,
+  defaultSymbolKey,
+  type MapEditFileSpecifier,
+  SymbolJsonFilenameSchema,
+} from "./map-node-api";
 
 const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
 
@@ -48,11 +53,11 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                     if (existing) {
                       state.load(existing);
                     } else {
-                      const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
-                      state.openFresh({
-                        type: folderType,
-                        filename: folderType === "map" ? "empty-map.json" : `${defaultSymbolKey}.json`,
-                      });
+                      state.openFresh(
+                        folderType === "map"
+                          ? { type: "map", filename: "empty-map.json" }
+                          : { type: "symbol", filename: `${defaultSymbolKey}.json` },
+                      );
                     }
                   }}
                 >
@@ -79,13 +84,13 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
     <Select.Root
       value={state.currentFile.filename}
       onValueChange={(filename) => {
-        if (filename && filename !== state.currentFile.filename) {
-          const file = { type: "symbol" as const, filename };
-          if (savedFilenames.has(filename)) {
-            state.load(file);
-          } else {
-            state.openFresh(file);
-          }
+        if (filename !== state.currentFile.filename) return;
+        const parsedFilename = SymbolJsonFilenameSchema.parse(filename);
+        const file: MapEditFileSpecifier = { type: "symbol", filename: parsedFilename };
+        if (savedFilenames.has(parsedFilename)) {
+          state.load(file);
+        } else {
+          state.openFresh(file);
         }
       }}
     >
@@ -104,7 +109,7 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
               {allSymbolKeys.map((key) => {
-                const filename = `${key}.json`;
+                const filename = `${key}.json` as const;
                 const isSaved = savedFilenames.has(filename);
                 return (
                   <Select.Item

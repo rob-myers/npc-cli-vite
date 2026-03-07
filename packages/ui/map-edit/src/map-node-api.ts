@@ -4,7 +4,6 @@ import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
-// 🚧 fast lookup
 /** Find node and its parent */
 export function findNode(
   /** Either top-level nodes or `group.childrem` */
@@ -278,6 +277,9 @@ export const imageOffsetValues = Object.values(labelledImageOffsetValue)
 
 export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 
+export const SymbolJsonFilenameSchema = z.templateLiteral([StarShipSymbolImageKeySchema, ".json"]);
+export const MapJsonFilenameSchema = z.string().endsWith(".json");
+
 const MapEditSavedBaseSchema = z.object({
   filename: z.string(),
   width: z.number(),
@@ -287,11 +289,12 @@ const MapEditSavedBaseSchema = z.object({
 });
 
 export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend({
-  /** 🚧 enforce StarshipSymbolImageKey  */
   type: z.literal("symbol"),
+  filename: SymbolJsonFilenameSchema,
 });
 export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend({
   type: z.literal("map"),
+  filename: MapJsonFilenameSchema,
 });
 export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
@@ -304,7 +307,9 @@ export function isSavableFileType(type: string): type is MapEditSavableFileType 
   return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavableFileType);
 }
 
-export type MapEditFileSpecifier = { type: MapEditSavableFileType; filename: string };
+export type MapEditFileSpecifier = Pretty<
+  Pick<MapEditSavedSymbol, "type" | "filename"> | Pick<MapEditSavedMap, "type" | "filename">
+>;
 
 export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
   return `${LOCAL_STORAGE_PREFIX}${file.type}:${file.filename}`;
@@ -312,7 +317,7 @@ export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
 
 export function decodeFileSpecifierLocalStorageKey(localStorageKey: string) {
   const [, type, filename] = localStorageKey.split(/[:]/);
-  return { type: type as MapEditSavableFileType, filename };
+  return { type, filename } as MapEditFileSpecifier;
 }
 
 export function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
@@ -320,8 +325,8 @@ export function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
-      const { type, filename } = decodeFileSpecifierLocalStorageKey(key);
-      if (isSavableFileType(type) && filename) files.push({ type, filename });
+      const fileSpec = decodeFileSpecifierLocalStorageKey(key);
+      if (isSavableFileType(fileSpec.type) && fileSpec.filename) files.push(fileSpec);
       else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`);
     }
   }
@@ -371,9 +376,6 @@ export type MapEditListFoldersResponse = {
 
 //#endregion
 
-export const SymbolJsonFilenameSchema = z.templateLiteral([StarShipSymbolImageKeySchema, ".json"]);
-export const MapJsonFilenameSchema = z.string().endsWith(".json");
-
 const BaseManifestItemSchema = z.object({
   filename: z.string(),
   thumbnailFilename: z.string(),
@@ -411,3 +413,5 @@ export function symbolKeyFilenameToSymbolKey(
 ): StarshipSymbolImageKey {
   return filename.replace(/\.json$/, "") as StarshipSymbolImageKey;
 }
+
+export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";

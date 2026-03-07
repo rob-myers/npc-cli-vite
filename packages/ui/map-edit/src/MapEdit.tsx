@@ -30,6 +30,7 @@ import {
   type BaseRect,
   baseSvgSize,
   computeNodeCssTransform,
+  defaultSymbolKey,
   extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
@@ -142,7 +143,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
       )?.[props.meta.id] ?? {
         type: "symbol",
-        filename: "untitled.json",
+        filename: `${defaultSymbolKey}.json`,
       },
       isDirty: false,
 
@@ -888,10 +889,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: true,
         });
       },
-      save(file = state.currentFile) {
+      save(fileSpecifier = state.currentFile) {
         const savedFile: MapEditSavedFile = {
-          type: file.type,
-          filename: file.filename,
+          ...fileSpecifier,
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
@@ -899,19 +899,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"
-        tryLocalStorageSet(getFileSpecifierLocalStorageKey(file), JSON.stringify(savedFile));
+        tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), JSON.stringify(savedFile));
 
         // remember current file for this MapEdit instance
         tryLocalStorageSet(
           LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
-          JSON.stringify(extendCurrentFileSpecifierMapping(props.meta.id, file)),
+          JSON.stringify(extendCurrentFileSpecifierMapping(props.meta.id, fileSpecifier)),
         );
 
-        if (!state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, file))) {
-          state.savedFileSpecifiers.push(file);
+        if (!state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier))) {
+          state.savedFileSpecifiers.push(fileSpecifier);
         }
         state.set({
-          currentFile: file,
+          currentFile: fileSpecifier,
           savedFileSpecifiers: state.savedFileSpecifiers,
           isDirty: false,
         });
