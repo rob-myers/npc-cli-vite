@@ -3,14 +3,7 @@
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import {
-  type ALLOWED_MAP_EDIT_FOLDERS,
-  isSavableFileType,
-  type MapEditFileSpecifier,
-  type MapEditListFilesResponse,
-  type MapEditListFoldersResponse,
-  type MapEditSavableFileType,
-} from "@npc-cli/ui__map-edit/map-node-api";
+import { type ALLOWED_MAP_EDIT_FOLDERS, isSavableFileType } from "@npc-cli/ui__map-edit/map-node-api";
 import type { Connect, Plugin } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
@@ -34,20 +27,8 @@ export function mapEditApiPlugin(): Plugin {
         res.setHeader("Content-Type", "application/json");
 
         try {
-          // GET /api/map-edit/files
-          // List all files from allowed folders
-          if (req.url === "/api/map-edit/files" && req.method === "GET") {
-            return onGetApiMapEditFiles(res);
-          }
-
-          // GET /api/map-edit/folders
-          // List allowed folders
-          if (req.url === "/api/map-edit/folders" && req.method === "GET") {
-            return onGetApiMapEditFolders(res);
-          }
-
-          // GET POST DELETE /api/map-edit/file/:folder/:filename
-          // File operations
+          // GET, POST, DELETE
+          // /api/map-edit/file/:folder/:filename
           if (await handleApiMapEditFile(req, res)) {
             return;
           }
@@ -62,17 +43,6 @@ export function mapEditApiPlugin(): Plugin {
       });
     },
   };
-}
-
-function onGetApiMapEditFiles(res: ServerResponse<IncomingMessage>) {
-  const files = MIRRORED_ALLOWED_MAP_EDIT_FOLDERS.flatMap(getFilesFromFolder).sort();
-  const response: MapEditListFilesResponse = { files };
-  res.end(JSON.stringify(response));
-}
-
-function onGetApiMapEditFolders(res: ServerResponse<IncomingMessage>) {
-  const response: MapEditListFoldersResponse = { folders: MIRRORED_ALLOWED_MAP_EDIT_FOLDERS };
-  res.end(JSON.stringify(response));
 }
 
 async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerResponse<IncomingMessage>) {
@@ -116,11 +86,11 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
     }
 
     // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
-    const { parseRawMapEdit } = (await import(
+    const { parseRawMapEditFile } = (await import(
       `./service/process-symbol.ts?t=${Date.now()}`
     )) as typeof import("./service/process-symbol");
 
-    const savedFile = parseRawMapEdit(fs.readFileSync(filePath, "utf-8")); // throws on error
+    const savedFile = parseRawMapEditFile(fs.readFileSync(filePath, "utf-8")); // throws on error
     res.end(JSON.stringify(savedFile));
     return true;
   }
@@ -131,11 +101,11 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
     for await (const chunk of req) body += chunk;
 
     // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
-    const { parseRawMapEdit, processSavedFile } = (await import(
+    const { parseRawMapEditFile, processSavedFile } = (await import(
       `./service/process-symbol.ts?t=${Date.now()}`
     )) as typeof import("./service/process-symbol");
 
-    const fileToSave = parseRawMapEdit(body); // throws on error
+    const fileToSave = parseRawMapEditFile(body); // throws on error
     fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
     processSavedFile(fileToSave);
 
@@ -146,20 +116,15 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
   // DELETE - Delete file and related cache
   if (req.method === "DELETE") {
     // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
-    const { deleteSavedFile } = (await import(
+    const { deleteSavedFile, parseMapEditFileSpecifier } = (await import(
       `./service/process-symbol.ts?t=${Date.now()}`
     )) as typeof import("./service/process-symbol");
-    deleteSavedFile({ type: folder, filename });
+
+    deleteSavedFile(parseMapEditFileSpecifier({ type: folder, filename }));
 
     res.end(JSON.stringify({ success: true }));
     return true;
   }
-}
-
-function getFilesFromFolder(folder: MapEditSavableFileType): MapEditFileSpecifier[] {
-  return fs
-    .globSync(path.join(PUBLIC_DIR, folder, "*.json"))
-    .map((filePath) => ({ type: folder, filename: path.basename(filePath) }));
 }
 
 export const MIRRORED_ALLOWED_MAP_EDIT_FOLDERS: typeof ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"];

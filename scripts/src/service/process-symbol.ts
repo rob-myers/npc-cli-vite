@@ -1,6 +1,6 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit";
+import type { MapEditFileSpecifier, MapEditSavableFileType, MapEditSavedFile } from "@npc-cli/ui__map-edit";
 import { Mat } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, warn } from "@npc-cli/util/legacy/generic";
@@ -16,20 +16,24 @@ const {
   traverseNodesAsync,
   SymbolJsonFilenameSchema,
   MapJsonFilenameSchema,
+  MapEditFileSpecifierSchema,
 } = (await import(
   `../../../packages/ui/map-edit/src/map-node-api.ts?t=${Date.now()}`
 )) as typeof import("@npc-cli/ui__map-edit/map-node-api");
 
-export async function deleteSavedFile({ type, filename }: MapEditFileSpecifier) {
-  await ensureManifests(type, { changedFiles: [], removedFiles: [{ type, filename }] });
+export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
+  await ensureManifests(fileSpecifier.type, { changedFiles: [], removedFiles: [fileSpecifier] });
 }
 
-export function parseRawMapEdit(rawFileString: string) {
+export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(MapEditSavedFileSchema).parse(rawFileString);
 }
 
+export function parseMapEditFileSpecifier(fileSpecifier: { type: MapEditSavableFileType; filename: string }) {
+  return MapEditFileSpecifierSchema.parse(fileSpecifier);
+}
+
 export async function processSavedFile(savedFile: MapEditSavedFile) {
-  // currently same for symbol or map
   await createSavedFilePreviewPng(savedFile);
 
   // ensure both manifests
