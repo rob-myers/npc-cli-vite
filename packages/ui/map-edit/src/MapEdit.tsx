@@ -59,10 +59,13 @@ import {
   type MapNodeType,
   type MapsManifest,
   MapsManifestSchema,
+  mapFilenameToMapKey,
   mapNodes,
+  migrateMapEditSavedFile,
   removeNodeFromParent,
   type SymbolsManifest,
   SymbolsManifestSchema,
+  symbolFilenameToSymbolKey,
   type Transform,
   templateNodeByKey,
   traverseNodesSync,
@@ -78,7 +81,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { mutateAsync: loadMapEditFile } = useMutation({
     mutationKey: ["map-edit-load"],
     async mutationFn(file: MapEditFileSpecifier) {
-      return fetchParsed(`/${file.type}/${file.filename}`, MapEditSavedFileSchema);
+      return fetchParsed(
+        `/${file.type}/${file.filename}`,
+        z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema),
+      );
     },
   });
 
@@ -151,6 +157,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       )?.[props.meta.id] ?? {
         type: "symbol",
         filename: `${defaultSymbolKey}.json`,
+        key: defaultSymbolKey,
       },
       isDirty: false,
 
@@ -940,7 +947,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
-          // `integerOrds()` whilst drawing so we don't lose offset
           bounds: Rect.fromJson(getNodeBounds(...state.nodes)).precision(6).json,
         };
 
@@ -971,12 +977,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
+
         // localStorage (draft) takes precedence
         const localStorageResult = jsonParser
-          .pipe(MapEditSavedFileSchema)
+          .pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema))
           .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
-        const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
 
+        const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
         if (!savedFile) return;
 
         state.set({
@@ -1016,10 +1023,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           savedFileSpecifiers: Array.from(
             new Map<string, MapEditFileSpecifier>([
               ...Object.values(state.symbolsManifest.byFilename).map(
-                (f) => [`symbol/${f.filename}`, { type: "symbol", filename: f.filename }] as const,
+                (f) =>
+                  [
+                    `symbol/${f.filename}`,
+                    { type: "symbol", filename: f.filename, key: symbolFilenameToSymbolKey(f.filename) },
+                  ] as const,
               ),
               ...Object.values(state.mapsManifest.byFilename).map(
-                (f) => [`map/${f.filename}`, { type: "map", filename: f.filename }] as const,
+                (f) =>
+                  [
+                    `map/${f.filename}`,
+                    { type: "map", filename: f.filename, key: mapFilenameToMapKey(f.filename) },
+                  ] as const,
               ),
               ...drafts.map((f) => [`${f.type}/${f.filename}`, f] as const),
             ]).values(),

@@ -1,5 +1,6 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
+import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import type { MapEditFileSpecifier, MapEditSavableFileType, MapEditSavedFile } from "@npc-cli/ui__map-edit";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
@@ -18,6 +19,7 @@ const {
   MapJsonFilenameSchema,
   MapEditFileSpecifierSchema,
   isNodeTransformable,
+  migrateMapEditSavedFile,
 } = (await import(
   `../../../packages/ui/map-edit/src/map-node-api.ts?t=${Date.now()}`
 )) as typeof import("@npc-cli/ui__map-edit/map-node-api");
@@ -27,7 +29,7 @@ export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
 }
 
 export function parseRawMapEditFile(rawFileString: string) {
-  return jsonParser.pipe(MapEditSavedFileSchema).parse(rawFileString);
+  return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
 export function parseMapEditFileSpecifier(fileSpecifier: { type: MapEditSavableFileType; filename: string }) {
@@ -46,7 +48,8 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const { filename, nodes, bounds } = savedFile;
-  const scale = 2;
+  // Scale down hull symbols rather than up
+  const scale = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key) ? 0.5 : 2;
   const integralBounds = Rect.fromJson(bounds).integerOrds();
   const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
   const ct = canvas.getContext("2d");

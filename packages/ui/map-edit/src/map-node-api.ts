@@ -2,9 +2,7 @@ import { StarShipSymbolImageKeySchema, type StarshipSymbolImageKey } from "@npc-
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
-import z from "zod";
-
-/** Find node and its parent */
+import z from "zod"; /** Find node and its parent */
 export function findNode(
   /** Either top-level nodes or `group.childrem` */
   parentArray: MapNode[],
@@ -259,7 +257,6 @@ export const labelledImageOffsetValue = {
   zero: 0,
   centerExtra003: -0.3,
   halfLineWidth: -0.7,
-  centerG301Bridge: -1.2,
   eastAlignBed004: -3.7,
   centerXConsole051: 1.3,
   centerYStateRoom012: 2,
@@ -278,10 +275,12 @@ export const MapJsonFilenameSchema = z.string().endsWith(".json");
 export const MapEditSymbolFileSpecifierSchema = z.object({
   type: z.literal("symbol"),
   filename: SymbolJsonFilenameSchema,
+  key: StarShipSymbolImageKeySchema,
 });
 export const MapEditMapFileSpecifierSchema = z.object({
   type: z.literal("map"),
   filename: MapJsonFilenameSchema,
+  key: z.string(),
 });
 export const MapEditFileSpecifierSchema = z.union([MapEditSymbolFileSpecifierSchema, MapEditMapFileSpecifierSchema]);
 
@@ -308,7 +307,7 @@ export function isSavableFileType(type: string): type is MapEditSavableFileType 
 
 export const MapEditFilenameSchema = z.union([SymbolJsonFilenameSchema, MapJsonFilenameSchema]);
 export type MapEditFileSpecifier = Pretty<
-  Pick<MapEditSavedSymbol, "type" | "filename"> | Pick<MapEditSavedMap, "type" | "filename">
+  Pick<MapEditSavedSymbol, "type" | "filename" | "key"> | Pick<MapEditSavedMap, "type" | "filename" | "key">
 >;
 
 export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
@@ -396,10 +395,29 @@ export const MapsManifestSchema = z.object({
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
 
-export function symbolKeyFilenameToSymbolKey(
-  filename: z.infer<typeof SymbolJsonFilenameSchema>,
-): StarshipSymbolImageKey {
+export function symbolFilenameToSymbolKey(filename: z.infer<typeof SymbolJsonFilenameSchema>): StarshipSymbolImageKey {
   return filename.replace(/\.json$/, "") as StarshipSymbolImageKey;
 }
 
+export function mapFilenameToMapKey(filename: z.infer<typeof MapJsonFilenameSchema>): string {
+  return filename.replace(/\.json$/, "");
+}
+
 export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
+
+/**
+ * ⚠️ Used to fix saved files as we migrate schemas.
+ * ⚠️ "Blank drafts" can be fixed by clearing localStorage and re-opening the file.
+ *
+ * - 1. Added `key` field which is derived from `filename`.
+ *
+ */
+export function migrateMapEditSavedFile(savedFile: MapEditSavedFile): MapEditSavedFile {
+  if (savedFile?.type === "symbol") {
+    return { ...savedFile, key: symbolFilenameToSymbolKey(savedFile.filename) };
+  }
+  if (savedFile?.type === "map") {
+    return { ...savedFile, key: mapFilenameToMapKey(savedFile.filename) };
+  }
+  return savedFile;
+}
