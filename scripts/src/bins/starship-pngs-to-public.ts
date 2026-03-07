@@ -1,11 +1,14 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * - Ensure starship symbol PNGs exist in packages/app/public/starship-symbol
+ * - Ensure starship symbol PNGs listed in `symbolByGroup` exist
+ *   in packages/app/public/starship-symbol
  * - Compute packages/app/public/starship-symbol/manifest.json
  *
  * Usage:
+ * ```sh
  * pnpm starship-pngs-to-public
+ * ```
  */
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";

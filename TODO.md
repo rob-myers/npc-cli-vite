@@ -145,9 +145,17 @@
     - ask Jason
     - https://www.jcore.io/articles/schema-versioning-with-zod
 
+- ✅ 1st "extra" symbol `extra--004--desk--0.5x1`
+  - i.e. a symbol that does not comes from starship-symbol PNGs
+  - ✅ manually add to packages/media/src/starship-symbol/output/extra
+  - ✅ `pnpm starship-pngs-to-public` ensures and extends manifest
+  - ✅ can add image to MapEdit
+
 - ✅ can copy/paste nodes between instances
-- sync files in other instances?
+- ❌ sync files in other instances?
+  - can load again in other instance
 - can sync symbols in other instances?
+- with 2 instances open for same file, drafts will fight?
 
 - ❌ restart vite onchange map-edit plugin
   - but we do cache bust imports

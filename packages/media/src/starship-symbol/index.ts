@@ -2,6 +2,10 @@ import { keys } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
 export const symbolByGroup = {
+  extra: {
+    "extra--004--desk--0.5x1": true,
+  },
+
   "geomorph-core": {
     "g-101--multipurpose": true,
     "g-102--research-deck": true,
@@ -195,9 +199,7 @@ export const extraSymbols = {
 
 export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
-export const StarShipSymbolImageKeySchema = z.literal(
-  Object.values(symbolByGroup).flatMap((group) => keys(group)),
-);
+export const StarShipSymbolImageKeySchema = z.literal(Object.values(symbolByGroup).flatMap((group) => keys(group)));
 
 export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;
 

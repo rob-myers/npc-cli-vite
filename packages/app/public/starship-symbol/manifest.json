@@ -1,6 +1,7 @@
 {
-  "createdAt": "2026-03-04T10:02:22.930Z",
+  "createdAt": "2026-03-07T12:39:22.809Z",
   "byKey": {
+    "extra--004--desk--0.5x1": {"group": "extra", "width": 157, "height": 307},
     "g-101--multipurpose": {
       "group": "geomorph-core",
       "width": 1212,
