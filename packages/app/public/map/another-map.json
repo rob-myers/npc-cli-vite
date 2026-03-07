@@ -50,5 +50,6 @@
     "x": 0,
     "y": 0
   },
-  "type": "map"
+  "type": "map",
+  "key": "another-map"
 }

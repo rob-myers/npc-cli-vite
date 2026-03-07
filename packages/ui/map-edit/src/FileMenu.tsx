@@ -11,7 +11,9 @@ import {
   ALLOWED_MAP_EDIT_FOLDERS,
   defaultSymbolKey,
   type MapEditFileSpecifier,
+  mapFilenameToMapKey,
   SymbolJsonFilenameSchema,
+  symbolFilenameToSymbolKey,
 } from "./map-node-api";
 
 const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
@@ -55,8 +57,8 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                     } else {
                       state.openFresh(
                         folderType === "map"
-                          ? { type: "map", filename: "empty-map.json" }
-                          : { type: "symbol", filename: `${defaultSymbolKey}.json` },
+                          ? { type: "map", filename: "empty-map.json", key: "empty-map" }
+                          : { type: "symbol", filename: `${defaultSymbolKey}.json`, key: defaultSymbolKey },
                       );
                     }
                   }}
@@ -86,7 +88,11 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
       onValueChange={(filename) => {
         if (filename === state.currentFile.filename) return;
         const parsedFilename = SymbolJsonFilenameSchema.parse(filename);
-        const file: MapEditFileSpecifier = { type: "symbol", filename: parsedFilename };
+        const file: MapEditFileSpecifier = {
+          type: "symbol",
+          filename: parsedFilename,
+          key: symbolFilenameToSymbolKey(parsedFilename),
+        };
         if (savedFilenames.has(parsedFilename)) {
           state.load(file);
         } else {
@@ -148,10 +154,10 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
           const name = prompt("New map name:")?.trim();
           if (name) {
             const filename = name.endsWith(".json") ? name : `${name}.json`;
-            state.save({ type: "map", filename });
+            state.save({ type: "map", filename, key: mapFilenameToMapKey(filename) });
           }
         } else if (value !== state.currentFile.filename) {
-          state.load({ type: "map", filename: value });
+          state.load({ type: "map", filename: value, key: mapFilenameToMapKey(value) });
         }
       }}
     >

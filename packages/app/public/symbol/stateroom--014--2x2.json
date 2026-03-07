@@ -1,0 +1,40 @@
+{
+  "filename": "stateroom--014--2x2.json",
+  "width": 120,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "c3301586-d561-4c32-83db-dfed66e91c53",
+      "name": "stateroom--014--2x2 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "image",
+      "srcKey": "stateroom--014--2x2",
+      "baseRect": {
+        "width": 124,
+        "height": 126.80000000000001
+      },
+      "offset": {
+        "x": -2,
+        "y": -2
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    }
+  ],
+  "bounds": {
+    "width": 124,
+    "height": 126.8,
+    "x": -2,
+    "y": -2
+  },
+  "type": "symbol",
+  "key": "stateroom--014--2x2"
+}

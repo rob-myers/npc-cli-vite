@@ -96,6 +96,18 @@
         "x": -5.5,
         "y": -22
       }
+    },
+    "stateroom--014--2x2.json": {
+      "filename": "stateroom--014--2x2.json",
+      "thumbnailFilename": "stateroom--014--2x2.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {
+        "width": 124,
+        "height": 126.8,
+        "x": -2,
+        "y": -2
+      }
     }
   }
 }
