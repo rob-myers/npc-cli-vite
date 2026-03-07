@@ -1179,7 +1179,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       <aside
         className={cn(
-          "relative h-full border-r border-slate-800 flex flex-col bg-background",
+          uiClassName, // avoid losing key focus
+          "relative h-full border-r border-slate-800 flex flex-col",
           ...(isMobile
             ? [
                 "md:relative md:translate-x-0",
@@ -1197,7 +1198,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         </div>
 
         {/* inspector must scroll */}
-        <div className={cn(uiClassName, "overflow-auto bg-background")}>
+        <div className={cn("overflow-auto bg-red-500")}>
           {state.nodes.map((node) => (
             <InspectorNode key={node.id} node={node} level={0} root={state} />
           ))}
