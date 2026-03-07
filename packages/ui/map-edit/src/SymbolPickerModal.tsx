@@ -60,21 +60,18 @@ function SymbolPickerModal({
                   <button
                     key={entry.filename}
                     type="button"
-                    className="flex flex-col items-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors cursor-pointer"
+                    className="flex flex-col justify-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 cursor-pointer"
                     onClick={() => {
                       onSelect(symbolFilenameToSymbolKey(entry.filename));
                       onOpenChange(false);
                     }}
                     title={entry.filename}
                   >
-                    <div className="w-full aspect-square flex items-center justify-center overflow-hidden">
+                    <div className="h-full flex items-center justify-center">
                       <img
                         src={`/symbol/${entry.thumbnailFilename}?${state.cachedBustingQuery}`}
                         alt={entry.filename}
-                        className={cn(
-                          "max-w-full max-h-full object-contain",
-                          !state.loadedImages.has(entry.filename) && "hidden",
-                        )}
+                        className={cn("max-h-24 object-contain", !state.loadedImages.has(entry.filename) && "hidden")}
                         onLoad={() => {
                           state.loadedImages.add(entry.filename);
                           state.update();
@@ -82,7 +79,7 @@ function SymbolPickerModal({
                       />
                       {!state.loadedImages.has(entry.filename) && <Spinner />}
                     </div>
-                    <span className="text-[10px] text-slate-400 truncate w-full text-center">
+                    <span className="text-[12px] text-slate-400 truncate w-full text-center">
                       {entry.filename.replace(/\.json$/, "")}
                     </span>
                   </button>
