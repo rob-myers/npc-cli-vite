@@ -1,9 +1,11 @@
 import { keys } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
+// 🚧 permit extension without restarting vite plugin
 export const symbolByGroup = {
   extra: {
     "extra--004--desk--0.5x1": true,
+    "extra--003--chair--0.25x0.25": true,
   },
 
   "geomorph-core": {
