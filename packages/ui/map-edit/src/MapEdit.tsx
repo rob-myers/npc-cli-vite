@@ -592,6 +592,40 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         state.update();
       },
+      reflectNode(id, type) {
+        const [node] = findNode(state.nodes, id);
+        if (!isNodeTransformable(node)) return;
+
+        const { a, b, c, d, e, f } = node.transform;
+        const m = new DOMMatrix([a, b, c, d, e, f]);
+        const [cx, cy] = [node.baseRect.width / 2, node.baseRect.height / 2];
+
+        m.translateSelf(cx, cy)
+          .scaleSelf(type === "horizontal" ? -1 : 1, type === "vertical" ? -1 : 1)
+          .translateSelf(-cx, -cy);
+        Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
+
+        node.cssTransform = computeNodeCssTransform(node);
+      },
+      reflectSelected(type) {
+        if (state.selectedIds.size === 0) return;
+        state.pushHistory();
+        for (const id of state.selectedIds) {
+          state.reflectNode(id, type);
+        }
+        state.update();
+      },
+      translateSelected(dx, dy) {
+        for (const id of state.selectedIds) {
+          const [node] = findNode(state.nodes, id);
+          if (isNodeTransformable(node)) {
+            node.transform.e += dx;
+            node.transform.f += dy;
+            node.cssTransform = computeNodeCssTransform(node);
+          }
+        }
+        state.set({ nodes: state.nodes });
+      },
 
       onRename(id, newName) {
         state.set({
@@ -1072,12 +1106,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       if (e.key in keyShouldPreventDefault) e.preventDefault();
 
+      // Delete
       if (e.key === "Backspace") {
         if (state.selectedIds.size > 0) state.deleteSelectedNodes();
         state.wrapperEl?.focus();
         return;
       }
 
+      // Fill selection rect
       if (e.key === "r" && !e.metaKey) {
         e.preventDefault();
         if (state.selectionBox && state.selectionBox.width > 0 && state.selectionBox.height > 0) {
@@ -1087,6 +1123,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return;
       }
 
+      // Rotate
       if (e.key === "e" || e.key === "q") {
         if (state.selectedIds.size > 0) state.rotateSelected(e.key === "e" ? 90 : -90);
         return;
@@ -1097,46 +1134,62 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       }
 
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
-        e.preventDefault();
-        state.pushHistory();
-        const delta = increment * (e.shiftKey ? 4 : 1);
-        const dx = e.key === "ArrowLeft" ? -delta : e.key === "ArrowRight" ? delta : 0;
-        const dy = e.key === "ArrowUp" ? -delta : e.key === "ArrowDown" ? delta : 0;
-        for (const id of state.selectedIds) {
-          const [node] = findNode(state.nodes, id);
-          if (isNodeTransformable(node)) {
-            node.transform.e += dx;
-            node.transform.f += dy;
-            node.cssTransform = computeNodeCssTransform(node);
-          }
+        if (!e.shiftKey) {
+          // Translate
+          e.preventDefault();
+          state.pushHistory();
+          const delta = increment * (e.shiftKey ? 4 : 1);
+          state.translateSelected(
+            e.key === "ArrowLeft" ? -delta : e.key === "ArrowRight" ? delta : 0,
+            e.key === "ArrowUp" ? -delta : e.key === "ArrowDown" ? delta : 0,
+          );
+        } else {
+          // Reflect
+          state.reflectSelected(e.key === "ArrowUp" || e.key === "ArrowDown" ? "vertical" : "horizontal");
         }
-        state.set({ nodes: state.nodes });
         return;
       }
 
       const modified = e.metaKey || e.ctrlKey;
       if (!modified) return;
 
-      if (e.key === "z" && !e.shiftKey) {
-        state.undo();
-      } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
-        state.redo();
-      } else if (e.key === "s") {
-        state.save();
-      } else if (e.key === "g") {
-        state.selectedIds.size > 0 && state.groupSelected();
-      } else if (e.key === "c") {
-        state.copySelected();
-      } else if (e.key === "v") {
-        void state.pasteFromClipboard();
-      } else if (e.key === "d") {
-        state.selectedIds.size > 0 && state.duplicateSelected();
-      } else if (e.key === "i") {
-        state.add("image", { selectionAsParent: true });
-      } else if (e.key === "a") {
-        state.set({ selectedIds: new Set([...getRecursiveNodes(state.nodes)].map((node) => node.id)) });
-      } else if (e.key === "o") {
-        state.add("symbol", { selectionAsParent: true });
+      switch (e.key) {
+        case "z":
+          if (e.shiftKey) {
+            state.redo();
+          } else {
+            state.undo();
+          }
+          break;
+        case "y":
+          state.redo();
+          break;
+        case "s":
+          state.save();
+          break;
+        case "g":
+          state.selectedIds.size > 0 && state.groupSelected();
+          break;
+        case "c":
+          state.copySelected();
+          break;
+        case "v":
+          void state.pasteFromClipboard();
+          break;
+        case "d":
+          state.selectedIds.size > 0 && state.duplicateSelected();
+          break;
+        case "i":
+          state.add("image", { selectionAsParent: true });
+          break;
+        case "a":
+          // Select all
+          state.set({ selectedIds: new Set([...getRecursiveNodes(state.nodes)].map((node) => node.id)) });
+          break;
+        case "o":
+          // Instantiate symbol
+          state.add("symbol", { selectionAsParent: true });
+          break;
       }
     };
 
@@ -1380,6 +1433,9 @@ export type State = {
   rotateNode: (nodeId: string, degrees: -90 | 90 | -15 | 15) => void;
   rotateSelected: (degrees: -90 | 90 | -15 | 15) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
+  reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
+  reflectSelected: (type: "horizontal" | "vertical") => void;
+  translateSelected: (dx: number, dy: number) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier) => void;
   load: (file?: MapEditFileSpecifier) => Promise<void>;
