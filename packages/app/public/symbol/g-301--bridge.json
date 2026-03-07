@@ -1,0 +1,39 @@
+{
+  "filename": "g-301--bridge.json",
+  "width": 240,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "0c07b065-949e-49cc-81ce-8c3bb1838904",
+      "name": "g-301--bridge 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": -5
+      },
+      "type": "image",
+      "srcKey": "g-301--bridge",
+      "baseRect": {
+        "width": 242.4,
+        "height": 125.60000000000001
+      },
+      "offset": {
+        "x": -1.2,
+        "y": 0.7
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -1.2, -4.3)"
+    }
+  ],
+  "bounds": {
+    "width": 242.4,
+    "height": 125.6,
+    "x": -1.2,
+    "y": -4.3
+  },
+  "type": "symbol"
+}
