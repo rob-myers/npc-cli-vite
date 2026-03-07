@@ -5,7 +5,7 @@
  * - Compute packages/app/public/starship-symbol/manifest.json
  *
  * Usage:
- * pnpm asset-pngs
+ * pnpm starship-pngs-to-public
  */
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";

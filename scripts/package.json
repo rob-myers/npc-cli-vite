@@ -7,7 +7,7 @@
   },
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
-    "asset-pngs": "./src/bins/asset-pngs.ts",
+    "starship-pngs-to-public": "./src/bins/starship-pngs-to-public.ts",
     "create-layouts": "./src/bins/create-layouts.tsx",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
