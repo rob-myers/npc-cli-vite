@@ -18,6 +18,7 @@ import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
+import z from "zod";
 
 import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
@@ -32,12 +33,13 @@ import {
   extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
-  getAllNodeIds,
   getFileSpecifierLocalStorageKey,
   getLocalStorageSavedFiles,
   getNodeBounds,
+  getRecursiveNodes,
   imageOffsetValues,
   insertNodeAt,
+  isNodeTransformable,
   LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
   labelledImageOffsetValue,
   type MapEditFileSpecifier,
@@ -45,6 +47,7 @@ import {
   MapEditSavedFileSchema,
   type MapNode,
   type MapNodeMap,
+  MapNodeSchema,
   type MapNodeType,
   type MapsManifest,
   MapsManifestSchema,
@@ -55,7 +58,6 @@ import {
   type Transform,
   templateNodeByKey,
   traverseNodesSync,
-  isNodeTransformable,
 } from "./map-node-api";
 import { SymbolPickerModal } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
@@ -444,6 +446,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.nodes.push(clone);
         return clone;
       },
+      // 🚧 clean
       duplicateSelected() {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
@@ -452,9 +455,37 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         for (const id of state.selectedIds) {
           if (seenDuringClone.has(id)) continue;
           const clone = state.duplicateNode(id, seenDuringClone);
-          if (clone) getAllNodeIds([clone]).forEach((id) => duplicatedIds.add(id));
+          if (clone) getRecursiveNodes([clone]).forEach(({ id }) => duplicatedIds.add(id));
         }
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
+      },
+      ensureSelectionDescendants(selectedIds) {
+        const extended = new Set<MapNode>();
+        for (const id of selectedIds) {
+          const [node] = findNode(state.nodes, id);
+          if (!node || extended.has(node)) continue;
+          for (const otherNode of getRecursiveNodes([node])) {
+            extended.add(otherNode);
+          }
+        }
+        return extended;
+      },
+      copySelected() {
+        if (state.selectedIds.size === 0) return;
+        const nodesToCopy = [...state.ensureSelectionDescendants(state.selectedIds)];
+        const clipboardData = JSON.stringify({ mapEditNodes: nodesToCopy });
+        void navigator.clipboard.writeText(clipboardData);
+      },
+      async pasteFromClipboard() {
+        const parsed = jsonParser
+          .pipe(z.object({ mapEditNodes: z.array(MapNodeSchema) }))
+          .safeParse(await navigator.clipboard.readText().catch());
+        if (!parsed.success) return;
+
+        state.pushHistory();
+        const clones = parsed.data.mapEditNodes.map((node) => state.cloneNode(node));
+        state.nodes.push(...clones);
+        state.set({ selectedIds: new Set([...getRecursiveNodes(clones)].map((node) => node.id)), selectionBox: null });
       },
       rotateNode(nodeId, deltaDegrees) {
         const [node] = findNode(state.nodes, nodeId);
@@ -549,12 +580,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (edge === "inside" && dstNode.type === "group") {
           dstNode.children.push(srcNode);
         } else {
-          insertNodeAt(
-            srcNode,
-            dstParent?.children ?? state.nodes,
-            dstId,
-            edge === "inside" ? "bottom" : edge,
-          );
+          insertNodeAt(srcNode, dstParent?.children ?? state.nodes, dstId, edge === "inside" ? "bottom" : edge);
         }
 
         state.update();
@@ -755,9 +781,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const [node] = findNode(state.nodes, id);
-            return isNodeTransformable(node)
-              ? [[id, { x: node.transform.e, y: node.transform.f }]]
-              : [];
+            return isNodeTransformable(node) ? [[id, { x: node.transform.e, y: node.transform.f }]] : [];
           }),
         );
 
@@ -1091,12 +1115,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.save();
       } else if (e.key === "g") {
         state.selectedIds.size > 0 && state.groupSelected();
+      } else if (e.key === "c") {
+        state.copySelected();
+      } else if (e.key === "v") {
+        void state.pasteFromClipboard();
       } else if (e.key === "d") {
         state.selectedIds.size > 0 && state.duplicateSelected();
       } else if (e.key === "i") {
         state.add("image", { selectionAsParent: true });
       } else if (e.key === "a") {
-        state.set({ selectedIds: getAllNodeIds(state.nodes) });
+        state.set({ selectedIds: new Set([...getRecursiveNodes(state.nodes)].map((node) => node.id)) });
       } else if (e.key === "o") {
         state.add("symbol", { selectionAsParent: true });
       }
@@ -1335,6 +1363,9 @@ export type State = {
   /** Must manually update state to see changes. */
   duplicateNode: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
+  ensureSelectionDescendants: (selectedIds: Set<string>) => Set<MapNode>;
+  copySelected: () => void;
+  pasteFromClipboard: () => Promise<void>;
   rotateNode: (nodeId: string, degrees: -90 | 90 | -15 | 15) => void;
   rotateSelected: (degrees: -90 | 90 | -15 | 15) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
@@ -1469,9 +1500,11 @@ const snap = (v: number) => Math.round(v / increment) * increment;
 */
 const keyShouldPreventDefault = {
   a: true,
+  c: true,
   d: true,
   g: true,
   i: true,
+  v: true,
   // r: true,
   o: true,
   s: true,

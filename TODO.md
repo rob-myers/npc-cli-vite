@@ -145,7 +145,8 @@
     - ask Jason
     - https://www.jcore.io/articles/schema-versioning-with-zod
 
-- can copy/paste nodes between instances
+- ✅ can copy/paste nodes between instances
+- sync files in other instances?
 - can sync symbols in other instances?
 
 - ❌ restart vite onchange map-edit plugin

@@ -16,7 +16,7 @@ import {
 } from "@phosphor-icons/react";
 import { NodeIcon } from "./InspectorNode";
 import type { State } from "./MapEdit";
-import { clearLocalStorage, getAllNodeIds, mapNodeTypes } from "./map-node-api";
+import { clearLocalStorage, getRecursiveNodes, mapNodeTypes } from "./map-node-api";
 
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
@@ -177,7 +177,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
               closeOnClick
               onClick={() => {
-                state.set({ selectedIds: getAllNodeIds(state.nodes) });
+                state.set({ selectedIds: new Set([...getRecursiveNodes(state.nodes)].map(node => node.id)) });
               }}
             >
               <SelectionAllIcon className="size-4" />
