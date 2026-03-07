@@ -13,7 +13,13 @@ import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef } from "@npc-c
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { tryLocalStorageGet, tryLocalStorageGetParsed, tryLocalStorageSet, warn } from "@npc-cli/util/legacy/generic";
+import {
+  toPrecision,
+  tryLocalStorageGet,
+  tryLocalStorageGetParsed,
+  tryLocalStorageSet,
+  warn,
+} from "@npc-cli/util/legacy/generic";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useContext, useEffect, useMemo } from "react";
@@ -331,7 +337,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           if (rect) {
             // Use selection box dimensions
             newItem.transform = { a: 1, b: 0, c: 0, d: 1, e: rect.x, f: rect.y };
-            newItem.baseRect = { width: rect.width, height: rect.height };
+            newItem.baseRect = { width: toPrecision(rect.width, 6), height: toPrecision(rect.height, 6) };
           } else {
             // Place new item centered in viewport
             // newItem.transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
@@ -634,7 +640,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.baseRect.width = meta.width;
         node.baseRect.height = meta.height;
         node.cssTransform = computeNodeCssTransform(node);
+
+        // 🚧 bounds have been floor/ceil'd
         node.offset = { x: meta.bounds.x, y: meta.bounds.y };
+
         node.name = symbolKey;
 
         state.update();
@@ -895,7 +904,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
-          bounds: Rect.fromJson(getNodeBounds(...state.nodes)).integerOrds().json,
+          // `integerOrds()` whilst drawing so we don't lose offset
+          bounds: Rect.fromJson(getNodeBounds(...state.nodes)).precision(6).json,
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"

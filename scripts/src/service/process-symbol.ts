@@ -1,7 +1,7 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import type { MapEditFileSpecifier, MapEditSavableFileType, MapEditSavedFile } from "@npc-cli/ui__map-edit";
-import { Mat } from "@npc-cli/util/geom";
+import { Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, warn } from "@npc-cli/util/legacy/generic";
 import { Canvas, loadImage } from "skia-canvas";
@@ -17,6 +17,7 @@ const {
   SymbolJsonFilenameSchema,
   MapJsonFilenameSchema,
   MapEditFileSpecifierSchema,
+  isNodeTransformable,
 } = (await import(
   `../../../packages/ui/map-edit/src/map-node-api.ts?t=${Date.now()}`
 )) as typeof import("@npc-cli/ui__map-edit/map-node-api");
@@ -45,26 +46,27 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const { filename, nodes, bounds } = savedFile;
-  const scale = 1;
-  const canvas = new Canvas(bounds.width * scale, bounds.height * scale);
+  const scale = 2;
+  const integralBounds = Rect.fromJson(bounds).integerOrds();
+  const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
   const ct = canvas.getContext("2d");
 
   await traverseNodesAsync(nodes, async (node) => {
+    if (!isNodeTransformable(node)) return;
+
+    ct.setTransform(scale, 0, 0, scale, 0, 0);
+    ct.transform(...new Mat(node.cssTransform).toArray());
+    ct.translate(-bounds.x, -bounds.y); // integralBounds?
+
     switch (node.type) {
       case "image": {
         const image = await loadImage(
           path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
         );
-        ct.setTransform(...new Mat(node.cssTransform).toArray());
-        ct.scale(scale, scale);
-        ct.translate(-bounds.x, -bounds.y);
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
       case "rect": {
-        ct.setTransform(...new Mat(node.cssTransform).toArray());
-        ct.scale(scale, scale);
-        ct.translate(-bounds.x, -bounds.y);
         ct.fillStyle = "rgba(0,255,0,0.2)";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
         break;

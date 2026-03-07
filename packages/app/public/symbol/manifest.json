@@ -19,10 +19,10 @@
       "width": 120,
       "height": 180,
       "bounds": {
-        "width": 128,
-        "height": 185,
-        "x": -3,
-        "y": -3
+        "width": 127.5,
+        "height": 184.5,
+        "x": -2.5,
+        "y": -2.5
       }
     },
     "console--051--0.4x0.6.json": {
@@ -55,10 +55,10 @@
       "width": 30,
       "height": 60,
       "bounds": {
-        "width": 32,
-        "height": 62,
-        "x": -1,
-        "y": -1
+        "width": 31.4,
+        "height": 61.4,
+        "x": -0.5,
+        "y": -0.7
       }
     }
   }
