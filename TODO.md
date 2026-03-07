@@ -148,6 +148,7 @@
 - ✅ 1st "extra" symbol `extra--004--desk--0.5x1`
   - i.e. a symbol that does not comes from starship-symbol PNGs
   - ✅ manually add to packages/media/src/starship-symbol/output/extra
+    - npc-cli-next svg -> copy data url
   - ✅ `pnpm starship-pngs-to-public` ensures and extends manifest
   - ✅ can add image to MapEdit
 
