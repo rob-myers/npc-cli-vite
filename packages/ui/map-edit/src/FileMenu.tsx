@@ -84,7 +84,7 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
     <Select.Root
       value={state.currentFile.filename}
       onValueChange={(filename) => {
-        if (filename !== state.currentFile.filename) return;
+        if (filename === state.currentFile.filename) return;
         const parsedFilename = SymbolJsonFilenameSchema.parse(filename);
         const file: MapEditFileSpecifier = { type: "symbol", filename: parsedFilename };
         if (savedFilenames.has(parsedFilename)) {
