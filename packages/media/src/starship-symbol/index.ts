@@ -224,3 +224,7 @@ export type StarshipSymbolPngsManifest = z.infer<typeof StarshipSymbolPngsManife
  * - 1 sgu ~ 60x60 SVG units
  */
 export const sguScalePngToSvgFactor = 0.2;
+
+export function isHullSymbolImageKey(imageKey: StarshipSymbolImageKey): boolean {
+  return imageKey.startsWith("g-");
+}

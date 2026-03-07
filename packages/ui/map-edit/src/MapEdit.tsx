@@ -3,6 +3,7 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 enableDragDropTouch();
 
 import {
+  isHullSymbolImageKey,
   type StarshipSymbolImageKey,
   type StarshipSymbolPngsManifest,
   StarshipSymbolPngsManifestSchema,
@@ -648,11 +649,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         node.srcKey = imageKey;
 
-        const scaleFactor = sguScalePngToSvgFactor;
+        // scale down so 1 sgu ~ 60px
+        // BUT hull-symbol pngs are already scaled down (in original source)
+        const scaleFactor = isHullSymbolImageKey(imageKey) ? 1 : sguScalePngToSvgFactor;
         node.offset.x = labelledImageOffsetValue.halfLineWidth;
         node.offset.y = labelledImageOffsetValue.halfLineWidth;
 
-        // scale down so 1 sgu ~ 60px
         node.baseRect.width = meta.width * scaleFactor;
         node.baseRect.height = meta.height * scaleFactor;
         node.cssTransform = computeNodeCssTransform(node);
