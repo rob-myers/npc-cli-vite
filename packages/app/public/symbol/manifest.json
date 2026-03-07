@@ -7,10 +7,10 @@
       "width": 120,
       "height": 120,
       "bounds": {
-        "width": 128,
+        "width": 127.5,
         "height": 125,
-        "x": -3,
-        "y": -3
+        "x": -2.5,
+        "y": -2.5
       }
     },
     "stateroom--019--2x3.json": {
@@ -34,7 +34,7 @@
         "width": 30,
         "height": 31,
         "x": 0,
-        "y": -1
+        "y": -0.7
       }
     },
     "bed--003--1x1.6.json": {
@@ -43,9 +43,9 @@
       "width": 100,
       "height": 60,
       "bounds": {
-        "width": 101,
-        "height": 62,
-        "x": -1,
+        "width": 100.4,
+        "height": 61.4,
+        "x": -0.7,
         "y": 0
       }
     },
