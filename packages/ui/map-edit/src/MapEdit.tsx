@@ -606,12 +606,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!isNodeTransformable(node)) return;
 
         const { a, b, c, d, e, f } = node.transform;
-        const m = new DOMMatrix([a, b, c, d, e, f]);
+        const m = new DOMMatrix();
         const [cx, cy] = [node.baseRect.width / 2, node.baseRect.height / 2];
 
         m.translateSelf(cx, cy)
           .scaleSelf(type === "horizontal" ? -1 : 1, type === "vertical" ? -1 : 1)
-          .translateSelf(-cx, -cy);
+          .translateSelf(-cx, -cy)
+          .multiplySelf(new DOMMatrix([a, b, c, d, e, f]));
         Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
         node.cssTransform = computeNodeCssTransform(node);
