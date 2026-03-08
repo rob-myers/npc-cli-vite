@@ -1,10 +1,17 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
-// must import type, use cache-busting import for values
-import type {
-  MapEditFileSpecifier,
-  MapEditSavedFile,
+import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit/map-node-api";
+import {
+  isNodeTransformable,
+  MapEditFileSpecifierSchema,
+  MapEditSavedFileSchema,
+  MapJsonFilenameSchema,
+  MapsManifestSchema,
+  migrateMapEditSavedFile,
+  SymbolJsonFilenameSchema,
+  SymbolsManifestSchema,
+  traverseNodesAsync,
 } from "@npc-cli/ui__map-edit/map-node-api";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
@@ -12,21 +19,6 @@ import { error, warn } from "@npc-cli/util/legacy/generic";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
-
-// ⚠️ fix stale schemas via cache busting
-const {
-  MapEditSavedFileSchema,
-  MapsManifestSchema,
-  SymbolsManifestSchema,
-  traverseNodesAsync,
-  SymbolJsonFilenameSchema,
-  MapJsonFilenameSchema,
-  MapEditFileSpecifierSchema,
-  isNodeTransformable,
-  migrateMapEditSavedFile,
-} = (await import(
-  `../../../packages/ui/map-edit/src/map-node-api.ts?t=${Date.now()}`
-)) as typeof import("@npc-cli/ui__map-edit/map-node-api");
 
 export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
   await ensureManifests(fileSpecifier.type, { changedFiles: [], removedFiles: [fileSpecifier] });
