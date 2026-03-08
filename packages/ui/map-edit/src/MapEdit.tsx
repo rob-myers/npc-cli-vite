@@ -47,6 +47,7 @@ import {
   getRecursiveNodes,
   imageOffsetValues,
   insertNodeAt,
+  isNodeReflectable,
   isNodeTransformable,
   LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
   labelledImageOffsetValue,
@@ -516,7 +517,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
           node.cssTransform = computeNodeCssTransform(node);
         }
-        if (node.type === "rect") {
+        if (node.type === "rect" && Math.abs(deltaDegrees) === 90) {
           const { width: W, height: H } = node.baseRect;
           node.baseRect.width = H;
           node.baseRect.height = W;
@@ -603,7 +604,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       reflectNode(id, type) {
         const [node] = findNode(state.nodes, id);
-        if (!isNodeTransformable(node)) return;
+        if (!isNodeReflectable(node)) return;
 
         const { a, b, c, d, e, f } = node.transform;
         const m = new DOMMatrix();
@@ -612,7 +613,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         m.translateSelf(cx, cy)
           .scaleSelf(type === "horizontal" ? -1 : 1, type === "vertical" ? -1 : 1)
           .translateSelf(-cx, -cy)
-          .multiplySelf(new DOMMatrix([a, b, c, d, e, f]));
+          .preMultiplySelf(new DOMMatrix([a, b, c, d, e, f]));
         Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
         node.cssTransform = computeNodeCssTransform(node);
@@ -1149,18 +1150,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       }
 
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
-        if (!e.shiftKey) {
+        const everyNodeRefectable = [...getRecursiveNodes(state.nodes)].every((node) => isNodeReflectable(node));
+
+        if (e.shiftKey && everyNodeRefectable) {
+          state.reflectSelected(e.key === "ArrowUp" || e.key === "ArrowDown" ? "vertical" : "horizontal");
+        } else {
           // Translate
           e.preventDefault();
           state.pushHistory();
-          const delta = increment * (e.shiftKey ? 4 : 1);
+          const delta = increment * (e.shiftKey ? 10 : 1);
           state.translateSelected(
             e.key === "ArrowLeft" ? -delta : e.key === "ArrowRight" ? delta : 0,
             e.key === "ArrowUp" ? -delta : e.key === "ArrowDown" ? delta : 0,
           );
-        } else {
-          // Reflect
-          state.reflectSelected(e.key === "ArrowUp" || e.key === "ArrowDown" ? "vertical" : "horizontal");
         }
         return;
       }
@@ -1570,11 +1572,11 @@ const maxAsideWidth = 300;
 const defaultAsideWidth = minAsideWidth;
 const zoomDelta = 0.04;
 const minZoomScale = 0.5;
-const maxZoomScale = 20;
+const maxZoomScale = 40;
 
 export type ResizeHandle = "nw" | "ne" | "sw" | "se";
 
-const increment = 2.5;
+const increment = 1;
 
 const snap = (v: number) => Math.round(v / increment) * increment;
 
