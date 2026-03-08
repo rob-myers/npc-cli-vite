@@ -52,13 +52,93 @@
         "y": 0
       },
       "cssTransform": "matrix(0, 1, 1, 0, -0.7, 0)"
+    },
+    {
+      "id": "66b9779a-0f8b-45d9-a7e4-90f50312e473",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2.5,
+        "f": 117.5
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 122.5,
+        "height": 5
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2.5, 117.5)"
+    },
+    {
+      "id": "b6bd3684-cc43-4d7f-81b4-8b6b0b5ebf16",
+      "name": "wall 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": -1,
+        "e": -2.5,
+        "f": -2.5
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 122.5,
+        "height": 5
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2.5, -2.5)"
+    },
+    {
+      "id": "c4be19fb-25c5-40ac-85ce-a81838cb6ccb",
+      "name": "wall 2",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": -1,
+        "e": -2.5,
+        "f": -2.5
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 5,
+        "height": 122.5
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2.5, -2.5)"
+    },
+    {
+      "id": "c6e3400a-bb7e-4b5e-8ac4-52b485b3823c",
+      "name": "wall 3",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": -1,
+        "e": 117.5,
+        "f": -2.5
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 5,
+        "height": 122.5
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 117.5, -2.5)"
     }
   ],
   "bounds": {
-    "width": 124,
-    "height": 126.8,
-    "x": -2,
-    "y": -2
+    "width": 125,
+    "height": 127.3,
+    "x": -2.5,
+    "y": -2.5
   },
   "type": "symbol",
   "key": "stateroom--014--2x2"
