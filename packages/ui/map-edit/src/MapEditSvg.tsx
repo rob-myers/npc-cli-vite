@@ -115,10 +115,11 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             style={{ transform: node.cssTransform }}
             // fill="rgba(0, 0, 0, 0.25)"
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
-            strokeWidth={0}
+            strokeWidth={0.01}
             className={cn(
-              "fill-green-700/50 outline outline-black/80",
-              isSelected && "outline-blue-500",
+              "fill-green-700/50",
+              // isSelected && "outline outline-blue-500",
+              isSelected && "stroke-blue-500",
               cn(node.locked && "pointer-events-none opacity-25"),
             )}
           >

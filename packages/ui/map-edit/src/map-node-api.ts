@@ -82,6 +82,10 @@ export function insertNodeAt(srcNode: MapNode, dstArray: MapNode[], dstChildId: 
   dstArray.splice(idx, 0, srcNode);
 }
 
+export function isNodeReflectable(node: MapNode | null): node is TransformableMapNode {
+  return node !== null && node.type === "symbol";
+}
+
 export function isNodeTransformable(node: MapNode | null): node is TransformableMapNode {
   return node !== null && node.type !== "group";
 }
