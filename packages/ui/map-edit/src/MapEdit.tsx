@@ -146,11 +146,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       svgEl: null,
       wrapperEl: null,
 
-      mapsManifest: null,
       pngsManifest: null,
+      mapsManifest: null,
+      symbolsManifest: null,
+
       pickImageForId: null,
       pickSymbolForId: null,
-      symbolsManifest: null,
 
       currentFile: tryLocalStorageGetParsed<{ [uiId: string]: MapEditFileSpecifier }>(
         LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
@@ -1053,25 +1054,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     }
   }, []);
 
-  useQuery({
-    queryKey: ["map-edit-images-manifest"],
-    queryFn: async () => {
-      const pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
-      state.set({ pngsManifest });
-      return pngsManifest;
-    },
-  });
-
-  useQuery({
+  [state.pngsManifest, state.symbolsManifest, state.mapsManifest] = useQuery({
     queryKey: ["map-edit-manifests"],
     queryFn: async () => {
+      const pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
       const symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);
       const mapsManifest = await fetchParsed("/map/manifest.json", MapsManifestSchema);
-      state.set({ symbolsManifest, mapsManifest });
-      state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
-      return symbolsManifest;
+      return [pngsManifest, symbolsManifest, mapsManifest] as const;
     },
-  });
+  }).data ?? [null, null, null];
+
+  useEffect(() => {
+    state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
+  }, [state.symbolsManifest, state.mapsManifest]);
 
   // Pointer events
   useEffect(() => {
