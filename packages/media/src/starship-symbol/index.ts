@@ -29,7 +29,11 @@ const extraSymbols = {
 } as const;
 
 export const symbolByGroup = {
-  extra: extraSymbols,
+  extra: {
+    "extra--003--chair--0.25x0.25": true,
+    "extra--004--desk--0.5x1": true,
+    // 🚧 can add once provided in packages/media/src/starship-symbol/output/extra
+  } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
 
   "geomorph-core": {
     "g-101--multipurpose": true,
