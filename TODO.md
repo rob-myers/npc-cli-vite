@@ -144,6 +144,7 @@
   - 🚧 suppose we change schema of nodes, how to migrate saved file?
     - ask Jason
     - https://www.jcore.io/articles/schema-versioning-with-zod
+    - `z.preprocess` with function
 
 - ✅ 1st "extra" symbol `extra--004--desk--0.5x1`
   - i.e. a symbol that does not comes from starship-symbol PNGs

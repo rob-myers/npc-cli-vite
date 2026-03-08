@@ -1,18 +1,19 @@
-// ⚠️ this plugin does not hot-reload, so we use imports and cache bust them
-
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { type ALLOWED_MAP_EDIT_FOLDERS, isSavableFileType } from "@npc-cli/ui__map-edit/map-node-api";
-import type { Connect, Plugin } from "vite";
+import type { Connect, Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
+const PROCESS_SYMBOL_PATH = path.join(PROJECT_ROOT, "scripts/src/service/process-symbol.ts");
 
 export function mapEditApiPlugin(): Plugin {
+  let server: ViteDevServer;
   return {
     name: "map-edit-api",
-    configureServer(server) {
+    configureServer(_server) {
+      server = _server;
       // Ensure folders exist
       for (const folder of MIRRORED_ALLOWED_MAP_EDIT_FOLDERS) {
         const dir = path.join(PUBLIC_DIR, folder);
@@ -29,7 +30,7 @@ export function mapEditApiPlugin(): Plugin {
         try {
           // GET, POST, DELETE
           // /api/map-edit/file/:folder/:filename
-          if (await handleApiMapEditFile(req, res)) {
+          if (await handleApiMapEditFile(req, res, server)) {
             return;
           }
 
@@ -45,7 +46,7 @@ export function mapEditApiPlugin(): Plugin {
   };
 }
 
-async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerResponse<IncomingMessage>) {
+async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerResponse<IncomingMessage>, server: ViteDevServer) {
   const fileMatch = req.url?.match(/^\/api\/map-edit\/file\/(.+)$/);
   if (!fileMatch) return;
 
@@ -85,9 +86,8 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
       return true;
     }
 
-    // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
-    const { parseRawMapEditFile } = (await import(
-      `./service/process-symbol.ts?t=${Date.now()}`
+    const { parseRawMapEditFile } = (await server.ssrLoadModule(
+      PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-symbol");
 
     const savedFile = parseRawMapEditFile(fs.readFileSync(filePath, "utf-8")); // throws on error
@@ -100,9 +100,8 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
     let body = "";
     for await (const chunk of req) body += chunk;
 
-    // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
-    const { parseRawMapEditFile, processSavedFile } = (await import(
-      `./service/process-symbol.ts?t=${Date.now()}`
+    const { parseRawMapEditFile, processSavedFile } = (await server.ssrLoadModule(
+      PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-symbol");
 
     const fileToSave = parseRawMapEditFile(body); // throws on error
@@ -115,9 +114,8 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
 
   // DELETE - Delete file and related cache
   if (req.method === "DELETE") {
-    // ⚠️ must "hot reload" via cache busting (this plugin doesn't hot-reload)
-    const { deleteSavedFile, parseMapEditFileSpecifier } = (await import(
-      `./service/process-symbol.ts?t=${Date.now()}`
+    const { deleteSavedFile, parseMapEditFileSpecifier } = (await server.ssrLoadModule(
+      PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-symbol");
 
     deleteSavedFile(parseMapEditFileSpecifier({ type: folder, filename }));
