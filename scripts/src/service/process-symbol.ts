@@ -58,11 +58,19 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
     ct.translate(-bounds.x, -bounds.y); // integralBounds?
 
     switch (node.type) {
-      case "image": {
+      case "image":
+      case "symbol": {
         const image = await loadImage(
           path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
         );
+        if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
+        ct.globalAlpha = 1;
+        if (node.type === "symbol") {
+          ct.strokeStyle = "rgba(0,255,0,0.5)";
+          ct.strokeRect(0, 0, node.baseRect.width, node.baseRect.height);
+        }
+
         break;
       }
       case "rect": {
