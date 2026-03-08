@@ -48,33 +48,13 @@
         "height": 60
       },
       "offset": {
-        "x": -0.7,
+        "x": 0,
         "y": 0
       },
-      "cssTransform": "matrix(0, 1, 1, 0, -0.7, 0)"
+      "cssTransform": "matrix(0, 1, 1, 0, 0, 0)"
     },
     {
-      "id": "66b9779a-0f8b-45d9-a7e4-90f50312e473",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": -2.5,
-        "f": 117.5
-      },
-      "type": "rect",
-      "baseRect": {
-        "width": 122.5,
-        "height": 5
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, -2.5, 117.5)"
-    },
-    {
-      "id": "b6bd3684-cc43-4d7f-81b4-8b6b0b5ebf16",
+      "id": "4a00e238-02af-48dd-b043-6db9a896ccfd",
       "name": "wall 1",
       "locked": false,
       "visible": true,
@@ -82,19 +62,19 @@
         "a": 1,
         "b": 0,
         "c": 0,
-        "d": -1,
-        "e": -2.5,
-        "f": -2.5
+        "d": 1,
+        "e": -2,
+        "f": -2
       },
       "type": "rect",
       "baseRect": {
-        "width": 122.5,
-        "height": 5
+        "width": 124,
+        "height": 4
       },
-      "cssTransform": "matrix(1, 0, 0, 1, -2.5, -2.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     },
     {
-      "id": "c4be19fb-25c5-40ac-85ce-a81838cb6ccb",
+      "id": "e42f0818-30b1-4f37-a7e3-bafa353ecfba",
       "name": "wall 2",
       "locked": false,
       "visible": true,
@@ -102,19 +82,19 @@
         "a": 1,
         "b": 0,
         "c": 0,
-        "d": -1,
-        "e": -2.5,
-        "f": -2.5
+        "d": 1,
+        "e": 118,
+        "f": -2
       },
       "type": "rect",
       "baseRect": {
-        "width": 5,
-        "height": 122.5
+        "width": 4,
+        "height": 124
       },
-      "cssTransform": "matrix(1, 0, 0, 1, -2.5, -2.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 118, -2)"
     },
     {
-      "id": "c6e3400a-bb7e-4b5e-8ac4-52b485b3823c",
+      "id": "9ba5e5b1-c6e6-4d7b-810c-8b52da1e01ce",
       "name": "wall 3",
       "locked": false,
       "visible": true,
@@ -122,23 +102,43 @@
         "a": 1,
         "b": 0,
         "c": 0,
-        "d": -1,
-        "e": 117.5,
-        "f": -2.5
+        "d": 1,
+        "e": -2,
+        "f": -2
       },
       "type": "rect",
       "baseRect": {
-        "width": 5,
-        "height": 122.5
+        "width": 4,
+        "height": 124
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 117.5, -2.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "6c0bebe3-559a-41c4-b6ca-713df4df0b88",
+      "name": "wall 4",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": 118
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 124,
+        "height": 4
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
     }
   ],
   "bounds": {
-    "width": 125,
-    "height": 127.3,
-    "x": -2.5,
-    "y": -2.5
+    "width": 124,
+    "height": 126.8,
+    "x": -2,
+    "y": -2
   },
   "type": "symbol",
   "key": "stateroom--014--2x2"
