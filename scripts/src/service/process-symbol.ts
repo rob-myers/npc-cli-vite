@@ -1,6 +1,6 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import { isHullSymbolImageKey, StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
 import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit/map-node-api";
 import {
   isNodeTransformable,
@@ -107,33 +107,40 @@ type ProcessFileOpts = {
 async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
   const schema =
     type === "symbol"
-      ? ({ manifest: SymbolsManifestSchema, filename: SymbolJsonFilenameSchema } as const)
-      : ({ manifest: MapsManifestSchema, filename: MapJsonFilenameSchema } as const);
+      ? ({
+          manifest: SymbolsManifestSchema,
+          filename: SymbolJsonFilenameSchema,
+          key: StarShipSymbolImageKeySchema,
+        } as const)
+      : ({ manifest: MapsManifestSchema, filename: MapJsonFilenameSchema, key: z.string() } as const);
+  type ManifestItemKey = keyof typeof nextManifest.byKey;
 
   const createdAt = new Date().toISOString();
   const directory = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`);
   const manifestPath = path.resolve(directory, "manifest.json");
   const nextManifest = jsonParser
     .pipe(schema.manifest)
-    .safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data ?? { createdAt, byFilename: {} };
-  type ManifestItemFilename = keyof typeof nextManifest.byFilename | "manifest.json";
+    .safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data ?? { createdAt, byKey: {} };
 
-  const filePaths = fs.globSync(path.resolve(directory, "*.json"));
+  // Must exclude manifest.json
+  const itemFilePaths = fs.globSync(path.resolve(directory, "*.json")).filter((filePath) => filePath !== manifestPath);
   const changedFilenames =
-    opts.changedFiles?.map((x) => x.filename) ?? filePaths.map((filePath) => path.basename(filePath));
+    opts.changedFiles?.map((x) => x.filename) ?? itemFilePaths.map((filePath) => path.basename(filePath));
 
-  for (const filePath of filePaths) {
-    const filename = path.basename(filePath) as ManifestItemFilename;
-    if (filename === "manifest.json") continue;
+  for (const filePath of itemFilePaths) {
+    // item filename format: {key}.json
+    const key = path.basename(filePath, ".json") as ManifestItemKey;
+    const filename = `${key}.json` as const;
+
     if (!schema.filename.safeParse(filename).success) {
       warn(`Skipping file "${filename}" with invalid name in directory "${type}"`);
       continue;
     }
 
-    if (!nextManifest.byFilename[filename] || changedFilenames.includes(filename)) {
+    if (!nextManifest.byKey[key] || changedFilenames.includes(filename)) {
       const savedFileResult = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
       if (savedFileResult.success) {
-        nextManifest.byFilename[filename] = {
+        nextManifest.byKey[key] = {
           filename,
           thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
           width: savedFileResult.data.width,
@@ -146,9 +153,9 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
     }
 
     if (opts.removedFiles?.some((x) => x.filename === filename)) {
-      const entry = nextManifest.byFilename[filename];
+      const entry = nextManifest.byKey[key];
       if (entry) {
-        delete nextManifest.byFilename[filename];
+        delete nextManifest.byKey[key];
         await fs.promises.unlink(path.resolve(directory, entry.filename)).catch(warn);
         await fs.promises.unlink(path.resolve(directory, entry.thumbnailFilename)).catch(warn);
       } else {

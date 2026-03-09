@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-03-06T12:18:37.998Z",
-  "byFilename": {
-    "stateroom--012--2x2.json": {
+  "byKey": {
+    "stateroom--012--2x2": {
       "filename": "stateroom--012--2x2.json",
       "thumbnailFilename": "stateroom--012--2x2.thumbnail.png",
       "width": 120,
@@ -13,7 +13,7 @@
         "y": -2.5
       }
     },
-    "stateroom--019--2x3.json": {
+    "stateroom--019--2x3": {
       "filename": "stateroom--019--2x3.json",
       "thumbnailFilename": "stateroom--019--2x3.thumbnail.png",
       "width": 120,
@@ -25,7 +25,7 @@
         "y": -2.5
       }
     },
-    "console--051--0.4x0.6.json": {
+    "console--051--0.4x0.6": {
       "filename": "console--051--0.4x0.6.json",
       "thumbnailFilename": "console--051--0.4x0.6.thumbnail.png",
       "width": 30,
@@ -37,7 +37,7 @@
         "y": -0.7
       }
     },
-    "bed--003--1x1.6.json": {
+    "bed--003--1x1.6": {
       "filename": "bed--003--1x1.6.json",
       "thumbnailFilename": "bed--003--1x1.6.thumbnail.png",
       "width": 100,
@@ -49,7 +49,7 @@
         "y": 0
       }
     },
-    "extra--004--desk--0.5x1.json": {
+    "extra--004--desk--0.5x1": {
       "filename": "extra--004--desk--0.5x1.json",
       "thumbnailFilename": "extra--004--desk--0.5x1.thumbnail.png",
       "width": 30,
@@ -61,7 +61,7 @@
         "y": -0.7
       }
     },
-    "console--033--0.4x0.6.json": {
+    "console--033--0.4x0.6": {
       "filename": "console--033--0.4x0.6.json",
       "thumbnailFilename": "console--033--0.4x0.6.thumbnail.png",
       "width": 30,
@@ -73,7 +73,7 @@
         "y": -1.3
       }
     },
-    "extra--003--chair--0.25x0.25.json": {
+    "extra--003--chair--0.25x0.25": {
       "filename": "extra--003--chair--0.25x0.25.json",
       "thumbnailFilename": "extra--003--chair--0.25x0.25.thumbnail.png",
       "width": 20,
@@ -85,7 +85,7 @@
         "y": -0.3
       }
     },
-    "g-301--bridge.json": {
+    "g-301--bridge": {
       "filename": "g-301--bridge.json",
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
       "width": 1200,
@@ -97,7 +97,7 @@
         "y": -22
       }
     },
-    "stateroom--014--2x2.json": {
+    "stateroom--014--2x2": {
       "filename": "stateroom--014--2x2.json",
       "thumbnailFilename": "stateroom--014--2x2.thumbnail.png",
       "width": 120,
