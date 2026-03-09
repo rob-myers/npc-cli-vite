@@ -274,8 +274,11 @@ export const imageOffsetValues = Object.values(labelledImageOffsetValue)
 
 export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 
-export const SymbolJsonFilenameSchema = z.templateLiteral([StarShipSymbolImageKeySchema, ".json"]);
-export const MapJsonFilenameSchema = z.string().endsWith(".json");
+export const SymbolKeySchema = StarShipSymbolImageKeySchema;
+export const SymbolJsonFilenameSchema = z.templateLiteral([SymbolKeySchema, ".json"]);
+
+export const MapKeySchema = z.string();
+export const MapJsonFilenameSchema = MapKeySchema.endsWith(".json");
 
 export const MapEditSymbolFileSpecifierSchema = z.object({
   type: z.literal("symbol"),
@@ -307,7 +310,6 @@ export function isSavableFileType(type: string): type is MapEditSavedFile["type"
   return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavedFile["type"]);
 }
 
-export const MapEditFilenameSchema = z.union([SymbolJsonFilenameSchema, MapJsonFilenameSchema]);
 export type MapEditFileSpecifier = Pretty<DistributedPick<MapEditSavedFile, "type" | "filename" | "key">>;
 
 export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
@@ -373,10 +375,9 @@ const BaseManifestItemSchema = z.object({
 
 export const SymbolsManifestSchema = z.object({
   createdAt: z.string(),
-  byFilename: z.partialRecord(
-    SymbolJsonFilenameSchema,
+  byKey: z.partialRecord(
+    StarShipSymbolImageKeySchema,
     BaseManifestItemSchema.extend({
-      // 🚧 refine filename
       filename: SymbolJsonFilenameSchema,
     }),
   ),
@@ -384,8 +385,8 @@ export const SymbolsManifestSchema = z.object({
 
 export const MapsManifestSchema = z.object({
   createdAt: z.string(),
-  byFilename: z.record(
-    MapJsonFilenameSchema,
+  byKey: z.record(
+    z.string(),
     BaseManifestItemSchema.extend({
       filename: MapJsonFilenameSchema,
     }),

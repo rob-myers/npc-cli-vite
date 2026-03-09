@@ -30,7 +30,7 @@ function SymbolPickerModal({
     if (open && import.meta.env.DEV) state.updateCacheBustingQuery();
   }, [open]);
 
-  const entries = symbolsManifest ? Object.values(symbolsManifest.byFilename) : [];
+  const entries = symbolsManifest ? Object.values(symbolsManifest.byKey) : [];
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>

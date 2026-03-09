@@ -15,6 +15,7 @@ import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
+  entries,
   toPrecision,
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -60,13 +61,11 @@ import {
   type MapNodeType,
   type MapsManifest,
   MapsManifestSchema,
-  mapFilenameToMapKey,
   mapNodes,
   migrateMapEditSavedFile,
   removeNodeFromParent,
   type SymbolsManifest,
   SymbolsManifestSchema,
-  symbolFilenameToSymbolKey,
   type Transform,
   templateNodeByKey,
   traverseNodesSync,
@@ -680,7 +679,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ pickSymbolForId: null });
 
         const [node] = findNode(state.nodes, nodeId) ?? {};
-        const meta = state.symbolsManifest?.byFilename[`${symbolKey}.json`];
+        const meta = state.symbolsManifest?.byKey[symbolKey];
         if (!(node?.type === "symbol" && meta)) return;
 
         node.srcKey = symbolKey;
@@ -1026,19 +1025,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({
           savedFileSpecifiers: Array.from(
             new Map<string, MapEditFileSpecifier>([
-              ...Object.values(state.symbolsManifest.byFilename).map(
-                (f) =>
-                  [
-                    `symbol/${f.filename}`,
-                    { type: "symbol", filename: f.filename, key: symbolFilenameToSymbolKey(f.filename) },
-                  ] as const,
+              ...entries(state.symbolsManifest.byKey).map(
+                ([key, f]) => [`symbol/${f.filename}`, { type: "symbol", filename: f.filename, key }] as const,
               ),
-              ...Object.values(state.mapsManifest.byFilename).map(
-                (f) =>
-                  [
-                    `map/${f.filename}`,
-                    { type: "map", filename: f.filename, key: mapFilenameToMapKey(f.filename) },
-                  ] as const,
+              ...entries(state.mapsManifest.byKey).map(
+                ([key, f]) => [`map/${f.filename}`, { type: "map", filename: f.filename, key }] as const,
               ),
               ...drafts.map((f) => [`${f.type}/${f.filename}`, f] as const),
             ]).values(),

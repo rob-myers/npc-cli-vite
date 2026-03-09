@@ -165,7 +165,8 @@
 - ❌ sync files in other instances?
   - can load again in other instance
 
-- 🚧 change manifests from byFilename -> byKey
+- ✅ change manifests from byFilename -> byKey
+- 🚧 manifest entries have `key`
 
 - 🚧 align sub-symbol of hull symbol
   - 🚧 for symbols need their bounds.width and height

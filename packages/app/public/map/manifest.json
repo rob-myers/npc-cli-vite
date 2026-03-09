@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-03-06T12:18:38.000Z",
-  "byFilename": {
-    "another-map.json": {
+  "byKey": {
+    "another-map": {
       "filename": "another-map.json",
       "thumbnailFilename": "another-map.thumbnail.png",
       "width": 120,
@@ -13,7 +13,7 @@
         "y": 0
       }
     },
-    "my-map.json": {
+    "my-map": {
       "filename": "my-map.json",
       "thumbnailFilename": "my-map.thumbnail.png",
       "width": 600,
