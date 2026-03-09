@@ -28,7 +28,11 @@ export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
-export function parseMapEditFileSpecifier(fileSpecifier: { type: MapEditSavedFile["type"]; filename: string }) {
+export function parseMapEditFileSpecifier(fileSpecifier: {
+  type: MapEditSavedFile["type"];
+  filename: string;
+  key: string;
+}) {
   return MapEditFileSpecifierSchema.parse(fileSpecifier);
 }
 
