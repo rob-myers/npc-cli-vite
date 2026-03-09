@@ -89,6 +89,12 @@ export function isNodeTransformable(node: MapNode | null): node is Transformable
   return node !== null && node.type !== "group";
 }
 
+const namePreservesRegexes = ["wall", "door"].map((type) => new RegExp(`^${type}(\\s|$)`));
+
+export function shouldUseOriginalName(node: MapNode): boolean {
+  return node.type === "symbol" || namePreservesRegexes.some((re) => re.test(node.name));
+}
+
 export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
   return list.map((item) => {
     if (item.id === id) return fn(item);
