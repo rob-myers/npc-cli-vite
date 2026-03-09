@@ -1,5 +1,6 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
+import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
 import { baseSvgSize, findNode, getNodeBounds, type MapNode, type RectMapNode } from "./map-node-api";
@@ -88,23 +89,24 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
       }
 
       case "symbol": {
-        const { baseRect, cssTransform } = node;
+        if (node.srcKey === null || root.symbolsManifest === null) return null;
 
-        // 🚧 for symbols need their bounds.width and height
-        // const filename = node.srcKey === null ? null : `${node.srcKey}.json` as const;
-        // const foo = filename ? root.symbolsManifest?.byFilename[filename] : null;
+        const symbol = root.symbolsManifest.byKey[node.srcKey];
+        if (!symbol) {
+          warn(`Symbol with key "${node.srcKey}" not found in symbols manifest.`);
+          return null;
+        }
 
-        return node.srcKey !== null ? (
+        return (
           <image
             key={node.id}
             data-node-id={node.id}
             href={`/symbol/${node.srcKey}.thumbnail.png`}
-            // force offset for symbols
-            x={node.offset.x}
-            y={node.offset.y}
-            width={baseRect.width}
-            height={baseRect.height}
-            style={{ transform: cssTransform }}
+            x={symbol.bounds.x}
+            y={symbol.bounds.y}
+            width={symbol.bounds.width}
+            height={symbol.bounds.height}
+            style={{ transform: node.cssTransform }}
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0",
@@ -115,7 +117,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           >
             <title>{node.name}</title>
           </image>
-        ) : null;
+        );
       }
 
       case "rect": {
