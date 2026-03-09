@@ -154,15 +154,23 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
 const resizeHandleSize = 4;
 const resizeHandles: { handle: ResizeHandle; getPos: (r: Rect) => { x: number; y: number } }[] = [
   { handle: "nw", getPos: (r) => ({ x: r.x, y: r.y }) },
+  { handle: "n", getPos: (r) => ({ x: r.x + r.width / 2, y: r.y }) },
   { handle: "ne", getPos: (r) => ({ x: r.x + r.width, y: r.y }) },
-  { handle: "sw", getPos: (r) => ({ x: r.x, y: r.y + r.height }) },
+  { handle: "e", getPos: (r) => ({ x: r.x + r.width, y: r.y + r.height / 2 }) },
   { handle: "se", getPos: (r) => ({ x: r.x + r.width, y: r.y + r.height }) },
+  { handle: "s", getPos: (r) => ({ x: r.x + r.width / 2, y: r.y + r.height }) },
+  { handle: "sw", getPos: (r) => ({ x: r.x, y: r.y + r.height }) },
+  { handle: "w", getPos: (r) => ({ x: r.x, y: r.y + r.height / 2 }) },
 ];
 const handleToCursor: Record<ResizeHandle, string> = {
   nw: "cursor-nwse-resize",
+  n: "cursor-ns-resize",
   ne: "cursor-nesw-resize",
-  sw: "cursor-nesw-resize",
+  e: "cursor-ew-resize",
   se: "cursor-nwse-resize",
+  s: "cursor-ns-resize",
+  sw: "cursor-nesw-resize",
+  w: "cursor-ew-resize",
 };
 
 type Rect = { x: number; y: number; width: number; height: number };
