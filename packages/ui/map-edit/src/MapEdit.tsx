@@ -687,7 +687,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.baseRect.height = meta.height;
         node.cssTransform = computeNodeCssTransform(node);
 
-        // 🚧 bounds have been floor/ceil'd
         node.offset = { x: meta.bounds.x, y: meta.bounds.y };
 
         node.name = symbolKey;
@@ -949,7 +948,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
-          bounds: Rect.fromJson(getNodeBounds(...state.nodes)).precision(6).json,
+          bounds: Rect.fromJson(getNodeBounds(...state.nodes))
+            .union({ x: 0, y: 0, width: state.svgWidth, height: state.svgHeight })
+            .precision(6).json,
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"

@@ -1,0 +1,40 @@
+{
+  "filename": "iris-valves--005--1x1.json",
+  "width": 60,
+  "height": 60,
+  "nodes": [
+    {
+      "id": "30b291f3-bdd8-4140-9128-82d6ada3a817",
+      "name": "iris-valves--005--1x1 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 1,
+        "f": 8
+      },
+      "type": "image",
+      "srcKey": "iris-valves--005--1x1",
+      "baseRect": {
+        "width": 44.2,
+        "height": 44
+      },
+      "offset": {
+        "x": -0.7,
+        "y": 0
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 0.30000000000000004, 8)"
+    }
+  ],
+  "bounds": {
+    "width": 60,
+    "height": 60,
+    "x": 0,
+    "y": 0
+  },
+  "type": "symbol",
+  "key": "iris-valves--005--1x1"
+}
