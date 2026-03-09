@@ -100,7 +100,9 @@
       "key": "extra--003--chair--0.25x0.25"
     },
     "g-301--bridge": {
+      "type": "symbol",
       "filename": "g-301--bridge.json",
+      "key": "g-301--bridge",
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
       "width": 1200,
       "height": 600,
@@ -109,9 +111,7 @@
         "height": 628,
         "x": -5.5,
         "y": -22
-      },
-      "type": "symbol",
-      "key": "g-301--bridge"
+      }
     },
     "stateroom--014--2x2": {
       "filename": "stateroom--014--2x2.json",
@@ -128,9 +128,7 @@
       "key": "stateroom--014--2x2"
     },
     "stateroom--036--2x4": {
-      "type": "symbol",
       "filename": "stateroom--036--2x4.json",
-      "key": "stateroom--036--2x4",
       "thumbnailFilename": "stateroom--036--2x4.thumbnail.png",
       "width": 120,
       "height": 240,
@@ -139,7 +137,9 @@
         "height": 246.8,
         "x": -2,
         "y": -2
-      }
+      },
+      "type": "symbol",
+      "key": "stateroom--036--2x4"
     }
   }
 }
