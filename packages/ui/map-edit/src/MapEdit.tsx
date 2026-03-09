@@ -710,7 +710,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.dragEl = null; // cancel any pending drag
           if (e.shiftKey) {
             // shift+drag empty space draws selection box
-            state.startSelectionBox(e);
+            const increment = e.ctrlKey ? inc.small : inc.default;
+            state.startSelectionBox(e, increment);
           } else {
             // clear
             state.set({ selectedIds: new Set(), selectionBox: null });
@@ -737,6 +738,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       onSvgPointerMove(e) {
         if (!state.dragEl) return;
         e.stopPropagation();
+
+        const increment = e.ctrlKey ? inc.small : inc.default;
 
         if (state.dragEl.type === "selection-box") {
           const svgPos = state.clientToSvg(e.clientX, e.clientY);
@@ -866,18 +869,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
       },
-      startSelectionBox(e) {
+      startSelectionBox(e, increment) {
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
-
-        const snappedX = Math.floor(svgPos.x / increment) * increment;
-        const snappedY = Math.floor(svgPos.y / increment) * increment;
-        state.dragEl = {
-          type: "selection-box",
-          startSvg: { x: snappedX, y: snappedY },
-        };
+        const snappedPoint = { x: snap(svgPos.x, increment), y: snap(svgPos.y, increment) };
+        state.dragEl = { type: "selection-box", startSvg: { ...snappedPoint } };
         state.set({
-          selectionBox: { x: snappedX, y: snappedY, width: 0, height: 0 },
+          selectionBox: { ...snappedPoint, width: 0, height: 0 },
           selectedIds: new Set(),
         });
         (e.target as SVGElement).setPointerCapture(e.pointerId);
@@ -1150,7 +1148,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           // Translate
           e.preventDefault();
           state.pushHistory();
-          const delta = increment * (e.shiftKey ? 10 : 1);
+          const delta = e.shiftKey ? inc.small : inc.default;
           state.translateSelected(
             e.key === "ArrowLeft" ? -delta : e.key === "ArrowRight" ? delta : 0,
             e.key === "ArrowUp" ? -delta : e.key === "ArrowDown" ? delta : 0,
@@ -1408,7 +1406,7 @@ export type State = {
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
-  startSelectionBox: (e: React.PointerEvent<SVGSVGElement>) => void;
+  startSelectionBox: (e: React.PointerEvent<SVGSVGElement>, increment: number) => void;
 
   onPanPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove: (e: PointerEvent<HTMLDivElement>) => void;
@@ -1568,9 +1566,12 @@ const maxZoomScale = 40;
 
 export type ResizeHandle = "nw" | "ne" | "sw" | "se";
 
-const increment = 1;
+const inc = {
+  small: 1,
+  default: 5,
+};
 
-const snap = (v: number) => Math.round(v / increment) * increment;
+const snap = (v: number, increment = inc.small) => Math.round(v / increment) * increment;
 
 /**
 - d: Duplicate

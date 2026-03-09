@@ -167,9 +167,8 @@
 
 - ✅ change manifests from byFilename -> byKey
 - ✅ manifest entries have `key`
-- 🚧 increment is `5` by default
-  - increment is `1` when press shift
-  - increment is `10` when press ctrl
+- ✅ increment is `10` by default
+  - increment is `1` when press shift (translate) or ctrl (select)
 
 - 🚧 align sub-symbol of hull symbol
   - 🚧 for symbols need their bounds.width and height
