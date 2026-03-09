@@ -164,7 +164,15 @@
 - ✅ can copy/paste nodes between instances
 - ❌ sync files in other instances?
   - can load again in other instance
-- can sync symbols in other instances?
+
+- 🚧 change manifests from byFilename -> byKey
+
+- 🚧 align sub-symbol of hull symbol
+  - 🚧 for symbols need their bounds.width and height
+  - dimensions of symbol is wrong
+  - e.g. 120x120 originally but thumbnail is larger i.e. use `bounds`
+
+- 🚧 can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
 
 - ❌ restart vite onchange map-edit plugin
