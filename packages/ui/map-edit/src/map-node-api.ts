@@ -2,7 +2,6 @@ import { StarShipSymbolImageKeySchema, type StarshipSymbolImageKey } from "@npc-
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
-import type { DistributedPick } from "@npc-cli/util/types";
 import z from "zod"; /** Find node and its parent */
 
 export function findNode(
@@ -276,6 +275,8 @@ export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 
 export const SymbolKeySchema = StarShipSymbolImageKeySchema;
 export const SymbolJsonFilenameSchema = z.templateLiteral([SymbolKeySchema, ".json"]);
+/** AKA `StarShipSymbolImageKey` */
+export type SymbolKey = z.infer<typeof StarShipSymbolImageKeySchema>;
 
 export const MapKeySchema = z.string();
 export const MapJsonFilenameSchema = MapKeySchema.endsWith(".json");
@@ -291,6 +292,7 @@ export const MapEditMapFileSpecifierSchema = z.object({
   key: z.string(),
 });
 export const MapEditFileSpecifierSchema = z.union([MapEditSymbolFileSpecifierSchema, MapEditMapFileSpecifierSchema]);
+export type MapEditFileSpecifier = z.infer<typeof MapEditFileSpecifierSchema>;
 
 const MapEditSavedBaseSchema = z.object({
   filename: z.string(),
@@ -310,15 +312,14 @@ export function isSavableFileType(type: string): type is MapEditSavedFile["type"
   return ALLOWED_MAP_EDIT_FOLDERS.includes(type as MapEditSavedFile["type"]);
 }
 
-export type MapEditFileSpecifier = Pretty<DistributedPick<MapEditSavedFile, "type" | "filename" | "key">>;
-
 export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
   return `${LOCAL_STORAGE_PREFIX}${file.type}:${file.filename}`;
 }
 
-export function decodeFileSpecifierLocalStorageKey(localStorageKey: string) {
+export function tryDecodeFileSpecifierLocalStorageKey(localStorageKey: string): MapEditFileSpecifier | null {
   const [, type, filename] = localStorageKey.split(/[:]/);
-  return { type, filename } as MapEditFileSpecifier;
+  const result = MapEditFileSpecifierSchema.safeParse({ type, filename, key: filename.replace(/\.json$/, "") });
+  return result.data ?? null;
 }
 
 export function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
@@ -326,8 +327,8 @@ export function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
-      const fileSpec = decodeFileSpecifierLocalStorageKey(key);
-      if (isSavableFileType(fileSpec.type) && fileSpec.filename) files.push(fileSpec);
+      const fileSpec = tryDecodeFileSpecifierLocalStorageKey(key);
+      if (fileSpec) files.push(fileSpec);
       else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`);
     }
   }

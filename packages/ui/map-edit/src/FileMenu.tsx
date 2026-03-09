@@ -4,21 +4,14 @@ import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
-import { CheckIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
+import { FloppyDiskIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import type { State } from "./MapEdit";
-import {
-  ALLOWED_MAP_EDIT_FOLDERS,
-  defaultSymbolKey,
-  type MapEditFileSpecifier,
-  mapFilenameToMapKey,
-  SymbolJsonFilenameSchema,
-  symbolFilenameToSymbolKey,
-} from "./map-node-api";
+import { ALLOWED_MAP_EDIT_FOLDERS, defaultSymbolKey, SymbolKeySchema } from "./map-node-api";
 
 const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
 
-const newMapValue = "__new_map__";
+const newMapKey = "__new_map__";
 
 export function FileMenu({ state }: { state: UseStateRef<State> }) {
   const { type } = state.currentFile;
@@ -77,26 +70,27 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
 }
 
 function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
-  const savedFilenames = useMemo(
-    () => new Set(state.savedFileSpecifiers.filter((f) => f.type === "symbol").map((f) => f.filename)),
+  const savedKeys = useMemo(
+    () => new Set(state.savedFileSpecifiers.flatMap((f) => (f.type === "symbol" ? f.key : []))),
     [state.savedFileSpecifiers],
   );
 
   return (
     <Select.Root
-      value={state.currentFile.filename}
-      onValueChange={(filename) => {
-        if (filename === state.currentFile.filename) return;
-        const parsedFilename = SymbolJsonFilenameSchema.parse(filename);
-        const file: MapEditFileSpecifier = {
+      value={state.currentFile.key}
+      onValueChange={(key) => {
+        if (!key || key === state.currentFile.key) return;
+        const parsedKey = SymbolKeySchema.parse(key);
+        const fileSpecifier = {
           type: "symbol",
-          filename: parsedFilename,
-          key: symbolFilenameToSymbolKey(parsedFilename),
-        };
-        if (savedFilenames.has(parsedFilename)) {
-          state.load(file);
+          filename: `${parsedKey}.json`,
+          key: parsedKey,
+        } as const;
+
+        if (savedKeys.has(parsedKey)) {
+          state.load(fileSpecifier);
         } else {
-          state.openFresh(file);
+          state.openFresh(fileSpecifier);
         }
       }}
     >
@@ -115,19 +109,17 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
               {allSymbolKeys.map((key) => {
-                const filename = `${key}.json` as const;
-                const isSaved = savedFilenames.has(filename);
                 return (
                   <Select.Item
                     key={key}
-                    value={filename}
+                    value={key}
                     className={cn(
                       "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
                       "data-highlighted:bg-slate-700 data-selected:text-blue-400",
                     )}
                   >
                     <Select.ItemText>{key}</Select.ItemText>
-                    {isSaved && <CheckIcon className="size-3 text-green-400 shrink-0" />}
+                    {savedKeys.has(key) && <FloppyDiskIcon className="size-3 text-green-400 shrink-0" />}
                   </Select.Item>
                 );
               })}
@@ -147,17 +139,18 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
 
   return (
     <Select.Root
-      value={state.currentFile.filename}
-      onValueChange={(value) => {
-        if (!value) return;
-        if (value === newMapValue) {
+      value={state.currentFile.key}
+      onValueChange={(mapKey) => {
+        if (!mapKey || mapKey === state.currentFile.key) return;
+
+        if (mapKey !== newMapKey) {
+          state.load({ type: "map", filename: `${mapKey}.json`, key: mapKey });
+        } else {
           const name = prompt("New map name:")?.trim();
           if (name) {
-            const filename = name.endsWith(".json") ? name : `${name}.json`;
-            state.save({ type: "map", filename, key: mapFilenameToMapKey(filename) });
+            const mapKey = name.endsWith(".json") ? name.slice(0, -".json".length) : name;
+            state.save({ type: "map", filename: `${mapKey}.json`, key: mapKey });
           }
-        } else if (value !== state.currentFile.filename) {
-          state.load({ type: "map", filename: value, key: mapFilenameToMapKey(value) });
         }
       }}
     >
@@ -177,18 +170,18 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
             <Select.List>
               {mapFiles.map((file) => (
                 <Select.Item
-                  key={file.filename}
-                  value={file.filename}
+                  key={file.key}
+                  value={file.key}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
                     "data-highlighted:bg-slate-700 data-selected:text-blue-400",
                   )}
                 >
-                  <Select.ItemText>{file.filename}</Select.ItemText>
+                  <Select.ItemText>{file.key}</Select.ItemText>
                 </Select.Item>
               ))}
               <Select.Item
-                value={newMapValue}
+                value={newMapKey}
                 className="flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-400 border-t border-slate-700 data-highlighted:bg-slate-700"
               >
                 <PlusIcon className="size-3" />
