@@ -744,7 +744,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         switch (state.dragEl.type) {
           case "selection-box": {
-            const increment = e.shiftKey ? inc.small : inc.default;
+            const increment = e.ctrlKey ? inc.small : inc.default;
             const snapDir = (v: number, ref: number) => (v >= ref ? Math.ceil : Math.floor)(v / increment) * increment;
             const snappedX = snapDir(svgPos.x, startSvg.x);
             const snappedY = snapDir(svgPos.y, startSvg.y);
@@ -759,7 +759,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             break;
           }
           case "move-selection": {
-            // shift-move would de-select: use keyboard controls and shift for larger increments
+            // always small: use shift+arrow to snap
             const increment = inc.small;
             const dx = svgPos.x - startSvg.x;
             const dy = svgPos.y - startSvg.y;
@@ -1141,12 +1141,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       }
 
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
-        const everyNodeRefectable = [...getRecursiveNodes(state.nodes)].every((node) => isNodeReflectable(node));
-
-        if (e.shiftKey && everyNodeRefectable) {
+        if (e.shiftKey && (e.ctrlKey || e.metaKey)) {
           state.reflectSelected(e.key === "ArrowUp" || e.key === "ArrowDown" ? "vertical" : "horizontal");
         } else {
-          // Translate
           e.preventDefault();
           state.pushHistory();
           const increment = e.shiftKey ? inc.default : inc.small;
