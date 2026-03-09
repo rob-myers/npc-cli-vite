@@ -1,6 +1,5 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
-import { QuestionIcon } from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
 import { baseSvgSize, findNode, getNodeBounds, type MapNode, type RectMapNode } from "./map-node-api";
@@ -33,7 +32,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       <Defs />
       <OriginAndGrid />
       <SvgBoundingBox width={root.svgWidth} height={root.svgHeight} zoom={root.zoom} />
-      <RenderMapNodes selectedIds={root.selectedIds} nodes={root.nodes} />
+      <RenderMapNodes nodes={root.nodes} root={root} />
       {root.selectionBox !== null && (
         <rect
           x={root.selectionBox.x}
@@ -52,7 +51,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
   );
 }
 
-export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selectedIds: Set<string> }) => {
+export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseStateRef<State> }) => {
   return nodes.map((node) => {
     switch (node.type) {
       case "group": {
@@ -60,21 +59,17 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
         return (
           <g key={node.id} data-node-id={node.id} className={cn(node.locked && "pointer-events-none")}>
             <title>{node.name}</title>
-            <RenderMapNodes selectedIds={selectedIds} nodes={node.children} />
+            <RenderMapNodes nodes={node.children} root={root} />
           </g>
         );
       }
-      case "image":
-      case "symbol": {
+      case "image": {
         const { baseRect, cssTransform } = node;
-        const href =
-          node.type === "image" ? `/starship-symbol/${node.srcKey}.png` : `/symbol/${node.srcKey}.thumbnail.png`;
-
         return node.srcKey !== null ? (
           <image
             key={node.id}
             data-node-id={node.id}
-            href={href}
+            href={`/starship-symbol/${node.srcKey}.png`}
             x={0}
             y={0}
             width={baseRect.width}
@@ -83,27 +78,48 @@ export const RenderMapNodes = ({ nodes, selectedIds }: { nodes: MapNode[]; selec
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0",
-              node.type === "symbol" && "opacity-75 outline-green-500/50 outline-dotted",
-              selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
+              root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
               node.locked === true && "pointer-events-none opacity-25",
             )}
           >
             <title>{node.name}</title>
           </image>
-        ) : (
-          <QuestionIcon
+        ) : null;
+      }
+
+      case "symbol": {
+        const { baseRect, cssTransform } = node;
+
+        // 🚧 for symbols need their bounds.width and height
+        // const filename = node.srcKey === null ? null : `${node.srcKey}.json` as const;
+        // const foo = filename ? root.symbolsManifest?.byFilename[filename] : null;
+
+        return node.srcKey !== null ? (
+          <image
             key={node.id}
-            x={0}
-            y={0}
+            data-node-id={node.id}
+            href={`/symbol/${node.srcKey}.thumbnail.png`}
+            // force offset for symbols
+            x={node.offset.x}
+            y={node.offset.y}
             width={baseRect.width}
             height={baseRect.height}
-            transform={cssTransform}
-            preserveAspectRatio=""
-          />
-        );
+            style={{ transform: cssTransform }}
+            preserveAspectRatio="none"
+            className={cn(
+              "outline-1 outline-white/0",
+              "opacity-75 outline-green-500/50 outline-dotted",
+              root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
+              node.locked === true && "pointer-events-none opacity-25",
+            )}
+          >
+            <title>{node.name}</title>
+          </image>
+        ) : null;
       }
+
       case "rect": {
-        const isSelected = selectedIds.has(node.id);
+        const isSelected = root.selectedIds.has(node.id);
         return (
           <rect
             key={node.id}

@@ -420,7 +420,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               type: "symbol" as const,
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
-              offset: { ...node.offset },
+              // offset: { ...node.offset },
+              offset: { x: 0, y: 0 },
               cssTransform: computeNodeCssTransform(node),
             };
           }
