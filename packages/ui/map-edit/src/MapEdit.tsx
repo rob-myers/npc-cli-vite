@@ -740,68 +740,67 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         e.stopPropagation();
 
         const increment = e.ctrlKey ? inc.small : inc.default;
-
-        if (state.dragEl.type === "selection-box") {
-          const svgPos = state.clientToSvg(e.clientX, e.clientY);
-          const { startSvg } = state.dragEl;
-          const snappedX =
-            svgPos.x - startSvg.x >= 0
-              ? Math.ceil(svgPos.x / increment) * increment
-              : Math.floor(svgPos.x / increment) * increment;
-          const snappedY =
-            svgPos.y - startSvg.y >= 0
-              ? Math.ceil(svgPos.y / increment) * increment
-              : Math.floor(svgPos.y / increment) * increment;
-          state.set({
-            selectionBox: {
-              x: Math.min(startSvg.x, snappedX),
-              y: Math.min(startSvg.y, snappedY),
-              width: Math.abs(snappedX - startSvg.x),
-              height: Math.abs(snappedY - startSvg.y),
-            },
-          });
-          return;
-        }
-
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
-        const dx = svgPos.x - state.dragEl.startSvg.x;
-        const dy = svgPos.y - state.dragEl.startSvg.y;
+        const { startSvg } = state.dragEl;
 
-        if (state.dragEl.type === "move-selection") {
-          for (const [id, startPos] of state.dragEl.starts) {
-            const [node] = findNode(state.nodes, id);
-            if (!isNodeTransformable(node)) continue;
-            node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
-            node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
-            node.cssTransform = computeNodeCssTransform(node);
+        switch (state.dragEl.type) {
+          case "selection-box": {
+            const snapDir = (v: number, ref: number) =>
+              (v >= ref ? Math.ceil : Math.floor)(v / increment) * increment;
+            const snappedX = snapDir(svgPos.x, startSvg.x);
+            const snappedY = snapDir(svgPos.y, startSvg.y);
+            state.set({
+              selectionBox: {
+                x: Math.min(startSvg.x, snappedX),
+                y: Math.min(startSvg.y, snappedY),
+                width: Math.abs(snappedX - startSvg.x),
+                height: Math.abs(snappedY - startSvg.y),
+              },
+            });
+            break;
           }
-          state.update();
-          return;
+          case "move-selection": {
+            const dx = svgPos.x - startSvg.x;
+            const dy = svgPos.y - startSvg.y;
+            for (const [id, startPos] of state.dragEl.starts) {
+              const [node] = findNode(state.nodes, id);
+              if (!isNodeTransformable(node)) continue;
+              node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
+              node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
+              node.cssTransform = computeNodeCssTransform(node);
+            }
+            state.update();
+            break;
+          }
+          case "resize-rect": {
+            if (state.selectedIds.size !== 1) return;
+            const [selectedId] = state.selectedIds;
+            const [node] = findNode(state.nodes, selectedId);
+            if (node?.type !== "rect") return;
+
+            const dx = svgPos.x - startSvg.x;
+            const dy = svgPos.y - startSvg.y;
+            const { transform, baseRect } = node;
+            const { handle, startTransform, startBounds } = state.dragEl;
+            const isW = handle.includes("w");
+            const isN = handle.includes("n");
+
+            if (handle.includes("e") || isW) {
+              const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)));
+              baseRect.width = newWidth;
+              transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.e;
+            }
+            if (handle.includes("n") || handle.includes("s")) {
+              const newHeight = snap(Math.max(increment, startBounds.height + (isN ? -dy : dy)));
+              baseRect.height = newHeight;
+              transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.f;
+            }
+
+            node.cssTransform = computeNodeCssTransform(node);
+            state.update();
+            break;
+          }
         }
-
-        // scale a single rect
-        if (state.selectedIds.size !== 1) return;
-        const [selectedId] = state.selectedIds;
-        const [node] = findNode(state.nodes, selectedId);
-        if (node?.type !== "rect") return;
-
-        const { transform, baseRect } = node;
-        const { handle, startTransform, startBounds } = state.dragEl;
-        const isW = handle.includes("w");
-        const isN = handle.includes("n");
-
-        const widthDelta = isW ? -dx : dx;
-        const heightDelta = isN ? -dy : dy;
-        const newWidth = snap(Math.max(increment, startBounds.width + widthDelta));
-        const newHeight = snap(Math.max(increment, startBounds.height + heightDelta));
-        baseRect.width = newWidth;
-        baseRect.height = newHeight;
-        transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.e;
-        transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.f;
-
-        node.cssTransform = computeNodeCssTransform(node);
-
-        state.update();
       },
       onSvgPointerUp(e) {
         if (!state.dragEl) return;
@@ -1564,7 +1563,7 @@ const zoomDelta = 0.04;
 const minZoomScale = 0.5;
 const maxZoomScale = 40;
 
-export type ResizeHandle = "nw" | "ne" | "sw" | "se";
+export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 const inc = {
   small: 1,
