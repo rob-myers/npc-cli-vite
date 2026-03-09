@@ -59,8 +59,9 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
       dragging: false,
       gridConfig: {
         cols,
-        rowHeight: 80,
+        rowHeight: 30,
         margin: [8, 8],
+        containerPadding: [0, 0],
       },
       editMode: false,
       numTouches: 0,
@@ -142,8 +143,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         const relativeX = clientX - containerRect.left;
         const relativeY = clientY - containerRect.top;
         const gridItemWidth = containerRef.current.clientWidth / cols;
-        const gridItemHeight =
-          (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
+        const gridItemHeight = (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
         const gridX = Math.floor(relativeX / gridItemWidth);
         const gridY = Math.floor(relativeY / gridItemHeight);
 
@@ -249,10 +249,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
   );
 
   const byId = useStore(uiStore, (s) => s.byId);
-  const topLevelUis = useMemo(
-    () => Object.values(byId).filter(({ meta }) => !meta.parentId),
-    [byId],
-  );
+  const topLevelUis = useMemo(() => Object.values(byId).filter(({ meta }) => !meta.parentId), [byId]);
 
   useBeforeunload(() => {
     state.persist();
@@ -293,9 +290,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                 // threshold: 10, // Touch doesn't work
               }}
               gridConfig={state.gridConfig}
-              resizeConfig={
-                state.editMode ? state.resizeConfig.editMode : state.resizeConfig.default
-              }
+              resizeConfig={state.editMode ? state.resizeConfig.editMode : state.resizeConfig.default}
               layout={layout}
               onResizeStart={state.onResizeStart}
               onResizeStop={state.onResizeStop}
@@ -357,12 +352,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                   closeOnClick={!uiRegistry[uiRegistryKey].bootstrap}
                   onClick={state.onContextMenuItem}
                   onKeyDown={(e) => {
-                    if (
-                      e.key === "Enter" ||
-                      e.key === " " ||
-                      e.key === "ArrowLeft" ||
-                      e.key === "ArrowRight"
-                    ) {
+                    if (e.key === "Enter" || e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight") {
                       e.stopPropagation();
                       if (uiRegistry[uiRegistryKey].bootstrap) {
                         state.contextMenuPopoverHandle.open(e.currentTarget.children[0].id);
@@ -380,9 +370,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                       {uiRegistryKey}
                     </Popover.Trigger>
                   ) : (
-                    <div className="w-full px-4 py-1.5 text-left cursor-pointer">
-                      {uiRegistryKey}
-                    </div>
+                    <div className="w-full px-4 py-1.5 text-left cursor-pointer">{uiRegistryKey}</div>
                   )}
                 </ContextMenu.Item>
               ))}
@@ -396,9 +384,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           <Popover.Positioner side={isTouchDevice() ? "top" : "right"} sideOffset={8}>
             <Popover.Popup initialFocus={false}>
               <PopoverArrow arrowBorderFill="#ffffff" />
-              <Popover.Description
-                render={(props) => <div className="bg-black text-white" {...props} />}
-              >
+              <Popover.Description render={(props) => <div className="bg-black text-white" {...props} />}>
                 {state.contextMenuPopoverUi && (
                   <div onClick={(e) => e.stopPropagation()}>
                     <Suspense fallback={<Spinner />}>
@@ -446,9 +432,7 @@ type Props = {
  * Portals do not transmit draggable handles.
  * Instead, UIs should use `uiClassName` to avoid being covered.
  */
-const DraggableOverlay = () => (
-  <div className={cn(allowReactGridDragClassName, "absolute z-0 inset-0 cursor-move")} />
-);
+const DraggableOverlay = () => <div className={cn(allowReactGridDragClassName, "absolute z-0 inset-0 cursor-move")} />;
 
 export type GridApi = UiContextValue["layoutApi"];
 
