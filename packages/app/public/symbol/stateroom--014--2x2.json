@@ -31,14 +31,14 @@
     {
       "id": "cf35bd35-052f-4488-a1bc-b679cf25699b",
       "name": "bed--003--1x1.6",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 0,
         "b": 1,
         "c": 1,
         "d": 0,
-        "e": 0,
+        "e": -1,
         "f": 0
       },
       "type": "symbol",
@@ -51,11 +51,11 @@
         "x": 0,
         "y": 0
       },
-      "cssTransform": "matrix(0, 1, 1, 0, 0, 0)"
+      "cssTransform": "matrix(0, 1, 1, 0, -1, 0)"
     },
     {
       "id": "4a00e238-02af-48dd-b043-6db9a896ccfd",
-      "name": "wall 1",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -75,7 +75,7 @@
     },
     {
       "id": "e42f0818-30b1-4f37-a7e3-bafa353ecfba",
-      "name": "wall 2",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -95,7 +95,7 @@
     },
     {
       "id": "9ba5e5b1-c6e6-4d7b-810c-8b52da1e01ce",
-      "name": "wall 3",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -115,7 +115,7 @@
     },
     {
       "id": "6c0bebe3-559a-41c4-b6ca-713df4df0b88",
-      "name": "wall 4",
+      "name": "wall",
       "locked": false,
       "visible": true,
       "transform": {
@@ -132,11 +132,71 @@
         "height": 4
       },
       "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
+    },
+    {
+      "id": "bd0deac9-37be-464a-bf80-dfd319951bbd",
+      "name": "door",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 67,
+        "f": 115
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 46,
+        "height": 10
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 67, 115)"
+    },
+    {
+      "id": "e6e04e20-90ce-47e6-9cb6-73edafff6b01",
+      "name": "door",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 67,
+        "f": 55
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 46,
+        "height": 10
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 67, 55)"
+    },
+    {
+      "id": "0eb66092-bf81-4f8a-a99d-0660dbe2bd4a",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 58,
+        "f": 58
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 64,
+        "height": 4
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 58, 58)"
     }
   ],
   "bounds": {
     "width": 124,
-    "height": 126.8,
+    "height": 127,
     "x": -2,
     "y": -2
   },
