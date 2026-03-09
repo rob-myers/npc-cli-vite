@@ -66,6 +66,7 @@ import {
   removeNodeFromParent,
   type SymbolsManifest,
   SymbolsManifestSchema,
+  shouldUseOriginalName,
   type Transform,
   templateNodeByKey,
   traverseNodesSync,
@@ -382,7 +383,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         seenDuringClone?.add(node.id);
         const baseProps = {
           id: crypto.randomUUID(),
-          name: node.type === "symbol" ? node.name : state.getNextName(node.type, `${node.name.split(" ")[0]} `),
+          name: shouldUseOriginalName(node) ? node.name : state.getNextName(node.type, `${node.name.split(" ")[0]} `),
           locked: node.locked,
           visible: node.visible,
           transform: { ...node.transform },
@@ -463,7 +464,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.nodes.push(clone);
         return clone;
       },
-      // 🚧 clean
       duplicateSelected() {
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
