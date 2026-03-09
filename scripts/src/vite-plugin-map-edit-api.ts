@@ -46,7 +46,11 @@ export function mapEditApiPlugin(): Plugin {
   };
 }
 
-async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerResponse<IncomingMessage>, server: ViteDevServer) {
+async function handleApiMapEditFile(
+  req: Connect.IncomingMessage,
+  res: ServerResponse<IncomingMessage>,
+  server: ViteDevServer,
+) {
   const fileMatch = req.url?.match(/^\/api\/map-edit\/file\/(.+)$/);
   if (!fileMatch) return;
 
@@ -118,7 +122,7 @@ async function handleApiMapEditFile(req: Connect.IncomingMessage, res: ServerRes
       PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-symbol");
 
-    deleteSavedFile(parseMapEditFileSpecifier({ type: folder, filename }));
+    deleteSavedFile(parseMapEditFileSpecifier({ type: folder, filename, key: path.basename(filename, ".json") }));
 
     res.end(JSON.stringify({ success: true }));
     return true;
