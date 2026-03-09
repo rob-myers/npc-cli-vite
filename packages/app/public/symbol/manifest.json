@@ -114,15 +114,29 @@
       "key": "g-301--bridge"
     },
     "stateroom--014--2x2": {
-      "type": "symbol",
       "filename": "stateroom--014--2x2.json",
-      "key": "stateroom--014--2x2",
       "thumbnailFilename": "stateroom--014--2x2.thumbnail.png",
       "width": 120,
       "height": 120,
       "bounds": {
         "width": 124,
         "height": 127,
+        "x": -2,
+        "y": -2
+      },
+      "type": "symbol",
+      "key": "stateroom--014--2x2"
+    },
+    "stateroom--036--2x4": {
+      "type": "symbol",
+      "filename": "stateroom--036--2x4.json",
+      "key": "stateroom--036--2x4",
+      "thumbnailFilename": "stateroom--036--2x4.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {
+        "width": 124,
+        "height": 246.8,
         "x": -2,
         "y": -2
       }
