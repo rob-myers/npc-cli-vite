@@ -378,20 +378,13 @@ export const SymbolsManifestSchema = z.object({
   createdAt: z.string(),
   byKey: z.partialRecord(
     StarShipSymbolImageKeySchema,
-    BaseManifestItemSchema.extend({
-      filename: SymbolJsonFilenameSchema,
-    }),
+    BaseManifestItemSchema.extend(MapEditSymbolFileSpecifierSchema.shape),
   ),
 });
 
 export const MapsManifestSchema = z.object({
   createdAt: z.string(),
-  byKey: z.record(
-    z.string(),
-    BaseManifestItemSchema.extend({
-      filename: MapJsonFilenameSchema,
-    }),
-  ),
+  byKey: z.record(z.string(), BaseManifestItemSchema.extend(MapEditMapFileSpecifierSchema.shape)),
 });
 
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;

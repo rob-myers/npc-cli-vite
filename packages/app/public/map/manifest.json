@@ -11,7 +11,9 @@
         "height": 0,
         "x": 0,
         "y": 0
-      }
+      },
+      "type": "map",
+      "key": "empty-map"
     },
     "another-map": {
       "filename": "another-map.json",
@@ -23,7 +25,9 @@
         "height": 120,
         "x": 0,
         "y": 0
-      }
+      },
+      "type": "map",
+      "key": "another-map"
     }
   }
 }
