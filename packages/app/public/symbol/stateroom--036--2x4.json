@@ -1,0 +1,140 @@
+{
+  "filename": "stateroom--036--2x4.json",
+  "width": 120,
+  "height": 240,
+  "nodes": [
+    {
+      "id": "39e3fa2d-4689-4c86-ac77-4e0e7a4f2924",
+      "name": "stateroom--036--2x4 1",
+      "locked": true,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "image",
+      "srcKey": "stateroom--036--2x4",
+      "baseRect": {
+        "width": 124,
+        "height": 246.8
+      },
+      "offset": {
+        "x": -2,
+        "y": -2
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "032bfcbd-3314-4750-9e48-fa1ce9c19a45",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -2
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 4,
+        "height": 244
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "cd50a167-ad7b-4f7a-ae40-5bdc4eea8db3",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 118,
+        "f": -2
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 4,
+        "height": 244
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, 118, -2)"
+    },
+    {
+      "id": "980ddd4d-63a0-45ca-a15d-7ea9b7d236bd",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": 238
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 124,
+        "height": 4
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, 238)"
+    },
+    {
+      "id": "b3fabcaa-1eaf-48b3-894c-ec7ecc8f34c9",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -2
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 124,
+        "height": 4
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "86a6f114-de7a-4807-9f55-5286853019c3",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": 58
+      },
+      "type": "rect",
+      "baseRect": {
+        "width": 124,
+        "height": 4
+      },
+      "cssTransform": "matrix(1, 0, 0, 1, -2, 58)"
+    }
+  ],
+  "bounds": {
+    "width": 124,
+    "height": 246.8,
+    "x": -2,
+    "y": -2
+  },
+  "type": "symbol",
+  "key": "stateroom--036--2x4"
+}
