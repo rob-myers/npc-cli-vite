@@ -1,15 +1,15 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
-import { isHullSymbolImageKey, StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
+import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit/map-node-api";
 import {
   isNodeTransformable,
   MapEditFileSpecifierSchema,
+  MapEditMapFileSpecifierSchema,
   MapEditSavedFileSchema,
-  MapJsonFilenameSchema,
+  MapEditSymbolFileSpecifierSchema,
   MapsManifestSchema,
   migrateMapEditSavedFile,
-  SymbolJsonFilenameSchema,
   SymbolsManifestSchema,
   traverseNodesAsync,
 } from "@npc-cli/ui__map-edit/map-node-api";
@@ -113,11 +113,12 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
     type === "symbol"
       ? ({
           manifest: SymbolsManifestSchema,
-          filename: SymbolJsonFilenameSchema,
-          key: StarShipSymbolImageKeySchema,
+          fileSpecifier: MapEditSymbolFileSpecifierSchema,
         } as const)
-      : ({ manifest: MapsManifestSchema, filename: MapJsonFilenameSchema, key: z.string() } as const);
-  type ManifestItemKey = keyof typeof nextManifest.byKey;
+      : ({
+          manifest: MapsManifestSchema,
+          fileSpecifier: MapEditMapFileSpecifierSchema,
+        } as const);
 
   const createdAt = new Date().toISOString();
   const directory = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`);
@@ -132,12 +133,12 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
     opts.changedFiles?.map((x) => x.filename) ?? itemFilePaths.map((filePath) => path.basename(filePath));
 
   for (const filePath of itemFilePaths) {
-    // item filename format: {key}.json
-    const key = path.basename(filePath, ".json") as ManifestItemKey;
-    const filename = `${key}.json` as const;
+    const filename = path.basename(filePath);
+    const key = path.basename(filename, ".json") as keyof typeof nextManifest.byKey;
+    const fileSpecifierResult = schema.fileSpecifier.safeParse({ type, key, filename });
 
-    if (!schema.filename.safeParse(filename).success) {
-      warn(`Skipping file "${filename}" with invalid name in directory "${type}"`);
+    if (!fileSpecifierResult.success) {
+      warn(`Skipping invalid "${filename}" in directory "${type}"`);
       continue;
     }
 
@@ -145,7 +146,7 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
       const savedFileResult = jsonParser.pipe(MapEditSavedFileSchema).safeParse(readFileSync(filePath, "utf-8"));
       if (savedFileResult.success) {
         nextManifest.byKey[key] = {
-          filename,
+          ...fileSpecifierResult.data,
           thumbnailFilename: `${path.basename(filename, ".json")}.thumbnail.png`,
           width: savedFileResult.data.width,
           height: savedFileResult.data.height,
