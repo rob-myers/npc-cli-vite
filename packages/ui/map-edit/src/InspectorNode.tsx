@@ -92,7 +92,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
         className={cn(
           uiClassName,
           "relative grid grid-cols-[minmax(auto,1.5rem)_auto_auto] items-center cursor-pointer hover:brightness-125",
-          "pr-3 bg-background border-b border-b-on-background/10",
+          "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
           state.closestEdge === "top" && "border-t-2 border-t-blue-400",
           state.closestEdge === "bottom" && "border-b-2 border-b-blue-400",
