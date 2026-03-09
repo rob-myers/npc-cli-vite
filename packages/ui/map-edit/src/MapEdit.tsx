@@ -739,14 +739,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!state.dragEl) return;
         e.stopPropagation();
 
-        const increment = e.ctrlKey ? inc.small : inc.default;
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const { startSvg } = state.dragEl;
 
         switch (state.dragEl.type) {
           case "selection-box": {
-            const snapDir = (v: number, ref: number) =>
-              (v >= ref ? Math.ceil : Math.floor)(v / increment) * increment;
+            const increment = e.shiftKey ? inc.small : inc.default;
+            const snapDir = (v: number, ref: number) => (v >= ref ? Math.ceil : Math.floor)(v / increment) * increment;
             const snappedX = snapDir(svgPos.x, startSvg.x);
             const snappedY = snapDir(svgPos.y, startSvg.y);
             state.set({
@@ -760,6 +759,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             break;
           }
           case "move-selection": {
+            // shift-move would de-select: use keyboard controls and shift for larger increments
+            const increment = inc.small;
             const dx = svgPos.x - startSvg.x;
             const dy = svgPos.y - startSvg.y;
             for (const [id, startPos] of state.dragEl.starts) {
@@ -773,6 +774,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             break;
           }
           case "resize-rect": {
+            const increment = e.shiftKey ? inc.default : inc.small;
             if (state.selectedIds.size !== 1) return;
             const [selectedId] = state.selectedIds;
             const [node] = findNode(state.nodes, selectedId);
@@ -786,14 +788,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             const isN = handle.includes("n");
 
             if (handle.includes("e") || isW) {
-              const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)));
+              const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)), increment);
               baseRect.width = newWidth;
-              transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth) : startTransform.e;
+              transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth, increment) : startTransform.e;
             }
             if (handle.includes("n") || handle.includes("s")) {
-              const newHeight = snap(Math.max(increment, startBounds.height + (isN ? -dy : dy)));
+              const newHeight = snap(Math.max(increment, startBounds.height + (isN ? -dy : dy)), increment);
               baseRect.height = newHeight;
-              transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight) : startTransform.f;
+              transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight, increment) : startTransform.f;
             }
 
             node.cssTransform = computeNodeCssTransform(node);
@@ -1147,10 +1149,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           // Translate
           e.preventDefault();
           state.pushHistory();
-          const delta = e.shiftKey ? inc.small : inc.default;
+          const increment = e.shiftKey ? inc.default : inc.small;
           state.translateSelected(
-            e.key === "ArrowLeft" ? -delta : e.key === "ArrowRight" ? delta : 0,
-            e.key === "ArrowUp" ? -delta : e.key === "ArrowDown" ? delta : 0,
+            e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0,
+            e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0,
           );
         }
         return;
