@@ -235,7 +235,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         document.body.addEventListener("pointerup", state.onResizeInspectorPointerUp);
       },
       onResizeInspectorPointerMove(e) {
-        const dx = e.clientX - state.lastPointerPos.x;
+        const dx = -(e.clientX - state.lastPointerPos.x);
         state.lastPointerPos = { x: e.clientX, y: e.clientY };
         state.set({
           asideWidth: Math.max(minAsideWidth, Math.min(maxAsideWidth, state.asideWidth + dx)),
@@ -1249,6 +1249,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         </>
       )}
 
+      <div
+        ref={state.ref("containerEl")}
+        className={cn(
+          "w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing touch-none",
+          theme === "dark" ? "bg-gray-700/30" : "bg-white",
+        )}
+        onPointerDown={state.onPanPointerDown}
+        onPointerMove={state.onPanPointerMove}
+        onPointerUp={state.onPanPointerUp}
+      >
+        <MapEditSvg root={state} />
+      </div>
+
       <aside
         className={cn(
           uiClassName, // avoid losing key focus
@@ -1264,13 +1277,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         )}
         style={{ width: state.asideWidth, minWidth: state.asideWidth }}
       >
-        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center px-2 pr-4 py-2 border-b border-slate-800 bg-slate-900/20">
-          <FileMenu state={state} />
+        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center pl-4 py-2 border-b border-slate-800 bg-slate-900/20">
           <MainMenu state={state} />
+          <FileMenu state={state} />
         </div>
 
         {/* inspector must scroll */}
-        <div className={cn("overflow-auto bg-red-500")}>
+        <div className={cn("overflow-auto pl-1")}>
           {state.nodes.map((node) => (
             <InspectorNode key={node.id} node={node} level={0} root={state} />
           ))}
@@ -1280,19 +1293,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         <InspectorResizer state={state} />
       </aside>
-
-      <div
-        ref={state.ref("containerEl")}
-        className={cn(
-          "w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing touch-none",
-          theme === "dark" ? "bg-gray-700/30" : "bg-white",
-        )}
-        onPointerDown={state.onPanPointerDown}
-        onPointerMove={state.onPanPointerMove}
-        onPointerUp={state.onPanPointerUp}
-      >
-        <MapEditSvg root={state} />
-      </div>
 
       <ImagePickerModal
         open={state.pickImageForId !== null}
@@ -1527,7 +1527,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
     <div
       className={cn(
         uiClassName,
-        "z-2 w-1 absolute right-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
+        "z-2 w-1 absolute left-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
         "bg-blue-500/50",
         "max-md:hidden", // Hide on mobile
       )}
