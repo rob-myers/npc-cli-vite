@@ -127,6 +127,56 @@
         "height": 4
       },
       "cssTransform": "matrix(1, 0, 0, 1, -2, 58)"
+    },
+    {
+      "id": "d30a05aa-cfd8-4588-aec0-a429be4b80a7",
+      "name": "console--051--0.4x0.6",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": -0.8660254037844387,
+        "b": -0.5,
+        "c": 0.5,
+        "d": -0.8660254037844387,
+        "e": 31,
+        "f": 199
+      },
+      "type": "symbol",
+      "srcKey": "console--051--0.4x0.6",
+      "baseRect": {
+        "width": 30,
+        "height": 30
+      },
+      "offset": {
+        "x": 0,
+        "y": -0.7
+      },
+      "cssTransform": "matrix(-0.8660254037844387, -0.5, 0.5, -0.8660254037844387, 31, 198.3)"
+    },
+    {
+      "id": "51c9af30-b10e-4f74-a4b0-a8cbb75d45ec",
+      "name": "console--051--0.4x0.6",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": -0.8660254037844387,
+        "b": 0.5000000000000001,
+        "c": 0.5000000000000001,
+        "d": 0.8660254037844387,
+        "e": 30,
+        "f": 200
+      },
+      "type": "symbol",
+      "srcKey": "console--051--0.4x0.6",
+      "baseRect": {
+        "width": 30,
+        "height": 30
+      },
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "cssTransform": "matrix(-0.8660254037844387, 0.5000000000000001, 0.5000000000000001, 0.8660254037844387, 30, 200)"
     }
   ],
   "bounds": {
