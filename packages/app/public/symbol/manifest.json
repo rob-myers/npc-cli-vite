@@ -100,7 +100,9 @@
       "key": "extra--003--chair--0.25x0.25"
     },
     "g-301--bridge": {
+      "type": "symbol",
       "filename": "g-301--bridge.json",
+      "key": "g-301--bridge",
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
       "width": 1200,
       "height": 600,
@@ -109,9 +111,7 @@
         "height": 628,
         "x": -5.5,
         "y": -22
-      },
-      "type": "symbol",
-      "key": "g-301--bridge"
+      }
     },
     "stateroom--014--2x2": {
       "filename": "stateroom--014--2x2.json",
@@ -142,9 +142,7 @@
       "key": "stateroom--036--2x4"
     },
     "iris-valves--005--1x1": {
-      "type": "symbol",
       "filename": "iris-valves--005--1x1.json",
-      "key": "iris-valves--005--1x1",
       "thumbnailFilename": "iris-valves--005--1x1.thumbnail.png",
       "width": 60,
       "height": 60,
@@ -153,7 +151,9 @@
         "height": 60,
         "x": 0,
         "y": 0
-      }
+      },
+      "type": "symbol",
+      "key": "iris-valves--005--1x1"
     }
   }
 }
