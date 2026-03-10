@@ -15,7 +15,8 @@ export function findNode(
       return [child, parent];
     }
     if (child.type === "group") {
-      return findNode(child.children, id, child);
+      const result = findNode(child.children, id, child);
+      if (result[0] !== null) return result;
     }
   }
   return [null, null];
@@ -89,7 +90,7 @@ export function isNodeTransformable(node: MapNode | null): node is Transformable
   return node !== null && node.type !== "group";
 }
 
-const namePreservesRegexes = ["wall", "door"].map((type) => new RegExp(`^${type}(\\s|$)`));
+const namePreservesRegexes = ["wall", "door", "obstacle"].map((type) => new RegExp(`^${type}(\\s|$)`));
 
 export function shouldUseOriginalName(node: MapNode): boolean {
   return node.type === "symbol" || namePreservesRegexes.some((re) => re.test(node.name));
