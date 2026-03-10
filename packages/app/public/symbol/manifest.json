@@ -154,6 +154,20 @@
       },
       "type": "symbol",
       "key": "iris-valves--005--1x1"
+    },
+    "console--019--2x2": {
+      "filename": "console--019--2x2.json",
+      "thumbnailFilename": "console--019--2x2.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {
+        "width": 121.4,
+        "height": 121.4,
+        "x": -1,
+        "y": -1
+      },
+      "type": "symbol",
+      "key": "console--019--2x2"
     }
   }
 }
