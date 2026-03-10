@@ -1545,9 +1545,9 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
         }}
       >
         {state.asideWidth <= minAsideWidth ? (
-          <CaretRightIcon className="size-4" />
-        ) : (
           <CaretLeftIcon className="size-4" />
+        ) : (
+          <CaretRightIcon className="size-4" />
         )}
       </button>
     </div>
