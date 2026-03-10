@@ -168,6 +168,20 @@
       },
       "type": "symbol",
       "key": "console--019--2x2"
+    },
+    "bridge--042--8x9": {
+      "filename": "bridge--042--8x9.json",
+      "thumbnailFilename": "bridge--042--8x9.thumbnail.png",
+      "width": 480,
+      "height": 540,
+      "bounds": {
+        "width": 489.2,
+        "height": 558,
+        "x": -5,
+        "y": -18
+      },
+      "type": "symbol",
+      "key": "bridge--042--8x9"
     }
   }
 }

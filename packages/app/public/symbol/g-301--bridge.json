@@ -31,7 +31,7 @@
     {
       "id": "0b8b6c16-fb39-44ba-adb8-70cfdc665e85",
       "name": "hull",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 1,
@@ -46,7 +46,7 @@
         {
           "id": "24866c4e-d4bd-4f27-a2b5-9928f10dfb01",
           "name": "wall hull _window",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -67,7 +67,7 @@
         {
           "id": "fe4d79e9-9fa1-413b-9b4d-97eb54e1387d",
           "name": "window hull y=1.1 h=0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -88,7 +88,7 @@
         {
           "id": "78a3a442-2070-43d2-9719-da9185135a69",
           "name": "_window hull y=1.1 h=0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -109,7 +109,7 @@
         {
           "id": "72dc299d-7c64-46d8-9c31-f6fccdff58bd",
           "name": "wall hull sans-n--20x10",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -130,7 +130,7 @@
         {
           "id": "9e166580-3081-402f-90b7-1ff3e26e9eeb",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -151,7 +151,7 @@
         {
           "id": "65562b04-eb2a-4ef6-8807-de765ac9e89a",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -174,7 +174,7 @@
     {
       "id": "1a3e8093-738f-409e-bcf1-8cbd65935bf2",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 1,
@@ -189,7 +189,7 @@
         {
           "id": "30f70277-0029-4718-82b4-061add06d4b4",
           "name": "stateroom--014--2x2",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -214,7 +214,7 @@
         {
           "id": "d2117b74-0f1c-41be-95e4-42ebb5fb5a21",
           "name": "stateroom--014--2x2",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -239,7 +239,7 @@
         {
           "id": "56b70cf8-83da-4e10-b502-daa1d1ef274a",
           "name": "stateroom--036--2x4",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
@@ -264,7 +264,7 @@
         {
           "id": "a07d1583-de2c-478e-8381-feb1092fc523",
           "name": "stateroom--036--2x4",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -289,7 +289,7 @@
         {
           "id": "e8bb8a0b-9bf5-4a49-bcec-e51c3fc83041",
           "name": "stateroom--036--2x4",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -1,
@@ -314,7 +314,7 @@
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -339,7 +339,7 @@
         {
           "id": "6d56cb79-5d36-44e1-a9b6-01b4412608b4",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -1,
@@ -364,7 +364,7 @@
         {
           "id": "f41febf1-40e0-41cd-abf9-97b391685c63",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -1,
@@ -389,7 +389,7 @@
         {
           "id": "9491dce9-e8ab-4f33-b1ae-d4a67d518f9d",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -414,7 +414,7 @@
         {
           "id": "2e1e3db6-1542-4f4c-8177-b676ac448bdb",
           "name": "console--019--2x2",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -1,
@@ -439,7 +439,7 @@
         {
           "id": "f46b7ff8-319f-4072-864c-4a6484ea74e8",
           "name": "console--019--2x2",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 1,
