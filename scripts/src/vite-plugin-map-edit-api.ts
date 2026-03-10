@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { type ALLOWED_MAP_EDIT_FOLDERS, isSavableFileType } from "@npc-cli/ui__map-edit/map-node-api";
+import {
+  type ALLOWED_MAP_EDIT_FOLDERS,
+  devMessageFromServer,
+  isSavableFileType,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import type { Connect, Plugin, ViteDevServer } from "vite";
@@ -143,7 +147,7 @@ function watchPathSvgs(server: ViteDevServer) {
   const rebuild = () => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      rebuildPathManifest(manifestPath);
+      rebuildPathManifest(manifestPath, server);
     }, 200);
   };
 
@@ -152,15 +156,15 @@ function watchPathSvgs(server: ViteDevServer) {
   server.watcher.on("change", (filePath) => isPathSvg(filePath) && rebuild());
   server.watcher.on("unlink", (filePath) => isPathSvg(filePath) && rebuild());
 
-  // initial build
-  rebuildPathManifest(manifestPath);
+  // initial build (no notification needed)
+  rebuildPathManifest(manifestPath, null);
 }
 
 function isPathSvg(filePath: string) {
   return filePath.startsWith(PATH_DIR) && filePath.endsWith(".svg");
 }
 
-function rebuildPathManifest(manifestPath: string) {
+function rebuildPathManifest(manifestPath: string, server: ViteDevServer | null) {
   const svgFiles = fs.globSync(path.join(PATH_DIR, "*.svg"));
   const byKey: Record<string, { filename: string; key: string; pathCount: number; width: number; height: number }> = {};
 
@@ -175,6 +179,7 @@ function rebuildPathManifest(manifestPath: string) {
   const manifest = { createdAt: new Date().toISOString(), byKey };
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log(`[map-edit-api] rebuilt path/manifest.json (${Object.keys(byKey).length} entries)`);
+  server?.hot.send({ type: "custom", event: devMessageFromServer.recomputedPathManifest });
 }
 
 function parseSvgForManifest(

@@ -459,3 +459,7 @@ export function migrateMapEditSavedFile(savedFile: MapEditSavedFile): MapEditSav
   }
   return savedFile;
 }
+
+export const devMessageFromServer = {
+  recomputedPathManifest: "map-edit:recompute-path-manifest",
+} as const;
