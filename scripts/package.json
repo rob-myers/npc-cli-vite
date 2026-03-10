@@ -35,6 +35,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "htmlparser2": "catalog:",
     "nodemon": "catalog:"
   }
 }
