@@ -120,6 +120,24 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
         );
       }
 
+      case "path": {
+        return (
+          <path
+            key={node.id}
+            data-node-id={node.id}
+            d={node.d}
+            style={{ transform: node.cssTransform }}
+            className={cn(
+              "fill-amber-500/50 stroke-amber-700 stroke-1",
+              root.selectedIds.has(node.id) && "stroke-blue-500 stroke-2",
+              node.locked && "pointer-events-none opacity-25",
+            )}
+          >
+            <title>{node.name}</title>
+          </path>
+        );
+      }
+
       case "rect": {
         const isSelected = root.selectedIds.has(node.id);
         return (

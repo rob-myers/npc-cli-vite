@@ -23,7 +23,7 @@ function SymbolPickerModal({
     cachedBustingQuery: `t=${Date.now()}`,
     loadedImages: new Set<string>(),
     updateCacheBustingQuery() {
-      this.cachedBustingQuery = `t=${Date.now()}`;
+      state.cachedBustingQuery = `t=${Date.now()}`;
     },
   }));
   useEffect(() => {

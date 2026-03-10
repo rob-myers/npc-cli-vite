@@ -12,6 +12,7 @@ import {
   ImageIcon,
   LockIcon,
   LockOpenIcon,
+  PathIcon,
   QuestionIcon,
   RectangleIcon,
   StampIcon,
@@ -174,6 +175,8 @@ export function NodeIcon(props: { type: MapNodeType }) {
       return <ImageIcon className="size-4" />;
     case "symbol":
       return <StampIcon className="size-4" />;
+    case "path":
+      return <PathIcon className="size-4" />;
     default:
       return <QuestionIcon className="size-4" />;
   }
