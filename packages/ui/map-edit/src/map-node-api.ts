@@ -63,6 +63,7 @@ export function getNodeBounds(...nodes: MapNode[]): Geom.RectJson {
         height: node.baseRect.height * node.transform.d,
       };
     }
+    case "path":
     case "image":
     case "symbol": {
       const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
@@ -83,7 +84,7 @@ export function insertNodeAt(srcNode: MapNode, dstArray: MapNode[], dstChildId: 
 }
 
 export function isNodeReflectable(node: MapNode | null): node is TransformableMapNode {
-  return node !== null && node.type === "symbol";
+  return node !== null && (node.type === "symbol" || node.type === "path");
 }
 
 export function isNodeTransformable(node: MapNode | null): node is TransformableMapNode {
@@ -93,7 +94,7 @@ export function isNodeTransformable(node: MapNode | null): node is Transformable
 const namePreservesRegexes = ["wall", "door", "obstacle"].map((type) => new RegExp(`^${type}(\\s|$)`));
 
 export function shouldUseOriginalName(node: MapNode): boolean {
-  return node.type === "symbol" || namePreservesRegexes.some((re) => re.test(node.name));
+  return node.type === "symbol" || node.type === "path" || namePreservesRegexes.some((re) => re.test(node.name));
 }
 
 export function mapNodes(list: MapNode[], id: string, fn: (el: MapNode) => MapNode): MapNode[] {
@@ -108,6 +109,8 @@ export function computeNodeCssTransform(node: TransformableMapNode): string {
   switch (node.type) {
     case "rect":
       return computeRectCssTransform(node);
+    case "path":
+      return computePathCssTransform(node);
     case "image":
     case "symbol":
       return computeImageCssTransform(node);
@@ -122,6 +125,11 @@ export function computeNodeCssTransform(node: TransformableMapNode): string {
 function computeImageCssTransform(node: Extract<MapNode, { type: "image" | "symbol" }>): string {
   const { transform, offset } = node;
   return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${transform.e + offset.x}, ${transform.f + offset.y})`;
+}
+
+function computePathCssTransform(node: Extract<MapNode, { type: "path" }>): string {
+  const { transform } = node;
+  return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${transform.e}, ${transform.f})`;
 }
 
 function computeRectCssTransform(node: Extract<MapNode, { type: "rect" }>): string {
@@ -186,6 +194,13 @@ export const templateNodeByKey = {
     offset: defaultPoint,
     cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
   },
+  path: {
+    ...mockBaseNode,
+    type: "path",
+    d: "",
+    baseRect: defaultBaseRect,
+    cssTransform: "matrix(1, 0, 0, 1, 0, 0)",
+  },
 } satisfies Record<MapNodeType, MapNode>;
 
 const PointSchema = z.object({
@@ -241,17 +256,24 @@ export const MapNodeSchema = z.union([
     offset: PointSchema,
     cssTransform: z.string(),
   }),
+  BaseNodeSchema.extend({
+    type: z.literal("path"),
+    d: z.string(),
+    baseRect: z.object({ width: z.number(), height: z.number() }),
+    cssTransform: z.string(),
+  }),
 ]);
 
 export type MapNode = z.infer<typeof MapNodeSchema>;
 export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
-export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" }>;
+export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" | "path" }>;
 
 export const mapNodeTypes = keys({
   group: true,
   image: true,
+  path: true,
   rect: true,
   symbol: true,
 } satisfies Record<MapNodeType, true>);
@@ -394,8 +416,22 @@ export const MapsManifestSchema = z.object({
   byKey: z.record(z.string(), BaseManifestItemSchema.extend(MapEditMapFileSpecifierSchema.shape)),
 });
 
+export const PathManifestEntrySchema = z.object({
+  filename: z.string(),
+  key: z.string(),
+  pathCount: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+
+export const PathManifestSchema = z.object({
+  createdAt: z.string(),
+  byKey: z.record(z.string(), PathManifestEntrySchema),
+});
+
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
+export type PathManifest = z.infer<typeof PathManifestSchema>;
 
 export function symbolFilenameToSymbolKey(filename: z.infer<typeof SymbolJsonFilenameSchema>): StarshipSymbolImageKey {
   return filename.replace(/\.json$/, "") as StarshipSymbolImageKey;

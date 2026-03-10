@@ -62,6 +62,8 @@ import {
   type MapsManifest,
   MapsManifestSchema,
   mapNodes,
+  type PathManifest,
+  PathManifestSchema,
   migrateMapEditSavedFile,
   removeNodeFromParent,
   type SymbolsManifest,
@@ -71,6 +73,7 @@ import {
   templateNodeByKey,
   traverseNodesSync,
 } from "./map-node-api";
+import { PathPickerModal, type ParsedPath } from "./PathPickerModal";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
 
@@ -150,9 +153,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       pngsManifest: null,
       mapsManifest: null,
       symbolsManifest: null,
+      pathManifest: null,
 
       pickImageForId: null,
       pickSymbolForId: null,
+      pickPathOpen: false,
 
       currentFile: tryLocalStorageGetParsed<{ [uiId: string]: MapEditFileSpecifier }>(
         LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
@@ -338,6 +343,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       add(type, { selectionAsParent, rect } = {}) {
         if (!state.svgEl) return;
 
+        if (type === "path") {
+          state.set({ pickPathOpen: true });
+          return;
+        }
+
         state.pushHistory();
         const selection = selectionAsParent ? state.getSelectedNode() : null;
         const parent = selection?.type === "group" ? selection : null;
@@ -425,6 +435,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               cssTransform: computeNodeCssTransform(node),
             };
           }
+          case "path": {
+            return {
+              ...baseProps,
+              type: "path" as const,
+              d: node.d,
+              baseRect: { ...node.baseRect },
+              cssTransform: computeNodeCssTransform(node),
+            };
+          }
           default:
             throw new ExhaustiveError(node);
         }
@@ -508,7 +527,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const [node] = findNode(state.nodes, nodeId);
         if (!isNodeTransformable(node)) return;
 
-        if (node.type === "image" || node.type === "symbol") {
+        if (node.type === "image" || node.type === "symbol" || node.type === "path") {
           const { width: W, height: H } = node.baseRect;
           const [cx, cy] = [W / 2, H / 2];
           const { a, b, c, d, e, f } = node.transform;
@@ -692,6 +711,36 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.name = symbolKey;
 
         state.update();
+      },
+      addPaths(paths) {
+        if (!state.svgEl || paths.length === 0) return;
+        state.pushHistory();
+
+        const svgRect = state.svgEl.getBoundingClientRect();
+        const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
+        const selection = state.getSelectedNode();
+        const parent = selection?.type === "group" ? selection : null;
+
+        const newNodes: MapNode[] = paths.map((p) => {
+          const node = state.create("path");
+          node.d = p.d;
+          node.name = p.name;
+          node.baseRect = { width: p.svgWidth, height: p.svgHeight };
+          node.transform = { ...node.transform, e: center.x - p.svgWidth / 2, f: center.y - p.svgHeight / 2 };
+          node.cssTransform = computeNodeCssTransform(node);
+          return node;
+        });
+
+        if (parent) {
+          parent.children.push(...newNodes);
+        } else {
+          state.nodes.push(...newNodes);
+        }
+        state.set({
+          selectedIds: new Set(newNodes.map((n) => n.id)),
+          editingId: null,
+          pickPathOpen: false,
+        });
       },
 
       onSvgPointerDown(e) {
@@ -1048,15 +1097,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     }
   }, []);
 
-  [state.pngsManifest, state.symbolsManifest, state.mapsManifest] = useQuery({
+  [state.pngsManifest, state.symbolsManifest, state.mapsManifest, state.pathManifest] = useQuery({
     queryKey: ["map-edit-manifests"],
     queryFn: async () => {
       const pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
       const symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);
       const mapsManifest = await fetchParsed("/map/manifest.json", MapsManifestSchema);
-      return [pngsManifest, symbolsManifest, mapsManifest] as const;
+      const pathManifest = await fetchParsed("/path/manifest.json", PathManifestSchema);
+      return [pngsManifest, symbolsManifest, mapsManifest, pathManifest] as const;
     },
-  }).data ?? [null, null, null];
+  }).data ?? [null, null, null, null];
 
   useEffect(() => {
     state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
@@ -1118,6 +1168,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       if (e.key === "Backspace") {
         if (state.selectedIds.size > 0) state.deleteSelectedNodes();
         state.wrapperEl?.focus();
+        return;
+      }
+
+      // Open path picker
+      if (e.key === "p" && !e.metaKey) {
+        e.preventDefault();
+        state.add("path", { selectionAsParent: true });
         return;
       }
 
@@ -1327,6 +1384,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         )}
         symbolsManifest={state.symbolsManifest}
       />
+
+      <PathPickerModal
+        open={state.pickPathOpen}
+        onOpenChange={(open) => {
+          if (!open) state.set({ pickPathOpen: false });
+        }}
+        onSelect={(paths) => state.addPaths(paths)}
+        pathManifest={state.pathManifest}
+      />
     </div>
   );
 }
@@ -1395,8 +1461,10 @@ export type State = {
   pngsManifest: StarshipSymbolPngsManifest | null;
   pickImageForId: string | null;
   pickSymbolForId: string | null;
+  pickPathOpen: boolean;
   mapsManifest: MapsManifest | null;
   symbolsManifest: SymbolsManifest | null;
+  pathManifest: PathManifest | null;
 
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
@@ -1424,6 +1492,7 @@ export type State = {
   onCancelEdit: () => void;
   setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
   setSymbolKey: (nodeId: string, symbolKey: StarshipSymbolImageKey) => void;
+  addPaths: (paths: ParsedPath[]) => void;
   create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
   getNextName: (type: MapNodeType, prefix?: string) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
