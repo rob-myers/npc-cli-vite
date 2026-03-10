@@ -19,7 +19,7 @@ import {
 import type React from "react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";
-import type { MapNode, MapNodeType } from "./map-node-api";
+import { type MapNode, type MapNodeType, traverseNodesSync } from "./map-node-api";
 
 /**
  * - Double tap to edit name
@@ -138,7 +138,8 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           title={node.locked ? "Unlock" : "Lock"}
           onClick={(e) => {
             e.stopPropagation();
-            node.locked = !node.locked;
+            const locked = !node.locked;
+            traverseNodesSync([node], (n) => (n.locked = locked));
             root.update();
           }}
         >
