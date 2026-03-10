@@ -1,33 +1,12 @@
 {
-  "createdAt": "2026-03-10T00:00:00.000Z",
+  "createdAt": "2026-03-10T17:38:45.522Z",
   "byKey": {
-    "corridor-straight": {
-      "filename": "corridor-straight.svg",
-      "key": "corridor-straight",
-      "pathCount": 1,
-      "width": 60,
-      "height": 240
-    },
-    "corridor-L": {
-      "filename": "corridor-L.svg",
-      "key": "corridor-L",
-      "pathCount": 1,
-      "width": 180,
-      "height": 180
-    },
-    "hull-segment": {
-      "filename": "hull-segment.svg",
-      "key": "hull-segment",
-      "pathCount": 1,
-      "width": 300,
-      "height": 60
-    },
-    "door-frame": {
-      "filename": "door-frame.svg",
-      "key": "door-frame",
-      "pathCount": 2,
-      "width": 60,
-      "height": 10
+    "edge-gemorph-hull-walls": {
+      "filename": "edge-gemorph-hull-walls.svg",
+      "key": "edge-gemorph-hull-walls",
+      "pathCount": 6,
+      "width": 6040,
+      "height": 3039
     }
   }
 }
