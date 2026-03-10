@@ -45,279 +45,296 @@
       "children": []
     },
     {
-      "id": "30f70277-0029-4718-82b4-061add06d4b4",
-      "name": "stateroom--014--2x2",
+      "id": "1a3e8093-738f-409e-bcf1-8cbd65935bf2",
+      "name": "symbols",
       "locked": false,
       "visible": true,
       "transform": {
         "a": 1,
         "b": 0,
         "c": 0,
-        "d": -1,
+        "d": 1,
         "e": 0,
-        "f": 480
+        "f": 0
       },
-      "type": "symbol",
-      "srcKey": "stateroom--014--2x2",
-      "baseRect": {
-        "width": 120,
-        "height": 120
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(1, 0, 0, -1, 0, 480)"
-    },
-    {
-      "id": "d2117b74-0f1c-41be-95e4-42ebb5fb5a21",
-      "name": "stateroom--014--2x2",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": -1,
-        "e": 120,
-        "f": 480
-      },
-      "type": "symbol",
-      "srcKey": "stateroom--014--2x2",
-      "baseRect": {
-        "width": 120,
-        "height": 120
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(1, 0, 0, -1, 120, 480)"
-    },
-    {
-      "id": "56b70cf8-83da-4e10-b502-daa1d1ef274a",
-      "name": "stateroom--036--2x4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 2,
-        "f": 2
-      },
-      "type": "symbol",
-      "srcKey": "stateroom--036--2x4",
-      "baseRect": {
-        "width": 120,
-        "height": 240
-      },
-      "offset": {
-        "x": -2,
-        "y": -2
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
-    },
-    {
-      "id": "a07d1583-de2c-478e-8381-feb1092fc523",
-      "name": "stateroom--036--2x4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": -1,
-        "f": 600
-      },
-      "type": "symbol",
-      "srcKey": "stateroom--036--2x4",
-      "baseRect": {
-        "width": 120,
-        "height": 240
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(0, -1, 1, 0, -1, 600)"
-    },
-    {
-      "id": "e8bb8a0b-9bf5-4a49-bcec-e51c3fc83041",
-      "name": "stateroom--036--2x4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 1199,
-        "f": 1
-      },
-      "type": "symbol",
-      "srcKey": "stateroom--036--2x4",
-      "baseRect": {
-        "width": 120,
-        "height": 240
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(-1, 0, 0, 1, 1199, 1)"
-    },
-    {
-      "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
-      "name": "iris-valves--005--1x1",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": 0,
-        "f": 361
-      },
-      "type": "symbol",
-      "srcKey": "iris-valves--005--1x1",
-      "baseRect": {
-        "width": 60,
-        "height": 60
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(0, -1, 1, 0, 0, 361)"
-    },
-    {
-      "id": "6d56cb79-5d36-44e1-a9b6-01b4412608b4",
-      "name": "iris-valves--005--1x1",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -1,
-        "b": 0,
-        "c": 0,
-        "d": -1,
-        "e": 361,
-        "f": 600
-      },
-      "type": "symbol",
-      "srcKey": "iris-valves--005--1x1",
-      "baseRect": {
-        "width": 60,
-        "height": 60
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(-1, 0, 0, -1, 361, 600)"
-    },
-    {
-      "id": "f41febf1-40e0-41cd-abf9-97b391685c63",
-      "name": "iris-valves--005--1x1",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -1,
-        "b": 0,
-        "c": 0,
-        "d": -1,
-        "e": 961,
-        "f": 600
-      },
-      "type": "symbol",
-      "srcKey": "iris-valves--005--1x1",
-      "baseRect": {
-        "width": 60,
-        "height": 60
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(-1, 0, 0, -1, 961, 600)"
-    },
-    {
-      "id": "9491dce9-e8ab-4f33-b1ae-d4a67d518f9d",
-      "name": "iris-valves--005--1x1",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": 1,
-        "c": -1,
-        "d": 0,
-        "e": 1200,
-        "f": 239
-      },
-      "type": "symbol",
-      "srcKey": "iris-valves--005--1x1",
-      "baseRect": {
-        "width": 60,
-        "height": 60
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(0, 1, -1, 0, 1200, 239)"
-    },
-    {
-      "id": "2e1e3db6-1542-4f4c-8177-b676ac448bdb",
-      "name": "console--019--2x2",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 241,
-        "f": 122
-      },
-      "type": "symbol",
-      "srcKey": "console--019--2x2",
-      "baseRect": {
-        "width": 120,
-        "height": 120
-      },
-      "offset": {
-        "x": -1,
-        "y": -1
-      },
-      "cssTransform": "matrix(-1, 0, 0, 1, 240, 121)"
-    },
-    {
-      "id": "f46b7ff8-319f-4072-864c-4a6484ea74e8",
-      "name": "console--019--2x2",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 961,
-        "f": 122
-      },
-      "type": "symbol",
-      "srcKey": "console--019--2x2",
-      "baseRect": {
-        "width": 120,
-        "height": 120
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, 961, 122)"
+      "type": "group",
+      "children": [
+        {
+          "id": "30f70277-0029-4718-82b4-061add06d4b4",
+          "name": "stateroom--014--2x2",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 0,
+            "f": 480
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--014--2x2",
+          "baseRect": {
+            "width": 120,
+            "height": 120
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(1, 0, 0, -1, 0, 480)"
+        },
+        {
+          "id": "d2117b74-0f1c-41be-95e4-42ebb5fb5a21",
+          "name": "stateroom--014--2x2",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 120,
+            "f": 480
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--014--2x2",
+          "baseRect": {
+            "width": 120,
+            "height": 120
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(1, 0, 0, -1, 120, 480)"
+        },
+        {
+          "id": "56b70cf8-83da-4e10-b502-daa1d1ef274a",
+          "name": "stateroom--036--2x4",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 2,
+            "f": 2
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--036--2x4",
+          "baseRect": {
+            "width": 120,
+            "height": 240
+          },
+          "offset": {
+            "x": -2,
+            "y": -2
+          },
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "a07d1583-de2c-478e-8381-feb1092fc523",
+          "name": "stateroom--036--2x4",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": -1,
+            "f": 600
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--036--2x4",
+          "baseRect": {
+            "width": 120,
+            "height": 240
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(0, -1, 1, 0, -1, 600)"
+        },
+        {
+          "id": "e8bb8a0b-9bf5-4a49-bcec-e51c3fc83041",
+          "name": "stateroom--036--2x4",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 1199,
+            "f": 1
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--036--2x4",
+          "baseRect": {
+            "width": 120,
+            "height": 240
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(-1, 0, 0, 1, 1199, 1)"
+        },
+        {
+          "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
+          "name": "iris-valves--005--1x1",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 0,
+            "f": 361
+          },
+          "type": "symbol",
+          "srcKey": "iris-valves--005--1x1",
+          "baseRect": {
+            "width": 60,
+            "height": 60
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(0, -1, 1, 0, 0, 361)"
+        },
+        {
+          "id": "6d56cb79-5d36-44e1-a9b6-01b4412608b4",
+          "name": "iris-valves--005--1x1",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 361,
+            "f": 600
+          },
+          "type": "symbol",
+          "srcKey": "iris-valves--005--1x1",
+          "baseRect": {
+            "width": 60,
+            "height": 60
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(-1, 0, 0, -1, 361, 600)"
+        },
+        {
+          "id": "f41febf1-40e0-41cd-abf9-97b391685c63",
+          "name": "iris-valves--005--1x1",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 961,
+            "f": 600
+          },
+          "type": "symbol",
+          "srcKey": "iris-valves--005--1x1",
+          "baseRect": {
+            "width": 60,
+            "height": 60
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(-1, 0, 0, -1, 961, 600)"
+        },
+        {
+          "id": "9491dce9-e8ab-4f33-b1ae-d4a67d518f9d",
+          "name": "iris-valves--005--1x1",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 1200,
+            "f": 239
+          },
+          "type": "symbol",
+          "srcKey": "iris-valves--005--1x1",
+          "baseRect": {
+            "width": 60,
+            "height": 60
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(0, 1, -1, 0, 1200, 239)"
+        },
+        {
+          "id": "2e1e3db6-1542-4f4c-8177-b676ac448bdb",
+          "name": "console--019--2x2",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 241,
+            "f": 122
+          },
+          "type": "symbol",
+          "srcKey": "console--019--2x2",
+          "baseRect": {
+            "width": 120,
+            "height": 120
+          },
+          "offset": {
+            "x": -1,
+            "y": -1
+          },
+          "cssTransform": "matrix(-1, 0, 0, 1, 240, 121)"
+        },
+        {
+          "id": "f46b7ff8-319f-4072-864c-4a6484ea74e8",
+          "name": "console--019--2x2",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 961,
+            "f": 122
+          },
+          "type": "symbol",
+          "srcKey": "console--019--2x2",
+          "baseRect": {
+            "width": 120,
+            "height": 120
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "cssTransform": "matrix(1, 0, 0, 1, 961, 122)"
+        }
+      ]
     }
   ],
   "bounds": {
