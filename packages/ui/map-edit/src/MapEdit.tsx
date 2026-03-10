@@ -27,7 +27,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useCallback, useContext, useEffect, useMemo } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import z from "zod";
-
+import { queryClientApi } from "../../../cli/src/shell/query-client";
 import { FileMenu } from "./FileMenu";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
@@ -39,6 +39,7 @@ import {
   baseSvgSize,
   computeNodeCssTransform,
   defaultSymbolKey,
+  devMessageFromServer,
   extendCurrentFileSpecifierMapping,
   findNode,
   findNodeWithDepth,
@@ -1112,6 +1113,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   useEffect(() => {
     state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
   }, [state.symbolsManifest, state.mapsManifest]);
+
+  // Refresh manifests on dev server signal
+  useEffect(() => {
+    if (!import.meta.hot) return;
+    const onRecomputedPathManifest = () => {
+      queryClientApi.queryClient.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+    };
+    import.meta.hot.on(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
+    return () => import.meta.hot?.off(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
+  }, []);
 
   // Pointer events
   useEffect(() => {
