@@ -164,7 +164,6 @@ function rebuildPathManifest(manifestPath: string) {
   const svgFiles = fs.globSync(path.join(PATH_DIR, "*.svg"));
   const byKey: Record<string, { filename: string; key: string; pathCount: number; width: number; height: number }> = {};
 
-  console.log({ svgFiles });
   for (const filePath of svgFiles) {
     const filename = path.basename(filePath);
     const key = path.basename(filename, ".svg");

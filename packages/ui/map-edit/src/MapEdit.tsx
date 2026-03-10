@@ -62,9 +62,9 @@ import {
   type MapsManifest,
   MapsManifestSchema,
   mapNodes,
+  migrateMapEditSavedFile,
   type PathManifest,
   PathManifestSchema,
-  migrateMapEditSavedFile,
   removeNodeFromParent,
   type SymbolsManifest,
   SymbolsManifestSchema,
@@ -73,7 +73,7 @@ import {
   templateNodeByKey,
   traverseNodesSync,
 } from "./map-node-api";
-import { PathPickerModal, type ParsedPath } from "./PathPickerModal";
+import { type ParsedPath, PathPickerModal } from "./PathPickerModal";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
 
@@ -716,8 +716,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!state.svgEl || paths.length === 0) return;
         state.pushHistory();
 
-        const svgRect = state.svgEl.getBoundingClientRect();
-        const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
+        // const svgRect = state.svgEl.getBoundingClientRect();
+        // const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
         const selection = state.getSelectedNode();
         const parent = selection?.type === "group" ? selection : null;
 
@@ -726,7 +726,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           node.d = p.d;
           node.name = p.name;
           node.baseRect = { width: p.svgWidth, height: p.svgHeight };
-          node.transform = { ...node.transform, e: center.x - p.svgWidth / 2, f: center.y - p.svgHeight / 2 };
+          // node.transform = { ...node.transform, e: center.x - p.svgWidth / 2, f: center.y - p.svgHeight / 2 };
+          node.transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
           node.cssTransform = computeNodeCssTransform(node);
           return node;
         });
