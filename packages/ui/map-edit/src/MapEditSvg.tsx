@@ -5,7 +5,7 @@ import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
 import { baseSvgSize, findNode, getNodeBounds, type MapNode, type RectMapNode } from "./map-node-api";
 
-export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
+export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: string }) {
   const vbW = baseSvgSize / root.zoom;
   const vbH = baseSvgSize / root.zoom;
   const vbX = (baseSvgSize - vbW) / 2 - root.pan.x / root.zoom;
@@ -30,8 +30,7 @@ export function MapEditSvg({ root }: { root: UseStateRef<State> }) {
       onPointerUp={root.onSvgPointerUp}
       preserveAspectRatio="xMidYMid meet"
     >
-      <Defs />
-      <OriginAndGrid />
+      <DefsAndGrid uiId={uiId} />
       <SvgBoundingBox width={root.svgWidth} height={root.svgHeight} zoom={root.zoom} />
       <RenderMapNodes nodes={root.nodes} root={root} />
       {root.selectionBox !== null && (
@@ -226,16 +225,6 @@ function RectResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode; 
   );
 }
 
-const originLineLength = 4096;
-const originLineColor = "rgba(255, 0, 0, 0.5)";
-const OriginAndGrid = memo(() => (
-  <g>
-    {/* <line x1={-originLineLength} y1={0} x2={originLineLength} y2={0} stroke={originLineColor} strokeWidth={1} />
-    <line x1={0} y1={-originLineLength} x2={0} y2={originLineLength} stroke={originLineColor} strokeWidth={1} /> */}
-    <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#grid)" className="pointer-events-none" />
-  </g>
-));
-
 const SvgBoundingBox = memo(({ width, height, zoom }: { width: number; height: number; zoom: number }) => (
   <rect
     x={0}
@@ -250,14 +239,26 @@ const SvgBoundingBox = memo(({ width, height, zoom }: { width: number; height: n
   />
 ));
 
-const Defs = memo(() => (
-  <defs>
-    <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(100, 116, 139, 0.3)" strokeWidth="0.5" />
-    </pattern>
-    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-      <rect width="60" height="60" fill="url(#smallGrid)" />
-      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
-    </pattern>
-  </defs>
+const DefsAndGrid = memo(({ uiId }: { uiId: string }) => (
+  <>
+    <defs>
+      <pattern id={`smallgrid-${uiId}`} width="10" height="10" patternUnits="userSpaceOnUse">
+        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(100, 116, 139, 0.3)" strokeWidth="0.5" />
+      </pattern>
+      <pattern id={`grid-${uiId}`} width="60" height="60" patternUnits="userSpaceOnUse">
+        <rect width="60" height="60" fill={`url(#smallgrid-${uiId})`} />
+        <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(100, 116, 139, 0.5)" strokeWidth="1" />
+      </pattern>
+    </defs>
+    <g>
+      <rect
+        x="-10000"
+        y="-10000"
+        width="20000"
+        height="20000"
+        fill={`url(#grid-${uiId})`}
+        className="pointer-events-none"
+      />
+    </g>
+  </>
 ));

@@ -1325,7 +1325,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         onPointerMove={state.onPanPointerMove}
         onPointerUp={state.onPanPointerUp}
       >
-        <MapEditSvg root={state} />
+        <MapEditSvg root={state} uiId={props.meta.id} />
       </div>
 
       <aside
