@@ -206,7 +206,7 @@ export const StarShipSymbolImageKeySchema = z.literal(Object.values(symbolByGrou
 export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;
 
 export const StarshipSymbolPngsManifestSchema = z.object({
-  createdAt: z.string(),
+  modifiedAt: z.string(),
   byKey: z.record(
     StarShipSymbolImageKeySchema,
     z.object({

@@ -1,16 +1,16 @@
 {
-  "createdAt": "2026-03-10T18:34:42.070Z",
+  "modifiedAt": "2026-03-11T17:02:25.191Z",
   "byKey": {
     "bridge-042-hull-walls": {
-      "filename": "bridge-042-hull-walls.svg",
       "key": "bridge-042-hull-walls",
+      "filename": "bridge-042-hull-walls.svg",
       "pathCount": 6,
       "width": 480,
       "height": 540
     },
     "edge-geomorph-hull-walls": {
-      "filename": "edge-geomorph-hull-walls.svg",
       "key": "edge-geomorph-hull-walls",
+      "filename": "edge-geomorph-hull-walls.svg",
       "pathCount": 6,
       "width": 6040,
       "height": 3039

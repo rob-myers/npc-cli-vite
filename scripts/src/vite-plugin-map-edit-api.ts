@@ -5,8 +5,12 @@ import {
   type ALLOWED_MAP_EDIT_FOLDERS,
   devMessageFromServer,
   isSavableFileType,
+  type PathManifest,
+  PathManifestEntrySchema,
+  PathManifestSchema,
 } from "@npc-cli/ui__map-edit/map-node-api";
-import { warn } from "@npc-cli/util/legacy/generic";
+import { jsonParser } from "@npc-cli/util/json-parser";
+import { info, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
@@ -164,21 +168,31 @@ function isPathSvg(filePath: string) {
   return filePath.startsWith(PATH_DIR) && filePath.endsWith(".svg");
 }
 
-function rebuildPathManifest(manifestPath: string, server: ViteDevServer | null) {
+async function rebuildPathManifest(manifestPath: string, server: ViteDevServer | null) {
   const svgFiles = fs.globSync(path.join(PATH_DIR, "*.svg"));
-  const byKey: Record<string, { filename: string; key: string; pathCount: number; width: number; height: number }> = {};
+  const byKey: PathManifest["byKey"] = {};
 
   for (const filePath of svgFiles) {
     const filename = path.basename(filePath);
     const key = path.basename(filename, ".svg");
     const content = fs.readFileSync(filePath, "utf-8");
     const entry = parseSvgForManifest(content, filename, key);
-    if (entry) byKey[key] = entry;
+    // must re-parse to ensure key-ordering
+    if (entry) byKey[key] = PathManifestEntrySchema.parse(entry);
   }
 
-  const manifest = { createdAt: new Date().toISOString(), byKey };
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  console.log(`[map-edit-api] rebuilt path/manifest.json (${Object.keys(byKey).length} entries)`);
+  const prevManifest = jsonParser
+    .pipe(PathManifestSchema)
+    .safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data;
+
+  if (JSON.stringify(prevManifest?.byKey) === JSON.stringify(byKey)) {
+    info(`[map-edit-api] path/manifest.json: no changes detected`);
+    return;
+  }
+
+  const nextManifest: PathManifest = { modifiedAt: new Date().toISOString(), byKey };
+  fs.writeFileSync(manifestPath, JSON.stringify(nextManifest, null, 2));
+  info(`[map-edit-api] rebuilt path/manifest.json`);
   server?.hot.send({ type: "custom", event: devMessageFromServer.recomputedPathManifest });
 }
 

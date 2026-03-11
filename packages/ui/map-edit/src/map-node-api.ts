@@ -403,29 +403,30 @@ const BaseManifestItemSchema = z.object({
   bounds: RectSchema,
 });
 
+export const SymbolsManifestItemSchema = BaseManifestItemSchema.extend(MapEditSymbolFileSpecifierSchema.shape);
+
 export const SymbolsManifestSchema = z.object({
-  createdAt: z.string(),
-  byKey: z.partialRecord(
-    StarShipSymbolImageKeySchema,
-    BaseManifestItemSchema.extend(MapEditSymbolFileSpecifierSchema.shape),
-  ),
+  modifiedAt: z.string(),
+  byKey: z.partialRecord(StarShipSymbolImageKeySchema, SymbolsManifestItemSchema),
 });
 
+export const MapsManifestItemSchema = BaseManifestItemSchema.extend(MapEditMapFileSpecifierSchema.shape);
+
 export const MapsManifestSchema = z.object({
-  createdAt: z.string(),
-  byKey: z.record(z.string(), BaseManifestItemSchema.extend(MapEditMapFileSpecifierSchema.shape)),
+  modifiedAt: z.string(),
+  byKey: z.record(z.string(), MapsManifestItemSchema),
 });
 
 export const PathManifestEntrySchema = z.object({
-  filename: z.string(),
   key: z.string(),
+  filename: z.string(),
   pathCount: z.number(),
   width: z.number(),
   height: z.number(),
 });
 
 export const PathManifestSchema = z.object({
-  createdAt: z.string(),
+  modifiedAt: z.string(),
   byKey: z.record(z.string(), PathManifestEntrySchema),
 });
 
