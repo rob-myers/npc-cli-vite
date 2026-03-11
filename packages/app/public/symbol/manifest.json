@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-03-06T12:18:37.998Z",
+  "modifiedAt": "2026-03-11T16:56:14.259Z",
   "byKey": {
     "stateroom--012--2x2": {
       "filename": "stateroom--012--2x2.json",
@@ -100,9 +100,7 @@
       "key": "extra--003--chair--0.25x0.25"
     },
     "g-301--bridge": {
-      "type": "symbol",
       "filename": "g-301--bridge.json",
-      "key": "g-301--bridge",
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
       "width": 1200,
       "height": 600,
@@ -111,7 +109,9 @@
         "height": 3061,
         "x": -5.5,
         "y": -22
-      }
+      },
+      "type": "symbol",
+      "key": "g-301--bridge"
     },
     "stateroom--014--2x2": {
       "filename": "stateroom--014--2x2.json",

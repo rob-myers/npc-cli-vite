@@ -13,8 +13,13 @@
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { type StarshipSymbolPngsManifest, symbolByGroup } from "@npc-cli/media/starship-symbol";
-import { entries, error, keys, safeJsonCompact } from "@npc-cli/util/legacy/generic";
+import {
+  type StarshipSymbolPngsManifest,
+  StarshipSymbolPngsManifestSchema,
+  symbolByGroup,
+} from "@npc-cli/media/starship-symbol";
+import { jsonParser } from "@npc-cli/util/json-parser";
+import { entries, error, info, keys, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { PROJECT_ROOT } from "../const";
 
@@ -49,10 +54,7 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
 mkdirSync(assetsOutputDir, { recursive: true });
 
 // - Generate manifest.json with dimensions of each image
-const manifest: StarshipSymbolPngsManifest = {
-  createdAt: new Date().toISOString(),
-  byKey: {} as StarshipSymbolPngsManifest["byKey"],
-};
+const byKey = {} as StarshipSymbolPngsManifest["byKey"];
 
 for (const [folderName, symbols] of entries(symbolByGroup)) {
   const mediaSubFolderPath = path.join(mediaOutputDir, folderName);
@@ -63,7 +65,7 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
     fs.copyFileSync(srcPath, dstPath);
 
     const dimensions = await imageSizeFromFile(dstPath);
-    manifest.byKey[symbolKey] = {
+    byKey[symbolKey] = {
       group: folderName,
       width: dimensions.width,
       height: dimensions.height,
@@ -71,4 +73,15 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
   }
 }
 
-writeFileSync(path.join(assetsOutputDir, "manifest.json"), safeJsonCompact(manifest));
+const prevManifest = jsonParser
+  .pipe(StarshipSymbolPngsManifestSchema)
+  .safeParse(await fs.promises.readFile(path.join(assetsOutputDir, "manifest.json"), "utf-8").catch(warn)).data;
+
+if (JSON.stringify(prevManifest?.byKey) === JSON.stringify(byKey)) {
+  info(`${path.basename(import.meta.filename)}: no changes detected`);
+  process.exit(0);
+}
+
+info(`${path.basename(import.meta.filename)}: changes detected`);
+const nextManifest: StarshipSymbolPngsManifest = { modifiedAt: new Date().toISOString(), byKey };
+writeFileSync(path.join(assetsOutputDir, "manifest.json"), safeJsonCompact(nextManifest));
