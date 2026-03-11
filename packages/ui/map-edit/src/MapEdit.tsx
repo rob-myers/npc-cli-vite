@@ -1343,7 +1343,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         )}
         style={{ width: state.asideWidth, minWidth: state.asideWidth }}
       >
-        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center pl-4 py-2 border-b border-slate-800 bg-slate-900/20">
+        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center pl-3 py-2 bg-slate-900/20">
           <MainMenu state={state} />
           <FileMenu state={state} />
         </div>

@@ -22,7 +22,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
     <Menu.Root>
       <Menu.Trigger className={cn(uiClassName, "cursor-pointer")}>
-        <ListIcon className="size-5 text-on-background border" />
+        <ListIcon className="size-5.5 bg-background text-on-background border border-on-background/50 p-0.5" />
       </Menu.Trigger>
 
       <Menu.Portal>
@@ -177,7 +177,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
               closeOnClick
               onClick={() => {
-                state.set({ selectedIds: new Set([...getRecursiveNodes(state.nodes)].map(node => node.id)) });
+                state.set({ selectedIds: new Set([...getRecursiveNodes(state.nodes)].map((node) => node.id)) });
               }}
             >
               <SelectionAllIcon className="size-4" />
