@@ -1,46 +1,54 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * 🚧 TODO
- * - ensure symbols flattened i.e. recursively unwind sub-symbols
- * - arrange as stratified directed graph
- * - create layouts i.e. hull symbol wrappers
+ * 🚧 WIP
+ * - `parsed` -- symbol key to derived geometry and metadata
+ * - `stratified` -- stratified directed graph
+ * - `flattened` -- lookup i.e. recursively unwind sub-symbols
+ * - `layouts` -- hull symbol wrappers
  *
  * USAGE:
  * ```sh
  * pnpm gen-symbols-json
- * pnpm gen-symbols-json --changedFiles='["packages/app/public/symbol/untitled.json"]'
+ * pnpm gen-symbols-json --changedFiles='["packages/app/public/symbol/console--051--0.4x0.6.json"]'
+ *
+ * # see also
+ * pnpm watch-symbols
  * ```
  *
  */
 import fs from "node:fs";
-import { ansi } from "@npc-cli/cli/shell/const";
-import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import path from "node:path";
+import { parseArgs } from "node:util";
+import { MapEditSavedFileSchema, SymbolJsonFilenameSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, info, safeJsonCompact, safeJsonParse } from "@npc-cli/util/legacy/generic";
-
-// 🚧 use node parseArgs
-//@ts-expect-error
-import getopts from "getopts";
 import z from "zod";
 
-const opts = getopts(process.argv, { string: ["changedFiles"] });
-const changedFiles = safeJsonParse(opts.changedFiles || "[]") as string[];
+const opts = parseArgs({
+  args: process.argv.slice(2),
+  options: { changedFiles: { type: "string" } },
+});
+
+/** Paths .../packages/app/public/symbol/{symbolKey}.json */
+const changedFiles = (
+  (safeJsonParse(opts.values.changedFiles || "null") as string[] | null) ??
+  fs.globSync("packages/app/public/symbol/*.json")
+).filter((filePath) => SymbolJsonFilenameSchema.safeParse(path.basename(filePath)).success);
+
 if (!Array.isArray(changedFiles) || !changedFiles.every((file) => typeof file === "string")) {
   throw new Error("If present --changedFiles must be a JSON array of strings.");
 }
 
-info(`[${ansi.Yellow}gen-symbols-json${ansi.Reset}]`, `changedFiles: ${JSON.stringify(changedFiles)}`);
+info(`[gen-symbols-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
 
-// 🚧 account for changedFiles
-for (const file of fs.globSync("packages/app/public/symbol/**/*.json")) {
+for (const file of changedFiles) {
   const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
   if (!result.success) {
-    error(`${file}: skipping invalid MapEditSavedFile JSON: ${safeJsonCompact(z.flattenError(result.error))}`);
+    error(`${file}: skipping invalid MapEditSavedFile JSON: ${safeJsonCompact(z.prettifyError(result.error))}`);
     continue;
   }
 
-  // 🚧 recursively construct flattened symbols
-  const savedFile = result.data;
-  console.log({ file, savedFile });
+  console.log("🚧", { file });
+  // const savedFile = result.data;
 }
