@@ -8,6 +8,23 @@
     - https://www.jcore.io/articles/schema-versioning-with-zod
     - `z.preprocess` with function
 
+- can sync symbols in other instances?
+- with 2 instances open for same file, drafts will fight?
+- in production, delete file should be "reset file"
+
+- 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
+  - ✅ start script gen-symbols-json
+  - ✅ start defining schema for `assets.json`
+  - 🚧 creates `public/assets.json` with symbol lookup
+  - ⚠️ some of it should run in browser
+    - we'll permit hull symbols edits in prod
+
+- 🚧 replace dummy gltf with model from fiverr
+
+## Long running
+
+- 🚧 migrate to `node:util` parseArgs i.e. discard `getopts`
+
 - 🚧 shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
@@ -27,17 +44,3 @@
   - can drag into tabs from outer ui
   - can drag out of tabs to outside (not another tabs)
   - detect responsive tabs change and revert on return (?)
-
-
-- 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
-  - ✅ start script gen-symbols-json
-  - ✅ start defining schema for `assets.json`
-  - creates `public/assets.json` with enriched and flattened
-  - given file contents, logic can be run in browser
-    - we will permit editing of hull symbols in prod
-
-- can sync symbols in other instances?
-- with 2 instances open for same file, drafts will fight?
-- in production, delete file should be "reset file"
-
-- 🚧 migrate to `node:util` parseArgs i.e. discard `getopts`

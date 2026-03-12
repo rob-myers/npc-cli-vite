@@ -20,8 +20,8 @@ import {
   useStateRef,
 } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { DraggableEditToggle } from "./DraggableEditToggle";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
-import { LockIcon, PenIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
@@ -332,12 +332,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               })}
             </GridLayout>
 
-            <div
-              className="cursor-pointer fixed top-0 right-0 text-white bg-gray-800 p-2"
-              onClick={() => state.set({ editMode: !state.editMode })}
-            >
-              {state.editMode ? <PenIcon className="size-5" /> : <LockIcon className="size-5" />}
-            </div>
+            <DraggableEditToggle state={state} />
           </div>
         </ContextMenu.Trigger>
 
