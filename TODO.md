@@ -8,18 +8,6 @@
     - https://www.jcore.io/articles/schema-versioning-with-zod
     - `z.preprocess` with function
 
-- can sync symbols in other instances?
-- with 2 instances open for same file, drafts will fight?
-- in production, delete file should be "reset file"
-
-- ❌ restart vite onchange map-edit plugin
-  - but we do cache bust imports
-
-- 🚧 script watches public/symbol and "flattens" symbols
-  - creates `public/symbols.json` with enriched and flattened
-  - given file contents, logic can be run in browser
-    - we will permit editing of hull symbols in prod
-
 - 🚧 shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
@@ -29,7 +17,7 @@
   - ✅ Tty has /etc/{util.sh,util.js.sh}
   - 🚧 STOP bug: appears initially in e.g. 3rd tty
     - seen profile fail to load too
-  - 🚧 improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
+  - ❌ improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
   - sometimes on hot reload need to ctrl-c
 
 - 🚧 future tabs
@@ -39,3 +27,13 @@
   - can drag into tabs from outer ui
   - can drag out of tabs to outside (not another tabs)
   - detect responsive tabs change and revert on return (?)
+
+
+- 🚧 script watches public/symbol/* and "enriches" and "flattens" symbols
+  - creates `public/symbols.json` with enriched and flattened
+  - given file contents, logic can be run in browser
+    - we will permit editing of hull symbols in prod
+
+- can sync symbols in other instances?
+- with 2 instances open for same file, drafts will fight?
+- in production, delete file should be "reset file"

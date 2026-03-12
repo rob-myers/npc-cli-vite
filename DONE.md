@@ -170,6 +170,9 @@
   - dimensions of symbol is wrong
   - e.g. 120x120 originally but thumbnail is larger i.e. use `bounds`
 
+- ❌ restart vite onchange map-edit plugin
+  - but we do cache bust imports
+
 ## By 7th Feb 2016
 
 - ✅ follow a blockbench animation tutorial and export gltf
