@@ -21,11 +21,11 @@
 
 - 🚧 replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
-  - 🚧 use gltf to jsx for refined import
+  - ✅ use gltf to jsx for refined import
     - ✅ Blockbench: gltf export: `Export Groups as Armature`
     - ✅ migrate "uncloned" gltfjsx i.e. `pnpx gltfjsx template.gltf`
-    - 🚧 use a clone like generated jsx
-  - remove walkingRobotGuyGltf, testBlockBench5Gltf
+    - ✅ use a clone like generated jsx
+  - 🚧 remove walkingRobotGuyGltf, testBlockBench5Gltf
   - try convert minecraft texture to format
   - try deform limbs
 
