@@ -1,7 +1,9 @@
 import { url } from "@npc-cli/media";
 import { useAnimations, useGLTF } from "@react-three/drei";
+// import { useGraph } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+// import { SkeletonUtils } from "three-stdlib";
 
 export function TemplateGltfDemo() {
   const groupRef = useRef<THREE.Group>(null);
@@ -17,6 +19,42 @@ export function TemplateGltfDemo() {
   return (
     <group ref={groupRef}>
       <primitive object={gltf.scene} />
+    </group>
+  );
+}
+
+export function SkinnedMeshTemplateDemo() {
+  const groupRef = useRef<THREE.Group>(null);
+  const gltf = useGLTF(url.templateGltf);
+  // const clone = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+  // const { nodes, materials: _materials } = useGraph(clone);
+  const { actions } = useAnimations(gltf.animations, groupRef);
+
+  useEffect(() => {
+    actions["walk"]?.reset().fadeIn(0.5).play();
+    return () => void actions["walk"]?.fadeOut(0.5);
+  }, [actions]);
+
+  // const mesh = gltf.nodes["hips"] as THREE.SkinnedMesh;
+  const bones = Object.values(gltf.nodes).filter((n) => n instanceof THREE.Bone);
+  console.log({ gltf, actions, bones }, bones[0]);
+
+  const root = gltf.nodes.root as THREE.SkinnedMesh;
+
+  return (
+    <group ref={groupRef}>
+      <skinnedMesh
+        name="root"
+        geometry={root.geometry}
+        material={root.material}
+        skeleton={root.skeleton}
+        // position={root.position}
+        // userData={root.userData}
+      >
+        <primitive
+          object={bones[0]} // 🚧
+        />
+      </skinnedMesh>
     </group>
   );
 }
@@ -71,4 +109,3 @@ export function SkinnedMeshWithAnimationDemo() {
     </group>
   );
 }
-0;

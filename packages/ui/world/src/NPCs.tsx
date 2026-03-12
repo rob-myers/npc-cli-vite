@@ -1,11 +1,12 @@
-import { TemplateGltfDemo } from "./demo";
+import { SkinnedMeshTemplateDemo } from "./demo";
 
 export default function NPCs() {
   return (
     <group>
       {/* <SkinnedMeshWithAnimationDemo /> */}
       {/* <WalkingRobotGuyGltfOnlyDemo /> */}
-      <TemplateGltfDemo />
+      {/* <TemplateGltfDemo /> */}
+      <SkinnedMeshTemplateDemo />
     </group>
   );
 }
