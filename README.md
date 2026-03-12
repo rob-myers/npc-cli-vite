@@ -64,7 +64,7 @@ pnpm -F @npc-cli/parse-sh build:wasm
 
 ### ImageMagick
 
-Needed for e.g. `pnpm get-symbol-pngs root Symbols symbol-root`
+Needed for e.g. `pnpm extract-starship-pngs root Symbols symbol-root`
 
 ```sh
 brew install imagemagick

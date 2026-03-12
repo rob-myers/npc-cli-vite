@@ -6,7 +6,7 @@
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts"
   },
   "bin": {
-    "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
+    "extract-starship-pngs": "./src/bins/extract-starship-pngs.ts",
     "starship-pngs-to-public": "./src/bins/starship-pngs-to-public.ts",
     "gen-symbols-json": "./src/bins/gen-symbols-json.tsx",
     "gen-ui": "./src/bins/gen-ui.ts",
