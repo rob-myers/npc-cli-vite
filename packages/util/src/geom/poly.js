@@ -190,7 +190,7 @@ export class Poly {
    * @param {Meta} [extraMeta]
    * @param {number} [precision]
    */
-  cleanClone(mat, extraMeta = undefined, precision = 4) {
+  cleanClone(mat, extraMeta = {}, precision = 4) {
     const cloned = mat
       ? this.clone().applyMatrix(mat).fixOrientation().precision(precision)
       : this.clone().fixOrientation();

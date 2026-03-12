@@ -10,8 +10,8 @@
     "build:wasm": "pnpm -F @npc-cli/parse-sh build:wasm",
     "gen:ui": "pnpm exec gen-ui",
     "preview": "pnpm -F @npc-cli/app preview",
-    "typecheck": "tsc -b",
-    "types": "tsc -b"
+    "typecheck": "tsgo -b",
+    "types": "tsgo -b"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -19,6 +19,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "7.3.1"

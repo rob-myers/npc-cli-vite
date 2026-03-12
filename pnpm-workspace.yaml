@@ -30,6 +30,7 @@ catalog:
   '@types/react-dom': ^19.2.3
   '@types/react-resizable': ^3.0.8
   '@types/three': ^0.182.0
+  '@typescript/native-preview': 7.0.0-dev.20260312.1
   '@vitejs/plugin-basic-ssl': ^2.1.4
   '@vitejs/plugin-react-swc': 4.2.3
   braces: ^3.0.3
