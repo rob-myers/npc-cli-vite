@@ -20,6 +20,9 @@
     - we'll permit hull symbols edits in prod
 
 - 🚧 replace dummy gltf with model from fiverr
+  - ✅ can see template.gltf
+  - use gltf to jsx for refined import
+  - remove walkingRobotGuyGltf, testBlockBench5Gltf
 
 ## Long running
 
