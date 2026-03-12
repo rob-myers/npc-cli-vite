@@ -1,6 +1,6 @@
 import { StarShipSymbolImageKeySchema, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
-import { Mat, Rect } from "@npc-cli/util/geom";
+import { Mat, Poly, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
@@ -10,6 +10,9 @@ const PointSchema = z.object({
   x: z.number(),
   y: z.number(),
 });
+
+const CoordSchema = z.tuple([z.number(), z.number()]);
+
 const BaseRectSchema = z.object({
   width: z.number(),
   height: z.number(),
@@ -151,6 +154,46 @@ export const PathManifestSchema = z.object({
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
 export type PathManifest = z.infer<typeof PathManifestSchema>;
+
+//#endregion
+
+//#region assets schemas
+
+export const GeoJsonPolygonSchema = z.object({
+  /** Identifier amongst GeoJSON formats. */
+  type: z.literal("Polygon"),
+  /**
+   * The 1st array defines the _outer polygon_,
+   * the others define non-nested _holes_.
+   */
+  coordinates: z.array(z.array(CoordSchema)),
+  meta: z.record(z.string(), z.string()),
+});
+
+export type GeoJsonPolygon = z.infer<typeof GeoJsonPolygonSchema>;
+
+export const PolySchema = z.instanceof(Poly);
+
+export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
+  decode: (geoJson) => Poly.from(geoJson),
+  encode: (poly) => poly.geoJson,
+});
+
+export const AssetsSymbolSchema = z.object({
+  key: StarShipSymbolImageKeySchema,
+  filename: SymbolJsonFilenameSchema,
+  isHull: z.boolean(),
+  width: z.number(),
+  height: z.number(),
+  bounds: RectSchema,
+
+  // 🚧
+  walls: z.array(GeoJsonPolygonSchema),
+});
+
+export const AssetsSchema = z.object({
+  symbol: z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema),
+});
 
 //#endregion
 

@@ -31,7 +31,7 @@
 
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
-  - 🚧 define schema for `assets.json`
+  - ✅ start defining schema for `assets.json`
   - creates `public/assets.json` with enriched and flattened
   - given file contents, logic can be run in browser
     - we will permit editing of hull symbols in prod

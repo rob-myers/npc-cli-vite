@@ -2,10 +2,9 @@
 
 /**
  * 🚧 WIP
- * - `parsed` -- symbol key to derived geometry and metadata
+ * - `parsed` -- symbol key to geometry/metadata
  * - `stratified` -- stratified directed graph
- * - `flattened` -- lookup i.e. recursively unwind sub-symbols
- * - `layouts` -- hull symbol wrappers
+ * - `flattened` -- symbol key to recursively unwound symbols (includes hull symbols)
  *
  * USAGE:
  * ```sh
