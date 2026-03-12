@@ -13,6 +13,7 @@
     "@phosphor-icons/react": "catalog:",
     "@react-three/drei": "catalog:",
     "@react-three/fiber": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "@types/three": "catalog:",
     "maath": "catalog:",
     "react": "catalog:",
