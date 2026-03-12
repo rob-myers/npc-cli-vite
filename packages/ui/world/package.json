@@ -18,6 +18,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "catalog:",
+    "three-stdlib": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
   }
