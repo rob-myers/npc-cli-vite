@@ -31,7 +31,7 @@
     {
       "id": "0b8b6c16-fb39-44ba-adb8-70cfdc665e85",
       "name": "hull",
-      "locked": true,
+      "locked": false,
       "visible": true,
       "transform": {
         "a": 1,
@@ -46,7 +46,7 @@
         {
           "id": "24866c4e-d4bd-4f27-a2b5-9928f10dfb01",
           "name": "wall hull _window",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 1,
@@ -67,7 +67,7 @@
         {
           "id": "fe4d79e9-9fa1-413b-9b4d-97eb54e1387d",
           "name": "window hull y=1.1 h=0.6",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 1,
@@ -88,7 +88,7 @@
         {
           "id": "78a3a442-2070-43d2-9719-da9185135a69",
           "name": "_window hull y=1.1 h=0.6",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 1,
@@ -109,7 +109,7 @@
         {
           "id": "72dc299d-7c64-46d8-9c31-f6fccdff58bd",
           "name": "wall hull sans-n--20x10",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 1,
@@ -130,7 +130,7 @@
         {
           "id": "9e166580-3081-402f-90b7-1ff3e26e9eeb",
           "name": "wall hull",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 1,
@@ -151,7 +151,7 @@
         {
           "id": "65562b04-eb2a-4ef6-8807-de765ac9e89a",
           "name": "wall hull",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 1,
