@@ -19,11 +19,17 @@
     "@tanstack/react-query": "catalog:",
     "clsx": "catalog:",
     "debounce": "^3.0.0",
+    "earcut": "catalog:",
     "javascript-stringify": "catalog:",
     "json-stringify-pretty-compact": "catalog:",
+    "poly2tri": "catalog:",
+    "polygon-clipping": "catalog:",
     "react": "catalog:",
     "tailwind-merge": "catalog:",
     "type-fest": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/earcut": "catalog:"
   }
 }

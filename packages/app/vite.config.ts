@@ -9,6 +9,10 @@ import { analyzer } from "vite-bundle-analyzer";
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    // poly2tri.js?v=7a093b1e:1295 Uncaught ReferenceError: global is not defined
+    global: "globalThis",
+  },
   plugins: [
     tanstackRouter({
       target: "react",
