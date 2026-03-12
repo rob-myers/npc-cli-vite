@@ -8,7 +8,7 @@
   "bin": {
     "get-symbol-pngs": "./src/bins/get-symbol-pngs.ts",
     "starship-pngs-to-public": "./src/bins/starship-pngs-to-public.ts",
-    "create-layouts": "./src/bins/create-layouts.tsx",
+    "gen-symbols-json": "./src/bins/gen-symbols-json.tsx",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts",
@@ -17,7 +17,7 @@
     "restart-on-fail": "./src/bins/restart-on-fail.sh"
   },
   "scripts": {
-    "watch-symbols": "pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=create-layouts"
+    "watch-symbols": "pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-symbols-json"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",

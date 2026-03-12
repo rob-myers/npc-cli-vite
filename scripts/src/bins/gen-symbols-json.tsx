@@ -8,8 +8,8 @@
  *
  * USAGE:
  * ```sh
- * pnpm create-layouts
- * pnpm create-layouts --changedFiles='["packages/app/public/symbol/untitled.json"]'
+ * pnpm gen-symbols-json
+ * pnpm gen-symbols-json --changedFiles='["packages/app/public/symbol/untitled.json"]'
  * ```
  *
  */
@@ -30,7 +30,7 @@ if (!Array.isArray(changedFiles) || !changedFiles.every((file) => typeof file ==
   throw new Error("If present --changedFiles must be a JSON array of strings.");
 }
 
-info(`[${ansi.Yellow}create-layouts${ansi.Reset}]`, `changedFiles: ${JSON.stringify(changedFiles)}`);
+info(`[${ansi.Yellow}gen-symbols-json${ansi.Reset}]`, `changedFiles: ${JSON.stringify(changedFiles)}`);
 
 // 🚧 account for changedFiles
 for (const file of fs.globSync("packages/app/public/symbol/**/*.json")) {
