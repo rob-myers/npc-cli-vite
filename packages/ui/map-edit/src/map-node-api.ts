@@ -434,14 +434,6 @@ export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
 export type PathManifest = z.infer<typeof PathManifestSchema>;
 
-export function symbolFilenameToSymbolKey(filename: z.infer<typeof SymbolJsonFilenameSchema>): StarshipSymbolImageKey {
-  return filename.replace(/\.json$/, "") as StarshipSymbolImageKey;
-}
-
-export function mapFilenameToMapKey(filename: z.infer<typeof MapJsonFilenameSchema>): string {
-  return filename.replace(/\.json$/, "");
-}
-
 export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
 
 /**
@@ -452,12 +444,6 @@ export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
  *
  */
 export function migrateMapEditSavedFile(savedFile: MapEditSavedFile): MapEditSavedFile {
-  if (savedFile?.type === "symbol") {
-    return { ...savedFile, key: symbolFilenameToSymbolKey(savedFile.filename) };
-  }
-  if (savedFile?.type === "map") {
-    return { ...savedFile, key: mapFilenameToMapKey(savedFile.filename) };
-  }
   return savedFile;
 }
 

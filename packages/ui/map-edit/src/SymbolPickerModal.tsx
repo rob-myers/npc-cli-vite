@@ -4,7 +4,7 @@ import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { memo, useEffect } from "react";
-import { type SymbolsManifest, symbolFilenameToSymbolKey } from "./map-node-api";
+import type { SymbolsManifest } from "./map-node-api";
 
 export const SymbolPickerModalMemo = memo(SymbolPickerModal);
 
@@ -62,7 +62,7 @@ function SymbolPickerModal({
                     type="button"
                     className="flex flex-col justify-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 cursor-pointer"
                     onClick={() => {
-                      onSelect(symbolFilenameToSymbolKey(entry.filename));
+                      onSelect(entry.key);
                       onOpenChange(false);
                     }}
                     title={entry.filename}
