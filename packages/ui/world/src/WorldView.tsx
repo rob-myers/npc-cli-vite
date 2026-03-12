@@ -1,7 +1,8 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
-import { Canvas, type RenderProps, type RootState } from "@react-three/fiber";
+import { Canvas, type RootState } from "@react-three/fiber";
 import { useContext, useEffect } from "react";
+import * as THREE from "three/webgpu";
 import { CameraControls } from "./CameraControls";
 import type { CameraControls as BaseCameraControls } from "./camera-controls";
 import { WorldContext } from "./world-context";
@@ -27,11 +28,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       zoomSpeed: 0.3,
       // zoomToCursor: true, // breaks follow zoom on HMR
     },
-    glOpts: {
-      toneMapping: 3,
-      toneMappingExposure: 1,
-      logarithmicDepthBuffer: true,
-      pixelRatio: window.devicePixelRatio,
+    async createRenderer(props: Record<string, unknown>) {
+      const renderer = new THREE.WebGPURenderer(props as ConstructorParameters<typeof THREE.WebGPURenderer>[0]);
+      // renderer.toneMapping = 3;
+      // renderer.toneMappingExposure = 1;
+      // // renderer.logarithmicDepthBuffer = true; // set via constructor if needed
+      // renderer.setPixelRatio(window.devicePixelRatio);
+      await renderer.init();
+      return renderer;
     },
     rootEl: null as any,
     canvasRef(canvasEl) {
@@ -56,7 +60,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       ref={state.canvasRef}
       frameloop={state.syncRenderMode()}
       // frameloop="always"
-      gl={state.glOpts}
+      gl={state.createRenderer}
     >
       {props.children}
 
@@ -94,7 +98,7 @@ type State = {
   canvas: HTMLCanvasElement;
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
-  glOpts: RenderProps<HTMLCanvasElement>["gl"];
+  createRenderer(props: Record<string, unknown>): Promise<THREE.WebGPURenderer>;
   rootEl: HTMLDivElement;
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
   syncRenderMode(): RootState["frameloop"];

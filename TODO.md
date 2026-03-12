@@ -26,7 +26,9 @@
     - ✅ migrate "uncloned" gltfjsx i.e. `pnpx gltfjsx template.gltf`
     - ✅ use a clone like generated jsx
   - ✅ remove walkingRobotGuyGltf, testBlockBench5Gltf
-  - try convert minecraft texture to format
+  - ✅ try convert minecraft texture to format
+    - fiverr third-party did a great job
+  - ✅ try add basic shader i.e. shade by dot product of normal with camera view direction
   - try deform limbs
 
 ## Long running
