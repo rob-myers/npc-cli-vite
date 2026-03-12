@@ -9,8 +9,8 @@
  *
  * USAGE:
  * ```sh
- * pnpm gen-symbols-json
- * pnpm gen-symbols-json --changedFiles='["packages/app/public/symbol/console--051--0.4x0.6.json"]'
+ * pnpm gen-assets-json
+ * pnpm gen-assets-json --changedFiles='["packages/app/public/symbol/console--051--0.4x0.6.json"]'
  *
  * # see also
  * pnpm watch-symbols
@@ -40,7 +40,7 @@ if (!Array.isArray(changedFiles) || !changedFiles.every((file) => typeof file ==
   throw new Error("If present --changedFiles must be a JSON array of strings.");
 }
 
-info(`[gen-symbols-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
+info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
 
 for (const file of changedFiles) {
   const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));

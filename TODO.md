@@ -1,9 +1,9 @@
 # TODO
 
-- 🚧 strategy for extending MapEditSavedFile schemas
+- ❌ strategy for extending zod schemas
   - ✅ parse localStorage before load
   - ✅ vite plugin does not use stale schemas i.e. import cache bust
-  - 🚧 suppose we change schema of nodes, how to migrate saved file?
+  - ❌ suppose we change schema of nodes, how to migrate saved file?
     - ask Jason
     - https://www.jcore.io/articles/schema-versioning-with-zod
     - `z.preprocess` with function
@@ -29,10 +29,10 @@
   - detect responsive tabs change and revert on return (?)
 
 
-- 🚧 script watches public/symbol/* and "enriches" and "flattens" symbols
+- 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
-  - 🚧 define schema for `symbols.json`
-  - creates `public/symbols.json` with enriched and flattened
+  - 🚧 define schema for `assets.json`
+  - creates `public/assets.json` with enriched and flattened
   - given file contents, logic can be run in browser
     - we will permit editing of hull symbols in prod
 
