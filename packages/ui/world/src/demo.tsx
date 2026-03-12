@@ -33,6 +33,7 @@ export function SkinnedMeshTemplateDemo() {
 
   useEffect(() => {
     console.log({ gltf, actions, rootBone: bones[0], material: root.material });
+    actions.idle?.play();
     const animationName = "walk";
     actions[animationName]?.reset().fadeIn(0.5).play();
     return () => {
@@ -48,7 +49,7 @@ export function SkinnedMeshTemplateDemo() {
         // material={root.material}
         material={material}
         skeleton={root.skeleton}
-        position={root.position}
+        // position={root.position}
         // userData={root.userData}
       >
         {bones[0] && <primitive object={bones[0]} />}
