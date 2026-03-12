@@ -30,6 +30,8 @@
 
 
 - 🚧 script watches public/symbol/* and "enriches" and "flattens" symbols
+  - ✅ start script gen-symbols-json
+  - 🚧 define schema for `symbols.json`
   - creates `public/symbols.json` with enriched and flattened
   - given file contents, logic can be run in browser
     - we will permit editing of hull symbols in prod
@@ -37,3 +39,5 @@
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
 - in production, delete file should be "reset file"
+
+- 🚧 migrate to `node:util` parseArgs i.e. discard `getopts`
