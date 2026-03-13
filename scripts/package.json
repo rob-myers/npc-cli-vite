@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "htmlparser2": "catalog:",
-    "nodemon": "catalog:"
+    "nodemon": "catalog:",
+    "@npc-cli/ui__world": "workspace:^"
   }
 }

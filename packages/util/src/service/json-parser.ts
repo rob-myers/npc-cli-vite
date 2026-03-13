@@ -1,5 +1,5 @@
 import z from "zod";
-import { warn } from "../legacy/generic";
+import { warn } from "../legacy/generic.js";
 
 /**
  * Compositional JSON parser for usage with other zod schemas.

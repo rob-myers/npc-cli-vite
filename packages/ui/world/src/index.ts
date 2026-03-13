@@ -8,3 +8,5 @@ export default defineUi({
   bootstrap: WorldBootstrap,
   schema: WorldUiSchema,
 });
+
+import "./geomorph.d.ts";

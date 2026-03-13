@@ -10,19 +10,19 @@
  * ```sh
  * pnpm gen-assets-json
  * pnpm gen-assets-json --changedFiles='["/path/to/.../public/symbol/console--051--0.4x0.6.json"]'
- *
- * # see also
  * pnpm watch-symbols
  * ```
  */
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { MapEditSavedFileSchema, SymbolJsonFilenameSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, info, safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
+import * as geomorph from "../service/geomorph";
+import { perf } from "../service/performance";
 
 const opts = parseArgs({
   args: process.argv.slice(2),
@@ -35,20 +35,38 @@ if (opts.values.changedFiles !== undefined && !inputChangedFiles) {
   process.exit(1);
 }
 
-/** Paths .../packages/app/public/symbol/{symbolKey}.json */
 const changedFiles = (
-  inputChangedFiles ?? fs.globSync(path.resolve(PROJECT_ROOT, "packages/app/public/symbol/*.json"))
-).filter((filePath) => SymbolJsonFilenameSchema.safeParse(path.basename(filePath)).success);
+  inputChangedFiles ??
+  fs.globSync([
+    path.resolve(PROJECT_ROOT, "packages/app/public/symbol/*.json"),
+    path.resolve(PROJECT_ROOT, "packages/app/public/map/*.json"),
+  ])
+).filter((filePath) => path.basename(filePath) !== "manifest.json");
 
+perf("begin");
 info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
 
+perf("symbols/maps");
+
 for (const file of changedFiles) {
-  const result = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
-  if (!result.success) {
-    error(`${file}: skipping invalid MapEditSavedFile JSON: ${safeJsonCompact(z.prettifyError(result.error))}`);
+  const symRes = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
+  if (!symRes.success) {
+    error(`${path.basename(file)}: skipping invalid MapEditSavedFile JSON`);
     continue;
   }
 
-  console.log("🚧", { file });
-  // const savedFile = result.data;
+  const savedFile = symRes.data;
+
+  // 🚧 update assets.json
+  if (savedFile.type === "symbol") {
+    const symbol = geomorph.parseMapEditSymbol(savedFile);
+    console.log("🚧 symbol", symbol.key);
+  } else {
+    const mapDef = geomorph.parseMapEditMap(savedFile);
+    console.log("🚧 mapDef", mapDef.key);
+  }
 }
+
+perf("symbols/maps");
+
+perf("begin");

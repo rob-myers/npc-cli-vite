@@ -62,4 +62,6 @@ declare namespace Geom {
   }
 
   type SixTuple = [number, number, number, number, number, number];
+
+  type AffineTransform = { a: number; b: number; c: number; d: number; e: number; f: number };
 }
