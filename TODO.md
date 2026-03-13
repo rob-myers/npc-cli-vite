@@ -19,7 +19,7 @@
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
-- 🚧 replace dummy gltf with model from fiverr
+- ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
   - ✅ use gltf to jsx for refined import
     - ✅ Blockbench: gltf export: `Export Groups as Armature`
@@ -29,7 +29,9 @@
   - ✅ try convert minecraft texture to format
     - fiverr third-party did a great job
   - ✅ try add basic shader i.e. shade by dot product of normal with camera view direction
-  - try deform limbs
+  - ✅ fix hmr when cloning
+
+- try deform limbs of blockbench model, saving as separate file
 
 ## Long running
 
