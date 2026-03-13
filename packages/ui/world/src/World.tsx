@@ -18,7 +18,7 @@ export default function World(props: { meta: WorldUiMeta }) {
   return (
     <WorldContext.Provider value={state}>
       <WorldView className={uiClassName}>
-        <ambientLight intensity={0.75} color="#ffffff" />
+        <ambientLight intensity={0.85} color="#ffffff" />
         <Floor />
         <Suspense>
           <NPCs />
