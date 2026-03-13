@@ -1,0 +1,92 @@
+{
+  "symbol": {
+    "bed--003--1x1.6": {
+      "key": "bed--003--1x1.6",
+      "isHull": false,
+      "width": 100,
+      "height": 60
+    },
+    "bridge--042--8x9": {
+      "key": "bridge--042--8x9",
+      "isHull": false,
+      "width": 480,
+      "height": 540
+    },
+    "console--019--2x2": {
+      "key": "console--019--2x2",
+      "isHull": false,
+      "width": 120,
+      "height": 120
+    },
+    "console--033--0.4x0.6": {
+      "key": "console--033--0.4x0.6",
+      "isHull": false,
+      "width": 30,
+      "height": 30
+    },
+    "console--051--0.4x0.6": {
+      "key": "console--051--0.4x0.6",
+      "isHull": false,
+      "width": 30,
+      "height": 30
+    },
+    "extra--003--chair--0.25x0.25": {
+      "key": "extra--003--chair--0.25x0.25",
+      "isHull": false,
+      "width": 20,
+      "height": 20
+    },
+    "extra--004--desk--0.5x1": {
+      "key": "extra--004--desk--0.5x1",
+      "isHull": false,
+      "width": 30,
+      "height": 60
+    },
+    "g-301--bridge": {
+      "key": "g-301--bridge",
+      "isHull": true,
+      "width": 1200,
+      "height": 600
+    },
+    "iris-valves--005--1x1": {
+      "key": "iris-valves--005--1x1",
+      "isHull": false,
+      "width": 60,
+      "height": 60
+    },
+    "stateroom--012--2x2": {
+      "key": "stateroom--012--2x2",
+      "isHull": false,
+      "width": 120,
+      "height": 120
+    },
+    "stateroom--014--2x2": {
+      "key": "stateroom--014--2x2",
+      "isHull": false,
+      "width": 120,
+      "height": 120
+    },
+    "stateroom--019--2x3": {
+      "key": "stateroom--019--2x3",
+      "isHull": false,
+      "width": 120,
+      "height": 180
+    },
+    "stateroom--036--2x4": {
+      "key": "stateroom--036--2x4",
+      "isHull": false,
+      "width": 120,
+      "height": 240
+    }
+  },
+  "map": {
+    "another-map": {
+      "key": "another-map",
+      "gms": []
+    },
+    "empty-map": {
+      "key": "empty-map",
+      "gms": []
+    }
+  }
+}
