@@ -18,7 +18,7 @@ const BaseRectSchema = z.object({
   height: z.number(),
 });
 const RectSchema = BaseRectSchema.extend(PointSchema.shape);
-const TransformSchema = z.object({
+const AffineTransformSchema = z.object({
   a: z.number(),
   b: z.number(),
   c: z.number(),
@@ -32,7 +32,7 @@ const BaseNodeSchema = z.object({
   name: z.string(),
   locked: z.boolean(),
   visible: z.boolean(),
-  transform: TransformSchema,
+  transform: AffineTransformSchema,
 });
 export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
 
@@ -74,9 +74,10 @@ export type MapNode = z.infer<typeof MapNodeSchema>;
 export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
+export type SymbolMapNode = Pretty<Extract<MapNode, { type: "symbol" }>>;
 export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" | "path" }>;
 export type BaseRect = { width: number; height: number };
-export type Transform = z.infer<typeof TransformSchema>;
+export type Transform = z.infer<typeof AffineTransformSchema>;
 export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
 
@@ -114,6 +115,8 @@ export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend(MapEditMapFil
 export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
 export type MapEditSavedFile = z.infer<typeof MapEditSavedFileSchema>;
+export type MapEditSavedSymbol = z.infer<typeof MapEditSavedSymbolSchema>;
+export type MapEditSavedMap = z.infer<typeof MapEditSavedMapSchema>;
 export type UiIdToCurrentFileSpecifer = Record<string, MapEditFileSpecifier>;
 
 const BaseManifestItemSchema = z.object({
@@ -159,6 +162,16 @@ export type PathManifest = z.infer<typeof PathManifestSchema>;
 
 //#region assets schemas
 
+export type GeomorphKey = Extract<SymbolKey, `g-${string}`>;
+
+export function isGeomorphKey(key: SymbolKey): key is GeomorphKey {
+  return key.startsWith("g-");
+}
+
+export const GeomorphKeySchema = SymbolKeySchema.refine(isGeomorphKey, {
+  message: "Expected GeomorphKey",
+}) as z.ZodType<GeomorphKey>;
+
 export const GeoJsonPolygonSchema = z.object({
   type: z.literal("Polygon"),
   /**
@@ -185,13 +198,27 @@ export const AssetsSymbolSchema = z.object({
   width: z.number(),
   height: z.number(),
   bounds: RectSchema,
-
   // 🚧
   walls: z.array(GeoJsonPolygonSchema),
 });
 
+export const AssetsMapDefSchema = z.object({
+  key: MapKeySchema,
+  filename: SymbolJsonFilenameSchema,
+  width: z.number(),
+  height: z.number(),
+  bounds: RectSchema,
+  gms: z.array(
+    z.object({
+      key: GeomorphKeySchema,
+      transform: AffineTransformSchema,
+    }),
+  ),
+});
+
 export const AssetsSchema = z.object({
   symbol: z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema),
+  map: z.partialRecord(MapKeySchema, AssetsMapDefSchema),
 });
 
 //#endregion
@@ -421,6 +448,15 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
   if (index === -1) throw Error(`Expected id ${childId} in ${JSON.stringify(parentArray)}`);
   parentArray.splice(index, 1);
   return index;
+}
+
+export function filterNodes<T extends MapNode>(list: MapNode[], test: (el: MapNode) => el is T): T[] {
+  const output = [] as T[];
+  for (const item of list) {
+    if (test(item)) output.push(item);
+    if (item.type === "group") output.push(...filterNodes(item.children, test));
+  }
+  return output;
 }
 
 export function traverseNodesSync(list: MapNode[], act: (el: MapNode) => void) {

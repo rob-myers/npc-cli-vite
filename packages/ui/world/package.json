@@ -3,11 +3,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./geomorph.d.ts": "./src/geomorph.d.ts"
   },
   "scripts": {},
   "dependencies": {
     "@npc-cli/media": "workspace:^",
+    "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
