@@ -4,7 +4,6 @@ import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit/map-node-api";
 import {
   isNodeTransformable,
-  MapEditFileSpecifierSchema,
   MapEditMapFileSpecifierSchema,
   MapEditSavedFileSchema,
   MapEditSymbolFileSpecifierSchema,
@@ -26,16 +25,12 @@ export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
   await ensureManifests(fileSpecifier.type, { changedFiles: [], removedFiles: [fileSpecifier] });
 }
 
+/**
+ * - Expects text
+ * - Applies `migrateMapEditSavedFile` to parsed json before `MapEditSavedFileSchema.parse`
+ */
 export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
-}
-
-export function parseMapEditFileSpecifier(fileSpecifier: {
-  type: MapEditSavedFile["type"];
-  filename: string;
-  key: string;
-}) {
-  return MapEditFileSpecifierSchema.parse(fileSpecifier);
 }
 
 export async function processSavedFile(savedFile: MapEditSavedFile) {

@@ -160,7 +160,6 @@ export type PathManifest = z.infer<typeof PathManifestSchema>;
 //#region assets schemas
 
 export const GeoJsonPolygonSchema = z.object({
-  /** Identifier amongst GeoJSON formats. */
   type: z.literal("Polygon"),
   /**
    * The 1st array defines the _outer polygon_,

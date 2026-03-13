@@ -11,6 +11,7 @@
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
 - in production, delete file should be "reset file"
+- try deform limbs of blockbench model, saving as separate file
 
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
@@ -31,7 +32,6 @@
   - ✅ try add basic shader i.e. shade by dot product of normal with camera view direction
   - ✅ fix hmr when cloning
 
-- try deform limbs of blockbench model, saving as separate file
 
 ## Long running
 

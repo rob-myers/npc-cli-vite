@@ -5,6 +5,7 @@ import {
   type ALLOWED_MAP_EDIT_FOLDERS,
   devMessageFromServer,
   isSavableFileType,
+  MapEditFileSpecifierSchema,
   type PathManifest,
   PathManifestEntrySchema,
   PathManifestSchema,
@@ -131,11 +132,13 @@ async function handleApiMapEditFile(
 
   // DELETE - Delete file and related cache
   if (req.method === "DELETE") {
-    const { deleteSavedFile, parseMapEditFileSpecifier } = (await server.ssrLoadModule(
+    const { deleteSavedFile } = (await server.ssrLoadModule(
       PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-symbol");
 
-    deleteSavedFile(parseMapEditFileSpecifier({ type: folder, filename, key: path.basename(filename, ".json") }));
+    deleteSavedFile(
+      MapEditFileSpecifierSchema.parse({ type: folder, filename, key: path.basename(filename, ".json") }),
+    );
 
     res.end(JSON.stringify({ success: true }));
     return true;
