@@ -13,12 +13,12 @@
  * pnpm watch-symbols
  * ```
  */
-import fs from "node:fs";
+import fs, { writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import { AssetsSchema, type AssetsType, MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { error, info, safeJsonCompact } from "@npc-cli/util/legacy/generic";
+import { error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import * as geomorph from "../service/geomorph";
@@ -46,6 +46,13 @@ const changedFiles = (
 perf("begin");
 info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
 
+const assetsJsonPath = path.resolve("packages/app/public", "assets.json");
+const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(warn);
+const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw).data ?? {
+  map: {},
+  symbol: {},
+};
+
 perf("symbols/maps");
 
 for (const file of changedFiles) {
@@ -57,16 +64,25 @@ for (const file of changedFiles) {
 
   const savedFile = symRes.data;
 
-  // 🚧 update assets.json
+  // update assets.json
   if (savedFile.type === "symbol") {
     const symbol = geomorph.parseMapEditSymbol(savedFile);
-    console.log("🚧 symbol", symbol.key);
+    assets.symbol[symbol.key] = symbol;
   } else {
     const mapDef = geomorph.parseMapEditMap(savedFile);
-    console.log("🚧 mapDef", mapDef.key);
+    assets.map[mapDef.key] = mapDef;
   }
 }
 
 perf("symbols/maps");
-
 perf("begin");
+
+const nextAssetsRaw = JSON.stringify(z.decode(AssetsSchema, assets), null, 2);
+
+if (prevAssetsRaw === nextAssetsRaw) {
+  info(`${path.basename(import.meta.filename)}: no changes detected`);
+  process.exit(0);
+}
+
+info(`${path.basename(import.meta.filename)}: detected changes`);
+writeFileSync(assetsJsonPath, nextAssetsRaw);

@@ -16,7 +16,8 @@
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
   - ✅ start defining schema for `assets.json`
-  - 🚧 creates `public/assets.json` with symbol lookup
+  - ✅ creates `public/assets.json` with symbol lookup
+  - 🚧 compute walls
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
