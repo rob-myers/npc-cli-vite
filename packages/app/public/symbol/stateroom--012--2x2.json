@@ -169,14 +169,14 @@
         "c": 0,
         "d": 1,
         "e": 115,
-        "f": 67.5
+        "f": 68
       },
       "type": "rect",
       "baseRect": {
         "width": 10,
         "height": 45
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 115, 67.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 115, 68)"
     }
   ],
   "bounds": {
