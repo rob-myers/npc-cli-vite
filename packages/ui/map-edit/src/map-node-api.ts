@@ -485,7 +485,7 @@ export function getFileSpecifierLocalStorageKey(file: MapEditFileSpecifier) {
 
 export function tryDecodeFileSpecifierLocalStorageKey(localStorageKey: string): MapEditFileSpecifier | null {
   const [, type, filename] = localStorageKey.split(/[:]/);
-  const result = MapEditFileSpecifierSchema.safeParse({ type, filename, key: filename.replace(/\.json$/, "") });
+  const result = MapEditFileSpecifierSchema.safeParse({ type, filename, key: filename?.replace(/\.json$/, "") });
   return result.data ?? null;
 }
 
