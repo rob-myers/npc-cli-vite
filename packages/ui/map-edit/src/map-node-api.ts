@@ -203,6 +203,8 @@ export const AssetsSymbolSchema = z.object({
   // walls: z.array(GeoJsonPolygonSchema),
 });
 
+export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
+
 export const AssetsMapDefSchema = z.object({
   key: MapKeySchema,
   // filename: SymbolJsonFilenameSchema,
@@ -216,6 +218,8 @@ export const AssetsMapDefSchema = z.object({
     }),
   ),
 });
+
+export type AssetsMapDef = z.infer<typeof AssetsMapDefSchema>;
 
 export const AssetsSchema = z.object({
   symbol: z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema),
