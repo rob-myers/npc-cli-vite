@@ -64,7 +64,6 @@ for (const file of changedFiles) {
 
   const savedFile = symRes.data;
 
-  // update assets.json
   if (savedFile.type === "symbol") {
     const symbol = geomorph.parseMapEditSymbol(savedFile);
     assets.symbol[symbol.key] = symbol;
@@ -77,6 +76,7 @@ for (const file of changedFiles) {
 perf("symbols/maps");
 perf("begin");
 
+// reparse ensures key-ordering
 const nextAssetsRaw = JSON.stringify(z.decode(AssetsSchema, assets), null, 2);
 
 if (prevAssetsRaw === nextAssetsRaw) {
