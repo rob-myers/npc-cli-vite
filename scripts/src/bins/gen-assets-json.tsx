@@ -48,6 +48,7 @@ info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
 
 const assetsJsonPath = path.resolve("packages/app/public", "assets.json");
 const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(warn);
+// we ignore parse errors as we extend AssetsSchema
 const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw).data ?? {
   map: {},
   symbol: {},

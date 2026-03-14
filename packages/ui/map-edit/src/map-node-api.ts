@@ -194,12 +194,11 @@ export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
 
 export const AssetsSymbolSchema = z.object({
   key: StarShipSymbolImageKeySchema,
-  // filename: SymbolJsonFilenameSchema,
   isHull: z.boolean(),
   width: z.number(),
   height: z.number(),
+  bounds: RectSchema,
   // 🚧
-  // bounds: RectSchema,
   // walls: z.array(GeoJsonPolygonSchema),
 });
 
@@ -207,10 +206,6 @@ export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
 
 export const AssetsMapDefSchema = z.object({
   key: MapKeySchema,
-  // filename: SymbolJsonFilenameSchema,
-  // width: z.number(),
-  // height: z.number(),
-  // bounds: RectSchema,
   gms: z.array(
     z.object({
       gmKey: GeomorphKeySchema,
