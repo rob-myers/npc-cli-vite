@@ -1,5 +1,5 @@
 {
-  "filename": "empty-map.json",
+  "filename": "demo-map-0.json",
   "width": 1200,
   "height": 600,
   "nodes": [],
@@ -10,5 +10,5 @@
     "y": 0
   },
   "type": "map",
-  "key": "empty-map"
+  "key": "demo-map-0"
 }

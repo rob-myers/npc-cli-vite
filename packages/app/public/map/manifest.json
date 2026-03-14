@@ -1,33 +1,33 @@
 {
-  "modifiedAt": "2026-03-06T12:18:38.000Z",
+  "modifiedAt": "2026-03-14T09:56:23.647Z",
   "byKey": {
     "empty-map": {
       "filename": "empty-map.json",
       "thumbnailFilename": "empty-map.thumbnail.png",
-      "width": 120,
-      "height": 120,
+      "width": 1200,
+      "height": 600,
       "bounds": {
-        "width": 0,
-        "height": 0,
+        "width": 1200,
+        "height": 600,
         "x": 0,
         "y": 0
       },
       "type": "map",
       "key": "empty-map"
     },
-    "another-map": {
-      "filename": "another-map.json",
-      "thumbnailFilename": "another-map.thumbnail.png",
-      "width": 120,
-      "height": 120,
+    "demo-map-0": {
+      "filename": "demo-map-0.json",
+      "thumbnailFilename": "demo-map-0.thumbnail.png",
+      "width": 1200,
+      "height": 600,
       "bounds": {
-        "width": 120,
-        "height": 120,
+        "width": 1200,
+        "height": 600,
         "x": 0,
         "y": 0
       },
       "type": "map",
-      "key": "another-map"
+      "key": "demo-map-0"
     }
   }
 }
