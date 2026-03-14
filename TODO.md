@@ -8,6 +8,9 @@
     - https://www.jcore.io/articles/schema-versioning-with-zod
     - `z.preprocess` with function
 
+- 🚧 demo-map-0
+  - 🚧 fix g-301-bridge width/height/thumbnail
+
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
 - in production, delete file should be "reset file"
