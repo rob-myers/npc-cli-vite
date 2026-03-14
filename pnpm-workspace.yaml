@@ -59,7 +59,7 @@ catalog:
   react-reverse-portal: 2.3.0
   rxjs: ^7.8.2
   short-uuid: ^6.0.3
-  skia-canvas: ^3.0.8
+  skia-canvas: 3.0.8
   svg-path-parser: ^1.1.0
   tailwind-merge: ^3.4.0
   tailwindcss: ^4.1.17
