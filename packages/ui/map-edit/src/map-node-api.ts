@@ -74,6 +74,7 @@ export type MapNode = z.infer<typeof MapNodeSchema>;
 export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
+export type ImageMapNode = Pretty<Extract<MapNode, { type: "image" }>>;
 export type SymbolMapNode = Pretty<Extract<MapNode, { type: "symbol" }>>;
 export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" | "path" }>;
 export type BaseRect = { width: number; height: number };
