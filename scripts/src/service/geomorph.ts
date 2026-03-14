@@ -26,13 +26,13 @@ export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
 }
 
 export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
-  // 🚧 compute walls
-  // 🚧 compute doors
   return {
     key: savedFile.key,
     isHull: isHullSymbolImageKey(savedFile.key),
     width: savedFile.width,
     height: savedFile.height,
-    // 🚧
+    bounds: savedFile.bounds,
+    // 🚧 compute walls
+    // 🚧 compute doors
   };
 }
