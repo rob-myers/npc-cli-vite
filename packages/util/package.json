@@ -25,11 +25,13 @@
     "poly2tri": "catalog:",
     "polygon-clipping": "catalog:",
     "react": "catalog:",
+    "svg-path-parser": "catalog:",
     "tailwind-merge": "catalog:",
     "type-fest": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/earcut": "catalog:"
+    "@types/earcut": "catalog:",
+    "@types/svg-path-parser": "catalog:"
   }
 }
