@@ -352,7 +352,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.pushHistory();
         const selection = selectionAsParent ? state.getSelectedNode() : null;
         const parent = selection?.type === "group" ? selection : null;
-        const newItem = state.create(type);
+        const newItem = state.createNode(type);
 
         if ("baseRect" in newItem) {
           if (rect) {
@@ -449,7 +449,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             throw new ExhaustiveError(node);
         }
       },
-      create(type) {
+      createNode(type) {
         const templateNode = templateNodeByKey[type];
         return {
           ...templateNode,
@@ -583,7 +583,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         if (!shallowest) return;
 
-        const newGroup = state.create("group");
+        const newGroup = state.createNode("group");
         const insertArray = shallowest.parent?.children ?? state.nodes;
         const insertIndex = insertArray.indexOf(shallowest.node);
         const seen = new Set<string>();
@@ -723,7 +723,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const parent = selection?.type === "group" ? selection : null;
 
         const newNodes: MapNode[] = paths.map((p) => {
-          const node = state.create("path");
+          const node = state.createNode("path");
           node.d = p.d;
           node.name = p.name;
           node.baseRect = { width: p.svgWidth, height: p.svgHeight };
@@ -1502,7 +1502,7 @@ export type State = {
   setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
   setSymbolKey: (nodeId: string, symbolKey: StarshipSymbolImageKey) => void;
   addPaths: (paths: ParsedPath[]) => void;
-  create: <T extends MapNodeType>(type: T) => MapNodeMap[T];
+  createNode: <T extends MapNodeType>(type: T) => MapNodeMap[T];
   getNextName: (type: MapNodeType, prefix?: string) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
@@ -1638,7 +1638,7 @@ const minAsideWidth = 200;
 const maxAsideWidth = 300;
 const defaultAsideWidth = minAsideWidth;
 const zoomDelta = 0.04;
-const minZoomScale = 0.5;
+const minZoomScale = 0.25;
 const maxZoomScale = 40;
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";

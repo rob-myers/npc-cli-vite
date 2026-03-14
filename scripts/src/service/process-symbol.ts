@@ -45,14 +45,15 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
 }
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
+  const isMap = savedFile.type === "map";
+  const isHullSymbol = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key);
   const { filename, nodes, bounds } = savedFile;
+
   // Scale down hull symbols rather than up
-  const scale = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key) ? 0.5 : 2;
+  const scale = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key) ? 1 : 2;
   const integralBounds = Rect.fromJson(bounds).integerOrds();
   const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
   const ct = canvas.getContext("2d");
-
-  console.log(canvas.width, canvas.height);
 
   await traverseNodesAsync(nodes, async (node) => {
     if (!isNodeTransformable(node)) return;
@@ -64,8 +65,12 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
     switch (node.type) {
       case "image":
       case "symbol": {
+        if (isHullSymbol) break;
+
         const image = await loadImage(
-          path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
+          isMap
+            ? path.resolve(PROJECT_ROOT, "packages/app/public/symbol", `${node.srcKey}.thumbnail.png`)
+            : path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
         );
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
@@ -83,7 +88,8 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
         break;
       }
       case "path": {
-        ct.fillStyle = "rgba(0,0,255,0.2)";
+        ct.strokeStyle = "rgba(0,0,0,1)";
+        ct.fillStyle = "rgba(255,255,255,1)";
         const parsedPoly = geomService.svgPathToPolygon(node.d);
         if (!parsedPoly) {
           warn(`${filename}: failed to parse path.d data for node ${node.name}`);

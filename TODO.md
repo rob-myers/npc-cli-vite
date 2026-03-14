@@ -14,6 +14,9 @@
   - ⚠️ path svg has viewBox `0 0 1200 600` but width `6040px` and height `3039px`
     - changing width/height to 1200/600 fixed it
     - ✅ viewBox `0 0 w h` should override though
+  - ✅ draw hull thumbnails differently: polys and rects only
+  - ✅ draw map thumbnails using hull thumbnails, not symbols
+  - 🚧 on add geomorph symbol offset should be (0, 0)
 
 - ✅ graphical representation of path nodes in thumbnail
 
