@@ -10,7 +10,8 @@
 
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
-- in production, delete file should be "reset file"
+- can "reset file" in dev/prod, cannot delete file in prod
+- remove MainMenu > Open
 - try deform limbs of blockbench model, saving as separate file
 
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
@@ -18,8 +19,15 @@
   - ✅ start defining schema for `assets.json`
   - ✅ creates `public/assets.json` with symbol lookup
   - 🚧 compute walls
+  - 🚧 compute obstacles
+  - 🚧 compute doors
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
+
+- support `decor quad switch` via image node
+  - image node browser includes decor section
+- can see floors in World
+- can see walls in World
 
 - ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
