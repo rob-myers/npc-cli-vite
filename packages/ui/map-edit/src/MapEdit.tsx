@@ -1183,13 +1183,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return;
       }
 
-      // Open path picker
-      if (e.key === "p" && !e.metaKey) {
-        e.preventDefault();
-        state.add("path", { selectionAsParent: true });
-        return;
-      }
-
       // Fill selection rect
       if (e.key === "r" && !e.metaKey) {
         e.preventDefault();
@@ -1264,6 +1257,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         case "o":
           // Instantiate symbol
           state.add("symbol", { selectionAsParent: true });
+          break;
+        // Open path picker
+        case "p":
+          state.add("path", { selectionAsParent: true });
           break;
       }
     };
@@ -1670,6 +1667,7 @@ const keyShouldPreventDefault = {
   v: true,
   // r: true,
   o: true,
+  p: true,
   s: true,
   y: true,
   z: true,
