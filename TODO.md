@@ -8,7 +8,7 @@
     - https://www.jcore.io/articles/schema-versioning-with-zod
     - `z.preprocess` with function
 
-- 🚧 demo-map-0
+- ✅ demo-map-0
   - ✅ fix g-301-bridge width/height/thumbnail
   - ✅ issue with path node import i.e. baseRect has wrong size
   - ⚠️ path svg has viewBox `0 0 1200 600` but width `6040px` and height `3039px`
@@ -16,7 +16,6 @@
     - ✅ viewBox `0 0 w h` should override though
   - ✅ draw hull thumbnails differently: polys and rects only
   - ✅ draw map thumbnails using hull thumbnails, not symbols
-  - 🚧 on add geomorph symbol offset should be (0, 0)
 
 - ✅ graphical representation of path nodes in thumbnail
 
@@ -26,6 +25,7 @@
 - remove MainMenu > Open
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
+- warn if symbols "above" walls in symbol
 
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json

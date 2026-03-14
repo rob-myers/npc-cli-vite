@@ -1,20 +1,20 @@
 {
   "filename": "demo-map-0.json",
   "width": 1200,
-  "height": 1200,
+  "height": 600,
   "nodes": [
     {
-      "id": "81a3154e-0caf-4626-92ac-6ee557098436",
+      "id": "e80d60ae-0ab1-4c41-adb8-7a489887d1ba",
       "name": "g-301--bridge",
-      "locked": true,
+      "locked": false,
       "visible": true,
       "transform": {
         "a": 1,
         "b": 0,
         "c": 0,
         "d": 1,
-        "e": 0,
-        "f": 0
+        "e": 5.5,
+        "f": 22
       },
       "type": "symbol",
       "srcKey": "g-301--bridge",
@@ -23,40 +23,15 @@
         "height": 600
       },
       "offset": {
-        "x": 0,
-        "y": 0
+        "x": -5.5,
+        "y": -22
       },
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
-    },
-    {
-      "id": "2e2b4efc-d974-40e5-b886-e310fc1845a7",
-      "name": "g-301--bridge",
-      "locked": true,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": -1,
-        "e": 0,
-        "f": 1200
-      },
-      "type": "symbol",
-      "srcKey": "g-301--bridge",
-      "baseRect": {
-        "width": 1200,
-        "height": 600
-      },
-      "offset": {
-        "x": 0,
-        "y": 0
-      },
-      "cssTransform": "matrix(1, 0, 0, -1, 0, 1200)"
     }
   ],
   "bounds": {
     "width": 1200,
-    "height": 1200,
+    "height": 600,
     "x": 0,
     "y": 0
   },

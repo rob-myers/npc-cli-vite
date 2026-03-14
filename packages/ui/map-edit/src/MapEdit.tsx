@@ -47,6 +47,7 @@ import {
   getLocalStorageSavedFiles,
   getNodeBounds,
   getRecursiveNodes,
+  type ImageMapNode,
   imageOffsetValues,
   insertNodeAt,
   isNodeReflectable,
@@ -1274,11 +1275,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   // save draft in both dev/prod
   useBeforeunload(() => state.save());
 
-  const selectedNodeWithOffset = useMemo(() => {
+  const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
     const [id] = state.selectedIds;
     const [node] = findNode(state.nodes, id);
-    return node && (node.type === "image" || node.type === "symbol") ? node : null;
+    return node && node.type === "image" ? node : null;
   }, [state.selectedIds, state.nodes]);
 
   const isMobile = isTouchDevice();
@@ -1352,7 +1353,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           ))}
         </div>
 
-        {selectedNodeWithOffset && <SelectedOffsetNodeUI node={selectedNodeWithOffset} state={state} />}
+        {selectedImageNode && <SelectedImageNodeUI node={selectedImageNode} state={state} />}
 
         <InspectorResizer state={state} />
       </aside>
@@ -1537,13 +1538,7 @@ export type State = {
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
 };
 
-function SelectedOffsetNodeUI({
-  node,
-  state,
-}: {
-  node: Extract<MapNode, { type: "image" | "symbol" }>;
-  state: UseStateRef<State>;
-}) {
+function SelectedImageNodeUI({ node, state }: { node: ImageMapNode; state: UseStateRef<State> }) {
   return (
     <div
       className={cn(
@@ -1644,7 +1639,7 @@ const maxZoomScale = 40;
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 const inc = {
-  small: 1,
+  small: 0.5,
   default: 5,
 };
 

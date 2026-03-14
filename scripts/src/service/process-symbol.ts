@@ -50,7 +50,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const { filename, nodes, bounds } = savedFile;
 
   // Scale down hull symbols rather than up
-  const scale = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key) ? 1 : 2;
+  const scale = 2;
   const integralBounds = Rect.fromJson(bounds).integerOrds();
   const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
   const ct = canvas.getContext("2d");
@@ -60,15 +60,15 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
 
     ct.setTransform(scale, 0, 0, scale, 0, 0);
     ct.transform(...new Mat(node.cssTransform).toArray());
-    ct.translate(-bounds.x, -bounds.y); // integralBounds?
+    ct.translate(-bounds.x, -bounds.y);
 
     switch (node.type) {
       case "image":
       case "symbol": {
-        if (isHullSymbol) break;
+        if (isHullSymbol) break; // avoid large hull thumbnails
 
         const image = await loadImage(
-          isMap
+          isMap // avoid large map thumbnails
             ? path.resolve(PROJECT_ROOT, "packages/app/public/symbol", `${node.srcKey}.thumbnail.png`)
             : path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
         );
@@ -88,7 +88,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
         break;
       }
       case "path": {
-        ct.strokeStyle = "rgba(0,0,0,1)";
+        ct.strokeStyle = isHullSymbol ? "rgba(0,0,0,0)" : "rgba(0,0,0,1)";
         ct.fillStyle = "rgba(255,255,255,1)";
         const parsedPoly = geomService.svgPathToPolygon(node.d);
         if (!parsedPoly) {
