@@ -6,9 +6,7 @@
 export function isTouchDevice() {
   return (
     typeof window !== "undefined" &&
-    ("ontouchstart" in window ||
-      navigator.maxTouchPoints > 0 ||
-      /** @type {*} */ (navigator).msMaxTouchPoints > 0)
+    ("ontouchstart" in window || navigator.maxTouchPoints > 0 || /** @type {*} */ (navigator).msMaxTouchPoints > 0)
   );
 }
 
