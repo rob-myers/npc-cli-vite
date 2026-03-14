@@ -106,6 +106,13 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
     return;
   }
 
+  if (isHullSymbol) {
+    ct.resetTransform();
+    ct.font = "100px sans-serif";
+    const rect = ct.measureText(savedFile.key);
+    ct.fillText(savedFile.key, (canvas.width - rect.width) / 2, (canvas.height + 32) / 2);
+  }
+
   await canvas.toFile(
     path.resolve(
       PROJECT_ROOT,
