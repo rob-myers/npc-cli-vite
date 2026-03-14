@@ -10,7 +10,8 @@
     "./exhaustive-error": "./src/ExhaustiveError.ts",
     "./fetch-parsed": "./src/service/fetchParsed.ts",
     "./legacy/generic": "./src/legacy/generic.js",
-    "./legacy/dom": "./src/legacy/dom.js"
+    "./legacy/dom": "./src/legacy/dom.js",
+    "./service/skia-canvas": "./src/service/skia-canvas.ts"
   },
   "scripts": {},
   "dependencies": {
@@ -25,6 +26,7 @@
     "poly2tri": "catalog:",
     "polygon-clipping": "catalog:",
     "react": "catalog:",
+    "skia-canvas": "catalog:",
     "svg-path-parser": "catalog:",
     "tailwind-merge": "catalog:",
     "type-fest": "catalog:",
