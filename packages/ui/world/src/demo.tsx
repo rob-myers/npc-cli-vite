@@ -1,7 +1,8 @@
 import { url } from "@npc-cli/media";
+import { useStateRef } from "@npc-cli/util";
 import { useAnimations, useGLTF, useTexture } from "@react-three/drei";
 import { buildGraph } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -11,11 +12,11 @@ export function SkinnedMeshTemplateDemo() {
   const gltf = useGLTF(url.templateGltf);
 
   // clone and buildGraph in useState fixes HMR
-  const [{ clone: _clone, graph }] = useState(() => {
+  const state = useStateRef(() => {
     const clone = SkeletonUtils.clone(gltf.scene);
     return { clone, graph: buildGraph(clone) };
   });
-  const { nodes } = graph;
+  const { nodes } = state.graph;
   const { actions } = useAnimations(gltf.animations, groupRef); // cannot clone animations?
 
   const root = nodes.root as THREE.SkinnedMesh;
@@ -32,15 +33,19 @@ export function SkinnedMeshTemplateDemo() {
     const texNode = tslTexture(texture);
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).clamp(0, 1);
-    mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0.1);
+    mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
     return mat;
   }, [texture]);
 
   useEffect(() => {
     console.log({ gltf, actions, rootBone: bones[0], material: root.material });
+    
     actions[animationName.idle]?.play();
-    actions[animationName.walk]?.reset().fadeIn(0.5).play();
-    // actions[animationName.idle]?.fadeOut(0.5);
+    setTimeout(() => {
+      actions[animationName.idle]?.fadeOut(0.5);
+      actions[animationName.walk]?.reset().fadeIn(0.5).play();
+    }, 0);
+    
     return () => {
       Object.values(actions).forEach((a) => a?.stop());
     };
@@ -54,6 +59,7 @@ export function SkinnedMeshTemplateDemo() {
         // material={root.material}
         material={material}
         skeleton={root.skeleton}
+        // position={[0, 0, 0]}
         // position={root.position}
         // userData={root.userData}
       >
