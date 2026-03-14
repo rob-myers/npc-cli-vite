@@ -9,13 +9,20 @@
     - `z.preprocess` with function
 
 - 🚧 demo-map-0
-  - 🚧 fix g-301-bridge width/height/thumbnail
+  - ✅ fix g-301-bridge width/height/thumbnail
+  - ✅ issue with path node import i.e. baseRect has wrong size
+  - ⚠️ path svg has viewBox `0 0 1200 600` but width `6040px` and height `3039px`
+    - changing width/height to 1200/600 fixed it
+    - ✅ viewBox `0 0 w h` should override though
+
+- ✅ graphical representation of path nodes in thumbnail
 
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
 - can "reset file" in dev/prod, cannot delete file in prod
 - remove MainMenu > Open
 - try deform limbs of blockbench model, saving as separate file
+- move path parsing code out of vite plugin file, to support hmr
 
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json

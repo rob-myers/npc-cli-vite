@@ -1,5 +1,5 @@
 {
-  "modifiedAt": "2026-03-11T16:56:14.259Z",
+  "modifiedAt": "2026-03-14T14:35:10.599Z",
   "byKey": {
     "stateroom--012--2x2": {
       "filename": "stateroom--012--2x2.json",
@@ -105,8 +105,8 @@
       "width": 1200,
       "height": 600,
       "bounds": {
-        "width": 6045.5,
-        "height": 3061,
+        "width": 1212,
+        "height": 628,
         "x": -5.5,
         "y": -22
       },
