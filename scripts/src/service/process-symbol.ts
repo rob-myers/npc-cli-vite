@@ -14,9 +14,10 @@ import {
   SymbolsManifestSchema,
   traverseNodesAsync,
 } from "@npc-cli/ui__map-edit/map-node-api";
-import { Mat, Rect } from "@npc-cli/util/geom";
+import { geomService, Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { deepClone, error, info, warn } from "@npc-cli/util/legacy/generic";
+import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
@@ -51,6 +52,8 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
   const ct = canvas.getContext("2d");
 
+  console.log(canvas.width, canvas.height);
+
   await traverseNodesAsync(nodes, async (node) => {
     if (!isNodeTransformable(node)) return;
 
@@ -77,6 +80,16 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       case "rect": {
         ct.fillStyle = "rgba(0,255,0,0.2)";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
+        break;
+      }
+      case "path": {
+        ct.fillStyle = "rgba(0,0,255,0.2)";
+        const parsedPoly = geomService.svgPathToPolygon(node.d);
+        if (!parsedPoly) {
+          warn(`${filename}: failed to parse path.d data for node ${node.name}`);
+          break;
+        }
+        drawPolygons(ct, parsedPoly);
         break;
       }
     }

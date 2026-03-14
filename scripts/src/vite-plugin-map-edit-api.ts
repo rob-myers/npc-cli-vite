@@ -147,6 +147,7 @@ async function handleApiMapEditFile(
 
 export const MIRRORED_ALLOWED_MAP_EDIT_FOLDERS: typeof ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"];
 
+// 🚧 move outside so we can hot reload it
 function watchPathSvgs(server: ViteDevServer) {
   const manifestPath = path.join(PATH_DIR, "manifest.json");
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -204,33 +205,42 @@ function parseSvgForManifest(
   filename: string,
   key: string,
 ): { filename: string; key: string; pathCount: number; width: number; height: number } | null {
-  let width = 0;
-  let height = 0;
-  let pathCount = 0;
-  let depth = 0;
+  const meta = { width: 0, height: 0, pathCount: 0, depth: 0 };
+  const viewBoxRegex = /^0 0 (\d+) (\d+)$/;
 
   const parser = new Parser({
     onopentag(name, attrs) {
-      if (name === "svg" && depth === 0) {
-        width = parseInt(attrs.width, 10) || 0;
-        height = parseInt(attrs.height, 10) || 0;
+      if (name === "svg" && meta.depth === 0) {
+        // expect viewBox `0 0 {w} {h}`
+        const viewBox = attrs.viewBox || attrs.viewbox || ""; // ⚠️ parser forces lowercase "viewbox"
+        const matched = viewBox.match(viewBoxRegex);
+        if (matched) {
+          meta.width = parseInt(matched[1], 10) || 0;
+          meta.height = parseInt(matched[2], 10) || 0;
+        } else {
+          warn(
+            `[map-edit-api] SVG ${filename} expected viewBox format: "0 0 {w} {h}". Falling back to svg.{width,height}.`,
+          );
+          meta.width = parseInt(attrs.width, 10) || 0;
+          meta.height = parseInt(attrs.height, 10) || 0;
+        }
       }
-      if (name === "path" && depth === 1) {
-        pathCount++;
+      if (name === "path" && meta.depth === 1) {
+        meta.pathCount++;
       }
-      depth++;
+      meta.depth++;
     },
     onclosetag() {
-      depth--;
+      meta.depth--;
     },
   });
 
   parser.write(svgContent);
   parser.end();
 
-  if (width === 0 || height === 0) {
+  if (meta.width === 0 || meta.height === 0) {
     warn(`[map-edit-api] SVG ${filename} is missing valid width or height attributes. Skipping.`);
     return null;
   }
-  return { filename, key, pathCount, width, height };
+  return { filename, key, pathCount: meta.pathCount, width: meta.width, height: meta.height };
 }
