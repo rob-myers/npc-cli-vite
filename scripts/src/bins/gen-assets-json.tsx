@@ -78,7 +78,7 @@ perf("symbols/maps");
 perf("begin");
 
 // reparse ensures key-ordering
-const nextAssetsRaw = JSON.stringify(z.decode(AssetsSchema, assets), null, 2);
+const nextAssetsRaw = safeJsonCompact(z.encode(AssetsSchema, assets));
 
 if (prevAssetsRaw === nextAssetsRaw) {
   info(`${path.basename(import.meta.filename)}: no changes detected`);

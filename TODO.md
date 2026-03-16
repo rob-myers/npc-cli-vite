@@ -19,19 +19,11 @@
 
 - ✅ graphical representation of path nodes in thumbnail
 
-- can sync symbols in other instances?
-- with 2 instances open for same file, drafts will fight?
-- can "reset file" in dev/prod, cannot delete file in prod
-- remove MainMenu > Open
-- try deform limbs of blockbench model, saving as separate file
-- move path parsing code out of vite plugin file, to support hmr
-- warn if symbols "above" walls in symbol
-
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
   - ✅ start defining schema for `assets.json`
   - ✅ creates `public/assets.json` with symbol lookup
-  - 🚧 compute walls
+  - ✅ compute walls
   - 🚧 compute obstacles
   - 🚧 compute doors
   - ⚠️ some of it should run in browser
@@ -39,6 +31,7 @@
 
 - support `decor quad switch` via image node
   - image node browser includes decor section
+  - see geomorph.extractDecorPoly
 - can see floors in World
 - can see walls in World
 
@@ -56,6 +49,14 @@
 
 
 ## Long running
+
+- can sync symbols in other instances?
+- with 2 instances open for same file, drafts will fight?
+- can "reset file" in dev/prod, cannot delete file in prod
+- remove MainMenu > Open
+- try deform limbs of blockbench model, saving as separate file
+- move path parsing code out of vite plugin file, to support hmr
+- warn if symbols "above" walls in symbol
 
 - 🚧 migrate to `node:util` parseArgs i.e. discard `getopts`
 

@@ -75,6 +75,7 @@ export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 export type ImageMapNode = Pretty<Extract<MapNode, { type: "image" }>>;
+export type PathMapNode = Pretty<Extract<MapNode, { type: "path" }>>;
 export type SymbolMapNode = Pretty<Extract<MapNode, { type: "symbol" }>>;
 export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" | "path" }>;
 export type BaseRect = { width: number; height: number };
@@ -198,8 +199,8 @@ export const AssetsSymbolSchema = z.object({
   width: z.number(),
   height: z.number(),
   bounds: RectSchema,
+  walls: z.array(polyCodec),
   // 🚧
-  // walls: z.array(GeoJsonPolygonSchema),
 });
 
 export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
@@ -452,7 +453,7 @@ export function removeNodeFromParent(parentArray: MapNode[], childId: string) {
   return index;
 }
 
-export function filterNodes<T extends MapNode>(list: MapNode[], test: (el: MapNode) => el is T): T[] {
+export function filterNodes<T extends MapNode = MapNode>(list: MapNode[], test: (el: MapNode) => el is T): T[] {
   const output = [] as T[];
   for (const item of list) {
     if (test(item)) output.push(item);
