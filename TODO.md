@@ -31,6 +31,7 @@
 
 - 🚧 support image nodes with names `decor key={decorKey}`
   - ✅ sources are svgs in media/src/decor
+    - so far, some icons from https://github.com/phosphor-icons/core/tree/main/raw/duotone
   - vite plugin generates thumbnails
     - packages/media/src/decor/foo.svg -> packages/app/public/decor/foo.thumbnail.png
   - ✅ rename watch-symbols -> watch-assets
