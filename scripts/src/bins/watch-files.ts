@@ -1,28 +1,32 @@
 #!/usr/bin/env node --import=tsx
 
-// USAGE:
-// pnpm watch-files --globs='["packages/app/public/symbol/*.json"]' --pnpmBin=noop
+/**
+ * USAGE:
+ * ```sh
+ * pnpm -F scripts watch-assets
+ * ```
+ */
 
+import { parseArgs } from "node:util";
 import { error, info, safeJsonParse } from "@npc-cli/util/legacy/generic";
-//@ts-expect-error
-import getopts from "getopts";
 import nodemon, { type NodemonEventQuit } from "nodemon";
 import { PROJECT_ROOT } from "../const";
 import { labelledSpawn } from "../service/rename-starship-symbols";
 
-const opts = getopts(process.argv, { string: ["globs", "pnpmBin"] });
+const opts = parseArgs({
+  args: process.argv.slice(2),
+  options: { globs: { type: "string" }, pnpmBin: { type: "string" } },
+});
 
-const globs = safeJsonParse(opts.globs) as string[];
-if (!Array.isArray(globs) || globs.some((glob) => typeof glob !== "string")) {
+const globs = safeJsonParse(opts.values.globs ?? "");
+if (!Array.isArray(globs) || !globs.every((glob) => typeof glob === "string")) {
   error("Invalid --globs argument. Must be a JSON array of strings.");
   process.exit(1);
 }
 
-if (
-  !opts.pnpmBin ||
-  typeof opts.pnpmBin !== "string" ||
-  !/^[-a-z0-9]+$/.test(opts.pnpmBin as string)
-) {
+const pnpmBin = opts.values.pnpmBin;
+
+if (!pnpmBin || typeof pnpmBin !== "string" || !/^[-a-z0-9]+$/.test(pnpmBin)) {
   error("Invalid --pnpmBin argument. Must be a non-empty lowercase alphanumeric string.");
   process.exit(1);
 }
@@ -49,7 +53,7 @@ nodemon({
   .on("restart", onRestart)
   .on("quit", onQuit);
 
-info("watching symbols...");
+info("watching files...", globs);
 
 async function onRestart(nodemonFiles = [] as string[]) {
   nodemonFiles.forEach((file) => changed.set(file, Date.now()));
@@ -65,7 +69,7 @@ async function onRestart(nodemonFiles = [] as string[]) {
 
   // Run the script
   // console.log({ changedFiles });
-  await labelledSpawn(opts.pnpmBin, opts.pnpmBin, `--changedFiles=${JSON.stringify(changedFiles)}`);
+  await labelledSpawn(pnpmBin as string, pnpmBin as string, `--changedFiles=${JSON.stringify(changedFiles)}`);
 
   const seconds = ((Date.now() - startEpochMs) / 1000).toFixed(2);
   info(`took ${seconds}s`);

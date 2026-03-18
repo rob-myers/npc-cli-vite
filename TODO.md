@@ -29,11 +29,22 @@
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
-- support `decor quad switch` via image node
+- 🚧 support image nodes with names `decor key={decorKey}`
+  - ✅ sources are svgs in media/src/decor
+  - vite plugin generates thumbnails
+    - packages/media/src/decor/foo.svg -> packages/app/public/decor/foo.thumbnail.png
+  - ✅ rename watch-symbols -> watch-assets
   - image node browser includes decor section
-  - see geomorph.extractDecorPoly
+  - will support e.g.
+    - `decor quad key=switch` (textured quad)
+    - `decor cuboid color=#ff0` (vanilla cuboid)
+  - will generate spritesheets with meta json
+
 - can see floors in World
 - can see walls in World
+- extend existing symbols with missing
+  - decor
+  - obstacles
 
 - ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
