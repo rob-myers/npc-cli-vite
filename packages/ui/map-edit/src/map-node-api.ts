@@ -156,9 +156,22 @@ export const PathManifestSchema = z.object({
   byKey: z.record(z.string(), PathManifestEntrySchema),
 });
 
+export const DecorManifestEntrySchema = z.object({
+  key: z.string(),
+  filename: z.string(),
+  width: z.number(),
+  height: z.number(),
+});
+
+export const DecorManifestSchema = z.object({
+  modifiedAt: z.string(),
+  byKey: z.record(z.string(), DecorManifestEntrySchema),
+});
+
 export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
 export type PathManifest = z.infer<typeof PathManifestSchema>;
+export type DecorManifest = z.infer<typeof DecorManifestSchema>;
 
 //#endregion
 
