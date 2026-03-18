@@ -17,7 +17,7 @@
     "restart-on-fail": "./src/bins/restart-on-fail.sh"
   },
   "scripts": {
-    "watch-symbols": "pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-assets-json"
+    "watch-assets": "pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-assets-json"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",

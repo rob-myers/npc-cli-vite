@@ -123,5 +123,5 @@ Stuff I've noticed
 # Dev scripts
 
 ```sh
-pnpm -F scripts watch-symbols
+pnpm -F scripts watch-assets
 ```
