@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { type ALLOWED_MAP_EDIT_FOLDERS, isSavableFileType, MapEditFileSpecifierSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import {
+  type ALLOWED_MAP_EDIT_FOLDERS,
+  isSavableFileType,
+  MapEditFileSpecifierSchema,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
