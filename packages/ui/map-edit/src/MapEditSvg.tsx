@@ -3,7 +3,7 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import { baseSvgSize, findNode, getNodeBounds, type MapNode, type RectMapNode } from "./map-node-api";
+import { baseSvgSize, findNode, getNodeBounds, type ImageMapNode, type MapNode, type RectMapNode } from "./map-node-api";
 
 export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: string }) {
   const vbW = baseSvgSize / root.zoom;
@@ -11,11 +11,11 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
   const vbX = (baseSvgSize - vbW) / 2 - root.pan.x / root.zoom;
   const vbY = (baseSvgSize - vbH) / 2 - root.pan.y / root.zoom;
 
-  const resizableRectNode = useMemo(() => {
+  const resizableNode = useMemo(() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
     const [node] = findNode(root.nodes, selectedId);
-    return node?.type === "rect" ? node : null;
+    return node?.type === "rect" || node?.type === "image" ? node : null;
   }, [root.selectedIds]);
 
   return (
@@ -46,7 +46,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
           className="pointer-events-none"
         />
       )}
-      {resizableRectNode && <RectResizeHandles selectedNode={resizableRectNode} root={root} />}
+      {resizableNode && <ResizeHandles selectedNode={resizableNode} root={root} />}
     </svg>
   );
 }
@@ -192,9 +192,12 @@ const handleToCursor: Record<ResizeHandle, string> = {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-function RectResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode; root: UseStateRef<State> }) {
+const cornerHandles = new Set<ResizeHandle>(["nw", "ne", "se", "sw"]);
+
+function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
   const rect = getNodeBounds(selectedNode);
   const handleSize = (4 * resizeHandleSize) / root.zoom;
+  const isImage = selectedNode.type === "image";
   return (
     <g>
       <rect
@@ -205,22 +208,24 @@ function RectResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode; 
         strokeWidth={2 / root.zoom}
         className="stroke-blue-700 fill-none"
       />
-      {resizeHandles.map(({ handle, getPos }) => {
-        const pos = getPos(rect);
-        return (
-          <rect
-            key={handle}
-            data-resize-handle={handle}
-            x={pos.x - handleSize / 2}
-            y={pos.y - handleSize / 2}
-            width={handleSize}
-            height={handleSize}
-            stroke="rgba(100, 100, 100, 1)"
-            strokeWidth={2 / root.zoom}
-            className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
-          />
-        );
-      })}
+      {resizeHandles
+        .filter(({ handle }) => !isImage || cornerHandles.has(handle))
+        .map(({ handle, getPos }) => {
+          const pos = getPos(rect);
+          return (
+            <rect
+              key={handle}
+              data-resize-handle={handle}
+              x={pos.x - handleSize / 2}
+              y={pos.y - handleSize / 2}
+              width={handleSize}
+              height={handleSize}
+              stroke="rgba(100, 100, 100, 1)"
+              strokeWidth={2 / root.zoom}
+              className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
+            />
+          );
+        })}
     </g>
   );
 }

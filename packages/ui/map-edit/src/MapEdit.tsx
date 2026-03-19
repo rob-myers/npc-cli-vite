@@ -650,12 +650,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         state.update();
       },
-      translateSelected(dx, dy) {
+      translateSelected(dx, dy, snapToGrid) {
+        const increment = Math.abs(dx || dy);
         for (const id of state.selectedIds) {
           const [node] = findNode(state.nodes, id);
           if (isNodeTransformable(node)) {
-            node.transform.e += dx;
-            node.transform.f += dy;
+            if (snapToGrid && increment > 0) {
+              node.transform.e = snap(node.transform.e + dx, increment);
+              node.transform.f = snap(node.transform.f + dy, increment);
+            } else {
+              node.transform.e += dx;
+              node.transform.f += dy;
+            }
             node.cssTransform = computeNodeCssTransform(node);
           }
         }
@@ -847,7 +853,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             if (state.selectedIds.size !== 1) return;
             const [selectedId] = state.selectedIds;
             const [node] = findNode(state.nodes, selectedId);
-            if (node?.type !== "rect") return;
+            if (node?.type !== "rect" && node?.type !== "image") return;
 
             const dx = svgPos.x - startSvg.x;
             const dy = svgPos.y - startSvg.y;
@@ -856,15 +862,26 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             const isW = handle.includes("w");
             const isN = handle.includes("n");
 
-            if (handle.includes("e") || isW) {
+            if (node.type === "image") {
+              // uniform scaling: derive scale factor from width only
               const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)), increment);
-              baseRect.width = newWidth;
+              const scale = newWidth / startBounds.width;
+              const newHeight = startBounds.height * scale;
+              transform.a = startTransform.a * scale;
+              transform.d = startTransform.d * scale;
               transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth, increment) : startTransform.e;
-            }
-            if (handle.includes("n") || handle.includes("s")) {
-              const newHeight = snap(Math.max(increment, startBounds.height + (isN ? -dy : dy)), increment);
-              baseRect.height = newHeight;
               transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight, increment) : startTransform.f;
+            } else {
+              if (handle.includes("e") || isW) {
+                const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)), increment);
+                baseRect.width = newWidth;
+                transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth, increment) : startTransform.e;
+              }
+              if (handle.includes("n") || handle.includes("s")) {
+                const newHeight = snap(Math.max(increment, startBounds.height + (isN ? -dy : dy)), increment);
+                baseRect.height = newHeight;
+                transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight, increment) : startTransform.f;
+              }
             }
 
             node.cssTransform = computeNodeCssTransform(node);
@@ -924,7 +941,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
         const [node] = findNode(state.nodes, selectedId);
-        if (node?.type !== "rect") return;
+        if (node?.type !== "rect" && node?.type !== "image") return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const { transform, baseRect } = node;
@@ -1233,6 +1250,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.translateSelected(
             e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0,
             e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0,
+            e.shiftKey,
           );
         }
         return;
@@ -1547,7 +1565,7 @@ export type State = {
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
-  translateSelected: (dx: number, dy: number) => void;
+  translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier) => void;
   load: (file?: MapEditFileSpecifier) => Promise<void>;
