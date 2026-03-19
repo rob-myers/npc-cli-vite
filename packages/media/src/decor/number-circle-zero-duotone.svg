@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
-  <g transform="matrix(0.234375, 0, 0, 0.234375, 0, 0)">
-    <rect width="256" height="256" fill="none"/>
+  <g transform="matrix(0.302083, 0, 0, 0.302083, -8.666656, -8.666656)">
     <circle cx="128" cy="128" r="96" opacity="0.2"/>
-    <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="16"/>
+    <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-miterlimit="10" style="stroke-width: 6.6207px;"/>
     <ellipse cx="128" cy="128" rx="36" ry="48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
   </g>
 </svg>

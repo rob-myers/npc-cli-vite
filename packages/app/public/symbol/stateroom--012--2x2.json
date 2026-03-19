@@ -30,6 +30,73 @@
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     },
     {
+      "id": "b7f45d3e-70bf-4ac0-956b-58a985bd3d13",
+      "name": "symbols",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "type": "group",
+      "children": [
+        {
+          "id": "c4f32744-0e39-41f1-8899-633617ac2cf3",
+          "name": "console--051--0.4x0.61",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -0.7071067811865476,
+            "b": 0.7071067811865476,
+            "c": -0.7071067811865476,
+            "d": -0.7071067811865476,
+            "e": 42,
+            "f": 99
+          },
+          "type": "symbol",
+          "srcKey": "console--051--0.4x0.6",
+          "baseRect": {
+            "width": 30,
+            "height": 30
+          },
+          "offset": {
+            "x": 1,
+            "y": -1
+          },
+          "cssTransform": "matrix(-0.7071067811865476, 0.7071067811865476, -0.7071067811865476, -0.7071067811865476, 43, 98)"
+        },
+        {
+          "id": "f8cc7abb-9469-4e13-961d-be2e1e6d08f1",
+          "name": "bed--003--1x1.61",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 1,
+            "f": -1
+          },
+          "type": "symbol",
+          "srcKey": "bed--003--1x1.6",
+          "baseRect": {
+            "width": 100,
+            "height": 60
+          },
+          "offset": {
+            "x": -0.7,
+            "y": 0.7
+          },
+          "cssTransform": "matrix(1, 0, 0, 1, 0.30000000000000004, -0.30000000000000004)"
+        }
+      ]
+    },
+    {
       "id": "97c92355-8ddc-4a72-9fef-2d9a171510a1",
       "name": "wall",
       "locked": false,
@@ -108,56 +175,6 @@
         "height": 4
       },
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
-    },
-    {
-      "id": "c4f32744-0e39-41f1-8899-633617ac2cf3",
-      "name": "console--051--0.4x0.61",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -0.7071067811865476,
-        "b": 0.7071067811865476,
-        "c": -0.7071067811865476,
-        "d": -0.7071067811865476,
-        "e": 42,
-        "f": 99
-      },
-      "type": "symbol",
-      "srcKey": "console--051--0.4x0.6",
-      "baseRect": {
-        "width": 30,
-        "height": 30
-      },
-      "offset": {
-        "x": 1,
-        "y": -1
-      },
-      "cssTransform": "matrix(-0.7071067811865476, 0.7071067811865476, -0.7071067811865476, -0.7071067811865476, 43, 98)"
-    },
-    {
-      "id": "f8cc7abb-9469-4e13-961d-be2e1e6d08f1",
-      "name": "bed--003--1x1.61",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 1,
-        "f": -1
-      },
-      "type": "symbol",
-      "srcKey": "bed--003--1x1.6",
-      "baseRect": {
-        "width": 100,
-        "height": 60
-      },
-      "offset": {
-        "x": -0.7,
-        "y": 0.7
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, 0.30000000000000004, -0.30000000000000004)"
     },
     {
       "id": "e28651d9-f8d8-4a75-a0b1-7cba0a870c4c",

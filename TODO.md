@@ -39,19 +39,19 @@
   - ✅ BUG watching decor outside packages/app
     - ✅ `public/decor` is a symlink to `media/src/decor`
     - ✅ vite plugin watches `public/decor/*.svg` and generates manifest
-  - refine decor images
-    - convention for decor image sizes
-    - can resize image nodes
+  - ✅ refine decor images
+    - ✅ convention for decor image sizes: icons 60x60
+    - ✅ can resize image nodes
   - will support e.g.
     - `decor quad key=switch` (textured quad)
     - `decor cuboid color=#ff0` (vanilla cuboid)
   - will generate spritesheets with meta json
 
-- can see floors in World
-- can see walls in World
-- extend existing symbols with missing
+- 🚧 extend existing symbols with missing
   - decor
   - obstacles
+- can see floors in World
+- can see walls in World
 
 - ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
