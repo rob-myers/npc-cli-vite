@@ -71,16 +71,18 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   await traverseNodesAsync(nodes, async (node) => {
     if (!isNodeTransformable(node)) return;
 
+    // transform about top-left
+    const [a, b, c, d, tx, ty] = new Mat(node.cssTransform).toArray();
     ct.setTransform(scale, 0, 0, scale, 0, 0);
-    ct.transform(...new Mat(node.cssTransform).toArray());
-    ct.translate(-bounds.x, -bounds.y);
+    ct.translate(tx - bounds.x, ty - bounds.y);
+    ct.transform(a, b, c, d, 0, 0);
 
     switch (node.type) {
       case "image":
       case "symbol": {
         if (isHullSymbol) break; // avoid large hull thumbnails
-
         const image = await loadImage(getImageOrSymbolNodeImageUrl(node, isMap));
+
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         ct.globalAlpha = 1;
