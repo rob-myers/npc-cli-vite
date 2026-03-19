@@ -93,6 +93,8 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
+#### ⚠️ Boxy: transformed shapes may not be rendered correctly by `skia-canvas`. Convert to path and reduce transform seem to fix it.
+
 #### ⚠️ Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
 
 #### ⚠️ Blockbench import GLTF seems to cache file unless you "X it and rechoose"
