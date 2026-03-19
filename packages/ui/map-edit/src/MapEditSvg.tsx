@@ -69,7 +69,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <image
             key={node.id}
             data-node-id={node.id}
-            href={`/starship-symbol/${node.srcKey}.png`}
+            href={node.srcType === "decor" ? `/decor/${node.srcKey}.svg` : `/starship-symbol/${node.srcKey}.png`}
             x={0}
             y={0}
             width={baseRect.width}

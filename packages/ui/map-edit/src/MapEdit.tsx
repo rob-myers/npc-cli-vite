@@ -29,7 +29,7 @@ import { useBeforeunload } from "react-beforeunload";
 import z from "zod";
 import { queryClientApi } from "../../../cli/src/shell/query-client";
 import { FileMenu } from "./FileMenu";
-import { ImagePickerModal } from "./ImagePickerModal";
+import { ImagePickerModal, type ImagePickerSelection } from "./ImagePickerModal";
 import { InspectorNode } from "./InspectorNode";
 import { MainMenu } from "./MainMenu";
 import { MapEditSvg } from "./MapEditSvg";
@@ -38,6 +38,8 @@ import {
   type BaseRect,
   baseSvgSize,
   computeNodeCssTransform,
+  type DecorManifest,
+  DecorManifestSchema,
   defaultSymbolKey,
   devMessageFromServer,
   extendCurrentFileSpecifierMapping,
@@ -156,6 +158,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       mapsManifest: null,
       symbolsManifest: null,
       pathManifest: null,
+      decorManifest: null,
 
       pickImageForId: null,
       pickSymbolForId: null,
@@ -420,6 +423,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             return {
               ...baseProps,
               type: "image" as const,
+              srcType: node.srcType,
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
               offset: { ...node.offset },
@@ -671,27 +675,42 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       onCancelEdit() {
         state.set({ editingId: null });
       },
-      setImageKey(nodeId, imageKey) {
+      setImageKey(nodeId, selection) {
         state.set({ pickImageForId: null });
 
         const [node] = findNode(state.nodes, nodeId) ?? {};
-        const meta = state.pngsManifest?.byKey[imageKey];
-        if (!(node?.type === "image" && meta)) return;
+        if (!(node?.type === "image")) return;
 
-        node.srcKey = imageKey;
+        if (selection.type === "decor") {
+          const meta = state.decorManifest?.byKey[selection.key];
+          if (!meta) return;
 
-        // scale down so 1 sgu ~ 60px
-        // BUT hull-symbol pngs are already scaled down (in original source)
-        const scaleFactor = isHullSymbolImageKey(imageKey) ? 1 : sguScalePngToSvgFactor;
-        node.offset.x = labelledImageOffsetValue.halfLineWidth;
-        node.offset.y = labelledImageOffsetValue.halfLineWidth;
+          node.srcType = "decor";
+          node.srcKey = selection.key;
+          node.offset.x = labelledImageOffsetValue.halfLineWidth;
+          node.offset.y = labelledImageOffsetValue.halfLineWidth;
+          node.baseRect.width = meta.width;
+          node.baseRect.height = meta.height;
+        } else {
+          const imageKey = selection.key;
+          const meta = state.pngsManifest?.byKey[imageKey];
+          if (!meta) return;
 
-        node.baseRect.width = meta.width * scaleFactor;
-        node.baseRect.height = meta.height * scaleFactor;
+          node.srcType = "symbol";
+          node.srcKey = selection.key;
+          // scale down so 1 sgu ~ 60px
+          // BUT hull-symbol pngs are already scaled down (in original source)
+          const scaleFactor = isHullSymbolImageKey(imageKey) ? 1 : sguScalePngToSvgFactor;
+          node.offset.x = labelledImageOffsetValue.halfLineWidth;
+          node.offset.y = labelledImageOffsetValue.halfLineWidth;
+          node.baseRect.width = meta.width * scaleFactor;
+          node.baseRect.height = meta.height * scaleFactor;
+        }
+
         node.cssTransform = computeNodeCssTransform(node);
 
         if (node.name.match(/^(Image \d+)$/)) {
-          node.name = state.getNextName("image", `${imageKey} `);
+          node.name = state.getNextName("image", `${selection.key} `);
         }
 
         state.update();
@@ -1100,16 +1119,17 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     }
   }, []);
 
-  [state.pngsManifest, state.symbolsManifest, state.mapsManifest, state.pathManifest] = useQuery({
+  [state.pngsManifest, state.symbolsManifest, state.mapsManifest, state.pathManifest, state.decorManifest] = useQuery({
     queryKey: ["map-edit-manifests"],
     queryFn: async () => {
       const pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
       const symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);
       const mapsManifest = await fetchParsed("/map/manifest.json", MapsManifestSchema);
       const pathManifest = await fetchParsed("/path/manifest.json", PathManifestSchema);
-      return [pngsManifest, symbolsManifest, mapsManifest, pathManifest] as const;
+      const decorManifest = await fetchParsed("/decor/manifest.json", DecorManifestSchema);
+      return [pngsManifest, symbolsManifest, mapsManifest, pathManifest, decorManifest] as const;
     },
-  }).data ?? [null, null, null, null];
+  }).data ?? [null, null, null, null, null];
 
   useEffect(() => {
     state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
@@ -1366,11 +1386,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             state.set({ pickImageForId: null });
           }
         }}
-        onSelect={(imageKey) => {
+        onSelect={(selection) => {
           if (state.pickImageForId) {
-            state.setImageKey(state.pickImageForId, imageKey);
+            state.setImageKey(state.pickImageForId, selection);
           }
         }}
+        decorManifest={state.decorManifest}
       />
 
       <SymbolPickerModalMemo
@@ -1475,6 +1496,7 @@ export type State = {
   mapsManifest: MapsManifest | null;
   symbolsManifest: SymbolsManifest | null;
   pathManifest: PathManifest | null;
+  decorManifest: DecorManifest | null;
 
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
@@ -1500,7 +1522,7 @@ export type State = {
   onRename: (id: string, newName: string) => void;
   onStartEdit: (id: string) => void;
   onCancelEdit: () => void;
-  setImageKey: (nodeId: string, imageKey: StarshipSymbolImageKey) => void;
+  setImageKey: (nodeId: string, selection: ImagePickerSelection) => void;
   setSymbolKey: (nodeId: string, symbolKey: StarshipSymbolImageKey) => void;
   addPaths: (paths: ParsedPath[]) => void;
   createNode: <T extends MapNodeType>(type: T) => MapNodeMap[T];
