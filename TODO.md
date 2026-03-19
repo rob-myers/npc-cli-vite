@@ -49,6 +49,8 @@
 
 - 🚧 extend existing symbols with missing
   - ✅ stateroom-012 🚧 ...
+  - ✅ BUG thumbnail wrong for transformed decor: origin?
+    - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
   - decor 
   - obstacles
 - can see floors in World

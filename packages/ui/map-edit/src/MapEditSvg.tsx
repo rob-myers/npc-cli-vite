@@ -3,7 +3,14 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
 import type { ResizeHandle, State } from "./MapEdit";
-import { baseSvgSize, findNode, getNodeBounds, type ImageMapNode, type MapNode, type RectMapNode } from "./map-node-api";
+import {
+  baseSvgSize,
+  findNode,
+  getNodeBounds,
+  type ImageMapNode,
+  type MapNode,
+  type RectMapNode,
+} from "./map-node-api";
 
 export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: string }) {
   const vbW = baseSvgSize / root.zoom;
@@ -78,6 +85,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0",
+              "origin-top-left",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
               node.locked === true && "pointer-events-none opacity-25",
             )}
