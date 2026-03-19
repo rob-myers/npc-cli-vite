@@ -1,5 +1,5 @@
 {
-  "modifiedAt": "2026-03-19T13:22:57.191Z",
+  "modifiedAt": "2026-03-19T14:11:26.171Z",
   "byKey": {
     "arrow-square-right-duotone": {
       "key": "arrow-square-right-duotone",
@@ -10,14 +10,14 @@
     "number-circle-one-duotone": {
       "key": "number-circle-one-duotone",
       "filename": "number-circle-one-duotone.svg",
-      "width": 256,
-      "height": 256
+      "width": 60,
+      "height": 60
     },
     "number-circle-zero-duotone": {
       "key": "number-circle-zero-duotone",
       "filename": "number-circle-zero-duotone.svg",
-      "width": 256,
-      "height": 256
+      "width": 60,
+      "height": 60
     }
   }
 }
