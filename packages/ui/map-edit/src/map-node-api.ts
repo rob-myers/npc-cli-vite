@@ -50,7 +50,8 @@ export const MapNodeSchema = z.union([
   }),
   BaseNodeSchema.extend({
     type: z.literal("image"),
-    srcKey: StarShipSymbolImageKeySchema.nullable(),
+    srcType: z.enum(["symbol", "decor"]).default("symbol"),
+    srcKey: z.string().nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     offset: PointSchema,
     cssTransform: z.string(),
@@ -258,6 +259,7 @@ export const templateNodeByKey = {
   image: {
     ...mockBaseNode,
     type: "image",
+    srcType: "symbol" as const,
     srcKey: null,
     baseRect: defaultBaseRect,
     offset: defaultPoint,

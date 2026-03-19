@@ -2,27 +2,36 @@ import { Dialog } from "@base-ui/react/dialog";
 import { type StarshipSymbolGroup, type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
+import { keys } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
+import type { DecorManifest } from "./map-node-api";
+
+export type ImagePickerSelection = { type: "symbol"; key: StarshipSymbolImageKey } | { type: "decor"; key: string };
 
 export function ImagePickerModal({
   open,
   onOpenChange,
   onSelect,
+  decorManifest,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (imageKey: StarshipSymbolImageKey) => void;
+  onSelect: (selection: ImagePickerSelection) => void;
+  decorManifest: DecorManifest | null;
 }) {
   const state = useStateRef(() => {
     const groups = Object.entries(symbolByGroup);
-    const savedGroup = localStorage.getItem(localStorageKey);
+    const savedSection = localStorage.getItem(localStorageKey);
     const firstGroup = (groups[0]?.[0] ?? null) as StarshipSymbolGroup | null;
     return {
       groups,
-      expandedGroup: savedGroup && savedGroup in symbolByGroup ? savedGroup : firstGroup,
+      expandedSection:
+        savedSection && (savedSection === decorSectionKey || savedSection in symbolByGroup) ? savedSection : firstGroup,
       loadedImages: new Set<string>(),
     };
   });
+
+  const decorKeys = decorManifest ? Object.keys(decorManifest.byKey) : [];
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -44,35 +53,81 @@ export function ImagePickerModal({
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
+            {decorKeys.length > 0 && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  className="w-full text-left text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 hover:text-slate-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    const next = state.expandedSection === decorSectionKey ? null : decorSectionKey;
+                    state.expandedSection = next;
+                    if (next !== null) localStorage.setItem(localStorageKey, next);
+                    state.update();
+                  }}
+                >
+                  decor ({decorKeys.length})
+                </button>
+
+                {state.expandedSection === decorSectionKey && (
+                  <div
+                    ref={(el) => el?.scrollIntoView({ block: "center", behavior: "smooth" })}
+                    className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
+                  >
+                    {decorKeys.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="aspect-square bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
+                        onClick={() => {
+                          onSelect({ type: "decor", key });
+                          onOpenChange(false);
+                        }}
+                        title={key}
+                      >
+                        <img
+                          src={`/decor/${key}.thumbnail.png`}
+                          alt={key}
+                          className={cn("size-full object-contain bg-white", !state.loadedImages.has(key) && "hidden")}
+                          onLoad={() => {
+                            state.loadedImages.add(key);
+                            state.update();
+                          }}
+                        />
+                        {!state.loadedImages.has(key) && <Spinner />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {state.groups.map(([group, symbols]) => (
               <div key={group} className="mb-4">
                 <button
                   type="button"
                   className="w-full text-left text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 hover:text-slate-200 transition-colors cursor-pointer"
                   onClick={() => {
-                    const next = state.expandedGroup === group ? null : group;
-                    state.expandedGroup = next;
-                    if (next !== null) {
-                      localStorage.setItem(localStorageKey, next);
-                    }
+                    const next = state.expandedSection === group ? null : group;
+                    state.expandedSection = next;
+                    if (next !== null) localStorage.setItem(localStorageKey, next);
                     state.update();
                   }}
                 >
                   {group} ({Object.keys(symbols).length})
                 </button>
 
-                {state.expandedGroup === group && (
+                {state.expandedSection === group && (
                   <div
                     ref={(el) => el?.scrollIntoView({ block: "center", behavior: "smooth" })}
                     className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
                   >
-                    {Object.keys(symbols).map((imageKey) => (
+                    {keys(symbols).map((imageKey) => (
                       <button
                         key={imageKey}
                         type="button"
                         className="aspect-square bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
                         onClick={() => {
-                          onSelect(imageKey as StarshipSymbolImageKey);
+                          onSelect({ type: "symbol", key: imageKey });
                           onOpenChange(false);
                         }}
                         title={imageKey}
@@ -85,9 +140,7 @@ export function ImagePickerModal({
                             state.loadedImages.add(imageKey);
                             state.update();
                           }}
-                          // loading="lazy"
                         />
-
                         {!state.loadedImages.has(imageKey) && <Spinner />}
                       </button>
                     ))}
@@ -103,3 +156,4 @@ export function ImagePickerModal({
 }
 
 const localStorageKey = "imagePickerModal.lastSection";
+const decorSectionKey = "__decor__";

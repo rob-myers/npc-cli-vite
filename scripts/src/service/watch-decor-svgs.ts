@@ -37,6 +37,7 @@ export function watchDecorSvgs(server: ViteDevServer) {
     if (!isDecorSvg(filePath)) return;
     const key = path.basename(filePath, ".svg");
     fs.promises.unlink(path.join(DECOR_PUBLIC_DIR, `${key}.thumbnail.png`)).catch(() => {});
+    fs.promises.unlink(path.join(DECOR_PUBLIC_DIR, `${key}.svg`)).catch(() => {});
     rebuild();
   });
 
@@ -66,6 +67,7 @@ async function rebuildDecor() {
       height: dims.height,
     });
 
+    fs.copyFileSync(filePath, path.join(DECOR_PUBLIC_DIR, filename));
     await generateThumbnail(key, filePath);
   }
 

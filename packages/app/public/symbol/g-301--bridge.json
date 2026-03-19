@@ -17,6 +17,7 @@
         "f": -20
       },
       "type": "image",
+      "srcType": "symbol",
       "srcKey": "g-301--bridge",
       "baseRect": {
         "width": 1212,

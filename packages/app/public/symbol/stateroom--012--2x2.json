@@ -17,6 +17,7 @@
         "f": 0
       },
       "type": "image",
+      "srcType": "symbol",
       "srcKey": "stateroom--012--2x2",
       "baseRect": {
         "width": 126.60000000000001,
