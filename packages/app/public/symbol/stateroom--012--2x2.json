@@ -187,14 +187,40 @@
         "c": 0,
         "d": 1,
         "e": 115,
-        "f": 68
+        "f": 67.5
       },
       "type": "rect",
       "baseRect": {
         "width": 10,
         "height": 45
       },
-      "cssTransform": "matrix(1, 0, 0, 1, 115, 68)"
+      "cssTransform": "matrix(1, 0, 0, 1, 115, 67.5)"
+    },
+    {
+      "id": "5bb54664-a075-459e-9294-793426dd6ebd",
+      "name": "label 1",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0.5833333333333334,
+        "b": 0,
+        "c": 0,
+        "d": 0.5833333333333334,
+        "e": 50,
+        "f": 75
+      },
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {
+        "width": 60,
+        "height": 20
+      },
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "cssTransform": "matrix(0.5833333333333334, 0, 0, 0.5833333333333334, 50, 75)"
     }
   ],
   "bounds": {

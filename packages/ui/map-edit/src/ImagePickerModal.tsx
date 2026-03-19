@@ -87,7 +87,10 @@ export function ImagePickerModal({
                         <img
                           src={`/decor/${key}.thumbnail.png`}
                           alt={key}
-                          className={cn("size-full object-contain bg-white", !state.loadedImages.has(key) && "hidden")}
+                          className={cn(
+                            "size-full object-contain bg-[repeating-linear-gradient(-45deg,white_0,white_10px,#dde_10px,#dde_20px)]",
+                            !state.loadedImages.has(key) && "hidden",
+                          )}
                           onLoad={() => {
                             state.loadedImages.add(key);
                             state.update();

@@ -1,7 +1,12 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
-import type { MapEditFileSpecifier, MapEditSavedFile } from "@npc-cli/ui__map-edit/map-node-api";
+import type {
+  ImageMapNode,
+  MapEditFileSpecifier,
+  MapEditSavedFile,
+  SymbolMapNode,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import {
   isNodeTransformable,
   MapEditMapFileSpecifierSchema,
@@ -24,6 +29,14 @@ import { PROJECT_ROOT } from "../const.ts";
 
 export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
   await ensureManifests(fileSpecifier.type, { changedFiles: [], removedFiles: [fileSpecifier] });
+}
+
+function getImageOrSymbolNodeImageUrl(node: ImageMapNode | SymbolMapNode, isMap: boolean) {
+  return isMap // avoid large map thumbnails
+    ? path.resolve(PROJECT_ROOT, "packages/app/public/symbol", `${node.srcKey}.thumbnail.png`)
+    : node.type === "image" && node.srcType === "decor"
+      ? path.resolve(PROJECT_ROOT, "packages/app/public/decor", `${node.srcKey}.svg`)
+      : path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`);
 }
 
 /**
@@ -67,11 +80,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       case "symbol": {
         if (isHullSymbol) break; // avoid large hull thumbnails
 
-        const image = await loadImage(
-          isMap // avoid large map thumbnails
-            ? path.resolve(PROJECT_ROOT, "packages/app/public/symbol", `${node.srcKey}.thumbnail.png`)
-            : path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`),
-        );
+        const image = await loadImage(getImageOrSymbolNodeImageUrl(node, isMap));
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
         ct.globalAlpha = 1;
