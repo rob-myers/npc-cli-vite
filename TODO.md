@@ -35,7 +35,13 @@
   - ✅ vite plugin generates thumbnails
     - packages/media/src/decor/foo.svg -> packages/app/public/decor/foo.thumbnail.png
   - ✅ rename watch-symbols -> watch-assets
-  - 🚧 image node browser includes decor section
+  - ✅ image node browser includes decor section
+  - ✅ BUG watching decor outside packages/app
+    - ✅ `public/decor` is a symlink to `media/src/decor`
+    - ✅ vite plugin watches `public/decor/*.svg` and generates manifest
+  - refine decor images
+    - convention for decor image sizes
+    - can resize image nodes
   - will support e.g.
     - `decor quad key=switch` (textured quad)
     - `decor cuboid color=#ff0` (vanilla cuboid)

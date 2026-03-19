@@ -1,10 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  type DecorManifest,
-  DecorManifestEntrySchema,
-  DecorManifestSchema,
-} from "@npc-cli/ui__map-edit/map-node-api";
+import { type DecorManifest, DecorManifestEntrySchema, DecorManifestSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import { Canvas, loadImage } from "skia-canvas";
@@ -12,7 +8,8 @@ import type { ViteDevServer } from "vite";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 
-const DECOR_SRC_DIR = path.join(PROJECT_ROOT, "packages/media/src/decor");
+// ⚠️ vite didn't watch files outside packages/app, despite vite.config fs server.allow config
+// DECOR_PUBLIC_DIR is actually a symlink to packages/media/src/decor
 const DECOR_PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public/decor");
 const MANIFEST_PATH = path.join(DECOR_PUBLIC_DIR, "manifest.json");
 
@@ -30,7 +27,7 @@ export function watchDecorSvgs(server: ViteDevServer) {
     }, 200);
   };
 
-  server.watcher.add(path.join(DECOR_SRC_DIR, "*.svg"));
+  server.watcher.add(path.join(DECOR_PUBLIC_DIR, "*.svg"));
   server.watcher.on("add", (filePath) => isDecorSvg(filePath) && rebuild());
   server.watcher.on("change", (filePath) => isDecorSvg(filePath) && rebuild());
   server.watcher.on("unlink", (filePath) => {
@@ -46,11 +43,11 @@ export function watchDecorSvgs(server: ViteDevServer) {
 }
 
 function isDecorSvg(filePath: string) {
-  return filePath.startsWith(DECOR_SRC_DIR) && filePath.endsWith(".svg");
+  return filePath.startsWith(DECOR_PUBLIC_DIR) && filePath.endsWith(".svg");
 }
 
 async function rebuildDecor() {
-  const svgFiles = fs.globSync(path.join(DECOR_SRC_DIR, "*.svg"));
+  const svgFiles = fs.globSync(path.join(DECOR_PUBLIC_DIR, "*.svg"));
   const byKey: DecorManifest["byKey"] = {};
 
   for (const filePath of svgFiles) {
@@ -67,7 +64,6 @@ async function rebuildDecor() {
       height: dims.height,
     });
 
-    fs.copyFileSync(filePath, path.join(DECOR_PUBLIC_DIR, filename));
     await generateThumbnail(key, filePath);
   }
 
@@ -84,10 +80,7 @@ async function rebuildDecor() {
   info(`[watch-decor] rebuilt manifest.json`);
 }
 
-function parseSvgDimensions(
-  svgContent: string,
-  filename: string,
-): { width: number; height: number } | null {
+function parseSvgDimensions(svgContent: string, filename: string): { width: number; height: number } | null {
   const meta = { width: 0, height: 0, depth: 0 };
   const viewBoxRegex = /^0 0 (\d+) (\d+)$/;
 
