@@ -408,7 +408,7 @@ export function insertNodeAt(srcNode: MapNode, dstArray: MapNode[], dstChildId: 
 }
 
 export function isNodeReflectable(node: MapNode | null): node is TransformableMapNode {
-  return node !== null && (node.type === "symbol" || node.type === "path");
+  return node !== null && (node.type === "symbol" || node.type === "image" || node.type === "path");
 }
 
 export function isNodeTransformable(node: MapNode | null): node is TransformableMapNode {

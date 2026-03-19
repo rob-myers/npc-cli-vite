@@ -48,7 +48,8 @@
   - will generate spritesheets with meta json
 
 - 🚧 extend existing symbols with missing
-  - decor
+  - ✅ stateroom-012 🚧 ...
+  - decor 
   - obstacles
 - can see floors in World
 - can see walls in World
