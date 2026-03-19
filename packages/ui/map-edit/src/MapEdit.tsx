@@ -55,7 +55,6 @@ import {
   isNodeReflectable,
   isNodeTransformable,
   LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
-  labelledImageOffsetValue,
   type MapEditFileSpecifier,
   type MapEditSavedFile,
   MapEditSavedFileSchema,
@@ -687,8 +686,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
           node.srcType = "decor";
           node.srcKey = selection.key;
-          node.offset.x = labelledImageOffsetValue.halfLineWidth;
-          node.offset.y = labelledImageOffsetValue.halfLineWidth;
+          node.offset.x = 0;
+          node.offset.y = 0;
           node.baseRect.width = meta.width;
           node.baseRect.height = meta.height;
         } else {
@@ -701,8 +700,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           // scale down so 1 sgu ~ 60px
           // BUT hull-symbol pngs are already scaled down (in original source)
           const scaleFactor = isHullSymbolImageKey(imageKey) ? 1 : sguScalePngToSvgFactor;
-          node.offset.x = labelledImageOffsetValue.halfLineWidth;
-          node.offset.y = labelledImageOffsetValue.halfLineWidth;
+          node.offset.x = 0;
+          node.offset.y = 0;
           node.baseRect.width = meta.width * scaleFactor;
           node.baseRect.height = meta.height * scaleFactor;
         }
