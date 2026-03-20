@@ -17,7 +17,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
   const { type } = state.currentFile;
 
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-0.5 min-w-0">
       <Menu.Root>
         <Menu.Trigger
           className={cn(
@@ -97,12 +97,12 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
       <Select.Trigger
         className={cn(
           uiClassName,
-          "flex w-30 line-clamp-1 gap-1 items-center text-sm truncate cursor-pointer hover:text-on-background min-w-0",
+          "flex flex-1 gap-1 items-center text-sm truncate cursor-pointer hover:text-on-background min-w-0",
           "text-on-background/80 rounded-xs",
           state.isDirty && "italic",
         )}
       >
-        <Select.Value placeholder="Select symbol..." />
+        <Select.Value className="truncate" placeholder="Select symbol..." />
       </Select.Trigger>
 
       <Select.Portal>
