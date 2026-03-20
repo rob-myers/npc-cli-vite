@@ -207,6 +207,18 @@ export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
   encode: (poly) => poly.geoJson,
 });
 
+export const AssetsSubSymbolSchema = z.object({
+  symbolKey: StarShipSymbolImageKeySchema,
+  /** Original width (Starship Symbols coordinates i.e. 60 ~ 1 grid) */
+  width: z.number(),
+  /** Original height (Starship Symbols coordinates i.e. 60 ~ 1 grid) */
+  height: z.number(),
+  transform: AffineTransformSchema,
+  meta: z.record(z.string(), z.any()),
+});
+
+export type AssetsSubSymbol = z.infer<typeof AssetsSubSymbolSchema>;
+
 export const AssetsSymbolSchema = z.object({
   key: StarShipSymbolImageKeySchema,
   isHull: z.boolean(),
@@ -217,6 +229,7 @@ export const AssetsSymbolSchema = z.object({
   doors: z.array(polyCodec),
   obstacles: z.array(polyCodec),
   walls: z.array(polyCodec),
+  symbols: z.array(AssetsSubSymbolSchema),
   // 🚧
 });
 

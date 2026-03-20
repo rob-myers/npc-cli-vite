@@ -28,16 +28,36 @@ export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
   };
 }
 
+export function parseMapEditSubSymbol(node: SymbolMapNode, meta: Meta): Geomorph.SubSymbol | null {
+  return node.srcKey === null
+    ? null
+    : {
+        symbolKey: node.srcKey,
+        width: node.baseRect.width,
+        height: node.baseRect.height,
+        transform: node.transform,
+        meta,
+      };
+}
+
 export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
   const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
 
   const walls: Geomorph.Symbol["walls"] = [];
   const obstacles: Geomorph.Symbol["obstacles"] = [];
   const doors: Geomorph.Symbol["doors"] = [];
-  // 🚧
+  const symbols: Geomorph.Symbol["symbols"] = [];
+  // 🚧 ...
 
   for (const node of allNodes) {
-    const meta = tagsToMeta(textToTags(node.name));
+    const ownTags = textToTags(node.name);
+    const meta = tagsToMeta(ownTags);
+
+    if (node.type === "symbol") {
+      const subSymbol = parseMapEditSubSymbol(node, meta);
+      subSymbol !== null && symbols.push(subSymbol);
+    }
+
     const poly = mapNodeToPoly(node);
     if (poly !== null) {
       meta.door === true && doors.push(poly);
@@ -56,7 +76,8 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
     doors,
     obstacles,
     walls,
-    // 🚧
+    symbols,
+    // 🚧 ...
   };
 }
 

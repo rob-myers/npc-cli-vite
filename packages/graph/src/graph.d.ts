@@ -214,25 +214,25 @@ declare namespace Graph {
 
   // //#endregion
 
-  // //#region SymbolGraph
+  //#region SymbolGraph
 
-  // interface SymbolGraphNode {
-  //   id: Key.Symbol;
-  // }
+  interface SymbolGraphNode {
+    id: Key.Symbol;
+  }
 
-  // interface SymbolGraphEdgeOpts extends BaseEdgeOpts {
-  //   transform: Geom.SixTuple;
-  //   meta: Meta;
-  // }
+  interface SymbolGraphEdgeOpts extends BaseEdgeOpts {
+    transform: Geom.SixTuple;
+    meta: Meta;
+  }
 
-  // type SymbolGraphJson = GraphJson<SymbolGraphNode, SymbolGraphEdgeOpts> & {
-  //   /** e.g. `"20,20"` */
-  //   size?: string;
-  //   /** e.g. `"LR"` */
-  //   rankdir?: string;
-  // };
+  type SymbolGraphJson = GraphJson<SymbolGraphNode, SymbolGraphEdgeOpts> & {
+    /** e.g. `"20,20"` */
+    size?: string;
+    /** e.g. `"LR"` */
+    rankdir?: string;
+  };
 
-  // //#endregion
+  //#endregion
 
   interface AStarNode {
     astar: {

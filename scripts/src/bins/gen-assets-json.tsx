@@ -1,9 +1,9 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * 🚧 WIP
- * - `parsed` -- symbol key to geometry/metadata
- * - `stratified` -- stratified directed graph
+ * WIP
+ * - 🚧 `parsed` -- symbol key to geometry/metadata
+ * - 🚧 `stratified` -- stratified directed graph
  * - `flattened` -- symbol key to unwound symbols (includes hull symbols)
  *
  * USAGE:
