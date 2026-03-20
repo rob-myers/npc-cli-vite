@@ -536,8 +536,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const { width: W, height: H } = node.baseRect;
           const [cx, cy] = [W / 2, H / 2];
           const { a, b, c, d, e, f } = node.transform;
+          // negate rotation when reflected (det < 0) so direction stays consistent
+          const det = a * d - b * c;
+          const degrees = det < 0 ? -deltaDegrees : deltaDegrees;
           const m = new DOMMatrix([a, b, c, d, e, f]);
-          m.translateSelf(cx, cy).rotateSelf(deltaDegrees).translateSelf(-cx, -cy);
+          m.translateSelf(cx, cy).rotateSelf(degrees).translateSelf(-cx, -cy);
           Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
           node.cssTransform = computeNodeCssTransform(node);
         }
@@ -863,14 +866,29 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             const isN = handle.includes("n");
 
             if (node.type === "image") {
-              // uniform scaling: derive scale factor from width only
-              const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)), increment);
-              const scale = newWidth / startBounds.width;
-              const newHeight = startBounds.height * scale;
-              transform.a = startTransform.a * scale;
-              transform.d = startTransform.d * scale;
-              transform.e = isW ? snap(startBounds.x + startBounds.width - newWidth, increment) : startTransform.e;
-              transform.f = isN ? snap(startBounds.y + startBounds.height - newHeight, increment) : startTransform.f;
+              // project drag delta onto image's local x-axis
+              const axisLen = Math.sqrt(startTransform.a ** 2 + startTransform.b ** 2);
+              const axisX = startTransform.a / axisLen;
+              const axisY = startTransform.b / axisLen;
+              const projectedDelta = dx * axisX + dy * axisY;
+
+              // uniform scaling: use actual image width (not AABB)
+              const { baseRect: startBaseRect } = state.dragEl;
+              const startWidth = startBaseRect.width * axisLen;
+              const newWidth = snap(Math.max(increment, startWidth + (isW ? -projectedDelta : projectedDelta)), increment);
+              const k = newWidth / startWidth;
+
+              // scale all matrix components uniformly (preserves rotation)
+              transform.a = startTransform.a * k;
+              transform.b = startTransform.b * k;
+              transform.c = startTransform.c * k;
+              transform.d = startTransform.d * k;
+
+              // anchor the opposite corner: local coords of anchor point
+              const anchorX = isW ? startBaseRect.width : 0;
+              const anchorY = isN ? startBaseRect.height : 0;
+              transform.e = startTransform.e + (startTransform.a * anchorX + startTransform.c * anchorY) * (1 - k);
+              transform.f = startTransform.f + (startTransform.b * anchorX + startTransform.d * anchorY) * (1 - k);
             } else {
               if (handle.includes("e") || isW) {
                 const newWidth = snap(Math.max(increment, startBounds.width + (isW ? -dx : dx)), increment);
@@ -940,8 +958,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       startResizeRect(e, handle) {
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
+
         const [node] = findNode(state.nodes, selectedId);
-        if (node?.type !== "rect" && node?.type !== "image") return;
+        if (!node) return;
+
+        // can only resize "rect" and decor "image"
+        if (!(node.type === "rect" || (node.type === "image" && node.srcType === "decor"))) {
+          return;
+        }
+
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
         const { transform, baseRect } = node;

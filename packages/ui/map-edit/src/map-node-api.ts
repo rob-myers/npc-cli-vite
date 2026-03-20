@@ -415,7 +415,7 @@ export function isNodeTransformable(node: MapNode | null): node is Transformable
   return node !== null && node.type !== "group";
 }
 
-const namePreservesRegexes = ["wall", "door", "obstacle"].map((type) => new RegExp(`^${type}(\\s|$)`));
+const namePreservesRegexes = ["wall", "door", "obstacle", "decor"].map((type) => new RegExp(`^${type}(\\s|$)`));
 
 export function shouldUseOriginalName(node: MapNode): boolean {
   return node.type === "symbol" || node.type === "path" || namePreservesRegexes.some((re) => re.test(node.name));
