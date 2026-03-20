@@ -7,6 +7,8 @@
   },
   "scripts": {},
   "dependencies": {
+    "@npc-cli/util": "workspace:^",
+    "chalk": "catalog:",
     "zod": "catalog:"
   }
 }
