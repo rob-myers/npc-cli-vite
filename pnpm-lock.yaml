@@ -392,6 +392,12 @@ importers:
         specifier: 'catalog:'
         version: 2.1.5
 
+  packages/graph:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
+
   packages/media:
     dependencies:
       '@npc-cli/util':
@@ -408,6 +414,12 @@ importers:
         version: link:../util
       zod:
         specifier: ^4.1.13
+        version: 4.1.13
+
+  packages/template:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
         version: 4.1.13
 
   packages/theme:

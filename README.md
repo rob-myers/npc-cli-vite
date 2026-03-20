@@ -125,5 +125,9 @@ Stuff I've noticed
 # Dev scripts
 
 ```sh
+pnpm gen-ui
+
+pnpm gen-pkg
+
 pnpm -F scripts watch-assets
 ```
