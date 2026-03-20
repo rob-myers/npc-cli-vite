@@ -24,8 +24,8 @@
   - ✅ start defining schema for `assets.json`
   - ✅ creates `public/assets.json` with symbol lookup
   - ✅ compute walls
-  - 🚧 compute obstacles
-  - 🚧 compute doors
+  - ✅ compute obstacles
+  - ✅ compute doors
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
@@ -47,12 +47,10 @@
     - `decor cuboid color=#ff0` (vanilla cuboid)
   - will generate spritesheets with meta json
 
-- 🚧 extend existing symbols with missing
+- 🚧 extend existing symbols with missing decor/obstacle
   - ✅ stateroom-012 🚧 ...
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
-  - decor 
-  - obstacles
 - can see floors in World
 - can see walls in World
 
