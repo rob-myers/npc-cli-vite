@@ -15,6 +15,7 @@
     { "path": "./packages/ui/jsh" },
     { "path": "./packages/ui/tabs" },
     { "path": "./packages/ui/template" },
-    { "path": "./packages/ui/world" }
+    { "path": "./packages/ui/world" },
+    { "path": "./packages/graph" }
   ]
 }

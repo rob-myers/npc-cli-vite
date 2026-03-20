@@ -68,6 +68,15 @@ await Promise.all([
   }),
 ]);
 
+// Add reference to root tsconfig.json
+const rootTsconfigPath = join(PROJECT_ROOT, "tsconfig.json");
+const rootTsconfig = JSON.parse(readFileSync(rootTsconfigPath, "utf8"));
+const newRef = { path: `./${packageDirectory}` };
+if (!rootTsconfig.references.some((r: { path: string }) => r.path === newRef.path)) {
+  rootTsconfig.references.push(newRef);
+  await writeFile(rootTsconfigPath, `${JSON.stringify(rootTsconfig, null, 2)}\n`, "utf8");
+}
+
 console.log("✅ Scaffolding done!");
 
 sh("pnpm install");
