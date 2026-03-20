@@ -19,6 +19,8 @@
 
 - ✅ graphical representation of path nodes in thumbnail
 
+- ✅ `pnpm gen-pkg`
+
 - 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
   - ✅ start defining schema for `assets.json`
@@ -26,6 +28,10 @@
   - ✅ compute walls
   - ✅ compute obstacles
   - ✅ compute doors
+  - 🚧 towards symbol flattening
+    - 🚧 packages/graph migrated from npc-cli-next
+    - 🚧 describe previous strategy
+    - create stratified graph
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
