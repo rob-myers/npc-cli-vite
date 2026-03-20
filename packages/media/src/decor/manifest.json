@@ -1,5 +1,5 @@
 {
-  "modifiedAt": "2026-03-19T17:09:24.968Z",
+  "modifiedAt": "2026-03-20T09:48:15.201Z",
   "byKey": {
     "arrow-square-right-duotone": {
       "key": "arrow-square-right-duotone",
@@ -10,8 +10,8 @@
     "label": {
       "key": "label",
       "filename": "label.svg",
-      "width": 60,
-      "height": 20
+      "width": 40,
+      "height": 15
     },
     "number-circle-one-duotone": {
       "key": "number-circle-one-duotone",
