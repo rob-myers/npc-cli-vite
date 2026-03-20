@@ -213,6 +213,9 @@ export const AssetsSymbolSchema = z.object({
   width: z.number(),
   height: z.number(),
   bounds: RectSchema,
+
+  doors: z.array(polyCodec),
+  obstacles: z.array(polyCodec),
   walls: z.array(polyCodec),
   // 🚧
 });

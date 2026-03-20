@@ -77,7 +77,7 @@ for (const file of changedFiles) {
 perf("symbols/maps");
 perf("begin");
 
-// reparse ensures key-ordering
+// reparse via z.encode ensures key-ordering
 const nextAssetsRaw = safeJsonCompact(z.encode(AssetsSchema, assets));
 
 if (prevAssetsRaw === nextAssetsRaw) {

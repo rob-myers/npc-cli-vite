@@ -32,12 +32,16 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
   const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
 
   const walls: Geomorph.Symbol["walls"] = [];
+  const obstacles: Geomorph.Symbol["obstacles"] = [];
+  const doors: Geomorph.Symbol["doors"] = [];
   // 🚧
 
   for (const node of allNodes) {
     const meta = tagsToMeta(textToTags(node.name));
     const poly = mapNodeToPoly(node);
     if (poly !== null) {
+      meta.door === true && doors.push(poly);
+      meta.obstacle === true && obstacles.push(poly);
       meta.wall === true && walls.push(poly);
     }
   }
@@ -48,6 +52,9 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
     width: savedFile.width,
     height: savedFile.height,
     bounds: savedFile.bounds,
+
+    doors,
+    obstacles,
     walls,
     // 🚧
   };
