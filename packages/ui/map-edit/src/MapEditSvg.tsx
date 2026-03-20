@@ -22,7 +22,9 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
     const [node] = findNode(root.nodes, selectedId);
-    return node?.type === "rect" || node?.type === "image" ? node : null;
+    if (!node) return null;
+    if (node.type === "rect" || (node.type === "image" && node.srcType === "decor")) return node;
+    return null;
   }, [root.selectedIds]);
 
   return (
@@ -200,26 +202,26 @@ const handleToCursor: Record<ResizeHandle, string> = {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-const cornerHandles = new Set<ResizeHandle>(["nw", "ne", "se", "sw"]);
-
 function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
-  const rect = getNodeBounds(selectedNode);
   const handleSize = (4 * resizeHandleSize) / root.zoom;
-  const isImage = selectedNode.type === "image";
-  return (
-    <g>
-      <rect
-        x={rect.x}
-        y={rect.y}
-        width={rect.width}
-        height={rect.height}
-        strokeWidth={2 / root.zoom}
-        className="stroke-blue-700 fill-none"
-      />
-      {resizeHandles
-        .filter(({ handle }) => !isImage || cornerHandles.has(handle))
-        .map(({ handle, getPos }) => {
-          const pos = getPos(rect);
+
+  if (selectedNode.type === "image") {
+    // Rotated UI: compute transformed corners from cssTransform
+    const { width: w, height: h } = selectedNode.baseRect;
+    const { a, b, c, d, e, f } = new DOMMatrix(selectedNode.cssTransform);
+    const tp = (x: number, y: number) => ({ x: a * x + c * y + e, y: b * x + d * y + f });
+    const nw = tp(0, 0);
+    const ne = tp(w, 0);
+    const se = tp(w, h);
+    const sw = tp(0, h);
+    const corners = { nw, ne, se, sw };
+    const points = `${nw.x},${nw.y} ${ne.x},${ne.y} ${se.x},${se.y} ${sw.x},${sw.y}`;
+
+    return (
+      <g>
+        <polygon points={points} strokeWidth={2 / root.zoom} className="stroke-blue-700 fill-none" />
+        {(["nw", "ne", "se", "sw"] as const).map((handle) => {
+          const pos = corners[handle];
           return (
             <rect
               key={handle}
@@ -230,10 +232,42 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
               height={handleSize}
               stroke="rgba(100, 100, 100, 1)"
               strokeWidth={2 / root.zoom}
-              className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
+              className="stroke-white fill-blue-700 cursor-auto"
             />
           );
         })}
+      </g>
+    );
+  }
+
+  // Axis-aligned UI for rect nodes
+  const rect = getNodeBounds(selectedNode);
+  return (
+    <g>
+      <rect
+        x={rect.x}
+        y={rect.y}
+        width={rect.width}
+        height={rect.height}
+        strokeWidth={2 / root.zoom}
+        className="stroke-blue-700 fill-none"
+      />
+      {resizeHandles.map(({ handle, getPos }) => {
+        const pos = getPos(rect);
+        return (
+          <rect
+            key={handle}
+            data-resize-handle={handle}
+            x={pos.x - handleSize / 2}
+            y={pos.y - handleSize / 2}
+            width={handleSize}
+            height={handleSize}
+            stroke="rgba(100, 100, 100, 1)"
+            strokeWidth={2 / root.zoom}
+            className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
+          />
+        );
+      })}
     </g>
   );
 }
