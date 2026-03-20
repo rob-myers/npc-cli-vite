@@ -29,8 +29,9 @@
   - ✅ compute obstacles
   - ✅ compute doors
   - 🚧 towards symbol flattening
-    - 🚧 packages/graph migrated from npc-cli-next
-    - 🚧 describe previous strategy
+    - ✅ packages/graph migrated from npc-cli-next
+      - base-graph and Graph namespace
+    - ✅ assets.json symbols have sub-symbols
     - create stratified graph
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod

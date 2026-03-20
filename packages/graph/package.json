@@ -8,6 +8,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/util": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
     "chalk": "catalog:",
     "zod": "catalog:"
   }
