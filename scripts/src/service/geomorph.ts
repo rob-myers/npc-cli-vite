@@ -12,6 +12,22 @@ import "@npc-cli/ui__world/geomorph.d.ts";
 import { geomService, Mat, Poly } from "@npc-cli/util";
 import { tagsToMeta, textToTags } from "@npc-cli/util/legacy/generic";
 
+function mapNodeToPoly(node: MapNode): Poly | null {
+  if (node.type === "rect") {
+    const { a, b, c, d, e, f } = node.transform;
+    const mat = new Mat([a, b, c, d, e, f]);
+    return Poly.fromRect({ x: 0, y: 0, ...node.baseRect }).applyMatrix(mat);
+  }
+
+  if (node.type === "path") {
+    const { a, b, c, d, e, f } = node.transform;
+    const mat = new Mat([a, b, c, d, e, f]);
+    return geomService.svgPathToPolygon(node.d)?.applyMatrix(mat) ?? null;
+  }
+
+  return null;
+}
+
 export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
   type GeomorphNode = SymbolMapNode & { srcKey: GeomorphKey };
   const geomorphNodes = filterNodes(
@@ -79,20 +95,4 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
     symbols,
     // 🚧 ...
   };
-}
-
-function mapNodeToPoly(node: MapNode): Poly | null {
-  if (node.type === "rect") {
-    const { a, b, c, d, e, f } = node.transform;
-    const mat = new Mat([a, b, c, d, e, f]);
-    return Poly.fromRect({ x: 0, y: 0, ...node.baseRect }).applyMatrix(mat);
-  }
-
-  if (node.type === "path") {
-    const { a, b, c, d, e, f } = node.transform;
-    const mat = new Mat([a, b, c, d, e, f]);
-    return geomService.svgPathToPolygon(node.d)?.applyMatrix(mat) ?? null;
-  }
-
-  return null;
 }
