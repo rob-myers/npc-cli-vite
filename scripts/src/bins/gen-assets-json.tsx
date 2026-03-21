@@ -44,7 +44,7 @@ const changedFiles = (
   ])
 ).filter((filePath) => path.basename(filePath) !== "manifest.json");
 
-perf("begin");
+perf("total");
 info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles.map((f) => path.basename(f)))}`);
 
 const assetsJsonPath = path.resolve("packages/app/public", "assets.json");
@@ -96,7 +96,7 @@ for (const level of symbolsStratified) {
 assets.flattened = flattened;
 perf("flatten symbols");
 
-perf("begin");
+perf("total");
 
 // reparse via z.encode ensures key-ordering
 const nextAssetsRaw = safeJsonCompact(z.encode(AssetsSchema, assets));
