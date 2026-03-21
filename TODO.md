@@ -28,15 +28,21 @@
   - ✅ compute walls
   - ✅ compute obstacles
   - ✅ compute doors
-  - 🚧 towards symbol flattening
+  - ✅ towards symbol flattening
     - ✅ packages/graph migrated from npc-cli-next
       - base-graph and Graph namespace
     - ✅ assets.json symbols have sub-symbols
-    - create stratified graph
+    - ✅ create stratified graph
+    - ✅ migrate `instantiateFlatSymbol` ignoring optional doors/walls
+      - should 1st store `transform` from decor image node in `decor.meta.transform`
+      - decor quads will be transforms of sub-quads of textures
+      - decor cuboids will be transforms of base instanced cuboid
+    - ✅ can see flattened symbols in assets.json
+  - 🚧 script should be watching (currently manually running `pnpm gen-assets-json`)
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
-- 🚧 support image nodes with names `decor key={decorKey}`
+- ✅ support image nodes with names `decor key={decorKey}`
   - ✅ sources are svgs in media/src/decor
     - so far, some icons from https://github.com/phosphor-icons/core/tree/main/raw/duotone
   - ✅ vite plugin generates thumbnails
@@ -54,12 +60,11 @@
     - `decor cuboid color=#ff0` (vanilla cuboid)
   - will generate spritesheets with meta json
 
-- 🚧 extend existing symbols with missing decor/obstacle
-  - ✅ stateroom-012 🚧 ...
-  - ✅ BUG thumbnail wrong for transformed decor: origin?
-    - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
-- can see floors in World
-- can see walls in World
+- 🚧 can see walls in World (first approximation)
+- 🚧 can see floors in World (first approximation)
+- symbols can have optional door supported by instantiateFlatSymbol
+  - e.g. office--001--2x2
+- symbol can have optional wall supported by instantiateFlatSymbol
 
 - ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
@@ -76,10 +81,15 @@
 
 ## Long running
 
+- 🚧 extend existing symbols with missing decor/obstacle
+  - ✅ stateroom-012 🚧 ...
+  - ✅ BUG thumbnail wrong for transformed decor: origin?
+    - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
+
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
 - can "reset file" in dev/prod, cannot delete file in prod
-- remove MainMenu > Open
+- 🚧 remove MainMenu > Open
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
