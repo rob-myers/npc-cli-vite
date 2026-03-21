@@ -202,8 +202,31 @@ export const symbolByGroup = {
 export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
 export const StarShipSymbolImageKeySchema = z.literal(Object.values(symbolByGroup).flatMap((group) => keys(group)));
-
 export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;
+
+export const StarShipGeomorphKeySchema = z.literal([
+  ...keys(symbolByGroup["geomorph-core"]),
+  ...keys(symbolByGroup["geomorph-edge"]),
+]);
+export type StarShipGeomorphKey = z.infer<typeof StarShipGeomorphKeySchema>;
+
+export function isHullSymbolImageKey(imageKey: StarshipSymbolImageKey): imageKey is StarShipGeomorphKey {
+  return imageKey.startsWith("g-");
+}
+
+type ExtractGeomorphNumber<T extends string> = T extends `g-${infer N}--${string}`
+  ? N extends `${infer D extends number}`
+    ? D
+    : never
+  : never;
+export type StarshipGeomorphNumber = ExtractGeomorphNumber<StarShipGeomorphKey>;
+export const StarShipGeomorphNumberSchema = z.literal(
+  [...keys(symbolByGroup["geomorph-core"]), ...keys(symbolByGroup["geomorph-edge"])].map(getGeomorphNumber),
+);
+/** g-101--multipurpose -> g-101 -> 101 */
+export function getGeomorphNumber(gmKey: StarShipGeomorphKey): StarshipGeomorphNumber {
+  return Number(gmKey.split("--")[0].slice(2)) as StarshipGeomorphNumber;
+}
 
 export const StarshipSymbolPngsManifestSchema = z.object({
   modifiedAt: z.string(),
@@ -216,7 +239,6 @@ export const StarshipSymbolPngsManifestSchema = z.object({
     }),
   ),
 });
-
 export type StarshipSymbolPngsManifest = z.infer<typeof StarshipSymbolPngsManifestSchema>;
 
 /**
@@ -224,7 +246,3 @@ export type StarshipSymbolPngsManifest = z.infer<typeof StarshipSymbolPngsManife
  * - 1 sgu ~ 60x60 SVG units
  */
 export const sguScalePngToSvgFactor = 0.2;
-
-export function isHullSymbolImageKey(imageKey: StarshipSymbolImageKey): boolean {
-  return imageKey.startsWith("g-");
-}

@@ -17,9 +17,10 @@ import fs, { writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { SymbolGraph } from "@npc-cli/graph";
+import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { AssetsSchema, type AssetsType, MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { entries, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import * as geomorph from "../service/geomorph";
@@ -54,6 +55,7 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
   map: {},
   symbol: {},
   flattened: {},
+  layout: {},
 };
 
 perf("symbols/maps");
@@ -95,6 +97,15 @@ for (const level of symbolsStratified) {
 }
 assets.flattened = flattened;
 perf("flatten symbols");
+
+perf("create layouts");
+for (const [symbolKey, flat] of entries(assets.flattened)) {
+  if (!isHullSymbolImageKey(symbolKey)) continue;
+  // 🚧
+  const layout = geomorph.createLayout(symbolKey, flat, assets);
+  assets.layout[symbolKey] = layout;
+}
+perf("create layouts");
 
 perf("total");
 
