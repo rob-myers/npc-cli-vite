@@ -6,7 +6,7 @@ catalog:
   '@atlaskit/pragmatic-drag-and-drop': ^1.7.7
   '@atlaskit/pragmatic-drag-and-drop-hitbox': ^1.1.0
   '@base-ui/react': 1.1.0
-  '@biomejs/biome': ^2.3.11
+  '@biomejs/biome': ^2.4.8
   '@dragdroptouch/drag-drop-touch': ^2.0.3
   '@gltf-transform/core': ^4.3.0
   '@gltf-transform/extensions': ^4.3.0
@@ -24,8 +24,8 @@ catalog:
   '@thednp/dommatrix': ^3.0.2
   '@types/braces': ^3.0.5
   '@types/earcut': ^3.0.0
-  '@types/node': ^24.10.4
-  '@types/react': ^19.2.7
+  '@types/node': ^24.12.0
+  '@types/react': ^19.2.14
   '@types/react-beforeunload': 2.1.5
   '@types/react-dom': ^19.2.3
   '@types/react-resizable': ^3.0.8

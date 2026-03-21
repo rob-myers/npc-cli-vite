@@ -217,7 +217,7 @@ declare namespace Graph {
   //#region SymbolGraph
 
   interface SymbolGraphNode {
-    id: Key.Symbol;
+    id: import("@npc-cli/media/starship-symbol").StarshipSymbolImageKey;
   }
 
   interface SymbolGraphEdgeOpts extends BaseEdgeOpts {

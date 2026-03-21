@@ -11,5 +11,8 @@
     "@npc-cli/ui__world": "workspace:^",
     "chalk": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@npc-cli/media": "workspace:^"
   }
 }
