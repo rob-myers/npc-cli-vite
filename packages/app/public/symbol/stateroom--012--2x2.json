@@ -198,7 +198,7 @@
     },
     {
       "id": "c0892ada-95e6-485a-9bb2-80ce3e101d71",
-      "name": "decor key=switch",
+      "name": "decor quad key=switch",
       "locked": false,
       "visible": true,
       "transform": {
@@ -224,7 +224,7 @@
     },
     {
       "id": "6385ff42-5768-490a-a6c5-b7be92e97c43",
-      "name": "decor key=switch inner",
+      "name": "decor quad key=switch inner",
       "locked": false,
       "visible": true,
       "transform": {

@@ -16,6 +16,7 @@
 import fs, { writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { SymbolGraph } from "@npc-cli/graph";
 import { AssetsSchema, type AssetsType, MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
@@ -44,7 +45,7 @@ const changedFiles = (
 ).filter((filePath) => path.basename(filePath) !== "manifest.json");
 
 perf("begin");
-info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles)}`);
+info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles.map((f) => path.basename(f)))}`);
 
 const assetsJsonPath = path.resolve("packages/app/public", "assets.json");
 const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(warn);
@@ -52,10 +53,10 @@ const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(
 const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw).data ?? {
   map: {},
   symbol: {},
+  flattened: {},
 };
 
 perf("symbols/maps");
-
 for (const file of changedFiles) {
   const symRes = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
   if (!symRes.success) {
@@ -73,8 +74,28 @@ for (const file of changedFiles) {
     assets.map[mapDef.key] = mapDef;
   }
 }
-
 perf("symbols/maps");
+
+perf("stratify symbols");
+const symbolGraph = SymbolGraph.from(assets.symbol);
+const symbolsStratified = symbolGraph.stratify();
+perf("stratify symbols");
+
+perf("flatten symbols");
+const flattened: AssetsType["flattened"] = {};
+for (const level of symbolsStratified) {
+  for (const { id: symbolKey } of level) {
+    const symbol = assets.symbol[symbolKey];
+    if (symbol) {
+      geomorph.flattenSymbol(symbol, flattened);
+    } else {
+      warn(`Symbol ${symbolKey} not found in assets.symbol`);
+    }
+  }
+}
+assets.flattened = flattened;
+perf("flatten symbols");
+
 perf("begin");
 
 // reparse via z.encode ensures key-ordering

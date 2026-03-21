@@ -50,7 +50,7 @@ export const MapNodeSchema = z.union([
   }),
   BaseNodeSchema.extend({
     type: z.literal("image"),
-    srcType: z.enum(["symbol", "decor"]).default("symbol"),
+    srcType: z.literal(["symbol", "decor"]).default("symbol"),
     srcKey: z.string().nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     offset: PointSchema,
@@ -76,6 +76,7 @@ export type MapNodeType = MapNode["type"];
 export type RectMapNode = Pretty<Extract<MapNode, { type: "rect" }>>;
 export type GroupMapNode = Pretty<Extract<MapNode, { type: "group" }>>;
 export type ImageMapNode = Pretty<Extract<MapNode, { type: "image" }>>;
+export type DecorImageMapNode = Pretty<ImageMapNode & { srcType: "decor" }>;
 export type PathMapNode = Pretty<Extract<MapNode, { type: "path" }>>;
 export type SymbolMapNode = Pretty<Extract<MapNode, { type: "symbol" }>>;
 export type TransformableMapNode = Extract<MapNode, { type: "rect" | "image" | "symbol" | "path" }>;
@@ -83,6 +84,10 @@ export type BaseRect = { width: number; height: number };
 export type Transform = z.infer<typeof AffineTransformSchema>;
 export type MapNodeByType<T extends MapNodeType> = Pretty<Extract<MapNode, { type: T }>>;
 export type MapNodeMap = { [T in MapNodeType]: MapNodeByType<T> };
+
+export function isDecorImageMapNode(node: MapNode): node is DecorImageMapNode {
+  return node.type === "image" && node.srcType === "decor";
+}
 
 export const SymbolKeySchema = StarShipSymbolImageKeySchema;
 export const SymbolJsonFilenameSchema = z.templateLiteral([SymbolKeySchema, ".json"]);
@@ -195,7 +200,7 @@ export const GeoJsonPolygonSchema = z.object({
    * the others define non-nested _holes_.
    */
   coordinates: z.array(z.array(CoordSchema)),
-  meta: z.record(z.string(), z.string()),
+  meta: z.record(z.string(), z.any()),
 });
 
 export type GeoJsonPolygon = z.infer<typeof GeoJsonPolygonSchema>;
@@ -206,6 +211,23 @@ export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
   decode: (geoJson) => Poly.from(geoJson),
   encode: (poly) => poly.geoJson,
 });
+
+export const AssetsFlatSymbolSchema = z.object({
+  key: StarShipSymbolImageKeySchema,
+  isHull: z.boolean(),
+  width: z.number(),
+  height: z.number(),
+  bounds: RectSchema,
+
+  decor: z.array(polyCodec),
+  doors: z.array(polyCodec),
+  obstacles: z.array(polyCodec),
+  walls: z.array(polyCodec),
+  // 🚧
+});
+export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;
+
+export type SymbolPolysKey = keyof Omit<AssetsFlatSymbol, "key" | "isHull" | "width" | "height" | "bounds">;
 
 export const AssetsSubSymbolSchema = z.object({
   symbolKey: StarShipSymbolImageKeySchema,
@@ -219,18 +241,8 @@ export const AssetsSubSymbolSchema = z.object({
 
 export type AssetsSubSymbol = z.infer<typeof AssetsSubSymbolSchema>;
 
-export const AssetsSymbolSchema = z.object({
-  key: StarShipSymbolImageKeySchema,
-  isHull: z.boolean(),
-  width: z.number(),
-  height: z.number(),
-  bounds: RectSchema,
-
-  doors: z.array(polyCodec),
-  obstacles: z.array(polyCodec),
-  walls: z.array(polyCodec),
+export const AssetsSymbolSchema = AssetsFlatSymbolSchema.extend({
   symbols: z.array(AssetsSubSymbolSchema),
-  // 🚧
 });
 
 export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
@@ -250,6 +262,7 @@ export type AssetsMapDef = z.infer<typeof AssetsMapDefSchema>;
 export const AssetsSchema = z.object({
   symbol: z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema),
   map: z.partialRecord(MapKeySchema, AssetsMapDefSchema),
+  flattened: z.partialRecord(StarShipSymbolImageKeySchema, AssetsFlatSymbolSchema),
 });
 
 export type AssetsType = z.infer<typeof AssetsSchema>;
