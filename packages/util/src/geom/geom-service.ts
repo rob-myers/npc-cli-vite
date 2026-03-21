@@ -99,6 +99,24 @@ class GeomService {
   }
 
   /**
+   * Join disjoint triangulations
+   */
+  joinTriangulations(triangulations: Geom.Triangulation[]): Geom.Triangulation & { tOffsets: number[] } {
+    const vs: Vect[] = [];
+    const tris: [number, number, number][] = [];
+    const tOffsets: number[] = [];
+    let vOffset = 0;
+
+    for (const decomp of triangulations) {
+      vs.push(...decomp.vs);
+      tOffsets.push(tris.length);
+      tris.push(...decomp.tris.map((tri) => tri.map((x) => (x += vOffset)) as [number, number, number]));
+      vOffset += decomp.vs.length;
+    }
+    return { vs, tris, tOffsets };
+  }
+
+  /**
    * Convert a polygonal rectangle back into a `Rect` and `angle` s.t.
    * - rectangle needs to be rotated about its "top-left point" `(x, y)`.
    * - rectangle `width` is greater than or equal to its `height`.

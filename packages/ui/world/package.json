@@ -4,7 +4,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./geomorph.d.ts": "./src/geomorph.d.ts"
+    "./geomorph.d.ts": "./src/geomorph.d.ts",
+    "./connector": "./src/Connector.ts",
+    "./const": "./src/const.ts"
   },
   "scripts": {},
   "dependencies": {

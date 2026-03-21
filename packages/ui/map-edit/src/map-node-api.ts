@@ -4,6 +4,7 @@ import {
   StarShipSymbolImageKeySchema,
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
+import { Connector } from "@npc-cli/ui__world/connector";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Poly, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
@@ -303,9 +304,16 @@ export const DecorDefSchema = z.discriminatedUnion("type", [
 ]);
 export type DecorDef = z.infer<typeof DecorDefSchema>;
 
+export const TriangulationSchema = z.object({
+  vs: z.array(PointSchema),
+  tris: z.array(z.tuple([z.number(), z.number(), z.number()])),
+});
+
 //#endregion
 
 //#region assets schemas
+
+export const ConnectorSchema = z.instanceof(Connector);
 
 export const GeoJsonPolygonSchema = z.object({
   type: z.literal("Polygon"),
@@ -333,10 +341,10 @@ export const AssetsFlatSymbolSchema = z.object({
   decor: z.array(polyCodec),
   doors: z.array(polyCodec),
   obstacles: z.array(polyCodec),
+  unsorted: z.array(polyCodec),
   /** All walls including hull walls */
   walls: z.array(polyCodec),
   windows: z.array(polyCodec),
-  // 🚧
 });
 export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;
 export type SymbolPolysKey = keyof Omit<AssetsSymbol, "key" | "isHull" | "width" | "height" | "bounds" | "symbols">;
@@ -361,7 +369,7 @@ export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
 
 export const GeomorphLayoutObstacleSchema = z.object({
   /** The `symbol` the obstacle originally comes from */
-  symbolKey: StarShipGeomorphKeySchema,
+  symbolKey: StarShipSymbolImageKeySchema,
   /** The index in `symbol.obstacles` this obstacle corresponds to */
   obstacleId: z.number(),
   /** The height of this particular instance */
@@ -375,6 +383,7 @@ export const GeomorphLayoutObstacleSchema = z.object({
   /** Shortcut to `origPoly.meta` */
   meta: MetaSchema,
 });
+export type GeomorphLayoutObstacle = z.infer<typeof GeomorphLayoutObstacleSchema>;
 
 export const GeomorphLayoutSchema = z.object({
   key: StarShipGeomorphKeySchema,
@@ -382,10 +391,19 @@ export const GeomorphLayoutSchema = z.object({
   bounds: RectSchema,
 
   decor: z.array(DecorSchema),
-  doors: z.array(polyCodec),
+  doors: z.array(ConnectorSchema),
+  hullDoors: z.array(ConnectorSchema),
+  hullPoly: z.array(polyCodec),
+  labels: z.array(DecorPointSchema),
   obstacles: z.array(GeomorphLayoutObstacleSchema),
+  rooms: z.array(polyCodec),
+  unsorted: z.array(polyCodec),
   walls: z.array(polyCodec),
-  // 🚧
+  windows: z.array(ConnectorSchema),
+
+  navDecomp: TriangulationSchema,
+  /** AABBs of `navPolyWithDoors` i.e. original nav-poly */
+  navRects: z.array(RectSchema),
 });
 export type GeomorphLayout = z.infer<typeof GeomorphLayoutSchema>;
 

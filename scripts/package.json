@@ -29,6 +29,7 @@
     "@npc-cli/graph": "workspace:^",
     "@npc-cli/media": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "getopts": "catalog:",
     "image-size": "catalog:",
@@ -38,7 +39,6 @@
   },
   "devDependencies": {
     "htmlparser2": "catalog:",
-    "nodemon": "catalog:",
-    "@npc-cli/ui__world": "workspace:^"
+    "nodemon": "catalog:"
   }
 }

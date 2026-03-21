@@ -1,5 +1,10 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
-import { getGeomorphNumber, isHullSymbolImageKey, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
+import {
+  getGeomorphNumber,
+  isHullSymbolImageKey,
+  type StarShipGeomorphKey,
+  type StarshipSymbolImageKey,
+} from "@npc-cli/media/starship-symbol";
 import {
   type AssetsType,
   type DecorImageMapNode,
@@ -12,17 +17,19 @@ import {
   type SymbolPolysKey,
 } from "@npc-cli/ui__map-edit/map-node-api";
 import "@npc-cli/ui__world/geomorph.d.ts";
+import { Connector } from "@npc-cli/ui__world/connector";
+import {
+  decorIconRadius,
+  decorIconRadiusOutset,
+  doorSwitchHeight,
+  obstacleOutset,
+  precision,
+  sguToWorldScale,
+  specialWallMetaKeys,
+  wallOutset,
+} from "@npc-cli/ui__world/const";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
-import { debug, tagsToMeta, textToTags, toPrecision } from "@npc-cli/util/legacy/generic";
-import { warn } from "console";
-import { Connector } from "./Connector";
-
-function applyDecorMetaRewrites(meta: Meta): void {
-  if (typeof meta.switch === "number") {
-    meta.y = doorSwitchHeight;
-    meta.tilt = true; // 90° so in XY plane
-  }
-}
+import { debug, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 
 /**
  * 🚧 needs review
@@ -87,15 +94,25 @@ function computeFlattenedDoors(
   };
 }
 
-function createEmptyLayout(gmKey: StarShipGeomorphKey, flatHull: Geomorph.FlatSymbol): Geomorph.GeomorphLayout {
+function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol): Geomorph.GeomorphLayout {
   return {
     key: gmKey,
-    bounds: flatHull.bounds,
+    bounds: flat.bounds,
     num: getGeomorphNumber(gmKey),
+
     decor: [],
     doors: [],
+    hullDoors: [],
+    hullPoly: [],
+    labels: [],
     obstacles: [],
+    rooms: [],
+    unsorted: [],
     walls: [],
+    windows: [],
+
+    navDecomp: { vs: [], tris: [] },
+    navRects: [],
   };
 }
 
@@ -225,40 +242,33 @@ export function createLayout(
     bounds: flat.bounds,
     num: getGeomorphNumber(gmKey),
 
-    // 🚧 decor schema
-    // 🚧 connector schema
-    // 🚧 obstacles schema
-    decor: [],
-    doors: [],
-    obstacles: [],
-    walls: [],
+    decor,
+    doors,
+    hullDoors: doors.filter((x) => x.meta.hull),
+    hullPoly,
+    labels,
+    obstacles: sym.obstacles.map((o): Geomorph.LayoutObstacle => {
+      const obstacleId = o.meta.obsId as number;
+      const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
+      const origPoly = assets.symbol[symbolKey]!.obstacles[o.meta.obsId];
+      const transform = (o.meta.transform ?? [1, 0, 0, 1, 0, 0]) as Geom.SixTuple;
+      tmpMat1.feedFromArray(transform);
+      return {
+        symbolKey,
+        obstacleId,
+        origPoly,
+        height: typeof o.meta.y === "number" ? o.meta.y : 0,
+        transform: tmpMat1.feedFromArray(transform).json,
+        center: tmpMat1.transformPoint(origPoly.center).precision(2),
+        meta: origPoly.meta,
+      };
+    }),
+    rooms: rooms.map((x) => x.precision(precision)),
+    unsorted: sym.unsorted.map((x) => x.precision(precision)),
+    walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map((x) => x.precision(precision)),
+    windows,
 
-    // decor,
-    // doors,
-    // hullPoly,
-    // hullDoors: doors.filter(x => x.meta.hull),
-    // labels,
-    // obstacles: symbol.obstacles.map(/** @returns {Geomorph.LayoutObstacle} */ o => {
-    //   const obstacleId = /** @type {number} */ (o.meta.obsId);
-    //   const symbolKey = /** @type {Key.Symbol} */ (o.meta.symKey);
-    //   const origPoly = assets.symbols[symbolKey].obstacles[o.meta.obsId];
-    //   const transform = /** @type {Geom.SixTuple} */ (o.meta.transform ?? [1, 0, 0, 1, 0, 0]);
-    //   tmpMat1.feedFromArray(transform);
-    //   return {
-    //     symbolKey,
-    //     obstacleId,
-    //     origPoly,
-    //     height: typeof o.meta.y === 'number' ? o.meta.y : 0,
-    //     transform,
-    //     center: tmpMat1.transformPoint(origPoly.center).precision(2),
-    //     meta: origPoly.meta,
-    //   };
-    // }),
-    // rooms: rooms.map(x => x.precision(precision)),
-    // walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map(x => x.precision(precision)),
-    // windows,
-    // unsorted: symbol.unsorted.map(x => x.precision(precision)),
-    // ...geomorph.decomposeLayoutNav(navPolyWithDoors, doors),
+    ...decomposeLayoutNav(navPolyWithDoors, doors),
   };
 }
 
@@ -349,6 +359,25 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   }
 }
 
+// 🚧 return type should be Pick<Geomorph.GeomorphLayout, "navDecomp" | "navRects"> once those fields exist
+export function decomposeLayoutNav(
+  navPolyWithDoors: Geom.Poly[],
+  doors: Connector[],
+): Pick<Geomorph.GeomorphLayout, "navDecomp" | "navRects"> {
+  // remove all doorways... we'll use offMeshConnections instead
+  const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
+  const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
+  const navDecomp = geomService.joinTriangulations(navPolySansDoors.map((poly) => poly.qualityTriangulate()));
+
+  // include doors to infer "connected components"
+  const navRects = navPolyWithDoors.map((x) => x.rect.precision(precision));
+  // Smaller rects 1st, else larger overrides (e.g. 102)
+  navRects.sort((a, b) => (a.area < b.area ? -1 : 1));
+  // Mutate doors
+  doors.forEach((door) => (door.navRectId = navRects.findIndex((r) => r.contains(door.center))));
+  return { navDecomp, navRects };
+}
+
 function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
   const poly = Poly.fromRect({ x: 0, y: 0, ...node.baseRect });
   const mat = tmpMat1.setMatrixValue(node.transform).precision(precision);
@@ -368,13 +397,17 @@ function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
     meta.direction = tmpVect1.set(mat.a, mat.b).normalize().json;
   }
 
-  applyDecorMetaRewrites(meta);
+  // extensions
+  if (typeof meta.switch === "number") {
+    meta.y = doorSwitchHeight;
+    meta.tilt = true; // 90° so in XY plane
+  }
 
   return poly;
 }
 
 export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): void {
-  const { key, isHull, walls, obstacles, symbols, windows } = symbol;
+  const { key, isHull, walls, obstacles, symbols, unsorted, windows } = symbol;
 
   const flats = symbols.flatMap(({ symbolKey, meta, transform }) => {
     const flat = flattened[symbolKey];
@@ -395,18 +428,17 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     width: symbol.width,
     height: symbol.height,
 
+    // 🚧 aggregated and cloned
+    // addableWalls: addableWalls.map(x => x.cleanClone()),
+    // removableDoors: removableDoors.map(x => ({ ...x, wall: x.wall.cleanClone() })),
+
     // not aggregated, only cloned
     doors: flatDoors,
     decor: flatDecor,
     obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
+    unsorted: unsorted.concat(flats.flatMap((x) => x.unsorted)),
     walls: walls.concat(flats.flatMap((x) => x.walls)),
     windows: windows.concat(flats.flatMap((x) => x.windows)),
-    // 🚧
-    // addableWalls: addableWalls.map(x => x.cleanClone()),
-    // removableDoors: removableDoors.map(x => ({ ...x, wall: x.wall.cleanClone() })),
-    // aggregated and cloned
-    // unsorted: unsorted.concat(flats.flatMap(x => x.unsorted)),
-    // windows: windows.concat(flats.flatMap(x => x.windows)),
   };
 }
 
@@ -446,6 +478,7 @@ export function instantiateFlatSymbol(
         },
       }),
     ),
+    unsorted: sym.unsorted.map((poly) => poly.cleanClone(mat)),
     walls: sym.walls.map((poly) => poly.cleanClone(tmpMat1)),
     windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1)),
   };
@@ -515,6 +548,7 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
     doors: [] as Geomorph.Symbol["doors"],
     hullWalls: [] as Geomorph.Symbol["hullWalls"],
     obstacles: [] as Geomorph.Symbol["obstacles"],
+    unsorted: [] as Geomorph.Symbol["unsorted"],
     walls: [] as Geomorph.Symbol["walls"],
     windows: [] as Geomorph.Symbol["windows"],
   };
@@ -606,37 +640,3 @@ const tagPolysKeyPairs = Object.entries({
 const tmpMat1 = new Mat();
 const tmpMat2 = new Mat();
 const tmpVect1 = new Vect();
-
-/** Size of starship geomorphs grid side in meters */
-const geomorphGridMeters = 1.5;
-const sguToWorldScale = (1 / 60) * geomorphGridMeters;
-const decorIconRadius = 5 * sguToWorldScale;
-const decorIconRadiusOutset = 2 * sguToWorldScale;
-const doorSwitchHeight = 1;
-/** SVG symbols are drawn 5 times larger */
-export const sguSymbolScaleUp = 5;
-/** SVG symbols are drawn 5 times larger */
-export const sguSymbolScaleDown = 1 / sguSymbolScaleUp;
-
-const obstacleOutset = 8 * sguToWorldScale;
-export const precision = 4;
-/**
- * Walls with any of these tags will not be merged with adjacent walls
- * - `y` (numeric) Height of base off the floor
- * - `h` (numeric) Height of wall
- * - `broad` (true) Not thin e.g. back of lifeboat
- */
-const specialWallMetaKeys = /** @type {const} */ (["y", "h", "broad", "hollow"]);
-export const wallOutset = 10 * sguToWorldScale;
-
-/** Depth of doorway along line walking through door */
-export const doorDepth = 20 * sguToWorldScale * sguSymbolScaleDown;
-/** Depth of doorway along line walking through hull door */
-export const hullDoorDepth = 40 * sguToWorldScale * sguSymbolScaleDown;
-/**
- * Smaller than @see {offMeshConnectionHalfDepth}
- */
-export const connectorEntranceHalfDepth = {
-  hull: 0.25 + wallOutset,
-  nonHull: 0.125 + wallOutset,
-};
