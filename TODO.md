@@ -88,8 +88,8 @@
 
 - can sync symbols in other instances?
 - with 2 instances open for same file, drafts will fight?
-- can "reset file" in dev/prod, cannot delete file in prod
-- 🚧 remove MainMenu > Open
+- ✅ can "reset file" in dev/prod, cannot delete file in prod
+- ✅ remove MainMenu > Open
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol

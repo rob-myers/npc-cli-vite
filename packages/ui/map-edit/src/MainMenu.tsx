@@ -2,13 +2,11 @@ import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import {
+  ArrowCounterClockwiseIcon,
   CaretRightIcon,
   CopyIcon,
   FloppyDiskIcon,
-  FolderOpenIcon,
-  ImageIcon,
   ListIcon,
-  MapTrifoldIcon,
   RulerIcon,
   SelectionAllIcon,
   TrashIcon,
@@ -37,53 +35,16 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               Save
             </Menu.Item>
 
-            <Menu.SubmenuRoot>
-              <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
-                <div className="flex items-center gap-2">
-                  <FolderOpenIcon className="size-4" />
-                  Open
-                </div>
-                <CaretRightIcon className="size-4" />
-              </Menu.SubmenuTrigger>
-              <Menu.Portal>
-                <Menu.Positioner className="z-50" sideOffset={4}>
-                  <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40 max-h-[300px] overflow-y-auto">
-                    {state.savedFileSpecifiers.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-slate-500 italic">No saved files</div>
-                    ) : (
-                      state.savedFileSpecifiers.map((file) => (
-                        <Menu.Item
-                          key={`${file.type}/${file.filename}`}
-                          className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer group"
-                          closeOnClick
-                          onClick={() => state.load(file)}
-                        >
-                          <div className="truncate flex gap-2">
-                            {file.type === "map" ? (
-                              <MapTrifoldIcon className="size-4" />
-                            ) : (
-                              <ImageIcon className="size-4" />
-                            )}
-                            {file.filename}
-                          </div>
-                          <button
-                            className="group-hover:opacity-100 p-0.5 hover:text-red-400"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`Delete "${file.filename}"?`)) {
-                                state.deleteFile(file);
-                              }
-                            }}
-                          >
-                            <TrashIcon className="size-3" />
-                          </button>
-                        </Menu.Item>
-                      ))
-                    )}
-                  </Menu.Popup>
-                </Menu.Positioner>
-              </Menu.Portal>
-            </Menu.SubmenuRoot>
+            {state.isDirty && (
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick
+                onClick={() => state.load()}
+              >
+                <ArrowCounterClockwiseIcon className="size-4" />
+                Reset
+              </Menu.Item>
+            )}
 
             <Menu.SubmenuRoot>
               <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
@@ -145,14 +106,16 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                   <CopyIcon className="size-4" />
                   Duplicate
                 </Menu.Item>
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-red-400 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick
-                  onClick={() => state.deleteSelectedNodes()}
-                >
-                  <TrashIcon className="size-4" />
-                  Delete
-                </Menu.Item>
+                {import.meta.env.DEV && (
+                  <Menu.Item
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-red-400 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => state.deleteSelectedNodes()}
+                  >
+                    <TrashIcon className="size-4" />
+                    Delete
+                  </Menu.Item>
+                )}
                 <div className="my-1 border-t border-slate-700" />
               </>
             )}
