@@ -61,6 +61,9 @@
   - will generate spritesheets with meta json
 
 - 🚧 migrate geomorph.createLayout
+  - ✅ implement postParseSymbol 
+    - we don't support `removableDoors` or `addableWalls` yet
+  - ✅ symbols also have hullWalls (sub of walls)
 - can see walls in World (first approximation)
 - can see floors in World (first approximation)
 - symbols can have optional door supported by instantiateFlatSymbol

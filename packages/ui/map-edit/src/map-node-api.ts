@@ -214,11 +214,12 @@ export const AssetsFlatSymbolSchema = z.object({
   decor: z.array(polyCodec),
   doors: z.array(polyCodec),
   obstacles: z.array(polyCodec),
+  /** All walls including hull walls */
   walls: z.array(polyCodec),
   // 🚧
 });
 export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;
-export type SymbolPolysKey = keyof Omit<AssetsFlatSymbol, "key" | "isHull" | "width" | "height" | "bounds">;
+export type SymbolPolysKey = keyof Omit<AssetsSymbol, "key" | "isHull" | "width" | "height" | "bounds" | "symbols">;
 
 export const AssetsSubSymbolSchema = z.object({
   symbolKey: StarShipSymbolImageKeySchema,
@@ -232,6 +233,8 @@ export const AssetsSubSymbolSchema = z.object({
 export type AssetsSubSymbol = z.infer<typeof AssetsSubSymbolSchema>;
 
 export const AssetsSymbolSchema = AssetsFlatSymbolSchema.extend({
+  /** Usually from hull symbols but also in lifeboat */
+  hullWalls: z.array(polyCodec),
   symbols: z.array(AssetsSubSymbolSchema),
 });
 export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
