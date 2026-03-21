@@ -252,6 +252,7 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
   const polysLookup: Record<SymbolPolysKey, Geomorph.Symbol[SymbolPolysKey]> = {
     decor: [] as Geomorph.Symbol["decor"],
     doors: [] as Geomorph.Symbol["doors"],
+    hullWalls: [] as Geomorph.Symbol["hullWalls"],
     obstacles: [] as Geomorph.Symbol["obstacles"],
     walls: [] as Geomorph.Symbol["walls"],
   };
@@ -272,11 +273,15 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
       continue;
     }
 
-    const poly = mapNodeToPoly(node, meta);
+    const poly = mapNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
     if (poly === null) continue;
 
     for (const [tag, polysKey] of Object.values(tagPolysKeyPairs)) {
       meta[tag] === true && polysLookup[polysKey].push(poly);
+    }
+
+    if (meta.wall === true && meta.hull === true) {
+      polysLookup.hullWalls.push(poly);
     }
 
     if (meta.switch === true) {
