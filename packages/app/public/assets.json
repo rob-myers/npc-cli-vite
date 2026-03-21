@@ -21,6 +21,7 @@
         }
       ],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -213,6 +214,7 @@
           "meta": {}
         }
       ],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -237,6 +239,7 @@
         }
       ],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": [
         {
@@ -265,6 +268,7 @@
       "doors": [],
       "obstacles": [],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -284,6 +288,7 @@
         }
       ],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -297,6 +302,7 @@
       "doors": [],
       "obstacles": [],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -310,6 +316,7 @@
       "doors": [],
       "obstacles": [],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -429,6 +436,7 @@
           "meta": {}
         }
       ],
+      "windows": [],
       "hullWalls": [
         {
           "type": "Polygon",
@@ -626,6 +634,7 @@
       "doors": [],
       "obstacles": [],
       "walls": [],
+      "windows": [],
       "hullWalls": [],
       "symbols": []
     },
@@ -643,6 +652,7 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "img": "switch",
             "transform": [1, 0, 0, 1, 120, 57.5]
           }
         },
@@ -654,6 +664,7 @@
             "quad": true,
             "key": "switch",
             "inner": true,
+            "img": "switch",
             "transform": [-1, 0, 0, 1, 120, 57.5]
           }
         },
@@ -663,6 +674,7 @@
           "meta": {
             "decor": true,
             "label": "stateroom",
+            "img": "label",
             "point": true,
             "direction": {"x": 1, "y": 0}
           }
@@ -700,6 +712,7 @@
           "meta": {}
         }
       ],
+      "windows": [],
       "hullWalls": [],
       "symbols": [
         {
@@ -772,6 +785,7 @@
           "meta": {}
         }
       ],
+      "windows": [],
       "hullWalls": [],
       "symbols": [
         {
@@ -828,6 +842,7 @@
           "meta": {}
         }
       ],
+      "windows": [],
       "hullWalls": [],
       "symbols": [
         {
@@ -896,6 +911,7 @@
           "meta": {}
         }
       ],
+      "windows": [],
       "hullWalls": [],
       "symbols": [
         {
@@ -962,7 +978,8 @@
           "meta": {}
         }
       ],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "bridge--042--8x9": {
       "key": "bridge--042--8x9",
@@ -1152,7 +1169,8 @@
           ],
           "meta": {}
         }
-      ]
+      ],
+      "windows": []
     },
     "console--033--0.4x0.6": {
       "key": "console--033--0.4x0.6",
@@ -1163,7 +1181,8 @@
       "decor": [],
       "doors": [],
       "obstacles": [],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "console--051--0.4x0.6": {
       "key": "console--051--0.4x0.6",
@@ -1180,7 +1199,8 @@
           "meta": {}
         }
       ],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "extra--003--chair--0.25x0.25": {
       "key": "extra--003--chair--0.25x0.25",
@@ -1191,7 +1211,8 @@
       "decor": [],
       "doors": [],
       "obstacles": [],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "extra--004--desk--0.5x1": {
       "key": "extra--004--desk--0.5x1",
@@ -1202,7 +1223,8 @@
       "decor": [],
       "doors": [],
       "obstacles": [],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "iris-valves--005--1x1": {
       "key": "iris-valves--005--1x1",
@@ -1213,7 +1235,8 @@
       "decor": [],
       "doors": [],
       "obstacles": [],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "console--019--2x2": {
       "key": "console--019--2x2",
@@ -1251,7 +1274,8 @@
           }
         }
       ],
-      "walls": []
+      "walls": [],
+      "windows": []
     },
     "stateroom--012--2x2": {
       "key": "stateroom--012--2x2",
@@ -1267,6 +1291,7 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "img": "switch",
             "transform": [1, 0, 0, 1, 120, 57.5]
           }
         },
@@ -1278,6 +1303,7 @@
             "quad": true,
             "key": "switch",
             "inner": true,
+            "img": "switch",
             "transform": [-1, 0, 0, 1, 120, 57.5]
           }
         },
@@ -1287,6 +1313,7 @@
           "meta": {
             "decor": true,
             "label": "stateroom",
+            "img": "label",
             "point": true,
             "direction": {"x": 1, "y": 0}
           }
@@ -1350,7 +1377,8 @@
           "coordinates": [[[122, -2], [122, 2], [-2, 2], [-2, -2]]],
           "meta": {}
         }
-      ]
+      ],
+      "windows": []
     },
     "stateroom--014--2x2": {
       "key": "stateroom--014--2x2",
@@ -1409,7 +1437,8 @@
           "coordinates": [[[122, 58], [122, 62], [58, 62], [58, 58]]],
           "meta": {}
         }
-      ]
+      ],
+      "windows": []
     },
     "stateroom--019--2x3": {
       "key": "stateroom--019--2x3",
@@ -1482,7 +1511,8 @@
           ],
           "meta": {}
         }
-      ]
+      ],
+      "windows": []
     },
     "stateroom--036--2x4": {
       "key": "stateroom--036--2x4",
@@ -1552,7 +1582,8 @@
           "coordinates": [[[122, 58], [122, 62], [-2, 62], [-2, 58]]],
           "meta": {}
         }
-      ]
+      ],
+      "windows": []
     },
     "g-301--bridge": {
       "key": "g-301--bridge",
@@ -2006,7 +2037,8 @@
           "coordinates": [[[1201, 59], [1201, 63], [1077, 63], [1077, 59]]],
           "meta": {}
         }
-      ]
+      ],
+      "windows": []
     }
   },
   "layout": {

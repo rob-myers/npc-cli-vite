@@ -216,6 +216,7 @@ export const AssetsFlatSymbolSchema = z.object({
   obstacles: z.array(polyCodec),
   /** All walls including hull walls */
   walls: z.array(polyCodec),
+  windows: z.array(polyCodec),
   // 🚧
 });
 export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;

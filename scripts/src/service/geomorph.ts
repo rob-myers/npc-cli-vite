@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
 import { getGeomorphNumber, isHullSymbolImageKey, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import {
   type AssetsType,
@@ -14,6 +15,7 @@ import "@npc-cli/ui__world/geomorph.d.ts";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { debug, tagsToMeta, textToTags, toPrecision } from "@npc-cli/util/legacy/generic";
 import { warn } from "console";
+import { Connector } from "./Connector";
 
 function applyDecorMetaRewrites(meta: Meta): void {
   if (typeof meta.switch === "number") {
@@ -85,21 +87,11 @@ function computeFlattenedDoors(
   };
 }
 
-/**
- * @param flat Flat hull symbol
- */
-export function createLayout(
-  gmKey: StarShipGeomorphKey,
-  flat: Geomorph.FlatSymbol,
-  _assets: AssetsType,
-): Geomorph.GeomorphLayout {
-  debug(`createLayout ${gmKey}`);
-
+function createEmptyLayout(gmKey: StarShipGeomorphKey, flatHull: Geomorph.FlatSymbol): Geomorph.GeomorphLayout {
   return {
     key: gmKey,
-    bounds: flat.bounds,
+    bounds: flatHull.bounds,
     num: getGeomorphNumber(gmKey),
-    // 🚧
     decor: [],
     doors: [],
     obstacles: [],
@@ -107,12 +99,263 @@ export function createLayout(
   };
 }
 
-function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
-  const poly = Poly.fromRect(new Rect(0, 0, node.baseRect.width, node.baseRect.height));
-  poly.meta = meta;
+/**
+ * @param flat Flat hull symbol
+ */
+export function createLayout(
+  gmKey: StarShipGeomorphKey,
+  flat: Geomorph.FlatSymbol,
+  assets: AssetsType,
+): Geomorph.GeomorphLayout {
+  debug(`createLayout ${gmKey}`);
 
+  const sym = assets.symbol[gmKey];
+  if (!sym) {
+    warn(`Missing hull symbol ${gmKey}: falling back to empty layout`);
+    return createEmptyLayout(gmKey, flat);
+  }
+
+  const hullPoly = Poly.union(sym.hullWalls).map((x) => x.precision(precision));
+  const hullOutline = hullPoly.map((x) => new Poly(x.outline).clone()); // sans holes
+
+  // Avoid non-hull walls inside hull walls (for x-ray)
+  const uncutWalls = sym.walls
+    .flatMap((x) =>
+      // biome-ignore lint/complexity/noCommaOperator: convenience
+      Poly.cutOut(sym.hullWalls, [x]).map((y) => ((y.meta = x.meta), y)),
+    )
+    .concat(sym.hullWalls);
+  const plainWallMeta = { wall: true };
+  const hullWallMeta = { wall: true, hull: true };
+
+  /**
+   * Cut doors from walls pointwise. The latter:
+   * - avoids errors (e.g. for 301).
+   * - permits meta propagation e.g. `h` (height), 'hull' (hull wall)
+   */
+  const connectors = sym.doors.concat(sym.windows);
+  const cutWalls = uncutWalls.flatMap((x) =>
+    Poly.cutOut(connectors, [x]).map((y) =>
+      Object.assign(y, {
+        meta: specialWallMetaKeys.some((key) => key in x.meta)
+          ? x.meta
+          : x.meta.hull === true
+            ? hullWallMeta
+            : plainWallMeta,
+      }),
+    ),
+  );
+
+  const rooms = Poly.union(uncutWalls.concat(sym.windows)).flatMap((x) =>
+    x.holes.map((ring) => new Poly(ring).fixOrientation()),
+  );
+
+  // 🔔 Room meta is specified by:
+  // - "decor meta ..."
+  // - "decor label=text ..."
+  // could compute faster client-side via pixel-look-up
+  const metaDecor = new Set(sym.decor.filter((x) => typeof x.meta.label === "string" || x.meta.meta === true));
+  for (const room of rooms) {
+    for (const d of metaDecor) {
+      if (room.contains(d.outline[0])) {
+        metaDecor.delete(d); // at most 1 room
+        Object.assign(room.meta, d.meta, {
+          decor: undefined,
+          meta: undefined,
+          y: undefined,
+          label: room.meta.label ?? d.meta.label, // 1st label has priority
+        });
+      }
+    }
+  }
+
+  // 🚧
+  const decor: Geomorph.Decor[] = [];
+  const labels: Geomorph.DecorPoint[] = [];
+  for (const poly of sym.decor) {
+    const d = createLayoutDecorFromPoly(poly);
+    if (typeof poly.meta.label === "string" && d.type === "point") {
+      labels.push(d);
+    } else {
+      decor.push(d);
+    }
+  }
+
+  const ignoreNavPoints = decor.flatMap((d) => (d.type === "point" && d.meta["ignore-nav"] ? d : []));
+  const symbolObstacles = sym.obstacles.filter((d) => d.meta["permit-nav"] !== true);
+
+  const navPolyWithDoors = Poly.cutOut(
+    [
+      ...cutWalls.flatMap((x) => geomService.createOutset(x, wallOutset)),
+      ...sym.windows,
+      ...symbolObstacles.flatMap((x) =>
+        geomService.createOutset(
+          x,
+          typeof x.meta["nav-outset"] === "number" ? x.meta["nav-outset"] * sguToWorldScale : obstacleOutset,
+        ),
+      ),
+      ...decor
+        .filter(isDecorCuboid)
+        .filter((d) => d.meta.nav === true)
+        // 🔔 originally all decor was a <use> of a unit-quad
+        // .map((d) => geomService.applyUnitQuadTransformWithOutset(tmpMat1.feedFromArray(d.transform), obstacleOutset)),
+        .map((d) => geomService.createOutset(Poly.fromRect(d.bounds2d), obstacleOutset)[0]),
+    ],
+    hullOutline,
+  )
+    .filter((poly) => poly.rect.area > 1 && !ignoreNavPoints.some((p) => poly.contains(p)))
+    .map((poly) => poly.cleanFinalReps().precision(precision));
+
+  // 🔔 connector.roomIds will be computed in browser
+  const doors = sym.doors.map((x) => new Connector(x));
+  const windows = sym.windows.map((x) => new Connector(x));
+
+  // Joining walls with `{plain,hull}WallMeta` reduces the rendering cost later
+  // 🔔 could save more by joining hull/non-hull but want to distinguish them
+  const joinedWalls = Poly.union(cutWalls.filter((x) => x.meta === plainWallMeta)).map((x) =>
+    Object.assign(x, { meta: plainWallMeta }),
+  );
+  const joinedHullWalls = Poly.union(cutWalls.filter((x) => x.meta === hullWallMeta)).map((x) =>
+    Object.assign(x, { meta: hullWallMeta }),
+  );
+  const unjoinedWalls = cutWalls.filter((x) => x.meta !== plainWallMeta && x.meta !== hullWallMeta);
+
+  return {
+    key: gmKey,
+    bounds: flat.bounds,
+    num: getGeomorphNumber(gmKey),
+
+    // 🚧 decor schema
+    // 🚧 connector schema
+    // 🚧 obstacles schema
+    decor: [],
+    doors: [],
+    obstacles: [],
+    walls: [],
+
+    // decor,
+    // doors,
+    // hullPoly,
+    // hullDoors: doors.filter(x => x.meta.hull),
+    // labels,
+    // obstacles: symbol.obstacles.map(/** @returns {Geomorph.LayoutObstacle} */ o => {
+    //   const obstacleId = /** @type {number} */ (o.meta.obsId);
+    //   const symbolKey = /** @type {Key.Symbol} */ (o.meta.symKey);
+    //   const origPoly = assets.symbols[symbolKey].obstacles[o.meta.obsId];
+    //   const transform = /** @type {Geom.SixTuple} */ (o.meta.transform ?? [1, 0, 0, 1, 0, 0]);
+    //   tmpMat1.feedFromArray(transform);
+    //   return {
+    //     symbolKey,
+    //     obstacleId,
+    //     origPoly,
+    //     height: typeof o.meta.y === 'number' ? o.meta.y : 0,
+    //     transform,
+    //     center: tmpMat1.transformPoint(origPoly.center).precision(2),
+    //     meta: origPoly.meta,
+    //   };
+    // }),
+    // rooms: rooms.map(x => x.precision(precision)),
+    // walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map(x => x.precision(precision)),
+    // windows,
+    // unsorted: symbol.unsorted.map(x => x.precision(precision)),
+    // ...geomorph.decomposeLayoutNav(navPolyWithDoors, doors),
+  };
+}
+
+/**
+ * 🚧 clarify and clean
+ * - Script only.
+ * - Layout only i.e. not nested symbols.
+ * - Should be instantiated inside `<Decor/>`
+ */
+export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
+  // 🔔 key, gmId, roomId provided on instantiation
+  const meta = poly.meta as Meta<Geomorph.GmRoomId>;
+  meta.y = toPrecision(Number(meta.y) || 0);
+  const base = { key: "", meta };
+
+  if (meta.rect === true) {
+    if (poly.outline.length !== 4) {
+      warn(`createLayoutDecorFromPoly: decor rect expected 4 points (saw ${poly.outline.length})`, poly.meta);
+    }
+    const { baseRect, angle } = geomService.polyToAngledRect(poly);
+    baseRect.precision(precision);
+    return {
+      type: "rect",
+      ...base,
+      bounds2d: poly.rect.json,
+      points: poly.outline.map((x) => x.json),
+      center: poly.center.precision(3).json,
+      angle,
+    } as Geomorph.DecorRect;
+  } else if (meta.quad === true || meta.decal === true) {
+    const type = meta.quad === true ? "quad" : "decal"; // decal supported?
+    const polyRect = poly.rect.precision(precision);
+    const { transform } = poly.meta;
+    delete poly.meta.transform; // ?
+
+    const quadMeta = base.meta as Geomorph.DecorQuad["meta"];
+    if (!isDecorImgKey(quadMeta.img)) {
+      quadMeta.img = "icon--warn";
+    }
+
+    return {
+      type: type as "quad" | "decal",
+      key: base.key,
+      meta: quadMeta,
+      bounds2d: polyRect.json,
+      transform,
+      center: poly.center.precision(3).json,
+      // 🔔 determinant `det` will be provided on instantiation
+      det: 1,
+    } as Geomorph.DecorQuad | Geomorph.DecorDecal;
+  } else if (meta.cuboid === true) {
+    // decor cuboids follow "decor quad approach"
+    const polyRect = poly.rect.precision(precision);
+    const { transform } = poly.meta;
+    delete poly.meta.transform;
+
+    const center2d = poly.center;
+    const y3d = typeof meta.y === "number" ? meta.y : 0;
+    const height3d = typeof meta.h === "number" ? meta.h : 0.5; // 🚧 remove hard-coding
+    const center = geomService.toPrecisionV3({ x: center2d.x, y: y3d + height3d / 2, z: center2d.y });
+
+    return { type: "cuboid", ...base, bounds2d: polyRect.json, transform, center } as Geomorph.DecorCuboid;
+  } else if (meta.circle === true) {
+    const polyRect = poly.rect.precision(precision);
+    const baseRect = geomService.polyToAngledRect(poly).baseRect.precision(precision);
+    const center = poly.center.precision(precision);
+    const radius = Math.max(baseRect.width, baseRect.height) / 2;
+    return { type: "circle", ...base, bounds2d: polyRect.json, radius, center } as Geomorph.DecorCircle;
+  } else {
+    // 🔔 fallback to decor point
+    const center = poly.center.precision(precision);
+    const radius = decorIconRadius + decorIconRadiusOutset;
+    const bounds2d = new Rect(center.x - radius, center.y - radius, 2 * radius, 2 * radius).precision(precision).json;
+    /**
+     * meta.direction:
+     * - comes from <use transform> of decor symbol
+     * - determines orient (degrees), where direction (1, 0) understood as 0 degrees.
+     */
+    const direction = (meta.direction as Geom.VectJson) || { x: 0, y: 0 };
+    delete meta.direction;
+    const orient = toPrecision((180 / Math.PI) * Math.atan2(direction.y, direction.x));
+
+    // permit invisible point i.e. no image
+    if ("img" in meta && !isDecorImgKey(meta.img)) {
+      meta.img = "icon--warn";
+    }
+    return { type: "point", ...base, bounds2d, x: center.x, y: center.y, orient } as Geomorph.DecorPoint;
+  }
+}
+
+function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
+  const poly = Poly.fromRect({ x: 0, y: 0, ...node.baseRect });
   const mat = tmpMat1.setMatrixValue(node.transform).precision(precision);
   poly.applyMatrix(mat);
+
+  poly.meta = meta;
+  poly.meta.img = node.srcKey; // e.g. arrow-square-right-duotone
 
   if (meta.cuboid === true || meta.quad === true) {
     // - preserve transform for shader later, so can transform quad from the spritesheet
@@ -131,7 +374,7 @@ function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
 }
 
 export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): void {
-  const { key, isHull, walls, obstacles, symbols } = symbol;
+  const { key, isHull, walls, obstacles, symbols, windows } = symbol;
 
   const flats = symbols.flatMap(({ symbolKey, meta, transform }) => {
     const flat = flattened[symbolKey];
@@ -151,11 +394,13 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     bounds: symbol.bounds,
     width: symbol.width,
     height: symbol.height,
+
     // not aggregated, only cloned
-    walls: walls.concat(flats.flatMap((x) => x.walls)),
-    obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
     doors: flatDoors,
     decor: flatDecor,
+    obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
+    walls: walls.concat(flats.flatMap((x) => x.walls)),
+    windows: windows.concat(flats.flatMap((x) => x.windows)),
     // 🚧
     // addableWalls: addableWalls.map(x => x.cleanClone()),
     // removableDoors: removableDoors.map(x => ({ ...x, wall: x.wall.cleanClone() })),
@@ -202,7 +447,23 @@ export function instantiateFlatSymbol(
       }),
     ),
     walls: sym.walls.map((poly) => poly.cleanClone(tmpMat1)),
+    windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1)),
   };
+}
+
+function isDecorCuboid(d: Geomorph.Decor): d is Geomorph.DecorCuboid {
+  return d.type === "cuboid";
+}
+
+/** 🚧 somehow check public/decor/manifest.json */
+function isDecorImgKey(_input: string) {
+  // biome-ignore lint/correctness/noConstantCondition: unimplemented
+  if (false) {
+    warn(`${"createLayoutDecorFromPoly"}: decor meta.img must exist (using "icon--warn")`);
+    return false;
+  } else {
+    return true;
+  }
 }
 
 function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
@@ -255,6 +516,7 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
     hullWalls: [] as Geomorph.Symbol["hullWalls"],
     obstacles: [] as Geomorph.Symbol["obstacles"],
     walls: [] as Geomorph.Symbol["walls"],
+    windows: [] as Geomorph.Symbol["windows"],
   };
 
   for (const node of allNodes) {
@@ -345,5 +607,36 @@ const tmpMat1 = new Mat();
 const tmpMat2 = new Mat();
 const tmpVect1 = new Vect();
 
+/** Size of starship geomorphs grid side in meters */
+const geomorphGridMeters = 1.5;
+const sguToWorldScale = (1 / 60) * geomorphGridMeters;
+const decorIconRadius = 5 * sguToWorldScale;
+const decorIconRadiusOutset = 2 * sguToWorldScale;
 const doorSwitchHeight = 1;
-const precision = 4;
+/** SVG symbols are drawn 5 times larger */
+export const sguSymbolScaleUp = 5;
+/** SVG symbols are drawn 5 times larger */
+export const sguSymbolScaleDown = 1 / sguSymbolScaleUp;
+
+const obstacleOutset = 8 * sguToWorldScale;
+export const precision = 4;
+/**
+ * Walls with any of these tags will not be merged with adjacent walls
+ * - `y` (numeric) Height of base off the floor
+ * - `h` (numeric) Height of wall
+ * - `broad` (true) Not thin e.g. back of lifeboat
+ */
+const specialWallMetaKeys = /** @type {const} */ (["y", "h", "broad", "hollow"]);
+export const wallOutset = 10 * sguToWorldScale;
+
+/** Depth of doorway along line walking through door */
+export const doorDepth = 20 * sguToWorldScale * sguSymbolScaleDown;
+/** Depth of doorway along line walking through hull door */
+export const hullDoorDepth = 40 * sguToWorldScale * sguSymbolScaleDown;
+/**
+ * Smaller than @see {offMeshConnectionHalfDepth}
+ */
+export const connectorEntranceHalfDepth = {
+  hull: 0.25 + wallOutset,
+  nonHull: 0.125 + wallOutset,
+};
