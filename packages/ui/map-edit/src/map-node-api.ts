@@ -11,6 +11,8 @@ import z from "zod";
 
 //#region schemas
 
+const MetaSchema = z.record(z.string(), z.any());
+
 const PointSchema = z.object({
   x: z.number(),
   y: z.number(),
@@ -186,6 +188,123 @@ export type DecorManifest = z.infer<typeof DecorManifestSchema>;
 
 //#endregion
 
+//#region decor schemas
+
+const SixTupleSchema = z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]);
+const Vector3LikeSchema = z.object({ x: z.number(), y: z.number(), z: z.number() });
+const GmRoomIdSchema = z.object({
+  grKey: z.string(),
+  gmId: z.number(),
+  roomId: z.number(),
+});
+
+const BaseDecorSchema = z.object({
+  key: z.string(),
+  meta: MetaSchema.and(GmRoomIdSchema),
+  bounds2d: RectSchema,
+  updatedAt: z.number().optional(),
+  src: StarShipGeomorphKeySchema.optional(),
+});
+
+const BaseDecorDefSchema = z.object({
+  key: z.string(),
+  meta: MetaSchema.optional(),
+});
+
+export const DecorCircleSchema = BaseDecorSchema.extend({
+  type: z.literal("circle"),
+  radius: z.number(),
+  center: PointSchema,
+});
+export const DecorCircleDefSchema = BaseDecorDefSchema.extend({
+  type: z.literal("circle"),
+  radius: z.number(),
+  center: PointSchema,
+});
+
+export const DecorCuboidSchema = BaseDecorSchema.extend({
+  type: z.literal("cuboid"),
+  center: Vector3LikeSchema,
+  transform: SixTupleSchema,
+});
+export const DecorCuboidDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).extend({
+  type: z.literal("cuboid"),
+  baseY: z.number(),
+  height3d: z.number(),
+  transform: SixTupleSchema.optional(),
+});
+
+export const DecorPointSchema = BaseDecorSchema.extend({
+  type: z.literal("point"),
+  x: z.number(),
+  y: z.number(),
+  orient: z.number(),
+  meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string().optional() })),
+});
+export const DecorPointDefSchema = BaseDecorDefSchema.extend({
+  type: z.literal("point"),
+  x: z.number(),
+  y: z.number(),
+  img: z.string().optional(),
+  orient: z.number().optional(),
+  y3d: z.number().optional(),
+});
+
+export const DecorQuadSchema = BaseDecorSchema.extend({
+  type: z.literal("quad"),
+  transform: SixTupleSchema,
+  center: PointSchema,
+  det: z.number(),
+  meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
+});
+export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).extend({
+  type: z.literal("quad"),
+  img: z.string(),
+  color: z.string().optional(),
+  transform: SixTupleSchema.optional(),
+  y3d: z.number().optional(),
+});
+
+export const DecorDecalSchema = BaseDecorSchema.extend({
+  type: z.literal("decal"),
+  transform: SixTupleSchema,
+  center: PointSchema,
+  det: z.number(),
+  meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
+});
+
+export const DecorRectSchema = BaseDecorSchema.extend({
+  type: z.literal("rect"),
+  points: z.array(PointSchema),
+  center: PointSchema,
+  angle: z.number(),
+});
+export const DecorRectDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).extend({
+  type: z.literal("rect"),
+  angle: z.number().optional(),
+});
+
+export const DecorSchema = z.discriminatedUnion("type", [
+  DecorCircleSchema,
+  DecorCuboidSchema,
+  DecorPointSchema,
+  DecorQuadSchema,
+  DecorDecalSchema,
+  DecorRectSchema,
+]);
+export type Decor = z.infer<typeof DecorSchema>;
+
+export const DecorDefSchema = z.discriminatedUnion("type", [
+  DecorCircleDefSchema,
+  DecorCuboidDefSchema,
+  DecorPointDefSchema,
+  DecorQuadDefSchema,
+  DecorRectDefSchema,
+]);
+export type DecorDef = z.infer<typeof DecorDefSchema>;
+
+//#endregion
+
 //#region assets schemas
 
 export const GeoJsonPolygonSchema = z.object({
@@ -240,14 +359,31 @@ export const AssetsSymbolSchema = AssetsFlatSymbolSchema.extend({
 });
 export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
 
+export const GeomorphLayoutObstacleSchema = z.object({
+  /** The `symbol` the obstacle originally comes from */
+  symbolKey: StarShipGeomorphKeySchema,
+  /** The index in `symbol.obstacles` this obstacle corresponds to */
+  obstacleId: z.number(),
+  /** The height of this particular instance */
+  height: z.number(),
+  /** `symbol.obstacles[obstacleId]` -- could be inferred from `assets` */
+  origPoly: polyCodec,
+  /** Transform from original symbol into Geomorph (meters) */
+  transform: AffineTransformSchema,
+  /** `origPoly.center` transformed by `transform` */
+  center: PointSchema,
+  /** Shortcut to `origPoly.meta` */
+  meta: MetaSchema,
+});
+
 export const GeomorphLayoutSchema = z.object({
   key: StarShipGeomorphKeySchema,
   num: StarShipGeomorphNumberSchema,
   bounds: RectSchema,
 
-  decor: z.array(polyCodec),
+  decor: z.array(DecorSchema),
   doors: z.array(polyCodec),
-  obstacles: z.array(polyCodec),
+  obstacles: z.array(GeomorphLayoutObstacleSchema),
   walls: z.array(polyCodec),
   // 🚧
 });
