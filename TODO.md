@@ -60,7 +60,7 @@
     - `decor cuboid color=#ff0` (vanilla cuboid)
   - will generate spritesheets with meta json
 
-- 🚧 migrate geomorph.createLayout
+- ✅ migrate geomorph.createLayout
   - ✅ implement postParseSymbol 
     - we don't support `removableDoors` or `addableWalls` yet
   - ✅ symbols also have hullWalls (sub of walls)

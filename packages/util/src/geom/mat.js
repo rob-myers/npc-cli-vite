@@ -27,6 +27,11 @@ export class Mat {
     return this.a * this.d - this.b * this.c;
   }
 
+  /** @return {MatrixJson} */
+  get json() {
+    return { a: this.a, b: this.b, c: this.c, d: this.d, e: this.e, f: this.f };
+  }
+
   /** @param {Geom.SixTuple} _ */
   feedFromArray([a, b, c, d, e, f]) {
     this.a = a;
@@ -72,9 +77,7 @@ export class Mat {
   }
 
   get isIdentity() {
-    return (
-      this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.e === 0 && this.f === 0
-    );
+    return this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.e === 0 && this.f === 0;
   }
 
   get isInvertible() {
@@ -155,14 +158,7 @@ export class Mat {
 
   /** @param {number} radians angle */
   setRotation(radians) {
-    return this.feedFromArray([
-      Math.cos(radians),
-      Math.sin(radians),
-      -Math.sin(radians),
-      Math.cos(radians),
-      0,
-      0,
-    ]);
+    return this.feedFromArray([Math.cos(radians), Math.sin(radians), -Math.sin(radians), Math.cos(radians), 0, 0]);
   }
 
   /**
@@ -172,14 +168,7 @@ export class Mat {
    */
   setRotationAbout(radians, point) {
     this.feedFromArray([1, 0, 0, 1, -point.x, -point.y]);
-    this.postMultiply([
-      Math.cos(radians),
-      Math.sin(radians),
-      -Math.sin(radians),
-      Math.cos(radians),
-      0,
-      0,
-    ]);
+    this.postMultiply([Math.cos(radians), Math.sin(radians), -Math.sin(radians), Math.cos(radians), 0, 0]);
     this.e += point.x;
     this.f += point.y;
     return this;
