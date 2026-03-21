@@ -1,11 +1,9 @@
-import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import { getGeomorphNumber, isHullSymbolImageKey, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import {
   type AssetsType,
   type DecorImageMapNode,
   filterNodes,
-  type GeomorphKey,
   isDecorImageMapNode,
-  isGeomorphKey,
   type MapEditSavedMap,
   type MapEditSavedSymbol,
   type MapNode,
@@ -84,6 +82,28 @@ function computeFlattenedDoors(
       }
       return true;
     }),
+  };
+}
+
+/**
+ * @param flat Flat hull symbol
+ */
+export function createLayout(
+  gmKey: StarShipGeomorphKey,
+  flat: Geomorph.FlatSymbol,
+  _assets: AssetsType,
+): Geomorph.GeomorphLayout {
+  debug(`createLayout ${gmKey}`);
+
+  return {
+    key: gmKey,
+    bounds: flat.bounds,
+    num: getGeomorphNumber(gmKey),
+    // 🚧
+    decor: [],
+    doors: [],
+    obstacles: [],
+    walls: [],
   };
 }
 
@@ -209,10 +229,10 @@ function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
 }
 
 export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
-  type GeomorphNode = SymbolMapNode & { srcKey: GeomorphKey };
+  type GeomorphNode = SymbolMapNode & { srcKey: StarShipGeomorphKey };
   const geomorphNodes = filterNodes(
     savedFile.nodes,
-    (node): node is GeomorphNode => node.type === "symbol" && node.srcKey !== null && isGeomorphKey(node.srcKey),
+    (node): node is GeomorphNode => node.type === "symbol" && node.srcKey !== null && isHullSymbolImageKey(node.srcKey),
   );
 
   return {

@@ -1,4 +1,9 @@
-import { StarShipSymbolImageKeySchema, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import {
+  StarShipGeomorphKeySchema,
+  StarShipGeomorphNumberSchema,
+  StarShipSymbolImageKeySchema,
+  type StarshipSymbolImageKey,
+} from "@npc-cli/media/starship-symbol";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Poly, Rect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
@@ -183,16 +188,6 @@ export type DecorManifest = z.infer<typeof DecorManifestSchema>;
 
 //#region assets schemas
 
-export type GeomorphKey = Extract<SymbolKey, `g-${string}`>;
-
-export function isGeomorphKey(key: SymbolKey): key is GeomorphKey {
-  return key.startsWith("g-");
-}
-
-export const GeomorphKeySchema = SymbolKeySchema.refine(isGeomorphKey, {
-  message: "Expected GeomorphKey",
-}) as z.ZodType<GeomorphKey>;
-
 export const GeoJsonPolygonSchema = z.object({
   type: z.literal("Polygon"),
   /**
@@ -202,11 +197,8 @@ export const GeoJsonPolygonSchema = z.object({
   coordinates: z.array(z.array(CoordSchema)),
   meta: z.record(z.string(), z.any()),
 });
-
 export type GeoJsonPolygon = z.infer<typeof GeoJsonPolygonSchema>;
-
 export const PolySchema = z.instanceof(Poly);
-
 export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
   decode: (geoJson) => Poly.from(geoJson),
   encode: (poly) => poly.geoJson,
@@ -226,7 +218,6 @@ export const AssetsFlatSymbolSchema = z.object({
   // 🚧
 });
 export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;
-
 export type SymbolPolysKey = keyof Omit<AssetsFlatSymbol, "key" | "isHull" | "width" | "height" | "bounds">;
 
 export const AssetsSubSymbolSchema = z.object({
@@ -238,33 +229,43 @@ export const AssetsSubSymbolSchema = z.object({
   transform: AffineTransformSchema,
   meta: z.record(z.string(), z.any()),
 });
-
 export type AssetsSubSymbol = z.infer<typeof AssetsSubSymbolSchema>;
 
 export const AssetsSymbolSchema = AssetsFlatSymbolSchema.extend({
   symbols: z.array(AssetsSubSymbolSchema),
 });
-
 export type AssetsSymbol = z.infer<typeof AssetsSymbolSchema>;
+
+export const GeomorphLayoutSchema = z.object({
+  key: StarShipGeomorphKeySchema,
+  num: StarShipGeomorphNumberSchema,
+  bounds: RectSchema,
+
+  decor: z.array(polyCodec),
+  doors: z.array(polyCodec),
+  obstacles: z.array(polyCodec),
+  walls: z.array(polyCodec),
+  // 🚧
+});
+export type GeomorphLayout = z.infer<typeof GeomorphLayoutSchema>;
 
 export const AssetsMapDefSchema = z.object({
   key: MapKeySchema,
   gms: z.array(
     z.object({
-      gmKey: GeomorphKeySchema,
+      gmKey: StarShipGeomorphKeySchema,
       transform: AffineTransformSchema,
     }),
   ),
 });
-
 export type AssetsMapDef = z.infer<typeof AssetsMapDefSchema>;
 
 export const AssetsSchema = z.object({
   symbol: z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema),
   map: z.partialRecord(MapKeySchema, AssetsMapDefSchema),
   flattened: z.partialRecord(StarShipSymbolImageKeySchema, AssetsFlatSymbolSchema),
+  layout: z.partialRecord(StarShipGeomorphKeySchema, GeomorphLayoutSchema),
 });
-
 export type AssetsType = z.infer<typeof AssetsSchema>;
 
 //#endregion

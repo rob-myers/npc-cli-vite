@@ -60,8 +60,9 @@
     - `decor cuboid color=#ff0` (vanilla cuboid)
   - will generate spritesheets with meta json
 
-- 🚧 can see walls in World (first approximation)
-- 🚧 can see floors in World (first approximation)
+- 🚧 migrate geomorph.createLayout
+- can see walls in World (first approximation)
+- can see floors in World (first approximation)
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
