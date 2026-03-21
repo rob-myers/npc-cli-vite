@@ -26,6 +26,7 @@
     "@gltf-transform/functions": "catalog:",
     "@inquirer/prompts": "catalog:",
     "@npc-cli/cli": "workspace:^",
+    "@npc-cli/graph": "workspace:^",
     "@npc-cli/media": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/util": "workspace:^",

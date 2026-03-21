@@ -6,14 +6,14 @@ import "@npc-cli/ui__world/geomorph.d.ts";
  * - Node id is respective `SymbolKey`.
  * @extends {BaseGraph<Graph.SymbolGraphNode, Graph.SymbolGraphEdgeOpts>}
  */
-export class SymbolGraphClass extends BaseGraph {
+export class SymbolGraph extends BaseGraph {
   /** @param {Graph.SymbolGraphJson | Geomorph.AssetsType['symbol']} input  */
   static from(input) {
     if ("nodes" in input) {
-      return new SymbolGraphClass().plainFrom(input);
+      return new SymbolGraph().plainFrom(input);
     } else {
       const symbols = input;
-      const graph = new SymbolGraphClass();
+      const graph = new SymbolGraph();
 
       for (const symbolKey of keys(symbols)) {
         graph.registerNode({ id: symbolKey });
