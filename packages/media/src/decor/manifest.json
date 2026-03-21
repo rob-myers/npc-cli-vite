@@ -1,9 +1,15 @@
 {
-  "modifiedAt": "2026-03-21T16:54:35.259Z",
+  "modifiedAt": "2026-03-21T18:36:17.118Z",
   "byKey": {
     "arrow-square-right-duotone": {
       "key": "arrow-square-right-duotone",
       "filename": "arrow-square-right-duotone.svg",
+      "width": 60,
+      "height": 60
+    },
+    "icon--warn": {
+      "key": "icon--warn",
+      "filename": "icon--warn.svg",
       "width": 60,
       "height": 60
     },
