@@ -875,7 +875,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               // uniform scaling: use actual image width (not AABB)
               const { baseRect: startBaseRect } = state.dragEl;
               const startWidth = startBaseRect.width * axisLen;
-              const newWidth = snap(Math.max(increment, startWidth + (isW ? -projectedDelta : projectedDelta)), increment);
+              const newWidth = snap(
+                Math.max(increment, startWidth + (isW ? -projectedDelta : projectedDelta)),
+                increment,
+              );
               const k = newWidth / startWidth;
 
               // scale all matrix components uniformly (preserves rotation)
@@ -1403,7 +1406,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         )}
         style={{ width: state.asideWidth, minWidth: state.asideWidth }}
       >
-        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center pl-3 py-2 bg-slate-900/20">
+        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center pl-3 pr-2 py-2 bg-slate-900/20">
           <MainMenu state={state} />
           <FileMenu state={state} />
         </div>
