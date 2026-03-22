@@ -1,10 +1,11 @@
 import { themeApi } from "@npc-cli/theme";
 import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn } from "@npc-cli/util";
+import { WebRtcPeer } from "./webrtc/WebRtcPeer";
 
 export default function Global() {
   return (
-    <div className="flex justify-center items-center h-full overflow-auto">
+    <div className="flex flex-col justify-center items-center h-full overflow-auto gap-4">
       <div className="p-4 grid grid-cols-[minmax(2rem,auto)_minmax(2rem,auto)] w-48 gap-2">
         <button
           type="button"
@@ -32,6 +33,7 @@ export default function Global() {
           </button>
         </BasicPopover>
       </div>
+      <WebRtcPeer />
     </div>
   );
 }
