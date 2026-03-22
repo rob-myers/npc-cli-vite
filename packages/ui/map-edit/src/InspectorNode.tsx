@@ -133,7 +133,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
 
         <button
           className={cn(
-            "flex items-center justify-center px-1 text-on-background/50 hover:text-on-background",
+            "flex items-center justify-end px-1 text-on-background/50 hover:text-on-background",
             node.locked && "text-on-background/80",
           )}
           title={node.locked ? "Unlock" : "Lock"}
