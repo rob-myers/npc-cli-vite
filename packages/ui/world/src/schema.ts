@@ -5,7 +5,8 @@ export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
   disabled: z.boolean().default(true),
   worldKey: z.templateLiteral(["world-", z.number()]),
-    // prefer left because performance tool on right
+  mapKey: z.string().default("empty-map"),
+  // prefer left because performance tool on right
   menuPosition: BaseUiMetaSchema.shape.menuPosition.default("left"),
 });
 
