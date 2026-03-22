@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import React from "react";
 import * as THREE from "three";
 import { shallow } from "zustand/shallow";
-import { CameraControls as MapControlsImpl } from "./camera-controls";
+import { CameraControls as MapControlsImpl } from "../service/camera-controls";
 
 /**
  * Based on:

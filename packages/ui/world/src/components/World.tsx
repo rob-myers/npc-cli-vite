@@ -1,9 +1,9 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { useStateRef } from "@npc-cli/util";
 import { Suspense } from "react";
+import type { WorldUiMeta } from "../schema";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
-import type { WorldUiMeta } from "./schema";
 import { WorldView } from "./WorldView";
 import { WorldContext } from "./world-context";
 
