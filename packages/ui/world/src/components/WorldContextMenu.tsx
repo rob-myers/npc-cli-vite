@@ -1,8 +1,9 @@
 import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk";
 import { cn, useStateRef } from "@npc-cli/util";
+import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CheckIcon, ListIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
-import { useContext, useMemo, useRef } from "react";
+import { useContext } from "react";
 import { useMapManifest } from "../hooks/useMapManifest";
 import { WorldContext } from "./world-context";
 
@@ -11,21 +12,13 @@ export function WorldContextMenu() {
   const { data: mapManifest } = useMapManifest();
   const mapKeys = mapManifest ? Object.keys(mapManifest.byKey) : [];
 
-  const storedY = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(storageKey(w.id));
-      return raw ? Number(raw) : 0;
-    } catch {
-      return 0;
-    }
-  }, []);
-
-  const y = useMotionValue(storedY);
-  const dragged = useRef(false);
-
   const state = useStateRef(() => ({
     open: false,
+    storedY: tryLocalStorageGetParsed(storageKey(w.id)) ?? 0,
+    dragged: false,
   }));
+
+  const y = useMotionValue(state.storedY);
 
   return (
     <motion.div
@@ -34,21 +27,21 @@ export function WorldContextMenu() {
       drag="y"
       dragMomentum={false}
       onDragStart={() => {
-        dragged.current = true;
+        state.dragged = true;
       }}
       onDragEnd={() => {
-        localStorage.setItem(storageKey(w.id), String(y.get()));
+        tryLocalStorageSet(storageKey(w.id), String(y.get()));
       }}
     >
       <button
         type="button"
         className="cursor-pointer bg-gray-800 text-white p-2"
         onClick={() => {
-          if (dragged.current) {
-            dragged.current = false;
-            return;
+          if (state.dragged) {
+            state.dragged = false;
+          } else {
+            state.set({ open: !state.open });
           }
-          state.set({ open: !state.open });
         }}
       >
         <ListIcon className="size-5" weight="bold" />
