@@ -1,24 +1,20 @@
 import fs, { readFileSync } from "node:fs";
 import path from "node:path";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
-import type {
-  ImageMapNode,
-  MapEditFileSpecifier,
-  MapEditSavedFile,
-  SymbolMapNode,
-} from "@npc-cli/ui__map-edit/map-node-api";
 import {
-  isNodeTransformable,
+  type ImageMapNode,
+  type MapEditFileSpecifier,
   MapEditMapFileSpecifierSchema,
+  type MapEditSavedFile,
   MapEditSavedFileSchema,
   MapEditSymbolFileSpecifierSchema,
   MapsManifestItemSchema,
   MapsManifestSchema,
-  migrateMapEditSavedFile,
+  type SymbolMapNode,
   SymbolsManifestItemSchema,
   SymbolsManifestSchema,
-  traverseNodesAsync,
-} from "@npc-cli/ui__map-edit/map-node-api";
+} from "@npc-cli/ui__map-edit/editor.schema";
+import { isNodeTransformable, migrateMapEditSavedFile, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
 import { geomService, Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { deepClone, error, info, warn } from "@npc-cli/util/legacy/generic";

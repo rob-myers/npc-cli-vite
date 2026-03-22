@@ -3,7 +3,7 @@ import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import type { PathManifest } from "./map-node-api";
+import type { PathManifest } from "./editor.schema";
 
 export interface ParsedPath {
   d: string;

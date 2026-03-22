@@ -6,8 +6,9 @@ import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { FloppyDiskIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
+import { SymbolKeySchema } from "./editor.schema";
 import type { State } from "./MapEdit";
-import { ALLOWED_MAP_EDIT_FOLDERS, defaultSymbolKey, SymbolKeySchema } from "./map-node-api";
+import { ALLOWED_MAP_EDIT_FOLDERS, defaultSymbolKey } from "./map-node-api";
 
 const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
 

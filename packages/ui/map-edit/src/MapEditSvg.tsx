@@ -2,15 +2,9 @@ import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
+import type { ImageMapNode, MapNode, RectMapNode } from "./editor.schema";
 import type { ResizeHandle, State } from "./MapEdit";
-import {
-  baseSvgSize,
-  findNode,
-  getNodeBounds,
-  type ImageMapNode,
-  type MapNode,
-  type RectMapNode,
-} from "./map-node-api";
+import { baseSvgSize, findNode, getNodeBounds } from "./map-node-api";
 
 export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: string }) {
   const vbW = baseSvgSize / root.zoom;

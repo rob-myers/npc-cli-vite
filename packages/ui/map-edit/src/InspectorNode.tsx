@@ -19,8 +19,9 @@ import {
 } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect } from "react";
+import type { MapNode, MapNodeType } from "./editor.schema";
 import type { State as MapEditState } from "./MapEdit";
-import { type MapNode, type MapNodeType, traverseNodesSync } from "./map-node-api";
+import { traverseNodesSync } from "./map-node-api";
 
 /**
  * - Double tap to edit name

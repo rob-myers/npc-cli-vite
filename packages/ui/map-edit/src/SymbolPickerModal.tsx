@@ -4,7 +4,7 @@ import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { memo, useEffect } from "react";
-import type { SymbolsManifest } from "./map-node-api";
+import type { SymbolsManifest } from "./editor.schema";
 
 export const SymbolPickerModalMemo = memo(SymbolPickerModal);
 

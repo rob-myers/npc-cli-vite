@@ -4,7 +4,7 @@ import { uiClassName } from "@npc-cli/ui-sdk";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
-import type { DecorManifest } from "./map-node-api";
+import type { DecorManifest } from "./editor.schema";
 
 export type ImagePickerSelection = { type: "symbol"; key: StarshipSymbolImageKey } | { type: "decor"; key: string };
 
