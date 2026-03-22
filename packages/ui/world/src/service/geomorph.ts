@@ -16,7 +16,6 @@ import {
   type SymbolPolysKey,
 } from "@npc-cli/ui__map-edit/map-node-api";
 import "@npc-cli/ui__world/geomorph.d.ts";
-import { Connector } from "@npc-cli/ui__world/connector";
 import {
   decorIconRadius,
   decorIconRadiusOutset,
@@ -29,6 +28,7 @@ import {
 } from "@npc-cli/ui__world/const";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { debug, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
+import { Connector } from "./Connector";
 
 /**
  * 🚧 needs review
