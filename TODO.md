@@ -69,15 +69,20 @@
   - ✅ World has meta.mapKey with default "empty-map"
   - ✅ World has WorldContextMenu reading public/map/manifest and can change mapKey
 
+- 🚧 move map-node-api schemas into separate files
+  - ui/map-edit/src/schema
+  - ui/world/src/schema
+
 - 🚧 can see floors in World
   - ✅ start service/geometry.ts
   - ✅ start service/shader.ts
   - ✅ Floor uses instancedMesh demo
     - i.e. some instances with different colours
   - ✅ draw a demo texture atlas and apply it to floor instancedMesh
-  - 🚧 migrate positionInstances
+  - 🚧 migrate positionInstances -> transformInstances
     - demo map should have at least two geomorphs
-  - 🚧 migrate state.addUvs
+    - LayoutInstance schema
+  - migrate state.addUvs
 
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol
