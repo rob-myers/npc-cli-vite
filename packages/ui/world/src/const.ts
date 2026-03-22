@@ -2,8 +2,17 @@ export const precision = 4;
 
 /** Size of starship geomorphs grid side in meters */
 export const geomorphGridMeters = 1.5;
-/** In SVG symbols (sgu) the grid is 60x60 */
+
+/**
+ * Convert Starship Geomorph units (sgu) into world coordinates (meters).
+ * e.g. 1 tile is 60 sgu, which becomes 1.5 meters
+ */
 export const sguToWorldScale = (1 / 60) * geomorphGridMeters;
+/**
+ * Convert world coordinates (meters) into Starship Geomorph units (sgu).
+ * e.g. 1 tile is 1.5 meters, which becomes 60 sgu
+ */
+export const worldToSguScale = 1 / sguToWorldScale;
 
 export const decorIconRadius = 5 * sguToWorldScale;
 export const decorIconRadiusOutset = 2 * sguToWorldScale;
@@ -31,3 +40,10 @@ export const connectorEntranceHalfDepth = {
   hull: 0.25 + wallOutset,
   nonHull: 0.125 + wallOutset,
 };
+
+/** Unchangeable 🚧 why this value? */
+export const geomorphPngRectWidth = 30.3;
+/** Higher resolution floors */
+export const gmFloorExtraScale = 2;
+/** This is the width, but also the height even for edge geomorphs, because we use texture arrays */
+export const floorTextureDimension = geomorphPngRectWidth * worldToSguScale * gmFloorExtraScale;
