@@ -19,7 +19,7 @@ import { parseArgs } from "node:util";
 import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
-import { AssetsSchema, type AssetsType } from "@npc-cli/ui__map-edit/map-node-api";
+import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
 import * as geomorph from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
