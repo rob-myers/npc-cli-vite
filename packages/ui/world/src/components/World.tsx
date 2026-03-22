@@ -7,13 +7,15 @@ import NPCs from "./NPCs";
 import { WorldView } from "./WorldView";
 import { WorldContext } from "./world-context";
 
-export default function World(props: { meta: WorldUiMeta }) {
-  const state = useStateRef<State>(() => ({
-    key: props.meta.worldKey,
-    disabled: props.meta.disabled,
-  }));
-
-  state.disabled = props.meta.disabled;
+export default function World({ meta }: { meta: WorldUiMeta }) {
+  const state = useStateRef<State>(
+    () => ({
+      key: meta.worldKey,
+      disabled: meta.disabled,
+      mapKey: meta.mapKey,
+    }),
+    { deps: [meta] },
+  );
 
   return (
     <WorldContext.Provider value={state}>
@@ -31,4 +33,5 @@ export default function World(props: { meta: WorldUiMeta }) {
 export type State = {
   key: WorldUiMeta["worldKey"];
   disabled: boolean;
+  mapKey: string;
 };

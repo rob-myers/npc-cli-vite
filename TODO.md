@@ -64,8 +64,12 @@
   - ✅ implement postParseSymbol 
     - we don't support `removableDoors` or `addableWalls` yet
   - ✅ symbols also have hullWalls (sub of walls)
-- can see walls in World (first approximation)
+
+- 🚧 World has mapKey which can be changed
+  - ✅ World has meta.mapKey with default "empty-map"
 - can see floors in World (first approximation)
+
+- can see walls in World (first approximation)
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
