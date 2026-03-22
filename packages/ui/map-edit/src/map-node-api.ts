@@ -6,34 +6,20 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { Connector } from "@npc-cli/ui__world/connector";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
-import { Mat, Poly, Rect } from "@npc-cli/util/geom";
+import {
+  AffineTransformSchema,
+  CoordSchema,
+  Mat,
+  MetaSchema,
+  PointSchema,
+  Poly,
+  Rect,
+  RectSchema,
+} from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
 //#region schemas
-
-const MetaSchema = z.record(z.string(), z.any());
-
-const PointSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-});
-
-const CoordSchema = z.tuple([z.number(), z.number()]);
-
-const BaseRectSchema = z.object({
-  width: z.number(),
-  height: z.number(),
-});
-const RectSchema = BaseRectSchema.extend(PointSchema.shape);
-const AffineTransformSchema = z.object({
-  a: z.number(),
-  b: z.number(),
-  c: z.number(),
-  d: z.number(),
-  e: z.number(),
-  f: z.number(),
-});
 
 const BaseNodeSchema = z.object({
   id: z.string(),
