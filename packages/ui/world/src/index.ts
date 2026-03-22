@@ -4,7 +4,7 @@ import WorldBootstrap from "./bootstrap";
 import { WorldUiSchema } from "./schema";
 
 export default defineUi({
-  ui: lazy(() => import("./World")),
+  ui: lazy(() => import("./components/World.tsx")),
   bootstrap: WorldBootstrap,
   schema: WorldUiSchema,
 });

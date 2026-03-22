@@ -3,8 +3,8 @@ import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/dr
 import { Canvas, type RootState } from "@react-three/fiber";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
+import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { CameraControls } from "./CameraControls";
-import type { CameraControls as BaseCameraControls } from "./camera-controls";
 import { WorldContext } from "./world-context";
 
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {

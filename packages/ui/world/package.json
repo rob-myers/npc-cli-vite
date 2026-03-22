@@ -5,7 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./geomorph.d.ts": "./src/geomorph.d.ts",
-    "./connector": "./src/Connector.ts",
+    "./connector": "./src/service/Connector.ts",
     "./const": "./src/const.ts"
   },
   "scripts": {},
