@@ -4,7 +4,7 @@ import {
   type StarShipGeomorphKey,
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
-import { type AssetsType, filterNodes, type SymbolPolysKey } from "@npc-cli/ui__map-edit/map-node-api";
+import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import "@npc-cli/ui__world/geomorph.d.ts";
 import {
   type DecorImageMapNode,
@@ -14,6 +14,7 @@ import {
   type MapNode,
   type SymbolMapNode,
 } from "@npc-cli/ui__map-edit/editor.schema";
+import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
 import {
   decorIconRadius,
   decorIconRadiusOutset,

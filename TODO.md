@@ -69,11 +69,11 @@
   - ✅ World has meta.mapKey with default "empty-map"
   - ✅ World has WorldContextMenu reading public/map/manifest and can change mapKey
 
-- 🚧 move map-node-api schemas into separate files
+- ✅ move map-node-api schemas into separate files
   - ✅ util/src/geom/schema
   - ✅ ui/map-edit/src/editor.schema
   - ✅ ui/world/src/decor.schema
-  - ui/world/src/assets.schema
+  - ✅ ui/world/src/assets.schema
 
 - 🚧 can see floors in World
   - ✅ start service/geometry.ts

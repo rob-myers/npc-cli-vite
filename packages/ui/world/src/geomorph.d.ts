@@ -1,11 +1,11 @@
 declare namespace Geomorph {
-  type AssetsType = import("@npc-cli/ui__map-edit/map-node-api").AssetsType;
-  type FlatSymbol = import("@npc-cli/ui__map-edit/map-node-api").AssetsFlatSymbol;
-  type GeomorphLayout = import("@npc-cli/ui__map-edit/map-node-api").GeomorphLayout;
-  type LayoutObstacle = import("@npc-cli/ui__map-edit/map-node-api").GeomorphLayoutObstacle;
-  type MapDef = import("@npc-cli/ui__map-edit/map-node-api").AssetsMapDef;
-  type SubSymbol = import("@npc-cli/ui__map-edit/map-node-api").AssetsSubSymbol;
-  type Symbol = import("@npc-cli/ui__map-edit/map-node-api").AssetsSymbol;
+  type AssetsType = import("@npc-cli/ui__world/assets.schema").AssetsType;
+  type FlatSymbol = import("@npc-cli/ui__world/assets.schema").AssetsFlatSymbol;
+  type GeomorphLayout = import("@npc-cli/ui__world/assets.schema").GeomorphLayout;
+  type LayoutObstacle = import("@npc-cli/ui__world/assets.schema").GeomorphLayoutObstacle;
+  type MapDef = import("@npc-cli/ui__world/assets.schema").AssetsMapDef;
+  type SubSymbol = import("@npc-cli/ui__world/assets.schema").AssetsSubSymbol;
+  type Symbol = import("@npc-cli/ui__world/assets.schema").AssetsSymbol;
 
   interface ConnectorJson {
     poly: Geom.GeoJsonPolygon;
