@@ -30,7 +30,7 @@ export function WorldContextMenu() {
       uiStoreApi.setUiMeta(w.id, (draft) => {
         draft.mapKey = key;
       });
-      state.set({ open: false });
+      setTimeout(() => state.set({ open: false }), 0);
     },
   }));
 
