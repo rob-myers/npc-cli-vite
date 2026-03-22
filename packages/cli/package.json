@@ -7,6 +7,7 @@
     "./jsh/modules": "./src/jsh/modules.js",
     "./jsh/scripts": "./src/jsh/scripts.js",
     "./shell/const": "./src/shell/const.ts",
+    "./shell/query-client": "./src/shell/query-client.ts",
     "./legacy/npc.d.ts": {
       "types": "./src/legacy/npc.d.ts"
     }

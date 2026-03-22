@@ -24,6 +24,13 @@ export class QueryClientApi {
     })?.state.data;
   }
 
+  remove(queryKey: string | string[]) {
+    const found = this.queryCache.find({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
+    if (found) {
+      this.queryCache.remove(found);
+    }
+  }
+
   set<T>(queryKey: string[], updater: Updater<T | undefined, T>) {
     this.queryClient.setQueryDefaults(queryKey, {
       staleTime: Number.POSITIVE_INFINITY,
