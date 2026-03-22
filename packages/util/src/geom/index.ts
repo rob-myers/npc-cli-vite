@@ -1,3 +1,4 @@
+export * from "./geom.schema.ts";
 export * from "./geom-service.ts";
 export * from "./mat.js";
 export * from "./poly.js";
