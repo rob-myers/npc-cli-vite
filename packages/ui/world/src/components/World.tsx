@@ -16,7 +16,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     mapKey: meta.mapKey,
   }));
 
-  state.mapKey = meta.mapKey; // faster than `deps: [meta]`
+  // faster than state deps:[meta]
+  state.disabled = meta.disabled;
+  state.mapKey = meta.mapKey;
 
   return (
     <WorldContext.Provider value={state}>
