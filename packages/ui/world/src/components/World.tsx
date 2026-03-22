@@ -1,7 +1,8 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { useStateRef } from "@npc-cli/util";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import type { WorldUiMeta } from "../schema";
+import { queryClientApi } from "../service/query-client";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import { WorldContextMenu } from "./WorldContextMenu";
@@ -16,9 +17,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     mapKey: meta.mapKey,
   }));
 
-  // faster than state deps:[meta]
   state.disabled = meta.disabled;
   state.mapKey = meta.mapKey;
+
+  // cache world
+  useEffect(() => {
+    queryClientApi.set([meta.worldKey], state);
+    return () => queryClientApi.remove([meta.worldKey]);
+  }, []);
 
   return (
     <WorldContext.Provider value={state}>

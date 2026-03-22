@@ -8,7 +8,8 @@ export const queryClientApi = new QueryClientApi();
 cliQueryClient.setQueryClientApi(queryClientApi);
 worldQueryClient.setQueryClientApi(queryClientApi);
 
-if (import.meta.env.DEV) {
-  // biome-ignore lint/suspicious/noExplicitAny: devtools hook
-  (window as any).__TANSTACK_QUERY_CLIENT__ = queryClientApi.queryClient;
-}
+// 🔔 use <ReactQueryDevtools> to avoid DataCloneError from chrome devtools when cache World
+// if (import.meta.env.DEV) {
+//   // biome-ignore lint/suspicious/noExplicitAny: devtools hook
+//   (window as any).__TANSTACK_QUERY_CLIENT__ = queryClientApi.queryClient;
+// }

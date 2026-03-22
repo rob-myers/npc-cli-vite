@@ -1,4 +1,5 @@
 import { themeApi, themeStore } from "@npc-cli/theme";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { PreloadGrid } from "../components/PreloadGrid";
@@ -23,6 +24,7 @@ function RootComponent() {
       {resolvedLocation?.pathname === "/" && <PreloadGrid />}
       <Outlet />
       <TanStackRouterDevtools position="bottom-right" />
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
     </div>
   );
 }
