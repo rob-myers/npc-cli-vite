@@ -4,8 +4,10 @@ import type { RootState } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
 import type * as THREE from "three";
 import { Timer } from "three-stdlib";
+import { floorTextureDimension } from "../const";
 import type { WorldUiMeta } from "../schema";
 import { queryClientApi } from "../service/query-client";
+import { TexArray } from "../service/tex-array";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import { WorldContextMenu } from "./WorldContextMenu";
@@ -18,12 +20,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       id: meta.id,
       key: meta.worldKey,
       disabled: meta.disabled,
-      events: new Broadcaster(),
       mapKey: meta.mapKey,
+
+      events: new Broadcaster(),
       r3f: null as unknown as State["r3f"],
       reqAnimId: -1,
       threeReady: false,
       timer: new Timer(),
+
+      texFloor: new TexArray({
+        ctKey: "floor-tex",
+        numTextures: 1, // can change
+        width: floorTextureDimension,
+        height: floorTextureDimension,
+      }),
 
       view: null as unknown as State["view"],
 
@@ -85,6 +95,8 @@ export type State = {
   reqAnimId: number;
   threeReady: boolean;
   timer: Timer;
+
+  texFloor: TexArray;
 
   view: import("./WorldView").State;
 
