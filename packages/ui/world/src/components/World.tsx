@@ -1,6 +1,9 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { useStateRef } from "@npc-cli/util";
+import { Broadcaster, useStateRef } from "@npc-cli/util";
+import type { RootState } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
+import type * as THREE from "three";
+import { Timer } from "three-stdlib";
 import type { WorldUiMeta } from "../schema";
 import { queryClientApi } from "../service/query-client";
 import Floor from "./Floor";
@@ -10,12 +13,31 @@ import { WorldView } from "./WorldView";
 import { WorldContext } from "./world-context";
 
 export default function World({ meta }: { meta: WorldUiMeta }) {
-  const state = useStateRef<State>(() => ({
-    id: meta.id,
-    key: meta.worldKey,
-    disabled: meta.disabled,
-    mapKey: meta.mapKey,
-  }));
+  const state = useStateRef(
+    (): State => ({
+      id: meta.id,
+      key: meta.worldKey,
+      disabled: meta.disabled,
+      events: new Broadcaster(),
+      mapKey: meta.mapKey,
+      r3f: null as unknown as State["r3f"],
+      reqAnimId: -1,
+      threeReady: false,
+      timer: new Timer(),
+
+      view: null as unknown as State["view"],
+
+      onTick() {
+        state.reqAnimId = requestAnimationFrame(state.onTick);
+        state.timer.update();
+        // 🚧 tick subcomponents
+      },
+      stopTick() {
+        cancelAnimationFrame(state.reqAnimId);
+        state.reqAnimId = 0;
+      },
+    }),
+  );
 
   state.disabled = meta.disabled;
   state.mapKey = meta.mapKey;
@@ -25,6 +47,17 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     queryClientApi.set([meta.worldKey], state);
     return () => queryClientApi.remove([meta.worldKey]);
   }, []);
+
+  // enable/disable
+  useEffect(() => {
+    state.timer.reset();
+    state.view.syncRenderMode();
+    if (!state.disabled) {
+      state.onTick();
+    }
+    state.events.next({ key: state.disabled ? "disabled" : "enabled" });
+    return () => state.stopTick();
+  }, [state.disabled]);
 
   return (
     <WorldContext.Provider value={state}>
@@ -46,5 +79,15 @@ export type State = {
   id: string;
   key: WorldUiMeta["worldKey"];
   disabled: boolean;
+  events: Broadcaster<NPC.Event>;
   mapKey: string;
+  r3f: RootState & { camera: THREE.PerspectiveCamera };
+  reqAnimId: number;
+  threeReady: boolean;
+  timer: Timer;
+
+  view: import("./WorldView").State;
+
+  onTick(): void;
+  stopTick(): void;
 };

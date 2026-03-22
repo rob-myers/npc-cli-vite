@@ -1,7 +1,7 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { CameraControls } from "./CameraControls";
@@ -28,6 +28,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       zoomSpeed: 0.3,
       // zoomToCursor: true, // breaks follow zoom on HMR
     },
+    rootEl: null as any,
+
+    canvasRef(canvasEl) {
+      if (canvasEl !== null) {
+        state.canvas = canvasEl;
+        state.rootEl = canvasEl.parentElement?.parentElement as HTMLDivElement;
+      }
+    },
     async createRenderer(props: Record<string, unknown>) {
       const renderer = new THREE.WebGPURenderer(props as ConstructorParameters<typeof THREE.WebGPURenderer>[0]);
       // renderer.toneMapping = 3;
@@ -37,30 +45,31 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       await renderer.init();
       return renderer;
     },
-    rootEl: null as any,
-    canvasRef(canvasEl) {
-      if (canvasEl !== null) {
-        state.canvas = canvasEl;
-        state.rootEl = canvasEl.parentElement?.parentElement as HTMLDivElement;
-      }
+    onCreated(rootState) {
+      w.threeReady = true;
+      w.r3f = rootState as typeof w.r3f;
+      w.update(); // e.g. show stats
     },
     syncRenderMode() {
-      return w.disabled ? "demand" : "always";
+      if (w.disabled === true) {
+        w.r3f?.set({ frameloop: "demand" });
+        return "demand";
+      } else {
+        w.r3f?.set({ frameloop: "always" });
+        return "always";
+      }
     },
   }));
 
-  useEffect(() => {
-    // Force initial render to show Stats
-    state.update();
-  }, []);
+  w.view = state;
 
   return (
     <Canvas
       className={props.className}
       ref={state.canvasRef}
       frameloop={state.syncRenderMode()}
-      // frameloop="always"
       gl={state.createRenderer}
+      onCreated={state.onCreated}
     >
       {props.children}
 
@@ -94,12 +103,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   );
 }
 
-type State = {
+export type State = {
   canvas: HTMLCanvasElement;
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
-  createRenderer(props: Record<string, unknown>): Promise<THREE.WebGPURenderer>;
   rootEl: HTMLDivElement;
+
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
+  createRenderer(props: Record<string, unknown>): Promise<THREE.WebGPURenderer>;
+  onCreated(rootState: RootState): void;
   syncRenderMode(): RootState["frameloop"];
 };
