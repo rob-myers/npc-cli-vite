@@ -3,6 +3,7 @@ import {
   draggable,
   dropTargetForElements,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import {
   UiContext,
   UiInstanceMenu,
@@ -181,7 +182,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       </div>
       <div className="pt-4 px-2 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
-          <div key={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
+          <div key={tab.id} data-tab-content={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
             {byId[tab.id] && (
               <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
             )}
@@ -224,6 +225,32 @@ function TabItem({
       draggable({
         element: el,
         getInitialData: () => ({ type: "tab", id, tabsMetaId }),
+        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          const contentEl = el.closest(".flex.flex-col")?.querySelector<HTMLElement>(`[data-tab-content="${id}"]`);
+          const parentEl = contentEl?.parentElement;
+          if (!contentEl || !parentEl) return;
+
+          const { width, height } = parentEl.getBoundingClientRect();
+          const s = 0.4;
+
+          setCustomNativeDragPreview({
+            nativeSetDragImage,
+            render: ({ container }) => {
+              container.innerHTML = `
+                <div style="width:${width * s}px; overflow:hidden; background:rgba(59,130,246,0.5)">
+                  <div data-tab style="background:var(--color-background,#222); color:var(--color-on-background,#fff); font-size:6px"></div>
+                  <div style="width:${width * s}px; height:${height * s}px; overflow:hidden; border:2px solid rgba(255,255,255,0.5)">
+                    <div data-content style="width:${width}px; height:${height}px; transform:scale(${s}); transform-origin:top left"></div>
+                  </div>
+                </div>
+              `;
+              container.querySelector("[data-tab]")?.appendChild(el.cloneNode(true));
+              const contentClone = contentEl.cloneNode(true) as HTMLElement;
+              contentClone.classList.remove("hidden");
+              container.querySelector("[data-content]")?.appendChild(contentClone);
+            },
+          });
+        },
         onDragStart: () => state.set({ isDragging: true }),
         onDrop: () => state.set({ isDragging: false }),
       }),
