@@ -24,3 +24,12 @@ export const PointSchema = z.object({
 });
 
 export const RectSchema = BaseRectSchema.extend(PointSchema.shape);
+
+export const SixTupleSchema = z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]);
+
+export const Vector3LikeSchema = z.object({ x: z.number(), y: z.number(), z: z.number() });
+
+export const TriangulationSchema = z.object({
+  vs: z.array(PointSchema),
+  tris: z.array(z.tuple([z.number(), z.number(), z.number()])),
+});
