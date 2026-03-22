@@ -70,12 +70,14 @@
   - ✅ World has WorldContextMenu reading public/map/manifest and can change mapKey
 
 - 🚧 can see floors in World
-  - ✅ start service/three-geometry.ts
-  - ✅ start service/three-shader.ts
+  - ✅ start service/geometry.ts
+  - ✅ start service/shader.ts
   - ✅ Floor uses instancedMesh demo
     - i.e. some instances with different colours
   - ✅ draw a demo texture atlas and apply it to floor instancedMesh
-  - ask for help converting a shader into three TSL
+  - 🚧 migrate positionInstances
+    - demo map should have at least two geomorphs
+  - 🚧 migrate state.addUvs
 
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol
