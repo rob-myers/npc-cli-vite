@@ -1,25 +1,10 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import {
-  draggable,
-  dropTargetForElements,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import {
-  UiContext,
-  UiInstanceMenu,
-  type UiInstanceMeta,
-  uiClassName,
-  uiStore,
-  uiStoreApi,
-} from "@npc-cli/ui-sdk";
+import { UiContext, UiInstanceMenu, type UiInstanceMeta, uiClassName, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import {
-  ArrowUpRightIcon,
-  DotsThreeOutlineVerticalIcon,
-  PlusCircleIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { ArrowUpRightIcon, DotsThreeOutlineVerticalIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
@@ -72,9 +57,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           const item = draft.byId[tab.id];
           if (item) item.meta.parentId = undefined;
         });
-        layoutApi.appendLayoutItems([
-          { i: tab.id, x: 0, y: 0, w: 2, h: 1, ...layoutApi.getUiGridRect(meta.id) },
-        ]);
+        layoutApi.appendLayoutItems([{ i: tab.id, x: 0, y: 0, w: 2, h: 1, ...layoutApi.getUiGridRect(meta.id) }]);
       },
       onClickTab(tab: UiInstanceMeta) {
         uiStore.setState((draft) => {
@@ -153,10 +136,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       <div className="flex justify-between min-h-12 w-full border-b border-outline">
         <div
           ref={tabBarRef}
-          className={cn(
-            "flex items-end overflow-auto [scrollbar-width:thin]",
-            state.isDropTarget && "bg-blue-400/10",
-          )}
+          className={cn("flex items-end overflow-auto [scrollbar-width:thin]", state.isDropTarget && "bg-blue-400/10")}
         >
           {tabs.map((tab) => (
             <TabItem
@@ -180,12 +160,14 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         </div>
         <UiInstanceMenu meta={meta} className="self-end" />
       </div>
-      <div className="pt-4 px-2 flex-1 size-full overflow-auto">
+      <div className="pt-4 px-0 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
-          <div key={tab.id} data-tab-content={tab.id} className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}>
-            {byId[tab.id] && (
-              <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
-            )}
+          <div
+            key={tab.id}
+            data-tab-content={tab.id}
+            className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}
+          >
+            {byId[tab.id] && <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />}
           </div>
         ))}
       </div>
@@ -202,14 +184,7 @@ interface TabItemProps {
   tabsMetaId: string;
 }
 
-function TabItem({
-  tab,
-  isCurrentTab,
-  onClickTab,
-  onBreakOutTab,
-  onDeleteTab,
-  tabsMetaId,
-}: TabItemProps) {
+function TabItem({ tab, isCurrentTab, onClickTab, onBreakOutTab, onDeleteTab, tabsMetaId }: TabItemProps) {
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
     isDragging: false,
@@ -334,10 +309,7 @@ function TabItem({
         {isCurrentTab && (
           <BasicPopover
             trigger={
-              <DotsThreeOutlineVerticalIcon
-                weight="thin"
-                className="cursor-pointer size-4 text-on-background/80"
-              />
+              <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
             }
             className="bg-black p-0"
             arrowClassName="fill-black"
