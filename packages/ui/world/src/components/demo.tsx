@@ -4,9 +4,20 @@ import { Box, useAnimations, useGLTF, useTexture } from "@react-three/drei";
 import { buildGraph } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
-import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
+import {
+  cameraPosition,
+  instanceIndex,
+  int,
+  normalWorld,
+  positionWorld,
+  texture,
+  texture as tslTexture,
+  uv,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { createCheckerBoxMaterial } from "../service/shader";
+import type { TexArray } from "../service/tex-array";
 
 export function SkinnedMeshTemplateDemo() {
   const groupRef = useRef<THREE.Group>(null);
@@ -83,6 +94,56 @@ export function DemoCheckerBox() {
   return <Box args={[1, 1, 1, 10, 1, 10]} position={[0, 0, 0]} scale={[100, 0.001, 100]} material={mat} />;
 }
 
+export function drawDemoFloorTextures(texFloor: TexArray) {
+  const size = 256;
+  const cell = size / 4;
+  const { ct } = texFloor;
+
+  const layers: ((ct: CanvasRenderingContext2D) => void)[] = [
+    // colored grid
+    (ct) => {
+      const colors = ["#e74c3c", "#3498db", "#2ecc71", "#f39c12"];
+      for (let row = 0; row < 4; row++)
+        for (let col = 0; col < 4; col++) {
+          ct.fillStyle = colors[(row + col) % colors.length];
+          ct.fillRect(col * cell, row * cell, cell, cell);
+        }
+    },
+    // diagonal stripes
+    (ct) => {
+      ct.fillStyle = "#1abc9c";
+      ct.fillRect(0, 0, size, size);
+      ct.strokeStyle = "#2c3e50";
+      ct.lineWidth = 8;
+      for (let i = -size; i < size * 2; i += 24) {
+        ct.beginPath();
+        ct.moveTo(i, 0);
+        ct.lineTo(i + size, size);
+        ct.stroke();
+      }
+    },
+    // circles / dots
+    (ct) => {
+      ct.fillStyle = "#9b59b6";
+      ct.fillRect(0, 0, size, size);
+      ct.fillStyle = "#f1c40f";
+      for (let row = 0; row < 4; row++)
+        for (let col = 0; col < 4; col++) {
+          ct.beginPath();
+          ct.arc(col * cell + cell / 2, row * cell + cell / 2, cell / 3, 0, Math.PI * 2);
+          ct.fill();
+        }
+    },
+  ];
+
+  texFloor.resize({ numTextures: layers.length, width: size, height: size });
+  layers.forEach((draw, i) => {
+    ct.clearRect(0, 0, size, size);
+    draw(ct);
+    texFloor.updateIndex(i);
+  });
+}
+
 export const demoInstancedQuad = {
   metas: [
     { pos: [-8, 0, -8], color: 0xe74c3c },
@@ -110,4 +171,13 @@ export const demoInstancedQuad = {
     inst.instanceMatrix.needsUpdate = true;
     if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
   },
+};
+
+export const createDemoTexArrayMaterial = (texArray: TexArray) => {
+  drawDemoFloorTextures(texArray);
+  const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
+  const texNode = texture(texArray.tex, uv());
+  texNode.depthNode = instanceIndex.mod(int(3));
+  mat.colorNode = texNode;
+  return mat;
 };

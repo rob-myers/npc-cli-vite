@@ -74,8 +74,7 @@
   - ✅ start service/three-shader.ts
   - ✅ Floor uses instancedMesh demo
     - i.e. some instances with different colours
-  - 🚧 create a demo texture atlas and apply it to floor instancedMesh
-    - probably need a TextureArray
+  - ✅ draw a demo texture atlas and apply it to floor instancedMesh
   - ask for help converting a shader into three TSL
 
 - can see walls in World

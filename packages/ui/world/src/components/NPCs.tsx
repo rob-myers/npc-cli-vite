@@ -1,4 +1,4 @@
-import { SkinnedMeshTemplateDemo } from "./Demo";
+import { SkinnedMeshTemplateDemo } from "./demo";
 
 export default function NPCs() {
   return (
