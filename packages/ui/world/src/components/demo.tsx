@@ -1,11 +1,12 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { useAnimations, useGLTF, useTexture } from "@react-three/drei";
+import { Box, useAnimations, useGLTF, useTexture } from "@react-three/drei";
 import { buildGraph } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { createCheckerBoxMaterial } from "../service/shader";
 
 export function SkinnedMeshTemplateDemo() {
   const groupRef = useRef<THREE.Group>(null);
@@ -39,13 +40,13 @@ export function SkinnedMeshTemplateDemo() {
 
   useEffect(() => {
     console.log({ gltf, actions, rootBone: bones[0], material: root.material });
-    
+
     actions[animationName.idle]?.play();
     setTimeout(() => {
       actions[animationName.idle]?.fadeOut(0.5);
       actions[animationName.walk]?.reset().fadeIn(0.5).play();
     }, 0);
-    
+
     return () => {
       Object.values(actions).forEach((a) => a?.stop());
     };
@@ -76,3 +77,8 @@ const animationName = {
 } as const;
 
 useGLTF.preload(url.templateGltf);
+
+export function DemoCheckerBox() {
+  const mat = useMemo(() => createCheckerBoxMaterial(), []);
+  return <Box args={[1, 1, 1, 10, 1, 10]} position={[0, 0, 0]} scale={[100, 0.001, 100]} material={mat} />;
+}

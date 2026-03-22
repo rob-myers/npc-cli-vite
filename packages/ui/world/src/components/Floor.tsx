@@ -1,6 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import * as THREE from "three/webgpu";
-import { createXzQuad } from "../service/three-geometry";
+import { createXzQuad } from "../service/geometry";
 
 // biome-ignore format: grid layout
 const instances = [
