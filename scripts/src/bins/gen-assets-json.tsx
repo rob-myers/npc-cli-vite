@@ -2,9 +2,9 @@
 
 /**
  * WIP
- * - 🚧 `parsed` -- symbol key to geometry/metadata
- * - 🚧 `stratified` -- stratified directed graph
+ * - `parsed` -- symbol key to geometry/metadata
  * - `flattened` -- symbol key to unwound symbols (includes hull symbols)
+ * - `layout` -- symbol key to layouts (geomorphs)
  *
  * USAGE:
  * ```sh
@@ -19,11 +19,11 @@ import { parseArgs } from "node:util";
 import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { AssetsSchema, type AssetsType, MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import * as geomorph from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
-import * as geomorph from "../service/geomorph";
 import { perf } from "../service/performance";
 
 const opts = parseArgs({

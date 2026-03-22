@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
 import {
   getGeomorphNumber,
   isHullSymbolImageKey,
@@ -359,7 +358,6 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   }
 }
 
-// 🚧 return type should be Pick<Geomorph.GeomorphLayout, "navDecomp" | "navRects"> once those fields exist
 export function decomposeLayoutNav(
   navPolyWithDoors: Geom.Poly[],
   doors: Connector[],
@@ -601,7 +599,6 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
 
     ...polysLookup,
     symbols,
-    // 🚧 ...
   };
 }
 
