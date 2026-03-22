@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./map-node-api": "./src/map-node-api.ts"
+    "./map-node-api": "./src/map-node-api.ts",
+    "./editor.schema": "./src/editor.schema.ts"
   },
   "scripts": {},
   "dependencies": {

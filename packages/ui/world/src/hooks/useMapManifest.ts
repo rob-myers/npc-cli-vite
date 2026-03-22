@@ -1,4 +1,4 @@
-import { MapsManifestSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import { MapsManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { useQuery } from "@tanstack/react-query";
 

@@ -1,11 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  devMessageFromServer,
-  type PathManifest,
-  PathManifestEntrySchema,
-  PathManifestSchema,
-} from "@npc-cli/ui__map-edit/map-node-api";
+import { type PathManifest, PathManifestEntrySchema, PathManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
+import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { info, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { type DecorManifest, DecorManifestEntrySchema, DecorManifestSchema } from "@npc-cli/ui__map-edit/map-node-api";
+import { type DecorManifest, DecorManifestEntrySchema, DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import { Canvas, loadImage } from "skia-canvas";

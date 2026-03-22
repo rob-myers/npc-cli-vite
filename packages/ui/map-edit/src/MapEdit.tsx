@@ -28,33 +28,11 @@ import { type PointerEvent, useCallback, useContext, useEffect, useMemo } from "
 import { useBeforeunload } from "react-beforeunload";
 import z from "zod";
 import { queryClientApi } from "../../../cli/src/shell/query-client";
-import { FileMenu } from "./FileMenu";
-import { ImagePickerModal, type ImagePickerSelection } from "./ImagePickerModal";
-import { InspectorNode } from "./InspectorNode";
-import { MainMenu } from "./MainMenu";
-import { MapEditSvg } from "./MapEditSvg";
 import {
-  areFileSpecifiersEqual,
   type BaseRect,
-  baseSvgSize,
-  computeNodeCssTransform,
   type DecorManifest,
   DecorManifestSchema,
-  defaultSymbolKey,
-  devMessageFromServer,
-  extendCurrentFileSpecifierMapping,
-  findNode,
-  findNodeWithDepth,
-  getFileSpecifierLocalStorageKey,
-  getLocalStorageSavedFiles,
-  getNodeBounds,
-  getRecursiveNodes,
   type ImageMapNode,
-  imageOffsetValues,
-  insertNodeAt,
-  isNodeReflectable,
-  isNodeTransformable,
-  LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
   type MapEditFileSpecifier,
   type MapEditSavedFile,
   MapEditSavedFileSchema,
@@ -64,15 +42,39 @@ import {
   type MapNodeType,
   type MapsManifest,
   MapsManifestSchema,
-  mapNodes,
-  migrateMapEditSavedFile,
   type PathManifest,
   PathManifestSchema,
-  removeNodeFromParent,
   type SymbolsManifest,
   SymbolsManifestSchema,
-  shouldUseOriginalName,
   type Transform,
+} from "./editor.schema";
+import { FileMenu } from "./FileMenu";
+import { ImagePickerModal, type ImagePickerSelection } from "./ImagePickerModal";
+import { InspectorNode } from "./InspectorNode";
+import { MainMenu } from "./MainMenu";
+import { MapEditSvg } from "./MapEditSvg";
+import {
+  areFileSpecifiersEqual,
+  baseSvgSize,
+  computeNodeCssTransform,
+  defaultSymbolKey,
+  devMessageFromServer,
+  extendCurrentFileSpecifierMapping,
+  findNode,
+  findNodeWithDepth,
+  getFileSpecifierLocalStorageKey,
+  getLocalStorageSavedFiles,
+  getNodeBounds,
+  getRecursiveNodes,
+  imageOffsetValues,
+  insertNodeAt,
+  isNodeReflectable,
+  isNodeTransformable,
+  LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
+  mapNodes,
+  migrateMapEditSavedFile,
+  removeNodeFromParent,
+  shouldUseOriginalName,
   templateNodeByKey,
   traverseNodesSync,
 } from "./map-node-api";
