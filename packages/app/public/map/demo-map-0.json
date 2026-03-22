@@ -6,7 +6,7 @@
     {
       "id": "e80d60ae-0ab1-4c41-adb8-7a489887d1ba",
       "name": "g-301--bridge",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 1,
@@ -31,7 +31,7 @@
     {
       "id": "8c061af1-619d-450a-85bb-9d1e04690414",
       "name": "g-301--bridge",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 1,
