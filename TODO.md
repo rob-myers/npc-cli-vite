@@ -68,9 +68,12 @@
 - ✅ World has mapKey which can be changed
   - ✅ World has meta.mapKey with default "empty-map"
   - ✅ World has WorldContextMenu reading public/map/manifest and can change mapKey
-- can see floors in World (first approximation)
 
-- can see walls in World (first approximation)
+- 🚧 can see floors in World
+  - start service/three-geometry.ts
+  - start service/three-shader.ts
+
+- can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
