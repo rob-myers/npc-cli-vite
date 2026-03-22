@@ -65,8 +65,9 @@
     - we don't support `removableDoors` or `addableWalls` yet
   - ✅ symbols also have hullWalls (sub of walls)
 
-- 🚧 World has mapKey which can be changed
+- ✅ World has mapKey which can be changed
   - ✅ World has meta.mapKey with default "empty-map"
+  - ✅ World has WorldContextMenu reading public/map/manifest and can change mapKey
 - can see floors in World (first approximation)
 
 - can see walls in World (first approximation)
