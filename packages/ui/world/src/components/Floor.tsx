@@ -10,173 +10,166 @@ import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
-import { gmFloorExtraScale, worldToSguScale } from "../const";
+import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import * as geomorph from "../service/geomorph";
+import { getGridPattern } from "../service/grid-pattern";
 import { WorldContext } from "./world-context";
 
-// 🚧 clean
 export default function Floor() {
   const w = useContext(WorldContext);
 
-  const state = useStateRef(() => ({
-    inst: null as null | THREE.InstancedMesh,
-    quad: createXzQuad(),
+  const state = useStateRef(
+    () => ({
+      inst: null as null | THREE.InstancedMesh,
+      quad: createXzQuad(),
 
-    addUvs() {
-      if (!state.inst) return;
+      gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(200, 200, 200, 0.5)"),
 
-      // specify texture array rectangle, per instance
-      const uvOffsets: number[] = [];
-      const uvDimensions: number[] = [];
-      // also textureId for spritesheets later
-      const uvTextureIds: number[] = [];
+      addUvs() {
+        if (!state.inst) return;
 
-      for (const gm of w.gms) {
-        uvOffsets.push(0, 0);
-        // edge geomorph 301 pngRect height/width ~ 0.5 but not equal
-        uvDimensions.push(1, geomorph.isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1);
-        uvTextureIds.push(w.getGmKeyTexId(gm.key));
-      }
+        // specify texture rectangle (per instance)
+        const uvOffsets: number[] = [];
+        const uvDimensions: number[] = [];
+        // textureId for spritesheets (later)
+        const uvTextureIds: number[] = [];
 
-      state.inst.geometry.setAttribute("uvOffsets", new THREE.InstancedBufferAttribute(new Float32Array(uvOffsets), 2));
-      state.inst.geometry.setAttribute(
-        "uvDimensions",
-        new THREE.InstancedBufferAttribute(new Float32Array(uvDimensions), 2),
-      );
-      state.inst.geometry.setAttribute(
-        "uvTextureIds",
-        new THREE.InstancedBufferAttribute(new Uint32Array(uvTextureIds), 1),
-      );
-    },
+        for (const gm of w.gms) {
+          uvOffsets.push(0, 0);
+          // edge geomorph 301 pngRect height/width ~ 0.5 but not equal
+          uvDimensions.push(1, geomorph.isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1);
+          uvTextureIds.push(w.getGmKeyTexId(gm.key));
+        }
 
-    async draw() {
-      // w.menu.measure('floor.draw');
-      // for (const [texId, gmKey] of w.gmsData.seenGmKeys.entries()) {
-      //   state.drawGm(gmKey);
-      //   w.texFloor.updateIndex(texId);
-      //   await pause();
-      // }
-      // w.menu.measure('floor.draw');
-      for (const [texId, gm] of w.gms.entries()) {
-        state.drawGm(gm.key);
-        w.texFloor.updateIndex(texId); // 🚧 texId needn't be aligned
-        await pause();
-      }
-    },
+        state.inst.geometry.setAttribute(
+          "uvOffsets",
+          new THREE.InstancedBufferAttribute(new Float32Array(uvOffsets), 2),
+        );
+        state.inst.geometry.setAttribute(
+          "uvDimensions",
+          new THREE.InstancedBufferAttribute(new Float32Array(uvDimensions), 2),
+        );
+        state.inst.geometry.setAttribute(
+          "uvTextureIds",
+          new THREE.InstancedBufferAttribute(new Uint32Array(uvTextureIds), 1),
+        );
+      },
 
-    drawGm(gmKey: StarShipGeomorphKey) {
-      const { ct } = w.texFloor;
-      const gm = w.assets.layout[gmKey];
-      if (!gm) return;
+      async draw() {
+        // aligned to textures e.g. no geomorph dups
+        for (const [texId, gmKey] of w.seenGmKeys.entries()) {
+          state.drawGm(gmKey);
+          w.texFloor.updateIndex(texId);
+          await pause();
+        }
+      },
 
-      ct.resetTransform();
-      ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+      drawGm(gmKey: StarShipGeomorphKey) {
+        const { ct } = w.texFloor;
+        const gm = w.assets.layout[gmKey];
+        if (!gm) return;
 
-      // 🚧
-      ct.strokeStyle = "#0ff";
-      ct.lineWidth = 8;
-      ct.strokeRect(0, 0, ct.canvas.width, ct.canvas.height);
+        ct.resetTransform();
+        ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
 
-      ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        const hullFloor = gm.hullPoly.map((x) => x.clone().removeHoles());
+        drawPolygons(ct, hullFloor, { fillStyle: "#111", strokeStyle: null });
+        ct.save();
 
-      // hull floor
-      // if (state.dark === true) {
-      //   drawPolygons(ct, gm.hullPoly.map(x => x.clone().removeHoles()), ['#111', null]);
-      // }
-      drawPolygons(
-        ct,
-        gm.hullPoly.map((x) => x.clone().removeHoles()),
-        { fillStyle: "#f00", strokeStyle: null },
-      );
+        // grid
+        drawPolygons(ct, hullFloor, { fillStyle: "#111", strokeStyle: null, clip: true });
+        ct.setTransform(1, 0, 0, 1, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        ct.fillStyle = state.gridPattern;
+        ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
+        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        ct.restore();
 
-      // // grid
-      // ct.setTransform(1, 0, 0, 1, -gm.pngRect.x * worldToCanvas, -gm.pngRect.y * worldToCanvas);
-      // ct.fillStyle = state.grid;
-      // ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
-      // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.pngRect.x * worldToCanvas, -gm.pngRect.y * worldToCanvas);
+        // 🚧 clean e.g. provide examples of each
 
-      // drop shadows, avoiding doubling
-      // const shadowPolys = Poly.union(
-      //   gm.obstacles.flatMap((x) =>
-      //     x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
-      //   ),
-      // );
-      // drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
+        // // drop shadows, avoiding doubling
+        // const shadowPolys = Poly.union(
+        //   gm.obstacles.flatMap((x) =>
+        //     x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
+        //   ),
+        // );
+        // drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
 
-      // // wall bases
-      // drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
+        // wall bases
+        drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
 
-      // // draw nav mesh
-      // const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
-      // ct.lineJoin = "round";
-      // ct.lineWidth = 0.06;
-      // const fillStyle = "#444";
-      // const strokeStyle = "#0007";
+        // // draw nav mesh
+        // const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
+        // ct.lineJoin = "round";
+        // ct.lineWidth = 0.06;
+        // const fillStyle = "#444";
+        // const strokeStyle = "#0007";
+        // // (w.nav.toNavTris[gm.key] ?? []).forEach(([positions, indices]) => {
+        // //   for (const index of indices) {
+        // //     const triVId = index % 3; // 0, 1, 2
+        // //     const vertId = indices[index];
+        // //     triangle.outline[triVId].set(positions[3 * vertId], positions[3 * vertId + 2]);
+        // //     if (triVId === 2) {
+        // //       drawPolygons(ct, [triangle], [fillStyle, strokeStyle]);
+        // //     }
+        // //   }
+        // // });
 
-      // // (w.nav.toNavTris[gm.key] ?? []).forEach(([positions, indices]) => {
-      // //   for (const index of indices) {
-      // //     const triVId = index % 3; // 0, 1, 2
-      // //     const vertId = indices[index];
-      // //     triangle.outline[triVId].set(positions[3 * vertId], positions[3 * vertId + 2]);
-      // //     if (triVId === 2) {
-      // //       drawPolygons(ct, [triangle], [fillStyle, strokeStyle]);
-      // //     }
-      // //   }
-      // // });
+        // // hull doorways
+        // // 🚧 geomorphs are slightly misaligned e.g. 301 vs 101 in small-map-1
+        // // drawPolygons(ct, gm.hullDoors.flatMap(x => x.computeDoorway()), ['#000', null]);
+        // drawPolygons(
+        //   ct,
+        //   gm.hullDoors.flatMap((x) => x.poly),
+        //   { fillStyle: "#0004", strokeStyle: null },
+        // );
 
-      // // hull doorways
-      // // 🚧 geomorphs are slightly misaligned e.g. 301 vs 101 in small-map-1
-      // // drawPolygons(ct, gm.hullDoors.flatMap(x => x.computeDoorway()), ['#000', null]);
-      // drawPolygons(
-      //   ct,
-      //   gm.hullDoors.flatMap((x) => x.poly),
-      //   { fillStyle: "#0004", strokeStyle: null },
-      // );
+        // // // decals from gm.decor
+        // // const { decor } = w.geomorphs.sheet;
+        // // const decals = gm.decor.filter(x => x.type === 'decal');
+        // // for (const decal of decals) {
+        // //   const rect = decor[decal.meta.img];
+        // //   // drawPolygons(ct, [Poly.fromRect(decal.bounds2d)], ['#f00', null]);
+        // //   ct.save();
+        // //   ct.transform(...decal.transform);
+        // //   if (state.dark === true) {// 🔔 grayscale decals for invert
+        // //     ct.globalCompositeOperation = 'xor';
+        // //   }
+        // //   ct.drawImage(w.decorImgs[rect.sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1);
+        // //   ct.restore();
+        // // }
 
-      // // // decals from gm.decor
-      // // const { decor } = w.geomorphs.sheet;
-      // // const decals = gm.decor.filter(x => x.type === 'decal');
-      // // for (const decal of decals) {
-      // //   const rect = decor[decal.meta.img];
-      // //   // drawPolygons(ct, [Poly.fromRect(decal.bounds2d)], ['#f00', null]);
-      // //   ct.save();
-      // //   ct.transform(...decal.transform);
-      // //   if (state.dark === true) {// 🔔 grayscale decals for invert
-      // //     ct.globalCompositeOperation = 'xor';
-      // //   }
-      // //   ct.drawImage(w.decorImgs[rect.sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1);
-      // //   ct.restore();
-      // // }
-
-      // // debug decor rects
-      // // if (state.debug === true) {
-      // //   drawPolygons(ct, gm.decor.filter(x => x.type === 'rect').map(x => Poly.fromRect(x.bounds2d)), [null, '#00f']);
-      // // }
-      // drawPolygons(
-      //   ct,
-      //   gm.decor.filter((x) => x.type === "rect").map((x) => Poly.fromRect(x.bounds2d)),
-      //   { fillStyle: null, strokeStyle: "#00f" },
-      // );
-    },
-    transformInstances() {
-      if (!state.inst) return;
-      for (const [gmId, gm] of w.gms.entries()) {
-        const mat = new Mat({
-          a: gm.bounds.width,
-          b: 0,
-          c: 0,
-          d: gm.bounds.height,
-          e: gm.bounds.x,
-          f: gm.bounds.y,
-        }).postMultiply(gm.matrix);
-        // if (mat.determinant < 0) mat.preMultiply([-1, 0, 0, 1, 1, 0])
-        state.inst.setMatrixAt(gmId, embedXZMat4(mat));
-      }
-      state.inst.instanceMatrix.needsUpdate = true;
-      state.inst.computeBoundingSphere();
-    },
-  }));
+        // // debug decor rects
+        // // if (state.debug === true) {
+        // //   drawPolygons(ct, gm.decor.filter(x => x.type === 'rect').map(x => Poly.fromRect(x.bounds2d)), [null, '#00f']);
+        // // }
+        // drawPolygons(
+        //   ct,
+        //   gm.decor.filter((x) => x.type === "rect").map((x) => Poly.fromRect(x.bounds2d)),
+        //   { fillStyle: null, strokeStyle: "#00f" },
+        // );
+      },
+      transformInstances() {
+        if (!state.inst) return;
+        for (const [gmId, gm] of w.gms.entries()) {
+          const mat = new Mat({
+            a: gm.bounds.width,
+            b: 0,
+            c: 0,
+            d: gm.bounds.height,
+            e: gm.bounds.x,
+            f: gm.bounds.y,
+          }).postMultiply(gm.matrix);
+          // if (mat.determinant < 0) mat.preMultiply([-1, 0, 0, 1, 1, 0])
+          state.inst.setMatrixAt(gmId, embedXZMat4(mat));
+        }
+        state.inst.instanceMatrix.needsUpdate = true;
+        state.inst.computeBoundingSphere();
+      },
+    }),
+    { reset: { gridPattern: false } },
+  );
 
   // three shader language
   const shaderMeta = useMemo(() => {
@@ -210,5 +203,4 @@ export default function Floor() {
   );
 }
 
-const tmpMat1 = new Mat();
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
