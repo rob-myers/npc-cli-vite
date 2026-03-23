@@ -14,6 +14,7 @@ import type { WorldUiMeta } from "../schema";
 import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { TexArray } from "../service/tex-array";
+import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import { WorldContextMenu } from "./WorldContextMenu";
@@ -122,6 +123,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           <Suspense>
             <NPCs />
           </Suspense>
+          <Debug />
         </WorldView>
         <WorldContextMenu />
       </div>
