@@ -98,8 +98,10 @@
 - ✅ use zod codec for points
 - ✅ use zod codec for rects
 
-- 🚧 gen-assets-json should trigger hot-reload
-  - works but currently have to save twice
+- ✅ gen-assets-json triggers hot-reload
+
+- 🚧 fix misaligned demo-map-0
+  - try take `offset`s into account
 
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol

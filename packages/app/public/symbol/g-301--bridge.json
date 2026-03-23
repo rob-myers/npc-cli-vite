@@ -8,25 +8,12 @@
       "name": "g-301--bridge 1",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": -2.5,
-        "f": -20
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": -20},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "g-301--bridge",
-      "baseRect": {
-        "width": 1212,
-        "height": 628
-      },
-      "offset": {
-        "x": -3,
-        "y": -2
-      },
+      "baseRect": {"width": 1212, "height": 628},
+      "offset": {"x": -3, "y": -2},
       "cssTransform": "matrix(1, 0, 0, 1, -5.5, -22)"
     },
     {
@@ -34,14 +21,7 @@
       "name": "symbols",
       "locked": false,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
       "children": [
         {
@@ -49,24 +29,11 @@
           "name": "stateroom--014--2x2",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": -1,
-            "e": 0,
-            "f": 480
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 480},
           "type": "symbol",
           "srcKey": "stateroom--014--2x2",
-          "baseRect": {
-            "width": 120,
-            "height": 120
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 120, "height": 120},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, -1, 0, 480)"
         },
         {
@@ -74,24 +41,11 @@
           "name": "stateroom--014--2x2",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": -1,
-            "e": 120,
-            "f": 480
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 120, "f": 480},
           "type": "symbol",
           "srcKey": "stateroom--014--2x2",
-          "baseRect": {
-            "width": 120,
-            "height": 120
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 120, "height": 120},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, -1, 120, 480)"
         },
         {
@@ -99,24 +53,11 @@
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
-          "baseRect": {
-            "width": 120,
-            "height": 240
-          },
-          "offset": {
-            "x": -2,
-            "y": -2
-          },
+          "baseRect": {"width": 120, "height": 240},
+          "offset": {"x": -2, "y": -2},
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
@@ -124,24 +65,11 @@
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 0,
-            "b": -1,
-            "c": 1,
-            "d": 0,
-            "e": 0,
-            "f": 600
-          },
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 600},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
-          "baseRect": {
-            "width": 120,
-            "height": 240
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 120, "height": 240},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, -1, 1, 0, 0, 600)"
         },
         {
@@ -149,24 +77,11 @@
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": -1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 1200,
-            "f": 0
-          },
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
-          "baseRect": {
-            "width": 120,
-            "height": 240
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 120, "height": 240},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(-1, 0, 0, 1, 1200, 0)"
         },
         {
@@ -174,24 +89,11 @@
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 0,
-            "b": -1,
-            "c": 1,
-            "d": 0,
-            "e": 0,
-            "f": 361
-          },
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 361},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
-          "baseRect": {
-            "width": 60,
-            "height": 60
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, -1, 1, 0, 0, 361)"
         },
         {
@@ -199,24 +101,11 @@
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": -1,
-            "b": 0,
-            "c": 0,
-            "d": -1,
-            "e": 361,
-            "f": 600
-          },
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 361, "f": 600},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
-          "baseRect": {
-            "width": 60,
-            "height": 60
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(-1, 0, 0, -1, 361, 600)"
         },
         {
@@ -224,24 +113,11 @@
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": -1,
-            "b": 0,
-            "c": 0,
-            "d": -1,
-            "e": 961,
-            "f": 600
-          },
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 961, "f": 600},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
-          "baseRect": {
-            "width": 60,
-            "height": 60
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(-1, 0, 0, -1, 961, 600)"
         },
         {
@@ -249,24 +125,11 @@
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 0,
-            "b": 1,
-            "c": -1,
-            "d": 0,
-            "e": 1200,
-            "f": 239
-          },
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1200, "f": 239},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
-          "baseRect": {
-            "width": 60,
-            "height": 60
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, 1, -1, 0, 1200, 239)"
         },
         {
@@ -274,24 +137,11 @@
           "name": "console--019--2x2",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": -1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 241,
-            "f": 122
-          },
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 241, "f": 122},
           "type": "symbol",
           "srcKey": "console--019--2x2",
-          "baseRect": {
-            "width": 120,
-            "height": 120
-          },
-          "offset": {
-            "x": -1,
-            "y": -1
-          },
+          "baseRect": {"width": 120, "height": 120},
+          "offset": {"x": -1, "y": -1},
           "cssTransform": "matrix(-1, 0, 0, 1, 240, 121)"
         },
         {
@@ -299,24 +149,11 @@
           "name": "console--019--2x2",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 961,
-            "f": 122
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 961, "f": 122},
           "type": "symbol",
           "srcKey": "console--019--2x2",
-          "baseRect": {
-            "width": 120,
-            "height": 120
-          },
-          "offset": {
-            "x": 0,
-            "y": 0
-          },
+          "baseRect": {"width": 120, "height": 120},
+          "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 961, 122)"
         }
       ]
@@ -326,14 +163,7 @@
       "name": "hull",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
       "children": [
         {
@@ -341,20 +171,10 @@
           "name": "wall hull _window",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M 424.654 118.297 L 437.817 106.761 L 455.502 93.227 L 474.309 81.559 L 493.501 71.36 L 513.75 62.68 L 534.512 56.544 L 556.935 51.623 L 578.318 49.318 L 600 47.792 L 621.663 48.831 L 643.493 51.496 L 664.725 56.77 L 686.007 63.076 L 705.997 70.934 L 726.186 81.594 L 744.291 93.328 L 761.565 106.644 L 774.546 118.304 L 777.819 122.371 L 769.343 130.446 L 766.5 127.449 L 754.325 115.944 L 737.618 103.329 L 720 92.138 L 701.217 82.48 L 681.811 74.219 L 661.384 68.065 L 641.622 63.696 L 621 61 L 600 60 L 579.133 61.085 L 557.974 63.7 L 537.834 68.462 L 518.03 74.494 L 498.515 82.532 L 480 92.259 L 462.375 103.775 L 445.383 116.172 L 429.21 132.33 L 420 123.43 L 424.654 118.297 Z",
-          "baseRect": {
-            "width": 1200,
-            "height": 600
-          },
+          "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
@@ -362,20 +182,10 @@
           "name": "window hull y=1.1 h=0.6",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M 424.654 118.297 L 437.817 106.761 L 455.502 93.227 L 474.309 81.559 L 493.501 71.36 L 513.75 62.68 L 534.512 56.544 L 556.935 51.623 L 578.318 49.318 L 600 47.792 L 621.663 48.831 L 643.493 51.496 L 664.725 56.77 L 686.007 63.076 L 705.997 70.934 L 726.186 81.594 L 744.291 93.328 L 761.565 106.644 L 774.546 118.304 L 777.819 122.371 L 769.343 130.446 L 766.5 127.449 L 754.325 115.944 L 737.618 103.329 L 720 92.138 L 701.217 82.48 L 681.811 74.219 L 661.384 68.065 L 641.622 63.696 L 621 61 L 600 60 L 579.133 61.085 L 557.974 63.7 L 537.834 68.462 L 518.03 74.494 L 498.515 82.532 L 480 92.259 L 462.375 103.775 L 445.383 116.172 L 429.21 132.33 L 420 123.43 L 424.654 118.297 Z",
-          "baseRect": {
-            "width": 1200,
-            "height": 600
-          },
+          "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
@@ -383,20 +193,10 @@
           "name": "_window hull y=1.1 h=0.6",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M 422.714 117.468 L 453.848 91.356 L 492.148 69.182 L 533.494 54.056 L 577.818 47.004 L 621.162 45.996 L 664.522 54.062 L 706.844 69.178 L 745.152 91.356 L 776.438 117.596 L 781.68 124.148 L 772.148 133.68 L 771.449 133.121 L 770.75 132.562 L 765.72 128.536 L 735.864 103.656 L 700.158 83.82 L 660.454 68.932 L 619.806 61 L 578.194 61 L 537.554 68.93 L 498.868 83.808 L 463.15 104.646 L 434.348 128.48 L 428.08 134.748 L 416.086 124.086 L 416.836 123.336 L 417.586 122.586 L 422.714 117.468 Z",
-          "baseRect": {
-            "width": 1200,
-            "height": 600
-          },
+          "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
@@ -404,20 +204,10 @@
           "name": "wall hull sans-n--20x10",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M -3.8 -4 L 4 -4 L 4 596 L 1196 596 L 1196 -4 L 1203.8 -4 L 1203.8 603.8 L -3.8 603.8 L -3.8 -4 Z",
-          "baseRect": {
-            "width": 1200,
-            "height": 600
-          },
+          "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
@@ -425,20 +215,10 @@
           "name": "wall hull",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M 358.4 63.3 L 180 63.3 L 177.1 62.1 L 119.1 4 L -4 4 L -4 -4 L 122.4 -4 L 181.7 55.3 L 360.5 55.3 L 363.1 56.7 L 424.7 119 L 419 124.7 L 358.4 63.3 Z",
-          "baseRect": {
-            "width": 1200,
-            "height": 600
-          },
+          "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
@@ -446,31 +226,16 @@
           "name": "wall hull",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 0,
-            "f": 0
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M 841 63 L 1020 63 L 1023 62 L 1081 4 L 1204 4 L 1204 -4 L 1077 -4 L 1018 55 L 839 55 L 837 56 L 773 119 L 779 125 L 841 63 Z",
-          "baseRect": {
-            "width": 1200,
-            "height": 600
-          },
+          "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }
       ]
     }
   ],
-  "bounds": {
-    "x": -5.5,
-    "y": -22,
-    "width": 1212,
-    "height": 628
-  },
+  "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
   "type": "symbol",
   "key": "g-301--bridge"
 }
