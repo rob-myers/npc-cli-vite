@@ -2,7 +2,7 @@ import { useComposedRefs, useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 import type * as THREE from "three/webgpu";
 import { createXzQuad } from "../service/geometry";
-import { createDemoTexArrayMaterial, demoInstancedQuad } from "./demo";
+import { createTestOutlineTexArrayMaterial, demoInstancedQuad } from "./demo";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -11,7 +11,8 @@ export default function Floor() {
   const state = useStateRef(() => ({
     inst: null as null | THREE.InstancedMesh,
     quad: createXzQuad(),
-    material: createDemoTexArrayMaterial(w.texFloor),
+    // material: createDemoTexArrayMaterial(w.texFloor),
+    material: createTestOutlineTexArrayMaterial(w.texFloor),
   }));
 
   return (
