@@ -73,10 +73,10 @@ export default function Floor() {
         ct.resetTransform();
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
         ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        ct.save();
 
         const hullFloor = gm.hullPoly.map((x) => x.clone().removeHoles());
-        drawPolygons(ct, hullFloor, { fillStyle: "#111", strokeStyle: null });
-        ct.save();
+        drawPolygons(ct, hullFloor, { fillStyle: "#333", strokeStyle: null });
 
         // grid
         drawPolygons(ct, hullFloor, { fillStyle: "#111", strokeStyle: null, clip: true });
@@ -197,6 +197,7 @@ export default function Floor() {
           transparent
           key={shaderMeta.uid}
           colorNode={shaderMeta.texNode}
+          depthWrite={false}
         />
       </instancedMesh>
     </group>
