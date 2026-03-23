@@ -3,7 +3,8 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "exports": {
-    "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts"
+    "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
+    "./vite-plugin-watch-assets": "./src/vite-plugin-watch-assets.ts"
   },
   "bin": {
     "extract-starship-pngs": "./src/bins/extract-starship-pngs.ts",
@@ -12,13 +13,7 @@
     "gen-pkg": "./src/bins/gen-pkg.ts",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
-    "pngs-to-webp": "./src/bins/pngs-to-webp.ts",
-    "noop": "./src/bins/noop.js",
-    "watch-files": "./src/bins/watch-files.ts",
-    "restart-on-fail": "./src/bins/restart-on-fail.sh"
-  },
-  "scripts": {
-    "watch-assets": "pnpm restart-on-fail watch-files --globs='[\"packages/app/public/symbol/*.json\"]' --pnpmBin=gen-assets-json"
+    "pngs-to-webp": "./src/bins/pngs-to-webp.ts"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",
