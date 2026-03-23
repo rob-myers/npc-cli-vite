@@ -5,7 +5,7 @@
       "isHull": false,
       "width": 100,
       "height": 60,
-      "bounds": {"width": 100.4, "height": 61.4, "x": -0.7, "y": 0},
+      "bounds": {"x": -0.7, "y": 0, "width": 100.4, "height": 61.4},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -31,7 +31,7 @@
       "isHull": false,
       "width": 480,
       "height": 540,
-      "bounds": {"width": 489.2, "height": 558, "x": -5, "y": -18},
+      "bounds": {"x": -5, "y": -18, "width": 489.2, "height": 558},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -225,7 +225,7 @@
       "isHull": false,
       "width": 120,
       "height": 120,
-      "bounds": {"width": 121.4, "height": 121.4, "x": -1, "y": -1},
+      "bounds": {"x": -1, "y": -1, "width": 121.4, "height": 121.4},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -266,7 +266,7 @@
       "isHull": false,
       "width": 30,
       "height": 30,
-      "bounds": {"width": 26.8, "height": 32.2, "x": 2, "y": -1.3},
+      "bounds": {"x": 2, "y": -1.3, "width": 26.8, "height": 32.2},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -281,7 +281,7 @@
       "isHull": false,
       "width": 30,
       "height": 30,
-      "bounds": {"width": 30, "height": 31, "x": 0, "y": -0.7},
+      "bounds": {"x": 0, "y": -0.7, "width": 30, "height": 31},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -302,7 +302,7 @@
       "isHull": false,
       "width": 20,
       "height": 20,
-      "bounds": {"width": 19.4, "height": 20.6, "x": 0.3, "y": -0.3},
+      "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -317,7 +317,7 @@
       "isHull": false,
       "width": 30,
       "height": 60,
-      "bounds": {"width": 31.4, "height": 61.4, "x": -0.5, "y": -0.7},
+      "bounds": {"x": -0.5, "y": -0.7, "width": 31.4, "height": 61.4},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -332,7 +332,7 @@
       "isHull": true,
       "width": 1200,
       "height": 600,
-      "bounds": {"width": 1212, "height": 628, "x": -5.5, "y": -22},
+      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -637,7 +637,7 @@
       "isHull": false,
       "width": 60,
       "height": 60,
-      "bounds": {"width": 60, "height": 60, "x": 0, "y": 0},
+      "bounds": {"x": 0, "y": 0, "width": 60, "height": 60},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -652,7 +652,7 @@
       "isHull": false,
       "width": 120,
       "height": 120,
-      "bounds": {"width": 128, "height": 124, "x": -2, "y": -2},
+      "bounds": {"x": -2, "y": -2, "width": 128, "height": 124},
       "decor": [
         {
           "type": "Polygon",
@@ -753,7 +753,7 @@
       "isHull": false,
       "width": 120,
       "height": 120,
-      "bounds": {"width": 124, "height": 127, "x": -2, "y": -2},
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 127},
       "decor": [],
       "doors": [
         {
@@ -813,7 +813,7 @@
       "isHull": false,
       "width": 120,
       "height": 180,
-      "bounds": {"width": 127.5, "height": 184.5, "x": -2.5, "y": -2.5},
+      "bounds": {"x": -2.5, "y": -2.5, "width": 127.5, "height": 184.5},
       "decor": [],
       "doors": [
         {
@@ -892,7 +892,7 @@
       "isHull": false,
       "width": 120,
       "height": 240,
-      "bounds": {"width": 124, "height": 246.8, "x": -2, "y": -2},
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -980,7 +980,7 @@
       "isHull": false,
       "width": 100,
       "height": 60,
-      "bounds": {"width": 100.4, "height": 61.4, "x": -0.7, "y": 0},
+      "bounds": {"x": -0.7, "y": 0, "width": 100.4, "height": 61.4},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -1004,7 +1004,7 @@
       "isHull": false,
       "width": 480,
       "height": 540,
-      "bounds": {"width": 489.2, "height": 558, "x": -5, "y": -18},
+      "bounds": {"x": -5, "y": -18, "width": 489.2, "height": 558},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -1196,7 +1196,7 @@
       "isHull": false,
       "width": 30,
       "height": 30,
-      "bounds": {"width": 26.8, "height": 32.2, "x": 2, "y": -1.3},
+      "bounds": {"x": 2, "y": -1.3, "width": 26.8, "height": 32.2},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -1209,7 +1209,7 @@
       "isHull": false,
       "width": 30,
       "height": 30,
-      "bounds": {"width": 30, "height": 31, "x": 0, "y": -0.7},
+      "bounds": {"x": 0, "y": -0.7, "width": 30, "height": 31},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -1228,7 +1228,7 @@
       "isHull": false,
       "width": 20,
       "height": 20,
-      "bounds": {"width": 19.4, "height": 20.6, "x": 0.3, "y": -0.3},
+      "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -1241,7 +1241,7 @@
       "isHull": false,
       "width": 30,
       "height": 60,
-      "bounds": {"width": 31.4, "height": 61.4, "x": -0.5, "y": -0.7},
+      "bounds": {"x": -0.5, "y": -0.7, "width": 31.4, "height": 61.4},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -1254,7 +1254,7 @@
       "isHull": false,
       "width": 60,
       "height": 60,
-      "bounds": {"width": 60, "height": 60, "x": 0, "y": 0},
+      "bounds": {"x": 0, "y": 0, "width": 60, "height": 60},
       "decor": [],
       "doors": [],
       "obstacles": [],
@@ -1267,7 +1267,7 @@
       "isHull": false,
       "width": 120,
       "height": 120,
-      "bounds": {"width": 121.4, "height": 121.4, "x": -1, "y": -1},
+      "bounds": {"x": -1, "y": -1, "width": 121.4, "height": 121.4},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -1307,7 +1307,7 @@
       "isHull": false,
       "width": 120,
       "height": 120,
-      "bounds": {"width": 128, "height": 124, "x": -2, "y": -2},
+      "bounds": {"x": -2, "y": -2, "width": 128, "height": 124},
       "decor": [
         {
           "type": "Polygon",
@@ -1411,7 +1411,7 @@
       "isHull": false,
       "width": 120,
       "height": 120,
-      "bounds": {"width": 124, "height": 127, "x": -2, "y": -2},
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 127},
       "decor": [],
       "doors": [
         {
@@ -1472,7 +1472,7 @@
       "isHull": false,
       "width": 120,
       "height": 180,
-      "bounds": {"width": 127.5, "height": 184.5, "x": -2.5, "y": -2.5},
+      "bounds": {"x": -2.5, "y": -2.5, "width": 127.5, "height": 184.5},
       "decor": [],
       "doors": [
         {
@@ -1547,7 +1547,7 @@
       "isHull": false,
       "width": 120,
       "height": 240,
-      "bounds": {"width": 124, "height": 246.8, "x": -2, "y": -2},
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -1619,7 +1619,7 @@
       "isHull": true,
       "width": 1200,
       "height": 600,
-      "bounds": {"width": 1212, "height": 628, "x": -5.5, "y": -22},
+      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
       "decor": [],
       "doors": [
         {
@@ -2075,7 +2075,7 @@
     "g-301--bridge": {
       "key": "g-301--bridge",
       "num": 301,
-      "bounds": {"width": 1212, "height": 628, "x": -5.5, "y": -22},
+      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
       "decor": [],
       "doors": [],
       "hullDoors": [],
@@ -2378,7 +2378,7 @@
           [9, 7, 8]
         ]
       },
-      "navRects": [{"width": 1191.5, "height": 591.5, "x": 4.25, "y": 4.25}]
+      "navRects": [{"x": 4.25, "y": 4.25, "width": 1191.5, "height": 591.5}]
     }
   }
 }

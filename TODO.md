@@ -86,6 +86,9 @@
     - LayoutInstance schema
   - migrate state.addUvs
 
+- ✅ use zod codec for points
+- 🚧 use zod codec for rects
+
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2

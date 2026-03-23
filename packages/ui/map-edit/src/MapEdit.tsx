@@ -10,7 +10,7 @@ import {
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
-import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
@@ -427,7 +427,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               srcType: node.srcType,
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
-              offset: { ...node.offset },
+              offset: node.offset.clone(),
               cssTransform: computeNodeCssTransform(node),
             };
           }
@@ -438,7 +438,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
               // offset: { ...node.offset },
-              offset: { x: 0, y: 0 },
+              offset: new Vect(),
               cssTransform: computeNodeCssTransform(node),
             };
           }
@@ -737,7 +737,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.baseRect.height = meta.height;
         node.cssTransform = computeNodeCssTransform(node);
 
-        node.offset = { x: meta.bounds.x, y: meta.bounds.y };
+        node.offset = new Vect(meta.bounds.x, meta.bounds.y);
 
         node.name = symbolKey;
 

@@ -1,6 +1,6 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
-import { Mat, Rect } from "@npc-cli/util/geom";
+import { Mat, Rect, Vect } from "@npc-cli/util/geom";
 import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import {
   type BaseMapNode,
@@ -19,7 +19,7 @@ import {
 //#region constants
 
 const defaultBaseRect: BaseRect = { width: 60, height: 60 };
-const defaultPoint: Geom.VectJson = { x: 0, y: 0 };
+const defaultPoint = new Vect();
 const idTransform: Transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
 const mockBaseNode: BaseMapNode = {
