@@ -466,10 +466,10 @@
     }
   ],
   "bounds": {
-    "width": 1212,
-    "height": 628,
     "x": -5.5,
-    "y": -22
+    "y": -22,
+    "width": 1212,
+    "height": 628
   },
   "type": "symbol",
   "key": "g-301--bridge"

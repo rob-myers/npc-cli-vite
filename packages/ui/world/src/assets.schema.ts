@@ -6,10 +6,9 @@ import {
 import { MapKeySchema } from "@npc-cli/ui__map-edit/editor.schema";
 import {
   AffineTransformSchema,
-  CoordSchema,
   MetaSchema,
   PointSchema,
-  Poly,
+  polyCodec,
   RectSchema,
   TriangulationSchema,
 } from "@npc-cli/util/geom";
@@ -18,22 +17,6 @@ import { DecorPointSchema, DecorSchema } from "./decor.schema";
 import { Connector } from "./service/Connector";
 
 export const ConnectorSchema = z.instanceof(Connector);
-
-export const GeoJsonPolygonSchema = z.object({
-  type: z.literal("Polygon"),
-  /**
-   * The 1st array defines the _outer polygon_,
-   * the others define non-nested _holes_.
-   */
-  coordinates: z.array(z.array(CoordSchema)),
-  meta: z.record(z.string(), z.any()),
-});
-export type GeoJsonPolygon = z.infer<typeof GeoJsonPolygonSchema>;
-export const PolySchema = z.instanceof(Poly);
-export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
-  decode: (geoJson) => Poly.from(geoJson),
-  encode: (poly) => poly.geoJson,
-});
 
 export const AssetsFlatSymbolSchema = z.object({
   key: StarShipSymbolImageKeySchema,
