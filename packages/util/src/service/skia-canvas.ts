@@ -1,4 +1,5 @@
-import type { CanvasRenderingContext2D } from "skia-canvas";
+// import type { CanvasRenderingContext2D } from "skia-canvas";
+/// <reference lib="dom" />
 
 export function drawPolygons(
   ct: CanvasRenderingContext2D,
