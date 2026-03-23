@@ -94,7 +94,30 @@ export function DemoCheckerBox() {
   return <Box args={[1, 1, 1, 10, 1, 10]} position={[0, 0, 0]} scale={[100, 0.001, 100]} material={mat} />;
 }
 
-export function drawDemoFloorTextures(texFloor: TexArray) {
+function drawDemoOutlineFloorTextures(texFloor: TexArray) {
+  const size = 256;
+  const { ct } = texFloor;
+
+  const layers: ((ct: CanvasRenderingContext2D) => void)[] = [
+    // black background with white border
+    (ct) => {
+      ct.fillStyle = "#000000";
+      ct.fillRect(0, 0, size, size);
+      ct.strokeStyle = "#ffffff";
+      ct.lineWidth = 8;
+      ct.strokeRect(4, 4, size - 8, size - 8);
+    },
+  ];
+
+  texFloor.resize({ numTextures: layers.length, width: size, height: size });
+  layers.forEach((draw, i) => {
+    ct.clearRect(0, 0, size, size);
+    draw(ct);
+    texFloor.updateIndex(i);
+  });
+}
+
+function drawDemoFloorTextures(texFloor: TexArray) {
   const size = 256;
   const cell = size / 4;
   const { ct } = texFloor;
@@ -173,11 +196,20 @@ export const demoInstancedQuad = {
   },
 };
 
-export const createDemoTexArrayMaterial = (texArray: TexArray) => {
+export function createDemoTexArrayMaterial(texArray: TexArray) {
   drawDemoFloorTextures(texArray);
+  return createTexArrayBasicMaterial(texArray);
+}
+
+export function createTestOutlineTexArrayMaterial(texArray: TexArray) {
+  drawDemoOutlineFloorTextures(texArray);
+  return createTexArrayBasicMaterial(texArray);
+}
+
+const createTexArrayBasicMaterial = (texArray: TexArray) => {
   const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
   const texNode = texture(texArray.tex, uv());
-  texNode.depthNode = instanceIndex.mod(int(3));
+  texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
   mat.colorNode = texNode;
   return mat;
 };
