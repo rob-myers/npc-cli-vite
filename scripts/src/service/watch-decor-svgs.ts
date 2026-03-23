@@ -11,7 +11,7 @@ import { PROJECT_ROOT } from "../const.ts";
 // ⚠️ vite didn't watch files outside packages/app, despite vite.config fs server.allow config
 // DECOR_PUBLIC_DIR is actually a symlink to packages/media/src/decor
 const DECOR_PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public/decor");
-const MANIFEST_PATH = path.join(DECOR_PUBLIC_DIR, "manifest.json");
+const DECOR_MANIFEST_PATH = path.join(DECOR_PUBLIC_DIR, "manifest.json");
 
 const THUMBNAIL_SIZE = 128;
 
@@ -67,16 +67,16 @@ async function rebuildDecor() {
     await generateThumbnail(key, filePath);
   }
 
-  const nextManifest: DecorManifest = { modifiedAt: new Date().toISOString(), byKey };
+  const nextManifest: DecorManifest = { byKey };
   const nextRaw = safeJsonCompact(z.encode(DecorManifestSchema, nextManifest));
 
-  const prevRaw = await fs.promises.readFile(MANIFEST_PATH, "utf-8").catch(() => null);
+  const prevRaw = await fs.promises.readFile(DECOR_MANIFEST_PATH, "utf-8").catch(() => null);
   if (prevRaw === nextRaw) {
     info(`[watch-decor] manifest.json: no changes detected`);
     return;
   }
 
-  fs.writeFileSync(MANIFEST_PATH, nextRaw);
+  fs.writeFileSync(DECOR_MANIFEST_PATH, nextRaw);
   info(`[watch-decor] rebuilt manifest.json`);
 }
 
