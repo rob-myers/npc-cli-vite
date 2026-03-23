@@ -567,11 +567,16 @@ export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
     (node): node is GeomorphNode => node.type === "symbol" && node.srcKey !== null && isHullSymbolImageKey(node.srcKey),
   );
 
+  const s = sguToWorldScale;
   return {
     key: savedFile.key,
     gms: geomorphNodes.map((gm) => ({
       gmKey: gm.srcKey,
-      transform: gm.transform,
+      transform: {
+        ...gm.transform,
+        e: toPrecision(gm.transform.e * s, 6),
+        f: toPrecision(gm.transform.f * s, 6),
+      },
     })),
   };
 }
@@ -630,15 +635,28 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
     }
   }
 
+  const s = sguToWorldScale;
+  for (const polys of Object.values(polysLookup)) {
+    for (const p of polys) p.scale(s).precision(6);
+  }
   return {
     key: savedFile.key,
     isHull: isHullSymbolImageKey(savedFile.key),
-    width: savedFile.width,
-    height: savedFile.height,
-    bounds: savedFile.bounds,
+    width: toPrecision(savedFile.width * s, 6),
+    height: toPrecision(savedFile.height * s, 6),
+    bounds: savedFile.bounds.clone().scale(s).precision(6),
 
     ...polysLookup,
-    symbols,
+    symbols: symbols.map((sym) => ({
+      ...sym,
+      width: toPrecision(sym.width * s, 6),
+      height: toPrecision(sym.height * s, 6),
+      transform: {
+        ...sym.transform,
+        e: toPrecision(sym.transform.e * s, 6),
+        f: toPrecision(sym.transform.f * s, 6),
+      },
+    })),
   };
 }
 

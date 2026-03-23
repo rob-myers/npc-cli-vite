@@ -87,8 +87,12 @@
     - ✅ start migrating World query
       - ✅ assets.json has mapDefs in `map` lookup
       - ✅ migrate geomorph.computeLayoutInstance
-    - 🚧 ...
+    - 🚧 transform instances
   - migrate state.addUvs
+
+- ✅ assets.json is in world coords
+  - public/symbol/*.json are in sgu coords (1grid ~ 60 x 60)
+  - we scale by `1/60 * 1.5` i.e. `0.025` so 1grid ~ 1.5m x 1.5m
 
 - ✅ use zod codec for points
 - ✅ use zod codec for rects

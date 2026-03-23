@@ -1,5 +1,5 @@
 {
-  "modifiedAt": "2026-03-22T17:33:14.662Z",
+  "modifiedAt": "2026-03-23T14:15:58.700Z",
   "byKey": {
     "empty-map": {
       "filename": "empty-map.json",
@@ -7,10 +7,10 @@
       "width": 1200,
       "height": 600,
       "bounds": {
-        "width": 1200,
-        "height": 600,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "width": 1200,
+        "height": 600
       },
       "type": "map",
       "key": "empty-map"
@@ -21,10 +21,10 @@
       "width": 1200,
       "height": 1200,
       "bounds": {
-        "width": 1200,
-        "height": 1200,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "width": 1200,
+        "height": 1200
       },
       "type": "map",
       "key": "demo-map-0"

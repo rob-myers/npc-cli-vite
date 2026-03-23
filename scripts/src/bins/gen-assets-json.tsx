@@ -102,7 +102,6 @@ perf("flatten symbols");
 perf("create layouts");
 for (const [symbolKey, flat] of entries(assets.flattened)) {
   if (!isHullSymbolImageKey(symbolKey)) continue;
-  // 🚧
   const layout = geomorph.createLayout(symbolKey, flat, assets);
   assets.layout[symbolKey] = layout;
 }
