@@ -82,8 +82,9 @@
     - i.e. some instances with different colours
   - ✅ draw a demo texture atlas and apply it to floor instancedMesh
   - 🚧 migrate positionInstances -> transformInstances
-    - demo map should have at least two geomorphs
-    - LayoutInstance schema
+    - ✅ demo-map-0 should have at least two geomorphs
+    - ✅ LayoutInstance schema
+    - 🚧 start migrating World query
   - migrate state.addUvs
 
 - ✅ use zod codec for points

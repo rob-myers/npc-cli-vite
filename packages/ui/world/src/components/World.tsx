@@ -4,6 +4,7 @@ import type { RootState } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
 import type * as THREE from "three";
 import { Timer } from "three-stdlib";
+import type { GeomorphLayoutInstance } from "../assets.schema";
 import { floorTextureDimension } from "../const";
 import type { WorldUiMeta } from "../schema";
 import { queryClientApi } from "../service/query-client";
@@ -34,6 +35,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: floorTextureDimension,
         height: floorTextureDimension,
       }),
+
+      gms: [],
 
       view: null as unknown as State["view"],
 
@@ -89,14 +92,17 @@ export type State = {
   id: string;
   key: WorldUiMeta["worldKey"];
   disabled: boolean;
-  events: Broadcaster<NPC.Event>;
   mapKey: string;
+
+  events: Broadcaster<NPC.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };
   reqAnimId: number;
   threeReady: boolean;
   timer: Timer;
 
   texFloor: TexArray;
+
+  gms: GeomorphLayoutInstance[];
 
   view: import("./WorldView").State;
 

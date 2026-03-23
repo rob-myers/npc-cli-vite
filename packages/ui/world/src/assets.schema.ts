@@ -6,12 +6,16 @@ import {
 import { MapKeySchema } from "@npc-cli/ui__map-edit/editor.schema";
 import {
   AffineTransformSchema,
+  MatSchema,
   MetaSchema,
   pointCodec,
   polyCodec,
+  RectSchema,
   rectCodec,
+  SixTupleSchema,
   TriangulationSchema,
 } from "@npc-cli/util/geom";
+import { Matrix4 } from "three/src/math/Matrix4.js";
 import z from "zod";
 import { DecorPointSchema, DecorSchema } from "./decor.schema";
 import { Connector } from "./service/Connector";
@@ -112,3 +116,19 @@ export const AssetsSchema = z.object({
   layout: z.partialRecord(StarShipGeomorphKeySchema, GeomorphLayoutSchema),
 });
 export type AssetsType = z.infer<typeof AssetsSchema>;
+
+export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
+  gmId: z.number(),
+  transform: SixTupleSchema,
+  matrix: MatSchema,
+  gridRect: RectSchema,
+  inverseMatrix: MatSchema,
+  mat4: z.instanceof(Matrix4),
+  determinant: z.number(),
+
+  /** `getOtherRoomId(doorId: number, roomId: number): number` */
+  getOtherRoomId: z.function({ input: [z.number(), z.number()], output: z.number() }),
+  /** `isHullDoor(doorId: number): boolean` */
+  isHullDoor: z.function({ input: [z.number()], output: z.boolean() }),
+});
+export type GeomorphLayoutInstance = z.infer<typeof GeomorphLayoutInstanceSchema>;
