@@ -1067,7 +1067,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           nodes: state.nodes,
           bounds: Rect.fromJson(getNodeBounds(...state.nodes))
             .union({ x: 0, y: 0, width: state.svgWidth, height: state.svgHeight })
-            .precision(6).json,
+            .precision(6),
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"

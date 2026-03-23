@@ -55,10 +55,10 @@
     }
   ],
   "bounds": {
-    "width": 1200,
-    "height": 1200,
     "x": 0,
-    "y": 0
+    "y": 0,
+    "width": 1200,
+    "height": 1200
   },
   "type": "map",
   "key": "demo-map-0"
