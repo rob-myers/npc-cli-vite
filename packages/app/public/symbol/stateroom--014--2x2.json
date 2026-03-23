@@ -17,6 +17,7 @@
         "f": 0
       },
       "type": "image",
+      "srcType": "symbol",
       "srcKey": "stateroom--014--2x2",
       "baseRect": {
         "width": 124,
@@ -195,10 +196,10 @@
     }
   ],
   "bounds": {
-    "width": 124,
-    "height": 127,
     "x": -2,
-    "y": -2
+    "y": -2,
+    "width": 124,
+    "height": 127
   },
   "type": "symbol",
   "key": "stateroom--014--2x2"

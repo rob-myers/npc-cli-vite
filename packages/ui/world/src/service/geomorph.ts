@@ -168,7 +168,7 @@ export function createLayout(
   const hullOutline = hullPoly.map((x) => new Poly(x.outline).clone()); // sans holes
 
   // Avoid non-hull walls inside hull walls (for x-ray)
-  const uncutWalls = sym.walls
+  const uncutWalls = flat.walls
     .flatMap((x) =>
       // biome-ignore lint/complexity/noCommaOperator: convenience
       Poly.cutOut(sym.hullWalls, [x]).map((y) => ((y.meta = x.meta), y)),
@@ -218,7 +218,6 @@ export function createLayout(
     }
   }
 
-  // 🚧
   const decor: Geomorph.Decor[] = [];
   const labels: Geomorph.DecorPoint[] = [];
   for (const poly of sym.decor) {

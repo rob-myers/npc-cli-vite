@@ -27,7 +27,7 @@ export const obstacleOutset = 8 * sguToWorldScale;
  */
 
 export const wallOutset = 10 * sguToWorldScale;
-export const specialWallMetaKeys = /** @type {const} */ (["y", "h", "broad", "hollow"]);
+export const specialWallMetaKeys = ["y", "h", "broad", "hollow"] as const;
 
 /** Depth of doorway along line walking through door */
 export const doorDepth = 20 * sguToWorldScale;
