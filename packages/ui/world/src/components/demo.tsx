@@ -5,6 +5,7 @@ import { buildGraph } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import {
+  attribute,
   cameraPosition,
   instanceIndex,
   int,
@@ -206,10 +207,14 @@ export function createTestOutlineTexArrayMaterial(texArray: TexArray) {
   return createTexArrayBasicMaterial(texArray);
 }
 
-const createTexArrayBasicMaterial = (texArray: TexArray) => {
+export const createTexArrayBasicMaterial = (texArray: TexArray, useUvDimensions = false) => {
   const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
-  const texNode = texture(texArray.tex, uv());
+  const uvDims = attribute("uvDimensions", "vec2");
+  const uvOffs = attribute("uvOffsets", "vec2");
+  const transformedUv = uv().mul(uvDims).add(uvOffs);
+  const texNode = texture(texArray.tex, useUvDimensions ? transformedUv : uv());
   texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
   mat.colorNode = texNode;
+  mat.transparent = true;
   return mat;
 };

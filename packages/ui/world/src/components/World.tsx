@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect } from "react";
 import type * as THREE from "three";
 import { Timer } from "three-stdlib";
-import { AssetsSchema, type GeomorphLayoutInstance } from "../assets.schema";
+import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
 import { emptyMapDef, floorTextureDimension } from "../const";
 import type { WorldUiMeta } from "../schema";
 import * as geomorph from "../service/geomorph";
@@ -37,6 +37,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       //#endregion
 
       //#region texture atlases
+      assets: null as unknown as State["assets"],
       texFloor: new TexArray({
         ctKey: "floor-tex",
         numTextures: 1, // can change
@@ -90,6 +91,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     queryKey: ["world", state.key, "derived data"],
     async queryFn() {
       const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
+      state.assets = assets;
 
       // compute map
       const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
@@ -129,6 +131,7 @@ export type State = {
   threeReady: boolean;
   timer: Timer;
 
+  assets: AssetsType;
   texFloor: TexArray;
 
   gms: GeomorphLayoutInstance[];

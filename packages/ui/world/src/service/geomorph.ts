@@ -530,7 +530,7 @@ function isDecorImgKey(_input: string) {
   }
 }
 
-function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
+export function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
   if (typeof input !== "number") {
     input = getGeomorphNumber(input);
   }
@@ -636,8 +636,13 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
   }
 
   const s = sguToWorldScale;
+  const scaled = new Set<Geom.Poly>();
   for (const polys of Object.values(polysLookup)) {
-    for (const p of polys) p.scale(s).precision(6);
+    for (const p of polys)
+      if (!scaled.has(p)) {
+        p.scale(s).precision(6);
+        scaled.add(p);
+      }
   }
   return {
     key: savedFile.key,

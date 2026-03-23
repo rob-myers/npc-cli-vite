@@ -102,7 +102,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
           warn(`${filename}: failed to parse path.d data for node ${node.name}`);
           break;
         }
-        drawPolygons(ct, parsedPoly);
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, parsedPoly);
         break;
       }
     }
