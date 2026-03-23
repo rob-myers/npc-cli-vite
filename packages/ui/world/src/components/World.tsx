@@ -1,6 +1,6 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
-import { Broadcaster, useStateRef } from "@npc-cli/util";
+import { Broadcaster, cn, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { hashJson } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
@@ -135,7 +135,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   return (
     <WorldContext.Provider value={state}>
       <div className="relative size-full">
-        <WorldView className={uiClassName}>
+        <WorldView className={cn(uiClassName, "bg-blue-600/10")}>
           <ambientLight intensity={0.85} color="#ffffff" />
           <Floor />
           <Suspense>
