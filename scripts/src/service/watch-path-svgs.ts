@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { type PathManifest, PathManifestEntrySchema, PathManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
-import { jsonParser } from "@npc-cli/util/json-parser";
-import { info, warn } from "@npc-cli/util/legacy/generic";
+import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import type { ViteDevServer } from "vite";
+import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
@@ -48,17 +48,15 @@ async function rebuildPathManifest(manifestPath: string, server: ViteDevServer |
     if (entry) byKey[key] = PathManifestEntrySchema.parse(entry);
   }
 
-  const prevManifest = jsonParser
-    .pipe(PathManifestSchema)
-    .safeParse(await fs.promises.readFile(manifestPath, "utf-8").catch(warn)).data;
+  const prevManifestRaw = await fs.promises.readFile(manifestPath, "utf-8").catch(warn);
+  const nextManifestRaw = safeJsonCompact(z.decode(PathManifestSchema, { byKey }));
 
-  if (JSON.stringify(prevManifest?.byKey) === JSON.stringify(byKey)) {
+  if (prevManifestRaw === nextManifestRaw) {
     info(`[map-edit-api] path/manifest.json: no changes detected`);
     return;
   }
 
-  const nextManifest: PathManifest = { modifiedAt: new Date().toISOString(), byKey };
-  fs.writeFileSync(manifestPath, JSON.stringify(nextManifest, null, 2));
+  fs.writeFileSync(manifestPath, nextManifestRaw);
   info(`[map-edit-api] rebuilt path/manifest.json`);
   server?.hot.send({ type: "custom", event: devMessageFromServer.recomputedPathManifest });
 }
