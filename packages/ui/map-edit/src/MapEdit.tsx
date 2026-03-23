@@ -82,8 +82,6 @@ import { type ParsedPath, PathPickerModal } from "./PathPickerModal";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
 
-const CAN_SAVE_TO_FILESYSTEM_IN_DEV = true;
-
 export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme } = useContext(UiContext);
 
@@ -1059,7 +1057,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: true,
         });
       },
-      save(fileSpecifier = state.currentFile) {
+      save(fileSpecifier = state.currentFile, { saveToDiskInDev = true } = {}) {
         const savedFile: MapEditSavedFile = {
           ...fileSpecifier,
           width: state.svgWidth,
@@ -1088,8 +1086,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: false,
         });
 
-        if (import.meta.env.DEV && CAN_SAVE_TO_FILESYSTEM_IN_DEV) {
-          // save to filesystem in development
+        if (import.meta.env.DEV && saveToDiskInDev) {
           void saveMapEditFile(savedFile);
         }
       },
@@ -1339,8 +1336,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     };
   }, [state.wrapperEl]);
 
-  // save draft in both dev/prod
-  useBeforeunload(() => state.save());
+  // autosave draft in dev/prod
+  useBeforeunload(() => state.save(state.currentFile, { saveToDiskInDev: false }));
 
   const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
@@ -1597,7 +1594,7 @@ export type State = {
   reflectSelected: (type: "horizontal" | "vertical") => void;
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
-  save: (file?: MapEditFileSpecifier) => void;
+  save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
   load: (file?: MapEditFileSpecifier) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
