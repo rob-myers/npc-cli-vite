@@ -2,14 +2,20 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useMemo } from "react";
+import { generateUUID } from "three/src/math/MathUtils.js";
+import { texture } from "three/src/nodes/accessors/TextureNode.js";
+import { uv } from "three/src/nodes/accessors/UV.js";
+import { attribute } from "three/src/nodes/core/AttributeNode.js";
+import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
+import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import * as geomorph from "../service/geomorph";
-import { createTexArrayBasicMaterial } from "./demo";
 import { WorldContext } from "./world-context";
 
+// 🚧 clean
 export default function Floor() {
   const w = useContext(WorldContext);
 
@@ -17,27 +23,20 @@ export default function Floor() {
     inst: null as null | THREE.InstancedMesh,
     quad: createXzQuad(),
 
-    // material: createDemoTexArrayMaterial(w.texFloor),
-    // material: createTestOutlineTexArrayMaterial(w.texFloor),
-    // material: new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, wireframe: true }),
-    material: createTexArrayBasicMaterial(w.texFloor, true),
-
     addUvs() {
       if (!state.inst) return;
+
+      // specify texture array rectangle, per instance
       const uvOffsets: number[] = [];
       const uvDimensions: number[] = [];
+      // also textureId for spritesheets later
       const uvTextureIds: number[] = [];
-      /** `[0, 1, ..., maxGmId]` */
-      const instanceIds: number[] = [];
 
-      // 🚧 somehow provide uvDimensions to shader so image scaled properly
-
-      for (const [gmId, gm] of w.gms.entries()) {
+      for (const gm of w.gms) {
         uvOffsets.push(0, 0);
-        // 🔔 edge geomorph 301 pngRect height/width ~ 0.5 (not equal)
+        // edge geomorph 301 pngRect height/width ~ 0.5 but not equal
         uvDimensions.push(1, geomorph.isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1);
-        // uvTextureIds.push(w.gmsData.getTextureId(gm.key)); // 🚧 for spritesheets
-        instanceIds.push(gmId);
+        uvTextureIds.push(w.getGmKeyTexId(gm.key));
       }
 
       state.inst.geometry.setAttribute("uvOffsets", new THREE.InstancedBufferAttribute(new Float32Array(uvOffsets), 2));
@@ -48,10 +47,6 @@ export default function Floor() {
       state.inst.geometry.setAttribute(
         "uvTextureIds",
         new THREE.InstancedBufferAttribute(new Uint32Array(uvTextureIds), 1),
-      );
-      state.inst.geometry.setAttribute(
-        "instanceIds",
-        new THREE.InstancedBufferAttribute(new Uint32Array(instanceIds), 1),
       );
     },
 
@@ -183,6 +178,18 @@ export default function Floor() {
     },
   }));
 
+  // three shader language
+  const shaderMeta = useMemo(() => {
+    const texArray = w.texFloor;
+    // aligned to instances
+    const uvDims = attribute("uvDimensions", "vec2");
+    const uvOffs = attribute("uvOffsets", "vec2");
+    const transformedUv = uv().mul(uvDims).add(uvOffs);
+    const texNode = texture(texArray.tex, transformedUv);
+    texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
+    return { texNode, uid: generateUUID() };
+  }, []);
+
   useEffect(() => {
     state.transformInstances();
     state.addUvs();
@@ -191,15 +198,14 @@ export default function Floor() {
 
   return (
     <group>
-      <instancedMesh
-        name="floor"
-        // ref={useComposedRefs(state.ref("inst"), demoInstancedQuad.ref)}
-        // args={[state.quad, undefined, demoInstancedQuad.metas.length]}
-        ref={state.ref("inst")}
-        args={[state.quad, undefined, w.gms.length]}
-        renderOrder={-3}
-        material={state.material}
-      />
+      <instancedMesh name="floor" ref={state.ref("inst")} args={[state.quad, undefined, w.gms.length]} renderOrder={-3}>
+        <meshStandardNodeMaterial
+          side={THREE.DoubleSide}
+          transparent
+          key={shaderMeta.uid}
+          colorNode={shaderMeta.texNode}
+        />
+      </instancedMesh>
     </group>
   );
 }

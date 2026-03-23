@@ -1,10 +1,12 @@
+import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { Broadcaster, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import type { RootState } from "@react-three/fiber";
+import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect } from "react";
-import type * as THREE from "three";
+import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
 import { emptyMapDef, floorTextureDimension } from "../const";
@@ -48,12 +50,16 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       //#region derived state
       gms: [],
+      seenGmKeys: [],
       //#endregion
 
       //#region subcomponent apis
       view: null as unknown as State["view"],
       //#endregion
 
+      getGmKeyTexId(gmKey: StarShipGeomorphKey) {
+        return this.seenGmKeys.indexOf(gmKey);
+      },
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
@@ -98,6 +104,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
         geomorph.computeLayoutInstance(assets.layout[gmKey]!, gmId, transform),
       );
+      state.seenGmKeys = state.gms.reduce<StarShipGeomorphKey[]>(
+        (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
+        [],
+      );
 
       return null;
     },
@@ -135,9 +145,29 @@ export type State = {
   texFloor: TexArray;
 
   gms: GeomorphLayoutInstance[];
+  /**
+   * Ordered by first time seen in `gms`.
+   * Thus `seenGmKeys.indexOf(gmKey)` provides `texId`.
+   */
+  seenGmKeys: StarShipGeomorphKey[];
 
   view: import("./WorldView").State;
 
+  getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   onTick(): void;
   stopTick(): void;
 };
+
+extend({ MeshStandardNodeMaterial: THREE.MeshStandardNodeMaterial });
+
+declare module "@react-three/fiber" {
+  interface ThreeElements {
+    meshStandardNodeMaterial: ThreeElements["meshStandardMaterial"] & {
+      colorNode?: THREE.MeshStandardNodeMaterial["colorNode"];
+      normalNode?: THREE.MeshStandardNodeMaterial["normalNode"];
+      emissiveNode?: THREE.MeshStandardNodeMaterial["emissiveNode"];
+      roughnessNode?: THREE.MeshStandardNodeMaterial["roughnessNode"];
+      metalnessNode?: THREE.MeshStandardNodeMaterial["metalnessNode"];
+    };
+  }
+}
