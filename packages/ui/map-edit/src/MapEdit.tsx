@@ -435,8 +435,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               type: "symbol" as const,
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
-              // offset: { ...node.offset },
-              offset: new Vect(),
+              offset: node.offset.clone(),
               cssTransform: computeNodeCssTransform(node),
             };
           }
@@ -465,7 +464,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           transform: { ...templateNode.transform },
           ...("children" in templateNode && { children: [...templateNode.children] }),
           ...("baseRect" in templateNode && { baseRect: { ...templateNode.baseRect } }),
-          ...("offset" in templateNode && { offset: { ...templateNode.offset } }),
+          ...("offset" in templateNode && { offset: templateNode.offset.clone() }),
         };
       },
       deleteNodes(nodeIds) {

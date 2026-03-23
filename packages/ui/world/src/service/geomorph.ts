@@ -410,7 +410,7 @@ export function decomposeLayoutNav(
 
 function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
   const poly = Poly.fromRect({ x: 0, y: 0, ...node.baseRect });
-  const mat = tmpMat1.setMatrixValue(node.transform).precision(precision);
+  const mat = tmpMat1.setMatrixValue(node.transform).translate(node.offset.x, node.offset.y).precision(precision);
   poly.applyMatrix(mat);
 
   poly.meta = meta;
@@ -605,7 +605,11 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
           symbolKey: node.srcKey,
           width: node.baseRect.width,
           height: node.baseRect.height,
-          transform: node.transform,
+          transform: {
+            ...node.transform,
+            e: node.transform.e + node.offset.x,
+            f: node.transform.f + node.offset.y,
+          },
           meta,
         });
       continue;
