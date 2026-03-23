@@ -145,7 +145,6 @@ export const DecorManifestEntrySchema = z.object({
 });
 
 export const DecorManifestSchema = z.object({
-  modifiedAt: z.string(),
   byKey: z.record(z.string(), DecorManifestEntrySchema),
 });
 
