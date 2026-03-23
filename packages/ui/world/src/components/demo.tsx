@@ -1,24 +1,11 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { Box, useAnimations, useGLTF, useTexture } from "@react-three/drei";
+import { useAnimations, useGLTF, useTexture } from "@react-three/drei";
 import { buildGraph } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
-import {
-  attribute,
-  cameraPosition,
-  instanceIndex,
-  int,
-  normalWorld,
-  positionWorld,
-  texture,
-  texture as tslTexture,
-  uv,
-  vec4,
-} from "three/tsl";
+import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { createCheckerBoxMaterial } from "../service/shader";
-import type { TexArray } from "../service/tex-array";
 
 export function SkinnedMeshTemplateDemo() {
   const groupRef = useRef<THREE.Group>(null);
@@ -89,132 +76,3 @@ const animationName = {
 } as const;
 
 useGLTF.preload(url.templateGltf);
-
-export function DemoCheckerBox() {
-  const mat = useMemo(() => createCheckerBoxMaterial(), []);
-  return <Box args={[1, 1, 1, 10, 1, 10]} position={[0, 0, 0]} scale={[100, 0.001, 100]} material={mat} />;
-}
-
-function drawDemoOutlineFloorTextures(texFloor: TexArray) {
-  const size = 256;
-  const { ct } = texFloor;
-
-  const layers: ((ct: CanvasRenderingContext2D) => void)[] = [
-    // black background with white border
-    (ct) => {
-      ct.fillStyle = "#000000";
-      ct.fillRect(0, 0, size, size);
-      ct.strokeStyle = "#ffffff";
-      ct.lineWidth = 8;
-      ct.strokeRect(4, 4, size - 8, size - 8);
-    },
-  ];
-
-  texFloor.resize({ numTextures: layers.length, width: size, height: size });
-  layers.forEach((draw, i) => {
-    ct.clearRect(0, 0, size, size);
-    draw(ct);
-    texFloor.updateIndex(i);
-  });
-}
-
-function drawDemoFloorTextures(texFloor: TexArray) {
-  const size = 256;
-  const cell = size / 4;
-  const { ct } = texFloor;
-
-  const layers: ((ct: CanvasRenderingContext2D) => void)[] = [
-    // colored grid
-    (ct) => {
-      const colors = ["#e74c3c", "#3498db", "#2ecc71", "#f39c12"];
-      for (let row = 0; row < 4; row++)
-        for (let col = 0; col < 4; col++) {
-          ct.fillStyle = colors[(row + col) % colors.length];
-          ct.fillRect(col * cell, row * cell, cell, cell);
-        }
-    },
-    // diagonal stripes
-    (ct) => {
-      ct.fillStyle = "#1abc9c";
-      ct.fillRect(0, 0, size, size);
-      ct.strokeStyle = "#2c3e50";
-      ct.lineWidth = 8;
-      for (let i = -size; i < size * 2; i += 24) {
-        ct.beginPath();
-        ct.moveTo(i, 0);
-        ct.lineTo(i + size, size);
-        ct.stroke();
-      }
-    },
-    // circles / dots
-    (ct) => {
-      ct.fillStyle = "#9b59b6";
-      ct.fillRect(0, 0, size, size);
-      ct.fillStyle = "#f1c40f";
-      for (let row = 0; row < 4; row++)
-        for (let col = 0; col < 4; col++) {
-          ct.beginPath();
-          ct.arc(col * cell + cell / 2, row * cell + cell / 2, cell / 3, 0, Math.PI * 2);
-          ct.fill();
-        }
-    },
-  ];
-
-  texFloor.resize({ numTextures: layers.length, width: size, height: size });
-  layers.forEach((draw, i) => {
-    ct.clearRect(0, 0, size, size);
-    draw(ct);
-    texFloor.updateIndex(i);
-  });
-}
-
-export const demoInstancedQuad = {
-  metas: [
-    { pos: [-8, 0, -8], color: 0xe74c3c },
-    { pos: [0, 0, -8], color: 0x3498db },
-    { pos: [8, 0, -8], color: 0x2ecc71 },
-    { pos: [-8, 0, 0], color: 0xf39c12 },
-    { pos: [0, 0, 0], color: 0x9b59b6 },
-    { pos: [8, 0, 0], color: 0x1abc9c },
-    { pos: [-8, 0, 8], color: 0xe67e22 },
-    { pos: [0, 0, 8], color: 0x2980b9 },
-    { pos: [8, 0, 8], color: 0xd35400 },
-    { pos: [0, 0, -16], color: 0x27ae60 },
-  ] as const,
-
-  ref(inst: THREE.InstancedMesh | null) {
-    if (inst == null) return;
-    const mat = new THREE.Matrix4();
-    const col = new THREE.Color();
-    const scl = new THREE.Vector3(6, 1, 6);
-    demoInstancedQuad.metas.forEach(({ pos: [x, y, z], color }, i) => {
-      mat.makeTranslation(x, y, z).scale(scl);
-      inst.setMatrixAt(i, mat);
-      inst.setColorAt(i, col.set(color));
-    });
-    inst.instanceMatrix.needsUpdate = true;
-    if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-  },
-};
-
-export function createDemoTexArrayMaterial(texArray: TexArray) {
-  drawDemoFloorTextures(texArray);
-  return createTexArrayBasicMaterial(texArray);
-}
-
-export function createTestOutlineTexArrayMaterial(texArray: TexArray) {
-  drawDemoOutlineFloorTextures(texArray);
-  return createTexArrayBasicMaterial(texArray);
-}
-
-export const createTexArrayBasicMaterial = (texArray: TexArray, useUvDimensions = false) => {
-  const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
-  const uvDims = attribute("uvDimensions", "vec2");
-  const uvOffs = attribute("uvOffsets", "vec2");
-  const transformedUv = uv().mul(uvDims).add(uvOffs);
-  const texNode = texture(texArray.tex, useUvDimensions ? transformedUv : uv());
-  texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-  mat.colorNode = texNode;
-  mat.transparent = true;
-  return mat;
-};
