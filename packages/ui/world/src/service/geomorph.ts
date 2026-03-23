@@ -2,6 +2,7 @@ import {
   getGeomorphNumber,
   isHullSymbolImageKey,
   type StarShipGeomorphKey,
+  type StarshipGeomorphNumber,
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
 import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
@@ -28,6 +29,7 @@ import {
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { debug, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 import { Connector } from "./Connector";
+import { embedXZMat4 } from "./geometry";
 
 /**
  * 🚧 needs review
@@ -89,6 +91,38 @@ function computeFlattenedDoors(
       }
       return true;
     }),
+  };
+}
+
+export function computeLayoutInstance(
+  layout: Geomorph.GeomorphLayout,
+  gmId: number,
+  transform: Geom.AffineTransform,
+): Geomorph.LayoutInstance {
+  const matrix = new Mat(transform);
+  // 🔔 only support "edge geomorph" or "full geomorph"
+  const sguGridRect = new Rect(0, 0, 1200, isEdgeGm(layout.num) ? 600 : 1200);
+
+  return {
+    ...layout,
+    gmId,
+    transform,
+    matrix,
+    gridRect: sguGridRect.scale(sguToWorldScale).applyMatrix(matrix),
+    inverseMatrix: matrix.getInverseMatrix(),
+    mat4: embedXZMat4(transform),
+    determinant: matrix.determinant,
+
+    getOtherRoomId(_doorId, _roomId) {
+      // // We support case where roomIds are equal e.g. 303
+      // const { roomIds } = this.doors[doorId];
+      // return roomIds.find((x, i) => typeof x === "number" && roomIds[1 - i] === roomId) ?? -1;
+      return -1;
+    },
+    isHullDoor(_doorId) {
+      // return doorId < this.hullDoors.length;
+      return false;
+    },
   };
 }
 
@@ -494,6 +528,13 @@ function isDecorImgKey(_input: string) {
   } else {
     return true;
   }
+}
+
+function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
+  if (typeof input !== "number") {
+    input = getGeomorphNumber(input);
+  }
+  return 301 <= input && input < 500;
 }
 
 function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {

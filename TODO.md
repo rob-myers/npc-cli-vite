@@ -84,7 +84,10 @@
   - 🚧 migrate positionInstances -> transformInstances
     - ✅ demo-map-0 should have at least two geomorphs
     - ✅ LayoutInstance schema
-    - 🚧 start migrating World query
+    - ✅ start migrating World query
+      - ✅ assets.json has mapDefs in `map` lookup
+      - ✅ migrate geomorph.computeLayoutInstance
+    - 🚧 ...
   - migrate state.addUvs
 
 - ✅ use zod codec for points

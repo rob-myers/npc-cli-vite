@@ -20,3 +20,10 @@ export async function fetchParsed<T extends z.ZodTypeAny>(
 
   return result.data;
 }
+
+/**
+ * Override cache in development
+ */
+export function getDevCacheBustQueryParam() {
+  return import.meta.env.DEV ? `?v=${Date.now()}` : "";
+}

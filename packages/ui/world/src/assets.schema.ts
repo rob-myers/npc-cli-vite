@@ -12,7 +12,6 @@ import {
   polyCodec,
   RectSchema,
   rectCodec,
-  SixTupleSchema,
   TriangulationSchema,
 } from "@npc-cli/util/geom";
 import { Matrix4 } from "three/src/math/Matrix4.js";
@@ -119,7 +118,7 @@ export type AssetsType = z.infer<typeof AssetsSchema>;
 
 export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   gmId: z.number(),
-  transform: SixTupleSchema,
+  transform: AffineTransformSchema,
   matrix: MatSchema,
   gridRect: RectSchema,
   inverseMatrix: MatSchema,
