@@ -1,5 +1,12 @@
 import { StarShipGeomorphKeySchema } from "@npc-cli/media/starship-symbol";
-import { MetaSchema, PointSchema, RectSchema, SixTupleSchema, Vector3LikeSchema } from "@npc-cli/util/geom";
+import {
+  MetaSchema,
+  pointCodec,
+  RectJsonSchema,
+  rectCodec,
+  SixTupleSchema,
+  Vector3LikeSchema,
+} from "@npc-cli/util/geom";
 import z from "zod";
 
 const GmRoomIdSchema = z.object({
@@ -11,7 +18,7 @@ const GmRoomIdSchema = z.object({
 const BaseDecorSchema = z.object({
   key: z.string(),
   meta: MetaSchema.and(GmRoomIdSchema),
-  bounds2d: RectSchema,
+  bounds2d: rectCodec,
   updatedAt: z.number().optional(),
   src: StarShipGeomorphKeySchema.optional(),
 });
@@ -24,12 +31,12 @@ const BaseDecorDefSchema = z.object({
 export const DecorCircleSchema = BaseDecorSchema.extend({
   type: z.literal("circle"),
   radius: z.number(),
-  center: PointSchema,
+  center: pointCodec,
 });
 export const DecorCircleDefSchema = BaseDecorDefSchema.extend({
   type: z.literal("circle"),
   radius: z.number(),
-  center: PointSchema,
+  center: pointCodec,
 });
 
 export const DecorCuboidSchema = BaseDecorSchema.extend({
@@ -37,7 +44,7 @@ export const DecorCuboidSchema = BaseDecorSchema.extend({
   center: Vector3LikeSchema,
   transform: SixTupleSchema,
 });
-export const DecorCuboidDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).extend({
+export const DecorCuboidDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
   type: z.literal("cuboid"),
   baseY: z.number(),
   height3d: z.number(),
@@ -63,11 +70,11 @@ export const DecorPointDefSchema = BaseDecorDefSchema.extend({
 export const DecorQuadSchema = BaseDecorSchema.extend({
   type: z.literal("quad"),
   transform: SixTupleSchema,
-  center: PointSchema,
+  center: pointCodec,
   det: z.number(),
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
 });
-export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).extend({
+export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
   type: z.literal("quad"),
   img: z.string(),
   color: z.string().optional(),
@@ -78,18 +85,18 @@ export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).ex
 export const DecorDecalSchema = BaseDecorSchema.extend({
   type: z.literal("decal"),
   transform: SixTupleSchema,
-  center: PointSchema,
+  center: pointCodec,
   det: z.number(),
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
 });
 
 export const DecorRectSchema = BaseDecorSchema.extend({
   type: z.literal("rect"),
-  points: z.array(PointSchema),
-  center: PointSchema,
+  points: z.array(pointCodec),
+  center: pointCodec,
   angle: z.number(),
 });
-export const DecorRectDefSchema = BaseDecorDefSchema.extend(RectSchema.shape).extend({
+export const DecorRectDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
   type: z.literal("rect"),
   angle: z.number().optional(),
 });

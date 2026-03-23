@@ -87,7 +87,7 @@
   - migrate state.addUvs
 
 - ✅ use zod codec for points
-- 🚧 use zod codec for rects
+- ✅ use zod codec for rects
 
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol

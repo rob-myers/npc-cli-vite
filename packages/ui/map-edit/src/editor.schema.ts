@@ -1,5 +1,5 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
-import { AffineTransformSchema, PointSchema, RectSchema } from "@npc-cli/util/geom";
+import { AffineTransformSchema, pointCodec, rectCodec } from "@npc-cli/util/geom";
 import z from "zod";
 
 const BaseNodeSchema = z.object({
@@ -28,14 +28,14 @@ export const MapNodeSchema = z.union([
     srcType: z.literal(["symbol", "decor"]).default("symbol"),
     srcKey: z.string().nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
-    offset: PointSchema,
+    offset: pointCodec,
     cssTransform: z.string(),
   }),
   BaseNodeSchema.extend({
     type: z.literal("symbol"),
     srcKey: StarShipSymbolImageKeySchema.nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
-    offset: PointSchema,
+    offset: pointCodec,
     cssTransform: z.string(),
   }),
   BaseNodeSchema.extend({
@@ -90,7 +90,7 @@ const MapEditSavedBaseSchema = z.object({
   width: z.number(),
   height: z.number(),
   nodes: z.array(MapNodeSchema),
-  bounds: RectSchema,
+  bounds: rectCodec,
 });
 
 export const MapEditSavedSymbolSchema = MapEditSavedBaseSchema.extend(MapEditSymbolFileSpecifierSchema.shape);
@@ -107,7 +107,7 @@ const BaseManifestItemSchema = z.object({
   thumbnailFilename: z.string(),
   width: z.number(),
   height: z.number(),
-  bounds: RectSchema,
+  bounds: rectCodec,
 });
 
 export const SymbolsManifestItemSchema = BaseManifestItemSchema.extend(MapEditSymbolFileSpecifierSchema.shape);

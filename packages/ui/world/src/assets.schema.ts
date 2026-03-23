@@ -7,9 +7,9 @@ import { MapKeySchema } from "@npc-cli/ui__map-edit/editor.schema";
 import {
   AffineTransformSchema,
   MetaSchema,
-  PointSchema,
+  pointCodec,
   polyCodec,
-  RectSchema,
+  rectCodec,
   TriangulationSchema,
 } from "@npc-cli/util/geom";
 import z from "zod";
@@ -23,7 +23,7 @@ export const AssetsFlatSymbolSchema = z.object({
   isHull: z.boolean(),
   width: z.number(),
   height: z.number(),
-  bounds: RectSchema,
+  bounds: rectCodec,
 
   decor: z.array(polyCodec),
   doors: z.array(polyCodec),
@@ -66,7 +66,7 @@ export const GeomorphLayoutObstacleSchema = z.object({
   /** Transform from original symbol into Geomorph (meters) */
   transform: AffineTransformSchema,
   /** `origPoly.center` transformed by `transform` */
-  center: PointSchema,
+  center: pointCodec,
   /** Shortcut to `origPoly.meta` */
   meta: MetaSchema,
 });
@@ -75,7 +75,7 @@ export type GeomorphLayoutObstacle = z.infer<typeof GeomorphLayoutObstacleSchema
 export const GeomorphLayoutSchema = z.object({
   key: StarShipGeomorphKeySchema,
   num: StarShipGeomorphNumberSchema,
-  bounds: RectSchema,
+  bounds: rectCodec,
 
   decor: z.array(DecorSchema),
   doors: z.array(ConnectorSchema),
@@ -90,7 +90,7 @@ export const GeomorphLayoutSchema = z.object({
 
   navDecomp: TriangulationSchema,
   /** AABBs of `navPolyWithDoors` i.e. original nav-poly */
-  navRects: z.array(RectSchema),
+  navRects: z.array(rectCodec),
 });
 export type GeomorphLayout = z.infer<typeof GeomorphLayoutSchema>;
 
