@@ -1,17 +1,11 @@
 {
-  "modifiedAt": "2026-03-23T19:20:43.326Z",
   "byKey": {
     "stateroom--012--2x2": {
       "filename": "stateroom--012--2x2.json",
       "thumbnailFilename": "stateroom--012--2x2.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": {
-        "x": -2,
-        "y": -2,
-        "width": 128,
-        "height": 124
-      },
+      "bounds": {"x": -2, "y": -2, "width": 128, "height": 124},
       "type": "symbol",
       "key": "stateroom--012--2x2"
     },
@@ -20,12 +14,7 @@
       "thumbnailFilename": "stateroom--019--2x3.thumbnail.png",
       "width": 120,
       "height": 180,
-      "bounds": {
-        "x": -2.5,
-        "y": -2.5,
-        "width": 127.5,
-        "height": 184.5
-      },
+      "bounds": {"x": -2.5, "y": -2.5, "width": 127.5, "height": 184.5},
       "type": "symbol",
       "key": "stateroom--019--2x3"
     },
@@ -34,12 +23,7 @@
       "thumbnailFilename": "console--051--0.4x0.6.thumbnail.png",
       "width": 30,
       "height": 30,
-      "bounds": {
-        "x": 0,
-        "y": -0.7,
-        "width": 30,
-        "height": 31
-      },
+      "bounds": {"x": 0, "y": -0.7, "width": 30, "height": 31},
       "type": "symbol",
       "key": "console--051--0.4x0.6"
     },
@@ -48,12 +32,7 @@
       "thumbnailFilename": "bed--003--1x1.6.thumbnail.png",
       "width": 100,
       "height": 60,
-      "bounds": {
-        "x": -0.7,
-        "y": 0,
-        "width": 100.4,
-        "height": 61.4
-      },
+      "bounds": {"x": -0.7, "y": 0, "width": 100.4, "height": 61.4},
       "type": "symbol",
       "key": "bed--003--1x1.6"
     },
@@ -62,12 +41,7 @@
       "thumbnailFilename": "extra--004--desk--0.5x1.thumbnail.png",
       "width": 30,
       "height": 60,
-      "bounds": {
-        "x": -0.5,
-        "y": -0.7,
-        "width": 31.4,
-        "height": 61.4
-      },
+      "bounds": {"x": -0.5, "y": -0.7, "width": 31.4, "height": 61.4},
       "type": "symbol",
       "key": "extra--004--desk--0.5x1"
     },
@@ -76,12 +50,7 @@
       "thumbnailFilename": "console--033--0.4x0.6.thumbnail.png",
       "width": 30,
       "height": 30,
-      "bounds": {
-        "x": 2,
-        "y": -1.3,
-        "width": 26.8,
-        "height": 32.2
-      },
+      "bounds": {"x": 2, "y": -1.3, "width": 26.8, "height": 32.2},
       "type": "symbol",
       "key": "console--033--0.4x0.6"
     },
@@ -90,12 +59,7 @@
       "thumbnailFilename": "extra--003--chair--0.25x0.25.thumbnail.png",
       "width": 20,
       "height": 20,
-      "bounds": {
-        "x": 0.3,
-        "y": -0.3,
-        "width": 19.4,
-        "height": 20.6
-      },
+      "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
       "type": "symbol",
       "key": "extra--003--chair--0.25x0.25"
     },
@@ -104,12 +68,7 @@
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
       "width": 1200,
       "height": 600,
-      "bounds": {
-        "x": -5.5,
-        "y": -22,
-        "width": 1212,
-        "height": 628
-      },
+      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
       "type": "symbol",
       "key": "g-301--bridge"
     },
@@ -118,12 +77,7 @@
       "thumbnailFilename": "stateroom--014--2x2.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": {
-        "x": -2,
-        "y": -2,
-        "width": 124,
-        "height": 127
-      },
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 127},
       "type": "symbol",
       "key": "stateroom--014--2x2"
     },
@@ -132,12 +86,7 @@
       "thumbnailFilename": "stateroom--036--2x4.thumbnail.png",
       "width": 120,
       "height": 240,
-      "bounds": {
-        "x": -2,
-        "y": -2,
-        "width": 124,
-        "height": 246.8
-      },
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
       "type": "symbol",
       "key": "stateroom--036--2x4"
     },
@@ -146,12 +95,7 @@
       "thumbnailFilename": "iris-valves--005--1x1.thumbnail.png",
       "width": 60,
       "height": 60,
-      "bounds": {
-        "x": 0,
-        "y": 0,
-        "width": 60,
-        "height": 60
-      },
+      "bounds": {"x": 0, "y": 0, "width": 60, "height": 60},
       "type": "symbol",
       "key": "iris-valves--005--1x1"
     },
@@ -160,12 +104,7 @@
       "thumbnailFilename": "console--019--2x2.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": {
-        "x": -1,
-        "y": -1,
-        "width": 121.4,
-        "height": 121.4
-      },
+      "bounds": {"x": -1, "y": -1, "width": 121.4, "height": 121.4},
       "type": "symbol",
       "key": "console--019--2x2"
     },
@@ -174,12 +113,7 @@
       "thumbnailFilename": "bridge--042--8x9.thumbnail.png",
       "width": 480,
       "height": 540,
-      "bounds": {
-        "x": -5,
-        "y": -18,
-        "width": 489.2,
-        "height": 558
-      },
+      "bounds": {"x": -5, "y": -18, "width": 489.2, "height": 558},
       "type": "symbol",
       "key": "bridge--042--8x9"
     }
