@@ -2,6 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { Broadcaster, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+import { hashJson } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +42,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       //#region texture atlases
       assets: null as unknown as State["assets"],
+      hash: 0,
       texFloor: new TexArray({
         ctKey: "floor-tex",
         numTextures: 1, // can change
@@ -93,9 +95,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled]);
 
+  const assetsQueryKey = ["world", state.key, "derived data"] as const;
+
   // never runs anywhere else so can mutate state
   const _query = useQuery({
-    queryKey: ["world", state.key, "derived data"],
+    queryKey: assetsQueryKey,
     async queryFn() {
       const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
       state.assets = assets;
@@ -110,9 +114,23 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         [],
       );
 
+      state.hash = hashJson(assets);
+
       return null;
     },
   });
+
+  // refetch on assets.json change via vite dev server
+  useEffect(() => {
+    if (!import.meta.hot) return;
+    const hot = import.meta.hot;
+    const cb = () => {
+      console.log("[World] assets.json changed, refetching");
+      queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
+    };
+    hot.on("assets-json-changed", cb);
+    return () => hot.off("assets-json-changed", cb);
+  }, []);
 
   return (
     <WorldContext.Provider value={state}>
@@ -144,6 +162,7 @@ export type State = {
   timer: Timer;
 
   assets: AssetsType;
+  hash: number;
   texFloor: TexArray;
 
   gms: GeomorphLayoutInstance[];

@@ -81,14 +81,15 @@
   - ✅ Floor uses instancedMesh demo
     - i.e. some instances with different colours
   - ✅ draw a demo texture atlas and apply it to floor instancedMesh
-  - 🚧 migrate positionInstances -> transformInstances
+  - ✅ migrate positionInstances -> transformInstances
     - ✅ demo-map-0 should have at least two geomorphs
     - ✅ LayoutInstance schema
     - ✅ start migrating World query
       - ✅ assets.json has mapDefs in `map` lookup
       - ✅ migrate geomorph.computeLayoutInstance
-    - 🚧 transform instances
-  - migrate state.addUvs
+    - ✅ transform instances
+  - ✅ migrate state.addUvs
+  - 🚧 clean
 
 - ✅ assets.json is in world coords
   - public/symbol/*.json are in sgu coords (1grid ~ 60 x 60)
@@ -96,6 +97,9 @@
 
 - ✅ use zod codec for points
 - ✅ use zod codec for rects
+
+- 🚧 gen-assets-json should trigger hot-reload
+  - works but currently have to save twice
 
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol

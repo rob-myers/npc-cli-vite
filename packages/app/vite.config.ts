@@ -1,5 +1,6 @@
 import mdx from "@mdx-js/rollup";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
+import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
@@ -26,6 +27,7 @@ export default defineConfig({
     process.env.USE_HTTPS ? basicSsl() : undefined,
     analyzer(),
     mapEditApiPlugin(),
+    watchAssetsPlugin(),
 
     // On close/reopen laptop in Chrome we do not want HMR to break
     {

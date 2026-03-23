@@ -187,7 +187,7 @@ export default function Floor() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.gms.length]);
+  }, [w.hash, w.gms.length]);
 
   return (
     <group>
