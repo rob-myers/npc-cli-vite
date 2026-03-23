@@ -10,56 +10,59 @@ import { WorldContext } from "./world-context";
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
   const w = useContext(WorldContext);
 
-  const state = useStateRef<State>(() => ({
-    canvas: null as any,
-    controls: null as any,
-    ctrlOpts: {
-      minAzimuthAngle: -Infinity,
-      maxAzimuthAngle: +Infinity,
-      // minPolarAngle: Math.PI * 0,
-      minPolarAngle: (Math.PI * 1) / 8,
-      // maxPolarAngle: Math.PI * 1/2,
-      maxPolarAngle: (Math.PI * 1) / 2.5,
-      // minDistance: 1.5, // target could be ground or npc head
-      minDistance: 5, // target could be ground or npc head
-      maxDistance: 35,
-      panSpeed: 2,
-      rotateSpeed: 0.5,
-      zoomSpeed: 0.3,
-      // zoomToCursor: true, // breaks follow zoom on HMR
-    },
-    rootEl: null as any,
+  const state = useStateRef<State>(
+    () => ({
+      canvas: null as any,
+      controls: null as any,
+      ctrlOpts: {
+        minAzimuthAngle: -Infinity,
+        maxAzimuthAngle: +Infinity,
+        // minPolarAngle: Math.PI * 0,
+        minPolarAngle: (Math.PI * 1) / 8,
+        // maxPolarAngle: Math.PI * 1/2,
+        maxPolarAngle: (Math.PI * 1) / 2.5,
+        // minDistance: 1.5, // target could be ground or npc head
+        minDistance: 5, // target could be ground or npc head
+        maxDistance: 60,
+        panSpeed: 2,
+        rotateSpeed: 0.5,
+        zoomSpeed: 0.3,
+        // zoomToCursor: true, // breaks follow zoom on HMR
+      },
+      rootEl: null as any,
 
-    canvasRef(canvasEl) {
-      if (canvasEl !== null) {
-        state.canvas = canvasEl;
-        state.rootEl = canvasEl.parentElement?.parentElement as HTMLDivElement;
-      }
-    },
-    async createRenderer(props: Record<string, unknown>) {
-      const renderer = new THREE.WebGPURenderer(props as ConstructorParameters<typeof THREE.WebGPURenderer>[0]);
-      // renderer.toneMapping = 3;
-      // renderer.toneMappingExposure = 1;
-      // // renderer.logarithmicDepthBuffer = true; // set via constructor if needed
-      // renderer.setPixelRatio(window.devicePixelRatio);
-      await renderer.init();
-      return renderer;
-    },
-    onCreated(rootState) {
-      w.threeReady = true;
-      w.r3f = rootState as typeof w.r3f;
-      w.update(); // e.g. show stats
-    },
-    syncRenderMode() {
-      if (w.disabled === true) {
-        w.r3f?.set({ frameloop: "demand" });
-        return "demand";
-      } else {
-        w.r3f?.set({ frameloop: "always" });
-        return "always";
-      }
-    },
-  }));
+      canvasRef(canvasEl) {
+        if (canvasEl !== null) {
+          state.canvas = canvasEl;
+          state.rootEl = canvasEl.parentElement?.parentElement as HTMLDivElement;
+        }
+      },
+      async createRenderer(props: Record<string, unknown>) {
+        const renderer = new THREE.WebGPURenderer(props as ConstructorParameters<typeof THREE.WebGPURenderer>[0]);
+        // renderer.toneMapping = 3;
+        // renderer.toneMappingExposure = 1;
+        // // renderer.logarithmicDepthBuffer = true; // set via constructor if needed
+        // renderer.setPixelRatio(window.devicePixelRatio);
+        await renderer.init();
+        return renderer;
+      },
+      onCreated(rootState) {
+        w.threeReady = true;
+        w.r3f = rootState as typeof w.r3f;
+        w.update(); // e.g. show stats
+      },
+      syncRenderMode() {
+        if (w.disabled === true) {
+          w.r3f?.set({ frameloop: "demand" });
+          return "demand";
+        } else {
+          w.r3f?.set({ frameloop: "always" });
+          return "always";
+        }
+      },
+    }),
+    { reset: { ctrlOpts: true } },
+  );
 
   w.view = state;
 
