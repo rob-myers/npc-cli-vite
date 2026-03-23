@@ -17,7 +17,7 @@ import {
 import { isNodeTransformable, migrateMapEditSavedFile, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
 import { geomService, Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { deepClone, error, info, warn } from "@npc-cli/util/legacy/generic";
+import { deepClone, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
@@ -152,8 +152,8 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
           fileSpecifier: MapEditMapFileSpecifierSchema,
         } as const);
 
-  const directory = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`);
-  const manifestPath = path.resolve(directory, "manifest.json");
+  const PUBLIC_SUB_DIRECTORY = path.resolve(PROJECT_ROOT, `packages/app/public/${type}`);
+  const manifestPath = path.resolve(PUBLIC_SUB_DIRECTORY, "manifest.json");
 
   const prevManifest = jsonParser
     .pipe(schema.manifest)
@@ -162,7 +162,9 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
   const byKey = deepClone(prevManifest?.byKey ?? {});
 
   // Must exclude manifest.json
-  const itemFilePaths = fs.globSync(path.resolve(directory, "*.json")).filter((filePath) => filePath !== manifestPath);
+  const itemFilePaths = fs
+    .globSync(path.resolve(PUBLIC_SUB_DIRECTORY, "*.json"))
+    .filter((filePath) => filePath !== manifestPath);
   const changedFilenames =
     opts.changedFiles?.map((x) => x.filename) ?? itemFilePaths.map((filePath) => path.basename(filePath));
 
@@ -196,20 +198,22 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
       const entry = byKey[key];
       if (entry) {
         delete byKey[key];
-        await fs.promises.unlink(path.resolve(directory, entry.filename)).catch(warn);
-        await fs.promises.unlink(path.resolve(directory, entry.thumbnailFilename)).catch(warn);
+        await fs.promises.unlink(path.resolve(PUBLIC_SUB_DIRECTORY, entry.filename)).catch(warn);
+        await fs.promises.unlink(path.resolve(PUBLIC_SUB_DIRECTORY, entry.thumbnailFilename)).catch(warn);
       } else {
         error(`Failed to remove ${type}: ${filename} (no entry in manifest)`);
       }
     }
   }
 
-  if (JSON.stringify(byKey) === JSON.stringify(prevManifest?.byKey)) {
+  const prevManifestRaw = safeJsonCompact(prevManifest);
+  const nextManifestRaw = safeJsonCompact(z.decode(schema.manifest, { byKey }));
+
+  if (prevManifestRaw === nextManifestRaw) {
     info(`${path.basename(import.meta.filename)}: ${type}: no changes detected`);
     return;
   }
 
   info(`${path.basename(import.meta.filename)}: ${type}: changes detected`);
-  const nextManifest: typeof prevManifest = { modifiedAt: new Date().toISOString(), byKey };
-  fs.writeFileSync(manifestPath, JSON.stringify(nextManifest, null, 2));
+  fs.writeFileSync(manifestPath, nextManifestRaw);
 }

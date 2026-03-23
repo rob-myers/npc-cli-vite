@@ -113,14 +113,12 @@ const BaseManifestItemSchema = z.object({
 export const SymbolsManifestItemSchema = BaseManifestItemSchema.extend(MapEditSymbolFileSpecifierSchema.shape);
 
 export const SymbolsManifestSchema = z.object({
-  modifiedAt: z.string(),
   byKey: z.partialRecord(StarShipSymbolImageKeySchema, SymbolsManifestItemSchema),
 });
 
 export const MapsManifestItemSchema = BaseManifestItemSchema.extend(MapEditMapFileSpecifierSchema.shape);
 
 export const MapsManifestSchema = z.object({
-  modifiedAt: z.string(),
   byKey: z.record(z.string(), MapsManifestItemSchema),
 });
 
@@ -133,7 +131,6 @@ export const PathManifestEntrySchema = z.object({
 });
 
 export const PathManifestSchema = z.object({
-  modifiedAt: z.string(),
   byKey: z.record(z.string(), PathManifestEntrySchema),
 });
 

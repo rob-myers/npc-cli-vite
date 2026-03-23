@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { MapEditFileSpecifierSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { type ALLOWED_MAP_EDIT_FOLDERS, isSavableFileType } from "@npc-cli/ui__map-edit/map-node-api";
+import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
@@ -119,7 +120,9 @@ async function handleApiMapEditFile(
     )) as typeof import("./service/process-symbol");
 
     const fileToSave = parseRawMapEditFile(body); // throws on error
-    fs.writeFileSync(filePath, JSON.stringify(fileToSave, null, 2));
+    fs.writeFileSync(filePath, safeJsonCompact(fileToSave));
+
+    // generate thumbnail, update manifest
     processSavedFile(fileToSave);
 
     res.end(JSON.stringify({ success: true }));
