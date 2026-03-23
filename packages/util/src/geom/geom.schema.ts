@@ -1,4 +1,5 @@
 import z from "zod";
+import { Mat } from "./mat.js";
 import { Poly } from "./poly.js";
 import { Rect } from "./rect.js";
 import { Vect } from "./vect.js";
@@ -65,3 +66,5 @@ export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
   decode: (geoJson) => Poly.from(geoJson),
   encode: (poly) => poly.geoJson,
 });
+
+export const MatSchema = z.instanceof(Mat);
