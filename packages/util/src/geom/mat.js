@@ -4,7 +4,7 @@
  * - String format `matrix(a, b, c, d, e, f)`.
  */
 export class Mat {
-  /** @param  {string | Geom.SixTuple} [args] */
+  /** @param  {string | Geom.SixTuple | MatrixJson} [args] */
   constructor(args) {
     this.a = 1;
     this.b = 0;
@@ -12,11 +12,7 @@ export class Mat {
     this.d = 1;
     this.e = 0;
     this.f = 0;
-    if (Array.isArray(args)) {
-      this.setMatrixValue(/** @type {Geom.SixTuple} */ (args));
-    } else {
-      this.setMatrixValue(/** @type {undefined | string} */ (args));
-    }
+    this.setMatrixValue(args);
   }
 
   /**

@@ -41,3 +41,17 @@ unitXzQuad.setIndex([
   0, 2, 1,
   0, 3, 2,
 ]);
+
+/** Embed a 2D affine transform into three.js XZ plane. */
+export function embedXZMat4(
+  transform: Geom.AffineTransform,
+  { yScale, yHeight, mat4 }: { yScale?: number; yHeight?: number; mat4?: THREE.Matrix4 } = {},
+) {
+  // biome-ignore format: meaningful newlines
+  return (mat4 ?? new THREE.Matrix4()).set(
+    transform.a, 0,            transform.c, transform.e,
+    0,            yScale ?? 1,  0,            yHeight ?? 0,
+    transform.b, 0,            transform.d, transform.f,
+    0,            0,            0,             1
+  );
+}

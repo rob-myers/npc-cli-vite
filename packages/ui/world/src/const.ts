@@ -47,3 +47,11 @@ export const geomorphPngRectWidth = 30.3;
 export const gmFloorExtraScale = 2;
 /** This is the width, but also the height even for edge geomorphs, because we use texture arrays */
 export const floorTextureDimension = geomorphPngRectWidth * worldToSguScale * gmFloorExtraScale;
+
+/** Assumed to exist inside `assets.json` `map` lookup */
+export const emptyMapKey = "empty-map";
+/** The value of @see {emptyMapKey} */
+export const emptyMapDef: import("./assets.schema").AssetsMapDef = {
+  key: emptyMapKey,
+  gms: [],
+};

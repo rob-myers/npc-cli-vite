@@ -1,12 +1,15 @@
 import { uiClassName } from "@npc-cli/ui-sdk";
 import { Broadcaster, useStateRef } from "@npc-cli/util";
+import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import type { RootState } from "@react-three/fiber";
+import { useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect } from "react";
 import type * as THREE from "three";
 import { Timer } from "three-stdlib";
-import type { GeomorphLayoutInstance } from "../assets.schema";
-import { floorTextureDimension } from "../const";
+import { AssetsSchema, type GeomorphLayoutInstance } from "../assets.schema";
+import { emptyMapDef, floorTextureDimension } from "../const";
 import type { WorldUiMeta } from "../schema";
+import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { TexArray } from "../service/tex-array";
 import Floor from "./Floor";
@@ -18,27 +21,37 @@ import { WorldContext } from "./world-context";
 export default function World({ meta }: { meta: WorldUiMeta }) {
   const state = useStateRef(
     (): State => ({
+      //#region core properties
       id: meta.id,
       key: meta.worldKey,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
+      //#endregion
 
+      //#region core setup and communication
       events: new Broadcaster(),
       r3f: null as unknown as State["r3f"],
       reqAnimId: -1,
       threeReady: false,
       timer: new Timer(),
+      //#endregion
 
+      //#region texture atlases
       texFloor: new TexArray({
         ctKey: "floor-tex",
         numTextures: 1, // can change
         width: floorTextureDimension,
         height: floorTextureDimension,
       }),
+      //#endregion
 
+      //#region derived state
       gms: [],
+      //#endregion
 
+      //#region subcomponent apis
       view: null as unknown as State["view"],
+      //#endregion
 
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
@@ -71,6 +84,22 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
     return () => state.stopTick();
   }, [state.disabled]);
+
+  // never runs anywhere else so can mutate state
+  const _query = useQuery({
+    queryKey: ["world", state.key, "derived data"],
+    async queryFn() {
+      const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
+
+      // compute map
+      const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
+      state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
+        geomorph.computeLayoutInstance(assets.layout[gmKey]!, gmId, transform),
+      );
+
+      return null;
+    },
+  });
 
   return (
     <WorldContext.Provider value={state}>
