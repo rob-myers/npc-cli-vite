@@ -7,6 +7,7 @@ const BaseNodeSchema = z.object({
   name: z.string(),
   locked: z.boolean(),
   visible: z.boolean(),
+  /** Independent of `offset` when it is present */
   transform: AffineTransformSchema,
 });
 export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
@@ -29,6 +30,7 @@ export const MapNodeSchema = z.union([
     srcKey: z.string().nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     offset: pointCodec,
+    /** Constructed from `transform` and `offset` */
     cssTransform: z.string(),
   }),
   BaseNodeSchema.extend({
@@ -36,6 +38,7 @@ export const MapNodeSchema = z.union([
     srcKey: StarShipSymbolImageKeySchema.nullable(),
     baseRect: z.object({ width: z.number(), height: z.number() }),
     offset: pointCodec,
+    /** Constructed from `transform` and `offset` */
     cssTransform: z.string(),
   }),
   BaseNodeSchema.extend({

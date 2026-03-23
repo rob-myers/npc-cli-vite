@@ -213,16 +213,16 @@ export function computeNodeCssTransform(node: TransformableMapNode): string {
       return computePathCssTransform(node);
     case "image":
     case "symbol":
-      return computeImageCssTransform(node);
+      return computeImageOrSymbolCssTransform(node);
     default:
       throw new ExhaustiveError(node);
   }
 }
 
 /**
- * Compute CSS transform string for an image node.
+ * Compute CSS transform string for an image or symbol node.
  */
-function computeImageCssTransform(node: Extract<MapNode, { type: "image" | "symbol" }>): string {
+function computeImageOrSymbolCssTransform(node: Extract<MapNode, { type: "image" | "symbol" }>): string {
   const { transform, offset } = node;
   return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${transform.e + offset.x}, ${transform.f + offset.y})`;
 }

@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "54e07d7b-c34a-4307-853f-b6f45b5fdf10",
-      "name": "g-301--bridge 1",
+      "name": "g-301--bridge",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": -20},
@@ -53,12 +53,12 @@
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 2},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
           "id": "a07d1583-de2c-478e-8381-feb1092fc523",
@@ -77,24 +77,24 @@
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1197.5, "f": 2.5},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, 1, 1200, 0)"
+          "cssTransform": "matrix(-1, 0, 0, 1, 1197.5, 2.5)"
         },
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 361},
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 360},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, 0, 361)"
+          "cssTransform": "matrix(0, -1, 1, 0, 0, 360)"
         },
         {
           "id": "6d56cb79-5d36-44e1-a9b6-01b4412608b4",
