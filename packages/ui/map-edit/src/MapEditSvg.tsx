@@ -21,6 +21,16 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
     return null;
   }, [root.selectedIds]);
 
+  const multiSelectionBounds = useMemo(() => {
+    if (root.selectedIds.size <= 1) return null;
+    const selectedNodes: MapNode[] = [];
+    for (const id of root.selectedIds) {
+      const [node] = findNode(root.nodes, id);
+      if (node && node.type !== "group") selectedNodes.push(node);
+    }
+    return selectedNodes.length > 0 ? getNodeBounds(...selectedNodes) : null;
+  }, [root.selectedIds, root.nodes]);
+
   return (
     <svg
       ref={root.ref("svgEl")}
@@ -50,6 +60,16 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
         />
       )}
       {resizableNode && <ResizeHandles selectedNode={resizableNode} root={root} />}
+      {multiSelectionBounds && (
+        <rect
+          x={multiSelectionBounds.x}
+          y={multiSelectionBounds.y}
+          width={multiSelectionBounds.width}
+          height={multiSelectionBounds.height}
+          strokeWidth={2 / root.zoom}
+          className="stroke-blue-700 fill-none pointer-events-none"
+        />
+      )}
     </svg>
   );
 }
