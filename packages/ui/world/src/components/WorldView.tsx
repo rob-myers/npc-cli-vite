@@ -1,6 +1,7 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
+import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
 import { useContext } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
@@ -37,8 +38,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.rootEl = canvasEl.parentElement?.parentElement as HTMLDivElement;
         }
       },
-      async createRenderer(props: Record<string, unknown>) {
-        const renderer = new THREE.WebGPURenderer(props as ConstructorParameters<typeof THREE.WebGPURenderer>[0]);
+      async createRenderer(props: DefaultGLProps) {
+        // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
+        // > "The depth stencil attachment [TextureView of Texture "depthBuffer"] size (width: 300, height: 150) does not match the size of the other attachments' base plane (width: 1190, height: 1296). "
+        const canvas = props.canvas as HTMLCanvasElement;
+        const parentRect = canvas.parentElement!.getBoundingClientRect();
+        canvas.width = parentRect.width * devicePixelRatio;
+        canvas.height = parentRect.height * devicePixelRatio;
+
+        const renderer = new THREE.WebGPURenderer({
+          canvas,
+          antialias: true,
+          logarithmicDepthBuffer: true,
+        });
         // renderer.toneMapping = 3;
         // renderer.toneMappingExposure = 1;
         // // renderer.logarithmicDepthBuffer = true; // set via constructor if needed
@@ -113,7 +125,7 @@ export type State = {
   rootEl: HTMLDivElement;
 
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
-  createRenderer(props: Record<string, unknown>): Promise<THREE.WebGPURenderer>;
+  createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   onCreated(rootState: RootState): void;
   syncRenderMode(): RootState["frameloop"];
 };
