@@ -135,7 +135,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   return (
     <WorldContext.Provider value={state}>
       <div className="relative size-full">
-        <WorldView className={cn(uiClassName, "bg-blue-600/10")}>
+        <WorldView className={cn(uiClassName, "bg-zinc-800")}>
           <ambientLight intensity={0.85} color="#ffffff" />
           <Floor />
           <Suspense>
