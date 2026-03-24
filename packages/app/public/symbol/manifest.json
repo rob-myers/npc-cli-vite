@@ -104,7 +104,7 @@
       "thumbnailFilename": "console--019--2x2.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": {"x": -1, "y": -1, "width": 121.4, "height": 121.4},
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 124},
       "type": "symbol",
       "key": "console--019--2x2"
     },
