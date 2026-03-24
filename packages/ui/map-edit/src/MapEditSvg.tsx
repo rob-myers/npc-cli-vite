@@ -214,7 +214,7 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
     return (
       <g>
         <polygon points={points} strokeWidth={2 / root.zoom} className="stroke-blue-700 fill-none" />
-        {(["nw", "ne", "se", "sw"] as const).map((handle) => {
+        {!root.isReadOnly() && (["nw", "ne", "se", "sw"] as const).map((handle) => {
           const pos = corners[handle];
           return (
             <rect
@@ -246,7 +246,7 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
         strokeWidth={2 / root.zoom}
         className="stroke-blue-700 fill-none"
       />
-      {resizeHandles.map(({ handle, getPos }) => {
+      {!root.isReadOnly() && resizeHandles.map(({ handle, getPos }) => {
         const pos = getPos(rect);
         return (
           <rect

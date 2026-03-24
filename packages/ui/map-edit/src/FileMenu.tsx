@@ -183,13 +183,15 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
                   <Select.ItemText>{file.key}</Select.ItemText>
                 </Select.Item>
               ))}
-              <Select.Item
-                value={newMapKey}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-400 border-t border-slate-700 data-highlighted:bg-slate-700"
-              >
-                <PlusIcon className="size-3" />
-                <Select.ItemText>New map...</Select.ItemText>
-              </Select.Item>
+              {!state.isReadOnly() && (
+                <Select.Item
+                  value={newMapKey}
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-400 border-t border-slate-700 data-highlighted:bg-slate-700"
+                >
+                  <PlusIcon className="size-3" />
+                  <Select.ItemText>New map...</Select.ItemText>
+                </Select.Item>
+              )}
             </Select.List>
           </Select.Popup>
         </Select.Positioner>

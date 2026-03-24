@@ -56,7 +56,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
       }),
       dropTargetForElements({
         element: el,
-        canDrop: ({ source }) => source.data.type === "map-node" && source.data.id !== id,
+        canDrop: ({ source }) => !root.isReadOnly() && source.data.type === "map-node" && source.data.id !== id,
         getData: ({ input }) => attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
         onDrag: ({ self, location }) => {
           const edge = extractClosestEdge(self.data);
@@ -85,7 +85,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
     );
   }, []);
 
-  const onDoubleTap = useDoubleTap(() => root.onStartEdit(node.id));
+  const onDoubleTap = useDoubleTap(() => !root.isReadOnly() && root.onStartEdit(node.id));
 
   return (
     <div>
@@ -120,7 +120,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
             isSelected && (root.theme === "dark" ? "text-blue-400/80" : "text-blue-900/80"),
           )}
           value={node.name}
-          readOnly={!isEditing}
+          readOnly={!isEditing || root.isReadOnly()}
           onBlur={() => isEditing && root.set({ editingId: null })}
           onChange={(e) => {
             node.name = e.currentTarget.value;
@@ -140,6 +140,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           title={node.locked ? "Unlock" : "Lock"}
           onClick={(e) => {
             e.stopPropagation();
+            if (root.isReadOnly()) return;
             const locked = !node.locked;
             traverseNodesSync([node], (n) => (n.locked = locked));
             root.update();
