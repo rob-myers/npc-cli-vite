@@ -1052,7 +1052,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           height: state.svgHeight,
         });
         state.set({
-          nodes: JSON.parse(entry.nodes) as MapNode[],
+          // revive classes like Vect
+          nodes: z.array(MapNodeSchema).decode(JSON.parse(entry.nodes)),
           selectedIds: entry.selectedIds,
           selectionBox: null,
           svgWidth: entry.width,
@@ -1070,7 +1071,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           height: state.svgHeight,
         });
         state.set({
-          nodes: JSON.parse(entry.nodes) as MapNode[],
+          nodes: z.array(MapNodeSchema).decode(JSON.parse(entry.nodes)),
           selectedIds: entry.selectedIds,
           selectionBox: null,
           svgWidth: entry.width,
