@@ -20,8 +20,7 @@ export function watchAssetsPlugin(): Plugin {
 
       const isWatchedFile = (filePath: string) =>
         !filePath.endsWith("manifest.json") &&
-        (filePath.startsWith(path.join(PUBLIC_DIR, "symbol/")) ||
-          filePath.startsWith(path.join(PUBLIC_DIR, "map/"))) &&
+        (filePath.startsWith(path.join(PUBLIC_DIR, "symbol/")) || filePath.startsWith(path.join(PUBLIC_DIR, "map/"))) &&
         filePath.endsWith(".json");
 
       const runGenAssets = async (server: ViteDevServer) => {
@@ -58,7 +57,7 @@ export function watchAssetsPlugin(): Plugin {
         if (!isWatchedFile(filePath)) return;
         changed.set(filePath, Date.now());
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => runGenAssets(server), 300);
+        debounceTimer = setTimeout(() => runGenAssets(server), 30);
       };
 
       server.watcher.on("change", onFileChange);
