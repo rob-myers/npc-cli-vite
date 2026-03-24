@@ -125,6 +125,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     (): State => ({
       theme,
 
+      devForceReadOnly: false,
+      isReadOnly() {
+        return (
+          isTouchDevice() ||
+          ((import.meta.env.PROD || (import.meta.env.DEV && state.devForceReadOnly)) &&
+            state.currentFile.type === "symbol" &&
+            !isHullSymbolImageKey(state.currentFile.key))
+        );
+      },
+
       isPanning: false,
       isPinching: false,
       pan: { x: baseSvgSize, y: 1.25 * baseSvgSize },
@@ -345,6 +355,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
 
       add(type, { selectionAsParent, rect } = {}) {
+        if (state.isReadOnly()) return;
         if (!state.svgEl) return;
 
         if (type === "path") {
@@ -468,12 +479,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         };
       },
       deleteNodes(nodeIds) {
+        if (state.isReadOnly()) return;
         for (const id of nodeIds) {
           const [node, parent] = findNode(state.nodes, id);
           node !== null && removeNodeFromParent(parent?.children ?? state.nodes, id);
         }
       },
       deleteSelectedNodes() {
+        if (state.isReadOnly()) return;
         if (state.selectedIds.size === 0) return;
         if (state.editingId) return;
         state.pushHistory();
@@ -481,6 +494,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
       duplicateNode(rootNodeId, seenDuringClone) {
+        if (state.isReadOnly()) return null;
         const [node] = findNode(state.nodes, rootNodeId);
         if (!node) return null;
         const clone = state.cloneNode(node, seenDuringClone);
@@ -488,6 +502,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return clone;
       },
       duplicateSelected() {
+        if (state.isReadOnly()) return;
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
         const seenDuringClone = new Set<string>();
@@ -517,6 +532,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         void navigator.clipboard.writeText(clipboardData);
       },
       async pasteFromClipboard() {
+        if (state.isReadOnly()) return;
         const parsed = jsonParser
           .pipe(z.object({ mapEditNodes: z.array(MapNodeSchema) }))
           .safeParse(await navigator.clipboard.readText().catch());
@@ -528,6 +544,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: new Set([...getRecursiveNodes(clones)].map((node) => node.id)), selectionBox: null });
       },
       rotateNode(nodeId, deltaDegrees) {
+        if (state.isReadOnly()) return;
         const [node] = findNode(state.nodes, nodeId);
         if (!isNodeTransformable(node)) return;
 
@@ -553,6 +570,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
       },
       rotateSelected(degrees) {
+        if (state.isReadOnly()) return;
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
         for (const id of state.selectedIds) state.rotateNode(id, degrees);
@@ -580,6 +598,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return node;
       },
       groupSelected() {
+        if (state.isReadOnly()) return;
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
         let shallowest: ReturnType<typeof findNodeWithDepth> = null;
@@ -606,6 +625,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
       },
       moveNode(srcId, dstId, edge) {
+        if (state.isReadOnly()) return;
         if (srcId === dstId) return;
 
         const [srcNode, srcParent] = findNode(state.nodes, srcId);
@@ -629,6 +649,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.update();
       },
       reflectNode(id, type) {
+        if (state.isReadOnly()) return;
         const [node] = findNode(state.nodes, id);
         if (!isNodeReflectable(node)) return;
 
@@ -645,6 +666,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.cssTransform = computeNodeCssTransform(node);
       },
       reflectSelected(type) {
+        if (state.isReadOnly()) return;
         if (state.selectedIds.size === 0) return;
         state.pushHistory();
         for (const id of state.selectedIds) {
@@ -653,6 +675,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.update();
       },
       translateSelected(dx, dy, snapToGrid) {
+        if (state.isReadOnly()) return;
         const increment = Math.abs(dx || dy);
         for (const id of state.selectedIds) {
           const [node] = findNode(state.nodes, id);
@@ -671,6 +694,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
 
       onRename(id, newName) {
+        if (state.isReadOnly()) return;
         state.set({
           nodes: mapNodes(state.nodes, id, (el) => ({ ...el, name: newName })),
           editingId: null,
@@ -683,6 +707,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ editingId: null });
       },
       setImageKey(nodeId, selection) {
+        if (state.isReadOnly()) return;
         state.set({ pickImageForId: null });
 
         const [node] = findNode(state.nodes, nodeId) ?? {};
@@ -723,6 +748,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.update();
       },
       setSymbolKey(nodeId, symbolKey) {
+        if (state.isReadOnly()) return;
         state.set({ pickSymbolForId: null });
 
         const [node] = findNode(state.nodes, nodeId) ?? {};
@@ -741,6 +767,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.update();
       },
       addPaths(paths) {
+        if (state.isReadOnly()) return;
         if (!state.svgEl || paths.length === 0) return;
         state.pushHistory();
 
@@ -940,6 +967,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.pushHistory();
       },
       startDragSelection(e) {
+        if (state.isReadOnly()) return;
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
 
@@ -958,6 +986,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ selectionBox: null });
       },
       startResizeRect(e, handle) {
+        if (state.isReadOnly()) return;
         if (state.selectedIds.size !== 1) return;
         const [selectedId] = state.selectedIds;
 
@@ -996,6 +1025,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
 
       pushHistory() {
+        if (state.isReadOnly()) return;
         const nodesJson = JSON.stringify(state.nodes);
         const prev = state.undoStack.at(-1)?.nodes;
         if (prev === nodesJson) return;
@@ -1011,6 +1041,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.update();
       },
       undo() {
+        if (state.isReadOnly()) return;
         const entry = state.undoStack.pop();
         if (!entry) return;
         state.redoStack.push({
@@ -1028,6 +1059,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
       redo() {
+        if (state.isReadOnly()) return;
         const entry = state.redoStack.pop();
         if (!entry) return;
         state.undoStack.push({
@@ -1057,6 +1089,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
       save(fileSpecifier = state.currentFile, { saveToDiskInDev = true } = {}) {
+        if (state.isReadOnly()) return;
         const savedFile: MapEditSavedFile = {
           ...fileSpecifier,
           width: state.svgWidth,
@@ -1115,6 +1148,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
       async deleteFile(file) {
+        if (state.isReadOnly()) return;
         // remove draft
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
 
@@ -1150,7 +1184,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
     }),
-    { deps: [loadMapEditFile, deleteMapEditFile] },
+    { deps: [loadMapEditFile, deleteMapEditFile], reset: { devForceReadOnly: true } },
   );
   state.theme = theme;
 
@@ -1540,6 +1574,9 @@ export type State = {
   symbolsManifest: SymbolsManifest | null;
   pathManifest: PathManifest | null;
   decorManifest: DecorManifest | null;
+
+  devForceReadOnly: boolean;
+  isReadOnly: () => boolean;
 
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
