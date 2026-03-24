@@ -681,8 +681,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const [node] = findNode(state.nodes, id);
           if (isNodeTransformable(node)) {
             if (snapToGrid && increment > 0) {
-              node.transform.e = snap(node.transform.e + dx, increment);
-              node.transform.f = snap(node.transform.f + dy, increment);
+              // 🚧 why subtract rather than add offset?
+              node.transform.e = snap(node.transform.e + dx, increment) - ("offset" in node ? node.offset.x : 0);
+              node.transform.f = snap(node.transform.f + dy, increment) - ("offset" in node ? node.offset.y : 0);
             } else {
               node.transform.e += dx;
               node.transform.f += dy;
