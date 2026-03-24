@@ -137,12 +137,12 @@
           "name": "console--019--2x2",
           "locked": false,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 241, "f": 122},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 241, "f": 121},
           "type": "symbol",
           "srcKey": "console--019--2x2",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": -1, "y": -1},
-          "cssTransform": "matrix(-1, 0, 0, 1, 240, 121)"
+          "cssTransform": "matrix(-1, 0, 0, 1, 240, 120)"
         },
         {
           "id": "f46b7ff8-319f-4072-864c-4a6484ea74e8",
