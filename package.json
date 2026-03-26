@@ -7,6 +7,7 @@
     "dev": "pnpm -F @npc-cli/app dev",
     "dev-hotspot": "export USE_HTTPS=true && pnpm dev --host",
     "build": "pnpm -F @npc-cli/app build",
+    "build:analyze": "export BUILD_AND_ANALYZE=true; pnpm -F @npc-cli/app build",
     "build:wasm": "pnpm -F @npc-cli/parse-sh build:wasm",
     "gen:ui": "pnpm exec gen-ui",
     "preview": "pnpm -F @npc-cli/app preview",
