@@ -1389,29 +1389,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       tabIndex={0}
       className="overflow-auto size-full flex justify-center items-start outline-none relative"
     >
-      {/* Mobile toggle button */}
-      {isMobile && (
-        <>
+      {isMobile &&
+        (state.isAsideCollapsed ? (
           <button
             className={cn(
               uiClassName,
-              "md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-800 border border-slate-700 rounded-md shadow-lg",
-              "hover:bg-slate-700 transition-colors",
+              "md:hidden left-4 z-50 p-2 bg-slate-800 text-white border border-slate-700 rounded-md shadow-lg",
             )}
             onClick={() => state.set({ isAsideCollapsed: !state.isAsideCollapsed })}
           >
             {state.isAsideCollapsed ? <CaretRightIcon className="size-5" /> : <CaretLeftIcon className="size-5" />}
           </button>
-
-          {!state.isAsideCollapsed && (
-            <div
-              className={cn(uiClassName, "md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity")}
-              onClick={() => state.set({ isAsideCollapsed: true })}
-            />
-          )}
-        </>
-      )}
-
+        ) : (
+          <div
+            className={cn(uiClassName, "md:hidden absolute inset-0 bg-black/50 z-30 transition-opacity")}
+            onClick={() => state.set({ isAsideCollapsed: true })}
+          />
+        ))}
       <div
         ref={state.ref("containerEl")}
         className={cn(
@@ -1435,6 +1429,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                 "max-md:absolute max-md:top-0 max-md:left-0 max-md:z-40 max-md:shadow-2xl",
                 "transition-transform duration-300",
                 state.isAsideCollapsed && "max-md:-translate-x-full",
+                "bg-background",
               ]
             : []),
         )}
