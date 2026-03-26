@@ -14,6 +14,7 @@ import { emptyMapDef, floorTextureDimension } from "../const";
 import type { WorldUiMeta } from "../schema";
 import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
+import { recomputeFromLocalStorageDrafts, symbolSavedEvent } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
@@ -102,12 +103,17 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     queryKey: assetsQueryKey,
     async queryFn() {
       const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
+
+      if (import.meta.env.PROD) {
+        recomputeFromLocalStorageDrafts(assets);
+      }
+
       state.assets = assets;
 
       // compute map
       const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
       state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
-        geomorph.computeLayoutInstance(assets.layout[gmKey]!, gmId, transform),
+        geomorph.createLayoutInstance(assets.layout[gmKey]!, gmId, transform),
       );
       state.seenGmKeys = state.gms.reduce<StarShipGeomorphKey[]>(
         (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
@@ -120,16 +126,27 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     },
   });
 
-  // refetch on assets.json change via vite dev server
   useEffect(() => {
-    if (!import.meta.hot) return;
-    const hot = import.meta.hot;
-    const cb = () => {
-      console.log("[World] assets.json changed, refetching");
-      queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
-    };
-    hot.on("assets-json-changed", cb);
-    return () => hot.off("assets-json-changed", cb);
+    if (import.meta.env.DEV && import.meta.hot) {
+      // refetch on assets.json change (DEV)
+      const hot = import.meta.hot;
+      const cb = () => {
+        console.log("[World] assets.json changed, refetching");
+        queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
+      };
+      hot.on("assets-json-changed", cb);
+      return () => hot.off("assets-json-changed", cb);
+    }
+
+    if (import.meta.env.PROD) {
+      // refetch on MapEdit save hull symbol to localStorage (PROD)
+      const cb = () => {
+        console.log("[World] symbol saved, refetching");
+        queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
+      };
+      window.addEventListener(symbolSavedEvent, cb);
+      return () => window.removeEventListener(symbolSavedEvent, cb);
+    }
   }, []);
 
   return (
