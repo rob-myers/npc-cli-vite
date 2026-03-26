@@ -47,7 +47,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                   <Menu.Item
                     className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
-                    onClick={() => state.load()}
+                    onClick={() => state.load(undefined, { ignoreDraft: true })}
                   >
                     <ArrowCounterClockwiseIcon className="size-4" />
                     Reset

@@ -1127,15 +1127,17 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           void saveMapEditFile(savedFile);
         }
       },
-      async load(file = state.currentFile) {
-        if (!confirm("You have unsaved changes. Discard and load?")) {
+      async load(file = state.currentFile, { askToRestore = true, ignoreDraft = false } = {}) {
+        if (askToRestore && state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
 
         // localStorage (draft) takes precedence
-        const localStorageResult = jsonParser
-          .pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema))
-          .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
+        const localStorageResult = ignoreDraft
+          ? { data: null }
+          : jsonParser
+              .pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema))
+              .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
 
         const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
         if (!savedFile) return;
@@ -1195,7 +1197,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
   useEffect(() => {
     if (state.nodes === emptyNodes) {
-      state.load();
+      state.load(undefined, { askToRestore: false });
       isTouchDevice() && state.set({ isAsideCollapsed: true });
     }
   }, []);
@@ -1631,7 +1633,7 @@ export type State = {
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
-  load: (file?: MapEditFileSpecifier) => Promise<void>;
+  load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean }) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
