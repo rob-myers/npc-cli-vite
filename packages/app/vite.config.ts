@@ -25,9 +25,10 @@ export default defineConfig({
     tailwindcss(),
     // pnpm dev-hotspot needs https for crypto
     process.env.USE_HTTPS ? basicSsl() : undefined,
-    analyzer(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
+
+    process.env.BUILD_AND_ANALYZE ? analyzer() : undefined,
 
     // On close/reopen laptop in Chrome we do not want HMR to break
     {
