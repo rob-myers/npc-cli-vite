@@ -94,7 +94,7 @@ function computeFlattenedDoors(
   };
 }
 
-export function computeLayoutInstance(
+export function createLayoutInstance(
   layout: Geomorph.GeomorphLayout,
   gmId: number,
   transform: Geom.AffineTransform,

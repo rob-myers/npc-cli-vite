@@ -1120,12 +1120,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: false,
         });
 
+        // notify World to recompute layouts from localStorage drafts
+        window.dispatchEvent(new CustomEvent("map-edit:symbol-saved", { detail: { key: fileSpecifier.key } }));
+
         if (import.meta.env.DEV && saveToDiskInDev) {
           void saveMapEditFile(savedFile);
         }
       },
       async load(file = state.currentFile) {
-        if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
+        if (!confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
 

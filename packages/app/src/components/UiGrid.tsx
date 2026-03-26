@@ -20,7 +20,6 @@ import {
   useStateRef,
 } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { DraggableEditToggle } from "./DraggableEditToggle";
 import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import type React from "react";
 import { Suspense, useEffect, useMemo, useRef } from "react";
@@ -29,6 +28,7 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import type { GridConfig, ResizeConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
+import { DraggableEditToggle } from "./DraggableEditToggle";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -167,7 +167,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               title: uiStoreApi.getDefaultTitle(uiRegistryKey),
               uiKey: uiRegistryKey,
             },
-            gridRect: { x: gridX, y: gridY, width: 2, height: 2 },
+            gridRect: { x: gridX, y: gridY, width: 2, height: 4 },
           });
         }
       },
@@ -319,10 +319,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                     <portals.OutPortal node={portal.portalNode} />
                     {!meta.customUiInstanceMenu && (
                       <UiInstanceMenu
-                        className={cn(
-                          "z-999 absolute top-1",
-                          meta.menuPosition === "left" ? "left-1" : "right-1",
-                        )}
+                        className={cn("z-999 absolute top-1", meta.menuPosition === "left" ? "left-1" : "right-1")}
                         meta={meta}
                       />
                     )}
@@ -406,7 +403,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                               x: state.contextMenuPopoverUi.point.x,
                               y: state.contextMenuPopoverUi.point.y,
                               width: 2,
-                              height: 2,
+                              height: 4,
                             },
                           });
                           state.closeContextMenu();

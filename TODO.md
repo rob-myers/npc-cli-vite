@@ -93,8 +93,9 @@
 
 - ✅ fix start with empty map
 
-- support recomputing layouts in prod
+- ✅ support recomputing layouts in prod
   - can only edit hull symbols
+  - technically re-flatten and re-stratify so could support arbitrary symbol edits
 
 - ✅ assets.json is in world coords
   - public/symbol/*.json are in sgu coords (1grid ~ 60 x 60)
