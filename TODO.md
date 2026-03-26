@@ -91,6 +91,11 @@
   - ✅ migrate state.addUvs
   - 🚧 clean
 
+- ✅ fix start with empty map
+
+- support recomputing layouts in prod
+  - can only edit hull symbols
+
 - ✅ assets.json is in world coords
   - public/symbol/*.json are in sgu coords (1grid ~ 60 x 60)
   - we scale by `1/60 * 1.5` i.e. `0.025` so 1grid ~ 1.5m x 1.5m
@@ -100,8 +105,9 @@
 
 - ✅ gen-assets-json triggers hot-reload
 
-- 🚧 fix misaligned demo-map-0
+- ✅ fix misaligned demo-map-0
   - try take `offset`s into account
+  - check symbol snapping preserves offset
 
 - can see walls in World
 - symbols can have optional door supported by instantiateFlatSymbol

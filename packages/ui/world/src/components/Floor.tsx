@@ -191,15 +191,22 @@ export default function Floor() {
 
   return (
     <group>
-      <instancedMesh name="floor" ref={state.ref("inst")} args={[state.quad, undefined, w.gms.length]} renderOrder={-3}>
-        <meshStandardNodeMaterial
-          side={THREE.DoubleSide}
-          transparent
-          key={shaderMeta.uid}
-          colorNode={shaderMeta.texNode}
-          depthWrite={false}
-        />
-      </instancedMesh>
+      {w.gms.length > 0 && (
+        <instancedMesh
+          name="floor"
+          ref={state.ref("inst")}
+          args={[state.quad, undefined, w.gms.length]}
+          renderOrder={-3}
+        >
+          <meshStandardNodeMaterial
+            side={THREE.DoubleSide}
+            transparent
+            key={shaderMeta.uid}
+            colorNode={shaderMeta.texNode}
+            depthWrite={false}
+          />
+        </instancedMesh>
+      )}
     </group>
   );
 }

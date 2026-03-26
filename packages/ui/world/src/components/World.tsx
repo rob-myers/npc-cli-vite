@@ -95,7 +95,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled]);
 
-  const assetsQueryKey = ["world", state.key, "derived data"] as const;
+  const assetsQueryKey = ["world", state.key, state.mapKey, "root"] as const;
 
   // never runs anywhere else so can mutate state
   const _query = useQuery({
