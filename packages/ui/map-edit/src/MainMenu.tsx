@@ -44,16 +44,14 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                     Save
                   </Menu.Item>
 
-                  {state.isDirty && (
-                    <Menu.Item
-                      className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                      closeOnClick
-                      onClick={() => state.load()}
-                    >
-                      <ArrowCounterClockwiseIcon className="size-4" />
-                      Reset
-                    </Menu.Item>
-                  )}
+                  <Menu.Item
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => state.load()}
+                  >
+                    <ArrowCounterClockwiseIcon className="size-4" />
+                    Reset
+                  </Menu.Item>
 
                   <Menu.SubmenuRoot>
                     <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
