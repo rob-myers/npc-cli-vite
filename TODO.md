@@ -124,6 +124,10 @@
   - ✅ try add basic shader i.e. shade by dot product of normal with camera view direction
   - ✅ fix hmr when cloning
 
+- DEV: do not recompute all symbols when only edit a hull symbol
+  - already done in prod in case of hull-symbols
+  - more generally could use stratification sub-graph
+
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
