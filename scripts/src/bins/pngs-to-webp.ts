@@ -13,14 +13,18 @@
 import childProcess from "node:child_process";
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
+import { parseArgs } from "node:util";
 import { error } from "@npc-cli/util/legacy/generic";
-//@ts-expect-error
-import getopts from "getopts";
 import { PROJECT_ROOT } from "../const";
 
-const opts = getopts(process.argv, { string: ["quality"] });
-const [, , repoDirPath] = opts._;
-const quality = opts.quality || 75;
+const opts = parseArgs({
+  allowPositionals: true,
+  options: { quality: { type: "string" } },
+  args: process.argv.slice(2),
+});
+
+const repoDirPath = opts.positionals[0];
+const quality = Number(opts.values.quality || 75);
 
 const dirPath = path.resolve(PROJECT_ROOT, repoDirPath as string);
 const filePaths = childProcess
