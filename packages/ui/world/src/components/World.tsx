@@ -10,11 +10,11 @@ import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
-import { emptyMapDef, floorTextureDimension } from "../const";
+import { assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymbolSavedEvent } from "../const";
 import type { WorldUiMeta } from "../schema";
 import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
-import { recomputeFromLocalStorageDrafts, symbolSavedEvent } from "../service/recompute-layout";
+import { recomputeFromLocalStorageDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
@@ -134,8 +134,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         console.log("[World] assets.json changed, refetching");
         queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
       };
-      hot.on("assets-json-changed", cb);
-      return () => hot.off("assets-json-changed", cb);
+      hot.on(assetsJsonChangedEvent, cb);
+      return () => hot.off(assetsJsonChangedEvent, cb);
     }
 
     if (import.meta.env.PROD) {
@@ -144,8 +144,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         console.log("[World] symbol saved, refetching");
         queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
       };
-      window.addEventListener(symbolSavedEvent, cb);
-      return () => window.removeEventListener(symbolSavedEvent, cb);
+      window.addEventListener(mapEditSymbolSavedEvent, cb);
+      return () => window.removeEventListener(mapEditSymbolSavedEvent, cb);
     }
   }, []);
 

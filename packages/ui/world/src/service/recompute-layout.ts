@@ -104,6 +104,3 @@ function stratifySymbols(symbols: AssetsType["symbol"]): StarshipSymbolImageKey[
 
   return output;
 }
-
-/** Custom event name dispatched by MapEdit on symbol save */
-export const symbolSavedEvent = "map-edit:symbol-saved";

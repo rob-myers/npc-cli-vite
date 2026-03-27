@@ -9,6 +9,7 @@ import {
   StarshipSymbolPngsManifestSchema,
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
+import { mapEditSymbolSavedEvent } from "@npc-cli/ui__world/const";
 import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
 import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
@@ -965,10 +966,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
 
         state.dragEl = null;
-        state.pushHistory();
       },
       startDragSelection(e) {
         if (state.isReadOnly()) return;
+        state.pushHistory();
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
 
@@ -1122,7 +1123,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
 
         // notify World to recompute layouts from localStorage drafts
-        window.dispatchEvent(new CustomEvent("map-edit:symbol-saved", { detail: { key: fileSpecifier.key } }));
+        window.dispatchEvent(new CustomEvent(mapEditSymbolSavedEvent, { detail: { key: fileSpecifier.key } }));
 
         if (import.meta.env.DEV && saveToDiskInDev) {
           void saveMapEditFile(savedFile);

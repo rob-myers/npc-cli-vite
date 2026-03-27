@@ -56,3 +56,6 @@ export const emptyMapDef: import("./assets.schema").AssetsMapDef = {
   key: emptyMapKey,
   gms: [],
 };
+
+export const assetsJsonChangedEvent = "assets-json-changed";
+export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
