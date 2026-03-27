@@ -1,6 +1,6 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat, useStateRef } from "@npc-cli/util";
-import { pause } from "@npc-cli/util/legacy/generic";
+import { entries, pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
@@ -29,35 +29,33 @@ export default function Floor() {
       addUvs() {
         if (!state.inst) return;
 
-        // specify texture rectangle (per instance)
-        const uvOffsets: number[] = [];
-        const uvDimensions: number[] = [];
-        // textureId for spritesheets (later)
-        const uvTextureIds: number[] = [];
+        const attr = {
+          /** Texture subrect top-left */
+          uvOffsets: { def: [] as number[], TypedArray: Float32Array, itemSize: 2 },
+          /** Texture subrect dimensions */
+          uvDimensions: { def: [] as number[], TypedArray: Float32Array, itemSize: 2 },
+          /** Texture ID for spritesheets */
+          uvTextureIds: { def: [] as number[], TypedArray: Uint32Array, itemSize: 1 },
+        };
 
         for (const gm of w.gms) {
-          uvOffsets.push(0, 0);
-          // edge geomorph 301 pngRect height/width ~ 0.5 but not equal
-          uvDimensions.push(1, geomorph.isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1);
-          uvTextureIds.push(w.getGmKeyTexId(gm.key));
+          attr.uvOffsets.def.push(0, 0);
+          attr.uvDimensions.def.push(
+            1,
+            // geomorph 301 pngRect height/width ~ 0.5 but not equal
+            geomorph.isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1,
+          );
+          attr.uvTextureIds.def.push(w.getGmKeyTexId(gm.key));
         }
 
-        state.inst.geometry.setAttribute(
-          "uvOffsets",
-          new THREE.InstancedBufferAttribute(new Float32Array(uvOffsets), 2),
-        );
-        state.inst.geometry.setAttribute(
-          "uvDimensions",
-          new THREE.InstancedBufferAttribute(new Float32Array(uvDimensions), 2),
-        );
-        state.inst.geometry.setAttribute(
-          "uvTextureIds",
-          new THREE.InstancedBufferAttribute(new Uint32Array(uvTextureIds), 1),
-        );
+        for (const [key, value] of entries(attr)) {
+          const { def, TypedArray, itemSize } = value;
+          state.inst.geometry.setAttribute(key, new THREE.InstancedBufferAttribute(new TypedArray(def), itemSize));
+        }
       },
 
       async draw() {
-        // aligned to textures e.g. no geomorph dups
+        // each gmKey has exactly one texture
         for (const [texId, gmKey] of w.seenGmKeys.entries()) {
           state.drawGm(gmKey);
           w.texFloor.updateIndex(texId);
