@@ -10,6 +10,16 @@ declare namespace Geomorph {
 
   type ConnectorJson = import("@npc-cli/ui__world/assets.schema").ConnectorJson;
 
+  type GmData = {
+    gmKey: StarShipGeomorphKey;
+    doorSegs: [Geom.Vect, Geom.Vect][];
+    unseen: boolean;
+    wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta }[];
+    wallPolyCount: number;
+    wallPolySegCounts: number[];
+    // 🚧 ...
+  };
+
   interface GmRoomId {
     /** gmRoomKey `g{gmId}r${roomId}` */
     grKey: Geomorph.GmRoomKey;

@@ -59,3 +59,5 @@ export const emptyMapDef: import("./assets.schema").AssetsMapDef = {
 
 export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
+
+export const wallHeight = 2;
