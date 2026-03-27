@@ -204,10 +204,9 @@ export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 export const StarShipSymbolImageKeySchema = z.literal(Object.values(symbolByGroup).flatMap((group) => keys(group)));
 export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;
 
-export const StarShipGeomorphKeySchema = z.literal([
-  ...keys(symbolByGroup["geomorph-core"]),
-  ...keys(symbolByGroup["geomorph-edge"]),
-]);
+export const geomorphKeys = [...keys(symbolByGroup["geomorph-core"]), ...keys(symbolByGroup["geomorph-edge"])] as const;
+
+export const StarShipGeomorphKeySchema = z.literal(geomorphKeys);
 export type StarShipGeomorphKey = z.infer<typeof StarShipGeomorphKeySchema>;
 
 export function isHullSymbolImageKey(imageKey: StarshipSymbolImageKey): imageKey is StarShipGeomorphKey {

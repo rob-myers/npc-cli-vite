@@ -144,6 +144,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         [],
       );
 
+      for (const gmKey of state.seenGmKeys) {
+        state.gmsData.computeGmKey(assets.layout[gmKey] as Geomorph.Layout);
+      }
+      state.gmsData.computeRoot(state.gms);
+
       state.hash = hashJson(assets);
 
       return null;

@@ -110,7 +110,7 @@
   - try take `offset`s into account
   - check symbol snapping preserves offset
 
-- 🚧 can see walls in World
+- ✅ can see walls in World
 
 - ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
@@ -127,6 +127,8 @@
 - DEV: do not recompute all symbols when only edit a hull symbol
   - already done in prod in case of hull-symbols
   - more generally could use stratification sub-graph
+
+- BUG MapEdit asking to save draft changes onchange when there are no changes
 
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
