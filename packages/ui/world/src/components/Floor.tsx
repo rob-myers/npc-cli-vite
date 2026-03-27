@@ -1,5 +1,5 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import { Mat, useStateRef } from "@npc-cli/util";
+import { Mat, Poly, useStateRef } from "@npc-cli/util";
 import { entries, pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { useContext, useEffect, useMemo } from "react";
@@ -86,13 +86,14 @@ export default function Floor() {
 
         // 🚧 clean e.g. provide examples of each
 
-        // // drop shadows, avoiding doubling
-        // const shadowPolys = Poly.union(
-        //   gm.obstacles.flatMap((x) =>
-        //     x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
-        //   ),
-        // );
-        // drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
+        // drop shadows, avoiding doubling
+        const shadowPolys = Poly.union(
+          gm.obstacles.flatMap((x) =>
+            x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
+          ),
+        );
+        console.log(gm, { shadowPolys });
+        drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
 
         // wall bases
         drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
@@ -210,3 +211,4 @@ export default function Floor() {
 }
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
+const tmpMat1 = new Mat();
