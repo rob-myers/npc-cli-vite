@@ -78,6 +78,9 @@ export class TexArray {
   }
 
   update() {
+    for (let i = 0; i < this.opts.numTextures; i++) {
+      this.tex.addLayerUpdate(i); // fix double draw on Cmd+Shift+T in Chrome
+    }
     this.tex.needsUpdate = true;
   }
 
