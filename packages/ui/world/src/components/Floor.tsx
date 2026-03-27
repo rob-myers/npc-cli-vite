@@ -1,5 +1,5 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import { Mat, Poly, useStateRef } from "@npc-cli/util";
+import { Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
 import { entries, pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { useContext, useEffect, useMemo } from "react";
@@ -89,8 +89,24 @@ export default function Floor() {
             x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
           ),
         );
-        console.log(gm, { shadowPolys });
-        drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
+        drawPolygons(ct, shadowPolys, { fillStyle: "#0005", strokeStyle: null });
+
+        // wall shadows (uniform directional light)
+        ct.save();
+        drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
+        const shadowQuads = gm.walls.flatMap((w) =>
+          w.outline.map((p1, i) => {
+            const p2 = w.outline[(i + 1) % w.outline.length];
+            return new Poly([
+              new Vect(p1.x, p1.y),
+              new Vect(p2.x, p2.y),
+              new Vect(p2.x + shadowDx, p2.y + shadowDy),
+              new Vect(p1.x + shadowDx, p1.y + shadowDy),
+            ]);
+          }),
+        );
+        drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 100, 0.3)", strokeStyle: null });
+        ct.restore();
 
         // wall bases
         drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
@@ -164,4 +180,7 @@ export default function Floor() {
 }
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
+// also try `Math.PI / 4`
+const shadowDx = Math.cos(Math.PI / 4) * 0.5;
+const shadowDy = Math.sin(Math.PI / 4) * 0.5;
 const tmpMat1 = new Mat();
