@@ -1,10 +1,10 @@
 # TODO
 
-- 🚧 start using `navcat`
+- ✅ start using `navcat`
   - ✅ add to `ui__world`
   - ✅ create a webworker which can send/receive
   - ✅ generate demo tiled navmesh in webworker
-  - 🚧 send via serialization
+  - ✅ send via serialization
 
 - can connect Tty to World
 

@@ -12,7 +12,11 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       break;
     case "test-generate-tiled-navmesh": {
       const generated = await generateDemoNavMesh();
-      console.log({ generated });
+      // JSON.stringify of navMesh is meaningful
+      self.postMessage({
+        type: "test-generate-tiled-navmesh-result",
+        data: generated.navMesh,
+      } satisfies WW.MsgFromWorker);
       break;
     }
     default:
