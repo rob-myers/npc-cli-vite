@@ -59,7 +59,7 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
 };
 
 perf("symbols/maps");
-parseChangedFiles(changedFiles, assets);
+updateChangedSymbolsAndMaps(changedFiles, assets);
 perf("symbols/maps");
 
 perf("stratify symbols");
@@ -87,16 +87,15 @@ if (prevAssetsRaw === nextAssetsRaw) {
 info(`${path.basename(import.meta.filename)}: detected changes`);
 writeFileSync(assetsJsonPath, nextAssetsRaw);
 
-function parseChangedFiles(changedFiles: string[], assets: AssetsType) {
+function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType) {
   for (const file of changedFiles) {
     const symRes = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
     if (!symRes.success) {
-      error(`${path.basename(file)}: skipping invalid MapEditSavedFile JSON`);
+      error(`${path.basename(file)}: skipping invalid MapEditSavedFile`);
       continue;
     }
 
     const savedFile = symRes.data;
-
     if (savedFile.type === "symbol") {
       const symbol = geomorph.parseMapEditSymbol(savedFile);
       assets.symbol[symbol.key] = symbol;

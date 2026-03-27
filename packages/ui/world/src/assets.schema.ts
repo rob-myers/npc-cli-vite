@@ -6,6 +6,7 @@ import {
 import { MapKeySchema } from "@npc-cli/ui__map-edit/editor.schema";
 import {
   AffineTransformSchema,
+  GeoJsonPolygonSchema,
   MatSchema,
   MetaSchema,
   pointCodec,
@@ -19,7 +20,25 @@ import z from "zod";
 import { DecorPointSchema, DecorSchema } from "./decor.schema";
 import { Connector } from "./service/Connector";
 
+export const ConnectorJsonSchema = z.object({
+  poly: GeoJsonPolygonSchema,
+  /** Points into @see {Geomorph.Layout.navRects} */
+  navRectId: z.number(),
+  /**
+   * `[id of room infront, id of room behind]`
+   * where a room is *infront* if `normal` is pointing towards it.
+   * Hull doors have exactly one non-null entry.
+   */
+  roomIds: z.tuple([z.number().nullable(), z.number().nullable()]),
+});
+export type ConnectorJson = z.infer<typeof ConnectorJsonSchema>;
+
 export const ConnectorSchema = z.instanceof(Connector);
+
+export const connectorCodec = z.codec(ConnectorJsonSchema, ConnectorSchema, {
+  decode: (json) => Connector.from(json),
+  encode: (connector) => connector.json,
+});
 
 export const AssetsFlatSymbolSchema = z.object({
   key: StarShipSymbolImageKeySchema,
@@ -81,15 +100,15 @@ export const GeomorphLayoutSchema = z.object({
   bounds: rectCodec,
 
   decor: z.array(DecorSchema),
-  doors: z.array(ConnectorSchema),
-  hullDoors: z.array(ConnectorSchema),
+  doors: z.array(connectorCodec),
+  hullDoors: z.array(connectorCodec),
   hullPoly: z.array(polyCodec),
   labels: z.array(DecorPointSchema),
   obstacles: z.array(GeomorphLayoutObstacleSchema),
   rooms: z.array(polyCodec),
   unsorted: z.array(polyCodec),
   walls: z.array(polyCodec),
-  windows: z.array(ConnectorSchema),
+  windows: z.array(connectorCodec),
 
   navDecomp: TriangulationSchema,
   /** AABBs of `navPolyWithDoors` i.e. original nav-poly */
