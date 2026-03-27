@@ -80,7 +80,7 @@ export default function Walls() {
 
   useEffect(() => {
     state.positionInstances();
-  }, [w.mapKey, w.hash]);
+  }, [w.mapKey, w.hash, w.gms.length]);
 
   return wallCount ? (
     <instancedMesh
