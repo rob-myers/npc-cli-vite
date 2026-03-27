@@ -61,6 +61,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
+        // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
+        w.texFloor.update();
         w.update(); // e.g. show stats
       },
       syncRenderMode() {
