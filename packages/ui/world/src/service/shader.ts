@@ -9,7 +9,7 @@ export function createCheckerBoxMaterial() {
   return mat;
 }
 
-export function createInstancedTransparentMaterial(instanceCount: number, opacity = 0.5) {
+export function createInstancedTransparentMaterial(instanceCount: number, opacity = 0.2) {
   const colorsBuffer = instancedArray(instanceCount, "vec4");
   const colorData = colorsBuffer.value.array as Float32Array;
   for (let i = 0; i < instanceCount; i++) {
@@ -19,6 +19,7 @@ export function createInstancedTransparentMaterial(instanceCount: number, opacit
   const material = new THREE.MeshStandardNodeMaterial({
     side: THREE.DoubleSide,
     transparent: true,
+    depthWrite: false,
   });
   const instanceColor = colorsBuffer.element(instanceIndex);
   material.colorNode = vec4(instanceColor.x, instanceColor.y, instanceColor.z, 1.0);
