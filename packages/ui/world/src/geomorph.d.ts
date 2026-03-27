@@ -8,17 +8,7 @@ declare namespace Geomorph {
   type SubSymbol = import("@npc-cli/ui__world/assets.schema").AssetsSubSymbol;
   type Symbol = import("@npc-cli/ui__world/assets.schema").AssetsSymbol;
 
-  interface ConnectorJson {
-    poly: Geom.GeoJsonPolygon;
-    /** Points into @see {Geomorph.Layout.navRects} */
-    navRectId: number;
-    /**
-     * `[id of room infront, id of room behind]`
-     * where a room is *infront* if `normal` is pointing towards it.
-     * Hull doors have exactly one non-null entry.
-     */
-    roomIds: [null | number, null | number];
-  }
+  type ConnectorJson = import("@npc-cli/ui__world/assets.schema").ConnectorJson;
 
   interface GmRoomId {
     /** gmRoomKey `g{gmId}r${roomId}` */

@@ -73,20 +73,18 @@ export class Poly {
     const rings = [this.outline, ...this.holes];
     const [outer, ...inner] = rings.map((ring) =>
       // Append first to get final tangent
-      ring
-        .concat(ring[0])
-        .reduce(
-          (agg, p, i, ps) =>
-            i > 0
-              ? agg.concat(
-                  p
-                    .clone()
-                    .sub(ps[i - 1])
-                    .normalize(),
-                )
-              : [],
-          /** @type {Vect[]} */ ([]),
-        ),
+      ring.concat(ring[0]).reduce(
+        (agg, p, i, ps) =>
+          i > 0
+            ? agg.concat(
+                p
+                  .clone()
+                  .sub(ps[i - 1])
+                  .normalize(),
+              )
+            : [],
+        /** @type {Vect[]} */ ([]),
+      ),
     );
     return { outer, inner };
   }
@@ -414,6 +412,15 @@ export class Poly {
     this.outline.forEach((p) => p.scale(scalar));
     this.holes.forEach((h) => h.forEach((p) => p.scale(scalar)));
     this.clearCache();
+    return this;
+  }
+
+  /**
+   * @param {Meta} meta
+   * @returns {this}
+   */
+  setMeta(meta) {
+    this.meta = meta;
     return this;
   }
 

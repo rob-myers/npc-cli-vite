@@ -100,7 +100,8 @@ export function createLayoutInstance(
   transform: Geom.AffineTransform,
 ): Geomorph.LayoutInstance {
   const matrix = new Mat(transform);
-  // 🔔 only support "edge geomorph" or "full geomorph"
+
+  // we only support "edge geomorph" or "full geomorph"
   const sguGridRect = new Rect(0, 0, 1200, isEdgeGm(layout.num) ? 600 : 1200);
 
   return {
@@ -158,22 +159,22 @@ export function createLayout(
 ): Geomorph.GeomorphLayout {
   debug(`createLayout ${gmKey}`);
 
-  const sym = assets.symbol[gmKey];
-  if (!sym) {
+  const hullWalls = assets.symbol[gmKey]?.hullWalls;
+  if (!hullWalls) {
     warn(`Missing hull symbol ${gmKey}: falling back to empty layout`);
     return createEmptyLayout(gmKey, flat);
   }
 
-  const hullPoly = Poly.union(sym.hullWalls).map((x) => x.precision(precision));
+  const hullPoly = Poly.union(hullWalls).map((x) => x.precision(precision));
   const hullOutline = hullPoly.map((x) => new Poly(x.outline).clone()); // sans holes
 
   // Avoid non-hull walls inside hull walls (for x-ray)
   const uncutWalls = flat.walls
     .flatMap((x) =>
       // biome-ignore lint/complexity/noCommaOperator: convenience
-      Poly.cutOut(sym.hullWalls, [x]).map((y) => ((y.meta = x.meta), y)),
+      Poly.cutOut(hullWalls, [x]).map((y) => ((y.meta = x.meta), y)),
     )
-    .concat(sym.hullWalls);
+    .concat(hullWalls);
   const plainWallMeta = { wall: true };
   const hullWallMeta = { wall: true, hull: true };
 
@@ -182,7 +183,7 @@ export function createLayout(
    * - avoids errors (e.g. for 301).
    * - permits meta propagation e.g. `h` (height), 'hull' (hull wall)
    */
-  const connectors = sym.doors.concat(sym.windows);
+  const connectors = flat.doors.concat(flat.windows);
   const cutWalls = uncutWalls.flatMap((x) =>
     Poly.cutOut(connectors, [x]).map((y) =>
       Object.assign(y, {
@@ -195,7 +196,7 @@ export function createLayout(
     ),
   );
 
-  const rooms = Poly.union(uncutWalls.concat(sym.windows)).flatMap((x) =>
+  const rooms = Poly.union(uncutWalls.concat(flat.windows)).flatMap((x) =>
     x.holes.map((ring) => new Poly(ring).fixOrientation()),
   );
 
@@ -203,7 +204,7 @@ export function createLayout(
   // - "decor meta ..."
   // - "decor label=text ..."
   // could compute faster client-side via pixel-look-up
-  const metaDecor = new Set(sym.decor.filter((x) => typeof x.meta.label === "string" || x.meta.meta === true));
+  const metaDecor = new Set(flat.decor.filter((x) => typeof x.meta.label === "string" || x.meta.meta === true));
   for (const room of rooms) {
     for (const d of metaDecor) {
       if (room.contains(d.outline[0])) {
@@ -220,7 +221,7 @@ export function createLayout(
 
   const decor: Geomorph.Decor[] = [];
   const labels: Geomorph.DecorPoint[] = [];
-  for (const poly of sym.decor) {
+  for (const poly of flat.decor) {
     const d = createLayoutDecorFromPoly(poly);
     if (typeof poly.meta.label === "string" && d.type === "point") {
       labels.push(d);
@@ -230,12 +231,12 @@ export function createLayout(
   }
 
   const ignoreNavPoints = decor.flatMap((d) => (d.type === "point" && d.meta["ignore-nav"] ? d : []));
-  const symbolObstacles = sym.obstacles.filter((d) => d.meta["permit-nav"] !== true);
+  const symbolObstacles = flat.obstacles.filter((d) => d.meta["permit-nav"] !== true);
 
   const navPolyWithDoors = Poly.cutOut(
     [
       ...cutWalls.flatMap((x) => geomService.createOutset(x, wallOutset)),
-      ...sym.windows,
+      ...flat.windows,
       ...symbolObstacles.flatMap((x) =>
         geomService.createOutset(
           x,
@@ -255,8 +256,8 @@ export function createLayout(
     .map((poly) => poly.cleanFinalReps().precision(precision));
 
   // 🔔 connector.roomIds will be computed in browser
-  const doors = sym.doors.map((x) => new Connector(x));
-  const windows = sym.windows.map((x) => new Connector(x));
+  const doors = flat.doors.map((x) => new Connector(x));
+  const windows = flat.windows.map((x) => new Connector(x));
 
   // Joining walls with `{plain,hull}WallMeta` reduces the rendering cost later
   // 🔔 could save more by joining hull/non-hull but want to distinguish them
@@ -278,7 +279,7 @@ export function createLayout(
     hullDoors: doors.filter((x) => x.meta.hull),
     hullPoly,
     labels,
-    obstacles: sym.obstacles.map((o): Geomorph.LayoutObstacle => {
+    obstacles: flat.obstacles.map((o): Geomorph.LayoutObstacle => {
       const obstacleId = o.meta.obsId as number;
       const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
       const origPoly = assets.symbol[symbolKey]!.obstacles[o.meta.obsId];
@@ -295,7 +296,7 @@ export function createLayout(
       };
     }),
     rooms: rooms.map((x) => x.precision(precision)),
-    unsorted: sym.unsorted.map((x) => x.precision(precision)),
+    unsorted: flat.unsorted.map((x) => x.precision(precision)),
     walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map((x) => x.precision(precision)),
     windows,
 
@@ -541,16 +542,18 @@ function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
     case "rect": {
       const { a, b, c, d, e, f } = node.transform;
       const mat = new Mat([a, b, c, d, e, f]);
-      return Poly.fromRect({ x: 0, y: 0, ...node.baseRect }).applyMatrix(mat);
+      return Poly.fromRect({ x: 0, y: 0, ...node.baseRect })
+        .applyMatrix(mat)
+        .setMeta(meta);
     }
     case "path": {
       const { a, b, c, d, e, f } = node.transform;
       const mat = new Mat([a, b, c, d, e, f]);
-      return geomService.svgPathToPolygon(node.d)?.applyMatrix(mat) ?? null;
+      return geomService.svgPathToPolygon(node.d)?.applyMatrix(mat)?.setMeta(meta) ?? null;
     }
     case "image": {
       if (isDecorImageMapNode(node)) {
-        return extractDecorPoly(node, meta);
+        return extractDecorPoly(node, meta); // meta already attached
       }
       break;
     }
@@ -580,6 +583,9 @@ export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
   };
 }
 
+/**
+ * Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
+ */
 export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
   const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
 
@@ -639,6 +645,7 @@ export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symb
   }
 
   const s = sguToWorldScale;
+  /** Avoid scaling `hullWalls` twice since also in `walls` */
   const scaled = new Set<Geom.Poly>();
   for (const polys of Object.values(polysLookup)) {
     for (const p of polys)
