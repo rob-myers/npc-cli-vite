@@ -8,7 +8,11 @@
  * This module overlays localStorage drafts onto fetched assets.json,
  * re-flattening and re-laying-out all hull symbols.
  */
-import { isHullSymbolImageKey, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import {
+  isHullSymbolImageKey,
+  type StarShipGeomorphKey,
+  type StarshipSymbolImageKey,
+} from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { getFileSpecifierLocalStorageKey, getLocalStorageFileSpecs } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
@@ -17,10 +21,43 @@ import type { AssetsType } from "../assets.schema";
 import * as geomorph from "./geomorph";
 
 /**
- * Overlay any localStorage symbol drafts onto `baseAssets`,
- * re-flatten all symbols, and recompute hull layouts.
+ * - Overlay hull symbols localStorage symbol drafts onto `baseAssets`.
+ * - 🔔 This avoids flattening and re-stratifying all symbols.
  */
-export function recomputeFromLocalStorageDrafts(assets: AssetsType): boolean {
+export function recomputeHullSymbolFromLocalStorageDrafts(assets: AssetsType): boolean {
+  const drafts = getLocalStorageFileSpecs().filter((f) => f.type === "symbol" && isHullSymbolImageKey(f.key));
+  if (drafts.length === 0) return false;
+
+  const geomorphKeys: StarShipGeomorphKey[] = [];
+  for (const draft of drafts) {
+    const raw = tryLocalStorageGet(getFileSpecifierLocalStorageKey(draft));
+    const parsed = jsonParser.pipe(MapEditSavedFileSchema).safeParse(raw);
+    if (!parsed.success || parsed.data.type !== "symbol") continue;
+
+    const symbol = geomorph.parseMapEditSymbol(parsed.data);
+    assets.symbol[symbol.key] = symbol;
+    geomorphKeys.push(symbol.key as StarShipGeomorphKey);
+  }
+
+  if (geomorphKeys.length === 0) return false;
+  info("[recompute-hull-symbols] overlaying localStorage hull-symbol drafts");
+
+  // hull symbols are leaves in stratification, so only need to re-flatten them
+  for (const gmKey of geomorphKeys) {
+    const symbol = assets.symbol[gmKey] as Geomorph.Symbol;
+    const flat = geomorph.flattenSymbol(symbol, assets.flattened);
+    assets.layout[gmKey] = geomorph.createLayout(gmKey, flat, assets);
+  }
+
+  return true;
+}
+
+/**
+ * - Overlay any localStorage symbol drafts onto `baseAssets`,
+ *   re-flatten all symbols, and recompute hull layouts.
+ * - This supports arbitrary symbol edits, not only hull symbols.
+ */
+export function recomputeAllSymbolsFromLocalStorageDrafts(assets: AssetsType): boolean {
   const drafts = getLocalStorageFileSpecs().filter((f) => f.type === "symbol");
   if (drafts.length === 0) return false;
 
@@ -37,7 +74,7 @@ export function recomputeFromLocalStorageDrafts(assets: AssetsType): boolean {
 
   if (!changed) return false;
 
-  info("[recompute-layout] overlaying localStorage drafts");
+  info("[recompute-all-symbols] overlaying localStorage drafts");
 
   // stratify: topological sort from leaves to roots
   const stratified = stratifySymbols(assets.symbol);

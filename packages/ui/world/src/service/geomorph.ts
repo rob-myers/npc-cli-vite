@@ -95,7 +95,7 @@ function computeFlattenedDoors(
 }
 
 export function createLayoutInstance(
-  layout: Geomorph.GeomorphLayout,
+  layout: Geomorph.Layout,
   gmId: number,
   transform: Geom.AffineTransform,
 ): Geomorph.LayoutInstance {
@@ -127,7 +127,7 @@ export function createLayoutInstance(
   };
 }
 
-function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol): Geomorph.GeomorphLayout {
+function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol): Geomorph.Layout {
   return {
     key: gmKey,
     bounds: flat.bounds,
@@ -156,7 +156,7 @@ export function createLayout(
   gmKey: StarShipGeomorphKey,
   flat: Geomorph.FlatSymbol,
   assets: AssetsType,
-): Geomorph.GeomorphLayout {
+): Geomorph.Layout {
   debug(`createLayout ${gmKey}`);
 
   const hullWalls = assets.symbol[gmKey]?.hullWalls;
@@ -394,7 +394,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
 export function decomposeLayoutNav(
   navPolyWithDoors: Geom.Poly[],
   doors: Connector[],
-): Pick<Geomorph.GeomorphLayout, "navDecomp" | "navRects"> {
+): Pick<Geomorph.Layout, "navDecomp" | "navRects"> {
   // remove all doorways... we'll use offMeshConnections instead
   const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
   const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
@@ -437,7 +437,11 @@ function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
   return poly;
 }
 
-export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): void {
+/**
+ * - Mutates `flattened`
+ * - Returns flattened symbol.
+ */
+export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): Geomorph.FlatSymbol {
   const { key, isHull, walls, obstacles, symbols, unsorted, windows } = symbol;
 
   const flats = symbols.flatMap(({ symbolKey, meta, transform }) => {
@@ -452,7 +456,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
 
   const { flatDoors, flatDecor } = computeFlattenedDoors(symbol.key, symbol, flats);
 
-  flattened[key] = {
+  return (flattened[key] = {
     key,
     isHull,
     bounds: symbol.bounds,
@@ -470,7 +474,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     unsorted: unsorted.concat(flats.flatMap((x) => x.unsorted)),
     walls: walls.concat(flats.flatMap((x) => x.walls)),
     windows: windows.concat(flats.flatMap((x) => x.windows)),
-  };
+  });
 }
 
 /**

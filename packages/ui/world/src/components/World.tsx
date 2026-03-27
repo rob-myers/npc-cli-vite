@@ -14,7 +14,7 @@ import { assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymb
 import type { WorldUiMeta } from "../schema";
 import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
-import { recomputeFromLocalStorageDrafts } from "../service/recompute-layout";
+import { recomputeHullSymbolFromLocalStorageDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
@@ -98,22 +98,22 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   const assetsQueryKey = ["world", state.key, state.mapKey, "root"] as const;
 
-  // never runs anywhere else so can mutate state
+  /**
+   * This query never runs anywhere else so we may mutate state.
+   */
   const _query = useQuery({
     queryKey: assetsQueryKey,
     async queryFn() {
       const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
-
+      state.assets = assets;
       if (import.meta.env.PROD) {
-        recomputeFromLocalStorageDrafts(assets);
+        recomputeHullSymbolFromLocalStorageDrafts(assets);
       }
 
-      state.assets = assets;
-
-      // compute map
       const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
+
       state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
-        geomorph.createLayoutInstance(assets.layout[gmKey]!, gmId, transform),
+        geomorph.createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
       );
       state.seenGmKeys = state.gms.reduce<StarShipGeomorphKey[]>(
         (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
