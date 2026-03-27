@@ -21,7 +21,7 @@
 
 - ✅ `pnpm gen-pkg`
 
-- 🚧 script watches public/symbol/* and enriches/flattens symbols as `assets.json`
+- ✅ script watches public/symbol/* and enriches/flattens symbols as `assets.json`
   - ✅ start script gen-symbols-json
   - ✅ start defining schema for `assets.json`
   - ✅ creates `public/assets.json` with symbol lookup
@@ -38,7 +38,7 @@
       - decor quads will be transforms of sub-quads of textures
       - decor cuboids will be transforms of base instanced cuboid
     - ✅ can see flattened symbols in assets.json
-  - 🚧 script should be watching (currently manually running `pnpm gen-assets-json`)
+  - ✅ script should be watching (currently manually running `pnpm gen-assets-json`)
   - ⚠️ some of it should run in browser
     - we'll permit hull symbols edits in prod
 
@@ -75,7 +75,7 @@
   - ✅ ui/world/src/decor.schema
   - ✅ ui/world/src/assets.schema
 
-- 🚧 can see floors in World
+- ✅ can see floors in World
   - ✅ start service/geometry.ts
   - ✅ start service/shader.ts
   - ✅ Floor uses instancedMesh demo
@@ -89,7 +89,7 @@
       - ✅ migrate geomorph.computeLayoutInstance
     - ✅ transform instances
   - ✅ migrate state.addUvs
-  - 🚧 clean
+  - ✅ clean
 
 - ✅ fix start with empty map
 
@@ -110,10 +110,7 @@
   - try take `offset`s into account
   - check symbol snapping preserves offset
 
-- can see walls in World
-- symbols can have optional door supported by instantiateFlatSymbol
-  - e.g. office--001--2x2
-- symbol can have optional wall supported by instantiateFlatSymbol
+- 🚧 can see walls in World
 
 - ✅ replace dummy gltf with model from fiverr
   - ✅ can see template.gltf
@@ -127,6 +124,9 @@
   - ✅ try add basic shader i.e. shade by dot product of normal with camera view direction
   - ✅ fix hmr when cloning
 
+- symbols can have optional door supported by instantiateFlatSymbol
+  - e.g. office--001--2x2
+- symbol can have optional wall supported by instantiateFlatSymbol
 
 ## Long running
 

@@ -23,7 +23,6 @@ export default function Floor() {
     () => ({
       inst: null as null | THREE.InstancedMesh,
       quad: createXzQuad(),
-
       gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(200, 200, 200, 0.3)"),
 
       addUvs() {
@@ -84,8 +83,6 @@ export default function Floor() {
         ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
         ct.restore();
 
-        // 🚧 clean e.g. provide examples of each
-
         // drop shadows, avoiding doubling
         const shadowPolys = Poly.union(
           gm.obstacles.flatMap((x) =>
@@ -98,57 +95,13 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
 
-        // // draw nav mesh
-        // const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
-        // ct.lineJoin = "round";
-        // ct.lineWidth = 0.06;
-        // const fillStyle = "#444";
-        // const strokeStyle = "#0007";
-        // // (w.nav.toNavTris[gm.key] ?? []).forEach(([positions, indices]) => {
-        // //   for (const index of indices) {
-        // //     const triVId = index % 3; // 0, 1, 2
-        // //     const vertId = indices[index];
-        // //     triangle.outline[triVId].set(positions[3 * vertId], positions[3 * vertId + 2]);
-        // //     if (triVId === 2) {
-        // //       drawPolygons(ct, [triangle], [fillStyle, strokeStyle]);
-        // //     }
-        // //   }
-        // // });
-
-        // // hull doorways
-        // // 🚧 geomorphs are slightly misaligned e.g. 301 vs 101 in small-map-1
-        // // drawPolygons(ct, gm.hullDoors.flatMap(x => x.computeDoorway()), ['#000', null]);
-        // drawPolygons(
-        //   ct,
-        //   gm.hullDoors.flatMap((x) => x.poly),
-        //   { fillStyle: "#0004", strokeStyle: null },
-        // );
-
-        // // // decals from gm.decor
-        // // const { decor } = w.geomorphs.sheet;
-        // // const decals = gm.decor.filter(x => x.type === 'decal');
-        // // for (const decal of decals) {
-        // //   const rect = decor[decal.meta.img];
-        // //   // drawPolygons(ct, [Poly.fromRect(decal.bounds2d)], ['#f00', null]);
-        // //   ct.save();
-        // //   ct.transform(...decal.transform);
-        // //   if (state.dark === true) {// 🔔 grayscale decals for invert
-        // //     ct.globalCompositeOperation = 'xor';
-        // //   }
-        // //   ct.drawImage(w.decorImgs[rect.sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1);
-        // //   ct.restore();
-        // // }
-
-        // // debug decor rects
-        // // if (state.debug === true) {
-        // //   drawPolygons(ct, gm.decor.filter(x => x.type === 'rect').map(x => Poly.fromRect(x.bounds2d)), [null, '#00f']);
-        // // }
-        // drawPolygons(
-        //   ct,
-        //   gm.decor.filter((x) => x.type === "rect").map((x) => Poly.fromRect(x.bounds2d)),
-        //   { fillStyle: null, strokeStyle: "#00f" },
-        // );
+        // 🚧 draw nav mesh
+        // 🚧 hull doorways
+        // 🚧 hull doorways
+        // 🚧 decals from gm.decor
+        // 🚧 debug decor rects
       },
+
       transformInstances() {
         if (!state.inst) return;
         for (const [gmId, gm] of w.gms.entries()) {
