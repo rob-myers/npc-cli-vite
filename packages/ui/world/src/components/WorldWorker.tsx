@@ -11,18 +11,14 @@ export default function WorldWorker() {
       inner: null as unknown as Worker,
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         debug(`main thread received "${e.data?.type}" from 🤖 worker`);
-        if (e.data?.type === "pong") {
-          state.pongResolve?.("pong");
-          state.pongResolve = null;
-        }
+        // 🚧
       },
       ping() {
-        return new Promise<"pong">((resolve) => {
-          state.pongResolve = resolve;
-          state.inner.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
-        });
+        state.inner.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
       },
-      pongResolve: null,
+      testGenerateTiledNavMesh() {
+        state.inner.postMessage({ type: "test-generate-tiled-navmesh" } satisfies WW.MsgToWorker);
+      },
     }),
   );
 
@@ -44,6 +40,6 @@ export default function WorldWorker() {
 export type State = {
   inner: Worker;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
-  ping(): Promise<"pong">;
-  pongResolve: ((value: "pong") => void) | null;
+  ping(): void;
+  testGenerateTiledNavMesh(): void;
 };
