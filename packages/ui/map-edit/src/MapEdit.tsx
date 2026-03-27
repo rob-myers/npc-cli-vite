@@ -63,7 +63,7 @@ import {
   findNode,
   findNodeWithDepth,
   getFileSpecifierLocalStorageKey,
-  getLocalStorageSavedFiles,
+  getLocalStorageFileSpecs,
   getNodeBounds,
   getRecursiveNodes,
   imageOffsetValues,
@@ -183,7 +183,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       isDirty: false,
 
       // will extend with symbol/manifest.json
-      savedFileSpecifiers: getLocalStorageSavedFiles(),
+      savedFileSpecifiers: getLocalStorageFileSpecs(),
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -1092,6 +1092,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       save(fileSpecifier = state.currentFile, { saveToDiskInDev = true } = {}) {
         if (state.isReadOnly()) return;
+
         const savedFile: MapEditSavedFile = {
           ...fileSpecifier,
           width: state.svgWidth,
@@ -1160,7 +1161,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
 
         // useful in prod: clears drafts with no corresponding file in manifest
-        state.updateSavedFileSpecifiers(getLocalStorageSavedFiles());
+        state.updateSavedFileSpecifiers(getLocalStorageFileSpecs());
 
         // in dev actually delete from filesystem
         if (import.meta.env.DEV) {
@@ -1583,6 +1584,7 @@ export type State = {
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
   isDirty: boolean;
+  /** All saved file specifiers including drafts */
   savedFileSpecifiers: MapEditFileSpecifier[];
 
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;

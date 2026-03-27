@@ -10,7 +10,7 @@
  */
 import { isHullSymbolImageKey, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
-import { getFileSpecifierLocalStorageKey, getLocalStorageSavedFiles } from "@npc-cli/ui__map-edit/map-node-api";
+import { getFileSpecifierLocalStorageKey, getLocalStorageFileSpecs } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, info, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
 import type { AssetsType } from "../assets.schema";
@@ -21,7 +21,7 @@ import * as geomorph from "./geomorph";
  * re-flatten all symbols, and recompute hull layouts.
  */
 export function recomputeFromLocalStorageDrafts(assets: AssetsType): boolean {
-  const drafts = getLocalStorageSavedFiles().filter((f) => f.type === "symbol");
+  const drafts = getLocalStorageFileSpecs().filter((f) => f.type === "symbol");
   if (drafts.length === 0) return false;
 
   let changed = false;

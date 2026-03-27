@@ -281,17 +281,17 @@ export function tryDecodeFileSpecifierLocalStorageKey(localStorageKey: string): 
   return result.data ?? null;
 }
 
-export function getLocalStorageSavedFiles(): MapEditFileSpecifier[] {
-  const files: MapEditFileSpecifier[] = [];
+export function getLocalStorageFileSpecs(): MapEditFileSpecifier[] {
+  const fileSpecs: MapEditFileSpecifier[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith(LOCAL_STORAGE_PREFIX)) {
       const fileSpec = tryDecodeFileSpecifierLocalStorageKey(key);
-      if (fileSpec) files.push(fileSpec);
+      if (fileSpec) fileSpecs.push(fileSpec);
       else warn(`Invalid localStorage key "${key}" found for MapEdit - skipping`);
     }
   }
-  return files.sort((a, b) => a.filename.localeCompare(b.filename));
+  return fileSpecs.sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
 export function clearLocalStorage() {
