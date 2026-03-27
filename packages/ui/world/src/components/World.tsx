@@ -27,21 +27,24 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   const state = useStateRef(
     (): State => ({
       //#region core properties
+
       id: meta.id,
       key: meta.worldKey,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
-      //#endregion
+      assetsQueryPrefix: ["world", meta.worldKey],
 
+      //#endregion
       //#region core setup and communication
       events: new Broadcaster(),
       r3f: null as unknown as State["r3f"],
       reqAnimId: -1,
       threeReady: false,
       timer: new Timer(),
-      //#endregion
 
+      //#endregion
       //#region texture atlases
+
       assets: null as unknown as State["assets"],
       hash: 0,
       texFloor: new TexArray({
@@ -50,17 +53,31 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: floorTextureDimension,
         height: floorTextureDimension,
       }),
-      //#endregion
 
+      //#endregion
       //#region derived state
+
       gms: [],
       seenGmKeys: [],
-      //#endregion
 
+      //#endregion
       //#region subcomponent apis
+
       view: null as unknown as State["view"],
+
       //#endregion
 
+      devSetupAssetsSync() {
+        if (!import.meta.env.DEV || !import.meta.hot) return;
+        // refetch on assets.json change (DEV)
+        const hot = import.meta.hot;
+        const cb = () => {
+          console.log("[World] assets.json changed, refetching");
+          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.assetsQueryPrefix });
+        };
+        hot.on(assetsJsonChangedEvent, cb);
+        return () => hot.off(assetsJsonChangedEvent, cb);
+      },
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {
         return this.seenGmKeys.indexOf(gmKey);
       },
@@ -68,6 +85,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
         // 🚧 tick subcomponents
+      },
+      prodSetupHullAssetsSync() {
+        const cb = () => {
+          console.log("[World] symbol saved, refetching");
+          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.assetsQueryPrefix });
+        };
+        window.addEventListener(mapEditSymbolSavedEvent, cb);
+        return () => window.removeEventListener(mapEditSymbolSavedEvent, cb);
       },
       stopTick() {
         cancelAnimationFrame(state.reqAnimId);
@@ -79,13 +104,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   state.disabled = meta.disabled;
   state.mapKey = meta.mapKey;
 
-  // cache world
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
     return () => queryClientApi.remove([meta.worldKey]);
-  }, []);
+  }, []); // cache world
 
-  // enable/disable
   useEffect(() => {
     state.timer.reset();
     state.view.syncRenderMode();
@@ -96,13 +119,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled]);
 
-  const assetsQueryKey = ["world", state.key, state.mapKey, "root"] as const;
-
   /**
    * This query never runs anywhere else so we may mutate state.
    */
   const _query = useQuery({
-    queryKey: assetsQueryKey,
+    queryKey: [...state.assetsQueryPrefix, state.mapKey],
     async queryFn() {
       const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
       state.assets = assets;
@@ -128,26 +149,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     if (import.meta.env.DEV && import.meta.hot) {
-      // refetch on assets.json change (DEV)
-      const hot = import.meta.hot;
-      const cb = () => {
-        console.log("[World] assets.json changed, refetching");
-        queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
-      };
-      hot.on(assetsJsonChangedEvent, cb);
-      return () => hot.off(assetsJsonChangedEvent, cb);
+      return state.devSetupAssetsSync();
     }
-
     if (import.meta.env.PROD) {
-      // refetch on MapEdit save hull symbol to localStorage (PROD)
-      const cb = () => {
-        console.log("[World] symbol saved, refetching");
-        queryClientApi.queryClient.invalidateQueries({ queryKey: [...assetsQueryKey] });
-      };
-      window.addEventListener(mapEditSymbolSavedEvent, cb);
-      return () => window.removeEventListener(mapEditSymbolSavedEvent, cb);
+      return state.prodSetupHullAssetsSync();
     }
-  }, []);
+  }, []); // sync assets in dev/prod
 
   return (
     <WorldContext.Provider value={state}>
@@ -171,6 +178,7 @@ export type State = {
   key: WorldUiMeta["worldKey"];
   disabled: boolean;
   mapKey: string;
+  assetsQueryPrefix: ["world", worldKey: string];
 
   events: Broadcaster<NPC.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };
@@ -191,8 +199,10 @@ export type State = {
 
   view: import("./WorldView").State;
 
+  devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   onTick(): void;
+  prodSetupHullAssetsSync(): void;
   stopTick(): void;
 };
 
