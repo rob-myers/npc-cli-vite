@@ -1,5 +1,6 @@
 import childProcess from "node:child_process";
 import path from "node:path";
+import { assetsJsonChangedEvent } from "@npc-cli/ui__world/const";
 import type { Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
@@ -41,7 +42,7 @@ export function watchAssetsPlugin(): Plugin {
             proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
             proc.on("error", reject);
           });
-          server.hot.send({ type: "custom", event: "assets-json-changed" });
+          server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
         } catch (err) {
           console.error("[watch-assets] gen-assets-json failed:", err);
         }
