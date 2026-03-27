@@ -2,8 +2,8 @@
 
 - 🚧 start using `navcat`
   - ✅ add to `ui__world`
-  - 🚧 create a webworker which can send/receive
-  - generate demo tiled navmesh in webworker
+  - ✅ create a webworker which can send/receive
+  - 🚧 generate demo tiled navmesh in webworker
   - send via serialization
 
 - DEV: do not recompute all symbols when only edit a hull symbol
