@@ -7,13 +7,10 @@
   - ✅ send via serialization
 
 - can connect Tty to World
-
-- DEV: do not recompute all symbols when only edit a hull symbol
-  - already done in prod in case of hull-symbols
-  - more generally could use stratification sub-graph
-
+- do not recompute all symbols when only edit a hull symbol (DEV)
+  - done in prod for hull-symbols
+  - more generally use sub-stratification
 - BUG MapEdit asking to save draft changes onchange when there are no changes
-
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
@@ -25,13 +22,14 @@
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
-- can sync symbols in other instances?
+- sync symbols in other instances?
 - drafts fight: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
 
-- 🚧 migrate to `node:util` parseArgs i.e. discard `getopts`
+- ✅ migrate to `node:util` parseArgs i.e. discard `getopts`
+  - keep it for `@npc-cli/cli`
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
