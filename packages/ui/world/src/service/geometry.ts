@@ -42,6 +42,48 @@ unitXzQuad.setIndex([
   0, 3, 2,
 ]);
 
+/** Clone of unit quad in XY plane from (0,0,0) to (1,1,0). */
+export function createXyQuad() {
+  return unitXyQuad.clone();
+}
+
+const unitXyQuad = new THREE.BufferGeometry();
+unitXyQuad.setAttribute(
+  "position",
+  // biome-ignore format: meaningful newlines
+  new THREE.Float32BufferAttribute([
+    0, 0, 0,
+    1, 0, 0,
+    1, 1, 0,
+    0, 1, 0,
+  ], 3),
+);
+unitXyQuad.setAttribute(
+  "normal",
+  // biome-ignore format: meaningful newlines
+  new THREE.Float32BufferAttribute([
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+  ], 3),
+);
+unitXyQuad.setAttribute(
+  "uv",
+  // biome-ignore format: meaningful newlines
+  new THREE.Float32BufferAttribute([
+    0, 0,
+    1, 0,
+    1, 1,
+    0, 1,
+  ], 2),
+);
+// biome-ignore format: meaningful newlines
+unitXyQuad.setIndex([
+  0, 2, 1,
+  0, 3, 2,
+]);
+
 /** Embed a 2D affine transform into three.js XZ plane. */
 export function embedXZMat4(
   transform: Geom.AffineTransform,

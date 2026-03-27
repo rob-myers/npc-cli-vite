@@ -12,6 +12,7 @@ import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
 import { assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymbolSavedEvent } from "../const";
 import type { WorldUiMeta } from "../schema";
+import DerivedGmsData from "../service/DerivedGmsData";
 import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolFromLocalStorageDrafts } from "../service/recompute-layout";
@@ -19,6 +20,7 @@ import { TexArray } from "../service/tex-array";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
+import Walls from "./Walls";
 import { WorldContextMenu } from "./WorldContextMenu";
 import { WorldView } from "./WorldView";
 import { WorldContext } from "./world-context";
@@ -59,6 +61,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       gms: [],
       seenGmKeys: [],
+      gmsData: new DerivedGmsData(),
 
       //#endregion
       //#region subcomponent apis
@@ -162,6 +165,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         <WorldView className={cn(uiClassName, "bg-zinc-800")}>
           <ambientLight intensity={0.85} color="#ffffff" />
           <Floor />
+          <Walls />
           <Suspense>
             <NPCs />
           </Suspense>
@@ -196,6 +200,7 @@ export type State = {
    * Thus `seenGmKeys.indexOf(gmKey)` provides `texId`.
    */
   seenGmKeys: StarShipGeomorphKey[];
+  gmsData: DerivedGmsData;
 
   view: import("./WorldView").State;
 
