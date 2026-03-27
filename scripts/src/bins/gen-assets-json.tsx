@@ -1,8 +1,7 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * WIP
- * - `parsed` -- symbol key to geometry/metadata
+ * - `symbol` -- symbol key to geometry/metadata
  * - `flattened` -- symbol key to unwound symbols (includes hull symbols)
  * - `layout` -- symbol key to layouts (geomorphs)
  *
@@ -60,51 +59,19 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
 };
 
 perf("symbols/maps");
-for (const file of changedFiles) {
-  const symRes = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
-  if (!symRes.success) {
-    error(`${path.basename(file)}: skipping invalid MapEditSavedFile JSON`);
-    continue;
-  }
-
-  const savedFile = symRes.data;
-
-  if (savedFile.type === "symbol") {
-    const symbol = geomorph.parseMapEditSymbol(savedFile);
-    assets.symbol[symbol.key] = symbol;
-  } else {
-    const mapDef = geomorph.parseMapEditMap(savedFile);
-    assets.map[mapDef.key] = mapDef;
-  }
-}
+parseChangedFiles(changedFiles, assets);
 perf("symbols/maps");
 
 perf("stratify symbols");
-const symbolGraph = SymbolGraph.from(assets.symbol);
-const symbolsStratified = symbolGraph.stratify();
+const symbolsStratified = stratifySymbols(assets);
 perf("stratify symbols");
 
 perf("flatten symbols");
-const flattened: AssetsType["flattened"] = {};
-for (const level of symbolsStratified) {
-  for (const { id: symbolKey } of level) {
-    const symbol = assets.symbol[symbolKey];
-    if (symbol) {
-      geomorph.flattenSymbol(symbol, flattened);
-    } else {
-      warn(`Symbol ${symbolKey} not found in assets.symbol`);
-    }
-  }
-}
-assets.flattened = flattened;
+flattenSymbols(symbolsStratified, assets);
 perf("flatten symbols");
 
 perf("create layouts");
-for (const [symbolKey, flat] of entries(assets.flattened)) {
-  if (!isHullSymbolImageKey(symbolKey)) continue;
-  const layout = geomorph.createLayout(symbolKey, flat, assets);
-  assets.layout[symbolKey] = layout;
-}
+createLayouts(assets);
 perf("create layouts");
 
 perf("total");
@@ -119,3 +86,51 @@ if (prevAssetsRaw === nextAssetsRaw) {
 
 info(`${path.basename(import.meta.filename)}: detected changes`);
 writeFileSync(assetsJsonPath, nextAssetsRaw);
+
+function parseChangedFiles(changedFiles: string[], assets: AssetsType) {
+  for (const file of changedFiles) {
+    const symRes = jsonParser.pipe(MapEditSavedFileSchema).safeParse(fs.readFileSync(file, "utf-8"));
+    if (!symRes.success) {
+      error(`${path.basename(file)}: skipping invalid MapEditSavedFile JSON`);
+      continue;
+    }
+
+    const savedFile = symRes.data;
+
+    if (savedFile.type === "symbol") {
+      const symbol = geomorph.parseMapEditSymbol(savedFile);
+      assets.symbol[symbol.key] = symbol;
+    } else {
+      const mapDef = geomorph.parseMapEditMap(savedFile);
+      assets.map[mapDef.key] = mapDef;
+    }
+  }
+}
+
+function stratifySymbols(assets: AssetsType) {
+  const symbolGraph = SymbolGraph.from(assets.symbol);
+  return symbolGraph.stratify();
+}
+
+function flattenSymbols(symbolsStratified: ReturnType<typeof stratifySymbols>, assets: AssetsType) {
+  const flattened: AssetsType["flattened"] = {};
+  for (const level of symbolsStratified) {
+    for (const { id: symbolKey } of level) {
+      const symbol = assets.symbol[symbolKey];
+      if (symbol) {
+        geomorph.flattenSymbol(symbol, flattened);
+      } else {
+        warn(`Symbol ${symbolKey} not found in assets.symbol`);
+      }
+    }
+  }
+  assets.flattened = flattened;
+}
+
+function createLayouts(assets: AssetsType) {
+  for (const [symbolKey, flat] of entries(assets.flattened)) {
+    if (!isHullSymbolImageKey(symbolKey)) continue;
+    const layout = geomorph.createLayout(symbolKey, flat, assets);
+    assets.layout[symbolKey] = layout;
+  }
+}
