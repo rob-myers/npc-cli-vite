@@ -23,7 +23,7 @@ export default function Floor() {
     () => ({
       inst: null as null | THREE.InstancedMesh,
       quad: createXzQuad(),
-      gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(200, 200, 200, 0.3)"),
+      gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(50, 50, 50, 0.8)"),
 
       addUvs() {
         if (!state.inst) return;
@@ -73,7 +73,7 @@ export default function Floor() {
         ct.save();
 
         const hullFloor = gm.hullPoly.map((x) => x.clone().removeHoles());
-        drawPolygons(ct, hullFloor, { fillStyle: "#123", strokeStyle: null });
+        drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
 
         // grid
         drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
