@@ -1,5 +1,11 @@
 # TODO
 
+- 🚧 start using `navcat`
+  - ✅ add to `ui__world`
+  - 🚧 create a webworker which can send/receive
+  - generate demo tiled navmesh in webworker
+  - send via serialization
+
 - DEV: do not recompute all symbols when only edit a hull symbol
   - already done in prod in case of hull-symbols
   - more generally could use stratification sub-graph
@@ -18,7 +24,7 @@
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
 - can sync symbols in other instances?
-- with 2 instances open for same file, drafts will fight?
+- drafts fight: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
