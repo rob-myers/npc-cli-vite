@@ -23,6 +23,7 @@ import NPCs from "./NPCs";
 import Walls from "./Walls";
 import { WorldContextMenu } from "./WorldContextMenu";
 import { WorldView } from "./WorldView";
+import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
 
 export default function World({ meta }: { meta: WorldUiMeta }) {
@@ -67,6 +68,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       //#region subcomponent apis
 
       view: null as unknown as State["view"],
+      worker: null as unknown as State["worker"],
 
       //#endregion
 
@@ -177,6 +179,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           <Debug />
         </WorldView>
         <WorldContextMenu />
+        <WorldWorker />
       </div>
     </WorldContext.Provider>
   );
@@ -208,6 +211,7 @@ export type State = {
   gmsData: DerivedGmsData;
 
   view: import("./WorldView").State;
+  worker: import("./WorldWorker").State;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;

@@ -10,3 +10,4 @@ export default defineUi({
 });
 
 import "./geomorph.d.ts";
+import "./world-worker.d.ts";
