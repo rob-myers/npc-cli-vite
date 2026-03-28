@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";

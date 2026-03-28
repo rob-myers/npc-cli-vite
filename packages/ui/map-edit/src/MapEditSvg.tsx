@@ -1,4 +1,4 @@
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
@@ -234,22 +234,23 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
     return (
       <g>
         <polygon points={points} strokeWidth={2 / root.zoom} className="stroke-blue-700 fill-none" />
-        {!root.isReadOnly() && (["nw", "ne", "se", "sw"] as const).map((handle) => {
-          const pos = corners[handle];
-          return (
-            <rect
-              key={handle}
-              data-resize-handle={handle}
-              x={pos.x - handleSize / 2}
-              y={pos.y - handleSize / 2}
-              width={handleSize}
-              height={handleSize}
-              stroke="rgba(100, 100, 100, 1)"
-              strokeWidth={2 / root.zoom}
-              className="stroke-white fill-blue-700 cursor-auto"
-            />
-          );
-        })}
+        {!root.isReadOnly() &&
+          (["nw", "ne", "se", "sw"] as const).map((handle) => {
+            const pos = corners[handle];
+            return (
+              <rect
+                key={handle}
+                data-resize-handle={handle}
+                x={pos.x - handleSize / 2}
+                y={pos.y - handleSize / 2}
+                width={handleSize}
+                height={handleSize}
+                stroke="rgba(100, 100, 100, 1)"
+                strokeWidth={2 / root.zoom}
+                className="stroke-white fill-blue-700 cursor-auto"
+              />
+            );
+          })}
       </g>
     );
   }
@@ -266,22 +267,23 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
         strokeWidth={2 / root.zoom}
         className="stroke-blue-700 fill-none"
       />
-      {!root.isReadOnly() && resizeHandles.map(({ handle, getPos }) => {
-        const pos = getPos(rect);
-        return (
-          <rect
-            key={handle}
-            data-resize-handle={handle}
-            x={pos.x - handleSize / 2}
-            y={pos.y - handleSize / 2}
-            width={handleSize}
-            height={handleSize}
-            stroke="rgba(100, 100, 100, 1)"
-            strokeWidth={2 / root.zoom}
-            className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
-          />
-        );
-      })}
+      {!root.isReadOnly() &&
+        resizeHandles.map(({ handle, getPos }) => {
+          const pos = getPos(rect);
+          return (
+            <rect
+              key={handle}
+              data-resize-handle={handle}
+              x={pos.x - handleSize / 2}
+              y={pos.y - handleSize / 2}
+              width={handleSize}
+              height={handleSize}
+              stroke="rgba(100, 100, 100, 1)"
+              strokeWidth={2 / root.zoom}
+              className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
+            />
+          );
+        })}
     </g>
   );
 }

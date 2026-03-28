@@ -1,4 +1,4 @@
-import { BaseUiMetaSchema } from "@npc-cli/ui-sdk";
+import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
 export const TabsUiMetaSchema = z.object({

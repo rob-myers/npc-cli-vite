@@ -10,7 +10,9 @@ import {
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
 import { mapEditSymbolSavedEvent } from "@npc-cli/ui__world/const";
-import { type ThemeName, UiContext, uiClassName } from "@npc-cli/ui-sdk";
+import type { ThemeName } from "@npc-cli/ui-sdk";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";

@@ -1,4 +1,5 @@
-import { UiContext, uiClassName } from "@npc-cli/ui-sdk";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn } from "@npc-cli/util";
 import { useContext } from "react";
 import TestMdx from "./pages/test-mdx.mdx";
@@ -6,9 +7,7 @@ import TestMdx from "./pages/test-mdx.mdx";
 export default function Blog() {
   const { theme } = useContext(UiContext);
   return (
-    <div
-      className={cn(theme === "dark" && "prose-invert", "prose h-full max-w-[unset] leading-[1.4]")}
-    >
+    <div className={cn(theme === "dark" && "prose-invert", "prose h-full max-w-[unset] leading-[1.4]")}>
       <div className={cn(uiClassName, "overflow-auto p-4 size-full")}>
         <TestMdx />
       </div>

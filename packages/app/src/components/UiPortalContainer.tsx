@@ -1,11 +1,8 @@
 import { uiRegistry } from "@npc-cli/ui-registry";
-import {
-  UiErrorBoundary,
-  type UiInstanceMeta,
-  UiParseError,
-  type UiStoreByIdEntry,
-  uiStore,
-} from "@npc-cli/ui-sdk";
+import type { UiInstanceMeta, UiStoreByIdEntry } from "@npc-cli/ui-sdk";
+import { UiErrorBoundary } from "@npc-cli/ui-sdk/UiErrorBoundary";
+import { UiParseError } from "@npc-cli/ui-sdk/UiParseError";
+import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 import { Spinner } from "@npc-cli/util";
 import type React from "react";
 import { Suspense, useMemo } from "react";
@@ -32,11 +29,7 @@ const UiPortal = ({ meta, portal }: UiStoreByIdEntry) => {
     <portals.InPortal key={meta.id} node={portal.portalNode}>
       <UiErrorBoundary meta={meta}>
         <Suspense fallback={<Spinner />}>
-          {result.success ? (
-            <C meta={result.data} />
-          ) : (
-            <UiParseError uiKey={meta.uiKey} zodError={result.error} />
-          )}
+          {result.success ? <C meta={result.data} /> : <UiParseError uiKey={meta.uiKey} zodError={result.error} />}
         </Suspense>
       </UiErrorBoundary>
     </portals.InPortal>

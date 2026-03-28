@@ -1,4 +1,4 @@
-import { uiStore } from "@npc-cli/ui-sdk";
+import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 import { motion } from "motion/react";
 import { useStore } from "zustand/react";
 

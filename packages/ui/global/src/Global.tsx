@@ -1,5 +1,5 @@
 import { themeApi } from "@npc-cli/theme";
-import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk";
+import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { BasicPopover, cn } from "@npc-cli/util";
 import { WebRtcPeer } from "./webrtc/WebRtcPeer";
 

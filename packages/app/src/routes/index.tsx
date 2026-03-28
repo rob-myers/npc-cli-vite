@@ -1,6 +1,7 @@
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
-import { getFallbackLayoutApi, UiContext, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import { getFallbackLayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { deepClone } from "@npc-cli/util/legacy/generic";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";

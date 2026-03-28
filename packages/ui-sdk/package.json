@@ -3,7 +3,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./ui.store": "./src/ui.store.ts",
+    "./schema": "./src/schema.ts",
+    "./UiInstanceMenu": "./src/UiInstanceMenu.tsx",
+    "./UiContext": "./src/UiContext.tsx",
+    "./UiErrorBoundary": "./src/UiErrorBoundary.tsx",
+    "./UiParseError": "./src/UiParseError.tsx"
   },
   "scripts": {},
   "dependencies": {

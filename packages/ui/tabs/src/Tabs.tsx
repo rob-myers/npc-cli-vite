@@ -1,7 +1,10 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import { UiContext, UiInstanceMenu, type UiInstanceMeta, uiClassName, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
+import { uiClassName, uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { ArrowUpRightIcon, DotsThreeOutlineVerticalIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";

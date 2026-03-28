@@ -1,5 +1,5 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { Broadcaster, cn, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { hashJson } from "@npc-cli/util/legacy/generic";
