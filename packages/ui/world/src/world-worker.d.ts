@@ -1,5 +1,5 @@
 declare namespace WW {
-  type MsgToWorker = { type: "ping" } | { type: "request-tiled-navmesh" };
+  type MsgToWorker = { type: "ping" } | { type: "request-tiled-navmesh"; mapKey: string };
 
   type MsgFromWorker =
     | { type: "pong" }

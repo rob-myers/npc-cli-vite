@@ -114,9 +114,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled]);
 
-  /**
-   * This query never runs anywhere else so we may mutate state.
-   */
   const _query = useQuery({
     queryKey: [...state.assetsQueryPrefix, state.mapKey],
     async queryFn() {
@@ -145,7 +142,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       return null;
     },
-  });
+  }); // never runs anywhere else, so it may mutate state
 
   useEffect(() => {
     if (import.meta.env.DEV && import.meta.hot) {

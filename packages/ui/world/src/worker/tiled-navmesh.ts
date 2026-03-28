@@ -2,7 +2,7 @@
  * @source https://github.com/isaac-mason/navcat/blob/main/examples/src/example-tiled-navmesh.ts
  */
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { debug } from "@npc-cli/util/legacy/generic";
+import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { generateTiledNavMesh, type TiledNavMeshInput, type TiledNavMeshOptions } from "navcat/blocks";
 import { getPositionsAndIndices } from "navcat/three";
 import * as THREE from "three";
@@ -43,6 +43,14 @@ export default async function generateTiledNavMeshResult(
   // generate scene from provided polygons
   const scene = new THREE.Scene();
   const { meshes } = await computeGeomorphMeshes(gms);
+
+  if (meshes.length === 0) {
+    warn("🤖 nav.worker: map has no meshes, adding dummy 10x10 plane");
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial());
+    plane.rotation.x = -Math.PI / 2;
+    meshes.push(plane);
+  }
+
   meshes.forEach((mesh) => scene.add(mesh));
 
   /* generate navmesh */
