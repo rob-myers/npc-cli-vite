@@ -10,16 +10,9 @@
   - ✅ extract triangles and draw in floor
   - ✅ send event which can be awaited (`nav-updated`)
 
-- 🚧 sync navmesh recomputation with MapEdit
-  - DEV edit symbol -> recompute assets.json -> refetch + change `w.hash` -> floor redraw
-  - ❌ try await nav recomputation in world query
-  - ✅ BUG: PROD webworker is refetching assets without changing it
-    - need to send the localStorage drafts to webworker
-  - transition needs thought
-
 - 🚧 do not cut doors out of navmesh
-
-- BUG `drawGm` (Floor):  "SWEEP" probably poly union issue
+- fix hmr onchange geomorphs.ts 
+  - ✅ vite-plugin-watch-assets recomputes assets.json
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
@@ -33,7 +26,18 @@
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
 
+- BUG `drawGm` (Floor): "SWEEP" probably poly union issue
+  - need repro e.g. move stateroom inside 301
+
 ## Long running
+
+- 🚧 sync navmesh recomputation with MapEdit
+  - DEV edit symbol -> recompute assets.json -> refetch + change `w.hash` -> floor redraw
+  - ❌ try await nav recomputation in world query
+  - ✅ BUG: PROD webworker is refetching assets without changing it
+    - need to send the localStorage drafts to webworker
+  - transition needs thought
+
 
 - 🚧 extend existing symbols with missing decor/obstacle
   - ✅ stateroom-012 🚧 ...

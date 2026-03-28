@@ -6,6 +6,7 @@ import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.tsx");
+const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
 
 export function watchAssetsPlugin(): Plugin {
   return {
@@ -13,16 +14,18 @@ export function watchAssetsPlugin(): Plugin {
     configureServer(server) {
       const symbolGlob = path.join(PUBLIC_DIR, "symbol/*.json");
       const mapGlob = path.join(PUBLIC_DIR, "map/*.json");
-      server.watcher.add([symbolGlob, mapGlob]);
+      server.watcher.add([symbolGlob, mapGlob, GEOMORPH_SERVICE]);
 
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let running = false;
       const changed = new Map<string, number>();
 
-      const isWatchedFile = (filePath: string) =>
+      const isAssetInputFile = (filePath: string) =>
         !filePath.endsWith("manifest.json") &&
         (filePath.startsWith(path.join(PUBLIC_DIR, "symbol/")) || filePath.startsWith(path.join(PUBLIC_DIR, "map/"))) &&
         filePath.endsWith(".json");
+
+      const isWatchedFile = (filePath: string) => filePath === GEOMORPH_SERVICE || isAssetInputFile(filePath);
 
       const runGenAssets = async (server: ViteDevServer) => {
         if (running) return;
@@ -56,7 +59,7 @@ export function watchAssetsPlugin(): Plugin {
 
       const onFileChange = (filePath: string) => {
         if (!isWatchedFile(filePath)) return;
-        changed.set(filePath, Date.now());
+        if (isAssetInputFile(filePath)) changed.set(filePath, Date.now());
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => runGenAssets(server), 30);
       };
