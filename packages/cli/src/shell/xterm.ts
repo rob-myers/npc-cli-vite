@@ -183,7 +183,7 @@ export class TtyXterm {
       this.xterm.dispose();
     } catch (e) {
       // xterm-addon-webgl throws `Cannot read properties of undefined (reading 'onRequestRedraw')`
-      warn(`xterm.dispose: ignoring error: "${((e as any) || {}).message || e}"`);
+      warn(`xterm.dispose: ignoring error: "${(e as any)?.message || e}"`);
     }
   }
 

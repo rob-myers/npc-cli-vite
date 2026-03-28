@@ -4,14 +4,24 @@
     "enabled": true,
     "rules": {
       "a11y": "off",
+      "style": {
+        "useComponentExportOnlyModules": "error"
+      },
       "suspicious": {
         "noAssignInExpressions": "off",
         "noConfusingVoidType": "off",
+        "noExplicitAny": "off",
         "noDoubleEquals": "off",
         "useIterableCallbackReturn": "off"
       },
+      "complexity": {
+        "noCommaOperator": "off"
+      },
       "correctness": {
         "noUnusedFunctionParameters": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "off"
       }
     }
   },
@@ -35,6 +45,6 @@
     }
   },
   "files": {
-    "includes": ["**", "!**/routeTree.gen.ts", "!packages/cli/vendors/wasm_exec.js"]
+    "includes": ["**", "!**/*.generated.*", "!**/dist"]
   }
 }
