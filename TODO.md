@@ -6,9 +6,11 @@
   - ✅ generate demo tiled navmesh in webworker
   - ✅ send via serialization
 
-- 🚧 construct `w.nav` and show on floor
+- ✅ construct `w.nav` and show on floor
   - ✅ extract triangles and draw in floor
-  - 🚧 send event which can be awaited
+  - ✅ send event which can be awaited (`nav-updated`)
+
+- 🚧 do not cut doors out of navmesh
 
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 
