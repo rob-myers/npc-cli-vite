@@ -22,7 +22,7 @@ import {
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, info, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
 import type { AssetsType } from "../assets.schema";
-import * as geomorph from "./geomorph";
+import { createLayout, flattenSymbol, parseMapEditSymbol } from "./geomorph";
 
 /**
  * - Overlay hull symbols localStorage symbol drafts onto `baseAssets`.
@@ -36,7 +36,7 @@ export function recomputeHullSymbolUsingDrafts(
   const geomorphKeys: StarShipGeomorphKey[] = [];
   for (const draft of mapEditDrafts) {
     if (draft.type !== "symbol") continue;
-    const symbol = geomorph.parseMapEditSymbol(draft);
+    const symbol = parseMapEditSymbol(draft);
     assets.symbol[symbol.key] = symbol;
     geomorphKeys.push(symbol.key as StarShipGeomorphKey);
   }
@@ -47,8 +47,8 @@ export function recomputeHullSymbolUsingDrafts(
   // hull symbols are leaves in stratification, so only need to re-flatten them
   for (const gmKey of geomorphKeys) {
     const symbol = assets.symbol[gmKey] as Geomorph.Symbol;
-    const flat = geomorph.flattenSymbol(symbol, assets.flattened);
-    assets.layout[gmKey] = geomorph.createLayout(gmKey, flat, assets);
+    const flat = flattenSymbol(symbol, assets.flattened);
+    assets.layout[gmKey] = createLayout(gmKey, flat, assets);
   }
 
   return true;
@@ -69,7 +69,7 @@ export function recomputeAllSymbolsFromLocalStorageDrafts(assets: AssetsType): b
     const parsed = jsonParser.pipe(MapEditSavedFileSchema).safeParse(raw);
     if (!parsed.success || parsed.data.type !== "symbol") continue;
 
-    const symbol = geomorph.parseMapEditSymbol(parsed.data);
+    const symbol = parseMapEditSymbol(parsed.data);
     assets.symbol[symbol.key] = symbol;
     changed = true;
   }
@@ -87,7 +87,7 @@ export function recomputeAllSymbolsFromLocalStorageDrafts(assets: AssetsType): b
     for (const symbolKey of level) {
       const symbol = assets.symbol[symbolKey];
       if (symbol) {
-        geomorph.flattenSymbol(symbol, flattened);
+        flattenSymbol(symbol, flattened);
       }
     }
   }
@@ -96,7 +96,7 @@ export function recomputeAllSymbolsFromLocalStorageDrafts(assets: AssetsType): b
   // recompute layouts for hull symbols
   for (const [symbolKey, flat] of entries(assets.flattened)) {
     if (!isHullSymbolImageKey(symbolKey)) continue;
-    assets.layout[symbolKey] = geomorph.createLayout(symbolKey, flat, assets);
+    assets.layout[symbolKey] = createLayout(symbolKey, flat, assets);
   }
 
   return true;

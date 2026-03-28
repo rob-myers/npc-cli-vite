@@ -9,7 +9,7 @@ import { generateTiledNavMesh, type TiledNavMeshInput, type TiledNavMeshOptions 
 import { getPositionsAndIndices } from "navcat/three";
 import * as THREE from "three";
 import { AssetsSchema } from "../assets.schema";
-import * as geomorph from "../service/geomorph";
+import { createLayoutInstance } from "../service/geomorph";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { computeGmInstanceMeshes } from "./nav-util";
 
@@ -44,7 +44,7 @@ export async function computeMapGmInstances(
 
   const mapDef = assets.map[mapKey]!;
   const gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
-    geomorph.createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
+    createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
   );
   return gms;
 }

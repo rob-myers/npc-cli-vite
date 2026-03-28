@@ -12,7 +12,7 @@ import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
-import * as geomorph from "../service/geomorph";
+import { isEdgeGm } from "../service/geomorph";
 import { getGridPattern } from "../service/grid-pattern";
 import { WorldContext } from "./world-context";
 
@@ -42,7 +42,7 @@ export default function Floor() {
           attr.uvDimensions.def.push(
             1,
             // geomorph 301 pngRect height/width ~ 0.5 but not equal
-            geomorph.isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1,
+            isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1,
           );
           attr.uvTextureIds.def.push(w.getGmKeyTexId(gm.key));
         }

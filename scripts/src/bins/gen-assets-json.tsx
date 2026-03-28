@@ -19,7 +19,7 @@ import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
-import * as geomorph from "@npc-cli/ui__world/geomorph";
+import { createLayout, flattenSymbol, parseMapEditMap, parseMapEditSymbol } from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
@@ -97,10 +97,10 @@ function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType)
 
     const savedFile = symRes.data;
     if (savedFile.type === "symbol") {
-      const symbol = geomorph.parseMapEditSymbol(savedFile);
+      const symbol = parseMapEditSymbol(savedFile);
       assets.symbol[symbol.key] = symbol;
     } else {
-      const mapDef = geomorph.parseMapEditMap(savedFile);
+      const mapDef = parseMapEditMap(savedFile);
       assets.map[mapDef.key] = mapDef;
     }
   }
@@ -117,7 +117,7 @@ function flattenSymbols(symbolsStratified: ReturnType<typeof stratifySymbols>, a
     for (const { id: symbolKey } of level) {
       const symbol = assets.symbol[symbolKey];
       if (symbol) {
-        geomorph.flattenSymbol(symbol, flattened);
+        flattenSymbol(symbol, flattened);
       } else {
         warn(`Symbol ${symbolKey} not found in assets.symbol`);
       }
@@ -129,7 +129,7 @@ function flattenSymbols(symbolsStratified: ReturnType<typeof stratifySymbols>, a
 function createLayouts(assets: AssetsType) {
   for (const [symbolKey, flat] of entries(assets.flattened)) {
     if (!isHullSymbolImageKey(symbolKey)) continue;
-    const layout = geomorph.createLayout(symbolKey, flat, assets);
+    const layout = createLayout(symbolKey, flat, assets);
     assets.layout[symbolKey] = layout;
   }
 }

@@ -1,9 +1,3 @@
-/**
- * 🔔 HMR breaks if you import from:
- * - src/schema.ts
- * - vite-plugin-watch-assets.ts
- */
-
 export const precision = 4;
 
 /** Size of starship geomorphs grid side in meters */
