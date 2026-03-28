@@ -6,6 +6,8 @@
   - ✅ generate demo tiled navmesh in webworker
   - ✅ send via serialization
 
+- 🚧 construct `w.nav` and show on floor
+
 - can connect Tty to World
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

@@ -9,6 +9,9 @@
         "noConfusingVoidType": "off",
         "noDoubleEquals": "off",
         "useIterableCallbackReturn": "off"
+      },
+      "correctness": {
+        "noUnusedFunctionParameters": "error"
       }
     }
   },

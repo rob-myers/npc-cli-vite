@@ -1,5 +1,6 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug } from "@npc-cli/util/legacy/generic";
+import type { TiledNavMeshResult } from "navcat/blocks";
 import { useContext, useEffect } from "react";
 import { WorldContext } from "./world-context";
 
@@ -11,25 +12,31 @@ export default function WorldWorker() {
     (): State => ({
       inner: null as unknown as Worker,
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
-        debug(`main thread received "${e.data?.type}" from 🤖 worker`);
-
         const msg = e.data;
+        debug(`🤖 main thread received "${msg?.type}" from worker`);
+
         switch (msg.type) {
           case "pong":
             break;
-          case "test-generate-tiled-navmesh-result": {
+
+          case "tiled-navmesh-response": {
+            // 🚧 extract triangles and draw in floor
+            // 🚧 send event which can be awaited
             console.log(msg);
+            state.loadTiledMesh(msg.tiledNavMeshResult);
+            w.events.next({ key: "nav-updated" });
             break;
           }
+
           default:
             throw new ExhaustiveError(msg);
         }
       },
+      loadTiledMesh(_result: TiledNavMeshResult) {
+        // 🚧
+      },
       ping() {
         state.inner.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
-      },
-      testGenerateTiledNavMesh() {
-        state.inner.postMessage({ type: "test-generate-tiled-navmesh" } satisfies WW.MsgToWorker);
       },
     }),
   );
@@ -52,6 +59,6 @@ export default function WorldWorker() {
 export type State = {
   inner: Worker;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
+  loadTiledMesh(result: TiledNavMeshResult): void;
   ping(): void;
-  testGenerateTiledNavMesh(): void;
 };
