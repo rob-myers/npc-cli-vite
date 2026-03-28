@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./const": "./src/const.ts",
     "./ui.store": "./src/ui.store.ts",
     "./schema": "./src/schema.ts",
     "./UiInstanceMenu": "./src/UiInstanceMenu.tsx",

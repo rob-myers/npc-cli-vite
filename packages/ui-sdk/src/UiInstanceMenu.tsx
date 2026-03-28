@@ -1,9 +1,17 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { allowReactGridDragClassName, BasicPopover, cn } from "@npc-cli/util";
 import { LayoutIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
-import { uiClassName, uiStoreApi } from "./ui.store";
+import { uiClassName } from "./const";
 
-export function UiInstanceMenu({ className, meta }: { className?: string; meta: UiInstanceMeta }) {
+export function UiInstanceMenu({
+  className,
+  meta,
+  uiStoreApi,
+}: {
+  className?: string;
+  meta: UiInstanceMeta;
+  uiStoreApi: typeof import("@npc-cli/ui-sdk/ui.store").uiStoreApi;
+}) {
   return (
     <div
       className={cn(

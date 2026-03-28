@@ -30,6 +30,8 @@ function Index() {
     layoutApi: getFallbackLayoutApi(),
     theme,
     uiRegistry,
+    uiStore,
+    uiStoreApi,
   }));
 
   return (

@@ -1,12 +1,10 @@
+// We intentially only export types here
 import type z from "zod";
 import type { UiInstanceMeta } from "./schema";
 
-export * from "./schema";
-export * from "./UiContext";
-export * from "./UiErrorBoundary";
-export * from "./UiInstanceMenu";
-export * from "./UiParseError";
-export * from "./ui.store";
+export type * from "./schema";
+export type * from "./UiContext";
+export type * from "./ui.store";
 
 export type UiBootstrapProps = {
   addInstance(partialUiMeta: { [key: string]: unknown }): void;

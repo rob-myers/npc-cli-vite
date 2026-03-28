@@ -1,4 +1,4 @@
-import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn } from "@npc-cli/util";
 import type { TemplateUiMeta } from "./schema";
 

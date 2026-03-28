@@ -9,9 +9,11 @@ import type { UiInstanceMeta } from "./schema";
 export const UiContext = createContext<UiContextValue>({
   layoutApi: getFallbackLayoutApi(),
   theme: // initial value for future SSG
-    tryLocalStorageGetParsed<StorageValue<ThemeState>>("theme-storage" satisfies ThemeStorageKey)
-      ?.state.theme || "dark",
+    tryLocalStorageGetParsed<StorageValue<ThemeState>>("theme-storage" satisfies ThemeStorageKey)?.state.theme ||
+    "dark",
   uiRegistry: {} as UiRegistry,
+  uiStore: {} as typeof import("./ui.store").uiStore,
+  uiStoreApi: {} as typeof import("./ui.store").uiStoreApi,
 });
 
 export type { ThemeName } from "@npc-cli/theme";
@@ -20,6 +22,8 @@ export type UiContextValue = {
   layoutApi: LayoutApi;
   theme: ThemeName;
   uiRegistry: UiRegistry;
+  uiStore: typeof import("./ui.store").uiStore;
+  uiStoreApi: typeof import("./ui.store").uiStoreApi;
 };
 
 export type LayoutApi = {

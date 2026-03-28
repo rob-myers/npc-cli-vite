@@ -1,4 +1,4 @@
-import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";

@@ -16,6 +16,8 @@ import {
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
 import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
+import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
+import { debug, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 import {
   decorIconRadius,
   decorIconRadiusOutset,
@@ -25,9 +27,7 @@ import {
   sguToWorldScale,
   specialWallMetaKeys,
   wallOutset,
-} from "@npc-cli/ui__world/const";
-import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
-import { debug, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
+} from "../const";
 import { Connector } from "./Connector";
 import { embedXZMat4 } from "./geometry";
 

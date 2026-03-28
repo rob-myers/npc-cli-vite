@@ -2,9 +2,9 @@ import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
-import { uiClassName, uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { ArrowUpRightIcon, DotsThreeOutlineVerticalIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
@@ -14,7 +14,7 @@ import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
-  const { layoutApi, uiRegistry } = useContext(UiContext);
+  const { layoutApi, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
 
@@ -150,6 +150,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
               onBreakOutTab={() => state.onBreakOutTab(tab)}
               onDeleteTab={() => state.onDeleteTab(tab, { preservePortal: false })}
               tabsMetaId={meta.id}
+              uiStore={uiStore}
+              uiStoreApi={uiStoreApi}
             />
           ))}
           <button
@@ -161,7 +163,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             <PlusCircleIcon className="size-6" weight="duotone" />
           </button>
         </div>
-        <UiInstanceMenu meta={meta} className="self-end" />
+        <UiInstanceMenu meta={meta} className="self-end" uiStoreApi={uiStoreApi} />
       </div>
       <div className="pt-4 px-0 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
@@ -185,9 +187,20 @@ interface TabItemProps {
   onBreakOutTab: () => void;
   onDeleteTab: () => void;
   tabsMetaId: string;
+  uiStore: typeof import("@npc-cli/ui-sdk/ui.store").uiStore;
+  uiStoreApi: typeof import("@npc-cli/ui-sdk/ui.store").uiStoreApi;
 }
 
-function TabItem({ tab, isCurrentTab, onClickTab, onBreakOutTab, onDeleteTab, tabsMetaId }: TabItemProps) {
+function TabItem({
+  tab,
+  isCurrentTab,
+  onClickTab,
+  onBreakOutTab,
+  onDeleteTab,
+  tabsMetaId,
+  uiStore,
+  uiStoreApi,
+}: TabItemProps) {
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
     isDragging: false,

@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { type StarshipSymbolGroup, type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
-import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";

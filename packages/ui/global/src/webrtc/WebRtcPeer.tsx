@@ -1,4 +1,4 @@
-import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn } from "@npc-cli/util";
 import { useRef, useState } from "react";
 import type { PeerState } from "./use-webrtc";

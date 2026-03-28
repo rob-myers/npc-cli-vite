@@ -149,6 +149,3 @@ function getDefaultUiMeta(): UiInstanceMeta {
   const globalUiId = `ui-${crypto.randomUUID()}`;
   return { id: globalUiId, title: "global-0", uiKey: "Global" };
 }
-
-/** Raise UI above draggable area */
-export const uiClassName = "relative z-1";
