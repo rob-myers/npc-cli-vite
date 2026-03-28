@@ -1,4 +1,4 @@
-import { BaseUiMetaSchema, defineUi } from "@npc-cli/ui-sdk";
+import { BaseUiMetaSchema, defineUi } from "@npc-cli/ui-sdk/schema";
 import { lazy } from "react";
 
 export default defineUi({

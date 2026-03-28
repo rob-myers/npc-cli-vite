@@ -1,6 +1,7 @@
 import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import { keys } from "@npc-cli/util/legacy/generic";
 import z from "zod";
+import type { UiPackageDef } from ".";
 
 /** Needed because `uiRegistryKeys` yields circular import dependency  */
 const mirrored: Record<UiRegistryKey, true> = {
@@ -37,3 +38,7 @@ export const BaseUiMetaSchema = z.looseObject({
 });
 
 export type UiInstanceMeta = z.infer<typeof BaseUiMetaSchema>;
+
+export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
+  return uiDef;
+};

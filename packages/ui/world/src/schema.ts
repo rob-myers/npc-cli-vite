@@ -1,4 +1,4 @@
-import { BaseUiMetaSchema } from "@npc-cli/ui-sdk";
+import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 import { emptyMapKey } from "./const";
 

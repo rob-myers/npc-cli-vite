@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
 import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { emptyMapKey } from "@npc-cli/ui__world/const";
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { FloppyDiskIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";

@@ -1,4 +1,5 @@
-import { type UiBootstrapProps, uiStore, uiStoreApi } from "@npc-cli/ui-sdk";
+import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
+import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { cn, useStateRef } from "@npc-cli/util";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 

@@ -1,4 +1,4 @@
-import { defineUi } from "@npc-cli/ui-sdk";
+import { defineUi } from "@npc-cli/ui-sdk/schema";
 import { lazy } from "react";
 import WorldBootstrap from "./bootstrap";
 import { WorldUiSchema } from "./schema";

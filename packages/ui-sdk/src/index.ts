@@ -1,7 +1,6 @@
 import type z from "zod";
 import type { UiInstanceMeta } from "./schema";
 
-export * from "./define-ui";
 export * from "./schema";
 export * from "./UiContext";
 export * from "./UiErrorBoundary";
@@ -19,6 +18,3 @@ export type UiPackageDef = {
   bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
   schema: z.ZodType<UiInstanceMeta>;
 };
-
-/** Raise UI above draggable area */
-export const uiClassName = "relative z-1";

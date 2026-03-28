@@ -1,4 +1,4 @@
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn } from "@npc-cli/util";
 import { useRef, useState } from "react";
 import type { PeerState } from "./use-webrtc";
@@ -52,15 +52,10 @@ export function WebRtcPeer() {
         ref={logRef}
         className="bg-slate-900 border border-slate-700 rounded p-2 h-40 overflow-auto flex flex-col gap-0.5"
       >
-        {rtc.messages.length === 0 && (
-          <span className="text-slate-500 italic">No messages yet</span>
-        )}
+        {rtc.messages.length === 0 && <span className="text-slate-500 italic">No messages yet</span>}
         {rtc.messages.map((msg, i) => (
           <div key={i} className={cn(msg.from === "local" ? "text-blue-400" : "text-green-400")}>
-            <span className="text-slate-500">
-              {msg.from === "local" ? "you" : msg.peerId}:
-            </span>{" "}
-            {msg.text}
+            <span className="text-slate-500">{msg.from === "local" ? "you" : msg.peerId}:</span> {msg.text}
           </div>
         ))}
       </div>
@@ -120,8 +115,7 @@ function PeerCard({ peer, rtc }: { peer: PeerState; rtc: ReturnType<typeof useWe
               peer.status === "connected" && "bg-green-800 text-green-200",
               peer.status === "disconnected" && "bg-red-900 text-red-200",
               peer.status === "idle" && "bg-slate-700 text-slate-300",
-              !["connected", "disconnected", "idle"].includes(peer.status) &&
-                "bg-yellow-900 text-yellow-200",
+              !["connected", "disconnected", "idle"].includes(peer.status) && "bg-yellow-900 text-yellow-200",
             )}
           >
             {peer.status}

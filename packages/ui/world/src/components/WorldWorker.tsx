@@ -1,5 +1,5 @@
-import { getLocalStorageDrafts } from "@npc-cli/ui__map-edit";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
+import { getLocalStorageDrafts } from "@npc-cli/ui__map-edit/map-node-api";
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";

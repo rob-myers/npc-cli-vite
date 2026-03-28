@@ -1,4 +1,4 @@
-import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk";
+import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { cn, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { ListIcon } from "@phosphor-icons/react";

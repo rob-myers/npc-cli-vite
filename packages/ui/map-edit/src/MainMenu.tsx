@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import { uiClassName } from "@npc-cli/ui-sdk";
+import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
