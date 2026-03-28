@@ -1,6 +1,5 @@
 import childProcess from "node:child_process";
 import path from "node:path";
-import { assetsJsonChangedEvent } from "@npc-cli/ui__world/const";
 import type { Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
@@ -69,3 +68,6 @@ export function watchAssetsPlugin(): Plugin {
     },
   };
 }
+
+// Avoid HMR issue
+const assetsJsonChangedEvent: typeof import("@npc-cli/ui__world/const").assetsJsonChangedEvent = "assets-json-changed";
