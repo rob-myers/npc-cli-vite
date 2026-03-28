@@ -2,13 +2,13 @@
  * @source https://github.com/isaac-mason/navcat/blob/main/examples/src/example-tiled-navmesh.ts
  */
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { debug, warn } from "@npc-cli/util/legacy/generic";
+import { warn } from "@npc-cli/util/legacy/generic";
 import { generateTiledNavMesh, type TiledNavMeshInput, type TiledNavMeshOptions } from "navcat/blocks";
 import { getPositionsAndIndices } from "navcat/three";
 import * as THREE from "three";
 import { AssetsSchema } from "../assets.schema";
 import * as geomorph from "../service/geomorph";
-import { computeGmInstanceMesh, type TileCacheConvexAreaDef } from "./recast-detour";
+import { computeGmInstanceMeshes } from "./nav-util";
 
 /* navmesh generation parameters */
 const config = {
@@ -29,20 +29,22 @@ const config = {
   detailSampleMaxError: 1,
 };
 
-export default async function generateTiledNavMeshResult(
-  mapKey = "demo-map-0",
-): Promise<import("navcat/blocks").TiledNavMeshResult> {
+export async function computeMapGmInstances(mapKey = "demo-map-0"): Promise<Geomorph.LayoutInstance[]> {
   // 🚧 no need to refetch every time
   const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
   const mapDef = assets.map[mapKey]!;
-
   const gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
     geomorph.createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
   );
+  return gms;
+}
 
+export default async function generateTiledNavMeshResult(
+  mapGmInstances: Geomorph.LayoutInstance[],
+): Promise<import("navcat/blocks").TiledNavMeshResult> {
   // generate scene from provided polygons
   const scene = new THREE.Scene();
-  const { meshes } = await computeGeomorphMeshes(gms);
+  const { meshes } = await computeGmInstanceMeshes(mapGmInstances);
 
   if (meshes.length === 0) {
     warn("🤖 nav.worker: map has no meshes, adding dummy 10x10 plane");
@@ -99,21 +101,4 @@ export default async function generateTiledNavMeshResult(
   };
 
   return generateTiledNavMesh(navMeshInput, navMeshConfig);
-}
-
-async function computeGeomorphMeshes(gms: Geomorph.LayoutInstance[]) {
-  const meshes = [] as THREE.Mesh[];
-  const customAreaDefs = [] as TileCacheConvexAreaDef[];
-  for (const { mesh, customAreaDefs } of gms.map(computeGmInstanceMesh)) {
-    meshes.push(mesh);
-    customAreaDefs.push(...customAreaDefs);
-  }
-
-  debug("🤖 nav.worker", {
-    "total vertices": meshes.reduce((agg, mesh) => agg + (mesh.geometry.getAttribute("position")?.count ?? 0), 0),
-    "total triangles": meshes.reduce((agg, mesh) => agg + (mesh.geometry.index?.count ?? 0) / 3, 0),
-    "total meshes": meshes.length,
-  });
-
-  return { meshes, customAreaDefs };
 }
