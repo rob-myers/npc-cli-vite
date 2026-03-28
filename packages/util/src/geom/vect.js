@@ -168,8 +168,7 @@ export class Vect {
    */
   static topLeft(...vectors) {
     return vectors.reduce(
-      /** @param {Geom.Vect} agg */ (agg, v) =>
-        v.y < agg.y || (v.y === agg.y && v.x < agg.x) ? agg.copy(v) : agg,
+      /** @param {Geom.Vect} agg */ (agg, v) => (v.y < agg.y || (v.y === agg.y && v.x < agg.x) ? agg.copy(v) : agg),
       new Vect(Infinity, Infinity),
     );
   }

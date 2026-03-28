@@ -11,8 +11,9 @@
   - ✅ send event which can be awaited (`nav-updated`)
 
 - 🚧 do not cut doors out of navmesh
-- fix hmr onchange geomorphs.ts 
-  - ✅ vite-plugin-watch-assets recomputes assets.json
+- ✅ vite-plugin-watch-assets recomputes assets.json
+- 🚧 fix hmr onchange geomorphs.ts, const.ts and many others
+  - probably: `vite:hmr circular imports detected` (`pnpm dev --debug`)
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

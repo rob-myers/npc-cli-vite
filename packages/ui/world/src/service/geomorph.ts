@@ -5,8 +5,7 @@ import {
   type StarshipGeomorphNumber,
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
-import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
-import "@npc-cli/ui__world/geomorph.d.ts";
+// import "@npc-cli/ui__world/geomorph.d.ts";
 import {
   type DecorImageMapNode,
   isDecorImageMapNode,
@@ -16,6 +15,7 @@ import {
   type SymbolMapNode,
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
+import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import {
   decorIconRadius,
   decorIconRadiusOutset,
@@ -395,12 +395,12 @@ export function decomposeLayoutNav(
   navPolyWithDoors: Geom.Poly[],
   doors: Connector[],
 ): Pick<Geomorph.Layout, "navDecomp" | "navRects"> {
-  // // remove all doorways... we'll use offMeshConnections instead
-  // const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
-  // const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
-  // const navDecomp = geomService.joinTriangulations(navPolySansDoors.map((poly) => poly.qualityTriangulate()));
+  // remove all doorways... we'll use offMeshConnections instead
+  const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
+  const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
+  const navDecomp = geomService.joinTriangulations(navPolySansDoors.map((poly) => poly.qualityTriangulate()));
 
-  const navDecomp = geomService.joinTriangulations(navPolyWithDoors.map((poly) => poly.qualityTriangulate()));
+  // const navDecomp = geomService.joinTriangulations(navPolyWithDoors.map((poly) => poly.qualityTriangulate()));
 
   // include doors to infer "connected components"
   const navRects = navPolyWithDoors.map((x) => x.rect.precision(precision));
