@@ -8,6 +8,8 @@
 
 - 🚧 construct `w.nav` and show on floor
 
+- import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
+
 - can connect Tty to World
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
