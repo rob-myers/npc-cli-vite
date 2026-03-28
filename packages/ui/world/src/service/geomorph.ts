@@ -5,7 +5,7 @@ import {
   type StarshipGeomorphNumber,
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
-// import "@npc-cli/ui__world/geomorph.d.ts";
+import "@npc-cli/ui__world/geomorph.d.ts";
 import {
   type DecorImageMapNode,
   isDecorImageMapNode,
