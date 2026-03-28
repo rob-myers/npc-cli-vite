@@ -112,6 +112,7 @@ export default function Floor() {
         drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
 
         // 🚧 draw nav mesh
+
         // 🚧 hull doorways
         // 🚧 hull doorways
         // 🚧 decals from gm.decor
@@ -155,7 +156,7 @@ export default function Floor() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.gms.length]);
+  }, [w.hash, w.gms.length, w.nav.navMesh]);
 
   return (
     <group>

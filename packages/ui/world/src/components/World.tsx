@@ -6,7 +6,6 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import type { TiledNavMeshResult } from "navcat/blocks";
 import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
@@ -186,6 +185,7 @@ export type State = {
   timer: Timer;
 
   assets: AssetsType;
+  /** Hash of `w.assets` */
   hash: number;
   texFloor: TexArray;
 
@@ -199,9 +199,7 @@ export type State = {
 
   view: import("./WorldView").State;
   worker: import("./WorldWorker").State;
-  nav: TiledNavMeshResult & {
-    // 🚧
-  };
+  nav: Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;

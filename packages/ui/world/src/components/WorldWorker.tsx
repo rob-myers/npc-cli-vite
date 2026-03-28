@@ -1,6 +1,5 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug } from "@npc-cli/util/legacy/generic";
-import type { TiledNavMeshResult } from "navcat/blocks";
 import { useContext, useEffect } from "react";
 import { WorldContext } from "./world-context";
 
@@ -11,6 +10,7 @@ export default function WorldWorker() {
   const state = useStateRef(
     (): State => ({
       worker: null as unknown as Worker,
+
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
         debug(`🤖 main thread received "${msg?.type}" from worker`);
@@ -20,7 +20,7 @@ export default function WorldWorker() {
             break;
 
           case "tiled-navmesh-response": {
-            state.loadTiledMesh(msg.tiledNavMeshResult);
+            w.nav = { ...msg };
             w.events.next({ key: "nav-updated" });
             break;
           }
@@ -29,10 +29,7 @@ export default function WorldWorker() {
             throw new ExhaustiveError(msg);
         }
       },
-      loadTiledMesh(result: TiledNavMeshResult) {
-        w.nav = { ...result };
-        // 🚧
-      },
+
       ping() {
         state.worker.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
       },
@@ -65,6 +62,5 @@ export default function WorldWorker() {
 export type State = {
   worker: Worker;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
-  loadTiledMesh(result: TiledNavMeshResult): void;
   ping(): void;
 };
