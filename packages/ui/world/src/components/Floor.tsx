@@ -111,7 +111,22 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
 
-        // 🚧 draw nav mesh
+        // draw nav mesh
+        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
+        ct.lineJoin = "round";
+        ct.lineWidth = 0.06;
+        const fillStyle = "#444";
+        const strokeStyle = "#0007";
+        (w.nav.toNavTris[gm.key] ?? []).forEach(([positions, indices]) => {
+          for (const index of indices) {
+            const triVId = index % 3; // 0, 1, 2
+            const vertId = indices[index];
+            triangle.outline[triVId].set(positions[3 * vertId], positions[3 * vertId + 2]);
+            if (triVId === 2) {
+              drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
+            }
+          }
+        });
 
         // 🚧 hull doorways
         // 🚧 hull doorways

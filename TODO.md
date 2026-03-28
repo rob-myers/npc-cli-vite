@@ -7,7 +7,7 @@
   - ✅ send via serialization
 
 - 🚧 construct `w.nav` and show on floor
-  - 🚧 extract triangles and draw in floor
+  - ✅ extract triangles and draw in floor
   - 🚧 send event which can be awaited
 
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
