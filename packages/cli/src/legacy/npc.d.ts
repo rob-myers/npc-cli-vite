@@ -19,8 +19,6 @@ declare namespace NPC {
     datum: Datum;
   }
 
-  type Event =
-    | { key: "disabled" }
-    | { key: "enabled" };
-    // 🚧
+  type Event = { key: "disabled" } | { key: "enabled" } | { key: "nav-updated" };
+  // 🚧 ...
 }

@@ -29,9 +29,13 @@ const config = {
   detailSampleMaxError: 1,
 };
 
-export default async function generateDemoNavMesh() {
+export default async function generateTiledNavMeshResult(
+  mapKey = "demo-map-0",
+): Promise<import("navcat/blocks").TiledNavMeshResult> {
+  // 🚧 no need to refetch every time
   const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
-  const mapDef = assets.map["demo-map-0"]!; // 🚧
+  const mapDef = assets.map[mapKey]!;
+
   const gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
     geomorph.createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
   );
