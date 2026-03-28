@@ -40,7 +40,7 @@ export default function WorldWorker() {
   );
 
   useEffect(() => {
-    const worker = new Worker(new URL("./world.worker.ts", import.meta.url), { type: "module" });
+    const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
     state.worker = worker;
     w.worker = state;
     worker.addEventListener("message", state.handleWorkerMessage);
