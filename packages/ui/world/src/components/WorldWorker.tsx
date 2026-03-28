@@ -10,7 +10,7 @@ export default function WorldWorker() {
 
   const state = useStateRef(
     (): State => ({
-      inner: null as unknown as Worker,
+      worker: null as unknown as Worker,
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
         debug(`🤖 main thread received "${msg?.type}" from worker`);
@@ -20,9 +20,6 @@ export default function WorldWorker() {
             break;
 
           case "tiled-navmesh-response": {
-            // 🚧 extract triangles and draw in floor
-            // 🚧 send event which can be awaited
-            console.log(msg);
             state.loadTiledMesh(msg.tiledNavMeshResult);
             w.events.next({ key: "nav-updated" });
             break;
@@ -33,33 +30,40 @@ export default function WorldWorker() {
         }
       },
       loadTiledMesh(result: TiledNavMeshResult) {
+        w.nav = { ...result };
         // 🚧
-        w.nav.navMesh = result.navMesh;
-        w.nav.intermediates = result.intermediates;
       },
       ping() {
-        state.inner.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
+        state.worker.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
       },
     }),
   );
 
   useEffect(() => {
     const worker = new Worker(new URL("./world.worker.ts", import.meta.url), { type: "module" });
-    state.inner = worker;
+    state.worker = worker;
     w.worker = state;
     worker.addEventListener("message", state.handleWorkerMessage);
     return () => {
       worker.removeEventListener("message", state.handleWorkerMessage);
       worker.terminate();
-      w.worker = null!;
     };
-  }, []);
+  }, []); // setup worker
+
+  useEffect(() => {
+    if (!w.assets) return;
+
+    state.worker.postMessage({
+      type: "request-tiled-navmesh",
+      mapKey: w.mapKey,
+    } satisfies WW.MsgToWorker);
+  }, [w.assets, w.mapKey]);
 
   return null;
 }
 
 export type State = {
-  inner: Worker;
+  worker: Worker;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
   loadTiledMesh(result: TiledNavMeshResult): void;
   ping(): void;
