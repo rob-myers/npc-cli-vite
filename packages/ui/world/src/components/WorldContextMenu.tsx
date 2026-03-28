@@ -1,4 +1,5 @@
-import { uiClassName, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { ListIcon } from "@phosphor-icons/react";
@@ -8,6 +9,8 @@ import { useMapManifest } from "../hooks/useMapManifest";
 import { WorldContext } from "./world-context";
 
 export function WorldContextMenu() {
+  const { uiStoreApi } = useContext(UiContext);
+
   const w = useContext(WorldContext);
   const { data: mapManifest } = useMapManifest();
   const mapKeys = mapManifest ? Object.keys(mapManifest.byKey) : [];

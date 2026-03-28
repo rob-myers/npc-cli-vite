@@ -5,7 +5,7 @@ import {
   type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import {
   FolderIcon,

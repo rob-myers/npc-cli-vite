@@ -1,5 +1,5 @@
+import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { uiClassName } from "@npc-cli/ui-sdk/ui.store";
 import { cn } from "@npc-cli/util";
 import { useContext } from "react";
 import TestMdx from "./pages/test-mdx.mdx";

@@ -1,9 +1,12 @@
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
-import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import { useContext } from "react";
 
 export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode {
+  const { uiStore, uiStoreApi } = useContext(UiContext);
+
   const state = useStateRef(() => ({
     invalid: false,
     worldKey: uiStoreApi.getDefaultTitle("World", "world"), // e.g. world-0

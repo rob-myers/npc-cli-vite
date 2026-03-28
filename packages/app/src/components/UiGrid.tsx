@@ -1,16 +1,15 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
 import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
-import {
-  type AddUiItemOpts,
-  type OverrideContextMenuOpts,
-  type UiBootstrapProps,
-  type UiContextValue,
-  UiInstanceMenu,
-  type UiInstanceMeta,
-  uiStore,
-  uiStoreApi,
+import type {
+  AddUiItemOpts,
+  OverrideContextMenuOpts,
+  UiBootstrapProps,
+  UiContextValue,
+  UiInstanceMeta,
 } from "@npc-cli/ui-sdk";
+import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
+import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import {
   allowReactGridDragClassName,
   cn,
@@ -321,6 +320,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                       <UiInstanceMenu
                         className={cn("z-999 absolute top-1", meta.menuPosition === "left" ? "left-1" : "right-1")}
                         meta={meta}
+                        uiStoreApi={uiStoreApi}
                       />
                     )}
                     <DraggableOverlay />
