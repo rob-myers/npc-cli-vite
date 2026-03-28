@@ -6,6 +6,7 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
+import type { TiledNavMeshResult } from "navcat/blocks";
 import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
@@ -29,26 +30,17 @@ import { WorldContext } from "./world-context";
 export default function World({ meta }: { meta: WorldUiMeta }) {
   const state = useStateRef(
     (): State => ({
-      //#region core properties
-
       id: meta.id,
       key: meta.worldKey,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
       assetsQueryPrefix: ["world", meta.worldKey],
 
-      //#endregion
-      //#region core setup and communication
       events: new Broadcaster(),
-      r3f: null as unknown as State["r3f"],
       reqAnimId: -1,
       threeReady: false,
       timer: new Timer(),
 
-      //#endregion
-      //#region texture atlases
-
-      assets: null as unknown as State["assets"],
       hash: 0,
       texFloor: new TexArray({
         ctKey: "floor-tex",
@@ -57,20 +49,18 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         height: floorTextureDimension,
       }),
 
-      //#endregion
-      //#region derived state
-
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
 
-      //#endregion
-      //#region subcomponent apis
-
-      view: null as unknown as State["view"],
-      worker: null as unknown as State["worker"],
-
-      //#endregion
+      // biome-ignore format: meaningful newlines
+      ...{} as Pick<State, (
+        | "assets"
+        | "nav"
+        | "r3f"
+        | "worker"
+        | "view"
+      )>,
 
       devSetupAssetsSync() {
         if (!import.meta.env.DEV || !import.meta.hot) return;
@@ -212,6 +202,9 @@ export type State = {
 
   view: import("./WorldView").State;
   worker: import("./WorldWorker").State;
+  nav: TiledNavMeshResult & {
+    // 🚧
+  };
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;

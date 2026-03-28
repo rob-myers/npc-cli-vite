@@ -32,8 +32,10 @@ export default function WorldWorker() {
             throw new ExhaustiveError(msg);
         }
       },
-      loadTiledMesh(_result: TiledNavMeshResult) {
+      loadTiledMesh(result: TiledNavMeshResult) {
         // 🚧
+        w.nav.navMesh = result.navMesh;
+        w.nav.intermediates = result.intermediates;
       },
       ping() {
         state.inner.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
