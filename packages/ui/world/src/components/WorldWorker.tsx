@@ -1,6 +1,9 @@
+import { getLocalStorageDrafts } from "@npc-cli/ui__map-edit";
+import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
+import z from "zod";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -54,6 +57,9 @@ export default function WorldWorker() {
     state.worker.postMessage({
       type: "request-tiled-navmesh",
       mapKey: w.mapKey,
+      ...(import.meta.env.PROD && {
+        mapEditDrafts: getLocalStorageDrafts().map((draft) => z.encode(MapEditSavedFileSchema, draft)),
+      }),
     } satisfies WW.MsgToWorker);
   }, [w.assets, w.mapKey]);
 

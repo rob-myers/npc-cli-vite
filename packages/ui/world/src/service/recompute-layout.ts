@@ -1,7 +1,7 @@
 /**
  * Browser-side layout recomputation.
  *
- * In prod, users can edit hull symbols via MapEdit, saving drafts to localStorage.
+ * In PROD, users can edit hull symbols via MapEdit, saving drafts to localStorage.
  * We cannot re-run the node script `gen-assets-json`, but the core pipeline
  * (parseMapEditSymbol -> stratify -> flattenSymbol -> createLayout) is pure JS.
  *
@@ -14,7 +14,11 @@ import {
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
-import { getFileSpecifierLocalStorageKey, getLocalStorageFileSpecs } from "@npc-cli/ui__map-edit/map-node-api";
+import {
+  getFileSpecifierLocalStorageKey,
+  getLocalStorageDrafts,
+  getLocalStorageFileSpecs,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, info, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
 import type { AssetsType } from "../assets.schema";
@@ -24,17 +28,15 @@ import * as geomorph from "./geomorph";
  * - Overlay hull symbols localStorage symbol drafts onto `baseAssets`.
  * - 🔔 This avoids flattening and re-stratifying all symbols.
  */
-export function recomputeHullSymbolFromLocalStorageDrafts(assets: AssetsType): boolean {
-  const drafts = getLocalStorageFileSpecs().filter((f) => f.type === "symbol" && isHullSymbolImageKey(f.key));
-  if (drafts.length === 0) return false;
-
+export function recomputeHullSymbolUsingDrafts(
+  assets: AssetsType,
+  /** By default use `localStorage` which is not available in webworker */
+  mapEditDrafts = "localStorage" in self ? getLocalStorageDrafts() : [],
+): boolean {
   const geomorphKeys: StarShipGeomorphKey[] = [];
-  for (const draft of drafts) {
-    const raw = tryLocalStorageGet(getFileSpecifierLocalStorageKey(draft));
-    const parsed = jsonParser.pipe(MapEditSavedFileSchema).safeParse(raw);
-    if (!parsed.success || parsed.data.type !== "symbol") continue;
-
-    const symbol = geomorph.parseMapEditSymbol(parsed.data);
+  for (const draft of mapEditDrafts) {
+    if (draft.type !== "symbol") continue;
+    const symbol = geomorph.parseMapEditSymbol(draft);
     assets.symbol[symbol.key] = symbol;
     geomorphKeys.push(symbol.key as StarShipGeomorphKey);
   }

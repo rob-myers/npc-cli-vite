@@ -15,7 +15,7 @@ import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
 import * as geomorph from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
-import { recomputeHullSymbolFromLocalStorageDrafts } from "../service/recompute-layout";
+import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
@@ -119,7 +119,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
       if (import.meta.env.PROD) {
-        recomputeHullSymbolFromLocalStorageDrafts(state.assets);
+        recomputeHullSymbolUsingDrafts(state.assets);
       }
 
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
