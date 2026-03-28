@@ -22,6 +22,7 @@ export default function WorldWorker() {
           case "tiled-navmesh-response": {
             w.nav = { ...msg };
             w.events.next({ key: "nav-updated" });
+            w.update();
             break;
           }
 
