@@ -10,14 +10,24 @@
   - ✅ extract triangles and draw in floor
   - ✅ send event which can be awaited (`nav-updated`)
 
+- 🚧 sync navmesh recomputation with MapEdit
+  - DEV edit symbol -> recompute assets.json -> refetch + change `w.hash` -> floor redraw
+  - ❌ try await nav recomputation in world query
+  - ✅ BUG: PROD webworker is refetching assets without changing it
+    - need to send the localStorage drafts to webworker
+  - transition needs thought
+
 - 🚧 do not cut doors out of navmesh
+
+- BUG `drawGm` (Floor):  "SWEEP" probably poly union issue
+
+- do not recompute all symbols when only edit a hull symbol (DEV)
+  - done in prod for hull-symbols
+  - more generally use sub-stratification
 
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 
 - can connect Tty to World
-- do not recompute all symbols when only edit a hull symbol (DEV)
-  - done in prod for hull-symbols
-  - more generally use sub-stratification
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2

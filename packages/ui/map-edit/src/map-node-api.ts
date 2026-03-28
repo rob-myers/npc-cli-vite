@@ -1,7 +1,8 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect, Vect } from "@npc-cli/util/geom";
-import { keys, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
+import { jsonParser } from "@npc-cli/util/json-parser";
+import { keys, tryLocalStorageGet, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import {
   type BaseMapNode,
   type BaseRect,
@@ -9,6 +10,7 @@ import {
   type MapEditFileSpecifier,
   MapEditFileSpecifierSchema,
   type MapEditSavedFile,
+  MapEditSavedFileSchema,
   type MapNode,
   type MapNodeType,
   type Transform,
@@ -292,6 +294,26 @@ export function getLocalStorageFileSpecs(): MapEditFileSpecifier[] {
     }
   }
   return fileSpecs.sort((a, b) => a.filename.localeCompare(b.filename));
+}
+
+/**
+ * Provides "output types" e.g. using `Rect` classes,
+ * as opposed to their serialization i.e. "input types".
+ */
+export function getLocalStorageDrafts(): MapEditSavedFile[] {
+  const draftFileSpecs = getLocalStorageFileSpecs();
+  const output = [] as MapEditSavedFile[];
+
+  for (const fileSpec of draftFileSpecs) {
+    const raw = tryLocalStorageGet(getFileSpecifierLocalStorageKey(fileSpec));
+    const parsed = jsonParser.pipe(MapEditSavedFileSchema).safeParse(raw);
+    if (!parsed.success) {
+      warn(`${fileSpec.filename}" skipped invalid localStorage draft`);
+      continue;
+    }
+    output.push(parsed.data);
+  }
+  return output;
 }
 
 export function clearLocalStorage() {

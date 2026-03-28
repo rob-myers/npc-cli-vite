@@ -1,6 +1,8 @@
 /**
  * @source https://github.com/isaac-mason/navcat/blob/main/examples/src/example-tiled-navmesh.ts
  */
+
+import type { MapEditSavedFile } from "@npc-cli/ui__map-edit/editor.schema";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { generateTiledNavMesh, type TiledNavMeshInput, type TiledNavMeshOptions } from "navcat/blocks";
@@ -8,6 +10,7 @@ import { getPositionsAndIndices } from "navcat/three";
 import * as THREE from "three";
 import { AssetsSchema } from "../assets.schema";
 import * as geomorph from "../service/geomorph";
+import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { computeGmInstanceMeshes } from "./nav-util";
 
 /* navmesh generation parameters */
@@ -29,9 +32,16 @@ const config = {
   detailSampleMaxError: 1,
 };
 
-export async function computeMapGmInstances(mapKey = "demo-map-0"): Promise<Geomorph.LayoutInstance[]> {
+export async function computeMapGmInstances(
+  mapKey = "demo-map-0",
+  mapEditDrafts?: MapEditSavedFile[],
+): Promise<Geomorph.LayoutInstance[]> {
   // 🚧 no need to refetch every time
   const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
+  if (mapEditDrafts) {
+    recomputeHullSymbolUsingDrafts(assets, mapEditDrafts);
+  }
+
   const mapDef = assets.map[mapKey]!;
   const gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
     geomorph.createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),

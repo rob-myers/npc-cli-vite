@@ -101,6 +101,7 @@ export const MapEditSavedMapSchema = MapEditSavedBaseSchema.extend(MapEditMapFil
 export const MapEditSavedFileSchema = z.union([MapEditSavedSymbolSchema, MapEditSavedMapSchema]);
 
 export type MapEditSavedFile = z.infer<typeof MapEditSavedFileSchema>;
+export type MapEditSavedFileJson = z.input<typeof MapEditSavedFileSchema>;
 export type MapEditSavedSymbol = z.infer<typeof MapEditSavedSymbolSchema>;
 export type MapEditSavedMap = z.infer<typeof MapEditSavedMapSchema>;
 export type UiIdToCurrentFileSpecifer = Record<string, MapEditFileSpecifier>;
