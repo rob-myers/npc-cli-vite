@@ -33,7 +33,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       key: meta.worldKey,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
-      assetsQueryPrefix: ["world", meta.worldKey],
+      worldQueryPrefix: ["world", meta.worldKey],
 
       events: new Broadcaster(),
       reqAnimId: -1,
@@ -52,10 +52,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
 
+      nav: null,
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
         | "assets"
-        | "nav"
         | "r3f"
         | "worker"
         | "view"
@@ -67,7 +67,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const hot = import.meta.hot;
         const cb = () => {
           console.log("[World] assets.json changed, refetching");
-          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.assetsQueryPrefix });
+          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         hot.on(assetsJsonChangedEvent, cb);
         return () => hot.off(assetsJsonChangedEvent, cb);
@@ -83,7 +83,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       prodSetupHullAssetsSync() {
         const cb = () => {
           console.log("[World] symbol saved, refetching");
-          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.assetsQueryPrefix });
+          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         window.addEventListener(mapEditSymbolSavedEvent, cb);
         return () => window.removeEventListener(mapEditSymbolSavedEvent, cb);
@@ -113,19 +113,19 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled]);
 
-  const _query = useQuery({
-    queryKey: [...state.assetsQueryPrefix, state.mapKey],
+  const _worldQuery = useQuery({
+    queryKey: [...state.worldQueryPrefix, state.mapKey],
     async queryFn() {
-      const assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
-      state.assets = assets;
+      state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
+
       if (import.meta.env.PROD) {
-        recomputeHullSymbolFromLocalStorageDrafts(assets);
+        recomputeHullSymbolFromLocalStorageDrafts(state.assets);
       }
 
-      const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
+      const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
 
       state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
-        geomorph.createLayoutInstance(assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
+        geomorph.createLayoutInstance(state.assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
       );
       state.seenGmKeys = state.gms.reduce<StarShipGeomorphKey[]>(
         (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
@@ -133,11 +133,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       );
 
       for (const gmKey of state.seenGmKeys) {
-        state.gmsData.computeGmKey(assets.layout[gmKey] as Geomorph.Layout);
+        state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
       }
       state.gmsData.computeRoot(state.gms);
 
-      state.hash = hashJson(assets);
+      state.hash = hashJson(state.assets);
 
       return null;
     },
@@ -176,7 +176,7 @@ export type State = {
   key: WorldUiMeta["worldKey"];
   disabled: boolean;
   mapKey: string;
-  assetsQueryPrefix: ["world", worldKey: string];
+  worldQueryPrefix: ["world", worldKey: string];
 
   events: Broadcaster<NPC.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };
@@ -199,7 +199,7 @@ export type State = {
 
   view: import("./WorldView").State;
   worker: import("./WorldWorker").State;
-  nav: Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
+  nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;

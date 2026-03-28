@@ -117,7 +117,7 @@ export default function Floor() {
         ct.lineWidth = 0.02;
         const fillStyle = "#0f04";
         const strokeStyle = "#0003";
-        (w.nav.toNavTris[gm.key] ?? []).forEach(([positions]) => {
+        (w.nav?.toNavTris[gm.key] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
             triangle.outline[0].set(positions[i], positions[i + 2]);
             triangle.outline[1].set(positions[i + 3], positions[i + 5]);
@@ -169,7 +169,7 @@ export default function Floor() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.gms.length, w.nav.navMesh]);
+  }, [w.hash, w.gms.length, w.nav?.navMesh]);
 
   return (
     <group>
