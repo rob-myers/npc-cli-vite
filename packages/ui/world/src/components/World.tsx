@@ -13,7 +13,7 @@ import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../a
 import { assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymbolSavedEvent } from "../const";
 import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
-import * as geomorph from "../service/geomorph";
+import { createLayoutInstance } from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
@@ -125,7 +125,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
 
       state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
-        geomorph.createLayoutInstance(state.assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
+        createLayoutInstance(state.assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
       );
       state.seenGmKeys = state.gms.reduce<StarShipGeomorphKey[]>(
         (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
