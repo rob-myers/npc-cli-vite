@@ -1,6 +1,6 @@
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { debug } from "@npc-cli/util/legacy/generic";
-import generateTiledNavMeshResult from "../worker/tiled-navmesh";
+import generateTiledNavMeshResult from "./tiled-navmesh";
 
 self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
   const msg = e.data;
