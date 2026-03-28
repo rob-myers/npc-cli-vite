@@ -311,7 +311,7 @@ export interface Props extends BaseTabProps {
    * They are partitioned by "fileKey".
    */
   // modules: import("./TtyWithFunctions").TtyJsModules;
-  modules: {};
+  modules: any;
   /**
    * All shell files (*.sh and *.js.sh).
    * They are spread into `/etc`.

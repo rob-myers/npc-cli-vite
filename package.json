@@ -12,7 +12,8 @@
     "gen:ui": "pnpm exec gen-ui",
     "preview": "pnpm -F @npc-cli/app preview",
     "typecheck": "tsgo -b",
-    "types": "tsgo -b"
+    "types": "tsgo -b",
+    "check": "biome check packages/*"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

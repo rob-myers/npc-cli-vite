@@ -2,7 +2,7 @@ import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
 // Avoid HMR issue
-const emptyMapKey: typeof import("@npc-cli/ui__world/const").emptyMapKey = "empty-map";
+const emptyMapKey: typeof import("./const").emptyMapKey = "empty-map";
 
 export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,

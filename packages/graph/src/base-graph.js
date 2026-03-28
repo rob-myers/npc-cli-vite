@@ -301,7 +301,7 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
    */
   isConnected(src, dst) {
     const succ = this.succ.get(src);
-    return (succ && succ.has(dst)) || false;
+    return succ?.has(dst) || false;
   }
 
   /**

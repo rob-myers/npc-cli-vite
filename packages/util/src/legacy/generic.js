@@ -443,7 +443,7 @@ export function parseJsArg(input) {
   try {
     if (input === "") return input;
     return Function(`return ${input}`)();
-  } catch (e) {
+  } catch {
     return input;
   }
 }
@@ -461,7 +461,7 @@ export function parseJsWithCt(input, names = [], values = []) {
     if (input === "") return input;
     // eslint-disable-next-line no-new-func
     return Function(...names, `return ${input}`)(...values);
-  } catch (e) {
+  } catch {
     return input;
   }
 }
