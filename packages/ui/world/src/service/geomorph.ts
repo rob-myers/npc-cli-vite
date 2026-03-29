@@ -395,12 +395,12 @@ export function decomposeLayoutNav(
   navPolyWithDoors: Geom.Poly[],
   doors: Connector[],
 ): Pick<Geomorph.Layout, "navDecomp" | "navRects"> {
-  // remove all doorways... we'll use offMeshConnections instead
-  const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
-  const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
-  const navDecomp = geomService.joinTriangulations(navPolySansDoors.map((poly) => poly.qualityTriangulate()));
+  // // remove all doorways... we'll use offMeshConnections instead
+  // const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
+  // const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
+  // const navDecomp = geomService.joinTriangulations(navPolySansDoors.map((poly) => poly.qualityTriangulate()));
 
-  // const navDecomp = geomService.joinTriangulations(navPolyWithDoors.map((poly) => poly.qualityTriangulate()));
+  const navDecomp = geomService.joinTriangulations(navPolyWithDoors.map((poly) => poly.qualityTriangulate()));
 
   // include doors to infer "connected components"
   const navRects = navPolyWithDoors.map((x) => x.rect.precision(precision));
