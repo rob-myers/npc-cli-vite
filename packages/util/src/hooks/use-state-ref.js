@@ -31,12 +31,12 @@ export function useStateRef(initializer, opts = {}) {
       // Provide useUpdate wrapper `set`
       state.update = update;
       state.set = (partial) => {
-        Object.assign(state, partial);
+        const nextState = typeof partial === "function" ? partial(state) : partial;
+        Object.assign(state, nextState);
         update();
       };
       state.ref = (key, functionRef) => (value) =>
-        void ((state[key] = value === null ? /** @type {*} */ (null) : value),
-        functionRef?.(value));
+        void ((state[key] = value === null ? /** @type {*} */ (null) : value), functionRef?.(value));
     } else {
       /**
        * Either HMR or `opts.deps` has changed.
@@ -96,7 +96,7 @@ export function useStateRef(initializer, opts = {}) {
  * @template {Record<string, any>} State
  * @typedef {State & {
  *   _prevFn?: string;
- *   set(partial: Partial<State>): void;
+ *   set(partial: Partial<State> | ((prevState: State) => Partial<State> | void)): void;
  *   update(): void;
  *   ref<Key extends keyof State, T extends State[Key]>(
  *      key: Key,

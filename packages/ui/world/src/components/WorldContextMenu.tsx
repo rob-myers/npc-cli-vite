@@ -1,6 +1,6 @@
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { ListIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
@@ -48,8 +48,9 @@ export function WorldContextMenu() {
       onDragStart={state.onDragStart}
       onDragEnd={state.onDragEnd}
     >
-      <button type="button" className="cursor-pointer bg-gray-800 text-white p-2" onClick={state.onToggle}>
+      <button type="button" className="cursor-pointer bg-gray-800 text-white p-2 flex items-center gap-2" onClick={state.onToggle}>
         <ListIcon className="size-5" weight="bold" />
+        {w.nav.pending && <Spinner className="size-4" />}
       </button>
 
       <AnimatePresence>

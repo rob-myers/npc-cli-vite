@@ -52,7 +52,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
 
-      nav: null,
+      nav: { pending: true },
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
         | "assets"
@@ -199,7 +199,7 @@ export type State = {
 
   view: import("./WorldView").State;
   worker: import("./WorldWorker").State;
-  nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
+  nav: Pretty<{ pending: boolean } & Partial<Omit<WW.TiledNavMeshResponse, "type">>>;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
