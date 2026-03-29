@@ -26,7 +26,7 @@
   - ❌ can send config override message
   - ✅ handle hmr in world.worker.ts and inform `<WorldWorker>`
 
-- support hmr `DerivedGmsData` e.g. can change gmData.tops.nonHull
+- ✅ support hmr `DerivedGmsData` e.g. can change gmData.tops.nonHull
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

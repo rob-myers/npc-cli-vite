@@ -64,9 +64,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
-
       nav: null,
       assetsPending: true,
+
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
         | "assets"
@@ -77,18 +77,33 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       devSetupAssetsSync() {
         if (!import.meta.env.DEV || !import.meta.hot) return;
+
         // refetch on assets.json change (DEV)
         const hot = import.meta.hot;
-        const onChanging = () => state.set({ assetsPending: true });
+        const onChanging = () => void state.set({ assetsPending: true });
         const onChanged = () => {
           debug("[World] assets.json changed, refetching");
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         hot.on(assetsJsonChangingEvent, onChanging);
         hot.on(assetsJsonChangedEvent, onChanged);
+
+        const onDerivedGmsDataHMR = (e: Event) => {
+          const NewClass = (e as CustomEvent).detail;
+          debug("[World] HMR: DerivedGmsData updated, recomputing");
+          state.gmsData = new NewClass();
+          for (const gmKey of state.seenGmKeys) {
+            state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
+          }
+          state.gmsData.computeRoot(state.gms);
+          state.update();
+        };
+        window.addEventListener("hmr:DerivedGmsData", onDerivedGmsDataHMR);
+
         return () => {
           hot.off(assetsJsonChangingEvent, onChanging);
           hot.off(assetsJsonChangedEvent, onChanged);
+          window.removeEventListener("hmr:DerivedGmsData", onDerivedGmsDataHMR);
         };
       },
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {

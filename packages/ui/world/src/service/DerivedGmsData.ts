@@ -76,6 +76,14 @@ export default class DerivedGmsData {
   }
 }
 
+if (import.meta.hot) {
+  import.meta.hot.accept((newModule) => {
+    if (newModule) {
+      window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData", { detail: newModule.default }));
+    }
+  });
+}
+
 function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
   return {
     gmKey,
