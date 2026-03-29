@@ -2,7 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { Broadcaster, cn, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { hashJson } from "@npc-cli/util/legacy/generic";
+import { debug, hashJson } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -10,13 +10,20 @@ import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
-import { assetsJsonChangingEvent, assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymbolSavedEvent } from "../const";
+import {
+  assetsJsonChangedEvent,
+  assetsJsonChangingEvent,
+  emptyMapDef,
+  floorTextureDimension,
+  mapEditSymbolSavedEvent,
+} from "../const";
 import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
 import { createLayoutInstance } from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
+import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
@@ -47,6 +54,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: floorTextureDimension,
         height: floorTextureDimension,
       }),
+      texCeil: new TexArray({
+        ctKey: "ceil-tex",
+        numTextures: 1, // can change
+        width: floorTextureDimension,
+        height: floorTextureDimension,
+      }),
 
       gms: [],
       seenGmKeys: [],
@@ -66,11 +79,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         if (!import.meta.env.DEV || !import.meta.hot) return;
         // refetch on assets.json change (DEV)
         const hot = import.meta.hot;
-        const onChanging = () => {
-          state.set({ assetsPending: true });
-        };
+        const onChanging = () => state.set({ assetsPending: true });
         const onChanged = () => {
-          console.log("[World] assets.json changed, refetching");
+          debug("[World] assets.json changed, refetching");
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         hot.on(assetsJsonChangingEvent, onChanging);
@@ -90,7 +101,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       prodSetupHullAssetsSync() {
         const cb = () => {
-          console.log("[World] symbol saved, refetching");
+          debug("[World] symbol saved, refetching");
           state.set({ assetsPending: true });
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
@@ -115,9 +126,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   useEffect(() => {
     state.timer.reset();
     state.view.syncRenderMode();
-    if (!state.disabled) {
-      state.onTick();
-    }
+    if (!state.disabled) state.onTick();
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
     return () => state.stopTick();
   }, [state.disabled]);
@@ -167,6 +176,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         <WorldView className={cn(uiClassName, "bg-zinc-800")}>
           <ambientLight intensity={0.85} color="#ffffff" />
           <Floor />
+          <Ceiling />
           <Walls />
           <Suspense>
             <NPCs />
@@ -197,6 +207,7 @@ export type State = {
   /** Hash of `w.assets` */
   hash: number;
   texFloor: TexArray;
+  texCeil: TexArray;
 
   gms: GeomorphLayoutInstance[];
   /**

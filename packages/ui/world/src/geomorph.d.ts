@@ -13,6 +13,8 @@ declare namespace Geomorph {
   type GmData = {
     gmKey: StarShipGeomorphKey;
     doorSegs: [Geom.Vect, Geom.Vect][];
+    polyDecals: Geom.Poly[];
+    tops: { broad: Geom.Poly[]; hull: Geom.Poly[]; nonHull: Geom.Poly[]; window: Geom.Poly[] };
     unseen: boolean;
     wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta }[];
     wallPolyCount: number;

@@ -1,4 +1,7 @@
 import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
+import { geomService } from "@npc-cli/util";
+import { Poly } from "@npc-cli/util/geom/poly";
+import { wallHeight } from "../const";
 
 export default class DerivedGmsData {
   count = {
@@ -32,10 +35,9 @@ export default class DerivedGmsData {
 
   async computeGmKey(gm: Geomorph.Layout) {
     const gmData = this.byKey[gm.key];
-    // this.seenGmKeys.push(gm.key);
 
     gmData.doorSegs = gm.doors.map(({ seg }) => seg);
-    // gmData.polyDecals = gm.unsorted.filter(x => x.meta.poly === true);
+    gmData.polyDecals = gm.unsorted.filter((x) => x.meta.poly === true);
     gmData.wallSegs = [
       ...gm.walls.flatMap((x) => x.lineSegs.map((seg) => ({ seg, meta: x.meta }))),
       // ...gm.doors.flatMap(connector => this.getLintelSegs(connector)),
@@ -54,6 +56,21 @@ export default class DerivedGmsData {
     gmData.wallPolySegCounts.push(2 * gm.windows.reduce((sum, x) => sum + x.poly.outline.length, 0));
 
     // 🚧 ...
+    const nonHullWallsTouchCeil = gm.walls.filter(
+      (poly) =>
+        poly.meta.hull !== true &&
+        poly.meta.hollow !== true &&
+        (poly.meta.h === undefined || poly.meta.y + poly.meta.h === wallHeight), // touches ceiling
+    );
+    gmData.tops = {
+      broad: gm.walls.filter((x) => x.meta.broad === true),
+      hull: Poly.union(gm.walls.filter((x) => x.meta.hull).concat(gm.hullDoors.map((x) => x.computeThinPoly()))),
+      // nonHull: Poly.union(nonHullWallsTouchCeil.concat(gm.doors.map((door) => door.computeThinPoly()))).flatMap((x) =>
+      //   geomService.createInset(x, 0.02),
+      // ),
+      nonHull: Poly.union(nonHullWallsTouchCeil),
+      window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
+    };
 
     gmData.unseen = false;
   }
@@ -67,5 +84,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     wallSegs: [],
     wallPolyCount: 0,
     wallPolySegCounts: [],
+    polyDecals: [],
+    tops: { broad: [], hull: [], nonHull: [], window: [] },
   };
 }

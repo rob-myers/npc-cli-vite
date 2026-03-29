@@ -7,6 +7,7 @@
     "./types": "./src/types.ts",
     "./geom": "./src/geom/index.ts",
     "./geom/rect": "./src/geom/rect.js",
+    "./geom/poly": "./src/geom/poly.js",
     "./geom/vect": "./src/geom/vect.js",
     "./geom/mat": "./src/geom/mat.js",
     "./json-parser": "./src/service/json-parser.ts",
