@@ -20,7 +20,8 @@ export default function WorldWorker() {
             break;
 
           case "tiled-navmesh-response": {
-            w.nav = { ...msg, pending: false };
+            w.nav = { ...msg };
+            w.assetsPending = false;
             w.events.next({ key: "nav-updated" });
             w.update();
             break;
@@ -78,9 +79,7 @@ export default function WorldWorker() {
       })),
     } satisfies WW.MsgToWorker);
 
-    w.set(({ nav }) => {
-      nav.pending = true;
-    });
+    w.set({ assetsPending: true });
   }, [w.gms, state.reloads]); // request navmesh
 
   return null;

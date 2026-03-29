@@ -50,7 +50,7 @@ export function WorldContextMenu() {
     >
       <button type="button" className="cursor-pointer bg-gray-800 text-white p-2 flex items-center gap-2" onClick={state.onToggle}>
         <ListIcon className="size-5" weight="bold" />
-        {w.nav.pending && <Spinner className="size-4" />}
+        {w.assetsPending && <Spinner className="size-4" />}
       </button>
 
       <AnimatePresence>

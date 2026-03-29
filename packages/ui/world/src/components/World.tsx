@@ -10,7 +10,7 @@ import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
-import { assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymbolSavedEvent } from "../const";
+import { assetsJsonChangingEvent, assetsJsonChangedEvent, emptyMapDef, floorTextureDimension, mapEditSymbolSavedEvent } from "../const";
 import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
 import { createLayoutInstance } from "../service/geomorph";
@@ -52,7 +52,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
 
-      nav: { pending: true },
+      nav: null,
+      assetsPending: true,
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
         | "assets"
@@ -65,12 +66,19 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         if (!import.meta.env.DEV || !import.meta.hot) return;
         // refetch on assets.json change (DEV)
         const hot = import.meta.hot;
-        const cb = () => {
+        const onChanging = () => {
+          state.set({ assetsPending: true });
+        };
+        const onChanged = () => {
           console.log("[World] assets.json changed, refetching");
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
-        hot.on(assetsJsonChangedEvent, cb);
-        return () => hot.off(assetsJsonChangedEvent, cb);
+        hot.on(assetsJsonChangingEvent, onChanging);
+        hot.on(assetsJsonChangedEvent, onChanged);
+        return () => {
+          hot.off(assetsJsonChangingEvent, onChanging);
+          hot.off(assetsJsonChangedEvent, onChanged);
+        };
       },
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {
         return this.seenGmKeys.indexOf(gmKey);
@@ -83,6 +91,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       prodSetupHullAssetsSync() {
         const cb = () => {
           console.log("[World] symbol saved, refetching");
+          state.set({ assetsPending: true });
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         window.addEventListener(mapEditSymbolSavedEvent, cb);
@@ -199,7 +208,8 @@ export type State = {
 
   view: import("./WorldView").State;
   worker: import("./WorldWorker").State;
-  nav: Pretty<{ pending: boolean } & Partial<Omit<WW.TiledNavMeshResponse, "type">>>;
+  nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
+  assetsPending: boolean;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
