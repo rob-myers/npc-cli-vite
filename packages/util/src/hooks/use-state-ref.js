@@ -31,8 +31,7 @@ export function useStateRef(initializer, opts = {}) {
       // Provide useUpdate wrapper `set`
       state.update = update;
       state.set = (partial) => {
-        const nextState = typeof partial === "function" ? partial(state) : partial;
-        Object.assign(state, nextState);
+        Object.assign(state, partial);
         update();
       };
       state.ref = (key, functionRef) => (value) =>
@@ -96,7 +95,7 @@ export function useStateRef(initializer, opts = {}) {
  * @template {Record<string, any>} State
  * @typedef {State & {
  *   _prevFn?: string;
- *   set(partial: Partial<State> | ((prevState: State) => Partial<State> | void)): void;
+ *   set(partial: Partial<State>): void;
  *   update(): void;
  *   ref<Key extends keyof State, T extends State[Key]>(
  *      key: Key,

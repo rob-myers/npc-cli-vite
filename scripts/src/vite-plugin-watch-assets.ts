@@ -33,6 +33,7 @@ export function watchAssetsPlugin(): Plugin {
         const startEpochMs = Date.now();
         const changedFiles = Array.from(changed.keys());
         console.log(`[watch-assets] running gen-assets-json for ${changedFiles.length} file(s)`);
+        server.hot.send({ type: "custom", event: assetsJsonChangingEvent });
 
         try {
           await new Promise<void>((resolve, reject) => {
@@ -70,4 +71,5 @@ export function watchAssetsPlugin(): Plugin {
 }
 
 // Avoid HMR issue
+const assetsJsonChangingEvent: typeof import("@npc-cli/ui__world/const").assetsJsonChangingEvent = "assets-json-changing";
 const assetsJsonChangedEvent: typeof import("@npc-cli/ui__world/const").assetsJsonChangedEvent = "assets-json-changed";
