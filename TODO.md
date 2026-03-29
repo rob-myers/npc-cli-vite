@@ -16,7 +16,10 @@
   - 🔔 issue arises from newly added webworker i.e. it references world/src/const.ts
   - ✅ fix is to send "layout instances" to webworker so it doesn't know about const.ts
 
-- 🚧 do not cut doors out of navmesh
+- ❌ on edit `geomorph.ts` should rebuild assets and trigger update
+  - move request nav worker message to `<WorldWorker>`
+
+- ✅ do not cut doors out of navmesh
 - ✅ vite-plugin-watch-assets recomputes assets.json
 
 - do not recompute all symbols when only edit a hull symbol (DEV)

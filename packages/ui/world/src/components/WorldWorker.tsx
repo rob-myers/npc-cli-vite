@@ -54,6 +54,25 @@ export default function WorldWorker() {
     };
   }, []); // setup worker
 
+  useEffect(() => {
+    if (w.hash === 0) return; // wait for initial world load
+
+    state.worker.postMessage({
+      type: "request-tiled-navmesh",
+      mapKey: w.mapKey,
+      // - tailored data avoids worker dependency on "main thread modules"
+      // - in PROD we send assets mutations too
+      gmGeoms: w.gms.map(({ key, determinant, gridRect, inverseMatrix, mat4, navDecomp }) => ({
+        key,
+        triangulation: navDecomp, // implicit Vect -> {x, y}
+        determinant,
+        gridRect: gridRect.json,
+        inverseMat3: inverseMatrix.json,
+        mat4Array: mat4.toArray(),
+      })),
+    } satisfies WW.MsgToWorker);
+  }, [w.gms]); // request navmesh
+
   return null;
 }
 
