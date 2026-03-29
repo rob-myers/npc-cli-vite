@@ -10,7 +10,7 @@ import { computeGmInstanceMeshes } from "./nav-util";
 
 /* navmesh generation parameters */
 const config = {
-  cellSize: 0.15,
+  cellSize: 0.05,
   cellHeight: 0.15,
   tileSizeVoxels: 32,
   walkableRadiusWorld: 0.1,
@@ -25,7 +25,7 @@ const config = {
   maxVerticesPerPoly: 5,
   detailSampleDistance: 6,
   detailSampleMaxError: 1,
-};
+} as const satisfies Partial<TiledNavMeshOptions>;
 
 export async function generateTiledNavMeshResult(
   gmGeoms: WW.GmGeomForNav[],

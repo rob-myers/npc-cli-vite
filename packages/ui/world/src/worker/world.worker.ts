@@ -2,6 +2,7 @@ import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { debug } from "@npc-cli/util/legacy/generic";
 import { navForFloorDraw } from "./nav-util";
 import { generateTiledNavMeshResult } from "./tiled-navmesh";
+import { workerStore } from "./worker.store";
 
 self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
   const msg = e.data;
@@ -13,8 +14,10 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       break;
 
     case "request-tiled-navmesh": {
-      const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
+      // remember last payload
+      workerStore.setState({ gmGeoms: msg.gmGeoms });
 
+      const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
       self.postMessage({
         type: "tiled-navmesh-response",
         ...tiledNavMeshResult,
@@ -27,3 +30,10 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       throw new ExhaustiveError(msg);
   }
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept((_newModule) => {
+    debug("Handling worker hot-module-reload...");
+    self.postMessage({ type: "worker-hot-module-reload" } satisfies WW.MsgFromWorker);
+  });
+}

@@ -22,6 +22,10 @@
 - ✅ do not cut doors out of navmesh
 - ✅ vite-plugin-watch-assets recomputes assets.json
 
+- ✅ improve HMR onchange tiled-navmesh config
+  - ❌ can send config override message
+  - ✅ handle hmr in world.worker.ts and inform `<WorldWorker>`
+
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - more generally use sub-stratification
