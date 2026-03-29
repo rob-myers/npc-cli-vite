@@ -1,4 +1,9 @@
-import { Rect } from "@npc-cli/util/geom";
+/**
+ * 🔔 editing causes full-page-reload sinc this file also used by webworker.
+ * Can fix by split into separate files.
+ */
+
+import { Rect } from "@npc-cli/util/geom/rect";
 import * as THREE from "three";
 
 /** Clone of unit quad in XZ plane from (0,0,0) to (1,0,1). */
@@ -111,7 +116,7 @@ export function decompToXZGeometry(decomp: Geom.Triangulation, { reverse = false
 
 function decompToXZAttribs(decomp: Geom.Triangulation) {
   const vertices = decomp.vs.flatMap((v) => [v.x, 0, v.y]);
-  const indices = decomp.tris.flatMap((t) => t);
+  const indices = decomp.tris.flat();
   const bounds = Rect.fromPoints(...decomp.vs);
   const uvs = decomp.vs.flatMap(({ x, y }) => [(x - bounds.x) / bounds.width, (y - bounds.y) / bounds.height]);
   return { vertices, indices, uvs };

@@ -1,14 +1,16 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import { Vect } from "@npc-cli/util/geom";
+import { Mat } from "@npc-cli/util/geom/mat";
+import { Rect } from "@npc-cli/util/geom/rect";
+import { Vect } from "@npc-cli/util/geom/vect";
 import { debug, mapValues } from "@npc-cli/util/legacy/generic";
 import type { NavMesh, NavMeshTile } from "navcat";
 import * as THREE from "three";
 import { decompToXZGeometry } from "../service/geometry";
 
-export async function computeGmInstanceMeshes(gms: Geomorph.LayoutInstance[]) {
+export async function computeGmInstanceMeshes(gmGeoms: WW.GmGeomForNav[]) {
   const meshes = [] as THREE.Mesh[];
   const customAreaDefs = [] as TileCacheConvexAreaDef[];
-  for (const { mesh, customAreaDefs } of gms.map(computeGmInstanceMesh)) {
+  for (const { mesh, customAreaDefs } of gmGeoms.map(computeGmInstanceMesh)) {
     meshes.push(mesh);
     customAreaDefs.push(...customAreaDefs);
   }
@@ -22,15 +24,20 @@ export async function computeGmInstanceMeshes(gms: Geomorph.LayoutInstance[]) {
   return { meshes, customAreaDefs };
 }
 
-function computeGmInstanceMesh(gm: Geomorph.LayoutInstance): {
+function computeGmInstanceMesh(gmGeom: WW.GmGeomForNav): {
   mesh: THREE.Mesh;
   customAreaDefs: TileCacheConvexAreaDef[];
 } {
-  const mesh = new THREE.Mesh(decompToXZGeometry(gm.navDecomp, { reverse: gm.determinant === 1 }));
-  mesh.applyMatrix4(gm.mat4);
+  const triangulation: Geom.Triangulation = {
+    tris: gmGeom.triangulation.tris,
+    vs: gmGeom.triangulation.vs.map(({ x, y }) => new Vect(x, y)),
+  };
+
+  const mesh = new THREE.Mesh(decompToXZGeometry(triangulation, { reverse: gmGeom.determinant === 1 }));
+  mesh.applyMatrix4(tmpMatrix4.fromArray(gmGeom.mat4Array));
   mesh.updateMatrixWorld();
 
-  const customAreaDefs: TileCacheConvexAreaDef[] = [];
+  const customAreaDefs: TileCacheConvexAreaDef[] = []; // 🚧
 
   return { mesh, customAreaDefs };
 }
@@ -47,10 +54,14 @@ export interface TileCacheConvexAreaDef {
   }[];
 }
 
-export function navForFloorDraw(gms: Geomorph.LayoutInstance[], nav: NavMesh): FloorNavTris {
-  const gmKeyToFirst = gms.reduce(
+/**
+ * 🔔 We use @see {WW.GmGeomForNav} instead of @see {Geomorph.LayoutInstance}
+ * to avoid HMR issues related to shared webworker code.
+ */
+export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): FloorNavTris {
+  const gmKeyToFirst = gmGeoms.reduce(
     (agg, gm) => ((agg[gm.key] ??= gm), agg),
-    {} as Record<StarShipGeomorphKey, Geomorph.LayoutInstance>,
+    {} as Record<StarShipGeomorphKey, WW.GmGeomForNav>,
   );
   const toNavTris: FloorNavTris = mapValues(gmKeyToFirst, () => []);
 
@@ -61,7 +72,7 @@ export function navForFloorDraw(gms: Geomorph.LayoutInstance[], nav: NavMesh): F
   const tiles = Object.values(nav.tiles);
   for (const tile of tiles) {
     const point = { x: (tile.bounds[0] + tile.bounds[3]) * 0.5, y: (tile.bounds[2] + tile.bounds[5]) * 0.5 };
-    const gm = firstGms.find((x) => x.gridRect.contains(point));
+    const gm = firstGms.find((x) => tmpRect.copy(x.gridRect).contains(point));
     if (gm === undefined) continue;
 
     const tileTris = getTileTriangles(tile); // [positions, indices][]
@@ -74,7 +85,7 @@ export function navForFloorDraw(gms: Geomorph.LayoutInstance[], nav: NavMesh): F
       } else if (i % 3 === 2) {
         // z -> y
         v2d.y = t;
-        gm.inverseMatrix.transformPoint(v2d);
+        tmpMat3.setMatrixValue(gm.inverseMat3).transformPoint(v2d);
         positions[i - 2] = v2d.x;
         positions[i] = v2d.y;
       }
@@ -138,3 +149,7 @@ function getTileTriangles(tile: NavMeshTile): [number[], number[]] {
 
   return [positions, indices];
 }
+
+const tmpRect = new Rect();
+const tmpMat3 = new Mat();
+const tmpMatrix4 = new THREE.Matrix4();

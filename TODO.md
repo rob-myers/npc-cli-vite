@@ -10,10 +10,14 @@
   - ✅ extract triangles and draw in floor
   - ✅ send event which can be awaited (`nav-updated`)
 
+- ✅ fix hmr onchange geomorphs.ts, const.ts and many others
+  - ✅ fix `vite:hmr circular imports detected` (`pnpm dev --debug`)
+  - ✅ `@npc-cli/ui-sdk` root only exports types
+  - 🔔 issue arises from newly added webworker i.e. it references world/src/const.ts
+  - ✅ fix is to send "layout instances" to webworker so it doesn't know about const.ts
+
 - 🚧 do not cut doors out of navmesh
 - ✅ vite-plugin-watch-assets recomputes assets.json
-- 🚧 fix hmr onchange geomorphs.ts, const.ts and many others
-  - probably: `vite:hmr circular imports detected` (`pnpm dev --debug`)
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

@@ -4,8 +4,7 @@ declare namespace WW {
     | {
         type: "request-tiled-navmesh";
         mapKey: string;
-        /** PROD webworker needs to know about hull symbol edits too */
-        mapEditDrafts?: import("@npc-cli/ui__map-edit/editor.schema").MapEditSavedFileJson[];
+        gmGeoms: WW.GmGeomForNav[];
       };
 
   type MsgFromWorker =
@@ -16,4 +15,18 @@ declare namespace WW {
       } & import("navcat/blocks").TiledNavMeshResult);
 
   type TiledNavMeshResponse = Extract<MsgFromWorker, { type: "tiled-navmesh-response" }>;
+
+  /**
+   * Geomorph geometry for navigation mesh generation.
+   * - We've carefully extracted the needed parts to avoid overlap with main thread.
+   * - This avoids HMR issues e.g. on edit packages/ui/world/src/const.ts
+   */
+  type GmGeomForNav = {
+    key: import("@npc-cli/media/starship-symbol").StarShipGeomorphKey;
+    triangulation: Geom.TriangulationJson;
+    determinant: number;
+    gridRect: Geom.RectJson;
+    inverseMat3: Geom.AffineTransform;
+    mat4Array: number[]; // 16 numbers, column-major
+  };
 }
