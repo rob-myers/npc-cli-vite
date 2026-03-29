@@ -4,15 +4,6 @@ import { Poly } from "./poly.js";
 import { Rect } from "./rect.js";
 import { Vect } from "./vect.js";
 
-export const AffineTransformSchema = z.object({
-  a: z.number(),
-  b: z.number(),
-  c: z.number(),
-  d: z.number(),
-  e: z.number(),
-  f: z.number(),
-});
-
 export const CoordSchema = z.tuple([z.number(), z.number()]);
 
 export const MetaSchema = z.record(z.string(), z.any());
@@ -67,4 +58,18 @@ export const polyCodec = z.codec(GeoJsonPolygonSchema, PolySchema, {
   encode: (poly) => poly.geoJson,
 });
 
+export const AffineTransformSchema = z.object({
+  a: z.number(),
+  b: z.number(),
+  c: z.number(),
+  d: z.number(),
+  e: z.number(),
+  f: z.number(),
+});
+
 export const MatSchema = z.instanceof(Mat);
+
+export const matCodec = z.codec(AffineTransformSchema, MatSchema, {
+  decode: (json) => new Mat(json),
+  encode: (mat) => mat.json,
+});

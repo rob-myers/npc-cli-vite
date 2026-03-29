@@ -7,11 +7,10 @@ import { MapKeySchema } from "@npc-cli/ui__map-edit/editor.schema";
 import {
   AffineTransformSchema,
   GeoJsonPolygonSchema,
-  MatSchema,
   MetaSchema,
+  matCodec,
   pointCodec,
   polyCodec,
-  RectSchema,
   rectCodec,
   TriangulationSchema,
 } from "@npc-cli/util/geom";
@@ -138,9 +137,9 @@ export type AssetsType = z.infer<typeof AssetsSchema>;
 export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   gmId: z.number(),
   transform: AffineTransformSchema,
-  matrix: MatSchema,
-  gridRect: RectSchema,
-  inverseMatrix: MatSchema,
+  matrix: matCodec,
+  gridRect: rectCodec,
+  inverseMatrix: matCodec,
   mat4: z.instanceof(Matrix4),
   determinant: z.number(),
 

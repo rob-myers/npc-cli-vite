@@ -132,6 +132,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         [],
       );
 
+      state.worker.worker.postMessage({
+        type: "request-tiled-navmesh",
+        mapKey: state.mapKey,
+        // in PROD we're sending assets mutations too
+        gmGeoms: state.gms.map(({ key, determinant, gridRect, inverseMatrix, mat4, navDecomp }) => ({
+          key,
+          triangulation: navDecomp, // implicit Vect -> {x, y}
+          determinant,
+          gridRect: gridRect.json,
+          inverseMat3: inverseMatrix.json,
+          mat4Array: mat4.toArray(),
+        })),
+      } satisfies WW.MsgToWorker);
+
       for (const gmKey of state.seenGmKeys) {
         state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
       }

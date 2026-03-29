@@ -1,14 +1,10 @@
-import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
-import { getLocalStorageDrafts } from "@npc-cli/ui__map-edit/map-node-api";
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
-import z from "zod";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
   const w = useContext(WorldContext);
-  console.log(w);
 
   const state = useStateRef(
     (): State => ({
@@ -41,6 +37,13 @@ export default function WorldWorker() {
   );
 
   useEffect(() => {
+    /**
+     * 🔔 HMR can break if the webworker shares modules with main thread,
+     * e.g. don't want full-page-reload on edit packages/ui/world/src/const.ts
+     *
+     * For this reason we send specially craft payloads to worker,
+     * avoiding the need to e.g. parse or instantiate geomorphs.
+     */
     const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
     state.worker = worker;
     w.worker = state;
@@ -50,18 +53,6 @@ export default function WorldWorker() {
       worker.terminate();
     };
   }, []); // setup worker
-
-  useEffect(() => {
-    if (!w.assets) return;
-
-    state.worker.postMessage({
-      type: "request-tiled-navmesh",
-      mapKey: w.mapKey,
-      ...(import.meta.env.PROD && {
-        mapEditDrafts: getLocalStorageDrafts().map((draft) => z.encode(MapEditSavedFileSchema, draft)),
-      }),
-    } satisfies WW.MsgToWorker);
-  }, [w.assets, w.mapKey]);
 
   return null;
 }
