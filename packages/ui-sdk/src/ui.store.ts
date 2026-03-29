@@ -7,7 +7,7 @@ import { immer } from "zustand/middleware/immer";
 
 import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";
-import type { WithImmer } from "./with-immer-type";
+import type { WithImmer } from "./with-immer-type.d.ts";
 
 export const uiStoreApi = {
   addUis({ metas, overwrite = true }: { metas: UiInstanceMeta[]; overwrite?: boolean }): void {
