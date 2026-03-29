@@ -38,7 +38,7 @@ export function SkinnedMeshTemplateDemo() {
   }, [texture]);
 
   useEffect(() => {
-    console.log({ gltf, actions, rootBone: bones[0], material: root.material });
+    // console.log({ gltf, actions, rootBone: bones[0], material: root.material });
 
     actions[animationName.idle]?.play();
     setTimeout(() => {

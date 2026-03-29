@@ -30,16 +30,21 @@ export default defineConfig({
 
     process.env.BUILD_AND_ANALYZE ? analyzer() : undefined,
 
-    // On close/reopen laptop in Chrome we do not want HMR to break
     {
       name: "patch-vite-client",
       transform(code, id) {
         if (id.includes("@vite/client") || id.endsWith("client.mjs")) {
-          // Replace specific code or append logic
-          return code.replace(
-            '			if (payload.event === "vite:ws:disconnect") {',
-            '			if (payload.event === "vite:ws:disconnect") {\nconsole.log("[vite] 💔 vite:ws:disconnect reconnecting...");\ntransport.connect(createHMRHandler(handleMessage));return;',
-          );
+          return code
+            .replace(
+              // On close/reopen laptop in Chrome we do not want HMR to break
+              '			if (payload.event === "vite:ws:disconnect") {',
+              '			if (payload.event === "vite:ws:disconnect") {\nconsole.log("[vite] 💔 vite:ws:disconnect reconnecting...");\ntransport.connect(createHMRHandler(handleMessage));return;',
+            )
+            .replace(
+              // Fix console error in webworker probably due to our HMR implementation
+              '				const el = Array.from(document.querySelectorAll("link")).find((e) => !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl));',
+              '				const el = typeof document !== "undefined" ? Array.from(document.querySelectorAll("link")).find((e) => !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)) : undefined;',
+            );
         }
       },
     },
