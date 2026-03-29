@@ -12,7 +12,8 @@ declare namespace WW {
     | ({
         type: "tiled-navmesh-response";
         toNavTris: import("./worker/nav-util").FloorNavTris;
-      } & import("navcat/blocks").TiledNavMeshResult);
+      } & import("navcat/blocks").TiledNavMeshResult)
+    | { type: "worker-hot-module-reload" };
 
   type TiledNavMeshResponse = Extract<MsgFromWorker, { type: "tiled-navmesh-response" }>;
 

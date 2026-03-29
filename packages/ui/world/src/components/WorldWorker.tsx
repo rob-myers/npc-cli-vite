@@ -9,6 +9,7 @@ export default function WorldWorker() {
   const state = useStateRef(
     (): State => ({
       worker: null as unknown as Worker,
+      reloads: 0,
 
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
@@ -22,6 +23,11 @@ export default function WorldWorker() {
             w.nav = { ...msg };
             w.events.next({ key: "nav-updated" });
             w.update();
+            break;
+          }
+
+          case "worker-hot-module-reload": {
+            state.set({ reloads: state.reloads + 1 });
             break;
           }
 
@@ -41,8 +47,8 @@ export default function WorldWorker() {
      * 🔔 HMR can break if the webworker shares modules with main thread,
      * e.g. don't want full-page-reload on edit packages/ui/world/src/const.ts
      *
-     * For this reason we send specially craft payloads to worker,
-     * avoiding the need to e.g. parse or instantiate geomorphs.
+     * - we send specially craft payloads to worker
+     * - this avoids e.g. parse or instantiate geomorphs.
      */
     const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
     state.worker = worker;
@@ -52,7 +58,7 @@ export default function WorldWorker() {
       worker.removeEventListener("message", state.handleWorkerMessage);
       worker.terminate();
     };
-  }, []); // setup worker
+  }, [state.reloads]); // setup worker
 
   useEffect(() => {
     if (w.hash === 0) return; // wait for initial world load
@@ -71,12 +77,13 @@ export default function WorldWorker() {
         mat4Array: mat4.toArray(),
       })),
     } satisfies WW.MsgToWorker);
-  }, [w.gms]); // request navmesh
+  }, [w.gms, state.reloads]); // request navmesh
 
   return null;
 }
 
 export type State = {
+  reloads: number;
   worker: Worker;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
   ping(): void;
