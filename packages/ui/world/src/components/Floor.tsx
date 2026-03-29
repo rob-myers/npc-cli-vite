@@ -169,7 +169,7 @@ export default function Floor() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.gms.length, w.nav]);
+  }, [w.hash, w.gms, w.gmsData]);
 
   return (
     <group>
