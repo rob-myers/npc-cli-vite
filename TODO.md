@@ -39,6 +39,11 @@
   - ✅ sheets.json schema
   - ✅ write sheets.json
 
+- 🚧 gen-starship-sheets should also draw the spritesheets
+  - ✅ sheets.json entries have sheetId
+  - ✅ draw the spritesheets
+  - 🚧 find a way to restrict bridge--042 image size
+
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - more generally use sub-stratification
