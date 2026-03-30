@@ -1,6 +1,3 @@
-import childProcess from "node:child_process";
-import fs from "node:fs";
-import { ansi } from "@npc-cli/cli/shell/const";
 // relative imports for sucrase-node
 import { assertDefined } from "@npc-cli/util/legacy/generic";
 
@@ -134,56 +131,6 @@ function normalizeStarshipChars(word: string): string {
     .replace(/&/g, "and")
     .replace(/[ -]+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
-}
-
-/**
- * Logs std{out,err} with `label` prefix.
- * Options can be provided as single args like `--quality=75`.
- */
-export async function labelledSpawn(
-  label: string,
-  command: string,
-  ...args: string[]
-): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const proc = childProcess.spawn(command, args);
-    proc.stdout.on("data", (data) =>
-      (data.toString() as string)
-        .trimEnd()
-        .split("\n")
-        .forEach((line) =>
-          console.log(`[${ansi.Bold}${label}${ansi.Reset}]`, `${line}${ansi.Reset}`),
-        ),
-    );
-    // stderr needn't contain error messages
-    proc.stderr.on("data", (data) =>
-      (data.toString() as string)
-        .trimEnd()
-        .split("\n")
-        .forEach((line) =>
-          console.log(`[${ansi.Bold}${label}${ansi.Reset}]`, `${line}${ansi.Reset}`),
-        ),
-    );
-    // proc.stdout.on('close', () => resolve());
-    proc.on("error", (e) => reject(e));
-    proc.on("exit", (errorCode) => {
-      if (typeof errorCode === "number" && errorCode !== 0) {
-        reject({ errorCode });
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-/** Read file as string, or `null` on error. */
-export async function tryReadString(filePath: string): Promise<string | null> {
-  try {
-    return (await fs.promises.readFile(filePath)).toString();
-  } catch {
-    // assume doesn't exist
-    return null;
-  }
 }
 
 interface FilenameMeta {

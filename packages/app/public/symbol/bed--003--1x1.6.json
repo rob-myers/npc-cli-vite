@@ -21,10 +21,10 @@
       "name": "obstacle bed",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 25, "f": 12.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 24, "f": 11},
       "type": "rect",
-      "baseRect": {"width": 72.5, "height": 37.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 25, 12.5)"
+      "baseRect": {"width": 73.5, "height": 39.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 24, 11)"
     },
     {
       "id": "0b4aa3e9-ac14-4473-86d6-3af8b9626e6e",
@@ -33,7 +33,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "rect",
-      "baseRect": {"width": 22.5, "height": 60},
+      "baseRect": {"width": 24, "height": 61},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
