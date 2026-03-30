@@ -15,7 +15,7 @@
 import fs, { writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { SymbolGraph } from "@npc-cli/graph";
+import { SymbolGraph, type SymbolGraphNode } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
@@ -55,6 +55,7 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
   map: {},
   symbol: {},
   flattened: {},
+  stratifiedSymbolNodes: [],
   layout: {},
 };
 
@@ -63,11 +64,12 @@ updateChangedSymbolsAndMaps(changedFiles, assets);
 perf("symbols/maps");
 
 perf("stratify symbols");
-const symbolsStratified = stratifySymbols(assets);
+const symbolGraph = SymbolGraph.from(assets.symbol);
+assets.stratifiedSymbolNodes = symbolGraph.stratify();
 perf("stratify symbols");
 
 perf("flatten symbols");
-flattenSymbols(symbolsStratified, assets);
+flattenSymbols(assets.stratifiedSymbolNodes, assets);
 perf("flatten symbols");
 
 perf("create layouts");
@@ -106,12 +108,7 @@ function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType)
   }
 }
 
-function stratifySymbols(assets: AssetsType) {
-  const symbolGraph = SymbolGraph.from(assets.symbol);
-  return symbolGraph.stratify();
-}
-
-function flattenSymbols(symbolsStratified: ReturnType<typeof stratifySymbols>, assets: AssetsType) {
+function flattenSymbols(symbolsStratified: SymbolGraphNode[][], assets: AssetsType) {
   const flattened: AssetsType["flattened"] = {};
   for (const level of symbolsStratified) {
     for (const { id: symbolKey } of level) {

@@ -6,7 +6,7 @@ import "@npc-cli/ui__world/geomorph.d.ts";
  * Node id is respective `SymbolKey`.
  */
 export class SymbolGraph extends BaseGraph<Graph.SymbolGraphNode, Graph.SymbolGraphEdgeOpts> {
-  static from(input: Graph.SymbolGraphJson | Geomorph.AssetsType['symbol']) {
+  static from(input: Graph.SymbolGraphJson | Geomorph.AssetsSymbolLookup) {
     if ("nodes" in input) {
       return new SymbolGraph().plainFrom(input);
     } else {

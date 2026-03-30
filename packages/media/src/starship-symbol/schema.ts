@@ -1,6 +1,6 @@
 import { keys } from "@npc-cli/util/legacy/generic";
 import z from "zod";
-import { geomorphKeys, symbolByGroup } from "./const";
+import { geomorphKeys, symbolByGroup } from "./const.ts";
 
 export const StarShipSymbolImageKeySchema = z.literal(Object.values(symbolByGroup).flatMap((group) => keys(group)));
 export type StarshipSymbolImageKey = z.infer<typeof StarShipSymbolImageKeySchema>;

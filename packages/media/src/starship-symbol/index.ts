@@ -1,2 +1,2 @@
-export * from "./const";
-export * from "./schema";
+export * from "./const.ts";
+export * from "./schema.ts";

@@ -1,3 +1,4 @@
+import { SymbolGraphNodeSchema } from "@npc-cli/graph";
 import {
   StarShipGeomorphKeySchema,
   StarShipGeomorphNumberSchema,
@@ -126,10 +127,14 @@ export const AssetsMapDefSchema = z.object({
 });
 export type AssetsMapDef = z.infer<typeof AssetsMapDefSchema>;
 
+export const AssetsSymbolLookupSchema = z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema);
+export type AssetsSymbolLookup = z.infer<typeof AssetsSymbolLookupSchema>;
+
 export const AssetsSchema = z.object({
-  symbol: z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema),
+  symbol: AssetsSymbolLookupSchema,
   map: z.partialRecord(MapKeySchema, AssetsMapDefSchema),
   flattened: z.partialRecord(StarShipSymbolImageKeySchema, AssetsFlatSymbolSchema),
+  stratifiedSymbolNodes: z.array(z.array(SymbolGraphNodeSchema)),
   layout: z.partialRecord(StarShipGeomorphKeySchema, GeomorphLayoutSchema),
 });
 export type AssetsType = z.infer<typeof AssetsSchema>;
