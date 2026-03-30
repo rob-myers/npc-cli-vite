@@ -5,7 +5,7 @@ import { MaxRectsPacker, Rectangle } from "maxrects-packer";
  * Output width is maximum over all sheet widths.
  * Output height is maximum over all sheet heights.
  */
-export default function packRectangles<T>(
+export function packRectangles<T>(
   rectsToPack: PrePackedRect<T>[],
   opts: {
     logPrefix: string;

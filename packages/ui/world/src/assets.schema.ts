@@ -172,6 +172,19 @@ export type GeomorphLayoutInstance = z.infer<typeof GeomorphLayoutInstanceSchema
 // });
 // export type ObstacleSheetRectCtxt = z.infer<typeof ObstacleSheetRectCtxtSchema>;
 
+export const StarShipSymbolSheetDatumSchema = z.object({
+  key: StarShipSymbolImageKeySchema,
+  group: z.string(),
+});
+export type StarShipSymbolSheetDatum = z.infer<typeof StarShipSymbolSheetDatumSchema>;
+
+export const StarShipSymbolSheetEntrySchema = z.object({
+  key: StarShipSymbolImageKeySchema,
+  rect: rectCodec,
+  sheetId: z.number(),
+});
+export type StarShipSymbolSheetEntry = z.infer<typeof StarShipSymbolSheetEntrySchema>;
+
 /**
  * For public/sheets.json
  */
@@ -181,15 +194,9 @@ export const SheetsSchema = z.object({
    * - key format `{symbolKey} ${obstacleId}`
    * - `rect` in Starship Geomorphs Units (sgu), possibly scaled-up for higher-res images
    */
-  symbol: z.partialRecord(
-    StarShipSymbolImageKeySchema,
-    z.object({
-      key: StarShipSymbolImageKeySchema,
-      rect: rectCodec,
-    }),
-  ),
+  symbol: z.partialRecord(StarShipSymbolImageKeySchema, StarShipSymbolSheetEntrySchema),
   /** Aligned to sheets; its length is the number of the sheets. */
-  obstacleDims: z.array(z.object({ width: z.number(), height: z.number() })),
+  symbolSheetDims: z.array(z.object({ width: z.number(), height: z.number() })),
   /** Maximum over all sheets, for texture array */
-  maxObstacleDim: z.object({ width: z.number(), height: z.number() }),
+  maxSymbolSheetDim: z.object({ width: z.number(), height: z.number() }),
 });
