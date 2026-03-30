@@ -70,18 +70,7 @@ declare namespace Geomorph {
 
   //#endregion
 
-  type ObstacleKey = `${StarshipSymbolImageKey} ${number}`;
+  type ObstacleKey = import("@npc-cli/ui__world/assets.schema").ObstacleKey;
 
-  type ObstacleSheetRectCtxt = {
-    symbolKey: StarshipSymbolImageKey;
-    /**
-     * Index inside symbol (0-based)
-     * _NOTE_: often only one obstacle in a given symbol
-     */
-    obstacleId: number;
-    /** Spritesheet id (0-based) */
-    sheetId: number;
-    /** e.g. `chair` */
-    type: string;
-  };
+  // type ObstacleSheetRectCtxt = import("@npc-cli/ui__world/assets.schema").ObstacleSheetRectCtxt;
 }

@@ -30,6 +30,7 @@ export const StarshipSymbolPngsManifestSchema = z.object({
   byKey: z.record(
     StarShipSymbolImageKeySchema,
     z.object({
+      key: StarShipSymbolImageKeySchema,
       group: z.literal(keys(symbolByGroup)),
       width: z.number(),
       height: z.number(),

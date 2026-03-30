@@ -154,3 +154,42 @@ export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   isHullDoor: z.function({ input: [z.number()], output: z.boolean() }),
 });
 export type GeomorphLayoutInstance = z.infer<typeof GeomorphLayoutInstanceSchema>;
+
+// 🚧 TODO use during assets.json build?
+// export const ObstacleKeySchema = z.templateLiteral([StarShipSymbolImageKeySchema, z.literal(" "), z.number()]);
+// export type ObstacleKey = z.infer<typeof ObstacleKeySchema>;
+// export const ObstacleSheetRectCtxtSchema = z.object({
+//   symbolKey: StarShipSymbolImageKeySchema,
+//   /**
+//    * Index inside symbol (0-based)
+//    * _NOTE_: often only one obstacle in a given symbol
+//    */
+//   obstacleId: z.number(),
+//   /** Spritesheet id (0-based) */
+//   sheetId: z.number(),
+//   /** e.g. `chair` */
+//   type: z.string(),
+// });
+// export type ObstacleSheetRectCtxt = z.infer<typeof ObstacleSheetRectCtxtSchema>;
+
+/**
+ * For public/sheets.json
+ */
+export const SheetsSchema = z.object({
+  /**
+   * Over all sheets
+   * - key format `{symbolKey} ${obstacleId}`
+   * - `rect` in Starship Geomorphs Units (sgu), possibly scaled-up for higher-res images
+   */
+  symbol: z.partialRecord(
+    StarShipSymbolImageKeySchema,
+    z.object({
+      key: StarShipSymbolImageKeySchema,
+      rect: rectCodec,
+    }),
+  ),
+  /** Aligned to sheets; its length is the number of the sheets. */
+  obstacleDims: z.array(z.object({ width: z.number(), height: z.number() })),
+  /** Maximum over all sheets, for texture array */
+  maxObstacleDim: z.object({ width: z.number(), height: z.number() }),
+});
