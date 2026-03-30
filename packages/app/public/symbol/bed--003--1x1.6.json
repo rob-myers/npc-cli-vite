@@ -5,27 +5,15 @@
   "nodes": [
     {
       "id": "8b95a929-8f98-4d45-9960-3b78537063db",
-      "name": "bed--003--1x1.6 1",
+      "name": "bed--003--1x1.6",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
+      "srcType": "symbol",
       "srcKey": "bed--003--1x1.6",
-      "baseRect": {
-        "width": 100.4,
-        "height": 61.400000000000006
-      },
-      "offset": {
-        "x": -0.7,
-        "y": 0
-      },
+      "baseRect": {"width": 100.4, "height": 61.400000000000006},
+      "offset": {"x": -0.7, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, -0.7, 0)"
     },
     {
@@ -33,19 +21,9 @@
       "name": "obstacle bed",
       "locked": false,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 25,
-        "f": 12.5
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 25, "f": 12.5},
       "type": "rect",
-      "baseRect": {
-        "width": 72.5,
-        "height": 37.5
-      },
+      "baseRect": {"width": 72.5, "height": 37.5},
       "cssTransform": "matrix(1, 0, 0, 1, 25, 12.5)"
     },
     {
@@ -53,28 +31,13 @@
       "name": "obstacle table",
       "locked": false,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "rect",
-      "baseRect": {
-        "width": 22.5,
-        "height": 60
-      },
+      "baseRect": {"width": 22.5, "height": 60},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": {
-    "width": 100.4,
-    "height": 61.4,
-    "x": -0.7,
-    "y": 0
-  },
+  "bounds": {"x": -0.7, "y": 0, "width": 100.7, "height": 61.4},
   "type": "symbol",
   "key": "bed--003--1x1.6"
 }
