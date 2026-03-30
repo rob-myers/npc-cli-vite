@@ -11,6 +11,9 @@ declare namespace Geomorph {
 
   type ConnectorJson = import("@npc-cli/ui__world/assets.schema").ConnectorJson;
 
+  type StarshipSymbolImageKey = import("@npc-cli/media/starship-symbol").StarshipSymbolImageKey;
+  type StarShipGeomorphKey = import("@npc-cli/media/starship-symbol").StarShipGeomorphKey;
+
   type GmData = {
     gmKey: StarShipGeomorphKey;
     doorSegs: [Geom.Vect, Geom.Vect][];
@@ -66,4 +69,19 @@ declare namespace Geomorph {
   type RoomDecor = Set<Geomorph.Decor>;
 
   //#endregion
+
+  type ObstacleKey = `${StarshipSymbolImageKey} ${number}`;
+
+  type ObstacleSheetRectCtxt = {
+    symbolKey: StarshipSymbolImageKey;
+    /**
+     * Index inside symbol (0-based)
+     * _NOTE_: often only one obstacle in a given symbol
+     */
+    obstacleId: number;
+    /** Spritesheet id (0-based) */
+    sheetId: number;
+    /** e.g. `chair` */
+    type: string;
+  };
 }

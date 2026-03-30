@@ -1,7 +1,7 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
-import { SixTupleSchema } from "@npc-cli/util";
+import { SixTupleSchema } from "@npc-cli/util/geom";
 import z from "zod";
-import { SymbolGraph } from "./symbol-graph";
+import { SymbolGraph } from "./symbol-graph.ts";
 
 export const SymbolGraphNodeSchema = z.object({
   id: StarShipSymbolImageKeySchema,

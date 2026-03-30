@@ -17,8 +17,8 @@ import {
 } from "@npc-cli/util/geom";
 import { Matrix4 } from "three/src/math/Matrix4.js";
 import z from "zod";
-import { DecorPointSchema, DecorSchema } from "./decor.schema";
-import { Connector } from "./service/Connector";
+import { DecorPointSchema, DecorSchema } from "./decor.schema.ts";
+import { Connector } from "./service/Connector.ts";
 
 export const ConnectorJsonSchema = z.object({
   poly: GeoJsonPolygonSchema,
