@@ -21,7 +21,7 @@ import {
 } from "../service/rename-starship-symbols";
 
 /**
- * Rename & trim PNGs
+ * Rename & trim PNGs storing them in packages/media/src/starship-symbol/output
  * - Starship Symbols 2.0 by Robert Pearce https://travellerrpgblog.blogspot.com/
  * - Source PNGs extracted by Eric B. Smith http://gurpsland.no-ip.org/geomorphs/
  *

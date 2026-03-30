@@ -27,7 +27,6 @@ export function getGeomorphNumber(gmKey: StarShipGeomorphKey): StarshipGeomorphN
 }
 
 export const StarshipSymbolPngsManifestSchema = z.object({
-  modifiedAt: z.string(),
   byKey: z.record(
     StarShipSymbolImageKeySchema,
     z.object({

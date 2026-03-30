@@ -30,8 +30,8 @@
 
 - 🚧 generate spritesheets for symbols reachable by some MapEdit file
   - ✅ `gen-assets-json` stores `assets.stratifiedSymbolNodes`
-  - script `gen-starship-sheets` restricts to leaves in `assets.stratifiedSymbolNodes`
-  - script `gen-starship-sheets` generates spritesheet using `maxrects-packer`
+  - ✅ script `gen-starship-sheets` restricts to leaves in `assets.stratifiedSymbolNodes`
+  - 🚧 script `gen-starship-sheets` generates spritesheet using `maxrects-packer`
     > see legacy `npc-cli/service/rects-packer.js`
   - supports multiple sheets
 
