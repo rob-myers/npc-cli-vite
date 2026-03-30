@@ -30,10 +30,14 @@
 
 - 🚧 generate spritesheets for symbols reachable by some MapEdit file
   - ✅ `gen-assets-json` stores `assets.stratifiedSymbolNodes`
-  - ✅ script `gen-starship-sheets` restricts to leaves in `assets.stratifiedSymbolNodes`
-  - 🚧 script `gen-starship-sheets` generates spritesheet using `maxrects-packer`
-    > see legacy `npc-cli/service/rects-packer.js`
-  - supports multiple sheets
+  - ❌ script `gen-starship-sheets` restricts to leaves in `assets.stratifiedSymbolNodes`
+    - we cannot restrict to leaves: we need every symbol containing an "obstacle" polygon
+  - ✅ find every non-flattened symbol containing an "obstacle" polygon
+  - ✅ script `gen-starship-sheets` generates spritesheet data using `maxrects-packer`
+    - ✅ migrate legacy `npc-cli/service/rects-packer.js`
+  - ✅ supports multiple sheets 
+  - 🚧 sheets.json schema
+  - write sheets.json
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

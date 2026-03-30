@@ -207,3 +207,6 @@ export const geomorphKeys = [...keys(symbolByGroup["geomorph-core"]), ...keys(sy
  * - 1 sgu ~ 60x60 SVG units
  */
 export const sguScalePngToSvgFactor = 0.2;
+
+/** Should be `1 / sguScalePngToSvgFactor` */
+export const sguScaleSvgToPngFactor = 5;
