@@ -216,21 +216,9 @@ declare namespace Graph {
 
   //#region SymbolGraph
 
-  interface SymbolGraphNode {
-    id: import("@npc-cli/media/starship-symbol").StarshipSymbolImageKey;
-  }
-
-  interface SymbolGraphEdgeOpts extends BaseEdgeOpts {
-    transform: Geom.SixTuple;
-    meta: Meta;
-  }
-
-  type SymbolGraphJson = GraphJson<SymbolGraphNode, SymbolGraphEdgeOpts> & {
-    /** e.g. `"20,20"` */
-    size?: string;
-    /** e.g. `"LR"` */
-    rankdir?: string;
-  };
+  type SymbolGraphNode = import("./schema").SymbolGraphNode;
+  type SymbolGraphEdgeOpts = import("./schema").SymbolGraphEdgeOpts;
+  type SymbolGraphJson = import("./schema").SymbolGraphJson;
 
   //#endregion
 
