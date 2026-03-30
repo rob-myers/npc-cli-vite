@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 
 /**
+ * - creates public/sheets.json
+ * - creates public/sheet/symbol.{sheetId}.png
+ *
  * Usage
  * ```sh
  * pnpm gen-starship-sheets
  * pnpm gen-starship-sheets --prod
  * ```
- * - assumes `public/assets.json`
- * - assumes `public/starship-symbol/manifest.json`
+ * - assumes `pngquant`, `public/assets.json`, `public/starship-symbol/manifest.json`
  * - "prod" flag produces smaller filesize (same dimensions)
  *
- * We could have restricted to the rectangular bounds of obstacle polygons
- * in unflattened symbols. This would produce a much smaller `width x height`
- * but would also need to be recomputed on change obstacle.
+ * We could have restricted to the rectangular bounds of obstacle polygons in
+ * unflattened symbols. This would produce a much smaller `width x height`
+ * but would also need to be recomputed onchange obstacle.
  * We prefer to avoid such recomputations e.g. for better Dev experience.
  */
 
@@ -41,6 +43,8 @@ import starshipSymbolManifestEncoded from "../../../packages/app/public/starship
   type: "json",
 };
 import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
+import { PROJECT_ROOT } from "../const.ts";
+import { loggedSpawn } from "../service/logged-spawn.ts";
 
 const {
   values: { prod },
@@ -73,8 +77,9 @@ const {
   },
 );
 
-const sheetsJsonPath = path.resolve("packages/app/public", "sheets.json");
+//#region sheets.json
 
+const sheetsJsonPath = path.resolve("packages/app/public", "sheets.json");
 const sheet = SheetsSchema.encode({
   symbol: Object.fromEntries(
     bins.flatMap((bin, sheetId) =>
@@ -91,9 +96,12 @@ const sheet = SheetsSchema.encode({
   symbolSheetDims: bins.map((bin) => ({ width: bin.width, height: bin.height })),
   maxSymbolSheetDim: { width: maxWidth, height: maxHeight },
 });
-
 const nextSheetRaw = safeJsonCompact(sheet);
 writeFileSync(sheetsJsonPath, nextSheetRaw);
+
+//#endregion
+
+//#region sheets.{sheetId}.png
 
 const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");
@@ -108,7 +116,9 @@ for (const [sheetId, bin] of bins.entries()) {
   for (const rect of bin.rects) {
     const image = await loadImage(path.resolve(starshipSymbolDir, `${rect.data.key}.png`));
 
-    if (prod) {
+    if (!prod) {
+      ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
+    } else {
       // clip to the obstacles actually used
       const symKey = rect.data.key as StarshipSymbolImageKey;
       const sym = assets.symbol[symKey]!;
@@ -129,10 +139,13 @@ for (const [sheetId, bin] of bins.entries()) {
         ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
         ct.restore();
       }
-    } else {
-      ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
     }
   }
 
   await canvas.toFile(`${baseSymbolsSheetPath}.${sheetId}.png`);
 }
+
+//#endregion
+
+process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
+await loggedSpawn({ label: "pngquant", command: "pngquant", args: ["--force", "--ext", ".png", "*.png"], shell: true });
