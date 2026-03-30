@@ -31,17 +31,16 @@ import {
   type StarShipSymbolSheetEntry,
 } from "@npc-cli/ui__world/assets.schema";
 import { worldToSguScale } from "@npc-cli/ui__world/const";
-import { Poly } from "@npc-cli/util/geom/poly";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
-import assetsEncoded from "../../../packages/app/public/assets.json" with { type: "json" };
+import assetsEncoded from "../../..//packages/app/public/assets.json" with { type: "json" };
 import starshipSymbolManifestEncoded from "../../../packages/app/public/starship-symbol/manifest.json" with {
   type: "json",
 };
-import { packRectangles } from "../service/rects-packer.ts";
+import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
 
 const {
   values: { prod },
@@ -118,14 +117,20 @@ for (const [sheetId, bin] of bins.entries()) {
         // assume top-left bounds coincides with underlying image top-left
         poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
       );
-      ct.save();
-      drawPolygons(ct as unknown as CanvasRenderingContext2D, Poly.union(polys), { clip: true });
-    }
 
-    ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
-
-    if (prod) {
-      ct.restore();
+      // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
+      for (const poly of polys) {
+        ct.save();
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
+          clip: true,
+          fillStyle: "red",
+          strokeStyle: null,
+        });
+        ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
+        ct.restore();
+      }
+    } else {
+      ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
     }
   }
 

@@ -198,6 +198,10 @@ class GeomService {
     input.z = toPrecision(input.z, dp);
     return input;
   }
+
+  triangulationToPolys(decomp: Geom.Triangulation) {
+    return decomp.tris.map(([u, v, w]) => new Poly([decomp.vs[u], decomp.vs[v], decomp.vs[w]]));
+  }
 }
 
 export const geomService = new GeomService();
