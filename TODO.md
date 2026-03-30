@@ -35,7 +35,7 @@
   - ✅ find every non-flattened symbol containing an "obstacle" polygon
   - ✅ script `gen-starship-sheets` generates spritesheet data using `maxrects-packer`
     - ✅ migrate legacy `npc-cli/service/rects-packer.js`
-  - ✅ supports multiple sheets 
+  - ✅ supports multiple sheets (0-based)
   - ✅ sheets.json schema
   - ✅ write sheets.json
 
@@ -45,7 +45,7 @@
   - ❌ find a way to restrict bridge--042 image size
     - more obstacles from it will be added
   - ✅ can `pnpm gen-starship-sheets --prod`
-    - produces alternative "optimized" texture `.prod.png` only drawing obstacle-covered-parts
+    - produces alternative "optimized" texture `.prod.{texId}.png` only drawing obstacle-covered-parts
     - PROD only: smaller download and still have decor cuboid "obstacles"
     - still wastes texture space (memory)
 

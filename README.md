@@ -128,6 +128,17 @@ Stuff I've noticed
 - select two objects then can Cmd+Drag create box e.g. of vertices
 - z gets to wireframe and back
 
+# Pngquant
+
+```sh
+brew install pngquant
+
+# manual usage
+cd packages/app/public/sheet
+pngquant --ext .pngquant.png *.png
+```
+
+
 # Dev scripts
 
 ```sh
