@@ -3,7 +3,7 @@ import { SixTupleSchema } from "@npc-cli/util";
 import z from "zod";
 import { SymbolGraph } from "./symbol-graph";
 
-const SymbolGraphNodeSchema = z.object({
+export const SymbolGraphNodeSchema = z.object({
   id: StarShipSymbolImageKeySchema,
 });
 

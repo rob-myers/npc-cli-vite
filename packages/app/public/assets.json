@@ -241,7 +241,22 @@
       ],
       "windows": [],
       "hullWalls": [],
-      "symbols": []
+      "symbols": [
+        {
+          "symbolKey": "console--051--0.4x0.6",
+          "width": 0.75,
+          "height": 0.75,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 4.125,
+            "f": 1.4625
+          },
+          "meta": {"console--051--0.4x0.6": true}
+        }
+      ]
     },
     "console--019--2x2": {
       "key": "console--019--2x2",
@@ -1137,6 +1152,82 @@
       "walls": [],
       "windows": []
     },
+    "console--033--0.4x0.6": {
+      "key": "console--033--0.4x0.6",
+      "isHull": false,
+      "width": 0.75,
+      "height": 0.75,
+      "bounds": {"x": 0.05, "y": -0.0325, "width": 0.67, "height": 0.805},
+      "decor": [],
+      "doors": [],
+      "obstacles": [],
+      "unsorted": [],
+      "walls": [],
+      "windows": []
+    },
+    "console--051--0.4x0.6": {
+      "key": "console--051--0.4x0.6",
+      "isHull": false,
+      "width": 0.75,
+      "height": 0.75,
+      "bounds": {"x": 0, "y": -0.0175, "width": 0.75, "height": 0.775},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [[[0.75, 0], [0.75, 0.75], [0, 0.75], [0, 0]]],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--051--0.4x0.6",
+            "obsId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": []
+    },
+    "extra--003--chair--0.25x0.25": {
+      "key": "extra--003--chair--0.25x0.25",
+      "isHull": false,
+      "width": 0.5,
+      "height": 0.5,
+      "bounds": {"x": 0.0075, "y": -0.0075, "width": 0.485, "height": 0.515},
+      "decor": [],
+      "doors": [],
+      "obstacles": [],
+      "unsorted": [],
+      "walls": [],
+      "windows": []
+    },
+    "extra--004--desk--0.5x1": {
+      "key": "extra--004--desk--0.5x1",
+      "isHull": false,
+      "width": 0.75,
+      "height": 1.5,
+      "bounds": {"x": -0.0125, "y": -0.0175, "width": 0.785, "height": 1.535},
+      "decor": [],
+      "doors": [],
+      "obstacles": [],
+      "unsorted": [],
+      "walls": [],
+      "windows": []
+    },
+    "iris-valves--005--1x1": {
+      "key": "iris-valves--005--1x1",
+      "isHull": false,
+      "width": 1.5,
+      "height": 1.5,
+      "bounds": {"x": 0, "y": 0, "width": 1.5, "height": 1.5},
+      "decor": [],
+      "doors": [],
+      "obstacles": [],
+      "unsorted": [],
+      "walls": [],
+      "windows": []
+    },
     "bridge--042--8x9": {
       "key": "bridge--042--8x9",
       "isHull": false,
@@ -1248,6 +1339,19 @@
             "symKey": "bridge--042--8x9",
             "obsId": 1
           }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[4.125, 2.2125], [3.375, 2.2125], [3.375, 1.4625], [4.125, 1.4625]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--051--0.4x0.6",
+            "obsId": 0,
+            "transform": [0, 1, -1, 0, 4.125, 1.4625]
+          }
         }
       ],
       "unsorted": [],
@@ -1338,82 +1442,6 @@
           "meta": {"wall": true, "dark": true, "broad": true}
         }
       ],
-      "windows": []
-    },
-    "console--033--0.4x0.6": {
-      "key": "console--033--0.4x0.6",
-      "isHull": false,
-      "width": 0.75,
-      "height": 0.75,
-      "bounds": {"x": 0.05, "y": -0.0325, "width": 0.67, "height": 0.805},
-      "decor": [],
-      "doors": [],
-      "obstacles": [],
-      "unsorted": [],
-      "walls": [],
-      "windows": []
-    },
-    "console--051--0.4x0.6": {
-      "key": "console--051--0.4x0.6",
-      "isHull": false,
-      "width": 0.75,
-      "height": 0.75,
-      "bounds": {"x": 0, "y": -0.0175, "width": 0.75, "height": 0.775},
-      "decor": [],
-      "doors": [],
-      "obstacles": [
-        {
-          "type": "Polygon",
-          "coordinates": [[[0.75, 0], [0.75, 0.75], [0, 0.75], [0, 0]]],
-          "meta": {
-            "obstacle": true,
-            "chair": true,
-            "symKey": "console--051--0.4x0.6",
-            "obsId": 0
-          }
-        }
-      ],
-      "unsorted": [],
-      "walls": [],
-      "windows": []
-    },
-    "extra--003--chair--0.25x0.25": {
-      "key": "extra--003--chair--0.25x0.25",
-      "isHull": false,
-      "width": 0.5,
-      "height": 0.5,
-      "bounds": {"x": 0.0075, "y": -0.0075, "width": 0.485, "height": 0.515},
-      "decor": [],
-      "doors": [],
-      "obstacles": [],
-      "unsorted": [],
-      "walls": [],
-      "windows": []
-    },
-    "extra--004--desk--0.5x1": {
-      "key": "extra--004--desk--0.5x1",
-      "isHull": false,
-      "width": 0.75,
-      "height": 1.5,
-      "bounds": {"x": -0.0125, "y": -0.0175, "width": 0.785, "height": 1.535},
-      "decor": [],
-      "doors": [],
-      "obstacles": [],
-      "unsorted": [],
-      "walls": [],
-      "windows": []
-    },
-    "iris-valves--005--1x1": {
-      "key": "iris-valves--005--1x1",
-      "isHull": false,
-      "width": 1.5,
-      "height": 1.5,
-      "bounds": {"x": 0, "y": 0, "width": 1.5, "height": 1.5},
-      "decor": [],
-      "doors": [],
-      "obstacles": [],
-      "unsorted": [],
-      "walls": [],
       "windows": []
     },
     "console--019--2x2": {
@@ -2614,6 +2642,25 @@
       "windows": []
     }
   },
+  "stratifiedSymbolNodes": [
+    [
+      {"id": "bed--003--1x1.6"},
+      {"id": "console--033--0.4x0.6"},
+      {"id": "console--051--0.4x0.6"},
+      {"id": "extra--003--chair--0.25x0.25"},
+      {"id": "extra--004--desk--0.5x1"},
+      {"id": "iris-valves--005--1x1"}
+    ],
+    [
+      {"id": "bridge--042--8x9"},
+      {"id": "console--019--2x2"},
+      {"id": "stateroom--012--2x2"},
+      {"id": "stateroom--014--2x2"},
+      {"id": "stateroom--019--2x3"},
+      {"id": "stateroom--036--2x4"}
+    ],
+    [{"id": "g-301--bridge"}]
+  ],
   "layout": {
     "g-301--bridge": {
       "key": "g-301--bridge",

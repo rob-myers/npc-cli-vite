@@ -1,5 +1,6 @@
 declare namespace Geomorph {
   type AssetsType = import("@npc-cli/ui__world/assets.schema").AssetsType;
+  type AssetsSymbolLookup = import("@npc-cli/ui__world/assets.schema").AssetsSymbolLookup;
   type FlatSymbol = import("@npc-cli/ui__world/assets.schema").AssetsFlatSymbol;
   type Layout = import("@npc-cli/ui__world/assets.schema").GeomorphLayout;
   type LayoutInstance = import("@npc-cli/ui__world/assets.schema").GeomorphLayoutInstance;

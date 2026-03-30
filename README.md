@@ -93,7 +93,13 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
-#### ⚠️ Boxy: transformed shapes may not be rendered correctly by `skia-canvas`. Convert to path and reduce transform seem to fix it.
+#### ⚠️ The starship-symbol spritesheet will draw "leaf nodes" in the assets.json stratifiedSymbolNodes
+
+This means WIP composite symbols should have at least one sub-symbol.
+
+#### ⚠️ Boxy: transformed shapes may not be rendered correctly by `skia-canvas`.
+
+Convert to path and reduce transform seem to fix it.
 
 #### ⚠️ Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
 

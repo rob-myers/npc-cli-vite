@@ -28,24 +28,29 @@
 
 - ✅ support hmr `DerivedGmsData` e.g. can change gmData.tops.nonHull
 
+- 🚧 generate spritesheets for symbols reachable by some MapEdit file
+  - ✅ `gen-assets-json` stores `assets.stratifiedSymbolNodes`
+  - script `gen-starship-sheets` restricts to leaves in `assets.stratifiedSymbolNodes`
+  - script `gen-starship-sheets` generates spritesheet using `maxrects-packer`
+    > see legacy `npc-cli/service/rects-packer.js`
+  - supports multiple sheets
+
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - more generally use sub-stratification
 
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
-
 - can connect Tty to World
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
-
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue
   - need repro e.g. move stateroom inside 301
 
 ## Long running
 
-- 🚧 sync navmesh recomputation with MapEdit
+- ❌ sync navmesh recomputation with MapEdit
   - DEV edit symbol -> recompute assets.json -> refetch + change `w.hash` -> floor redraw
   - ❌ try await nav recomputation in world query
   - ✅ BUG: PROD webworker is refetching assets without changing it
@@ -59,7 +64,7 @@
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
 - sync symbols in other instances?
-- drafts fight: with 2 instances open for same file
+- drafts fighting: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol

@@ -692,6 +692,9 @@ importers:
 
   packages/ui/world:
     dependencies:
+      '@npc-cli/graph':
+        specifier: workspace:^
+        version: link:../../graph
       '@npc-cli/media':
         specifier: workspace:^
         version: link:../../media
