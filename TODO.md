@@ -39,10 +39,17 @@
   - ✅ sheets.json schema
   - ✅ write sheets.json
 
-- 🚧 gen-starship-sheets should also draw the spritesheets
+- ✅ `pnpm gen-starship-sheets` should also draw the spritesheets
   - ✅ sheets.json entries have sheetId
   - ✅ draw the spritesheets
-  - 🚧 find a way to restrict bridge--042 image size
+  - ❌ find a way to restrict bridge--042 image size
+    - more obstacles from it will be added
+  - ✅ can `pnpm gen-starship-sheets --prod`
+    - produces alternative "optimized" texture `.prod.png` only drawing obstacle-covered-parts
+    - PROD only: smaller download and still have decor cuboid "obstacles"
+    - still wastes texture space (memory)
+
+- MapEdit provide triangle `<path>` for console--019
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
