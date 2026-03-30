@@ -62,6 +62,7 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
 
     const dimensions = await imageSizeFromFile(dstPath);
     byKey[symbolKey] = {
+      key: symbolKey,
       group: folderName,
       width: dimensions.width,
       height: dimensions.height,

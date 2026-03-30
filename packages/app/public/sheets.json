@@ -1,0 +1,22 @@
+{
+  "symbol": {
+    "bridge--042--8x9": {
+      "key": "bridge--042--8x9",
+      "rect": {"x": 2, "y": 2, "width": 2446, "height": 2790}
+    },
+    "console--019--2x2": {
+      "key": "console--019--2x2",
+      "rect": {"x": 2450, "y": 2, "width": 607, "height": 607}
+    },
+    "bed--003--1x1.6": {
+      "key": "bed--003--1x1.6",
+      "rect": {"x": 2450, "y": 611, "width": 502, "height": 307}
+    },
+    "console--051--0.4x0.6": {
+      "key": "console--051--0.4x0.6",
+      "rect": {"x": 2450, "y": 920, "width": 137, "height": 155}
+    }
+  },
+  "obstacleDims": [{"width": 3059, "height": 2794}],
+  "maxObstacleDim": {"width": 3059, "height": 2794}
+}
