@@ -11,6 +11,7 @@
     "starship-pngs-to-public": "./src/bins/starship-pngs-to-public.ts",
     "gen-assets-json": "./src/bins/gen-assets-json.tsx",
     "gen-pkg": "./src/bins/gen-pkg.ts",
+    "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts"
@@ -28,6 +29,7 @@
     "@npc-cli/util": "workspace:^",
     "image-size": "catalog:",
     "json-stringify-pretty-compact": "catalog:",
+    "maxrects-packer": "catalog:",
     "skia-canvas": "catalog:",
     "zod": "catalog:"
   },

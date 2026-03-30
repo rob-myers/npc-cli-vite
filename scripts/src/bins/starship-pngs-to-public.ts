@@ -1,8 +1,9 @@
 #!/usr/bin/env node --import=tsx
 
+// 🚧 manifest does not need modifiedBy
+
 /**
- * - Ensure starship symbol PNGs listed in `symbolByGroup` exist
- *   in packages/app/public/starship-symbol
+ * - Copy starship symbol PNGs from `symbolByGroup` to packages/app/public/starship-symbol
  * - Compute packages/app/public/starship-symbol/manifest.json
  *
  * Usage:
@@ -13,12 +14,7 @@
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import {
-  type StarshipSymbolPngsManifest,
-  StarshipSymbolPngsManifestSchema,
-  symbolByGroup,
-} from "@npc-cli/media/starship-symbol";
-import { jsonParser } from "@npc-cli/util/json-parser";
+import { type StarshipSymbolPngsManifest, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { entries, error, info, keys, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { PROJECT_ROOT } from "../const";
@@ -73,15 +69,13 @@ for (const [folderName, symbols] of entries(symbolByGroup)) {
   }
 }
 
-const prevManifest = jsonParser
-  .pipe(StarshipSymbolPngsManifestSchema)
-  .safeParse(await fs.promises.readFile(path.join(assetsOutputDir, "manifest.json"), "utf-8").catch(warn)).data;
+const prevManifestRaw = await fs.promises.readFile(path.join(assetsOutputDir, "manifest.json"), "utf-8").catch(warn);
+const nextManifestRaw = safeJsonCompact({ byKey } satisfies StarshipSymbolPngsManifest);
 
-if (JSON.stringify(prevManifest?.byKey) === JSON.stringify(byKey)) {
+if (prevManifestRaw === nextManifestRaw) {
   info(`${path.basename(import.meta.filename)}: no changes detected`);
   process.exit(0);
 }
 
 info(`${path.basename(import.meta.filename)}: changes detected`);
-const nextManifest: StarshipSymbolPngsManifest = { modifiedAt: new Date().toISOString(), byKey };
-writeFileSync(path.join(assetsOutputDir, "manifest.json"), safeJsonCompact(nextManifest));
+writeFileSync(path.join(assetsOutputDir, "manifest.json"), nextManifestRaw);

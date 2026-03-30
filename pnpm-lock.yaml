@@ -135,6 +135,9 @@ catalogs:
     maath:
       specifier: ^0.10.8
       version: 0.10.8
+    maxrects-packer:
+      specifier: ^2.7.3
+      version: 2.7.3
     motion:
       specifier: ^12.23.26
       version: 12.23.26
@@ -846,6 +849,9 @@ importers:
       json-stringify-pretty-compact:
         specifier: 'catalog:'
         version: 4.0.0
+      maxrects-packer:
+        specifier: 'catalog:'
+        version: 2.7.3
       skia-canvas:
         specifier: 'catalog:'
         version: 3.0.8
@@ -2970,6 +2976,9 @@ packages:
 
   mathcat@0.0.11:
     resolution: {integrity: sha512-HIGDmqrjy6KE4LRH9uGLdYoVl+69idwtE5OjHILnNB4IL4RE2aVNagjLAWFKWH5xlcxNH9i+AoBgRKR4VdsyFw==}
+
+  maxrects-packer@2.7.3:
+    resolution: {integrity: sha512-bG6qXujJ1QgttZVIH4WDanhoJtvbud/xP/XPyf6A69C9RdA61BM4TomFALCq2nrTa+tARRIBB4LuIFsnUQU2wA==}
 
   mdast-util-from-markdown@2.0.2:
     resolution: {integrity: sha512-uZhTV/8NBuw0WHkPTrCqDOl0zVe1BIng5ZtHoDk49ME1qqcjYmmLmOf0gELgcRMxN4w2iuIeVso5/6QymSrgmA==}
@@ -5629,6 +5638,8 @@ snapshots:
   markdown-extensions@2.0.0: {}
 
   mathcat@0.0.11: {}
+
+  maxrects-packer@2.7.3: {}
 
   mdast-util-from-markdown@2.0.2:
     dependencies:
