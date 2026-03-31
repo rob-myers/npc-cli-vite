@@ -282,7 +282,8 @@ export function createLayout(
     obstacles: flat.obstacles.map((o): Geomorph.LayoutObstacle => {
       const obstacleId = o.meta.obsId as number;
       const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
-      const origPoly = assets.symbol[symbolKey]!.obstacles[o.meta.obsId];
+      const origSymbol = assets.symbol[symbolKey] as Geomorph.Symbol;
+      const origPoly = origSymbol.obstacles[o.meta.obsId];
       // o.meta.transform is aggregated in `instantiateFlatSymbol`
       const transform = (o.meta.transform ?? [1, 0, 0, 1, 0, 0]) as Geom.SixTuple;
       tmpMat1.feedFromArray(transform);
@@ -290,6 +291,7 @@ export function createLayout(
         symbolKey,
         obstacleId,
         origPoly,
+        origSubRect: origPoly.rect.delta(-origSymbol.bounds.x, -origSymbol.bounds.y).precision(2),
         height: typeof o.meta.y === "number" ? o.meta.y : 0,
         transform: tmpMat1.feedFromArray(transform).json,
         center: tmpMat1.transformPoint(origPoly.center).precision(2),
