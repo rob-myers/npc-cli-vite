@@ -103,7 +103,7 @@ async function handleApiMapEditFile(
 
     const { parseRawMapEditFile } = (await server.ssrLoadModule(
       PROCESS_SYMBOL_PATH,
-    )) as typeof import("./service/process-symbol");
+    )) as typeof import("./service/process-map-edit-save");
 
     const savedFile = parseRawMapEditFile(fs.readFileSync(filePath, "utf-8")); // throws on error
     res.end(JSON.stringify(savedFile));
@@ -117,7 +117,7 @@ async function handleApiMapEditFile(
 
     const { parseRawMapEditFile, processSavedFile } = (await server.ssrLoadModule(
       PROCESS_SYMBOL_PATH,
-    )) as typeof import("./service/process-symbol");
+    )) as typeof import("./service/process-map-edit-save");
 
     const fileToSave = parseRawMapEditFile(body); // throws on error
     fs.writeFileSync(filePath, safeJsonCompact(fileToSave));
@@ -133,7 +133,7 @@ async function handleApiMapEditFile(
   if (req.method === "DELETE") {
     const { deleteSavedFile } = (await server.ssrLoadModule(
       PROCESS_SYMBOL_PATH,
-    )) as typeof import("./service/process-symbol");
+    )) as typeof import("./service/process-map-edit-save");
 
     deleteSavedFile(
       MapEditFileSpecifierSchema.parse({ type: folder, filename, key: path.basename(filename, ".json") }),
