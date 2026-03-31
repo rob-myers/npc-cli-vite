@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 export function Debug() {
   const state = useStateRef(
     () => ({
-      unitCubeShown: true,
+      unitCubeShown: false,
     }),
     {
       reset: { unitCubeShown: true },
