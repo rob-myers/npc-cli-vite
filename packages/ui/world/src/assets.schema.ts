@@ -85,6 +85,8 @@ export const GeomorphLayoutObstacleSchema = z.object({
   height: z.number(),
   /** `symbol.obstacles[obstacleId]` -- could be inferred from `assets` */
   origPoly: polyCodec,
+  /** Subrect of original symbol's image for UV computation later */
+  origSubRect: rectCodec,
   /** Transform from original symbol into Geomorph (meters) */
   transform: AffineTransformSchema,
   /** `origPoly.center` transformed by `transform` */
