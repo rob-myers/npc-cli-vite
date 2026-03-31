@@ -23,7 +23,7 @@ export default function Floor() {
     () => ({
       inst: null as null | THREE.InstancedMesh,
       quad: createXzQuad(),
-      gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(50, 50, 50, 0.8)"),
+      gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(100, 100, 100, 0.8)"),
 
       addUvs() {
         if (!state.inst) return;
@@ -70,28 +70,28 @@ export default function Floor() {
         ct.resetTransform();
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
         ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
-        ct.save();
 
         const hullFloor = gm.hullPoly.map((x) => x.clone().removeHoles());
         drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
 
         // grid
-        drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
+        ct.save();
+        drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#f00", strokeStyle: null });
         ct.setTransform(1, 0, 0, 1, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
         ct.fillStyle = state.gridPattern;
         ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
         ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
         ct.restore();
 
-        // drop shadows, avoiding doubling
+        // obstacle drop shadows
         const shadowPolys = Poly.union(
           gm.obstacles.flatMap((x) =>
             x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
           ),
         );
-        drawPolygons(ct, shadowPolys, { fillStyle: "#0005", strokeStyle: null });
+        drawPolygons(ct, shadowPolys, { fillStyle: "#000f", strokeStyle: null });
 
-        // wall shadows (uniform directional light)
+        // uniform directional wall shadows
         ct.save();
         drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
         const shadowQuads = gm.walls.flatMap((w) =>
@@ -105,18 +105,18 @@ export default function Floor() {
             ]);
           }),
         );
-        drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 100, 0.3)", strokeStyle: null });
+        drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 0.4)", strokeStyle: null });
         ct.restore();
 
         // wall bases
         drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
 
         // draw nav mesh
-        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         ct.lineJoin = "round";
         ct.lineWidth = 0.02;
-        const fillStyle = "#0f04";
-        const strokeStyle = "#0003";
+        const fillStyle = "#00f5";
+        const strokeStyle = "#0004";
+        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         (w.nav?.toNavTris[gm.key] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
             triangle.outline[0].set(positions[i], positions[i + 2]);
