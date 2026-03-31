@@ -8,7 +8,7 @@ import type { Connect, Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
-const PROCESS_SYMBOL_PATH = path.join(PROJECT_ROOT, "scripts/src/service/process-symbol.ts");
+const PROCESS_SYMBOL_PATH = path.join(PROJECT_ROOT, "scripts/src/service/process-map-edit-save.ts");
 const WATCH_PATH_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-path-svgs.ts");
 const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
 
