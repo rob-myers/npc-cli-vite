@@ -10,11 +10,15 @@ import { computeGmInstanceMeshes } from "./nav-util";
 
 /* navmesh generation parameters */
 const config = {
+  // cellSize: 0.05,
+
+  // 0.05 * 30 === 1.5
   cellSize: 0.05,
-  cellHeight: 0.15,
-  tileSizeVoxels: 32,
+  tileSizeVoxels: 30,
+
+  cellHeight: 0.001,
   walkableRadiusWorld: 0.1,
-  walkableClimbWorld: 0.5,
+  walkableClimbWorld: 0,
   walkableHeightWorld: 0.25,
   walkableSlopeAngleDegrees: 45,
   borderSize: 4,
@@ -30,8 +34,6 @@ const config = {
 export async function generateTiledNavMeshResult(
   gmGeoms: WW.GmGeomForNav[],
 ): Promise<import("navcat/blocks").TiledNavMeshResult> {
-  // generate scene from provided polygons
-  const scene = new THREE.Scene();
   const { meshes } = await computeGmInstanceMeshes(gmGeoms);
 
   if (meshes.length === 0) {
@@ -41,18 +43,10 @@ export async function generateTiledNavMeshResult(
     meshes.push(plane);
   }
 
-  meshes.forEach((mesh) => scene.add(mesh));
+  meshes.push(computeNavOriginFixingMesh(meshes));
 
-  /* generate navmesh */
-  const walkableMeshes: THREE.Mesh[] = [];
-  scene.traverse((object) => {
-    if (object instanceof THREE.Mesh) {
-      walkableMeshes.push(object);
-    }
-  });
-
+  const walkableMeshes = meshes;
   const [positions, indices] = getPositionsAndIndices(walkableMeshes);
-
   const navMeshInput: TiledNavMeshInput = {
     positions,
     indices,
@@ -89,4 +83,17 @@ export async function generateTiledNavMeshResult(
   };
 
   return generateTiledNavMesh(navMeshInput, navMeshConfig);
+}
+
+function computeNavOriginFixingMesh(meshes: THREE.Mesh[]) {
+  const boxAll = new THREE.Box3();
+  const box = new THREE.Box3();
+  meshes.forEach((mesh) => boxAll.union(box.setFromObject(mesh)));
+  const dx = (((boxAll.min.x % 1.5) + 1.5) % 1.5) - 1.5;
+  const dz = (((boxAll.min.z % 1.5) + 1.5) % 1.5) - 1.5;
+  const origin = new THREE.Vector3(boxAll.min.x - dx - 1.5, 0, boxAll.min.z - dz - 1.5);
+  const originForcingMesh = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial());
+  originForcingMesh.position.copy(origin);
+  originForcingMesh.updateMatrixWorld();
+  return originForcingMesh;
 }

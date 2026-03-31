@@ -58,6 +58,8 @@
     - `origPoly.rect` offset by `(-bounds.x, -bounds.y)`
     - to compute UVs we'll also need `meta.symbolKey` to lookup `(sheetId, symbolImageCoords)`
 
+- ✅ BUG map origin is not aligned to world origin
+
 - 🚧 symbol asset bounds should come from "top image node"
   - polygons should be clipped to bounds e.g. obstacles,
     otherwise they'll be overlap in symbol spritesheet
