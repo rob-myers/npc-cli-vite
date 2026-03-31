@@ -170,10 +170,7 @@ export function createLayout(
 
   // Avoid non-hull walls inside hull walls (for x-ray)
   const uncutWalls = flat.walls
-    .flatMap((x) =>
-      // biome-ignore lint/complexity/noCommaOperator: convenience
-      Poly.cutOut(hullWalls, [x]).map((y) => ((y.meta = x.meta), y)),
-    )
+    .flatMap((x) => Poly.cutOut(hullWalls, [x]).map((y) => ((y.meta = x.meta), y)))
     .concat(hullWalls);
   const plainWallMeta = { wall: true };
   const hullWallMeta = { wall: true, hull: true };
@@ -580,15 +577,14 @@ export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
     (node): node is GeomorphNode => node.type === "symbol" && node.srcKey !== null && isHullSymbolImageKey(node.srcKey),
   );
 
-  const s = sguToWorldScale;
   return {
     key: savedFile.key,
     gms: geomorphNodes.map((gm) => ({
       gmKey: gm.srcKey,
       transform: {
         ...gm.transform,
-        e: toPrecision(gm.transform.e * s, 6),
-        f: toPrecision(gm.transform.f * s, 6),
+        e: toPrecision((gm.transform.e + gm.offset.x) * sguToWorldScale, 6),
+        f: toPrecision((gm.transform.f + gm.offset.y) * sguToWorldScale, 6),
       },
     })),
   };

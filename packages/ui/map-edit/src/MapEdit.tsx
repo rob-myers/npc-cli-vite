@@ -1101,6 +1101,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
+          // 🚧 union of "grid rects" instead?
           bounds: Rect.fromJson(getNodeBounds(...state.nodes))
             .union({ x: 0, y: 0, width: state.svgWidth, height: state.svgHeight })
             .precision(6),

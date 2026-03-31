@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
-import { AssetsSchema, type AssetsType, type GeomorphLayoutInstance } from "../assets.schema";
+import { AssetsSchema, type AssetsType } from "../assets.schema";
 import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
@@ -224,7 +224,7 @@ export type State = {
   texFloor: TexArray;
   texCeil: TexArray;
 
-  gms: GeomorphLayoutInstance[];
+  gms: Geomorph.LayoutInstance[];
   /**
    * Ordered by first time seen in `gms`.
    * Thus `seenGmKeys.indexOf(gmKey)` provides `texId`.
