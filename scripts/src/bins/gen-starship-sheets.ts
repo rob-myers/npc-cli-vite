@@ -9,8 +9,10 @@
  * pnpm gen-starship-sheets
  * pnpm gen-starship-sheets --prod
  * ```
- * - assumes `pngquant`, `public/assets.json`, `public/starship-symbol/manifest.json`
- * - "prod" flag produces smaller filesize (same dimensions)
+ * - assumes `public/assets.json`, `public/starship-symbol/manifest.json`
+ * - "--prod" flag
+ *  - produces smaller filesize (same dimensions) by restricting to obstacles
+ *  - reduces PNG size using `pngquant`
  *
  * We could have restricted to the rectangular bounds of obstacle polygons in
  * unflattened symbols. This would produce a much smaller `width x height`
@@ -119,7 +121,7 @@ for (const [sheetId, bin] of bins.entries()) {
     if (!prod) {
       ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
     } else {
-      // clip to the obstacles actually used
+      // in --prod we clip to the obstacles actually used
       const symKey = rect.data.key as StarshipSymbolImageKey;
       const sym = assets.symbol[symKey]!;
       const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
@@ -147,5 +149,12 @@ for (const [sheetId, bin] of bins.entries()) {
 
 //#endregion
 
-process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
-await loggedSpawn({ label: "pngquant", command: "pngquant", args: ["--force", "--ext", ".png", "*.png"], shell: true });
+if (prod) {
+  process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
+  await loggedSpawn({
+    label: "pngquant",
+    command: "pngquant",
+    args: ["--force", "--ext", ".png", "*.png"],
+    shell: true,
+  });
+}
