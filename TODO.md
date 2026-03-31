@@ -49,12 +49,24 @@
     - PROD only: smaller download and still have decor cuboid "obstacles"
     - still wastes texture space (memory)
 
-- MapEdit provide triangle `<path>` for console--019
+- ✅ MapEdit provide triangle `<path>` for console--019
+
+- 🚧 layout.obstacles have
+  - ✅ `symbolKey` (string) of original unflattened symbol parent
+  - ✅ `transform` for instancedMesh transform
+  - 🚧 `meta.symbolRect` (numeric 4-tuple) used to compute UVs
+    - have `origPoly` so use `origPoly.rect` offset by `(-bounds.x, -bounds.y)`
+    - to compute UVs we'll also need `meta.symbolKey` to lookup `(sheetId, symbolImageCoords)`
+
+- symbol asset bounds should come from "top image node"
+  - polygons should be clipped to bounds e.g. obstacles,
+    otherwise they'll be overlap in symbol spritesheet
+
+- start generating documentation in README.md
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - more generally use sub-stratification
-
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - can connect Tty to World
 - BUG MapEdit asking to save draft changes onchange when there are no changes

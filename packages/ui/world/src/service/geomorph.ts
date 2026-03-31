@@ -283,6 +283,7 @@ export function createLayout(
       const obstacleId = o.meta.obsId as number;
       const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
       const origPoly = assets.symbol[symbolKey]!.obstacles[o.meta.obsId];
+      // o.meta.transform is aggregated in `instantiateFlatSymbol`
       const transform = (o.meta.transform ?? [1, 0, 0, 1, 0, 0]) as Geom.SixTuple;
       tmpMat1.feedFromArray(transform);
       return {
@@ -481,6 +482,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
 
 /**
  * 🚧 support removable doors/walls
+ * - aggregates obstacle transform as meta.transform
  */
 export function instantiateFlatSymbol(
   sym: Geomorph.FlatSymbol,
@@ -505,8 +507,9 @@ export function instantiateFlatSymbol(
         ...(typeof meta.y === "number" && {
           y: toPrecision(meta.y + (parseInt(poly.meta.y, 10) || 0)),
         }),
-        // - compute transform during symbol flattening
-        // - only place we set `meta.transform` for obstacles
+        // - we compute transform during symbol flattening
+        // - this is the only place we set `meta.transform` for obstacles
+        // - later used to define `GeomorphLayoutObstacle` for layout obstacles
         ...{
           transform: tmpMat2
             .setMatrixValue(transform)
