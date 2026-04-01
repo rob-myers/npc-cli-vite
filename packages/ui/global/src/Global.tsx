@@ -2,15 +2,16 @@ import { themeApi } from "@npc-cli/theme";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { BasicPopover, cn } from "@npc-cli/util";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { WebRtcPeer } from "./webrtc/WebRtcPeer";
 
 export default function Global() {
   const { uiStoreApi } = useContext(UiContext);
+  const [showWebRtc, setShowWebRtc] = useState(false);
 
   return (
     <div className="flex flex-col items-center h-full overflow-auto gap-4">
-      <div className="p-4 grid grid-cols-[minmax(2rem,auto)_minmax(2rem,auto)] w-48 gap-2">
+      <div className="p-4 flex flex-wrap gap-2 *:px-2">
         <button
           type="button"
           className={cn(
@@ -36,8 +37,21 @@ export default function Global() {
             confirm
           </button>
         </BasicPopover>
+        <button
+          type="button"
+          className={cn(
+            uiClassName,
+            "cursor-pointer",
+            "overflow-auto border rounded",
+            "flex justify-center items-center bg-button-background",
+            showWebRtc && "bg-on-background text-background",
+          )}
+          onPointerDown={() => setShowWebRtc((v) => !v)}
+        >
+          rtc
+        </button>
       </div>
-      <WebRtcPeer />
+      {showWebRtc && <WebRtcPeer />}
     </div>
   );
 }
