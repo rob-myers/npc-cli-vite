@@ -1795,7 +1795,8 @@ export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 const inc = {
   small: 0.5,
-  default: 5,
+  // 🚧 needed when snapping but maybe too small when moving into place
+  default: 2.5,
 };
 
 const snap = (v: number, increment = inc.small) => Math.round(v / increment) * increment;
