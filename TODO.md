@@ -65,7 +65,11 @@
     - ✅ confusing (dx, dy) for console--019
     - ✅ console--019 should have transform.{e,f} 0
 
-- 🚧 go through existing symbols and fix
+- ✅ go through existing symbols and fix
+- ✅ need symbol `office--001--2x2` instead of `console--019--2x2`
+  - "apparent" alignment issues related to some symbol underlays having doors
+
+- 🚧 sometimes `Floor` and `Ceiling` fail due to unassigned or mismatched buffer attributes
 
 - 🚧 symbol thumbnail should be clipped to image node's bounds
   - this means e.g. the outer part of doors will not be drawn in thumbnail

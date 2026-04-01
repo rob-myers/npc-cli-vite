@@ -116,6 +116,15 @@
       "bounds": {"x": -5, "y": -18, "width": 489.2, "height": 558},
       "type": "symbol",
       "key": "bridge--042--8x9"
+    },
+    "office--001--2x2": {
+      "filename": "office--001--2x2.json",
+      "thumbnailFilename": "office--001--2x2.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "office--001--2x2"
     }
   }
 }
