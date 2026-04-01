@@ -87,6 +87,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       frameloop={state.syncRenderMode()}
       gl={state.createRenderer}
       onCreated={state.onCreated}
+      resize={{ debounce: 0 }}
     >
       {props.children}
 
