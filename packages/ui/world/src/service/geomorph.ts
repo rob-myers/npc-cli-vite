@@ -391,6 +391,118 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   }
 }
 
+export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.MapDef {
+  type GeomorphNode = SymbolMapNode & { srcKey: StarShipGeomorphKey };
+  const geomorphNodes = filterNodes(
+    savedFile.nodes,
+    (node): node is GeomorphNode => node.type === "symbol" && node.srcKey !== null && isHullSymbolImageKey(node.srcKey),
+  );
+
+  return {
+    key: savedFile.key,
+    gms: geomorphNodes.map((gm) => ({
+      gmKey: gm.srcKey,
+      transform: {
+        ...gm.transform,
+        e: toPrecision((gm.transform.e + gm.offset.x) * sguToWorldScale, 6),
+        f: toPrecision((gm.transform.f + gm.offset.y) * sguToWorldScale, 6),
+      },
+    })),
+  };
+}
+
+/**
+ * Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
+ */
+export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
+  const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
+
+  const symbols = [] as Geomorph.Symbol["symbols"];
+
+  const polysLookup: Record<SymbolPolysKey, Geomorph.Symbol[SymbolPolysKey]> = {
+    decor: [] as Geomorph.Symbol["decor"],
+    doors: [] as Geomorph.Symbol["doors"],
+    hullWalls: [] as Geomorph.Symbol["hullWalls"],
+    obstacles: [] as Geomorph.Symbol["obstacles"],
+    unsorted: [] as Geomorph.Symbol["unsorted"],
+    walls: [] as Geomorph.Symbol["walls"],
+    windows: [] as Geomorph.Symbol["windows"],
+  };
+
+  for (const node of allNodes) {
+    const ownTags = textToTags(node.name);
+    const meta = tagsToMeta(ownTags);
+
+    if (node.type === "symbol") {
+      node.srcKey !== null &&
+        symbols.push({
+          symbolKey: node.srcKey,
+          width: node.baseRect.width,
+          height: node.baseRect.height,
+          transform: {
+            ...node.transform,
+            e: node.transform.e + node.offset.x,
+            f: node.transform.f + node.offset.y,
+          },
+          meta,
+        });
+      continue;
+    }
+
+    const poly = mapNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
+    if (poly === null) continue;
+
+    for (const [tag, polysKey] of Object.values(tagPolysKeyPairs)) {
+      meta[tag] === true && polysLookup[polysKey].push(poly);
+    }
+
+    if (meta.wall === true && meta.hull === true) {
+      polysLookup.hullWalls.push(poly);
+    }
+
+    if (meta.switch === true) {
+      // switches are aligned to doors
+      meta.switch = polysLookup.doors.length - 1;
+    }
+    if (meta.obstacle === true) {
+      // Link to original symbol
+      meta.symKey = savedFile.key;
+      // local id inside SVG symbol
+      meta.obsId = polysLookup.obstacles.length - 1;
+    }
+  }
+
+  const s = sguToWorldScale;
+  /** Avoid scaling `hullWalls` twice since also in `walls` */
+  const scaled = new Set<Geom.Poly>();
+  for (const polys of Object.values(polysLookup)) {
+    for (const p of polys)
+      if (!scaled.has(p)) {
+        p.scale(s).precision(6);
+        scaled.add(p);
+      }
+  }
+  return {
+    key: savedFile.key,
+    isHull: isHullSymbolImageKey(savedFile.key),
+    width: toPrecision(savedFile.width * s, 6),
+    height: toPrecision(savedFile.height * s, 6),
+    bounds: savedFile.bounds.clone().scale(s).precision(6),
+
+    ...polysLookup,
+    symbols: symbols.map((sym) => ({
+      ...sym,
+      width: toPrecision(sym.width * s, 6),
+      height: toPrecision(sym.height * s, 6),
+      transform: {
+        ...sym.transform,
+        e: toPrecision(sym.transform.e * s, 6),
+        f: toPrecision(sym.transform.f * s, 6),
+      },
+    })),
+  };
+}
+
 export function decomposeLayoutNav(
   navPolyWithDoors: Geom.Poly[],
   doors: Connector[],
@@ -568,118 +680,6 @@ function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
   }
 
   return null;
-}
-
-export function parseMapEditMap(savedFile: MapEditSavedMap): Geomorph.MapDef {
-  type GeomorphNode = SymbolMapNode & { srcKey: StarShipGeomorphKey };
-  const geomorphNodes = filterNodes(
-    savedFile.nodes,
-    (node): node is GeomorphNode => node.type === "symbol" && node.srcKey !== null && isHullSymbolImageKey(node.srcKey),
-  );
-
-  return {
-    key: savedFile.key,
-    gms: geomorphNodes.map((gm) => ({
-      gmKey: gm.srcKey,
-      transform: {
-        ...gm.transform,
-        e: toPrecision((gm.transform.e + gm.offset.x) * sguToWorldScale, 6),
-        f: toPrecision((gm.transform.f + gm.offset.y) * sguToWorldScale, 6),
-      },
-    })),
-  };
-}
-
-/**
- * Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
- */
-export function parseMapEditSymbol(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
-  const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
-
-  const symbols = [] as Geomorph.Symbol["symbols"];
-
-  const polysLookup: Record<SymbolPolysKey, Geomorph.Symbol[SymbolPolysKey]> = {
-    decor: [] as Geomorph.Symbol["decor"],
-    doors: [] as Geomorph.Symbol["doors"],
-    hullWalls: [] as Geomorph.Symbol["hullWalls"],
-    obstacles: [] as Geomorph.Symbol["obstacles"],
-    unsorted: [] as Geomorph.Symbol["unsorted"],
-    walls: [] as Geomorph.Symbol["walls"],
-    windows: [] as Geomorph.Symbol["windows"],
-  };
-
-  for (const node of allNodes) {
-    const ownTags = textToTags(node.name);
-    const meta = tagsToMeta(ownTags);
-
-    if (node.type === "symbol") {
-      node.srcKey !== null &&
-        symbols.push({
-          symbolKey: node.srcKey,
-          width: node.baseRect.width,
-          height: node.baseRect.height,
-          transform: {
-            ...node.transform,
-            e: node.transform.e + node.offset.x,
-            f: node.transform.f + node.offset.y,
-          },
-          meta,
-        });
-      continue;
-    }
-
-    const poly = mapNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
-    if (poly === null) continue;
-
-    for (const [tag, polysKey] of Object.values(tagPolysKeyPairs)) {
-      meta[tag] === true && polysLookup[polysKey].push(poly);
-    }
-
-    if (meta.wall === true && meta.hull === true) {
-      polysLookup.hullWalls.push(poly);
-    }
-
-    if (meta.switch === true) {
-      // switches are aligned to doors
-      meta.switch = polysLookup.doors.length - 1;
-    }
-    if (meta.obstacle === true) {
-      // Link to original symbol
-      meta.symKey = savedFile.key;
-      // local id inside SVG symbol
-      meta.obsId = polysLookup.obstacles.length - 1;
-    }
-  }
-
-  const s = sguToWorldScale;
-  /** Avoid scaling `hullWalls` twice since also in `walls` */
-  const scaled = new Set<Geom.Poly>();
-  for (const polys of Object.values(polysLookup)) {
-    for (const p of polys)
-      if (!scaled.has(p)) {
-        p.scale(s).precision(6);
-        scaled.add(p);
-      }
-  }
-  return {
-    key: savedFile.key,
-    isHull: isHullSymbolImageKey(savedFile.key),
-    width: toPrecision(savedFile.width * s, 6),
-    height: toPrecision(savedFile.height * s, 6),
-    bounds: savedFile.bounds.clone().scale(s).precision(6),
-
-    ...polysLookup,
-    symbols: symbols.map((sym) => ({
-      ...sym,
-      width: toPrecision(sym.width * s, 6),
-      height: toPrecision(sym.height * s, 6),
-      transform: {
-        ...sym.transform,
-        e: toPrecision(sym.transform.e * s, 6),
-        f: toPrecision(sym.transform.f * s, 6),
-      },
-    })),
-  };
 }
 
 /**
