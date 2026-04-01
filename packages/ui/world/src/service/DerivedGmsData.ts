@@ -68,7 +68,7 @@ export default class DerivedGmsData {
       // nonHull: Poly.union(nonHullWallsTouchCeil.concat(gm.doors.map((door) => door.computeThinPoly()))).flatMap((x) =>
       //   geomService.createInset(x, 0.02),
       // ),
-      nonHull: Poly.union(nonHullWallsTouchCeil),
+      nonHull: Poly.union(nonHullWallsTouchCeil).flatMap((x) => geomService.createInset(x, 0.02)),
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
 
