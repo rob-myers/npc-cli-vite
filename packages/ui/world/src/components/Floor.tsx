@@ -195,6 +195,6 @@ export default function Floor() {
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 // also try `Math.PI / 4`
-const shadowDx = Math.cos(Math.PI / 4) * 0.5;
-const shadowDy = Math.sin(Math.PI / 4) * 0.5;
+const shadowDx = Math.cos(Math.PI / 4) * 0.25;
+const shadowDy = Math.sin(Math.PI / 4) * 0.25;
 const tmpMat1 = new Mat();
