@@ -96,7 +96,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       }
       case "path": {
         ct.strokeStyle = isHullSymbol ? "rgba(0,0,0,0)" : "rgba(0,0,0,1)";
-        ct.fillStyle = "rgba(255,255,255,1)";
+        ct.fillStyle = "rgba(255,255,0,1)";
         const parsedPoly = geomService.svgPathToPolygon(node.d);
         if (!parsedPoly) {
           warn(`${filename}: failed to parse path.d data for node ${node.name}`);
