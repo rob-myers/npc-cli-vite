@@ -8,53 +8,26 @@
       "name": "extra--004--desk--0.5x1 1",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 2.5,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
+      "srcType": "symbol",
       "srcKey": "extra--004--desk--0.5x1",
-      "baseRect": {
-        "width": 31.400000000000002,
-        "height": 61.400000000000006
-      },
-      "offset": {
-        "x": -3,
-        "y": -0.7
-      },
-      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.7)"
+      "baseRect": {"width": 31.400000000000002, "height": 61.400000000000006},
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
     },
     {
       "id": "bb4e41e5-dcd4-4e32-9e03-a4b81dd60cba",
       "name": "surface table",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "rect",
-      "baseRect": {
-        "width": 30,
-        "height": 60
-      },
+      "baseRect": {"width": 30, "height": 60},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": {
-    "width": 31.4,
-    "height": 61.4,
-    "x": -0.5,
-    "y": -0.7
-  },
+  "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4},
   "type": "symbol",
   "key": "extra--004--desk--0.5x1"
 }

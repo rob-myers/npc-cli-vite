@@ -4,7 +4,7 @@ import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
 import type { ImageMapNode, MapNode, RectMapNode } from "./editor.schema";
 import type { ResizeHandle, State } from "./MapEdit";
-import { baseSvgSize, findNode, getNodeBounds } from "./map-node-api";
+import { baseSvgSize, findNodeById, getNodeBounds } from "./map-node-api";
 
 export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: string }) {
   const vbW = baseSvgSize / root.zoom;
@@ -15,7 +15,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
   const resizableNode = useMemo(() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
-    const [node] = findNode(root.nodes, selectedId);
+    const [node] = findNodeById(root.nodes, selectedId);
     if (!node) return null;
     if (node.type === "rect" || (node.type === "image" && node.srcType === "decor")) return node;
     return null;
@@ -25,7 +25,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
     if (root.selectedIds.size <= 1) return null;
     const selectedNodes: MapNode[] = [];
     for (const id of root.selectedIds) {
-      const [node] = findNode(root.nodes, id);
+      const [node] = findNodeById(root.nodes, id);
       if (node && node.type !== "group") selectedNodes.push(node);
     }
     return selectedNodes.length > 0 ? getNodeBounds(...selectedNodes) : null;
@@ -124,9 +124,9 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <image
             key={node.id}
             data-node-id={node.id}
-            href={`/symbol/${node.srcKey}.thumbnail.png`}
-            x={symbol.bounds.x}
-            y={symbol.bounds.y}
+            href={`/symbol/${node.srcKey}.thumbnail.png?v=${root.localVersion ?? 0}`}
+            // x={symbol.bounds.x}
+            // y={symbol.bounds.y}
             width={symbol.bounds.width}
             height={symbol.bounds.height}
             style={{ transform: node.cssTransform }}
@@ -149,7 +149,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             key={node.id}
             data-node-id={node.id}
             d={node.d}
-            style={{ transform: node.cssTransform }}
+            style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom }}
             className={cn(
               "fill-amber-500/50 stroke-amber-700 stroke-1",
               root.selectedIds.has(node.id) && "stroke-blue-500 stroke-2",

@@ -8,18 +8,18 @@
       "name": "console--019--2x2 1",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1, "f": 1},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "console--019--2x2",
       "baseRect": {"width": 121.4, "height": 121.4},
-      "offset": {"x": -2, "y": -2},
-      "cssTransform": "matrix(1, 0, 0, 1, -1, -1)"
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
     },
     {
       "id": "ddb6b159-62a4-415c-920b-f4531fc7880a",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -27,7 +27,7 @@
         {
           "id": "1e070386-cad4-4597-8022-520460929daa",
           "name": "console--051--0.4x0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0.7071067811865475,
@@ -60,10 +60,10 @@
       "name": "obstacle",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -3, "f": 0},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": 0},
       "type": "rect",
-      "baseRect": {"width": 33.5, "height": 120},
-      "cssTransform": "matrix(1, 0, 0, 1, -3, 0)"
+      "baseRect": {"width": 30.5, "height": 120},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, 0)"
     },
     {
       "id": "9e9c3755-3004-4146-997e-1578be75038c",
@@ -80,10 +80,10 @@
       "name": "wall",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2.5},
       "type": "rect",
-      "baseRect": {"width": 4, "height": 124},
-      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+      "baseRect": {"width": 4, "height": 124.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2.5)"
     },
     {
       "id": "5e9902ee-dc02-4c0a-a399-1d93a3700234",
@@ -127,7 +127,7 @@
       "cssTransform": "matrix(1, 0, 0, 1, 30, 30)"
     }
   ],
-  "bounds": {"x": -3, "y": -2.5, "width": 125, "height": 127.5},
+  "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
   "type": "symbol",
   "key": "console--019--2x2"
 }

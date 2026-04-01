@@ -61,8 +61,16 @@
 - ✅ BUG map origin is not aligned to world origin
 
 - 🚧 symbol asset bounds should come from "top image node"
-  - polygons should be clipped to bounds e.g. obstacles,
-    otherwise they'll be overlap in symbol spritesheet
+  - ✅ transform.{e,f} should not include offset when snap
+    - ✅ confusing (dx, dy) for console--019
+    - ✅ console--019 should have transform.{e,f} 0
+
+- 🚧 go through existing symbols and fix
+
+- 🚧 symbol thumbnail should be clipped to image node's bounds
+  - this means e.g. the outer part of doors will not be drawn in thumbnail
+- obstacle polygons should be clipped to image node's bounds
+  - otherwise they'll be overlap in symbol spritesheet
 
 - start generating documentation in README.md
 
@@ -93,7 +101,8 @@
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
-- sync symbols in other instances?
+- ✅ sync symbols in other instances
+  - symbol thumbnails driven by meta.localVersion updated on `assetsJsonChanged`
 - drafts fighting: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
