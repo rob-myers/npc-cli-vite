@@ -13,8 +13,8 @@
       "srcType": "symbol",
       "srcKey": "console--051--0.4x0.6",
       "baseRect": {"width": 27.400000000000002, "height": 31},
-      "offset": {"x": 1.3, "y": -0.7},
-      "cssTransform": "matrix(1, 0, 0, 1, 1.3, -0.7)"
+      "offset": {"x": 1.3, "y": -0.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 1.3, -0.5)"
     },
     {
       "id": "0468f24b-d9a9-4ebc-a5bc-fbef87cb76f2",
@@ -27,7 +27,7 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": {"x": 0, "y": -0.7, "width": 30, "height": 31},
+  "bounds": {"x": 1.3, "y": -0.5, "width": 27.4, "height": 31},
   "type": "symbol",
   "key": "console--051--0.4x0.6"
 }

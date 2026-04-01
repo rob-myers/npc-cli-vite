@@ -82,6 +82,9 @@ export const labelledImageOffsetValue = {
   halfLineWidth: -0.7,
   eastAlignBed004: -3.7,
   centerXConsole051: 1.3,
+  centerXConsole033: 1.6,
+  centerYConsole033: -1.1,
+  centerYConsole051: -0.5,
   centerYStateRoom012: 2,
   centerXExtra004: -3,
 } as const;
@@ -106,7 +109,7 @@ export const devMessageFromServer = {
 //#region node apis
 
 /** Find node and its parent */
-export function findNode(
+export function findNodeById(
   /** Either top-level nodes or `group.childrem` */
   parentArray: MapNode[],
   id: string,
@@ -117,14 +120,14 @@ export function findNode(
       return [child, parent];
     }
     if (child.type === "group") {
-      const result = findNode(child.children, id, child);
+      const result = findNodeById(child.children, id, child);
       if (result[0] !== null) return result;
     }
   }
   return [null, null];
 }
 
-export function findNodeWithDepth(
+export function findNodeByIdWithDepth(
   parentArray: MapNode[],
   id: string,
   parent: GroupMapNode | null = null,
@@ -133,20 +136,22 @@ export function findNodeWithDepth(
   for (const child of parentArray) {
     if (child.id === id) return { node: child, parent, depth };
     if (child.type === "group") {
-      const result = findNodeWithDepth(child.children, id, child, depth + 1);
+      const result = findNodeByIdWithDepth(child.children, id, child, depth + 1);
       if (result) return result;
     }
   }
   return null;
 }
 
-export function getRecursiveNodes(nodes: MapNode[]) {
+export function getRecursiveNodes(nodes: MapNode[]): Set<MapNode> {
   const recursiveNodes = new Set<MapNode>();
   traverseNodesSync(nodes, (node) => void recursiveNodes.add(node));
   return recursiveNodes;
 }
 
-/** Compute the world-space bounds of a rect/image node */
+/**
+ * Compute the world-space bounds of rect/path/image/symbol nodes.
+ */
 export function getNodeBounds(...nodes: MapNode[]): Geom.RectJson {
   if (nodes.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
 
@@ -168,6 +173,7 @@ export function getNodeBounds(...nodes: MapNode[]): Geom.RectJson {
     case "path":
     case "image":
     case "symbol": {
+      // `node.cssTransform` takes `node.offset` into account
       const { a, b, c, d, e, f } = new DOMMatrix(node.cssTransform);
       const m = new Mat([a, b, c, d, e, f]);
       const baseRect = new Rect(0, 0, node.baseRect.width, node.baseRect.height);

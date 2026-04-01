@@ -116,7 +116,10 @@ export class Rect {
     return new Rect(0, 0, 0, 0);
   }
 
-  /** @param {import('./mat').Mat} m */
+  /**
+   * This computes the rectangular bounds of the transform of this rectangle.
+   * @param {import('./mat').Mat} m
+   */
   applyMatrix(m) {
     if (!m.isIdentity) {
       const p = m.transformPoint(this.topLeft);
