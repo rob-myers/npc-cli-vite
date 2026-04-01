@@ -6,7 +6,7 @@
     {
       "id": "37825e99-de9d-497a-9c6d-a1c47e9aeba7",
       "name": "console--019--2x2 1",
-      "locked": true,
+      "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
@@ -46,85 +46,45 @@
       ]
     },
     {
-      "id": "55f5d76d-9124-4d01-aa7a-aac1482c84d5",
-      "name": "obstacle",
+      "id": "c7afd44e-1ddc-44d4-bbea-e27707b51f7d",
+      "name": "obstacles",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -2.5},
-      "type": "rect",
-      "baseRect": {"width": 120, "height": 33},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, -2.5)"
-    },
-    {
-      "id": "c6fa5933-c9f6-4fc4-8ad5-f7649baf06ec",
-      "name": "obstacle",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": 0},
-      "type": "rect",
-      "baseRect": {"width": 30.5, "height": 120},
-      "cssTransform": "matrix(1, 0, 0, 1, -0.5, 0)"
-    },
-    {
-      "id": "9e9c3755-3004-4146-997e-1578be75038c",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": -2},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 122},
-      "cssTransform": "matrix(1, 0, 0, 1, 118, -2)"
-    },
-    {
-      "id": "f8992f20-faa2-4ee6-8a5c-15d817826057",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2.5},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 124.5},
-      "cssTransform": "matrix(1, 0, 0, 1, -2, -2.5)"
-    },
-    {
-      "id": "5e9902ee-dc02-4c0a-a399-1d93a3700234",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
-      "type": "rect",
-      "baseRect": {"width": 124, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
-    },
-    {
-      "id": "90309562-2d10-42a2-a08a-b58451500a0e",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
-      "type": "rect",
-      "baseRect": {"width": 124, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
-    },
-    {
-      "id": "569595a1-dc71-4fea-9b1e-0b61c10977f0",
-      "name": "door",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 70, "f": 115},
-      "type": "rect",
-      "baseRect": {"width": 45, "height": 10},
-      "cssTransform": "matrix(1, 0, 0, 1, 70, 115)"
-    },
-    {
-      "id": "50504741-4463-4d74-9043-e52c958582bd",
-      "name": "obstacle table",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30},
-      "type": "path",
-      "d": "M 0 0 L 30 0 L 0 30 L 0 0 Z",
-      "baseRect": {"width": 30, "height": 30},
-      "cssTransform": "matrix(1, 0, 0, 1, 30, 30)"
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "children": [
+        {
+          "id": "55f5d76d-9124-4d01-aa7a-aac1482c84d5",
+          "name": "obstacle",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 120, "height": 30},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "c6fa5933-c9f6-4fc4-8ad5-f7649baf06ec",
+          "name": "obstacle",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 30.5, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, -0.5, 0)"
+        },
+        {
+          "id": "50504741-4463-4d74-9043-e52c958582bd",
+          "name": "obstacle table",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30},
+          "type": "path",
+          "d": "M 0 0 L 30 0 L 0 30 L 0 0 Z",
+          "baseRect": {"width": 30, "height": 30},
+          "cssTransform": "matrix(1, 0, 0, 1, 30, 30)"
+        }
+      ]
     }
   ],
   "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},

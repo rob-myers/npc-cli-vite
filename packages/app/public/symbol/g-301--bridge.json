@@ -29,72 +29,86 @@
           "name": "stateroom--014--2x2",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 480},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": -2.5, "f": 482.5},
           "type": "symbol",
           "srcKey": "stateroom--014--2x2",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 0, 480)"
+          "cssTransform": "matrix(1, 0, 0, -1, -2.5, 482.5)"
         },
         {
           "id": "d2117b74-0f1c-41be-95e4-42ebb5fb5a21",
           "name": "stateroom--014--2x2",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 120, "f": 480},
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 117.5,
+            "f": 482.5
+          },
           "type": "symbol",
           "srcKey": "stateroom--014--2x2",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 120, 480)"
+          "cssTransform": "matrix(1, 0, 0, -1, 117.5, 482.5)"
         },
         {
           "id": "56b70cf8-83da-4e10-b502-daa1d1ef274a",
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 2},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
           "id": "a07d1583-de2c-478e-8381-feb1092fc523",
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 600},
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": -2.5, "f": 602.5},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, 0, 600)"
+          "cssTransform": "matrix(0, -1, 1, 0, -2.5, 602.5)"
         },
         {
           "id": "e8bb8a0b-9bf5-4a49-bcec-e51c3fc83041",
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 1202.5,
+            "f": -2.5
+          },
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, 1, 1200, 0)"
+          "cssTransform": "matrix(-1, 0, 0, 1, 1202.5, -2.5)"
         },
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 360},
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 10, "f": 360},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, 0, 360)"
+          "cssTransform": "matrix(0, -1, 1, 0, 10, 360)"
         },
         {
           "id": "6d56cb79-5d36-44e1-a9b6-01b4412608b4",
@@ -131,18 +145,6 @@
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, 1, -1, 0, 1200, 239)"
-        },
-        {
-          "id": "2e1e3db6-1542-4f4c-8177-b676ac448bdb",
-          "name": "console--019--2x2",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 241, "f": 121},
-          "type": "symbol",
-          "srcKey": "console--019--2x2",
-          "baseRect": {"width": 120, "height": 120},
-          "offset": {"x": -1, "y": -1},
-          "cssTransform": "matrix(-1, 0, 0, 1, 240, 120)"
         },
         {
           "id": "f46b7ff8-319f-4072-864c-4a6484ea74e8",
@@ -233,6 +235,18 @@
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }
       ]
+    },
+    {
+      "id": "a410db85-34bd-447b-88cc-0de110312a9e",
+      "name": "office--001--2x2",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 120},
+      "type": "symbol",
+      "srcKey": "office--001--2x2",
+      "baseRect": {"width": 120, "height": 120},
+      "offset": {"x": -2, "y": -2},
+      "cssTransform": "matrix(-1, 0, 0, 1, 238, 118)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},

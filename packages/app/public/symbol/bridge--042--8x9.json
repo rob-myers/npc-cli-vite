@@ -29,12 +29,12 @@
           "name": "console--051--0.4x0.6",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 165, "f": 59},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 165, "f": 60.5},
           "type": "symbol",
           "srcKey": "console--051--0.4x0.6",
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 0, "y": -0.7},
-          "cssTransform": "matrix(0, 1, -1, 0, 165, 58.3)"
+          "cssTransform": "matrix(0, 1, -1, 0, 165, 59.8)"
         }
       ]
     },
