@@ -545,7 +545,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!parsed.success) return;
 
         state.pushHistory();
-        const clones = parsed.data.mapEditNodes.map((node) => state.cloneNode(node));
+        const seen = new Set<string>();
+        const clones = parsed.data.mapEditNodes.flatMap((node) =>
+          seen.has(node.id) ? [] : state.cloneNode(node, seen),
+        );
         state.nodes.push(...clones);
         state.set({ selectedIds: new Set([...getRecursiveNodes(clones)].map((node) => node.id)), selectionBox: null });
       },
