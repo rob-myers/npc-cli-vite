@@ -1103,14 +1103,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.isReadOnly()) return;
 
         // symbol files should have a partially transparent image node (underlay)
-        const underlyingImageNode = [...getRecursiveNodes(state.nodes)].find(
+        const underlayImageNode = [...getRecursiveNodes(state.nodes)].find(
           (n): n is ImageMapNode => n.type === "image" && n.srcKey === fileSpecifier.key,
         );
         if (fileSpecifier.type === "symbol") {
-          if (!underlyingImageNode)
-            warn(`${fileSpecifier.key}: no underlying image node found, fallback to all nodes bounds`);
-          else if (underlyingImageNode.transform.e !== 0 || underlyingImageNode.transform.f !== 0)
-            warn(`${fileSpecifier.key}: underlying image node should have transform.{e,f} equal to 0`);
+          if (!underlayImageNode) warn(`symbol ${fileSpecifier.key}: no underlying image node found`);
+          else if (underlayImageNode.transform.e !== 0 || underlayImageNode.transform.f !== 0)
+            warn(`symbol ${fileSpecifier.key}: underlying image node transform.{e,f} should equal 0`);
         }
 
         const savedFile: MapEditSavedFile = {
@@ -1118,8 +1117,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           width: state.svgWidth,
           height: state.svgHeight,
           nodes: state.nodes,
-          bounds: (underlyingImageNode
-            ? Rect.fromJson(getNodeBounds(underlyingImageNode))
+          bounds: (underlayImageNode
+            ? Rect.fromJson(getNodeBounds(underlayImageNode))
             : Rect.fromJson(getNodeBounds(...state.nodes)).union({
                 x: 0,
                 y: 0,
