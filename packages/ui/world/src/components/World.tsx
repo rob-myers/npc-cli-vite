@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
-import { AssetsSchema, type AssetsType } from "../assets.schema";
+import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
 import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
@@ -27,6 +27,7 @@ import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
+import Obstacles from "./Obstacles";
 import Walls from "./Walls";
 import { WorldContextMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
@@ -70,10 +71,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
         | "assets"
+        | "sheets"
+        //
         | "r3f"
         | "worker"
+        //
         | "ceil"
         | "floor"
+        | "obs"
         | "view"
       )>,
 
@@ -148,8 +153,17 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled]);
 
+  state.sheets =
+    useQuery({
+      queryKey: [...state.worldQueryPrefix, "sheets"],
+      async queryFn() {
+        return await fetchParsed(`/sheets.json${getDevCacheBustQueryParam()}`, SheetsSchema);
+      },
+    }).data ?? state.sheets;
+
   const _worldQuery = useQuery({
-    queryKey: [...state.worldQueryPrefix, state.mapKey],
+    // Distinct query per World instance even if same map
+    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id],
     async queryFn() {
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
@@ -195,6 +209,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           <Floor />
           <Ceiling />
           <Walls />
+          <Obstacles />
           <Suspense>
             <NPCs />
           </Suspense>
@@ -221,6 +236,7 @@ export type State = {
   timer: Timer;
 
   assets: AssetsType;
+  sheets: SheetsType;
   /** Hash of `w.assets` */
   hash: number;
   texFloor: TexArray;
@@ -236,6 +252,7 @@ export type State = {
 
   ceil: import("./Ceiling").State;
   floor: import("./Floor").State;
+  obs: import("./Obstacles").State;
   view: import("./WorldView").State;
 
   worker: import("./WorldWorker").State;

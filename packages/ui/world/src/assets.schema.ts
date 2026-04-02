@@ -202,3 +202,4 @@ export const SheetsSchema = z.object({
   /** Maximum over all sheets, for texture array */
   maxSymbolSheetDim: z.object({ width: z.number(), height: z.number() }),
 });
+export type SheetsType = z.infer<typeof SheetsSchema>;
