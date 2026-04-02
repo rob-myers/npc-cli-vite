@@ -71,8 +71,16 @@
 
 - 🚧 sometimes `Floor` and `Ceiling` fail due to unassigned or mismatched buffer attributes
 
-- 🚧 symbol thumbnail should be clipped to image node's bounds
-  - this means e.g. the outer part of doors will not be drawn in thumbnail
+- 🚧 investigate symbol bounds
+  - 🔔 clipping to underlay image bounds means outer part of doors not drawn in thumbnail
+    - however provides better thumbnail alignment when laying out geomorphs
+    - could even consider further restriction to gridRect
+  - 🔔 seen symbol alignment improve on re-add symbol to 301
+  - ✅ reflection of symbol takes account of node.offset
+    - on reflect y/x-axis we negate x/y-offset
+  - ✅ `createSymbolFromSavedFile` should not apply `node.offset` to geometry
+  - 🚧 check other symbols
+
 - obstacle polygons should be clipped to image node's bounds
   - otherwise they'll be overlap in symbol spritesheet
 
