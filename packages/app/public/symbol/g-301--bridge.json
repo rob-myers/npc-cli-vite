@@ -60,12 +60,12 @@
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 2.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(1, 0, 0, 1, -2, 0.5)"
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
           "id": "a07d1583-de2c-478e-8381-feb1092fc523",
