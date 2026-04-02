@@ -17,7 +17,7 @@ export function WorldContextMenu() {
   const mapKeys = mapManifest ? Object.keys(mapManifest.byKey) : [];
 
   const state = useStateRef(() => ({
-    y: tryLocalStorageGetParsed(storageKey(w.id)) ?? 0,
+    y: tryLocalStorageGetParsed(storageKey(w.id)) ?? 40,
     onDragEnd() {
       tryLocalStorageSet(storageKey(w.id), String(y.get()));
     },

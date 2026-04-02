@@ -69,7 +69,7 @@
 - ✅ need symbol `office--001--2x2` instead of `console--019--2x2`
   - "apparent" alignment issues related to some symbol underlays having doors
 
-- 🚧 sometimes `Floor` and `Ceiling` fail due to unassigned or mismatched buffer attributes
+- ✅ sometimes `Floor` and `Ceiling` fail due to unassigned or mismatched buffer attributes
 
 - ✅ investigate symbol bounds
   - 🔔 clipping to underlay image bounds means outer part of doors not drawn in thumbnail
