@@ -28,7 +28,7 @@ import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import Walls from "./Walls";
-import { WorldContextMenu } from "./WorldContextMenu";
+import { WorldContextMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
 import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
