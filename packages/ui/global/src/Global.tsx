@@ -11,7 +11,7 @@ export default function Global() {
 
   return (
     <div className="flex flex-col items-center h-full overflow-auto gap-4">
-      <div className="p-4 flex flex-wrap gap-2 *:px-2">
+      <div className="p-4 flex flex-wrap items-center h-full gap-2 *:px-2">
         <button
           type="button"
           className={cn(
