@@ -1,6 +1,6 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
-import { entries, pause } from "@npc-cli/util/legacy/generic";
+import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
@@ -10,7 +10,7 @@ import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
-import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
+import { geomorphGridMeters, gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { getGridPattern } from "../service/grid-pattern";
@@ -25,32 +25,34 @@ export default function Floor() {
       quad: createXzQuad(),
       gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(100, 100, 100, 0.8)"),
 
+      /** itemSize 2 */
+      uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
+      /** itemSize 2 */
+      uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
+      /** itemSize 1 */
+      uvTextureIds: new Uint32Array(MAX_GEOMORPH_INSTANCES),
+
       addUvs() {
-        if (!state.inst) return;
+        const uvOffsets = state.quad.getAttribute("uvOffsets");
+        (uvOffsets.array as Float32Array).fill(0); // repeated (0, 0)
+        const uvDimensions = state.quad.getAttribute("uvDimensions");
+        (uvDimensions.array as Float32Array).fill(0);
+        const uvTextureIds = state.quad.getAttribute("uvTextureIds");
+        (uvTextureIds.array as Uint32Array).fill(0);
 
-        const attr = {
-          /** Texture subrect top-left */
-          uvOffsets: { def: [] as number[], TypedArray: Float32Array, itemSize: 2 },
-          /** Texture subrect dimensions */
-          uvDimensions: { def: [] as number[], TypedArray: Float32Array, itemSize: 2 },
-          /** Texture ID for spritesheets */
-          uvTextureIds: { def: [] as number[], TypedArray: Uint32Array, itemSize: 1 },
-        };
+        for (const [gmId, gm] of w.gms.entries()) {
+          // geomorph 301 pngRect height/width ~ 0.5 but not equal
+          (uvDimensions.array as Float32Array)[gmId * 2 + 0] = 1;
+          (uvDimensions.array as Float32Array)[gmId * 2 + 1] = isEdgeGm(gm.key)
+            ? gm.bounds.height / gm.bounds.width
+            : 1;
 
-        for (const gm of w.gms) {
-          attr.uvOffsets.def.push(0, 0);
-          attr.uvDimensions.def.push(
-            1,
-            // geomorph 301 pngRect height/width ~ 0.5 but not equal
-            isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1,
-          );
-          attr.uvTextureIds.def.push(w.getGmKeyTexId(gm.key));
+          (uvTextureIds.array as Uint32Array)[gmId * 1 + 0] = w.getGmKeyTexId(gm.key);
         }
 
-        for (const [key, value] of entries(attr)) {
-          const { def, TypedArray, itemSize } = value;
-          state.inst.geometry.setAttribute(key, new THREE.InstancedBufferAttribute(new TypedArray(def), itemSize));
-        }
+        uvOffsets.needsUpdate = true;
+        uvDimensions.needsUpdate = true;
+        uvTextureIds.needsUpdate = true;
       },
 
       async draw() {
@@ -172,24 +174,26 @@ export default function Floor() {
   }, [w.hash, w.nav, w.gmsData]);
 
   return (
-    <group>
-      {w.gms.length > 0 && (
-        <instancedMesh
-          name="floor"
-          ref={state.ref("inst")}
-          args={[state.quad, undefined, w.gms.length]}
-          renderOrder={-3}
-        >
-          <meshStandardNodeMaterial
-            side={THREE.DoubleSide}
-            transparent
-            key={shaderMeta.uid}
-            colorNode={shaderMeta.texNode}
-            depthWrite={false}
-          />
-        </instancedMesh>
-      )}
-    </group>
+    <instancedMesh
+      name="floor"
+      ref={state.ref("inst")}
+      args={[undefined, undefined, MAX_GEOMORPH_INSTANCES]}
+      renderOrder={-3}
+    >
+      <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
+        <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
+        <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
+        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+      </bufferGeometry>
+
+      <meshStandardNodeMaterial
+        side={THREE.DoubleSide}
+        transparent
+        key={shaderMeta.uid}
+        colorNode={shaderMeta.texNode}
+        depthWrite={false}
+      />
+    </instancedMesh>
   );
 }
 
