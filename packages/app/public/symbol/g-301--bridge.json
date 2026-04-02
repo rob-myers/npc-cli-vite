@@ -29,74 +29,36 @@
           "name": "stateroom--014--2x2",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": -2.5, "f": 482.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 480},
           "type": "symbol",
           "srcKey": "stateroom--014--2x2",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, -2.5, 482.5)"
+          "cssTransform": "matrix(1, 0, 0, -1, 0, 480)"
         },
         {
           "id": "d2117b74-0f1c-41be-95e4-42ebb5fb5a21",
           "name": "stateroom--014--2x2",
           "locked": false,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": -1,
-            "e": 117.5,
-            "f": 482.5
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 120, "f": 480},
           "type": "symbol",
           "srcKey": "stateroom--014--2x2",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 117.5, 482.5)"
-        },
-        {
-          "id": "56b70cf8-83da-4e10-b502-daa1d1ef274a",
-          "name": "stateroom--036--2x4",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-          "type": "symbol",
-          "srcKey": "stateroom--036--2x4",
-          "baseRect": {"width": 120, "height": 240},
-          "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+          "cssTransform": "matrix(1, 0, 0, -1, 120, 480)"
         },
         {
           "id": "a07d1583-de2c-478e-8381-feb1092fc523",
           "name": "stateroom--036--2x4",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": -2.5, "f": 602.5},
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 602.5},
           "type": "symbol",
           "srcKey": "stateroom--036--2x4",
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, -2.5, 602.5)"
-        },
-        {
-          "id": "e8bb8a0b-9bf5-4a49-bcec-e51c3fc83041",
-          "name": "stateroom--036--2x4",
-          "locked": false,
-          "visible": true,
-          "transform": {
-            "a": -1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 1202.5,
-            "f": -2.5
-          },
-          "type": "symbol",
-          "srcKey": "stateroom--036--2x4",
-          "baseRect": {"width": 120, "height": 240},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, 1, 1202.5, -2.5)"
+          "cssTransform": "matrix(0, -1, 1, 0, 0, 602.5)"
         },
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
@@ -147,28 +109,28 @@
           "cssTransform": "matrix(0, 1, -1, 0, 1192.5, 240)"
         },
         {
-          "id": "a410db85-34bd-447b-88cc-0de110312a9e",
-          "name": "office--001--2x2",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 122.5},
-          "type": "symbol",
-          "srcKey": "office--001--2x2",
-          "baseRect": {"width": 120, "height": 120},
-          "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(-1, 0, 0, 1, 238, 120.5)"
-        },
-        {
           "id": "7a8d3144-d2d1-453c-9c0d-efeaeda7f260",
           "name": "office--001--2x2",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 962.5, "f": 120},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 960, "f": 120},
           "type": "symbol",
           "srcKey": "office--001--2x2",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(1, 0, 0, 1, 960.5, 118)"
+          "cssTransform": "matrix(1, 0, 0, 1, 958, 118)"
+        },
+        {
+          "id": "d96f2083-134d-402f-a819-5551d0ee818d",
+          "name": "stateroom--036--2x4",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
+          "type": "symbol",
+          "srcKey": "stateroom--036--2x4",
+          "baseRect": {"width": 120, "height": 240},
+          "offset": {"x": 2, "y": -2},
+          "cssTransform": "matrix(-1, 0, 0, 1, 1202, -2)"
         }
       ]
     },
@@ -247,6 +209,30 @@
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }
       ]
+    },
+    {
+      "id": "6d777e3d-55dc-467a-aafd-c6cc70f25613",
+      "name": "office--001--2x2",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 120},
+      "type": "symbol",
+      "srcKey": "office--001--2x2",
+      "baseRect": {"width": 120, "height": 120},
+      "offset": {"x": 2, "y": -2},
+      "cssTransform": "matrix(-1, 0, 0, 1, 242, 118)"
+    },
+    {
+      "id": "89b90ad6-dfa6-4291-a030-a7684b495b23",
+      "name": "stateroom--036--2x4",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "symbol",
+      "srcKey": "stateroom--036--2x4",
+      "baseRect": {"width": 120, "height": 240},
+      "offset": {"x": -2, "y": -2},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},

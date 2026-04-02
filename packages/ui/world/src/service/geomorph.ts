@@ -441,8 +441,11 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
           height: node.baseRect.height,
           transform: {
             ...node.transform,
-            e: node.transform.e + node.offset.x,
-            f: node.transform.f + node.offset.y,
+            // e: node.transform.e + node.offset.x,
+            // f: node.transform.f + node.offset.y,
+            // 🔔 symbol geometry is already offset
+            e: node.transform.e + 0,
+            f: node.transform.f + 0,
           },
           meta,
         });
