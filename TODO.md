@@ -84,6 +84,10 @@
 - ❌ obstacle polygons should be clipped to image node's bounds
   - otherwise they'll be overlap in symbol spritesheet
 
+- 🚧 propagate e.g. `meta.h` from symbol into obstacles
+- 🚧 fix missing obstacles
+- 🚧 use textures
+
 - start generating documentation in README.md
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
