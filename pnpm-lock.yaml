@@ -695,6 +695,9 @@ importers:
 
   packages/ui/world:
     dependencies:
+      '@base-ui/react':
+        specifier: 'catalog:'
+        version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@npc-cli/graph':
         specifier: workspace:^
         version: link:../../graph
