@@ -128,6 +128,7 @@ export default function Ceiling() {
   }, []);
 
   useEffect(() => {
+    if (!state.inst) return;
     state.transformInstances();
     state.draw().then(() => w.update());
   }, [w.hash, w.nav, w.gmsData]);
@@ -139,7 +140,7 @@ export default function Ceiling() {
     <instancedMesh
       name="ceiling"
       ref={state.ref("inst")}
-      args={[w.floor?.inst?.geometry, undefined, MAX_GEOMORPH_INSTANCES]}
+      args={[w.floor.inst?.geometry, undefined, MAX_GEOMORPH_INSTANCES]}
       position={[0, wallHeight, 0]}
       renderOrder={6}
     >
