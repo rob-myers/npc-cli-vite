@@ -672,6 +672,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           .preMultiplySelf(new DOMMatrix([a, b, c, d, e, f]));
         Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
+        if ("offset" in node) {
+          if (type === "horizontal") node.offset.x = -node.offset.x;
+          if (type === "vertical") node.offset.y = -node.offset.y;
+        }
+
         node.cssTransform = computeNodeCssTransform(node);
       },
       reflectSelected(type) {
@@ -1126,6 +1131,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
                 height: state.svgHeight,
               })
           ).precision(6),
+          // bounds: Rect.fromJson(getNodeBounds(...state.nodes))
+          //   .union({ x: 0, y: 0, width: state.svgWidth, height: state.svgHeight })
+          //   .precision(6),
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"
