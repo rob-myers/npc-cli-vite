@@ -60,7 +60,7 @@
 
 - ✅ BUG map origin is not aligned to world origin
 
-- 🚧 symbol asset bounds should come from "top image node"
+- ✅ symbol asset bounds should come from "top image node"
   - ✅ transform.{e,f} should not include offset when snap
     - ✅ confusing (dx, dy) for console--019
     - ✅ console--019 should have transform.{e,f} 0
@@ -71,7 +71,7 @@
 
 - 🚧 sometimes `Floor` and `Ceiling` fail due to unassigned or mismatched buffer attributes
 
-- 🚧 investigate symbol bounds
+- ✅ investigate symbol bounds
   - 🔔 clipping to underlay image bounds means outer part of doors not drawn in thumbnail
     - however provides better thumbnail alignment when laying out geomorphs
     - could even consider further restriction to gridRect
@@ -79,9 +79,9 @@
   - ✅ reflection of symbol takes account of node.offset
     - on reflect y/x-axis we negate x/y-offset
   - ✅ `createSymbolFromSavedFile` should not apply `node.offset` to geometry
-  - 🚧 check other symbols
+  - ✅ check other symbols
 
-- obstacle polygons should be clipped to image node's bounds
+- ❌ obstacle polygons should be clipped to image node's bounds
   - otherwise they'll be overlap in symbol spritesheet
 
 - start generating documentation in README.md
