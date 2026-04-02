@@ -72,6 +72,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         | "assets"
         | "r3f"
         | "worker"
+        | "ceil"
         | "floor"
         | "view"
       )>,
@@ -233,6 +234,7 @@ export type State = {
   seenGmKeys: StarShipGeomorphKey[];
   gmsData: DerivedGmsData;
 
+  ceil: import("./Ceiling").State;
   floor: import("./Floor").State;
   view: import("./WorldView").State;
 
