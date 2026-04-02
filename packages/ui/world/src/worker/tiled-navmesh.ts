@@ -13,8 +13,10 @@ const config = {
   // cellSize: 0.05,
 
   // 0.05 * 30 === 1.5
-  cellSize: 0.05,
-  tileSizeVoxels: 30,
+  // cellSize: 0.05,
+  // tileSizeVoxels: 30,
+  cellSize: 0.1,
+  tileSizeVoxels: 15,
 
   cellHeight: 0.001,
   walkableRadiusWorld: 0.1,
