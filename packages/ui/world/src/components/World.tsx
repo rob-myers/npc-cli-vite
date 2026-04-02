@@ -72,6 +72,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         | "assets"
         | "r3f"
         | "worker"
+        | "floor"
         | "view"
       )>,
 
@@ -232,7 +233,9 @@ export type State = {
   seenGmKeys: StarShipGeomorphKey[];
   gmsData: DerivedGmsData;
 
+  floor: import("./Floor").State;
   view: import("./WorldView").State;
+
   worker: import("./WorldWorker").State;
   nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
   assetsPending: boolean;

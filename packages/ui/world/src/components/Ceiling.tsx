@@ -1,6 +1,6 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat, useStateRef } from "@npc-cli/util";
-import { entries, pause } from "@npc-cli/util/legacy/generic";
+import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
@@ -10,9 +10,8 @@ import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
-import { gmFloorExtraScale, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
-import { createXzQuad, embedXZMat4 } from "../service/geometry";
-import { isEdgeGm } from "../service/geomorph";
+import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
+import { embedXZMat4 } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 export default function Ceiling() {
@@ -20,35 +19,6 @@ export default function Ceiling() {
 
   const state = useStateRef(() => ({
     inst: null as null | THREE.InstancedMesh,
-    quad: createXzQuad(),
-
-    addUvs() {
-      if (!state.inst) return;
-
-      const attr = {
-        /** Texture subrect top-left */
-        uvOffsets: { def: [] as number[], TypedArray: Float32Array, itemSize: 2 },
-        /** Texture subrect dimensions */
-        uvDimensions: { def: [] as number[], TypedArray: Float32Array, itemSize: 2 },
-        /** Texture ID for spritesheets */
-        uvTextureIds: { def: [] as number[], TypedArray: Uint32Array, itemSize: 1 },
-      };
-
-      for (const gm of w.gms) {
-        attr.uvOffsets.def.push(0, 0);
-        attr.uvDimensions.def.push(
-          1,
-          // geomorph 301 bounds height/width ~ 0.5 but not equal
-          isEdgeGm(gm.key) ? gm.bounds.height / gm.bounds.width : 1,
-        );
-        attr.uvTextureIds.def.push(w.getGmKeyTexId(gm.key));
-      }
-
-      for (const [key, value] of entries(attr)) {
-        const { def, TypedArray, itemSize } = value;
-        state.inst.geometry.setAttribute(key, new THREE.InstancedBufferAttribute(new TypedArray(def), itemSize));
-      }
-    },
 
     async draw() {
       for (const [texId, gmKey] of w.seenGmKeys.entries()) {
@@ -151,29 +121,27 @@ export default function Ceiling() {
 
   useEffect(() => {
     state.transformInstances();
-    state.addUvs();
     state.draw().then(() => w.update());
   }, [w.hash, w.nav, w.gmsData]);
 
-  return (
-    <group>
-      {w.gms.length > 0 && (
-        <instancedMesh
-          name="ceiling"
-          ref={state.ref("inst")}
-          args={[state.quad, undefined, w.gms.length]}
-          position={[0, wallHeight, 0]}
-          renderOrder={6}
-        >
-          <meshStandardNodeMaterial
-            side={THREE.DoubleSide}
-            transparent
-            key={shaderMeta.uid}
-            colorNode={shaderMeta.texNode}
-            depthWrite={false}
-          />
-        </instancedMesh>
-      )}
-    </group>
-  );
+  /** Reuse floor quad geometry and instanced attributes */
+  const floorReady = Boolean(w.floor?.inst?.geometry);
+
+  return floorReady ? (
+    <instancedMesh
+      name="ceiling"
+      ref={state.ref("inst")}
+      args={[w.floor?.inst?.geometry, undefined, MAX_GEOMORPH_INSTANCES]}
+      position={[0, wallHeight, 0]}
+      renderOrder={6}
+    >
+      <meshStandardNodeMaterial
+        side={THREE.DoubleSide}
+        transparent
+        key={shaderMeta.uid}
+        colorNode={shaderMeta.texNode}
+        depthWrite={false}
+      />
+    </instancedMesh>
+  ) : null;
 }

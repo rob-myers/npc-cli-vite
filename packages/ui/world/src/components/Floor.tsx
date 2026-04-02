@@ -20,7 +20,7 @@ export default function Floor() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
-    () => ({
+    (): State => ({
       inst: null as null | THREE.InstancedMesh,
       quad: createXzQuad(),
       gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(100, 100, 100, 0.8)"),
@@ -155,6 +155,8 @@ export default function Floor() {
     { reset: { gridPattern: true } },
   );
 
+  w.floor = state;
+
   // three shader language
   const shaderMeta = useMemo(() => {
     const texArray = w.texFloor;
@@ -196,6 +198,19 @@ export default function Floor() {
     </instancedMesh>
   );
 }
+
+export type State = {
+  inst: null | THREE.InstancedMesh;
+  quad: THREE.BufferGeometry;
+  gridPattern: CanvasPattern;
+  uvOffsets: Float32Array;
+  uvDimensions: Float32Array;
+  uvTextureIds: Uint32Array;
+  addUvs(): void;
+  draw(): Promise<void>;
+  drawGm(gmKey: StarShipGeomorphKey): void;
+  transformInstances(): void;
+};
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 // also try `Math.PI / 4`
