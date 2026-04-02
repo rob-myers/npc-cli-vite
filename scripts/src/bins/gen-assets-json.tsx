@@ -9,7 +9,6 @@
  * ```sh
  * pnpm gen-assets-json
  * pnpm gen-assets-json --changedFiles='["/path/to/.../public/symbol/console--051--0.4x0.6.json"]'
- * pnpm -F scripts watch-assets
  * ```
  */
 import fs, { writeFileSync } from "node:fs";
