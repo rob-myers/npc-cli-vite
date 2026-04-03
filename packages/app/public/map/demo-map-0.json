@@ -4,7 +4,7 @@
   "height": 600,
   "nodes": [
     {
-      "id": "4b04b32a-9114-46a1-ba7c-6c7ee731a2d8",
+      "id": "881ce1f8-da81-4533-a8cf-965ff452172d",
       "name": "g-301--bridge",
       "locked": false,
       "visible": true,
@@ -12,11 +12,11 @@
       "type": "symbol",
       "srcKey": "g-301--bridge",
       "baseRect": {"width": 1200, "height": 600},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+      "offset": {"x": -5.5, "y": -22},
+      "cssTransform": "matrix(1, 0, 0, 1, -5.5, -22)"
     },
     {
-      "id": "9f35d613-8f54-477e-a7a9-053f9973fe0e",
+      "id": "e00ad195-2dd4-4555-84a3-12501f995a21",
       "name": "g-301--bridge",
       "locked": false,
       "visible": true,
@@ -24,11 +24,11 @@
       "type": "symbol",
       "srcKey": "g-301--bridge",
       "baseRect": {"width": 1200, "height": 600},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, -1, 0, 1200)"
+      "offset": {"x": -5.5, "y": 22},
+      "cssTransform": "matrix(1, 0, 0, -1, -5.5, 1222)"
     }
   ],
-  "bounds": {"x": 0, "y": 0, "width": 1200, "height": 1200},
+  "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 1244},
   "type": "map",
   "key": "demo-map-0"
 }
