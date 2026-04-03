@@ -439,14 +439,8 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
           symbolKey: node.srcKey,
           width: node.baseRect.width,
           height: node.baseRect.height,
-          transform: {
-            ...node.transform,
-            // e: node.transform.e + node.offset.x,
-            // f: node.transform.f + node.offset.y,
-            // 🔔 symbol geometry is already offset
-            e: node.transform.e + 0,
-            f: node.transform.f + 0,
-          },
+          // 🔔 symbol geometry is already offset
+          transform: { ...node.transform },
           meta,
         });
       continue;
@@ -607,6 +601,8 @@ export function instantiateFlatSymbol(
 
   const decor = sym.decor.map((poly) => poly.cleanClone(mat, transformDecorMeta(poly.meta, mat, meta.y)));
 
+  // 🚧 when apply, transform-origin should be center
+
   return {
     key: sym.key,
     isHull: sym.isHull,
@@ -628,6 +624,8 @@ export function instantiateFlatSymbol(
           transform: tmpMat2
             .setMatrixValue(transform)
             .preMultiply(poly.meta.transform ?? [1, 0, 0, 1, 0, 0])
+            // .preMultiply([1, 0, 0, 1, -poly.center.x, -poly.center.y])
+            // .postMultiply([1, 0, 0, 1, poly.center.x, poly.center.y])
             .toArray(),
         },
       }),

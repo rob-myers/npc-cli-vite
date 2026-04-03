@@ -134,7 +134,7 @@ export default function Obstacles(_props: Props) {
       </bufferGeometry>
 
       {/* 🚧 */}
-      <meshStandardMaterial color="red" />
+      <meshStandardMaterial color="red" side={THREE.DoubleSide} />
       {/* <instancedAtlasMaterial
         side={THREE.DoubleSide}
         transparent
