@@ -85,9 +85,11 @@
   - otherwise they'll be overlap in symbol spritesheet
 
 - 🚧 floor/ceiling textures per gmId not per gmKey
-  - navmesh will be continuous i.e. cannot assume same triangles for distinct gmKey instances
-  - draw as before but per gmId
+  - 🔔 continuous navmesh: cannot assume same triangles for distinct gmKey instances
+  - ✅ draw floor as before but per gmId (ceil still per gmKey)
   - 🚧 change NavMesh tile triangle test from gridRect to worldBounds
+  - if ceilings per gmKey then would need attribute to lookup
+    - so maybe ceiling per gmId too
 
 - 🚧 fix missing obstacles
   - ✅ related to reflection
@@ -97,6 +99,9 @@
 - use textures
 
 - start generating documentation in README.md
+
+- check glsl fallback e.g. incognito or force
+
 
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

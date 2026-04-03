@@ -29,6 +29,7 @@ const config = {
   maxSimplificationError: 1.3,
   maxEdgeLength: 12,
   maxVerticesPerPoly: 5,
+  // maxVerticesPerPoly: 3,
   detailSampleDistance: 6,
   detailSampleMaxError: 1,
 } as const satisfies Partial<TiledNavMeshOptions>;

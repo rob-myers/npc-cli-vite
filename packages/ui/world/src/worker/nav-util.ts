@@ -1,8 +1,7 @@
-import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat } from "@npc-cli/util/geom/mat";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { Vect } from "@npc-cli/util/geom/vect";
-import { debug, mapValues, warn } from "@npc-cli/util/legacy/generic";
+import { debug, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh, NavMeshTile } from "navcat";
 import * as THREE from "three";
 import { decompToXZGeometry } from "../service/geometry";
@@ -42,7 +41,8 @@ function computeGmInstanceMesh(gmGeom: WW.GmGeomForNav): {
   return { mesh, customAreaDefs };
 }
 
-export type FloorNavTris = { [gmKey in StarShipGeomorphKey]: [number[], number[]][] };
+/** Indexed by `gmId` */
+export type GmFloorNavTris = [number[], number[]][][];
 
 export interface TileCacheConvexAreaDef {
   areaId: number;
@@ -58,15 +58,10 @@ export interface TileCacheConvexAreaDef {
  * 🔔 We use @see {WW.GmGeomForNav} instead of @see {Geomorph.LayoutInstance}
  * to avoid HMR issues related to shared webworker code.
  */
-export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): FloorNavTris {
-  const gmKeyToFirst = gmGeoms.reduce(
-    (agg, gm) => ((agg[gm.key] ??= gm), agg),
-    {} as Record<StarShipGeomorphKey, WW.GmGeomForNav>,
-  );
-  const toNavTris: FloorNavTris = mapValues(gmKeyToFirst, () => []);
+export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): GmFloorNavTris {
+  if (gmGeoms.length === 0) return []; // skip empty-map
 
-  /** Those geomorph instances which are 1st for their gmKey */
-  const firstGms = Object.values(gmKeyToFirst);
+  const toNavTris: GmFloorNavTris = gmGeoms.map(() => []);
   const v2d = new Vect();
 
   const tiles = Object.values(nav.tiles);
@@ -74,30 +69,39 @@ export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): Floor
     const center = { x: (tile.bounds[0] + tile.bounds[3]) * 0.5, y: (tile.bounds[2] + tile.bounds[5]) * 0.5 };
 
     // 🚧 1 or 2 gms containing center
-    const gm = firstGms.find((x) => tmpRect.copy(x.gridRect).contains(center));
-    // const gm = firstGms.find((x) => tmpRect.copy(x.worldBounds).contains(center));
-    if (gm === undefined) {
-      warn("🤖 nav.worker: skipping tile outside gm grid rects", { center });
+    // const gm = firstGms.find((x) => tmpRect.copy(x.gridRect).contains(center));
+    const gmsContainingTile = gmGeoms.filter((x) => tmpRect.copy(x.worldBounds).contains(center));
+    if (gmsContainingTile.length === 0) {
+      warn("🤖 nav.worker: skipping tile outside all gms", { center });
       continue;
     }
 
-    const tileTris = getTileTriangles(tile); // [positions, indices][]
+    const [worldPositions, indices] = getTileTriangles(tile);
 
-    // apply inverseTransform because we'll draw in local coords
-    tileTris[0].forEach((t, i, positions) => {
-      if (i % 3 === 0) {
-        // x -> x
-        v2d.x = t;
-      } else if (i % 3 === 2) {
-        // z -> y
-        v2d.y = t;
-        tmpMat3.setMatrixValue(gm.inverseMat3).transformPoint(v2d);
-        positions[i - 2] = v2d.x;
-        positions[i] = v2d.y;
-      }
-    });
+    for (const [gmGeomIndex, gmGeom] of gmsContainingTile.entries()) {
+      const localPositions = worldPositions.slice(); // copy per gm
 
-    toNavTris[gm.key].push(tileTris);
+      // apply inverseTransform to (flat) positiions because we'll draw in local coords
+      localPositions.forEach((t, i, positions) => {
+        if (i % 3 === 0) {
+          // x -> x
+          v2d.x = t;
+        } else if (i % 3 === 2) {
+          // z -> y
+          v2d.y = t;
+          tmpMat3.setMatrixValue(gmGeom.inverseMat3).transformPoint(v2d);
+          positions[i - 2] = v2d.x;
+          positions[i] = v2d.y;
+
+          // 🚧 WIP expect hull door triangle in 2 gms
+          console.log(gmGeomIndex);
+          // if (gmGeomIndex === 1) positions[i - 2] += 4;
+        }
+      });
+
+      const gmId = gmGeoms.indexOf(gmGeom);
+      toNavTris[gmId].push([localPositions, indices]);
+    }
   }
 
   return toNavTris;
