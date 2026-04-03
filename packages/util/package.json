@@ -15,7 +15,7 @@
     "./fetch-parsed": "./src/service/fetchParsed.ts",
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js",
-    "./service/skia-canvas": "./src/service/skia-canvas.ts"
+    "./service/canvas": "./src/service/canvas.ts"
   },
   "scripts": {},
   "dependencies": {

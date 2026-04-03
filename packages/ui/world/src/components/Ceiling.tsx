@@ -1,6 +1,6 @@
 import { Mat, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";

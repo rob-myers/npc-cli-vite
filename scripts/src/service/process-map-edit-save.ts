@@ -18,7 +18,7 @@ import { isNodeTransformable, migrateMapEditSavedFile, traverseNodesAsync } from
 import { geomService, Mat, Rect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { deepClone, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
-import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
