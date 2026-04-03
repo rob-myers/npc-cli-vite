@@ -64,7 +64,8 @@ export default class DerivedGmsData {
     );
     gmData.tops = {
       broad: gm.walls.filter((x) => x.meta.broad === true),
-      hull: Poly.union(gm.walls.filter((x) => x.meta.hull).concat(gm.hullDoors.map((x) => x.computeThinPoly()))),
+      // hull: Poly.union(gm.walls.filter((x) => x.meta.hull).concat(gm.hullDoors.map((x) => x.computeThinPoly()))),
+      hull: Poly.union(gm.walls.filter((x) => x.meta.hull)),
       // nonHull: Poly.union(nonHullWallsTouchCeil.concat(gm.doors.map((door) => door.computeThinPoly()))).flatMap((x) =>
       //   geomService.createInset(x, 0.02),
       // ),
