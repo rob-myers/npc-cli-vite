@@ -69,14 +69,17 @@ export default function WorldWorker() {
       mapKey: w.mapKey,
       // - tailored data avoids worker dependency on "main thread modules"
       // - in PROD we send assets mutations too
-      gmGeoms: w.gms.map(({ key, determinant, gridRect, inverseMatrix, mat4, navDecomp }) => ({
-        key,
-        triangulation: navDecomp, // implicit Vect -> {x, y}
-        determinant,
-        gridRect: gridRect.json,
-        inverseMat3: inverseMatrix.json,
-        mat4Array: mat4.toArray(),
-      })),
+      gmGeoms: w.gms.map<WW.GmGeomForNav>(
+        ({ key, bounds, determinant, gridRect, matrix, inverseMatrix, mat4, navDecomp }) => ({
+          key,
+          triangulation: navDecomp, // implicit Vect -> {x, y}
+          worldBounds: bounds.clone().applyMatrix(matrix),
+          determinant,
+          gridRect: gridRect.json,
+          inverseMat3: inverseMatrix.json,
+          mat4Array: mat4.toArray(),
+        }),
+      ),
     } satisfies WW.MsgToWorker);
 
     w.set({ assetsPending: true });
