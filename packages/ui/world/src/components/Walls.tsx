@@ -84,6 +84,7 @@ export default function Walls() {
 
   return wallCount ? (
     <instancedMesh
+      // visible={false}
       name="walls"
       ref={state.ref("inst")}
       args={[state.quad, undefined, wallCount]}

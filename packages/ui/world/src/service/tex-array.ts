@@ -49,7 +49,8 @@ export class TexArray {
   }
 
   /**
-   * Resize if needed i.e. if "dimension" or "number of textures" has changed.
+   * - Resize if needed i.e. if "dimension" or "number of textures" has changed.
+   * - This recreates `THREE.DataArrayTexture`.
    */
   resize(opts: Omit<TexArrayOpts, "ctKey">) {
     if (

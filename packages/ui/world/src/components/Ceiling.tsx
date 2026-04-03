@@ -22,6 +22,7 @@ export default function Ceiling() {
       inst: null as null | THREE.InstancedMesh,
 
       async draw() {
+        // one texture per gmKey (unlike floors whose nav can change near hull doors)
         for (const [texId, gmKey] of w.seenGmKeys.entries()) {
           state.drawGm(gmKey);
           w.texCeil.updateIndex(texId);

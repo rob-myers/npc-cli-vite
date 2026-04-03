@@ -1,4 +1,3 @@
-import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
@@ -25,20 +24,14 @@ export default function Floor() {
       quad: createXzQuad(),
       gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(100, 100, 100, 0.8)"),
 
-      /** itemSize 2 */
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
-      /** itemSize 2 */
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
-      /** itemSize 1 */
-      uvTextureIds: new Uint32Array(MAX_GEOMORPH_INSTANCES),
 
       addUvs() {
         const uvOffsets = state.quad.getAttribute("uvOffsets");
         (uvOffsets.array as Float32Array).fill(0); // repeated (0, 0)
         const uvDimensions = state.quad.getAttribute("uvDimensions");
         (uvDimensions.array as Float32Array).fill(0);
-        const uvTextureIds = state.quad.getAttribute("uvTextureIds");
-        (uvTextureIds.array as Uint32Array).fill(0);
 
         for (const [gmId, gm] of w.gms.entries()) {
           // geomorph 301 pngRect height/width ~ 0.5 but not equal
@@ -46,48 +39,63 @@ export default function Floor() {
           (uvDimensions.array as Float32Array)[gmId * 2 + 1] = isEdgeGm(gm.key)
             ? gm.bounds.height / gm.bounds.width
             : 1;
-
-          (uvTextureIds.array as Uint32Array)[gmId * 1 + 0] = w.getGmKeyTexId(gm.key);
         }
 
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
-        uvTextureIds.needsUpdate = true;
       },
 
       async draw() {
-        // each gmKey has exactly one texture
-        for (const [texId, gmKey] of w.seenGmKeys.entries()) {
-          state.drawGm(gmKey);
-          w.texFloor.updateIndex(texId);
+        // one texture per gmId = texId (nav tris can change near hull doors)
+        for (const [gmId] of w.gms.entries()) {
+          state.drawGm(gmId);
+          w.texFloor.updateIndex(gmId);
           await pause();
         }
       },
 
-      drawGm(gmKey: StarShipGeomorphKey) {
+      drawGm(gmId) {
         const { ct } = w.texFloor;
-        const gm = w.assets.layout[gmKey];
-        if (!gm) return;
+
+        // get untransformed layout i.e. not an instance
+        const gmKey = w.gms[gmId]?.key;
+        const layout = w.assets.layout[gmKey];
+        if (!layout) return;
 
         ct.resetTransform();
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        ct.setTransform(
+          worldToCanvas,
+          0,
+          0,
+          worldToCanvas,
+          -layout.bounds.x * worldToCanvas,
+          -layout.bounds.y * worldToCanvas,
+        );
 
-        const hullFloor = gm.hullPoly.map((x) => x.clone().removeHoles());
+        const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
         drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
+        // drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: "#f00" });
 
         // grid
         ct.save();
         drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#f00", strokeStyle: null });
-        ct.setTransform(1, 0, 0, 1, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        ct.setTransform(1, 0, 0, 1, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         ct.fillStyle = state.gridPattern;
         ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
-        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+        ct.setTransform(
+          worldToCanvas,
+          0,
+          0,
+          worldToCanvas,
+          -layout.bounds.x * worldToCanvas,
+          -layout.bounds.y * worldToCanvas,
+        );
         ct.restore();
 
         // obstacle drop shadows
         const shadowPolys = Poly.union(
-          gm.obstacles.flatMap((x) =>
+          layout.obstacles.flatMap((x) =>
             x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
           ),
         );
@@ -96,7 +104,7 @@ export default function Floor() {
         // uniform directional wall shadows
         ct.save();
         drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
-        const shadowQuads = gm.walls.flatMap((w) =>
+        const shadowQuads = layout.walls.flatMap((w) =>
           w.outline.map((p1, i) => {
             const p2 = w.outline[(i + 1) % w.outline.length];
             return new Poly([
@@ -111,15 +119,15 @@ export default function Floor() {
         ct.restore();
 
         // wall bases
-        drawPolygons(ct, gm.walls, { fillStyle: "#0008", strokeStyle: null });
+        drawPolygons(ct, layout.walls, { fillStyle: "#0008", strokeStyle: null });
 
-        // draw nav mesh
+        // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.02;
         const fillStyle = "#00f5";
         const strokeStyle = "#0004";
         const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
-        (w.nav?.toNavTris[gm.key] ?? []).forEach(([positions]) => {
+        (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
             triangle.outline[0].set(positions[i], positions[i + 2]);
             triangle.outline[1].set(positions[i + 3], positions[i + 5]);
@@ -147,6 +155,7 @@ export default function Floor() {
           }).postMultiply(gm.matrix);
           // if (mat.determinant < 0) mat.preMultiply([-1, 0, 0, 1, 1, 0])
           state.inst.setMatrixAt(gmId, embedXZMat4(mat));
+          // state.inst.setMatrixAt(gmId, embedXZMat4(mat, { yHeight: gmId * 1 }));
         }
         state.inst.instanceMatrix.needsUpdate = true;
         state.inst.computeBoundingSphere();
@@ -166,7 +175,10 @@ export default function Floor() {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode, uid: generateUUID() };
+    // const sampledColor = texNode.depth(int(0));
+    // const sampledColor = texNode.depth(int(1));
+    const sampledColor = texNode.depth(instanceIndex);
+    return { texNode: sampledColor, uid: generateUUID() };
   }, []);
 
   useEffect(() => {
@@ -185,7 +197,6 @@ export default function Floor() {
       <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
         <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
-        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
       </bufferGeometry>
 
       <meshStandardNodeMaterial
@@ -205,10 +216,9 @@ export type State = {
   gridPattern: CanvasPattern;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
-  uvTextureIds: Uint32Array;
   addUvs(): void;
   draw(): Promise<void>;
-  drawGm(gmKey: StarShipGeomorphKey): void;
+  drawGm(gmId: number): void;
   transformInstances(): void;
 };
 

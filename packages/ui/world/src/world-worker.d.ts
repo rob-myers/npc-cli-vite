@@ -11,7 +11,7 @@ declare namespace WW {
     | { type: "pong" }
     | ({
         type: "tiled-navmesh-response";
-        toNavTris: import("./worker/nav-util").FloorNavTris;
+        toNavTris: import("./worker/nav-util").GmFloorNavTris;
       } & import("navcat/blocks").TiledNavMeshResult)
     | { type: "worker-hot-module-reload" };
 
