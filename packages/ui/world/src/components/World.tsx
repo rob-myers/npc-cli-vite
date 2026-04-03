@@ -31,7 +31,6 @@ import Obstacles from "./Obstacles";
 import Walls from "./Walls";
 import { WorldContextMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
-import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
 
 export default function World({ meta }: { meta: WorldUiMeta }) {
@@ -221,7 +220,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           <Debug />
         </WorldView>
         <WorldContextMenu />
-        <WorldWorker />
+        {/* <WorldWorker /> */}
       </div>
     </WorldContext.Provider>
   );
