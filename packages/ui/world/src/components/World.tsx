@@ -23,6 +23,7 @@ import { createLayoutInstance } from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
+import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
@@ -211,7 +212,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         <WorldView className={cn(uiClassName, "bg-zinc-800")}>
           <ambientLight intensity={0.85} color="#ffffff" />
           <Floor />
-          {/* <Ceiling /> */}
+          <Ceiling />
           <Walls />
           <Obstacles />
           <Suspense>
