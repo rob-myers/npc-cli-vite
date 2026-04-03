@@ -87,9 +87,14 @@
 - 🚧 floor/ceiling textures per gmId not per gmKey
   - 🔔 continuous navmesh: cannot assume same triangles for distinct gmKey instances
   - ✅ draw floor as before but per gmId (ceil still per gmKey)
-  - 🚧 change NavMesh tile triangle test from gridRect to worldBounds
-  - if ceilings per gmKey then would need attribute to lookup
-    - so maybe ceiling per gmId too
+  - ✅ change NavMesh tile triangle test from gridRect to worldBounds
+  - ✅ correctly computing triangles in different instances
+  - ✅ for the moment let's override hull doorways with a rect
+  - 🚧 ceilings per gmId too
+    - since using same quad as ceiling would need special attribute/uniform
+
+- MapEdit: map: geomorph symbol not aligned
+  - should be able to line up walls to grid
 
 - 🚧 fix missing obstacles
   - ✅ related to reflection

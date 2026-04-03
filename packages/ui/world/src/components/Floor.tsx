@@ -1,4 +1,4 @@
-import { Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
+import { geomService, Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
 import { useContext, useEffect, useMemo } from "react";
@@ -136,8 +136,13 @@ export default function Floor() {
           }
         });
 
-        // 🚧 hull doorways
-        // 🚧 hull doorways
+        // 🚧 hull doorways: covers up missing nav triangles in one of the textures
+        drawPolygons(
+          ct,
+          layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
+          { fillStyle: "#fff", strokeStyle: "#000", lineWidth: 0 },
+        );
+
         // 🚧 decals from gm.decor
         // 🚧 debug decor rects
       },
