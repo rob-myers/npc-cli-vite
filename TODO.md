@@ -86,6 +86,9 @@
 
 - 🚧 propagate e.g. `meta.h` from symbol into obstacles
 - 🚧 fix missing obstacles
+  - ✅ related to reflection
+  - ✅ can fix via THREE.DoubleSide
+  - 🚧 fix without using it by flipping based on determinant
 - 🚧 use textures
 
 - start generating documentation in README.md
