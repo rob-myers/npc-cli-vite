@@ -27,12 +27,10 @@ export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
   await ensureManifests(fileSpecifier.type, { changedFiles: [], removedFiles: [fileSpecifier] });
 }
 
-function getImageOrSymbolNodeImageUrl(node: ImageMapNode | SymbolMapNode, isMap: boolean) {
-  return isMap // avoid large map thumbnails
-    ? path.resolve(PROJECT_ROOT, "packages/app/public/symbol", `${node.srcKey}.thumbnail.png`)
-    : node.type === "image" && node.srcType === "decor"
-      ? path.resolve(PROJECT_ROOT, "packages/app/public/decor", `${node.srcKey}.svg`)
-      : path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`);
+function getImageOrSymbolNodeImageUrl(node: ImageMapNode | SymbolMapNode) {
+  return node.type === "image" && node.srcType === "decor"
+    ? path.resolve(PROJECT_ROOT, "packages/app/public/decor", `${node.srcKey}.svg`)
+    : path.resolve(PROJECT_ROOT, "packages/app/public/starship-symbol", `${node.srcKey}.png`);
 }
 
 /**
@@ -54,29 +52,38 @@ export async function processSavedFile(savedFile: MapEditSavedFile) {
 }
 
 async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
-  const isMap = savedFile.type === "map";
   const isHullSymbol = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key);
   const { filename, nodes, bounds } = savedFile;
+  const outputThumbnailFilepath = path.resolve(
+    PROJECT_ROOT,
+    `packages/app/public/${savedFile.type}`,
+    `${path.basename(filename, ".json")}.thumbnail.png`,
+  );
 
   const scale = 2;
   const integralBounds = Rect.fromJson(bounds).integerOrds();
   const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
   const ct = canvas.getContext("2d");
 
+  if (savedFile.type === "map") {
+    // currently unsupported
+    // 🚧 draw by following createMapDefFromSavedFile
+    return await canvas.toFile(outputThumbnailFilepath);
+  }
+
   await traverseNodesAsync(nodes, async (node) => {
     if (!isNodeTransformable(node)) return;
 
-    // transform about top-left
     const [a, b, c, d, tx, ty] = new Mat(node.cssTransform).toArray();
     ct.setTransform(scale, 0, 0, scale, 0, 0);
-    ct.translate(tx - bounds.x, ty - bounds.y);
-    ct.transform(a, b, c, d, 0, 0);
+    ct.translate(-bounds.x, -bounds.y);
+    ct.transform(a, b, c, d, tx, ty);
 
     switch (node.type) {
       case "image":
       case "symbol": {
         if (isHullSymbol) break; // avoid large hull thumbnails
-        const image = await loadImage(getImageOrSymbolNodeImageUrl(node, isMap));
+        const image = await loadImage(getImageOrSymbolNodeImageUrl(node));
 
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
         ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
@@ -108,8 +115,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   });
 
   if (canvas.width === 0 || canvas.height === 0) {
-    warn(`Skipping thumbnail generation for ${filename} due to zero width or height`);
-    return;
+    return warn(`Skipping thumbnail generation for ${filename} due to zero width or height`);
   }
 
   if (isHullSymbol) {
@@ -119,13 +125,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
     ct.fillText(savedFile.key, (canvas.width - rect.width) / 2, (canvas.height + 32) / 2);
   }
 
-  await canvas.toFile(
-    path.resolve(
-      PROJECT_ROOT,
-      `packages/app/public/${savedFile.type}`,
-      `${path.basename(filename, ".json")}.thumbnail.png`,
-    ),
-  );
+  await canvas.toFile(outputThumbnailFilepath);
 }
 
 type ProcessFileOpts = {

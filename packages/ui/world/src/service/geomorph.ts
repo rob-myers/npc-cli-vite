@@ -404,8 +404,9 @@ export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.
       gmKey: gm.srcKey,
       transform: {
         ...gm.transform,
-        e: toPrecision((gm.transform.e + gm.offset.x) * sguToWorldScale, 6),
-        f: toPrecision((gm.transform.f + gm.offset.y) * sguToWorldScale, 6),
+        // 🔔 ignoring offset amounts to correcting bounds
+        e: toPrecision(gm.transform.e * sguToWorldScale, 6),
+        f: toPrecision(gm.transform.f * sguToWorldScale, 6),
       },
     })),
   };

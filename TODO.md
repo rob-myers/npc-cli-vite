@@ -93,13 +93,11 @@
   - ✅ ceilings per gmId too
     - since using same quad as ceiling would need special attribute/uniform
 
-- 🚧 MapEdit: map: geomorph symbol not aligned
+- ✅ MapEdit: map: geomorph symbol not aligned
   - ✅ keep "the space at top" of 301
   - ✅ remove `node.offset` for hull symbols
   - ✅ add offset to respective `<image>` in map
-  - understand why it works and somehow undo it
-    - `node.offset` should not be zero
-    - `<image>` should not have offset `x y`
+  - ✅ fix it by changing how we compute mapDefs
 
 - 🚧 fix missing obstacles
   - ✅ related to reflection
@@ -112,7 +110,9 @@
 
 - check glsl fallback e.g. incognito or force
 
-
+- improve thumbnails
+  - generate map thumbnails (currently blank)
+  - clean symbol thumbnails
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - more generally use sub-stratification
