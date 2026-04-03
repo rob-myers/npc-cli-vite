@@ -783,9 +783,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.srcKey = symbolKey;
         node.baseRect.width = meta.width;
         node.baseRect.height = meta.height;
-        node.cssTransform = computeNodeCssTransform(node);
 
-        node.offset = new Vect(meta.bounds.x, meta.bounds.y);
+        // hull symbols occur in maps and are offset using <image x y>
+        node.offset = Vect.from(isHullSymbolImageKey(symbolKey) ? { x: 0, y: 0 } : meta.bounds);
+        node.cssTransform = computeNodeCssTransform(node);
 
         node.name = symbolKey;
 

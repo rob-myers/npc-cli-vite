@@ -58,7 +58,6 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const isHullSymbol = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key);
   const { filename, nodes, bounds } = savedFile;
 
-  // Scale down hull symbols rather than up
   const scale = 2;
   const integralBounds = Rect.fromJson(bounds).integerOrds();
   const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);

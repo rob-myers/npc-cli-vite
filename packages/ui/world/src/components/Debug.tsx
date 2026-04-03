@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 export function Debug() {
   const state = useStateRef(
     () => ({
-      unitCubeShown: false,
+      unitCubeShown: true,
     }),
     {
       reset: { unitCubeShown: true },
@@ -12,7 +12,7 @@ export function Debug() {
 
   return (
     <mesh name="origin" position={[0, 5, 0]} visible={state.unitCubeShown}>
-      <boxGeometry args={[0.1, 10, 0.1]} />
+      <boxGeometry args={[0.175, 10, 0.175]} />
       <meshBasicMaterial color="red" />
     </mesh>
   );
