@@ -1,4 +1,4 @@
-import { Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
+import { geomService, Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
@@ -122,26 +122,26 @@ export default function Floor() {
         drawPolygons(ct, layout.walls, { fillStyle: "#0008", strokeStyle: null });
 
         // draw nav mesh (gmId specific)
-        // ct.lineJoin = "round";
-        // ct.lineWidth = 0.02;
-        // const fillStyle = "#00f5";
-        // const strokeStyle = "#0004";
-        // const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
-        // (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
-        //   for (let i = 0; i < positions.length; i += 9) {
-        //     triangle.outline[0].set(positions[i], positions[i + 2]);
-        //     triangle.outline[1].set(positions[i + 3], positions[i + 5]);
-        //     triangle.outline[2].set(positions[i + 6], positions[i + 8]);
-        //     drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
-        //   }
-        // });
+        ct.lineJoin = "round";
+        ct.lineWidth = 0.02;
+        const fillStyle = "#00f5";
+        const strokeStyle = "#0004";
+        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
+        (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
+          for (let i = 0; i < positions.length; i += 9) {
+            triangle.outline[0].set(positions[i], positions[i + 2]);
+            triangle.outline[1].set(positions[i + 3], positions[i + 5]);
+            triangle.outline[2].set(positions[i + 6], positions[i + 8]);
+            drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
+          }
+        });
 
-        // // 🚧 hull doorways: covers up missing nav triangles in one of the textures
-        // drawPolygons(
-        //   ct,
-        //   layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
-        //   { fillStyle: "#fff", strokeStyle: "#000", lineWidth: 0 },
-        // );
+        // 🚧 hull doorways: covers up missing nav triangles in one of the textures
+        drawPolygons(
+          ct,
+          layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
+          { fillStyle: "#fff", strokeStyle: "#000", lineWidth: 0 },
+        );
 
         // 🚧 decals from gm.decor
         // 🚧 debug decor rects
