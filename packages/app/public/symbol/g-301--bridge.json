@@ -41,24 +41,24 @@
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 361, "f": 600},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 360, "f": 592.5},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, -1, 361, 600)"
+          "cssTransform": "matrix(-1, 0, 0, -1, 360, 592.5)"
         },
         {
           "id": "f41febf1-40e0-41cd-abf9-97b391685c63",
           "name": "iris-valves--005--1x1",
           "locked": false,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 961, "f": 600},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 960, "f": 592.5},
           "type": "symbol",
           "srcKey": "iris-valves--005--1x1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, -1, 961, 600)"
+          "cssTransform": "matrix(-1, 0, 0, -1, 960, 592.5)"
         },
         {
           "id": "9491dce9-e8ab-4f33-b1ae-d4a67d518f9d",

@@ -617,14 +617,21 @@
           "symbolKey": "iris-valves--005--1x1",
           "width": 1.5,
           "height": 1.5,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 9.025, "f": 15},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 9, "f": 14.8125},
           "meta": {"iris-valves--005--1x1": true}
         },
         {
           "symbolKey": "iris-valves--005--1x1",
           "width": 1.5,
           "height": 1.5,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 24.025, "f": 15},
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 24,
+            "f": 14.8125
+          },
           "meta": {"iris-valves--005--1x1": true}
         },
         {
