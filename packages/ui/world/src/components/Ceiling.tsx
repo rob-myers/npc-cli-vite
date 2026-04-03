@@ -1,4 +1,3 @@
-import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
@@ -22,16 +21,17 @@ export default function Ceiling() {
       inst: null as null | THREE.InstancedMesh,
 
       async draw() {
-        // one texture per gmKey (unlike floors whose nav can change near hull doors)
-        for (const [texId, gmKey] of w.seenGmKeys.entries()) {
-          state.drawGm(gmKey);
-          w.texCeil.updateIndex(texId);
+        // texture per gmId like floor (currently determined by gmKey)
+        for (const [gmId] of w.seenGmKeys.entries()) {
+          state.drawGm(gmId);
+          w.texCeil.updateIndex(gmId);
           await pause();
         }
       },
 
-      drawGm(gmKey: StarShipGeomorphKey) {
+      drawGm(gmId) {
         const { ct } = w.texCeil;
+        const gmKey = w.gms[gmId]?.key;
         const layout = w.assets.layout[gmKey];
         if (!layout) return;
         const { bounds } = layout;
@@ -125,7 +125,9 @@ export default function Ceiling() {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode, uid: generateUUID() };
+
+    const sampledColor = texNode.depth(instanceIndex); // per gmId
+    return { texNode: sampledColor, uid: generateUUID() };
   }, []);
 
   useEffect(() => {
@@ -159,6 +161,6 @@ export default function Ceiling() {
 export type State = {
   inst: null | THREE.InstancedMesh;
   draw(): Promise<void>;
-  drawGm(gmKey: StarShipGeomorphKey): void;
+  drawGm(gmId: number): void;
   transformInstances(): void;
 };
