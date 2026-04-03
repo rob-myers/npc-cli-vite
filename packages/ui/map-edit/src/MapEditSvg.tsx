@@ -133,7 +133,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0",
-              "opacity-75 outline-green-500/50 outline-dotted",
+              "opacity-75 outline-green-500/50 outline-dashed",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
               node.locked === true && "pointer-events-none opacity-25",
             )}
