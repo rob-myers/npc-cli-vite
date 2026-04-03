@@ -113,10 +113,10 @@
       "name": "wall",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 0},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 0},
       "type": "rect",
-      "baseRect": {"width": 4, "height": 60},
-      "cssTransform": "matrix(1, 0, 0, 1, 60, 0)"
+      "baseRect": {"width": 4, "height": 62},
+      "cssTransform": "matrix(1, 0, 0, 1, 58, 0)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 124, "height": 126.8},
