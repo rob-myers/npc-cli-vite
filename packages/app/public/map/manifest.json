@@ -14,7 +14,7 @@
       "thumbnailFilename": "demo-map-0.thumbnail.png",
       "width": 1200,
       "height": 600,
-      "bounds": {"x": -0.5, "y": 0, "width": 1200.5, "height": 1200},
+      "bounds": {"x": 0, "y": 0, "width": 1200, "height": 1200},
       "type": "map",
       "key": "demo-map-0"
     }

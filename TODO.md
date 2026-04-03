@@ -94,7 +94,12 @@
     - since using same quad as ceiling would need special attribute/uniform
 
 - 🚧 MapEdit: map: geomorph symbol not aligned
-  - should be able to line up walls to grid
+  - ✅ keep "the space at top" of 301
+  - ✅ remove `node.offset` for hull symbols
+  - ✅ add offset to respective `<image>` in map
+  - understand why it works and somehow undo it
+    - `node.offset` should not be zero
+    - `<image>` should not have offset `x y`
 
 - 🚧 fix missing obstacles
   - ✅ related to reflection

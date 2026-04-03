@@ -1,3 +1,4 @@
+import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
@@ -120,13 +121,15 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           return null;
         }
 
+        const isHullSymbol = isHullSymbolImageKey(node.srcKey);
+
         return (
           <image
             key={node.id}
             data-node-id={node.id}
             href={`/symbol/${node.srcKey}.thumbnail.png?v=${root.localVersion ?? 0}`}
-            // x={symbol.bounds.x}
-            // y={symbol.bounds.y}
+            x={isHullSymbol ? symbol.bounds.x : 0}
+            y={isHullSymbol ? symbol.bounds.y : 0}
             width={symbol.bounds.width}
             height={symbol.bounds.height}
             style={{ transform: node.cssTransform }}
