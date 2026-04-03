@@ -8,7 +8,7 @@ import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
-import type * as THREE from "three/webgpu";
+import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
@@ -204,15 +204,13 @@ export default function Floor() {
         <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
       </bufferGeometry>
 
-      <meshBasicMaterial color="blue" />
-
-      {/* <meshStandardNodeMaterial
+      <meshStandardNodeMaterial
         side={THREE.DoubleSide}
         transparent
         key={shaderMeta.uid}
         colorNode={shaderMeta.texNode}
         depthWrite={false}
-      /> */}
+      />
     </instancedMesh>
   );
 }
