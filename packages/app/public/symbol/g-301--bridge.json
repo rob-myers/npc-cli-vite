@@ -25,42 +25,6 @@
       "type": "group",
       "children": [
         {
-          "id": "30f70277-0029-4718-82b4-061add06d4b4",
-          "name": "stateroom--014--2x2",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 480},
-          "type": "symbol",
-          "srcKey": "stateroom--014--2x2",
-          "baseRect": {"width": 120, "height": 120},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 0, 480)"
-        },
-        {
-          "id": "d2117b74-0f1c-41be-95e4-42ebb5fb5a21",
-          "name": "stateroom--014--2x2",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 120, "f": 480},
-          "type": "symbol",
-          "srcKey": "stateroom--014--2x2",
-          "baseRect": {"width": 120, "height": 120},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 120, 480)"
-        },
-        {
-          "id": "a07d1583-de2c-478e-8381-feb1092fc523",
-          "name": "stateroom--036--2x4",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 602.5},
-          "type": "symbol",
-          "srcKey": "stateroom--036--2x4",
-          "baseRect": {"width": 120, "height": 240},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, 0, 602.5)"
-        },
-        {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
           "name": "iris-valves--005--1x1",
           "locked": false,
@@ -233,6 +197,42 @@
       "baseRect": {"width": 120, "height": 240},
       "offset": {"x": -2, "y": -2},
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "0e863ae2-65c2-48ce-ba3b-d807230052c7",
+      "name": "stateroom--014--2x2",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 480},
+      "type": "symbol",
+      "srcKey": "stateroom--014--2x2",
+      "baseRect": {"width": 120, "height": 120},
+      "offset": {"x": -2, "y": 2},
+      "cssTransform": "matrix(1, 0, 0, -1, -2, 482)"
+    },
+    {
+      "id": "dd9d12c0-9f66-4aa7-acf8-3cf59674dbe7",
+      "name": "stateroom--014--2x2",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 120, "f": 480},
+      "type": "symbol",
+      "srcKey": "stateroom--014--2x2",
+      "baseRect": {"width": 120, "height": 120},
+      "offset": {"x": -2, "y": 2},
+      "cssTransform": "matrix(1, 0, 0, -1, 118, 482)"
+    },
+    {
+      "id": "a1e64edb-ec3e-428a-aefb-f8b9ed87159a",
+      "name": "stateroom--036--2x4",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 600},
+      "type": "symbol",
+      "srcKey": "stateroom--036--2x4",
+      "baseRect": {"width": 120, "height": 240},
+      "offset": {"x": -1.309152145434565, "y": 2.507213724456707},
+      "cssTransform": "matrix(0, -1, 1, 0, -1.309152145434565, 602.5072137244567)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
