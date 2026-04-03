@@ -37,7 +37,7 @@ import {
 import { worldToSguScale } from "@npc-cli/ui__world/const";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
-import { drawPolygons } from "@npc-cli/util/service/skia-canvas";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import assetsEncoded from "../../..//packages/app/public/assets.json" with { type: "json" };

@@ -1,4 +1,3 @@
-// import type { CanvasRenderingContext2D } from "skia-canvas";
 /// <reference lib="dom" />
 
 export function drawPolygons(
@@ -9,7 +8,12 @@ export function drawPolygons(
     fillStyle,
     strokeStyle,
     lineWidth,
-  }: { clip?: boolean; fillStyle?: string | null; strokeStyle?: string | null; lineWidth?: number | null } = {},
+  }: {
+    clip?: boolean;
+    fillStyle?: string | CanvasPattern | null;
+    strokeStyle?: string | null;
+    lineWidth?: number | null;
+  } = {},
 ) {
   polys = Array.isArray(polys) ? polys : [polys];
   ct.fillStyle = fillStyle ?? ct.fillStyle;
