@@ -13,7 +13,7 @@ import { assetsJsonChangedEvent, mapEditSymbolSavedEvent } from "@npc-cli/ui__wo
 import type { ThemeName } from "@npc-cli/ui-sdk";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
+import { cn, ExhaustiveError, Mat, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
@@ -567,6 +567,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           const m = new DOMMatrix([a, b, c, d, e, f]);
           m.translateSelf(cx, cy).rotateSelf(degrees).translateSelf(-cx, -cy);
           Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
+
+          if ("offset" in node) {
+            // 🚧 clarify
+            new Mat().setRotation(-(180 / Math.PI) * degrees).transformPoint(node.offset);
+          }
           node.cssTransform = computeNodeCssTransform(node);
         }
         if (node.type === "rect" && Math.abs(deltaDegrees) === 90) {
@@ -663,13 +668,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!isNodeReflectable(node)) return;
 
         const { a, b, c, d, e, f } = node.transform;
-        const m = new DOMMatrix();
         const [cx, cy] = [node.baseRect.width / 2, node.baseRect.height / 2];
 
-        m.translateSelf(cx, cy)
+        // world-space center of node (transform only, offset applied separately via cssTransform)
+        const wx = a * cx + c * cy + e;
+        const wy = b * cx + d * cy + f;
+
+        // reflect along screen x/y axis about world center, applied after existing transform
+        const m = new DOMMatrix();
+        m.translateSelf(wx, wy)
           .scaleSelf(type === "horizontal" ? -1 : 1, type === "vertical" ? -1 : 1)
-          .translateSelf(-cx, -cy)
-          .preMultiplySelf(new DOMMatrix([a, b, c, d, e, f]));
+          .translateSelf(-wx, -wy)
+          .multiplySelf(new DOMMatrix([a, b, c, d, e, f]));
         Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
         if ("offset" in node) {
