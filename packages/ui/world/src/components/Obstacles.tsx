@@ -1,8 +1,8 @@
+import { useStateRef } from "@npc-cli/util";
 import { Mat } from "@npc-cli/util/geom";
 import { warn } from "@npc-cli/util/legacy/generic";
 import React from "react";
 import * as THREE from "three";
-import { useStateRef } from "../../../../util/src/hooks/use-state-ref";
 import { MAX_OBSTACLE_QUAD_INSTANCES } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { WorldContext } from "./world-context";

@@ -1,5 +1,5 @@
 import React from "react";
-import { useUpdate } from "./use-update";
+import { useUpdate } from "./use-update.js";
 
 /**
  * This hook is a mixture of `React.useState` and `React.useRef`.

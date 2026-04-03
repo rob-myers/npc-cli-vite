@@ -7,7 +7,7 @@ export * from "./geom";
 export * from "./hooks/use-composed-refs";
 export * from "./hooks/use-double-tap";
 export * from "./hooks/use-effect-non-strict";
-export * from "./hooks/use-state-ref";
+export * from "./hooks/use-state-ref.js";
 export * from "./hooks/use-update";
 export * from "./service/broadcaster";
 export * from "./service/json-parser";
