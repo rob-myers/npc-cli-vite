@@ -190,7 +190,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       const dimension = floorTextureDimension;
       state.texFloor.resize({ width: dimension, height: dimension, numTextures: Math.max(state.gms.length, 1) });
-      state.texCeil.resize({ width: dimension, height: dimension, numTextures: Math.max(state.seenGmKeys.length, 1) });
+      state.texCeil.resize({ width: dimension, height: dimension, numTextures: Math.max(state.gms.length, 1) });
 
       return null;
     },
