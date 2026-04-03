@@ -84,12 +84,17 @@
 - ❌ obstacle polygons should be clipped to image node's bounds
   - otherwise they'll be overlap in symbol spritesheet
 
-- 🚧 propagate e.g. `meta.h` from symbol into obstacles
+- 🚧 floor/ceiling textures per gmId not per gmKey
+  - navmesh will be continuous i.e. cannot assume same triangles for distinct gmKey instances
+  - draw as before but per gmId
+  - 🚧 change NavMesh tile triangle test from gridRect to worldBounds
+
 - 🚧 fix missing obstacles
   - ✅ related to reflection
   - ✅ can fix via THREE.DoubleSide
   - 🚧 fix without using it by flipping based on determinant
-- 🚧 use textures
+- propagate e.g. `meta.h` from symbol into obstacles
+- use textures
 
 - start generating documentation in README.md
 

@@ -2,7 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { Mat } from "@npc-cli/util/geom/mat";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { Vect } from "@npc-cli/util/geom/vect";
-import { debug, mapValues } from "@npc-cli/util/legacy/generic";
+import { debug, mapValues, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh, NavMeshTile } from "navcat";
 import * as THREE from "three";
 import { decompToXZGeometry } from "../service/geometry";
@@ -71,9 +71,15 @@ export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): Floor
 
   const tiles = Object.values(nav.tiles);
   for (const tile of tiles) {
-    const point = { x: (tile.bounds[0] + tile.bounds[3]) * 0.5, y: (tile.bounds[2] + tile.bounds[5]) * 0.5 };
-    const gm = firstGms.find((x) => tmpRect.copy(x.gridRect).contains(point));
-    if (gm === undefined) continue;
+    const center = { x: (tile.bounds[0] + tile.bounds[3]) * 0.5, y: (tile.bounds[2] + tile.bounds[5]) * 0.5 };
+
+    // 🚧 1 or 2 gms containing center
+    const gm = firstGms.find((x) => tmpRect.copy(x.gridRect).contains(center));
+    // const gm = firstGms.find((x) => tmpRect.copy(x.worldBounds).contains(center));
+    if (gm === undefined) {
+      warn("🤖 nav.worker: skipping tile outside gm grid rects", { center });
+      continue;
+    }
 
     const tileTris = getTileTriangles(tile); // [positions, indices][]
 
