@@ -24,6 +24,8 @@ export default function Obstacles(_props: Props) {
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
 
       addUvs() {
+        if (!w.sheets) return;
+
         const uvOffsets = state.quad.getAttribute("uvOffsets");
         (uvOffsets.array as Float32Array).fill(0); // repeated (0, 0)
         const uvDimensions = state.quad.getAttribute("uvDimensions");
