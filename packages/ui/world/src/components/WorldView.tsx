@@ -50,6 +50,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           canvas,
           antialias: true,
           logarithmicDepthBuffer: true,
+          powerPreference: "high-performance",
+          // forceWebGL: true,
         });
         // renderer.toneMapping = 3;
         // renderer.toneMappingExposure = 1;
