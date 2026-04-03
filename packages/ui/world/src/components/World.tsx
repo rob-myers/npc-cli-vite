@@ -188,9 +188,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       state.hash = hashJson(state.assets);
 
+      // 🚧 debug: try fix numTextures
       const dimension = floorTextureDimension;
-      state.texFloor.resize({ width: dimension, height: dimension, numTextures: Math.max(state.gms.length, 1) });
-      state.texCeil.resize({ width: dimension, height: dimension, numTextures: Math.max(state.gms.length, 1) });
+      state.texFloor.resize({ width: dimension, height: dimension, numTextures: 2 });
+      state.texCeil.resize({ width: dimension, height: dimension, numTextures: 2 });
 
       return null;
     },
