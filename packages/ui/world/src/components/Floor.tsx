@@ -20,7 +20,7 @@ export default function Floor() {
 
   const state = useStateRef(
     (): State => ({
-      inst: null as null | THREE.InstancedMesh,
+      inst: null,
       quad: createXzQuad(),
       gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(100, 100, 100, 0.8)"),
 
@@ -63,14 +63,8 @@ export default function Floor() {
 
         ct.resetTransform();
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-        ct.setTransform(
-          worldToCanvas,
-          0,
-          0,
-          worldToCanvas,
-          -layout.bounds.x * worldToCanvas,
-          -layout.bounds.y * worldToCanvas,
-        );
+        // biome-ignore format: succinct
+        ct.setTransform( worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
 
         const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
         drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
@@ -81,14 +75,8 @@ export default function Floor() {
         ct.setTransform(1, 0, 0, 1, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         ct.fillStyle = state.gridPattern;
         ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
-        ct.setTransform(
-          worldToCanvas,
-          0,
-          0,
-          worldToCanvas,
-          -layout.bounds.x * worldToCanvas,
-          -layout.bounds.y * worldToCanvas,
-        );
+        // biome-ignore format: succinct
+        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         ct.restore();
 
         // obstacle drop shadows
