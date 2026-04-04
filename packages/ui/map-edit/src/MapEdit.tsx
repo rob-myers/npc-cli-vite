@@ -1373,12 +1373,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       }
 
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && state.selectedIds.size > 0) {
-        if (e.shiftKey && (e.ctrlKey || e.metaKey)) {
+        // if (e.shiftKey && (e.ctrlKey || e.metaKey)) {
+        if (e.shiftKey && e.metaKey) {
           state.reflectSelected(e.key === "ArrowUp" || e.key === "ArrowDown" ? "vertical" : "horizontal");
         } else {
           e.preventDefault();
           state.pushHistory();
-          const increment = e.shiftKey ? inc.default : inc.small;
+          const increment = e.shiftKey ? (e.ctrlKey ? inc.large : inc.default) : inc.small;
           state.translateSelected(
             e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0,
             e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0,
@@ -1814,6 +1815,7 @@ const inc = {
   small: 0.5,
   // 🚧 needed when snapping but maybe too small when moving into place
   default: 2.5,
+  large: 10,
 };
 
 const snap = (v: number, increment = inc.small) => Math.round(v / increment) * increment;
