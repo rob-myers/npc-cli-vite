@@ -18,6 +18,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       workerStore.setState({ gmGeoms: msg.gmGeoms });
 
       const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
+
       self.postMessage({
         type: "tiled-navmesh-response",
         ...tiledNavMeshResult,
