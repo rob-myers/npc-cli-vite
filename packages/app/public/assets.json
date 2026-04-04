@@ -1177,6 +1177,57 @@
           "meta": {"console--019--2x2": true}
         }
       ]
+    },
+    "g-101--multipurpose": {
+      "key": "g-101--multipurpose",
+      "isHull": true,
+      "width": 30,
+      "height": 30,
+      "bounds": {"x": 0, "y": -0.1375, "width": 30, "height": 30.1375},
+      "decor": [],
+      "doors": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[8.75, -0.1375], [8.75, 0.1], [6.3125, 0.1], [6.3125, -0.1375]]
+          ],
+          "meta": {"door": true, "hull": true, "edge": "s", "auto": true}
+        }
+      ],
+      "obstacles": [],
+      "unsorted": [],
+      "walls": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [30.065, -0.125],
+              [30.065, 30.065],
+              [-0.125, 30.065],
+              [-0.125, -0.125]
+            ],
+            [[0.07, 29.87], [29.87, 29.87], [29.87, 0.07], [0.07, 0.07]]
+          ],
+          "meta": {"wall": true, "hull": true, "hull--20x20": true}
+        }
+      ],
+      "windows": [],
+      "hullWalls": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [30.065, -0.125],
+              [30.065, 30.065],
+              [-0.125, 30.065],
+              [-0.125, -0.125]
+            ],
+            [[0.07, 29.87], [29.87, 29.87], [29.87, 0.07], [0.07, 0.07]]
+          ],
+          "meta": {"wall": true, "hull": true, "hull--20x20": true}
+        }
+      ],
+      "symbols": []
     }
   },
   "map": {
@@ -1189,7 +1240,18 @@
         },
         {
           "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 30}
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 0.0625,
+            "f": 59.6875
+          }
+        },
+        {
+          "gmKey": "g-101--multipurpose",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 15}
         }
       ]
     },
@@ -1306,6 +1368,41 @@
       "obstacles": [],
       "unsorted": [],
       "walls": [],
+      "windows": []
+    },
+    "g-101--multipurpose": {
+      "key": "g-101--multipurpose",
+      "isHull": true,
+      "width": 30,
+      "height": 30,
+      "bounds": {"x": 0, "y": -0.1375, "width": 30, "height": 30.1375},
+      "decor": [],
+      "doors": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[8.75, -0.1375], [8.75, 0.1], [6.3125, 0.1], [6.3125, -0.1375]]
+          ],
+          "meta": {"door": true, "hull": true, "edge": "s", "auto": true}
+        }
+      ],
+      "obstacles": [],
+      "unsorted": [],
+      "walls": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [30.065, -0.125],
+              [30.065, 30.065],
+              [-0.125, 30.065],
+              [-0.125, -0.125]
+            ],
+            [[0.07, 29.87], [29.87, 29.87], [29.87, 0.07], [0.07, 0.07]]
+          ],
+          "meta": {"wall": true, "hull": true, "hull--20x20": true}
+        }
+      ],
       "windows": []
     },
     "bridge--042--8x9": {
@@ -2925,7 +3022,8 @@
       {"id": "console--051--0.4x0.6"},
       {"id": "extra--003--chair--0.25x0.25"},
       {"id": "extra--004--desk--0.5x1"},
-      {"id": "iris-valves--005--1x1"}
+      {"id": "iris-valves--005--1x1"},
+      {"id": "g-101--multipurpose"}
     ],
     [
       {"id": "bridge--042--8x9"},
@@ -4605,6 +4703,123 @@
         ]
       },
       "navRects": [{"x": 0.35, "y": 0.35, "width": 29.3, "height": 14.745}]
+    },
+    "g-101--multipurpose": {
+      "key": "g-101--multipurpose",
+      "num": 101,
+      "bounds": {"x": 0, "y": -0.1375, "width": 30, "height": 30.1375},
+      "decor": [],
+      "doors": [
+        {
+          "poly": {
+            "type": "Polygon",
+            "coordinates": [
+              [[8.75, -0.1375], [8.75, 0.1], [6.3125, 0.1], [6.3125, -0.1375]]
+            ],
+            "meta": {"door": true, "hull": true, "edge": "s", "auto": true}
+          },
+          "navRectId": 0,
+          "roomIds": [null, null]
+        }
+      ],
+      "hullDoors": [
+        {
+          "poly": {
+            "type": "Polygon",
+            "coordinates": [
+              [[8.75, -0.1375], [8.75, 0.1], [6.3125, 0.1], [6.3125, -0.1375]]
+            ],
+            "meta": {"door": true, "hull": true, "edge": "s", "auto": true}
+          },
+          "navRectId": 0,
+          "roomIds": [null, null]
+        }
+      ],
+      "hullPoly": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [-0.125, -0.125],
+              [30.065, -0.125],
+              [30.065, 30.065],
+              [-0.125, 30.065],
+              [-0.125, -0.125]
+            ],
+            [
+              [0.07, 0.07],
+              [0.07, 29.87],
+              [29.87, 29.87],
+              [29.87, 0.07],
+              [0.07, 0.07]
+            ]
+          ],
+          "meta": {}
+        }
+      ],
+      "labels": [],
+      "obstacles": [],
+      "rooms": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.07, 0.07],
+              [29.87, 0.07],
+              [29.87, 29.87],
+              [0.07, 29.87],
+              [0.07, 0.07]
+            ]
+          ],
+          "meta": {}
+        }
+      ],
+      "unsorted": [],
+      "walls": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [-0.125, -0.125],
+              [6.3125, -0.125],
+              [6.3125, 0.07],
+              [0.07, 0.07],
+              [0.07, 29.87],
+              [29.87, 29.87],
+              [29.87, 0.07],
+              [8.75, 0.07],
+              [8.75, -0.125],
+              [30.065, -0.125],
+              [30.065, 30.065],
+              [-0.125, 30.065],
+              [-0.125, -0.125]
+            ]
+          ],
+          "meta": {"wall": true, "hull": true}
+        }
+      ],
+      "windows": [],
+      "navDecomp": {
+        "vs": [
+          {"x": 0.32, "y": 0.32},
+          {"x": 6.5625, "y": 0.32},
+          {"x": 6.5625, "y": -0.125},
+          {"x": 8.5, "y": -0.125},
+          {"x": 8.5, "y": 0.32},
+          {"x": 29.62, "y": 0.32},
+          {"x": 29.62, "y": 29.62},
+          {"x": 0.32, "y": 29.62}
+        ],
+        "tris": [
+          [6, 7, 4],
+          [4, 5, 6],
+          [7, 1, 4],
+          [7, 0, 1],
+          [4, 1, 2],
+          [4, 2, 3]
+        ]
+      },
+      "navRects": [{"x": 0.32, "y": -0.125, "width": 29.3, "height": 29.745}]
     }
   }
 }

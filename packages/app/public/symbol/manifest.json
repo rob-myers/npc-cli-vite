@@ -125,6 +125,15 @@
       "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
       "type": "symbol",
       "key": "office--001--2x2"
+    },
+    "g-101--multipurpose": {
+      "filename": "g-101--multipurpose.json",
+      "thumbnailFilename": "g-101--multipurpose.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": 0, "y": -5.5, "width": 1200, "height": 1205.5},
+      "type": "symbol",
+      "key": "g-101--multipurpose"
     }
   }
 }
