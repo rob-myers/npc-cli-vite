@@ -10,7 +10,8 @@ import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
-import { embedXZMat4 } from "../service/geometry";
+import { createXzQuad, embedXZMat4 } from "../service/geometry";
+import { isEdgeGm } from "../service/geomorph";
 import { WorldContext } from "./world-context";
 
 export default function Ceiling() {
@@ -19,6 +20,27 @@ export default function Ceiling() {
   const state = useStateRef(
     (): State => ({
       inst: null as null | THREE.InstancedMesh,
+      quad: createXzQuad(),
+
+      uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
+      uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
+
+      addUvs() {
+        const uvOffsets = state.quad.getAttribute("uvOffsets");
+        (uvOffsets.array as Float32Array).fill(0); // repeated (0, 0)
+        const uvDimensions = state.quad.getAttribute("uvDimensions");
+        (uvDimensions.array as Float32Array).fill(0);
+
+        for (const [gmId, gm] of w.gms.entries()) {
+          (uvDimensions.array as Float32Array)[gmId * 2 + 0] = 1;
+          (uvDimensions.array as Float32Array)[gmId * 2 + 1] = isEdgeGm(gm.key)
+            ? gm.bounds.height / gm.bounds.width
+            : 1;
+        }
+
+        uvOffsets.needsUpdate = true;
+        uvDimensions.needsUpdate = true;
+      },
 
       async draw() {
         // texture per gmId like floor (currently determined by gmKey)
@@ -131,22 +153,24 @@ export default function Ceiling() {
   }, []);
 
   useEffect(() => {
-    if (!state.inst) return;
     state.transformInstances();
+    state.addUvs();
     state.draw().then(() => w.update());
   }, [w.hash, w.nav, w.gmsData]);
 
-  /** Reuse floor quad geometry and instanced attributes */
-  const floorReady = Boolean(w.floor?.inst?.geometry);
-
-  return floorReady ? (
+  return (
     <instancedMesh
       name="ceiling"
       ref={state.ref("inst")}
-      args={[w.floor.inst?.geometry, undefined, MAX_GEOMORPH_INSTANCES]}
+      args={[undefined, undefined, MAX_GEOMORPH_INSTANCES]}
       position={[0, wallHeight, 0]}
       renderOrder={6}
     >
+      <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
+        <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
+        <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
+      </bufferGeometry>
+
       <meshStandardNodeMaterial
         side={THREE.DoubleSide}
         transparent
@@ -155,11 +179,15 @@ export default function Ceiling() {
         depthWrite={false}
       />
     </instancedMesh>
-  ) : null;
+  );
 }
 
 export type State = {
   inst: null | THREE.InstancedMesh;
+  quad: THREE.BufferGeometry;
+  uvOffsets: Float32Array;
+  uvDimensions: Float32Array;
+  addUvs(): void;
   draw(): Promise<void>;
   drawGm(gmId: number): void;
   transformInstances(): void;

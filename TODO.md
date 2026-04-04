@@ -99,12 +99,18 @@
   - ✅ add offset to respective `<image>` in map
   - ✅ fix it by changing how we compute mapDefs
 
+- 🚧 refactor Ceiling
+  - ✅ own quad and attributes (don't use w.floor)
+  - texture indexed by gmKey (needs attribute)
+
 - 🚧 fix missing obstacles
   - ✅ related to reflection
   - ✅ can fix via THREE.DoubleSide
   - 🚧 fix without using it by flipping based on determinant
 - propagate e.g. `meta.h` from symbol into obstacles
 - use textures
+
+- horrendous prod-only bug seems related to changing dataTextureArray size (once from 1 to 2)
 
 - start generating documentation in README.md
 
