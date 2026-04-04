@@ -80,14 +80,6 @@ export default function Floor() {
         // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         // ct.restore();
 
-        // obstacle drop shadows
-        const shadowPolys = Poly.union(
-          layout.obstacles.flatMap((x) =>
-            x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
-          ),
-        );
-        drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
-
         // uniform directional wall shadows
         ct.save();
         drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
@@ -127,12 +119,21 @@ export default function Floor() {
         drawPolygons(
           ct,
           layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
-          { fillStyle: "#fff", strokeStyle: "#000", lineWidth: 0 },
+          { fillStyle: "#000", strokeStyle: "#000", lineWidth: 0 },
         );
 
         // lights
         // 🚧 cache
         drawLights(ct, layout, hullFloor);
+
+        // obstacle drop shadows
+
+        const shadowPolys = Poly.union(
+          layout.obstacles.flatMap((x) =>
+            x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
+          ),
+        );
+        drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
       },
 
       transformInstances() {
@@ -211,19 +212,20 @@ export type State = {
 };
 
 function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, _hullFloor: Geom.Poly[]) {
-  ct.save();
   ct.globalCompositeOperation = "lighten";
+  ct.save();
   for (const room of layout.rooms) {
     const { x, y } = room.center;
     const radius = Math.sqrt(room.rect.area) * 1;
     const grad = ct.createRadialGradient(x, y, 0, x, y, radius);
-    grad.addColorStop(0, "rgba(100, 100, 100, 0.4)");
+    grad.addColorStop(0, "rgba(100, 100, 100, 0.2)");
     grad.addColorStop(0.5, "rgba(100,100, 100, 0.1)");
     grad.addColorStop(1, "rgba(100, 100, 100, 0)");
     ct.fillStyle = grad;
     ct.fillRect(x - radius, y - radius, radius * 2, radius * 2);
   }
   ct.restore();
+  ct.globalCompositeOperation = "source-over";
 }
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
