@@ -114,6 +114,8 @@ const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, prod ? "symbols
 for (const [sheetId, bin] of bins.entries()) {
   const canvas = new Canvas(bin.width, bin.height);
   const ct = canvas.getContext("2d");
+  // ct.fillStyle = "blue";
+  // ct.fillRect(0, 0, bin.width, bin.height);
 
   for (const rect of bin.rects) {
     const image = await loadImage(path.resolve(starshipSymbolDir, `${rect.data.key}.png`));
