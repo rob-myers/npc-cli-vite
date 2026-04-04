@@ -209,19 +209,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   return (
     <WorldContext.Provider value={state}>
       <div className="relative size-full">
-        <WorldView className={cn(uiClassName, "bg-zinc-800")}>
-          <ambientLight intensity={0.85} color="#ffffff" />
-          <Floor />
-          <Ceiling />
-          <Walls />
-          <Obstacles />
-          <Suspense>
+        {/* 🔔 outer suspense avoids sporadic silent fail */}
+        <Suspense>
+          <WorldView className={cn(uiClassName, "bg-zinc-800")}>
+            <ambientLight intensity={0.85} color="#ffffff" />
+            <Floor />
+            <Ceiling />
+            <Walls />
+            <Obstacles />
             <NPCs />
-          </Suspense>
-          <Debug />
-        </WorldView>
+            <Debug />
+          </WorldView>
+          <WorldWorker />
+        </Suspense>
         <WorldContextMenu />
-        <WorldWorker />
       </div>
     </WorldContext.Provider>
   );
