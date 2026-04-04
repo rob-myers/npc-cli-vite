@@ -26,15 +26,15 @@
       "children": [
         {
           "id": "cf35bd35-052f-4488-a1bc-b679cf25699b",
-          "name": "bed--003--1x1.6",
+          "name": "bed--003--1x1.6 y=0.5",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 0},
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 1.5, "f": 0},
           "type": "symbol",
           "srcKey": "bed--003--1x1.6",
           "baseRect": {"width": 100, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, 1, 0, 0, 0)"
+          "cssTransform": "matrix(0, 1, 1, 0, 1.5, 0)"
         }
       ]
     },
