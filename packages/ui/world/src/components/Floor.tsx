@@ -62,6 +62,7 @@ export default function Floor() {
         if (!layout) return;
 
         ct.resetTransform();
+        ct.globalCompositeOperation = "source-over";
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
         // biome-ignore format: succinct
         ct.setTransform( worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
@@ -210,8 +211,8 @@ export type State = {
 };
 
 function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, _hullFloor: Geom.Poly[]) {
-  ct.globalCompositeOperation = "lighten";
   ct.save();
+  ct.globalCompositeOperation = "lighten";
   for (const room of layout.rooms) {
     const { x, y } = room.center;
     const radius = Math.sqrt(room.rect.area) * 1;
