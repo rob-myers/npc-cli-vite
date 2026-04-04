@@ -67,7 +67,7 @@ export default function Floor() {
         ct.setTransform( worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
 
         const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
-        drawPolygons(ct, hullFloor, { fillStyle: "#0003", strokeStyle: null });
+        drawPolygons(ct, hullFloor, { fillStyle: "#000", strokeStyle: null });
 
         // 🚧 offset grid by geomorph position
         // grid
@@ -106,13 +106,13 @@ export default function Floor() {
         ct.restore();
 
         // wall bases
-        drawPolygons(ct, layout.walls, { fillStyle: "#0008", strokeStyle: null });
+        drawPolygons(ct, layout.walls, { fillStyle: "#fff2", strokeStyle: null });
 
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
-        ct.lineWidth = 0.02;
-        const fillStyle = "#0042";
-        const strokeStyle = "#0002";
+        ct.lineWidth = 0.01;
+        const fillStyle = "#4442";
+        const strokeStyle = "#4444";
         const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
@@ -129,6 +129,10 @@ export default function Floor() {
           layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
           { fillStyle: "#fff", strokeStyle: "#000", lineWidth: 0 },
         );
+
+        // lights
+        // 🚧 cache
+        drawLights(ct, layout, hullFloor);
       },
 
       transformInstances() {
@@ -186,6 +190,7 @@ export default function Floor() {
         key={shaderMeta.uid}
         side={THREE.DoubleSide}
         transparent
+        alphaTest={0.8}
         colorNode={shaderMeta.texNode}
         depthWrite={false}
       />
@@ -204,6 +209,22 @@ export type State = {
   drawGm(gmId: number): void;
   transformInstances(): void;
 };
+
+function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, _hullFloor: Geom.Poly[]) {
+  ct.save();
+  ct.globalCompositeOperation = "lighten";
+  for (const room of layout.rooms) {
+    const { x, y } = room.center;
+    const radius = Math.sqrt(room.rect.area) * 1;
+    const grad = ct.createRadialGradient(x, y, 0, x, y, radius);
+    grad.addColorStop(0, "rgba(100, 100, 100, 0.4)");
+    grad.addColorStop(0.5, "rgba(100,100, 100, 0.1)");
+    grad.addColorStop(1, "rgba(100, 100, 100, 0)");
+    ct.fillStyle = grad;
+    ct.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+  ct.restore();
+}
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 const shadowDx = Math.cos(Math.PI / 4) * 0.25;
