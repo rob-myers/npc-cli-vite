@@ -81,8 +81,9 @@ export default function Floor() {
         // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         // ct.restore();
 
-        // wall bases
-        drawPolygons(ct, layout.walls, { fillStyle: "#fff2", strokeStyle: null });
+        // wall bases: dark works better with transparent walls
+        // drawPolygons(ct, layout.walls, { fillStyle: "#fff2", strokeStyle: null });
+        drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.025 });
 
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
