@@ -121,7 +121,7 @@ export default function Ceiling() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return { texNode: texNode.depth(uvTexIds), uid: generateUUID() };
-  }, [w.texCeil.opts.numTextures]);
+  }, [w.texCeil.hash]);
 
   useEffect(() => {
     state.transformInstances();

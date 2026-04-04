@@ -65,5 +65,4 @@ export const wallHeight = 2;
 
 export const MAX_GEOMORPH_INSTANCES = 64;
 
-// 🚧 chrome is being weird e.g. 2048 on "Low power mode" MacOS
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;

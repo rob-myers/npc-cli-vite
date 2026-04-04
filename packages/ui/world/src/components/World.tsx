@@ -61,6 +61,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: floorTextureDimension,
         height: floorTextureDimension,
       }),
+      texObs: new TexArray({
+        ctKey: "obs-tex",
+        numTextures: 1, // from sheets.symbolSheetDims.length
+        width: 1,
+        height: 1,
+      }),
 
       gms: [],
       seenGmKeys: [],
@@ -247,6 +253,7 @@ export type State = {
   hash: number;
   texFloor: TexArray;
   texCeil: TexArray;
+  texObs: TexArray;
 
   gms: Geomorph.LayoutInstance[];
   /**

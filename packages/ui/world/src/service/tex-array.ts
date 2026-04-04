@@ -1,4 +1,4 @@
-import { warn } from "@npc-cli/util/legacy/generic";
+import { hashJson, warn } from "@npc-cli/util/legacy/generic";
 import * as THREE from "three";
 
 interface TexArrayOpts {
@@ -23,6 +23,7 @@ export class TexArray {
   opts: TexArrayOpts;
   ct: CanvasRenderingContext2D;
   tex: THREE.DataArrayTexture;
+  hash = 0;
 
   constructor(opts: TexArrayOpts) {
     if (opts.numTextures === 0) {
@@ -41,6 +42,8 @@ export class TexArray {
     this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
     this.tex.format = THREE.RGBAFormat;
     this.tex.type = opts.type ?? THREE.UnsignedByteType;
+
+    this.hash = hashJson(opts);
   }
 
   dispose() {
@@ -84,6 +87,8 @@ export class TexArray {
     this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
     this.tex.format = THREE.RGBAFormat;
     this.tex.type = opts.type ?? THREE.UnsignedByteType;
+
+    this.hash = hashJson(opts);
   }
 
   update() {
