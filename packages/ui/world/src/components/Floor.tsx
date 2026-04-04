@@ -85,7 +85,7 @@ export default function Floor() {
             x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
           ),
         );
-        drawPolygons(ct, shadowPolys, { fillStyle: "#000f", strokeStyle: null });
+        drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
 
         // uniform directional wall shadows
         ct.save();
