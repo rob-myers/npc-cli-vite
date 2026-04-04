@@ -5,6 +5,7 @@
  * @param {string} fillColor
  */
 function createMonochromeMask(image, ctxt, fillColor) {
+  ctxt.canvas.width = 0;
   ctxt.canvas.width = image.width;
   ctxt.canvas.height = image.height;
   ctxt.globalCompositeOperation = "source-over";
