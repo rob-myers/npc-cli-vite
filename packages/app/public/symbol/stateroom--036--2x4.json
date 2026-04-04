@@ -26,7 +26,7 @@
       "children": [
         {
           "id": "d30a05aa-cfd8-4588-aec0-a429be4b80a7",
-          "name": "console--051--0.4x0.6 h=0.5",
+          "name": "console--051 y=0.5",
           "locked": false,
           "visible": true,
           "transform": {
@@ -45,7 +45,7 @@
         },
         {
           "id": "51c9af30-b10e-4f74-a4b0-a8cbb75d45ec",
-          "name": "console--051--0.4x0.6",
+          "name": "console--051 y=0.5",
           "locked": false,
           "visible": true,
           "transform": {
@@ -89,10 +89,10 @@
       "name": "wall",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 238},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 238},
       "type": "rect",
       "baseRect": {"width": 124, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, -2, 238)"
+      "cssTransform": "matrix(1, 0, 0, 1, -2.5, 238)"
     },
     {
       "id": "b3fabcaa-1eaf-48b3-894c-ec7ecc8f34c9",
