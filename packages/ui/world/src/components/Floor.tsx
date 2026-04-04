@@ -67,7 +67,7 @@ export default function Floor() {
         ct.setTransform( worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
 
         const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
-        drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
+        // drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
 
         // grid
         ct.save();
@@ -110,8 +110,8 @@ export default function Floor() {
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.02;
-        const fillStyle = "#00f5";
-        const strokeStyle = "#0004";
+        const fillStyle = "#0062";
+        const strokeStyle = "#0002";
         const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
