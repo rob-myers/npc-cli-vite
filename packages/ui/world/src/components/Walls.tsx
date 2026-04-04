@@ -76,7 +76,7 @@ export default function Walls() {
 
   const wallCount = w.gmsData.count.wall;
 
-  const mat = useMemo(() => createInstancedTransparentMaterial(wallCount, 0.5), [wallCount]);
+  const mat = useMemo(() => createInstancedTransparentMaterial(wallCount, 0.3), [wallCount]);
 
   useEffect(() => {
     state.positionInstances();
