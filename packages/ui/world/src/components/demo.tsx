@@ -32,7 +32,7 @@ export function SkinnedMeshTemplateDemo() {
     const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9 });
     const texNode = tslTexture(texture);
     const viewDir = cameraPosition.sub(positionWorld).normalize();
-    const ndotv = normalWorld.dot(viewDir).clamp(0, 1);
+    const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.6);
     mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
     return mat;
   }, [texture]);
@@ -59,8 +59,8 @@ export function SkinnedMeshTemplateDemo() {
         // material={root.material}
         material={material}
         skeleton={root.skeleton}
-        scale={0.7} // 🚧
-        position={[5, 0, 5]}
+        scale={0.65} // 🚧
+        position={[5, 0, 7.5]}
         // position={root.position}
         // userData={root.userData}
       >
