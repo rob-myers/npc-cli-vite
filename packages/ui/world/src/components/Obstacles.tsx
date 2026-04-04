@@ -136,7 +136,7 @@ export default function Obstacles(_props: Props) {
 
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
-            obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "white"));
+            obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "#999"));
             obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
             oId++;
           });
@@ -231,7 +231,7 @@ export default function Obstacles(_props: Props) {
           args={[state.skirtQuad, undefined, skirtCount]}
           frustumCulled={false}
         >
-          <meshBasicMaterial color="#667" side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#444" side={THREE.DoubleSide} />
         </instancedMesh>
       )}
     </>

@@ -69,7 +69,7 @@ export default function Ceiling() {
         const { tops, polyDecals } = w.gmsData.byKey[gmKey];
 
         // wall/door tops
-        drawPolygons(ct, tops.nonHull, { fillStyle: "#bbb", strokeStyle: "#000", lineWidth: thickLineWidth });
+        drawPolygons(ct, tops.nonHull, { fillStyle: "#ccc", strokeStyle: "#000", lineWidth: thickLineWidth });
         drawPolygons(ct, tops.window, { fillStyle: "#000", strokeStyle: wallsHighlight, lineWidth: thickLineWidth });
         drawPolygons(ct, tops.broad, { fillStyle: "#000", strokeStyle: grey90, lineWidth: thinLineWidth });
         drawPolygons(ct, tops.hull, { fillStyle: "#000", strokeStyle: wallsHighlight, lineWidth: thickLineWidth }); // hull walls and doors

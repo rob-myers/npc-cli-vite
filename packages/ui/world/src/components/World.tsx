@@ -217,7 +217,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       <div className="relative size-full">
         {/* 🔔 outer suspense avoids sporadic silent fail */}
         <Suspense>
-          <WorldView className={cn(uiClassName, "bg-zinc-300")}>
+          <WorldView className={cn(uiClassName, "bg-zinc-800")}>
             <ambientLight intensity={0.85} color="#ffffff" />
             <Floor />
             <Ceiling />
