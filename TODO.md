@@ -109,14 +109,14 @@
   - ✅ can fix via THREE.DoubleSide
   - ❌ fix without using it by flipping based on determinant
 
-- 🚧 obstacles
+- ✅ obstacles
   - ✅ propagate e.g. `meta.y` from symbol into obstacles
   - ✅ hide unused obstacle quads
   - ✅ use textures
   - ✅ issue with triangular part of console capturing nearby chair
     - console--019--2x2
     - ✅ remove `--prod` from `gen-starship-sheets` and always restrict symbols.{texId}.png to obstacles polygons
-  - 🚧 clean
+  - ✅ clean
     - DataArrayTexture
     - `worldToSguScale * 5`
 

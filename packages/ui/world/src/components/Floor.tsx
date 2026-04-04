@@ -161,7 +161,7 @@ export default function Floor() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return { texNode: texNode.depth(instanceIndex), uid: generateUUID() };
-  }, [w.texFloor.opts.numTextures]);
+  }, [w.texFloor.hash]);
 
   useEffect(() => {
     state.transformInstances();

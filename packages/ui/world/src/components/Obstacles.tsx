@@ -1,12 +1,14 @@
+import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { Mat } from "@npc-cli/util/geom";
-import { warn } from "@npc-cli/util/legacy/generic";
-import { useTexture } from "@react-three/drei";
+import { pause, warn } from "@npc-cli/util/legacy/generic";
 import React, { useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";
 import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
+import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
+import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
@@ -40,6 +42,8 @@ export default function Obstacles(_props: Props) {
 
         let [uvOffsetIdx, uvDimIdx, uvTexIdIdx] = [0, 0, 0];
 
+        const worldToPngScale = worldToSguScale * sguScaleSvgToPngFactor;
+
         // aligned to transforms
         for (const [_gmId, { obstacles }] of w.gms.entries()) {
           for (const { symbolKey, origSubRect, obstacleId: _obstacleId } of obstacles) {
@@ -57,11 +61,11 @@ export default function Obstacles(_props: Props) {
               sheetId,
               rect: { x: symbolX, y: symbolY },
             } = entry;
-            // origSubRect is in world units, sheet is in SGU/pixel units
-            const subX = origSubRect.x * worldToSguScale * 5;
-            const subY = origSubRect.y * worldToSguScale * 5;
-            const subW = origSubRect.width * worldToSguScale * 5;
-            const subH = origSubRect.height * worldToSguScale * 5;
+            // origSubRect is in world units, sheet is in png pixel units
+            const subX = origSubRect.x * worldToPngScale;
+            const subY = origSubRect.y * worldToPngScale;
+            const subW = origSubRect.width * worldToPngScale;
+            const subH = origSubRect.height * worldToPngScale;
 
             const { width: sheetWidth, height: sheetHeight } = w.sheets.symbolSheetDims[sheetId];
             const uvOffsetX = (symbolX + subX) / sheetWidth;
@@ -72,21 +76,41 @@ export default function Obstacles(_props: Props) {
             uvOffsets.array.set([uvOffsetX, uvOffsetY], uvOffsetIdx++ * 2);
             uvDimensions.array.set([uvDimW, uvDimH], uvDimIdx++ * 2);
             uvTextureIds.array[uvTexIdIdx++] = sheetId;
-
-            // uvOffsets.array.set([0, 0], uvOffsetIdx++ * 2);
-            // uvDimensions.array.set([1, 1], uvDimIdx++ * 2);
-            // uvTextureIds.array[uvTexIdIdx++] = sheetId;
           }
         }
-
-        // console.log("uvOffsets", uvOffsets.array);
-        // console.log("uvDimensions", uvDimensions.array);
-        // console.log("uvTextureIds", uvTextureIds.array);
 
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
         uvTextureIds.needsUpdate = true;
       },
+
+      async draw() {
+        if (!w.sheets) return;
+        const { ct } = w.texObs;
+        const { maxSymbolSheetDim, symbolSheetDims } = w.sheets;
+
+        // resize texObs to match sheet dimensions
+        w.texObs.resize({
+          numTextures: symbolSheetDims.length,
+          width: maxSymbolSheetDim.width,
+          height: maxSymbolSheetDim.height,
+        });
+
+        for (let sheetId = 0; sheetId < symbolSheetDims.length; sheetId++) {
+          const img = new Image();
+          img.src = `/sheet/symbols.${sheetId}.png`;
+          await new Promise<void>((resolve) => {
+            img.onload = () => {
+              ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+              ct.drawImage(img, 0, 0);
+              w.texObs.updateIndex(sheetId);
+              resolve();
+            };
+          });
+          await pause();
+        }
+      },
+
       createObstacleMatrix4(gmTransform, { origPoly: { rect }, transform: { a, b, c, d, e, f }, height }) {
         const [mat, mat4] = [tmpMat1, tmpMatFour1];
         // transform unit (XZ) square into `rect`, then apply `transform` followed by `gmTransform`
@@ -115,7 +139,6 @@ export default function Obstacles(_props: Props) {
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
             const mat4 = state.createObstacleMatrix4([a, b, c, d, e, f], o);
-            // obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "red"));
             obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "white"));
             obsInst.setMatrixAt(oId, mat4);
             oId++;
@@ -133,26 +156,21 @@ export default function Obstacles(_props: Props) {
 
   w.obs = state;
 
-  // 🚧 DataArrayTexture
-  const sheetTex = useTexture("/sheet/symbols.0.png", (tex) => {
-    tex.flipY = false;
-    tex.minFilter = THREE.NearestFilter;
-    tex.magFilter = THREE.NearestFilter;
-    tex.generateMipmaps = false;
-  });
-
   const shaderMeta = useMemo(() => {
+    const texArray = w.texObs;
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
+    const uvTexIds = attribute("uvTextureIds", "float");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
-    // const transformedUv = uv().mul(uvDims);
-    const colorNode = texture(sheetTex, transformedUv);
-    return { colorNode, uid: generateUUID() };
-  }, [sheetTex]);
+    const texNode = texture(texArray.tex, transformedUv);
+    texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
+    return { texNode: texNode.depth(uvTexIds), uid: generateUUID() };
+  }, [w.texObs.hash]);
 
   React.useEffect(() => {
     state.addUvs();
     state.transformAndColorObstacles();
+    state.draw().then(() => w.update());
   }, [w.mapKey, w.hash, w.gmsData.count.obstacles]);
 
   return (
@@ -175,8 +193,7 @@ export default function Obstacles(_props: Props) {
         side={THREE.DoubleSide}
         transparent
         alphaTest={0.5}
-        colorNode={shaderMeta.colorNode}
-        // depthWrite={false}
+        colorNode={shaderMeta.texNode}
       />
     </instancedMesh>
   );
@@ -193,6 +210,7 @@ export type State = {
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
   addUvs: () => void;
+  draw: () => Promise<void>;
   createObstacleMatrix4: (gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle) => THREE.Matrix4;
   decodeInstanceId: (instanceId: number) => Meta<{ gmId: number }>;
   transformAndColorObstacles: () => void;
