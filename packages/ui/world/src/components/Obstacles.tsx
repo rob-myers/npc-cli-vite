@@ -1,7 +1,7 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { Mat } from "@npc-cli/util/geom";
+import { Mat, Vect } from "@npc-cli/util/geom";
 import { invertCanvas } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import React, { useMemo } from "react";
@@ -13,7 +13,7 @@ import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
-import { createXzQuad, embedXZMat4 } from "../service/geometry";
+import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -21,9 +21,10 @@ export default function Obstacles(_props: Props) {
 
   const state = useStateRef(
     (): State => ({
-      ...({} as Pick<State, "inst">),
+      ...({} as Pick<State, "inst" | "skirtInst">),
 
       quad: createXzQuad(),
+      skirtQuad: createXyQuad(),
 
       /** itemSize 2 */
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
@@ -49,8 +50,6 @@ export default function Obstacles(_props: Props) {
         // aligned to transforms
         for (const [_gmId, { obstacles }] of w.gms.entries()) {
           for (const { symbolKey, origSubRect, obstacleId: _obstacleId } of obstacles) {
-            // lookup (sheetId, offset) of symbolKey
-            // use origSubRect
             const entry = w.sheets.symbol[symbolKey]!;
             if (!entry) {
               warn(`${symbolKey} not found in sheets.json`);
@@ -91,7 +90,6 @@ export default function Obstacles(_props: Props) {
         const { ct } = w.texObs;
         const { maxSymbolSheetDim, symbolSheetDims } = w.sheets;
 
-        // resize texObs to match sheet dimensions
         w.texObs.resize({
           numTextures: symbolSheetDims.length,
           width: maxSymbolSheetDim.width,
@@ -116,43 +114,65 @@ export default function Obstacles(_props: Props) {
 
       createObstacleMatrix4(gmTransform, { origPoly: { rect }, transform: { a, b, c, d, e, f }, height }) {
         const [mat, mat4] = [tmpMat1, tmpMatFour1];
-        // transform unit (XZ) square into `rect`, then apply `transform` followed by `gmTransform`
         mat.feedFromArray([rect.width, 0, 0, rect.height, rect.x, rect.y]);
         mat.postMultiply([a, b, c, d, e, f]).postMultiply(gmTransform);
         return embedXZMat4(mat, { mat4, yHeight: height });
       },
+
       decodeInstanceId(instanceId) {
         let id = instanceId;
         const gmId = w.gms.findIndex((gm) => id < gm.obstacles.length || ((id -= gm.obstacles.length), false));
         const gm = w.gms[gmId];
         const obstacle = gm.obstacles[id];
-        return {
-          gmId,
-          ...obstacle.meta,
-          height: obstacle.height,
-        };
+        return { gmId, ...obstacle.meta, height: obstacle.height };
       },
+
       transformAndColorObstacles() {
+        if (!state.inst) return;
         const { inst: obsInst } = state;
         let oId = 0;
 
-        if (!obsInst) return;
         obsInst.instanceMatrix.array.fill(0);
 
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
-            const mat4 = state.createObstacleMatrix4([a, b, c, d, e, f], o);
             obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "white"));
-            obsInst.setMatrixAt(oId, mat4);
+            obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
             oId++;
           });
         });
 
         obsInst.instanceMatrix.needsUpdate = true;
-        if (obsInst.instanceColor !== null) {
-          obsInst.instanceColor.needsUpdate = true;
-        }
+        if (obsInst.instanceColor !== null) obsInst.instanceColor.needsUpdate = true;
         obsInst.computeBoundingSphere();
+      },
+
+      positionSkirts() {
+        if (!state.skirtInst) return;
+        let sId = 0;
+
+        w.gms.forEach(({ obstacles, transform: gmTransform, determinant }) => {
+          obstacles.forEach(({ origPoly, transform: obTransform, height }) => {
+            tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
+            const corners = origPoly.outline.map((p) => tmpMat1.transformPoint(tmpVec1.set(p.x, p.y)).clone());
+
+            // biome-ignore format: succinct
+            for (let i = 0; i < corners.length; i++) {
+              const j = (i + 1) % corners.length;
+              const [p1, p2] = determinant > 0 ? [corners[j], corners[i]] : [corners[i], corners[j]];
+              const dx = p2.x - p1.x, dy = p2.y - p1.y;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
+              tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
+              state.skirtInst.setMatrixAt(sId++,
+                embedXZMat4(tmpMat2, { yScale: skirtDepth, yHeight: height - skirtDepth, mat4: tmpMatFour2 }),
+              );
+            }
+          });
+        });
+
+        state.skirtInst.instanceMatrix.needsUpdate = true;
+        state.skirtInst.computeBoundingSphere();
       },
     }),
   );
@@ -173,32 +193,48 @@ export default function Obstacles(_props: Props) {
   React.useEffect(() => {
     state.addUvs();
     state.transformAndColorObstacles();
+    state.positionSkirts();
     state.draw().then(() => w.update());
   }, [w.mapKey, w.hash, w.gmsData.count.obstacles]);
 
-  return (
-    <instancedMesh
-      name="obstacles"
-      ref={state.ref("inst")}
-      args={[undefined, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
-      frustumCulled={false}
-      position={[0, 0.001, 0]} // 🚧
-      renderOrder={-3}
-    >
-      <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
-        <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
-        <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
-        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
-      </bufferGeometry>
+  const skirtCount = w.gmsData.count.obstacles * 4;
 
-      <meshStandardNodeMaterial
-        key={shaderMeta.uid}
-        side={THREE.DoubleSide}
-        transparent
-        alphaTest={0.5}
-        colorNode={shaderMeta.texNode}
-      />
-    </instancedMesh>
+  return (
+    <>
+      <instancedMesh
+        name="obstacles"
+        ref={state.ref("inst")}
+        args={[undefined, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
+        frustumCulled={false}
+        position={[0, 0.001, 0]} // 🚧
+        renderOrder={-3}
+      >
+        <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
+          <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
+          <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
+          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+        </bufferGeometry>
+
+        <meshStandardNodeMaterial
+          key={shaderMeta.uid}
+          side={THREE.DoubleSide}
+          transparent
+          alphaTest={0.5}
+          colorNode={shaderMeta.texNode}
+        />
+      </instancedMesh>
+
+      {skirtCount > 0 && (
+        <instancedMesh
+          name="obstacle-skirts"
+          ref={state.ref("skirtInst")}
+          args={[state.skirtQuad, undefined, skirtCount]}
+          frustumCulled={false}
+        >
+          <meshBasicMaterial color="#444" side={THREE.DoubleSide} />
+        </instancedMesh>
+      )}
+    </>
   );
 }
 
@@ -208,22 +244,27 @@ type Props = {
 
 export type State = {
   inst: THREE.InstancedMesh;
+  skirtInst: THREE.InstancedMesh;
   quad: THREE.BufferGeometry;
+  skirtQuad: THREE.BufferGeometry;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
-  addUvs: () => void;
-  draw: () => Promise<void>;
-  createObstacleMatrix4: (gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle) => THREE.Matrix4;
-  decodeInstanceId: (instanceId: number) => Meta<{ gmId: number }>;
-  transformAndColorObstacles: () => void;
+  addUvs(): void;
+  draw(): Promise<void>;
+  createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
+  decodeInstanceId(instanceId: number): Meta<{ gmId: number }>;
+  transformAndColorObstacles(): void;
+  positionSkirts(): void;
 };
 
+const skirtDepth = 0.15;
 const tmpMat1 = new Mat();
+const tmpMat2 = new Mat();
+const tmpVec1 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
+const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
-const copyCanvas = document.createElement("canvas");
-const copyCtxt = copyCanvas.getContext("2d") as CanvasRenderingContext2D;
-const maskCanvas = document.createElement("canvas");
-const maskCtxt = maskCanvas.getContext("2d") as CanvasRenderingContext2D;
+const copyCtxt = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
+const maskCtxt = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;

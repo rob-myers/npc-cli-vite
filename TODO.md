@@ -124,9 +124,9 @@
   - horrendous prod-only 
   - seems fixed by wrapping everthing in `<Suspense>`
 
-- 🚧 currently need to re-run `pnpm gen-starship-sheets` per obstacle polygon change
+- 🚧 currently must re-run `pnpm gen-starship-sheets` per obstacle polygon change
   - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
-  - ...
+  - maybe just automate this... we still avoid the "changing spritesheet problem"
 
 - start generating documentation in README.md
 
