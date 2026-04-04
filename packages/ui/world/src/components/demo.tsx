@@ -59,7 +59,7 @@ export function SkinnedMeshTemplateDemo() {
         // material={root.material}
         material={material}
         skeleton={root.skeleton}
-        scale={0.5} // 🚧
+        scale={0.7} // 🚧
         position={[5, 0, 5]}
         // position={root.position}
         // userData={root.userData}
