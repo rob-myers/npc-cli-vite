@@ -1,3 +1,4 @@
+import { warn } from "@npc-cli/util/legacy/generic";
 import * as THREE from "three";
 
 interface TexArrayOpts {
@@ -61,6 +62,13 @@ export class TexArray {
     ) {
       return; // resize not needed
     }
+
+    // 🚧
+    warn("resizing texture array", this.opts.ctKey, {
+      width: opts.width,
+      height: opts.height,
+      numTextures: opts.numTextures,
+    });
 
     Object.assign(this.opts, opts);
 
