@@ -110,7 +110,7 @@
   - ❌ fix without using it by flipping based on determinant
 
 - ✅ propagate e.g. `meta.y` from symbol into obstacles
-- hide unused obstacle quads
+- ✅ hide unused obstacle quads
 - use textures
 
 - horrendous prod-only bug seems related to changing dataTextureArray size (once from 1 to 2)
