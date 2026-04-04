@@ -16,6 +16,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     case "request-tiled-navmesh": {
       // remember last payload
       workerStore.setState({ gmGeoms: msg.gmGeoms });
+      // await pause(1000);
 
       const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
 
