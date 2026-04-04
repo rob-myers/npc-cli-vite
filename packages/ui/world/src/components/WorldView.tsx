@@ -53,6 +53,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           powerPreference: "high-performance",
           // forceWebGL: true,
         });
+        renderer.onDeviceLost = (event) => {
+          console.warn("WebGPU device lost", event);
+        };
+
         // renderer.toneMapping = 3;
         // renderer.toneMappingExposure = 1;
         // // renderer.logarithmicDepthBuffer = true; // set via constructor if needed

@@ -78,7 +78,7 @@ export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): GmFlo
 
     const [worldPositions, indices] = getTileTriangles(tile);
 
-    for (const [gmGeomIndex, gmGeom] of gmsContainingTile.entries()) {
+    for (const [_gmGeomIndex, gmGeom] of gmsContainingTile.entries()) {
       const localPositions = worldPositions.slice(); // copy per gm
 
       // apply inverseTransform to (flat) positiions because we'll draw in local coords
@@ -94,8 +94,7 @@ export function navForFloorDraw(gmGeoms: WW.GmGeomForNav[], nav: NavMesh): GmFlo
           positions[i] = v2d.y;
 
           // 🚧 WIP expect hull door triangle in 2 gms
-          console.log(gmGeomIndex);
-          // if (gmGeomIndex === 1) positions[i - 2] += 4;
+          // console.log(gmGeomIndex);
         }
       });
 
