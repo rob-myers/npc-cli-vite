@@ -83,34 +83,34 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       )>,
 
       devSetupAssetsSync() {
-        if (!import.meta.env.DEV || !import.meta.hot) return;
-
-        // refetch on assets.json change (DEV)
         const hot = import.meta.hot;
-        const onChanging = () => void state.set({ assetsPending: true });
-        const onChanged = () => {
-          debug("[World] assets.json changed, refetching");
-          queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
-        };
-        hot.on(assetsJsonChangingEvent, onChanging);
-        hot.on(assetsJsonChangedEvent, onChanged);
+        if (!import.meta.env.DEV || !hot) return;
 
-        const onDerivedGmsDataHMR = (e: Event) => {
-          const NewClass = (e as CustomEvent).detail;
-          debug("[World] HMR: DerivedGmsData updated, recomputing");
-          state.gmsData = new NewClass();
-          for (const gmKey of state.seenGmKeys) {
-            state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
-          }
-          state.gmsData.computeRoot(state.gms);
-          state.update();
-        };
-        window.addEventListener("hmr:DerivedGmsData", onDerivedGmsDataHMR);
+        // biome-ignore format: succinct
+        const listeners: [target: "hot" | "window", event: string, handler: (...args: any[]) => void][] = [
+          ["hot", assetsJsonChangingEvent, () => state.set({ assetsPending: true })],
+          ["hot", assetsJsonChangedEvent, () => {
+            debug("[World] assets.json changed, refetching");
+            queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
+          }],
+          ["window", "hmr:DerivedGmsData", (e: Event) => {
+            debug("[World] HMR: DerivedGmsData updated, recomputing");
+            state.gmsData = new (e as CustomEvent).detail();
+            for (const gmKey of state.seenGmKeys) {
+              state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
+            }
+            state.gmsData.computeRoot(state.gms);
+            state.update();
+          }],
+        ];
 
+        for (const [target, event, handler] of listeners) {
+          target === "hot" ? hot.on(event, handler) : window.addEventListener(event, handler);
+        }
         return () => {
-          hot.off(assetsJsonChangingEvent, onChanging);
-          hot.off(assetsJsonChangedEvent, onChanged);
-          window.removeEventListener("hmr:DerivedGmsData", onDerivedGmsDataHMR);
+          for (const [target, event, handler] of listeners) {
+            target === "hot" ? hot.off(event, handler) : window.removeEventListener(event, handler);
+          }
         };
       },
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {
