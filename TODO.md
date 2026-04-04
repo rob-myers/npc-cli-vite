@@ -120,8 +120,13 @@
     - DataArrayTexture
     - `worldToSguScale * 5`
 
-- horrendous prod-only bug seems related to changing dataTextureArray size (once from 1 to 2)
+- ✅ BUG webgpu scene sometimes flickers initially and disappears
+  - horrendous prod-only 
   - seems fixed by wrapping everthing in `<Suspense>`
+
+- 🚧 currently need to re-run `pnpm gen-starship-sheets` per obstacle polygon change
+  - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
+  - ...
 
 - start generating documentation in README.md
 
