@@ -7,6 +7,13 @@
       "width": 480,
       "height": 540
     },
+    "core-geomorph-hull-walls": {
+      "key": "core-geomorph-hull-walls",
+      "filename": "core-geomorph-hull-walls.svg",
+      "pathCount": 1,
+      "width": 1200,
+      "height": 1200
+    },
     "edge-geomorph-hull-walls": {
       "key": "edge-geomorph-hull-walls",
       "filename": "edge-geomorph-hull-walls.svg",
