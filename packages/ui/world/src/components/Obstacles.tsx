@@ -37,9 +37,9 @@ export default function Obstacles(_props: Props) {
           uvDimIdx = 0,
           uvTexIdIdx = 0;
 
-        // 🚧 must be aligned to transforms
+        // aligned to transforms
         for (const [_gmId, { obstacles }] of w.gms.entries()) {
-          for (const { symbolKey, origSubRect, obstacleId } of obstacles) {
+          for (const { symbolKey, origSubRect, obstacleId: _obstacleId } of obstacles) {
             // lookup (sheetId, offset) of symbolKey
             // use origSubRect
             const entry = w.sheets.symbol[symbolKey]!;
@@ -93,7 +93,9 @@ export default function Obstacles(_props: Props) {
       positionObstacles() {
         const { inst: obsInst } = state;
         let oId = 0;
-        // const defaultObstacleColor = "#fff"; // 🚧 move to const
+
+        state.inst?.instanceMatrix.array.fill(0);
+
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
             const mat4 = state.createObstacleMatrix4([a, b, c, d, e, f], o);
