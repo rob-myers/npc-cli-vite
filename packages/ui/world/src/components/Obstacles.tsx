@@ -1,6 +1,7 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { Mat } from "@npc-cli/util/geom";
+import { invertCanvas } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import React, { useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
@@ -103,6 +104,7 @@ export default function Obstacles(_props: Props) {
             img.onload = () => {
               ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
               ct.drawImage(img, 0, 0);
+              invertCanvas(ct.canvas, copyCtxt, maskCtxt);
               w.texObs.updateIndex(sheetId);
               resolve();
             };
@@ -219,3 +221,8 @@ export type State = {
 const tmpMat1 = new Mat();
 const tmpMatFour1 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
+
+const copyCanvas = document.createElement("canvas");
+const copyCtxt = copyCanvas.getContext("2d") as CanvasRenderingContext2D;
+const maskCanvas = document.createElement("canvas");
+const maskCtxt = maskCanvas.getContext("2d") as CanvasRenderingContext2D;
