@@ -15,9 +15,9 @@ export async function computeGmInstanceMeshes(gmGeoms: WW.GmGeomForNav[]) {
   }
 
   debug("🤖 nav.worker", {
-    "total vertices": meshes.reduce((agg, mesh) => agg + (mesh.geometry.getAttribute("position")?.count ?? 0), 0),
-    "total triangles": meshes.reduce((agg, mesh) => agg + (mesh.geometry.index?.count ?? 0) / 3, 0),
-    "total meshes": meshes.length,
+    "input meshes": meshes.length,
+    "input vertices": meshes.reduce((agg, mesh) => agg + (mesh.geometry.getAttribute("position")?.count ?? 0), 0),
+    "input triangles": meshes.reduce((agg, mesh) => agg + (mesh.geometry.index?.count ?? 0) / 3, 0),
   });
 
   return { meshes, customAreaDefs };
