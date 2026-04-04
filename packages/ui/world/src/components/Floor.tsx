@@ -56,7 +56,6 @@ export default function Floor() {
 
       drawGm(gmId) {
         const { ct } = w.texFloor;
-
         // get untransformed layout i.e. not an instance
         const gmKey = w.gms[gmId]?.key;
         const layout = w.assets.layout[gmKey];
@@ -75,7 +74,6 @@ export default function Floor() {
 
         const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
         drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
-        // drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: "#f00" });
 
         // grid
         ct.save();
@@ -136,15 +134,12 @@ export default function Floor() {
           }
         });
 
-        // 🚧 hull doorways: covers up missing nav triangles in one of the textures
+        // hull doorways
         drawPolygons(
           ct,
           layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
           { fillStyle: "#fff", strokeStyle: "#000", lineWidth: 0 },
         );
-
-        // 🚧 decals from gm.decor
-        // 🚧 debug decor rects
       },
 
       transformInstances() {
@@ -158,7 +153,6 @@ export default function Floor() {
             e: gm.bounds.x,
             f: gm.bounds.y,
           }).postMultiply(gm.matrix);
-          // if (mat.determinant < 0) mat.preMultiply([-1, 0, 0, 1, 1, 0])
           state.inst.setMatrixAt(gmId, embedXZMat4(mat));
           // state.inst.setMatrixAt(gmId, embedXZMat4(mat, { yHeight: gmId * 1 }));
         }
@@ -171,19 +165,14 @@ export default function Floor() {
 
   w.floor = state;
 
-  // three shader language
   const shaderMeta = useMemo(() => {
     const texArray = w.texFloor;
-    // aligned to instances
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    // const sampledColor = texNode.depth(int(0));
-    // const sampledColor = texNode.depth(int(1));
-    const sampledColor = texNode.depth(instanceIndex);
-    return { texNode: sampledColor, uid: generateUUID() };
+    return { texNode: texNode.depth(instanceIndex), uid: generateUUID() };
   }, []);
 
   useEffect(() => {
@@ -228,7 +217,6 @@ export type State = {
 };
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
-// also try `Math.PI / 4`
 const shadowDx = Math.cos(Math.PI / 4) * 0.25;
 const shadowDy = Math.sin(Math.PI / 4) * 0.25;
 const tmpMat1 = new Mat();
