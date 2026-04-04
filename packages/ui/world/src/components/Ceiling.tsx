@@ -43,7 +43,7 @@ export default function Ceiling() {
       },
 
       async draw() {
-        // texture per gmId like floor (currently determined by gmKey)
+        // texture per gmId like floor
         for (const [gmId] of w.seenGmKeys.entries()) {
           state.drawGm(gmId);
           w.texCeil.updateIndex(gmId);
@@ -60,35 +60,14 @@ export default function Ceiling() {
 
         ct.resetTransform();
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-
-        const worldToCanvas = worldToSguScale * gmFloorExtraScale;
         ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -bounds.x * worldToCanvas, -bounds.y * worldToCanvas);
 
         const { tops, polyDecals } = w.gmsData.byKey[gmKey];
 
         // wall/door tops
-        const _nonHullWallsFill = "#001";
-        const _nonHullWallsStroke = "#888";
-        const windowsFill = "#000";
-        const broadFill = "#000";
-        const grey90 = "rgb(90, 90, 90)";
-        const wallsColor = "#333";
-        const wallsHighlight = "#999";
-        const thinLineWidth = 0.04;
-        const thickLineWidth = 0.06;
-
-        //   drawPolygons(ct, tops.nonHull, { fillStyle: nonHullWallsFill, strokeStyle: nonHullWallsStroke, lineWidth: thickLineWidth });
         drawPolygons(ct, tops.nonHull, { fillStyle: "#999", strokeStyle: "#001", lineWidth: thickLineWidth });
-
-        drawPolygons(ct, tops.window, {
-          fillStyle: windowsFill,
-          strokeStyle: wallsHighlight,
-          lineWidth: thickLineWidth,
-        });
-        drawPolygons(ct, tops.broad, { fillStyle: broadFill, strokeStyle: grey90, lineWidth: thinLineWidth });
-
-        // drawPolygons(ct, tops.hull, [black, wallsColor, thickLineWidth]); // hull walls and doors
-        // drawPolygons(ct, tops.hull, [black, wallsHighlight, thickLineWidth]); // hull walls and doors
+        drawPolygons(ct, tops.window, { fillStyle: "#000", strokeStyle: wallsHighlight, lineWidth: thickLineWidth });
+        drawPolygons(ct, tops.broad, { fillStyle: "#000", strokeStyle: grey90, lineWidth: thinLineWidth });
         drawPolygons(ct, tops.hull, { fillStyle: "#000", strokeStyle: wallsHighlight, lineWidth: thickLineWidth }); // hull walls and doors
 
         // decals
@@ -101,12 +80,10 @@ export default function Ceiling() {
               strokeStyle: x.meta.stroke || null,
               lineWidth: strokeWidth,
             });
-            // drawPolygons(ct, x, ['red', 'white', 0.08]);
           });
 
-        ct.strokeStyle = wallsColor;
-
         // Stroke a square at each corner to avoid z-fighting
+        ct.strokeStyle = wallsColor;
         const hullRect = layout.hullPoly[0].rect;
         const cornerDim = 8 * sguToWorldScale;
         ct.lineWidth = 0.02;
@@ -120,14 +97,10 @@ export default function Ceiling() {
         if (!state.inst) return;
         for (const [gmId, gm] of w.gms.entries()) {
           const mat = new Mat({
-            a: gm.bounds.width,
-            b: 0,
-            c: 0,
-            d: gm.bounds.height,
-            e: gm.bounds.x,
-            f: gm.bounds.y,
+            a: gm.bounds.width, b: 0,
+            c: 0, d: gm.bounds.height,
+            e: gm.bounds.x, f: gm.bounds.y,
           }).postMultiply(gm.matrix);
-          // if (mat.determinant < 0) mat.preMultiply([-1, 0, 0, 1, 1, 0])
           state.inst.setMatrixAt(gmId, embedXZMat4(mat));
         }
         state.inst.instanceMatrix.needsUpdate = true;
@@ -138,18 +111,14 @@ export default function Ceiling() {
 
   w.ceil = state;
 
-  // three shader language
   const shaderMeta = useMemo(() => {
     const texArray = w.texCeil;
-    // aligned to instances
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-
-    const sampledColor = texNode.depth(instanceIndex); // per gmId
-    return { texNode: sampledColor, uid: generateUUID() };
+    return { texNode: texNode.depth(instanceIndex), uid: generateUUID() };
   }, []);
 
   useEffect(() => {
@@ -192,3 +161,10 @@ export type State = {
   drawGm(gmId: number): void;
   transformInstances(): void;
 };
+
+const worldToCanvas = worldToSguScale * gmFloorExtraScale;
+const wallsColor = "#333";
+const wallsHighlight = "#999";
+const grey90 = "rgb(90, 90, 90)";
+const thinLineWidth = 0.04;
+const thickLineWidth = 0.06;
