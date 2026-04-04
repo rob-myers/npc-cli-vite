@@ -186,7 +186,7 @@ export default function Floor() {
       name="floor"
       ref={state.ref("inst")}
       args={[undefined, undefined, MAX_GEOMORPH_INSTANCES]}
-      // renderOrder={-3}
+      renderOrder={-3}
     >
       <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
