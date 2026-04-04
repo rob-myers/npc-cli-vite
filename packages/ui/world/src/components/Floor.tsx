@@ -80,23 +80,6 @@ export default function Floor() {
         // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         // ct.restore();
 
-        // uniform directional wall shadows
-        ct.save();
-        drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
-        const shadowQuads = layout.walls.flatMap((w) =>
-          w.outline.map((p1, i) => {
-            const p2 = w.outline[(i + 1) % w.outline.length];
-            return new Poly([
-              new Vect(p1.x, p1.y),
-              new Vect(p2.x, p2.y),
-              new Vect(p2.x + shadowDx, p2.y + shadowDy),
-              new Vect(p1.x + shadowDx, p1.y + shadowDy),
-            ]);
-          }),
-        );
-        drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 0.4)", strokeStyle: null });
-        ct.restore();
-
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#fff2", strokeStyle: null });
 
@@ -122,18 +105,33 @@ export default function Floor() {
           { fillStyle: "#000", strokeStyle: "#000", lineWidth: 0 },
         );
 
-        // lights
-        // 🚧 cache
+        // lights  🚧 cache
         drawLights(ct, layout, hullFloor);
 
         // obstacle drop shadows
-
         const shadowPolys = Poly.union(
           layout.obstacles.flatMap((x) =>
             x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
           ),
         );
         drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
+
+        // // uniform directional wall shadows
+        // ct.save();
+        // drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
+        // const shadowQuads = layout.walls.flatMap((w) =>
+        //   w.outline.map((p1, i) => {
+        //     const p2 = w.outline[(i + 1) % w.outline.length];
+        //     return new Poly([
+        //       new Vect(p1.x, p1.y),
+        //       new Vect(p2.x, p2.y),
+        //       new Vect(p2.x + shadowDx, p2.y + shadowDy),
+        //       new Vect(p1.x + shadowDx, p1.y + shadowDy),
+        //     ]);
+        //   }),
+        // );
+        // drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 1)", strokeStyle: null });
+        // ct.restore();
       },
 
       transformInstances() {
