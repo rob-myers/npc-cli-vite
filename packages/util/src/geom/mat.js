@@ -97,10 +97,14 @@ export class Mat {
 
   /**
    * Compute `param matrix` * `this matrix`.
-   * @param {Geom.Mat | Geom.SixTuple} input
+   * @param {Geom.Mat | Geom.AffineTransform | Geom.SixTuple} input
    */
   postMultiply(input) {
-    const [a, b, c, d, e, f] = Array.isArray(input) ? input : input.toArray();
+    const [a, b, c, d, e, f] = Array.isArray(input)
+      ? input
+      : input instanceof Mat
+        ? input.toArray()
+        : tmpMat1.setMatrixValue(input).toArray();
     const ma = a * this.a + c * this.b + e * 0;
     const mb = b * this.a + d * this.b + f * 0;
     const mc = a * this.c + c * this.d + e * 0;
@@ -112,10 +116,14 @@ export class Mat {
 
   /**
    * Compute `this matrix` * `param matrix`.
-   * @param {Geom.Mat | Geom.SixTuple} input
+   * @param {Geom.Mat | Geom.AffineTransform | Geom.SixTuple} input
    */
   preMultiply(input) {
-    const [a, b, c, d, e, f] = Array.isArray(input) ? input : input.toArray();
+    const [a, b, c, d, e, f] = Array.isArray(input)
+      ? input
+      : input instanceof Mat
+        ? input.toArray()
+        : tmpMat1.setMatrixValue(input).toArray();
     const ma = this.a * a + this.c * b + this.e * 0;
     const mb = this.b * a + this.d * b + this.f * 0;
     const mc = this.a * c + this.c * d + this.e * 0;
@@ -236,3 +244,5 @@ export class Mat {
 }
 
 /** @typedef {{ a: number; b: number; c: number; d: number; e: number; f: number }} MatrixJson */
+
+const tmpMat1 = new Mat();
