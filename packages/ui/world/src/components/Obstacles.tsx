@@ -1,5 +1,6 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
+import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat } from "@npc-cli/util/geom";
 import { invertCanvas } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
@@ -99,7 +100,7 @@ export default function Obstacles(_props: Props) {
 
         for (let sheetId = 0; sheetId < symbolSheetDims.length; sheetId++) {
           const img = new Image();
-          img.src = `/sheet/symbols.${sheetId}.png`;
+          img.src = `/sheet/symbols.${sheetId}.png${getDevCacheBustQueryParam()}`;
           await new Promise<void>((resolve) => {
             img.onload = () => {
               ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
