@@ -7,22 +7,18 @@
  * Usage
  * ```sh
  * pnpm gen-starship-sheets
- * pnpm gen-starship-sheets --prod
  * ```
  * - assumes `public/assets.json`, `public/starship-symbol/manifest.json`
- * - "--prod" flag
- *  - produces smaller filesize (same dimensions) by restricting to obstacles
- *  - reduces PNG size using `pngquant`
+ * - reduces PNG size using `pngquant`
  *
  * We could have restricted to the rectangular bounds of obstacle polygons in
  * unflattened symbols. This would produce a much smaller `width x height`
  * but would also need to be recomputed onchange obstacle.
- * We prefer to avoid such recomputations e.g. for better Dev experience.
+ * We prefer to avoid such recomputations for better DX.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { parseArgs } from "node:util";
 import {
   isHullSymbolImageKey,
   type StarshipSymbolImageKey,
@@ -47,10 +43,6 @@ import starshipSymbolManifestEncoded from "../../../packages/app/public/starship
 import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
 import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
-
-const {
-  values: { prod },
-} = parseArgs({ options: { prod: { type: "boolean", default: false } } });
 
 const assets = z.parse(AssetsSchema, assetsEncoded);
 const starshipSymbolManifest = z.parse(StarshipSymbolPngsManifestSchema, starshipSymbolManifestEncoded);
@@ -109,7 +101,7 @@ const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");
 mkdirSync(symbolsSheetDirectory, { recursive: true });
 
-const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, prod ? "symbols.prod" : "symbols");
+const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, "symbols");
 
 for (const [sheetId, bin] of bins.entries()) {
   const canvas = new Canvas(bin.width, bin.height);
@@ -120,29 +112,25 @@ for (const [sheetId, bin] of bins.entries()) {
   for (const rect of bin.rects) {
     const image = await loadImage(path.resolve(starshipSymbolDir, `${rect.data.key}.png`));
 
-    if (!prod) {
-      ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
-    } else {
-      // in --prod we clip to the obstacles actually used
-      const symKey = rect.data.key as StarshipSymbolImageKey;
-      const sym = assets.symbol[symKey]!;
-      const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
-      const polys = sym.obstacles.map((poly) =>
-        // assume top-left bounds coincides with underlying image top-left
-        poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
-      );
+    // MUST clip to the obstacles actually used e.g. diagonal part of table
+    const symKey = rect.data.key as StarshipSymbolImageKey;
+    const sym = assets.symbol[symKey]!;
+    const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
+    const polys = sym.obstacles.map((poly) =>
+      // assume top-left bounds coincides with underlying image top-left
+      poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
+    );
 
-      // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
-      for (const poly of polys) {
-        ct.save();
-        drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
-          clip: true,
-          fillStyle: "red",
-          strokeStyle: null,
-        });
-        ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
-        ct.restore();
-      }
+    // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
+    for (const poly of polys) {
+      ct.save();
+      drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
+        clip: true,
+        fillStyle: "red",
+        strokeStyle: null,
+      });
+      ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
+      ct.restore();
     }
   }
 
@@ -151,12 +139,10 @@ for (const [sheetId, bin] of bins.entries()) {
 
 //#endregion
 
-if (prod) {
-  process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
-  await loggedSpawn({
-    label: "pngquant",
-    command: "pngquant",
-    args: ["--force", "--ext", ".png", "*.png"],
-    shell: true,
-  });
-}
+process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
+await loggedSpawn({
+  label: "pngquant",
+  command: "pngquant",
+  args: ["--force", "--ext", ".png", "*.png"],
+  shell: true,
+});

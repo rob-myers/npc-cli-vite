@@ -134,8 +134,7 @@ export default function Obstacles(_props: Props) {
   w.obs = state;
 
   // 🚧 DataArrayTexture
-  // const sheetTex = useTexture("/sheet/symbols.0.png", (tex) => {
-  const sheetTex = useTexture("/sheet/symbols.prod.0.png", (tex) => {
+  const sheetTex = useTexture("/sheet/symbols.0.png", (tex) => {
     tex.flipY = false;
     tex.minFilter = THREE.NearestFilter;
     tex.magFilter = THREE.NearestFilter;

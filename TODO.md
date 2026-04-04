@@ -113,10 +113,12 @@
   - ✅ propagate e.g. `meta.y` from symbol into obstacles
   - ✅ hide unused obstacle quads
   - ✅ use textures
-  - 🚧 issue with triangular part of console capturing nearby chair
+  - ✅ issue with triangular part of console capturing nearby chair
     - console--019--2x2
-    - maybe remove `--prod` and always remove other?
-  - 🚧 clean e.g. `worldToSguScale * 5`
+    - ✅ remove `--prod` from `gen-starship-sheets` and always restrict symbols.{texId}.png to obstacles polygons
+  - 🚧 clean
+    - DataArrayTexture
+    - `worldToSguScale * 5`
 
 - horrendous prod-only bug seems related to changing dataTextureArray size (once from 1 to 2)
   - seems fixed by wrapping everthing in `<Suspense>`
