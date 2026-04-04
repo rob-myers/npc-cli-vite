@@ -19,41 +19,45 @@ export default function Ceiling() {
 
   const state = useStateRef(
     (): State => ({
-      inst: null as null | THREE.InstancedMesh,
+      inst: null,
       quad: createXzQuad(),
 
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
+      uvTextureIds: new Uint32Array(MAX_GEOMORPH_INSTANCES * 1),
 
       addUvs() {
         const uvOffsets = state.quad.getAttribute("uvOffsets");
         (uvOffsets.array as Float32Array).fill(0); // repeated (0, 0)
         const uvDimensions = state.quad.getAttribute("uvDimensions");
         (uvDimensions.array as Float32Array).fill(0);
+        const uvTextureIds = state.quad.getAttribute("uvTextureIds");
+        (uvTextureIds.array as Uint32Array).fill(0);
 
         for (const [gmId, gm] of w.gms.entries()) {
           (uvDimensions.array as Float32Array)[gmId * 2 + 0] = 1;
           (uvDimensions.array as Float32Array)[gmId * 2 + 1] = isEdgeGm(gm.key)
             ? gm.bounds.height / gm.bounds.width
             : 1;
+          (uvTextureIds.array as Uint32Array)[gmId] = w.getGmKeyTexId(gm.key);
         }
 
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
+        uvTextureIds.needsUpdate = true;
       },
 
       async draw() {
-        // texture per gmId like floor
-        for (const [gmId] of w.seenGmKeys.entries()) {
-          state.drawGm(gmId);
-          w.texCeil.updateIndex(gmId);
+        // texture per gmKey (unlike floor)
+        for (const gmKey of w.seenGmKeys) {
+          state.drawGm(gmKey);
+          w.texCeil.updateIndex(w.getGmKeyTexId(gmKey));
           await pause();
         }
       },
 
-      drawGm(gmId) {
+      drawGm(gmKey) {
         const { ct } = w.texCeil;
-        const gmKey = w.gms[gmId]?.key;
         const layout = w.assets.layout[gmKey];
         if (!layout) return;
         const { bounds } = layout;
@@ -96,11 +100,8 @@ export default function Ceiling() {
       transformInstances() {
         if (!state.inst) return;
         for (const [gmId, gm] of w.gms.entries()) {
-          const mat = new Mat({
-            a: gm.bounds.width, b: 0,
-            c: 0, d: gm.bounds.height,
-            e: gm.bounds.x, f: gm.bounds.y,
-          }).postMultiply(gm.matrix);
+          // biome-ignore format: succinct
+          const mat = new Mat({ a: gm.bounds.width, b: 0, c: 0, d: gm.bounds.height, e: gm.bounds.x, f: gm.bounds.y }).postMultiply(gm.matrix);
           state.inst.setMatrixAt(gmId, embedXZMat4(mat));
         }
         state.inst.instanceMatrix.needsUpdate = true;
@@ -115,11 +116,12 @@ export default function Ceiling() {
     const texArray = w.texCeil;
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
+    const uvTexIds = attribute("uvTextureIds", "float");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode: texNode.depth(instanceIndex), uid: generateUUID() };
-  }, []);
+    return { texNode: texNode.depth(uvTexIds), uid: generateUUID() };
+  }, [w.texCeil.opts.numTextures]);
 
   useEffect(() => {
     state.transformInstances();
@@ -138,12 +140,13 @@ export default function Ceiling() {
       <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
         <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
+        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
       </bufferGeometry>
 
       <meshStandardNodeMaterial
+        key={shaderMeta.uid}
         side={THREE.DoubleSide}
         transparent
-        key={shaderMeta.uid}
         colorNode={shaderMeta.texNode}
         depthWrite={false}
       />
@@ -156,9 +159,10 @@ export type State = {
   quad: THREE.BufferGeometry;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
+  uvTextureIds: Uint32Array;
   addUvs(): void;
   draw(): Promise<void>;
-  drawGm(gmId: number): void;
+  drawGm(gmKey: Geomorph.StarShipGeomorphKey): void;
   transformInstances(): void;
 };
 

@@ -101,7 +101,8 @@
 
 - 🚧 refactor Ceiling
   - ✅ own quad and attributes (don't use w.floor)
-  - texture indexed by gmKey (needs attribute)
+  - ✅ texture indexed by gmKey (needs attribute)
+  - test by supplying new hull symbol geomorph
 
 - 🚧 fix missing obstacles
   - ✅ related to reflection

@@ -13,7 +13,7 @@ export function createInstancedTransparentMaterial(instanceCount: number, opacit
   const colorsBuffer = instancedArray(instanceCount, "vec4");
   const colorData = colorsBuffer.value.array as Float32Array;
   for (let i = 0; i < instanceCount; i++) {
-    colorData[i * 4 + 3] = opacity; // invisible partial transparency
+    colorData[i * 4 + 3] = opacity; // partial transparency
   }
 
   const material = new THREE.MeshStandardNodeMaterial({
