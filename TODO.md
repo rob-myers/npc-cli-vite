@@ -99,16 +99,18 @@
   - ✅ add offset to respective `<image>` in map
   - ✅ fix it by changing how we compute mapDefs
 
-- 🚧 refactor Ceiling
+- ✅ refactor Ceiling
   - ✅ own quad and attributes (don't use w.floor)
   - ✅ texture indexed by gmKey (needs attribute)
-  - test by supplying new hull symbol geomorph
+  - ✅ test by supplying new hull symbol geomorph
 
-- 🚧 fix missing obstacles
+- ✅ fix missing obstacles
   - ✅ related to reflection
   - ✅ can fix via THREE.DoubleSide
-  - 🚧 fix without using it by flipping based on determinant
-- propagate e.g. `meta.h` from symbol into obstacles
+  - ❌ fix without using it by flipping based on determinant
+
+- ✅ propagate e.g. `meta.y` from symbol into obstacles
+- hide unused obstacle quads
 - use textures
 
 - horrendous prod-only bug seems related to changing dataTextureArray size (once from 1 to 2)
