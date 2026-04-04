@@ -51,7 +51,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       hash: 0,
       texFloor: new TexArray({
         ctKey: "floor-tex",
-        numTextures: 2, // can change
+        numTextures: 1, // can change
         width: floorTextureDimension,
         height: floorTextureDimension,
       }),
@@ -189,8 +189,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.hash = hashJson(state.assets);
 
       // 🚧 debug: try fix numTextures
-      // const dimension = floorTextureDimension;
-      // state.texFloor.resize({ width: dimension, height: dimension, numTextures: 2 });
+      const dimension = floorTextureDimension;
+      state.texFloor.resize({ width: dimension, height: dimension, numTextures: Math.max(0, state.gms.length) });
       // state.texCeil.resize({ width: dimension, height: dimension, numTextures: 2 });
 
       return null;

@@ -173,7 +173,7 @@ export default function Floor() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return { texNode: texNode.depth(instanceIndex), uid: generateUUID() };
-  }, []);
+  }, [w.texFloor.opts.numTextures]);
 
   useEffect(() => {
     state.transformInstances();
@@ -186,7 +186,7 @@ export default function Floor() {
       name="floor"
       ref={state.ref("inst")}
       args={[undefined, undefined, MAX_GEOMORPH_INSTANCES]}
-      renderOrder={-3}
+      // renderOrder={-3}
     >
       <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
@@ -194,9 +194,9 @@ export default function Floor() {
       </bufferGeometry>
 
       <meshStandardNodeMaterial
+        key={shaderMeta.uid}
         side={THREE.DoubleSide}
         transparent
-        key={shaderMeta.uid}
         colorNode={shaderMeta.texNode}
         depthWrite={false}
       />
