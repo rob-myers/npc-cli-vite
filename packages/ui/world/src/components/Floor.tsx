@@ -69,15 +69,16 @@ export default function Floor() {
         const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
         // drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
 
+        // 🚧 offset grid by geomorph position
         // grid
-        ct.save();
-        drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#f00", strokeStyle: null });
-        ct.setTransform(1, 0, 0, 1, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
-        ct.fillStyle = state.gridPattern;
-        ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
-        // biome-ignore format: succinct
-        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
-        ct.restore();
+        // ct.save();
+        // drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#f00", strokeStyle: null });
+        // ct.setTransform(1, 0, 0, 1, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
+        // ct.fillStyle = state.gridPattern;
+        // ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
+        // // biome-ignore format: succinct
+        // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
+        // ct.restore();
 
         // obstacle drop shadows
         const shadowPolys = Poly.union(
