@@ -168,7 +168,7 @@ export type State = {
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 const wallsColor = "#333";
-const wallsHighlight = "#999";
+const wallsHighlight = "#666";
 const grey90 = "rgb(90, 90, 90)";
 const thinLineWidth = 0.04;
 const thickLineWidth = 0.06;
