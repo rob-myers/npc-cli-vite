@@ -4,28 +4,51 @@
   "height": 1200,
   "nodes": [
     {
+      "id": "59a38220-08a2-4705-aa2c-8c55b42135d9",
+      "name": "g-101--multipurpose 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": -2.5},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "g-101--multipurpose",
+      "baseRect": {"width": 1212, "height": 1212},
+      "offset": {"x": -3, "y": -3},
+      "cssTransform": "matrix(1, 0, 0, 1, -5.5, -5.5)"
+    },
+    {
       "id": "524c57f6-c710-4b34-bdaa-a90a28fc87ca",
       "name": "wall hull hull--20x20",
-      "locked": false,
+      "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1.5},
       "type": "path",
       "d": "M 2.80001 1194.8 L 1194.8 1194.8 L 1194.8 2.80001 L 2.80001 2.80001 L 2.80001 1194.8 Z M 1202.6 -5 L 1202.6 1202.6 L -5 1202.6 L -5 -5 L 1202.6 -5 Z",
       "baseRect": {"width": 1200, "height": 1200},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 1.5)"
     },
     {
       "id": "808595c2-24b9-4952-9505-75169aeb9407",
       "name": "door hull edge=s",
-      "locked": false,
+      "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 252.5, "f": -5.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 252, "f": 1196},
       "type": "rect",
       "baseRect": {"width": 97.5, "height": 9.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 252.5, -5.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 252, 1196)"
+    },
+    {
+      "id": "fbc0553d-5568-469f-8fbd-279402402486",
+      "name": "door hull edge=s",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 252, "f": -5},
+      "type": "rect",
+      "baseRect": {"width": 98.5, "height": 11},
+      "cssTransform": "matrix(1, 0, 0, 1, 252, -5)"
     }
   ],
-  "bounds": {"x": 0, "y": -5.5, "width": 1200, "height": 1205.5},
+  "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
   "type": "symbol",
   "key": "g-101--multipurpose"
 }
