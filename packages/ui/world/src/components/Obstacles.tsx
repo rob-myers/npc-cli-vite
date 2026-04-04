@@ -231,7 +231,7 @@ export default function Obstacles(_props: Props) {
           args={[state.skirtQuad, undefined, skirtCount]}
           frustumCulled={false}
         >
-          <meshBasicMaterial color="#444" side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#667" side={THREE.DoubleSide} />
         </instancedMesh>
       )}
     </>
