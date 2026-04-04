@@ -1,9 +1,14 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat } from "@npc-cli/util/geom";
 import { warn } from "@npc-cli/util/legacy/generic";
-import React from "react";
-import * as THREE from "three";
-import { MAX_OBSTACLE_QUAD_INSTANCES } from "../const";
+import { useTexture } from "@react-three/drei";
+import React, { useMemo } from "react";
+import { generateUUID } from "three/src/math/MathUtils.js";
+import { texture } from "three/src/nodes/accessors/TextureNode.js";
+import { uv } from "three/src/nodes/accessors/UV.js";
+import { attribute } from "three/src/nodes/core/AttributeNode.js";
+import * as THREE from "three/webgpu";
+import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
@@ -33,9 +38,7 @@ export default function Obstacles(_props: Props) {
         const uvTextureIds = state.quad.getAttribute("uvTextureIds");
         (uvTextureIds.array as Uint32Array).fill(0);
 
-        let uvOffsetIdx = 0,
-          uvDimIdx = 0,
-          uvTexIdIdx = 0;
+        let [uvOffsetIdx, uvDimIdx, uvTexIdIdx] = [0, 0, 0];
 
         // aligned to transforms
         for (const [_gmId, { obstacles }] of w.gms.entries()) {
@@ -54,7 +57,11 @@ export default function Obstacles(_props: Props) {
               sheetId,
               rect: { x: symbolX, y: symbolY },
             } = entry;
-            const { x: subX, y: subY, width: subW, height: subH } = origSubRect;
+            // origSubRect is in world units, sheet is in SGU/pixel units
+            const subX = origSubRect.x * worldToSguScale * 5;
+            const subY = origSubRect.y * worldToSguScale * 5;
+            const subW = origSubRect.width * worldToSguScale * 5;
+            const subH = origSubRect.height * worldToSguScale * 5;
 
             const { width: sheetWidth, height: sheetHeight } = w.sheets.symbolSheetDims[sheetId];
             const uvOffsetX = (symbolX + subX) / sheetWidth;
@@ -65,8 +72,16 @@ export default function Obstacles(_props: Props) {
             uvOffsets.array.set([uvOffsetX, uvOffsetY], uvOffsetIdx++ * 2);
             uvDimensions.array.set([uvDimW, uvDimH], uvDimIdx++ * 2);
             uvTextureIds.array[uvTexIdIdx++] = sheetId;
+
+            // uvOffsets.array.set([0, 0], uvOffsetIdx++ * 2);
+            // uvDimensions.array.set([1, 1], uvDimIdx++ * 2);
+            // uvTextureIds.array[uvTexIdIdx++] = sheetId;
           }
         }
+
+        // console.log("uvOffsets", uvOffsets.array);
+        // console.log("uvDimensions", uvDimensions.array);
+        // console.log("uvTextureIds", uvTextureIds.array);
 
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
@@ -90,16 +105,18 @@ export default function Obstacles(_props: Props) {
           height: obstacle.height,
         };
       },
-      positionObstacles() {
+      transformAndColorObstacles() {
         const { inst: obsInst } = state;
         let oId = 0;
 
-        state.inst?.instanceMatrix.array.fill(0);
+        if (!obsInst) return;
+        obsInst.instanceMatrix.array.fill(0);
 
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
             const mat4 = state.createObstacleMatrix4([a, b, c, d, e, f], o);
-            obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "red"));
+            // obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "red"));
+            obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "white"));
             obsInst.setMatrixAt(oId, mat4);
             oId++;
           });
@@ -116,20 +133,37 @@ export default function Obstacles(_props: Props) {
 
   w.obs = state;
 
+  // 🚧 DataArrayTexture
+  // const sheetTex = useTexture("/sheet/symbols.0.png", (tex) => {
+  const sheetTex = useTexture("/sheet/symbols.prod.0.png", (tex) => {
+    tex.flipY = false;
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+  });
+
+  const shaderMeta = useMemo(() => {
+    const uvDims = attribute("uvDimensions", "vec2");
+    const uvOffs = attribute("uvOffsets", "vec2");
+    const transformedUv = uv().mul(uvDims).add(uvOffs);
+    // const transformedUv = uv().mul(uvDims);
+    const colorNode = texture(sheetTex, transformedUv);
+    return { colorNode, uid: generateUUID() };
+  }, [sheetTex]);
+
   React.useEffect(() => {
     state.addUvs();
-    state.positionObstacles();
+    state.transformAndColorObstacles();
   }, [w.mapKey, w.hash, w.gmsData.count.obstacles]);
 
   return (
     <instancedMesh
       name="obstacles"
-      // key={`${[w.mapKey, w.hash]}`}
       ref={state.ref("inst")}
-      args={[state.quad, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
+      args={[undefined, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
       frustumCulled={false}
       position={[0, 0.001, 0]} // 🚧
-      renderOrder={0}
+      renderOrder={-3}
     >
       <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
@@ -137,16 +171,14 @@ export default function Obstacles(_props: Props) {
         <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
       </bufferGeometry>
 
-      {/* 🚧 */}
-      <meshStandardMaterial color="red" side={THREE.DoubleSide} />
-      {/* <instancedAtlasMaterial
+      <meshStandardNodeMaterial
+        key={shaderMeta.uid}
         side={THREE.DoubleSide}
         transparent
-        atlas={w.texObs.tex}
-        diffuse={[0.28, 0.28, 0.3]}
-        objectPickRed={6}
         alphaTest={0.5}
-      /> */}
+        colorNode={shaderMeta.colorNode}
+        // depthWrite={false}
+      />
     </instancedMesh>
   );
 }
@@ -164,7 +196,7 @@ export type State = {
   addUvs: () => void;
   createObstacleMatrix4: (gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle) => THREE.Matrix4;
   decodeInstanceId: (instanceId: number) => Meta<{ gmId: number }>;
-  positionObstacles: () => void;
+  transformAndColorObstacles: () => void;
 };
 
 const tmpMat1 = new Mat();

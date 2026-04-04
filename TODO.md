@@ -109,11 +109,17 @@
   - ✅ can fix via THREE.DoubleSide
   - ❌ fix without using it by flipping based on determinant
 
-- ✅ propagate e.g. `meta.y` from symbol into obstacles
-- ✅ hide unused obstacle quads
-- use textures
+- 🚧 obstacles
+  - ✅ propagate e.g. `meta.y` from symbol into obstacles
+  - ✅ hide unused obstacle quads
+  - ✅ use textures
+  - 🚧 issue with triangular part of console capturing nearby chair
+    - console--019--2x2
+    - maybe remove `--prod` and always remove other?
+  - 🚧 clean e.g. `worldToSguScale * 5`
 
 - horrendous prod-only bug seems related to changing dataTextureArray size (once from 1 to 2)
+  - seems fixed by wrapping everthing in `<Suspense>`
 
 - start generating documentation in README.md
 

@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "37825e99-de9d-497a-9c6d-a1c47e9aeba7",
-      "name": "console--019--2x2 1",
+      "name": "console--019--2x2",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
@@ -26,7 +26,7 @@
       "children": [
         {
           "id": "1e070386-cad4-4597-8022-520460929daa",
-          "name": "console--051--0.4x0.6",
+          "name": "console--051 y=0.4",
           "locked": true,
           "visible": true,
           "transform": {
@@ -55,17 +55,17 @@
       "children": [
         {
           "id": "55f5d76d-9124-4d01-aa7a-aac1482c84d5",
-          "name": "obstacle",
+          "name": "obstacle table y=0.6",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0.5},
           "type": "rect",
           "baseRect": {"width": 120, "height": 30},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+          "cssTransform": "matrix(1, 0, 0, 1, 0.5, 0.5)"
         },
         {
           "id": "c6fa5933-c9f6-4fc4-8ad5-f7649baf06ec",
-          "name": "obstacle",
+          "name": "obstacle table y=0.6",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": 0},
@@ -75,7 +75,7 @@
         },
         {
           "id": "50504741-4463-4d74-9043-e52c958582bd",
-          "name": "obstacle table",
+          "name": "obstacle table y=0.6",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30},
