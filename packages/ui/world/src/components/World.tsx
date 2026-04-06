@@ -43,6 +43,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       mapKey: meta.mapKey,
       worldQueryPrefix: ["world", meta.worldKey],
 
+      brightness: 1,
+
       events: new Broadcaster(),
       reqAnimId: -1,
       threeReady: false,
@@ -72,7 +74,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
       nav: null,
-      assetsPending: true,
+      navPending: true,
 
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
@@ -94,7 +96,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
         // biome-ignore format: succinct
         const listeners: [target: "hot" | "window", event: string, handler: (...args: any[]) => void][] = [
-          ["hot", assetsJsonChangingEvent, () => state.set({ assetsPending: true })],
+          ["hot", assetsJsonChangingEvent, () => state.set({ navPending: true })],
           ["hot", assetsJsonChangedEvent, () => {
             debug("[World] assets.json changed, refetching");
             queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
@@ -130,7 +132,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       prodSetupHullAssetsSync() {
         const cb = () => {
           debug("[World] symbol saved, refetching");
-          state.set({ assetsPending: true });
+          state.set({ navPending: true });
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         window.addEventListener(mapEditSymbolSavedEvent, cb);
@@ -241,6 +243,8 @@ export type State = {
   mapKey: string;
   worldQueryPrefix: ["world", worldKey: string];
 
+  brightness: number;
+
   events: Broadcaster<NPC.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };
   reqAnimId: number;
@@ -270,7 +274,7 @@ export type State = {
 
   worker: import("./WorldWorker").State;
   nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
-  assetsPending: boolean;
+  navPending: boolean;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;

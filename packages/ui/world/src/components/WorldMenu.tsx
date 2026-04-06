@@ -37,13 +37,33 @@ export function WorldContextMenu() {
         <Menu.Trigger className="cursor-pointer">
           <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
             <ListIcon className="size-5" weight="bold" />
-            {w.assetsPending && <Spinner className="size-4" />}
+            {w.navPending && <Spinner className="size-4" />}
           </div>
         </Menu.Trigger>
 
         <Menu.Portal>
           <Menu.Positioner className="z-50" sideOffset={4} align="start">
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+              <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                <span className="w-16">Brightness</span>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.1"
+                  value={w.brightness}
+                  onChange={(e) => {
+                    w.brightness = Number(e.target.value);
+                    w.update();
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-20 accent-slate-400"
+                />
+                <span className="w-6 text-right">{w.brightness.toFixed(1)}</span>
+              </div>
+
+              <div className="my-1 border-t border-slate-700" />
+
               <Menu.SubmenuRoot>
                 <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
                   <span>Maps</span>

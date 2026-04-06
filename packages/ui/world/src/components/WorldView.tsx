@@ -2,6 +2,7 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
+import { motion } from "motion/react";
 import { useContext } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
@@ -87,43 +88,51 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   w.view = state;
 
   return (
-    <Canvas
-      className={props.className}
-      ref={state.canvasRef}
-      frameloop={state.syncRenderMode()}
-      gl={state.createRenderer}
-      onCreated={state.onCreated}
-      resize={{ debounce: 0 }}
+    <motion.div
+      className="size-full"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25, delay: 0.1 }}
     >
-      {props.children}
+      <Canvas
+        className={props.className}
+        style={{ filter: `brightness(${w.brightness})` }}
+        ref={state.canvasRef}
+        frameloop={state.syncRenderMode()}
+        gl={state.createRenderer}
+        onCreated={state.onCreated}
+        resize={{ debounce: 0 }}
+      >
+        {props.children}
 
-      {state.rootEl && (
-        <Stats
-          showPanel={0}
-          className={cn(
-            w.disabled && "pointer-events-none filter grayscale(1) brightness(0.5)",
-            "absolute! z-500! left-[unset]! right-0",
-          )}
-          parent={{ current: state.rootEl as HTMLDivElement }}
+        {state.rootEl && (
+          <Stats
+            showPanel={0}
+            className={cn(
+              w.disabled && "pointer-events-none filter grayscale(1) brightness(0.5)",
+              "absolute! z-500! left-[unset]! right-0",
+            )}
+            parent={{ current: state.rootEl as HTMLDivElement }}
+          />
+        )}
+
+        <PerspectiveCamera position={[0, 18, 0]} makeDefault fov={30} zoom={1} />
+
+        <CameraControls
+          ref={state.ref("controls")}
+          domElement={state.canvas}
+          initialAngle={{
+            azimuthal: Math.PI / 4,
+            polar: Math.PI / 3.8,
+          }}
+          minPanDistance={0}
+          // onChange={state.onChangeControls}
+          // onEnd={state.onControlsEnd}
+          // onStart={state.onControlsStart}
+          {...state.ctrlOpts}
         />
-      )}
-
-      <PerspectiveCamera position={[0, 18, 0]} makeDefault fov={30} zoom={1} />
-
-      <CameraControls
-        ref={state.ref("controls")}
-        domElement={state.canvas}
-        initialAngle={{
-          azimuthal: Math.PI / 4,
-          polar: Math.PI / 3.8,
-        }}
-        minPanDistance={0}
-        // onChange={state.onChangeControls}
-        // onEnd={state.onControlsEnd}
-        // onStart={state.onControlsStart}
-        {...state.ctrlOpts}
-      />
-    </Canvas>
+      </Canvas>
+    </motion.div>
   );
 }
 
