@@ -128,6 +128,13 @@
   - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
   - maybe just automate this... we still avoid the "changing spritesheet problem"
 
+- 🚧 fix sporadic lighter/darker floor
+  - ✅ avoid async re-draw (nav could be ready midway)
+  - 🚧 clean
+- can scroll through tabs on mobile
+- default is not empty-map (although still exists)
+- ensure multiple worlds work
+
 - start generating documentation in README.md
 
 - check glsl fallback e.g. incognito or force
