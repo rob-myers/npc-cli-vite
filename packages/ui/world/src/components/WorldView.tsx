@@ -102,6 +102,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         gl={state.createRenderer}
         onCreated={state.onCreated}
         resize={{ debounce: 0 }}
+        flat // 🔔 hopefully fix sporadic colorspace issues on refresh
       >
         {props.children}
 

@@ -219,7 +219,7 @@ function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, _hull
     const radius = Math.sqrt(room.rect.area) * 1;
     const grad = ct.createRadialGradient(x, y, 0, x, y, radius);
     grad.addColorStop(0, "rgba(100, 100, 100, 0.2)");
-    grad.addColorStop(0.5, "rgba(100,100, 100, 0.1)");
+    grad.addColorStop(0.5, "rgba(100,100, 100, 0.05)");
     grad.addColorStop(1, "rgba(100, 100, 100, 0)");
     ct.fillStyle = grad;
     ct.fillRect(x - radius, y - radius, radius * 2, radius * 2);
