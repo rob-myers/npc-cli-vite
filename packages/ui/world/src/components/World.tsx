@@ -203,6 +203,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       return null;
     },
+    enabled: state.threeReady, // 🔔 fixes horrible issue on refresh
   }); // never runs anywhere else, so it may mutate state
 
   useEffect(() => {
