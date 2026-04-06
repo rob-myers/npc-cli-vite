@@ -87,6 +87,7 @@ export class TexArray {
     this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
     this.tex.format = THREE.RGBAFormat;
     this.tex.type = opts.type ?? THREE.UnsignedByteType;
+    this.tex.colorSpace = THREE.NoColorSpace;
 
     this.hash = hashJson(opts);
   }
@@ -105,7 +106,8 @@ export class TexArray {
 
     // three.js clears these layers after next render
     this.tex.addLayerUpdate(index);
-    this.tex.needsUpdate = true; // 🚧
+    // 🚧 we're marking the ones this update applies to in previous line
+    this.tex.needsUpdate = true;
   }
 }
 
