@@ -1,5 +1,133 @@
 # DONE
 
+## By 7th Apr 2016
+
+- ✅ start using `navcat`
+  - ✅ add to `ui__world`
+  - ✅ create a webworker which can send/receive
+  - ✅ generate demo tiled navmesh in webworker
+  - ✅ send via serialization
+
+- ✅ construct `w.nav` and show on floor
+  - ✅ extract triangles and draw in floor
+  - ✅ send event which can be awaited (`nav-updated`)
+
+- ✅ fix hmr onchange geomorphs.ts, const.ts and many others
+  - ✅ fix `vite:hmr circular imports detected` (`pnpm dev --debug`)
+  - ✅ `@npc-cli/ui-sdk` root only exports types
+  - 🔔 issue arises from newly added webworker i.e. it references world/src/const.ts
+  - ✅ fix is to send "layout instances" to webworker so it doesn't know about const.ts
+
+- ❌ on edit `geomorph.ts` should rebuild assets and trigger update
+  - move request nav worker message to `<WorldWorker>`
+
+- ✅ do not cut doors out of navmesh
+- ✅ vite-plugin-watch-assets recomputes assets.json
+
+- ✅ improve HMR onchange tiled-navmesh config
+  - ❌ can send config override message
+  - ✅ handle hmr in world.worker.ts and inform `<WorldWorker>`
+
+- ✅ support hmr `DerivedGmsData` e.g. can change gmData.tops.nonHull
+
+- ✅ generate spritesheets for symbols reachable by some MapEdit file
+  - ✅ `gen-assets-json` stores `assets.stratifiedSymbolNodes`
+  - ❌ script `gen-starship-sheets` restricts to leaves in `assets.stratifiedSymbolNodes`
+    - we cannot restrict to leaves: we need every symbol containing an "obstacle" polygon
+  - ✅ find every non-flattened symbol containing an "obstacle" polygon
+  - ✅ script `gen-starship-sheets` generates spritesheet data using `maxrects-packer`
+    - ✅ migrate legacy `npc-cli/service/rects-packer.js`
+  - ✅ supports multiple sheets (0-based)
+  - ✅ sheets.json schema
+  - ✅ write sheets.json
+
+- ✅ `pnpm gen-starship-sheets` should also draw the spritesheets
+  - ✅ sheets.json entries have sheetId
+  - ✅ draw the spritesheets
+  - ❌ find a way to restrict bridge--042 image size
+    - more obstacles from it will be added
+  - ✅ can `pnpm gen-starship-sheets --prod`
+    - produces alternative "optimized" texture `.prod.{texId}.png` only drawing obstacle-covered-parts
+    - PROD only: smaller download and still have decor cuboid "obstacles"
+    - still wastes texture space (memory)
+
+- ✅ MapEdit provide triangle `<path>` for console--019
+
+- ✅ layout.obstacles have
+  - ✅ `symbolKey` (string) of original unflattened symbol parent
+  - ✅ `transform` for instancedMesh transform
+  - ✅ `origSubRect` used to compute UVs
+    - `origPoly.rect` offset by `(-bounds.x, -bounds.y)`
+    - to compute UVs we'll also need `meta.symbolKey` to lookup `(sheetId, symbolImageCoords)`
+
+- ✅ BUG map origin is not aligned to world origin
+
+- ✅ symbol asset bounds should come from "top image node"
+  - ✅ transform.{e,f} should not include offset when snap
+    - ✅ confusing (dx, dy) for console--019
+    - ✅ console--019 should have transform.{e,f} 0
+
+- ✅ go through existing symbols and fix
+- ✅ need symbol `office--001--2x2` instead of `console--019--2x2`
+  - "apparent" alignment issues related to some symbol underlays having doors
+
+- ✅ sometimes `Floor` and `Ceiling` fail due to unassigned or mismatched buffer attributes
+
+- ✅ investigate symbol bounds
+  - 🔔 clipping to underlay image bounds means outer part of doors not drawn in thumbnail
+    - however provides better thumbnail alignment when laying out geomorphs
+    - could even consider further restriction to gridRect
+  - 🔔 seen symbol alignment improve on re-add symbol to 301
+  - ✅ reflection of symbol takes account of node.offset
+    - on reflect y/x-axis we negate x/y-offset
+  - ✅ `createSymbolFromSavedFile` should not apply `node.offset` to geometry
+  - ✅ check other symbols
+
+- ❌ obstacle polygons should be clipped to image node's bounds
+  - otherwise they'll be overlap in symbol spritesheet
+
+- ✅ floor/ceiling textures per gmId not per gmKey
+  - 🔔 continuous navmesh: cannot assume same triangles for distinct gmKey instances
+  - ✅ draw floor as before but per gmId (ceil still per gmKey)
+  - ✅ change NavMesh tile triangle test from gridRect to worldBounds
+  - ✅ correctly computing triangles in different instances
+  - ✅ for the moment let's override hull doorways with a rect
+  - ✅ ceilings per gmId too
+    - since using same quad as ceiling would need special attribute/uniform
+
+- ✅ MapEdit: map: geomorph symbol not aligned
+  - ✅ keep "the space at top" of 301
+  - ✅ remove `node.offset` for hull symbols
+  - ✅ add offset to respective `<image>` in map
+  - ✅ fix it by changing how we compute mapDefs
+
+- ✅ refactor Ceiling
+  - ✅ own quad and attributes (don't use w.floor)
+  - ✅ texture indexed by gmKey (needs attribute)
+  - ✅ test by supplying new hull symbol geomorph
+
+- ✅ fix missing obstacles
+  - ✅ related to reflection
+  - ✅ can fix via THREE.DoubleSide
+  - ❌ fix without using it by flipping based on determinant
+
+- ✅ obstacles
+  - ✅ propagate e.g. `meta.y` from symbol into obstacles
+  - ✅ hide unused obstacle quads
+  - ✅ use textures
+  - ✅ issue with triangular part of console capturing nearby chair
+    - console--019--2x2
+    - ✅ remove `--prod` from `gen-starship-sheets` and always restrict symbols.{texId}.png to obstacles polygons
+  - ✅ clean
+    - DataArrayTexture
+    - `worldToSguScale * 5`
+
+- ✅ BUG webgpu scene sometimes flickers initially and disappears
+  - horrendous prod-only 
+  - seems fixed by wrapping everthing in `<Suspense>`
+
+- ✅ fix sporadic lighter/darker floor
+
 ## By 27th Mar 2016
 
 - ❌ strategy for extending zod schemas
