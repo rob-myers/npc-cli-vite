@@ -2,7 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { Broadcaster, cn, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { debug, hashJson } from "@npc-cli/util/legacy/generic";
+import { debug, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "..
 import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
+  brightnessStorageKey,
   emptyMapDef,
   floorTextureDimension,
   mapEditSymbolSavedEvent,
@@ -43,7 +44,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       mapKey: meta.mapKey,
       worldQueryPrefix: ["world", meta.worldKey],
 
-      brightness: 1,
+      brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? 1,
 
       events: new Broadcaster(),
       reqAnimId: -1,

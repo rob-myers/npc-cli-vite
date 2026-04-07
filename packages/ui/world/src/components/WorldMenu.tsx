@@ -6,6 +6,7 @@ import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/lega
 import { CaretRightIcon, ListIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useContext } from "react";
+import { brightnessStorageKey } from "../const";
 import { useMapManifest } from "../hooks/useMapManifest";
 import { WorldContext } from "./world-context";
 
@@ -55,6 +56,7 @@ export function WorldContextMenu() {
                   onChange={(e) => {
                     w.brightness = Number(e.target.value);
                     w.update();
+                    tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                   }}
                   onClick={(e) => e.stopPropagation()}
                   className="w-20 accent-slate-400"
