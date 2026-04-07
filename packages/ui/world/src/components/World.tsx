@@ -1,6 +1,6 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
-import { Broadcaster, cn, useStateRef } from "@npc-cli/util";
+import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { debug, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
@@ -99,11 +99,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const listeners: [target: "hot" | "window", event: string, handler: (...args: any[]) => void][] = [
           ["hot", assetsJsonChangingEvent, () => state.set({ navPending: true })],
           ["hot", assetsJsonChangedEvent, () => {
-            debug("[World] assets.json changed, refetching");
+            debug("[World] assets.json changed: refetching");
             queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
           }],
           ["window", "hmr:DerivedGmsData", (e: Event) => {
-            debug("[World] HMR: DerivedGmsData updated, recomputing");
+            debug("[World] HMR: DerivedGmsData updated: recomputing");
             state.gmsData = new (e as CustomEvent).detail();
             for (const gmKey of state.seenGmKeys) {
               state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
@@ -269,12 +269,12 @@ export type State = {
   seenGmKeys: StarShipGeomorphKey[];
   gmsData: DerivedGmsData;
 
-  ceil: import("./Ceiling").State;
-  floor: import("./Floor").State;
-  obs: import("./Obstacles").State;
-  view: import("./WorldView").State;
+  ceil: UseStateRef<import("./Ceiling").State>;
+  floor: UseStateRef<import("./Floor").State>;
+  obs: UseStateRef<import("./Obstacles").State>;
+  view: UseStateRef<import("./WorldView").State>;
 
-  worker: import("./WorldWorker").State;
+  worker: UseStateRef<import("./WorldWorker").State>;
   nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
   navPending: boolean;
 

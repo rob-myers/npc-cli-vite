@@ -9,7 +9,7 @@ import {
   StarshipSymbolPngsManifestSchema,
   sguScalePngToSvgFactor,
 } from "@npc-cli/media/starship-symbol";
-import { assetsJsonChangedEvent, mapEditSymbolSavedEvent } from "@npc-cli/ui__world/const";
+import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const";
 import type { ThemeName } from "@npc-cli/ui-sdk";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -19,6 +19,7 @@ import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
   entries,
+  safeJsonCompact,
   toPrecision,
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -442,7 +443,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               srcType: node.srcType,
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
-              offset: node.offset.clone(),
+              offset: node.offset.clone().precision(precision),
               cssTransform: computeNodeCssTransform(node),
             };
           }
@@ -452,7 +453,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               type: "symbol" as const,
               srcKey: node.srcKey,
               baseRect: { ...node.baseRect },
-              offset: node.offset.clone(),
+              offset: node.offset.clone().precision(precision),
               cssTransform: computeNodeCssTransform(node),
             };
           }
@@ -1147,12 +1148,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         };
 
         // save to local storage: (prod) only way to "save", (dev) provides "draft"
-        tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), JSON.stringify(savedFile));
+        tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
 
         // remember current file for this MapEdit instance
         tryLocalStorageSet(
           LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
-          JSON.stringify(extendCurrentFileSpecifierMapping(props.meta.id, fileSpecifier)),
+          safeJsonCompact(extendCurrentFileSpecifierMapping(props.meta.id, fileSpecifier)),
         );
 
         if (!state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier))) {
@@ -1170,12 +1171,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (import.meta.env.DEV && saveToDiskInDev) {
           void saveMapEditFile(savedFile);
         }
-
-        // // 🚧 too early i.e. need to wait for thumbnail to be redrawn
-        // uiStoreApi.setUiMeta(props.meta.id, (state) => {
-        //   const currentVersion = (state as MapEditUiMeta).localVersion ?? 0;
-        //   (state as MapEditUiMeta).localVersion = currentVersion + 1;
-        // });
       },
       async load(file = state.currentFile, { askToRestore = true, ignoreDraft = false } = {}) {
         if (askToRestore && state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {

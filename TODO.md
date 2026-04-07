@@ -4,9 +4,13 @@
   - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
   - could automate this... we still avoid "changing spritesheet problem"
   - ✅ assets.json has number `hash.obstacles`
+  - ❌ `pnpm gen-assets-json` triggers `pnpm gen-starship-sheets` onchange hash.obstacles
+    - we'll keep `hash.obstacles` though
 
-  - ✅ avoid async re-draw (nav could be ready midway)
-  - seems fixed via react-three-fiber `<Canvas flat>`
+- 🚧 avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
+
+- fix precision in `assets.json`
+
 - can scroll through tabs on mobile
 - default is not empty-map (although still exists)
 - ensure multiple worlds work

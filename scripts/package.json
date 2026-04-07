@@ -9,7 +9,7 @@
   "bin": {
     "extract-starship-pngs": "./src/bins/extract-starship-pngs.ts",
     "starship-pngs-to-public": "./src/bins/starship-pngs-to-public.ts",
-    "gen-assets-json": "./src/bins/gen-assets-json.tsx",
+    "gen-assets-json": "./src/bins/gen-assets-json.ts",
     "gen-pkg": "./src/bins/gen-pkg.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
     "gen-ui": "./src/bins/gen-ui.ts",

@@ -127,6 +127,8 @@
   - seems fixed by wrapping everthing in `<Suspense>`
 
 - ✅ fix sporadic lighter/darker floor
+  - seems fixed via react-three-fiber `<Canvas flat>`
+  - ✅ avoid async re-draw (nav could be ready midway)
 
 ## By 27th Mar 2016
 
