@@ -9,6 +9,9 @@
 
 - 🚧 avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
 
+- 🚧 try add shadow quad to blockbench file
+  - ✅ can export quad as another SkinnedMesh and show
+
 - fix precision in `assets.json`
 
 - can scroll through tabs on mobile

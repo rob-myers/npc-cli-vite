@@ -9,7 +9,8 @@ import * as THREE from "three/webgpu";
 
 export function SkinnedMeshTemplateDemo() {
   const groupRef = useRef<THREE.Group>(null);
-  const gltf = useGLTF(url.templateGltf);
+  // const gltf = useGLTF(url.templateGltf);
+  const gltf = useGLTF(url.templateTest0Gltf);
 
   // clone and buildGraph in useState fixes HMR
   const state = useStateRef(() => {
@@ -20,6 +21,7 @@ export function SkinnedMeshTemplateDemo() {
   const { actions } = useAnimations(gltf.animations, groupRef); // cannot clone animations?
 
   const root = nodes.root as THREE.SkinnedMesh;
+  const otherRoot = nodes.other as THREE.SkinnedMesh;
   const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
 
   const texture = useTexture(url.templateTexture, (texture) => {
@@ -60,11 +62,16 @@ export function SkinnedMeshTemplateDemo() {
         material={material}
         skeleton={root.skeleton}
         scale={0.65} // 🚧
-        position={[5, 0, 7.5]}
+        position={[5, 0.1, 7.5]}
         // position={root.position}
         // userData={root.userData}
       >
-        {bones[0] && <primitive object={bones[0]} />}
+        {bones && <primitive object={bones[0]} />}
+
+        {/* 🚧 rename as shadowRoot in model */}
+        <mesh geometry={otherRoot.geometry}>
+          <meshBasicMaterial color="black" opacity={0.25} transparent />
+        </mesh>
       </skinnedMesh>
     </group>
   );
