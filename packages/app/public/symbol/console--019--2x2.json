@@ -54,24 +54,14 @@
       "type": "group",
       "children": [
         {
-          "id": "55f5d76d-9124-4d01-aa7a-aac1482c84d5",
-          "name": "obstacle table y=0.6",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0.5},
-          "type": "rect",
-          "baseRect": {"width": 120, "height": 30},
-          "cssTransform": "matrix(1, 0, 0, 1, 0.5, 0.5)"
-        },
-        {
           "id": "c6fa5933-c9f6-4fc4-8ad5-f7649baf06ec",
           "name": "obstacle table y=0.6",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": 0.5},
           "type": "rect",
           "baseRect": {"width": 31, "height": 120},
-          "cssTransform": "matrix(1, 0, 0, 1, -0.5, 0)"
+          "cssTransform": "matrix(1, 0, 0, 1, -1, 0.5)"
         },
         {
           "id": "50504741-4463-4d74-9043-e52c958582bd",
@@ -85,6 +75,16 @@
           "cssTransform": "matrix(1, 0, 0, 1, 30, 30)"
         }
       ]
+    },
+    {
+      "id": "03be0e16-5e08-471f-86d9-1e167dff79d2",
+      "name": "obstacle table y=0.6",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -0.5},
+      "type": "rect",
+      "baseRect": {"width": 120, "height": 31},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, -0.5)"
     }
   ],
   "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},

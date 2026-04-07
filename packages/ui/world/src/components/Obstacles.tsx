@@ -12,6 +12,7 @@ import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
+import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { WorldContext } from "./world-context";
@@ -32,6 +33,7 @@ export default function Obstacles(_props: Props) {
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       /** itemSize 1 */
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
+      images: [],
 
       addUvs() {
         if (!w.sheets) return;
@@ -50,7 +52,7 @@ export default function Obstacles(_props: Props) {
         // aligned to transforms
         for (const [_gmId, { obstacles }] of w.gms.entries()) {
           for (const { symbolKey, origSubRect, obstacleId: _obstacleId } of obstacles) {
-            const entry = w.sheets.symbol[symbolKey]!;
+            const entry = w.sheets.symbol[symbolKey] as StarShipSymbolSheetEntry;
             if (!entry) {
               warn(`${symbolKey} not found in sheets.json`);
               uvOffsetIdx++;
@@ -79,10 +81,6 @@ export default function Obstacles(_props: Props) {
             uvTextureIds.array[uvTexIdIdx++] = sheetId;
           }
         }
-
-        uvOffsets.needsUpdate = true;
-        uvDimensions.needsUpdate = true;
-        uvTextureIds.needsUpdate = true;
       },
 
       async draw() {
@@ -96,8 +94,12 @@ export default function Obstacles(_props: Props) {
           height: maxSymbolSheetDim.height,
         });
 
+        // 🚧 cache image and only update on dev event (triggered by watching spritesheet PNGs)
+        if (state.images.length > 0) return;
+
+        state.images = Array.from({ length: symbolSheetDims.length }).map(() => new Image());
         for (let sheetId = 0; sheetId < symbolSheetDims.length; sheetId++) {
-          const img = new Image();
+          const img = state.images[sheetId];
           img.src = `/sheet/symbols.${sheetId}.png${getDevCacheBustQueryParam()}`;
           await new Promise<void>((resolve) => {
             img.onload = () => {
@@ -142,8 +144,6 @@ export default function Obstacles(_props: Props) {
           });
         });
 
-        obsInst.instanceMatrix.needsUpdate = true;
-        if (obsInst.instanceColor !== null) obsInst.instanceColor.needsUpdate = true;
         obsInst.computeBoundingSphere();
       },
 
@@ -171,8 +171,19 @@ export default function Obstacles(_props: Props) {
           });
         });
 
-        state.skirtInst.instanceMatrix.needsUpdate = true;
+        // state.skirtInst.instanceMatrix.needsUpdate = true;
         state.skirtInst.computeBoundingSphere();
+      },
+
+      sendDataToGpu() {
+        state.quad.getAttribute("uvOffsets").needsUpdate = true;
+        state.quad.getAttribute("uvDimensions").needsUpdate = true;
+        state.quad.getAttribute("uvTextureIds").needsUpdate = true;
+
+        state.inst.instanceMatrix.needsUpdate = true;
+        if (state.inst.instanceColor !== null) state.inst.instanceColor.needsUpdate = true;
+
+        state.skirtInst.instanceMatrix.needsUpdate = true;
       },
     }),
   );
@@ -194,7 +205,12 @@ export default function Obstacles(_props: Props) {
     state.addUvs();
     state.transformAndColorObstacles();
     state.positionSkirts();
-    state.draw().then(() => w.update());
+
+    state.draw().then(async () => {
+      await pause(60); // avoid mismatched instances/uvs
+      state.sendDataToGpu();
+      w.update();
+    });
   }, [w.mapKey, w.hash, w.gmsData.count.obstacles]);
 
   const skirtCount = w.gmsData.count.obstacles * 4;
@@ -250,12 +266,14 @@ export type State = {
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
+  images: HTMLImageElement[];
   addUvs(): void;
   draw(): Promise<void>;
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
   decodeInstanceId(instanceId: number): Meta<{ gmId: number }>;
   transformAndColorObstacles(): void;
   positionSkirts(): void;
+  sendDataToGpu(): void;
 };
 
 const skirtDepth = 0.15;

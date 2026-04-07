@@ -1,8 +1,9 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import { precision } from "@npc-cli/ui__world/const";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect, Vect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { keys, tryLocalStorageGet, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
+import { keys, toPrecision, tryLocalStorageGet, tryLocalStorageGetParsed, warn } from "@npc-cli/util/legacy/generic";
 import {
   type BaseMapNode,
   type BaseRect,
@@ -232,7 +233,7 @@ export function computeNodeCssTransform(node: TransformableMapNode): string {
  */
 function computeImageOrSymbolCssTransform(node: Extract<MapNode, { type: "image" | "symbol" }>): string {
   const { transform, offset } = node;
-  return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${transform.e + offset.x}, ${transform.f + offset.y})`;
+  return `matrix(${transform.a}, ${transform.b}, ${transform.c}, ${transform.d}, ${toPrecision(transform.e + offset.x, precision)}, ${toPrecision(transform.f + offset.y, precision)})`;
 }
 
 function computePathCssTransform(node: Extract<MapNode, { type: "path" }>): string {

@@ -82,9 +82,7 @@ createLayouts(assets);
 perf("create layouts");
 
 assets.hash = {
-  obstacles: hashJson(
-    Object.values(assets.symbol).map((s) => s?.obstacles),
-  ),
+  obstacles: hashJson(Object.values(assets.symbol).map((s) => s?.obstacles)),
 };
 
 perf("total");
