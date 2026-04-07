@@ -2,7 +2,8 @@
 
 - 🚧 currently must re-run `pnpm gen-starship-sheets` per obstacle polygon change
   - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
-  - maybe just automate this... we still avoid the "changing spritesheet problem"
+  - could automate this... we still avoid "changing spritesheet problem"
+  - ✅ assets.json has number `hash.obstacles`
 
   - ✅ avoid async re-draw (nav could be ready midway)
   - seems fixed via react-three-fiber `<Canvas flat>`

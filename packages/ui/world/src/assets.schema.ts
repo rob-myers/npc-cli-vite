@@ -138,6 +138,10 @@ export const AssetsSchema = z.object({
   flattened: z.partialRecord(StarShipSymbolImageKeySchema, AssetsFlatSymbolSchema),
   stratifiedSymbolNodes: z.array(z.array(SymbolGraphNodeSchema)),
   layout: z.partialRecord(StarShipGeomorphKeySchema, GeomorphLayoutSchema),
+  hash: z.object({
+    /** Over all symbols */
+    obstacles: z.number(),
+  }),
 });
 export type AssetsType = z.infer<typeof AssetsSchema>;
 

@@ -25,7 +25,7 @@ import {
   flattenSymbol,
 } from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { entries, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { entries, error, hashJson, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import { perf } from "../service/performance";
@@ -61,6 +61,7 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
   flattened: {},
   stratifiedSymbolNodes: [],
   layout: {},
+  hash: { obstacles: 0 },
 };
 
 perf("symbols/maps");
@@ -79,6 +80,12 @@ perf("flatten symbols");
 perf("create layouts");
 createLayouts(assets);
 perf("create layouts");
+
+assets.hash = {
+  obstacles: hashJson(
+    Object.values(assets.symbol).map((s) => s?.obstacles),
+  ),
+};
 
 perf("total");
 
