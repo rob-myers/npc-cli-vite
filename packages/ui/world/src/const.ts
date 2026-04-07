@@ -61,6 +61,8 @@ export const assetsJsonChangingEvent = "assets-json-changing";
 export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
+export const brightnessStorageKey = `world-brightness-value`;
+
 export const wallHeight = 2;
 
 export const MAX_GEOMORPH_INSTANCES = 64;
