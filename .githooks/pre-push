@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Generating prod gen-starship-sheets..."
+pnpm gen-starship-sheets --prod

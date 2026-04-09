@@ -13,7 +13,7 @@
     - ✅ put restrict to obstacle polys under `--prod`
       - probably should run in a git hook
     - ✅ clean up gen code
-    - 🚧 run `pnpm gen-starship-sheets` on commit or push
+    - 🚧 run `pnpm gen-starship-sheets --prod` on commit or push
 
 - ✅ avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
 

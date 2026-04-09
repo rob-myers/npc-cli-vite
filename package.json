@@ -13,7 +13,8 @@
     "preview": "pnpm -F @npc-cli/app preview",
     "typecheck": "tsgo -b",
     "types": "tsgo -b",
-    "check": "biome check packages/*"
+    "check": "biome check packages/*",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
