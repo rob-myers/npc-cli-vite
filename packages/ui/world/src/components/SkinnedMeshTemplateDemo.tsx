@@ -21,7 +21,6 @@ export function SkinnedMeshTemplateDemo() {
   const { actions } = useAnimations(gltf.animations, groupRef); // cannot clone animations?
 
   const root = nodes.root as THREE.SkinnedMesh;
-  const otherRoot = nodes.other as THREE.SkinnedMesh;
   const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
 
   const texture = useTexture(url.templateTexture, (texture) => {
@@ -68,10 +67,9 @@ export function SkinnedMeshTemplateDemo() {
       >
         {bones && <primitive object={bones[0]} />}
 
-        {/* 🚧 rename as shadowRoot in model */}
-        <mesh geometry={otherRoot.geometry}>
+        {/* <mesh geometry={otherRoot.geometry}>
           <meshBasicMaterial color="black" opacity={0.25} transparent />
-        </mesh>
+        </mesh> */}
       </skinnedMesh>
     </group>
   );
