@@ -21,10 +21,12 @@
 
 - 🚧 try add shadow quad to blockbench file
   - ✅ can export quad as another SkinnedMesh and show
+  - ✅ add parent root to Blockbench file: root -> skeleton-root -> ...
 
 - fix precision in `assets.json`
 
-- can scroll through tabs on mobile
+- 🚧 can scroll through tabs on mobile
+  - first attempt failed i.e. `overflow-x-auto` plus `shrink-0`
 - default is not empty-map (although still exists)
 - ensure multiple worlds work
 
