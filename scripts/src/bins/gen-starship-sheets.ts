@@ -1,24 +1,31 @@
 #!/usr/bin/env node
 
 /**
- * - creates public/sheets.json
- * - creates public/sheet/symbol.{sheetId}.png
+ * creates
+ * - public/sheets.json
+ * - public/sheet/symbol.{sheetId}.png
+ * - public/sheet/symbol.prod.{sheetId}.png when --prod
  *
  * Usage
  * ```sh
  * pnpm gen-starship-sheets
- * ```
- * - assumes `public/assets.json`, `public/starship-symbol/manifest.json`
- * - reduces PNG size using `pngquant`
  *
- * We could have restricted to the rectangular bounds of obstacle polygons in
- * unflattened symbols. This would produce a much smaller `width x height`
- * but would also need to be recomputed onchange obstacle.
- * We prefer to avoid such recomputations for better DX.
+ * # smaller image for prod where obstacle editing disabled
+ * pnpm gen-starship-sheets --prod
+ * ```
+ *
+ * dependencies
+ * - `public/assets.json`
+ * - `public/starship-symbol/manifest.json`
+ * - `pngquant` command to reduce PNG size
+ *
+ * This approach wastes space inside texture but avoids the need to
+ * recompute the spritesheet in development.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { parseArgs } from "node:util";
 import {
   isHullSymbolImageKey,
   type StarshipSymbolImageKey,
@@ -43,6 +50,12 @@ import starshipSymbolManifestEncoded from "../../../packages/app/public/starship
 import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
 import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
+import { collectMasks } from "../service/svg-masks.ts";
+
+const opts = parseArgs({
+  options: { prod: { type: "boolean" } },
+  args: process.argv.slice(2),
+});
 
 const assets = z.parse(AssetsSchema, assetsEncoded);
 const starshipSymbolManifest = z.parse(StarshipSymbolPngsManifestSchema, starshipSymbolManifestEncoded);
@@ -101,6 +114,9 @@ const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");
 mkdirSync(symbolsSheetDirectory, { recursive: true });
 
+/** symbol key → array of polygons to erase, in SVG viewBox coordinates */
+const masksBySymbol = collectMasks(path.resolve(starshipSymbolDir, "mask"));
+
 const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, "symbols");
 
 for (const [sheetId, bin] of bins.entries()) {
@@ -112,33 +128,56 @@ for (const [sheetId, bin] of bins.entries()) {
   for (const rect of bin.rects) {
     const image = await loadImage(path.resolve(starshipSymbolDir, `${rect.data.key}.png`));
 
-    // MUST clip to the obstacles actually used e.g. diagonal part of table
     const symKey = rect.data.key as StarshipSymbolImageKey;
     const sym = assets.symbol[symKey]!;
     const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
-    const polys = sym.obstacles.map((poly) =>
-      // assume top-left bounds coincides with underlying image top-left
-      poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
-    );
 
-    // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
-    for (const poly of polys) {
-      ct.save();
-      drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
-        clip: true,
-        fillStyle: "red",
-        strokeStyle: null,
-      });
+    if (opts.values.prod) {
+      // 🔔 clip to obstacles in production for much smaller file size
+      // 🔔 we don't in development so we can add obstacles without re-running this script
+      const polys = sym.obstacles.map((poly) =>
+        // assume top-left bounds coincides with underlying image top-left
+        poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
+      );
+
+      // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
+      for (const poly of polys) {
+        ct.save();
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
+          clip: true,
+          fillStyle: "red",
+          strokeStyle: null,
+        });
+        ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
+        ct.restore();
+      }
+    } else {
       ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
+    }
+
+    // erase "mask remove" regions
+    const masks = masksBySymbol[symKey];
+    if (masks?.length) {
+      const offsetX = rect.x - sym.bounds.x * scale;
+      const offsetY = rect.y - sym.bounds.y * scale;
+      ct.save();
+      ct.globalCompositeOperation = "destination-out";
+      for (const maskPoly of masks) {
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
+          fillStyle: "black",
+          strokeStyle: null,
+        });
+      }
       ct.restore();
     }
   }
 
-  await canvas.toFile(`${baseSymbolsSheetPath}.${sheetId}.png`);
+  await canvas.toFile(`${baseSymbolsSheetPath}.${opts.values.prod ? `prod.${sheetId}` : sheetId}.png`);
 }
 
 //#endregion
 
+// reduce PNG size
 process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
 await loggedSpawn({
   label: "pngquant",
