@@ -211,6 +211,7 @@ function TabItem({
     const el = state.tabEl;
     if (!el) return;
     const id = tab.id;
+    const touchCleanup = setupTouchLongPressDrag(el);
 
     return combine(
       draggable({
@@ -243,7 +244,10 @@ function TabItem({
           });
         },
         onDragStart: () => state.set({ isDragging: true }),
-        onDrop: () => state.set({ isDragging: false }),
+        onDrop: () => {
+          state.set({ isDragging: false });
+          touchCleanup.resetDraggable();
+        },
       }),
       dropTargetForElements({
         element: el,
@@ -304,6 +308,7 @@ function TabItem({
           }
         },
       }),
+      touchCleanup,
     );
   }, [tab.id, tabsMetaId]);
 
@@ -351,5 +356,27 @@ function TabItem({
         )}
       </div>
     </div>
+  );
+}
+
+const noopTouchCleanup = Object.assign(() => {}, { resetDraggable() {} });
+
+/** On touch devices, only allow drag after a 300ms long press. */
+function setupTouchLongPressDrag(el: HTMLElement) {
+  if (!("ontouchstart" in window)) return noopTouchCleanup;
+
+  let timer = 0;
+  const setDrag = (v: boolean) => el.setAttribute("draggable", String(v));
+  const cancel = () => { clearTimeout(timer); setDrag(false); };
+  const start = () => { timer = window.setTimeout(() => setDrag(true), 300); };
+
+  setDrag(false);
+  el.addEventListener("touchstart", start, { passive: true });
+  el.addEventListener("touchmove", cancel, { passive: true });
+  el.addEventListener("touchend", cancel);
+
+  return Object.assign(
+    () => { cancel(); el.removeEventListener("touchstart", start); el.removeEventListener("touchmove", cancel); el.removeEventListener("touchend", cancel); },
+    { resetDraggable: () => setDrag(false) },
   );
 }

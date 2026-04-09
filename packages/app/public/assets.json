@@ -1285,7 +1285,16 @@
         }
       ]
     },
-    "empty-map": {"key": "empty-map", "gms": []}
+    "empty-map": {"key": "empty-map", "gms": []},
+    "small-map-0": {
+      "key": "small-map-0",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        }
+      ]
+    }
   },
   "flattened": {
     "bed--003--1x1.6": {
