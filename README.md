@@ -139,6 +139,21 @@ pngquant --ext .pngquant.png *.png
 ```
 
 
+# Git hooks
+
+Git hooks live in `.githooks/` and are version-controlled. After cloning, run:
+
+```sh
+pnpm install
+```
+
+The `prepare` script automatically configures `core.hooksPath` to use `.githooks/`.
+
+| Hook | What it does |
+|------|-------------|
+| `pre-commit` | Runs `pnpm gen-starship-sheets --prod` and stages the output |
+| `pre-push` | Runs `pnpm gen-starship-sheets --prod` |
+
 # Dev scripts
 
 ```sh
