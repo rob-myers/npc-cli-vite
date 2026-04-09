@@ -139,7 +139,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       <div className="flex justify-between min-h-12 w-full border-b border-outline">
         <div
           ref={tabBarRef}
-          className={cn("flex items-end overflow-auto [scrollbar-width:thin]", state.isDropTarget && "bg-blue-400/10")}
+          className={cn("flex items-end overflow-x-auto [scrollbar-width:thin] touch-pan-x", state.isDropTarget && "bg-blue-400/10")}
         >
           {tabs.map((tab) => (
             <TabItem
@@ -312,7 +312,7 @@ function TabItem({
       ref={state.ref("tabEl")}
       className={cn(
         uiClassName,
-        "cursor-pointer px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
+        "cursor-pointer shrink-0 px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
         !isCurrentTab && "opacity-50 hover:opacity-80",
         state.isDragging && "opacity-30",
         state.isDropTarget && "border-l-2 border-l-blue-400",
