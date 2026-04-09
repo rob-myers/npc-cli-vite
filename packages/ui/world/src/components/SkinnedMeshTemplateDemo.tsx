@@ -1,27 +1,37 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { useAnimations, useGLTF, useTexture } from "@react-three/drei";
+import { useAnimations, useTexture } from "@react-three/drei";
 import { buildGraph } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import React, { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { WorldContext } from "./world-context";
 
 export function SkinnedMeshTemplateDemo() {
+  const w = React.useContext(WorldContext);
   const groupRef = useRef<THREE.Group>(null);
-  // const gltf = useGLTF(url.templateGltf);
-  const gltf = useGLTF(url.templateTest0Gltf);
 
-  // clone and buildGraph in useState fixes HMR
-  const state = useStateRef(() => {
-    const clone = SkeletonUtils.clone(gltf.scene);
-    return { clone, graph: buildGraph(clone) };
-  });
-  const { nodes } = state.graph;
-  const { actions } = useAnimations(gltf.animations, groupRef); // cannot clone animations?
+  const gltf = useQuery({
+    queryKey: [...w.worldQueryPrefix, "template-gltf"],
+    queryFn: () => new GLTFLoader().loadAsync(url.templateTest0Gltf),
+  }).data;
 
-  const root = nodes.root as THREE.SkinnedMesh;
-  const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
+  // clone and buildGraph in useStateRef fixes HMR
+  const state = useStateRef((): State => ({ gltfScene: null, clone: null, graph: null }));
+  if (gltf && state.gltfScene !== gltf.scene) {
+    state.gltfScene = gltf.scene;
+    state.clone = SkeletonUtils.clone(gltf.scene);
+    state.graph = buildGraph(state.clone);
+  }
+
+  const nodes = state.graph?.nodes;
+  const { actions } = useAnimations(gltf?.animations ?? [], groupRef);
+
+  const root = nodes?.root as THREE.SkinnedMesh | undefined;
+  const bones = nodes ? Object.values(nodes).filter((n) => n instanceof THREE.Bone) : [];
 
   const texture = useTexture(url.templateTexture, (texture) => {
     texture.flipY = false;
@@ -39,8 +49,6 @@ export function SkinnedMeshTemplateDemo() {
   }, [texture]);
 
   useEffect(() => {
-    // console.log({ gltf, actions, rootBone: bones[0], material: root.material });
-
     actions[animationName.idle]?.play();
     setTimeout(() => {
       actions[animationName.idle]?.fadeOut(0.5);
@@ -52,24 +60,19 @@ export function SkinnedMeshTemplateDemo() {
     };
   }, [actions]);
 
+  if (!root) return <group ref={groupRef} />;
+
   return (
     <group ref={groupRef}>
       <skinnedMesh
         name="root"
         geometry={root.geometry}
-        // material={root.material}
         material={material}
         skeleton={root.skeleton}
         scale={0.65} // 🚧
         position={[5, 0.1, 7.5]}
-        // position={root.position}
-        // userData={root.userData}
       >
-        {bones && <primitive object={bones[0]} />}
-
-        {/* <mesh geometry={otherRoot.geometry}>
-          <meshBasicMaterial color="black" opacity={0.25} transparent />
-        </mesh> */}
+        {bones.length > 0 && <primitive object={bones[0]} />}
       </skinnedMesh>
     </group>
   );
@@ -81,4 +84,8 @@ const animationName = {
   walk: "walk",
 } as const;
 
-useGLTF.preload(url.templateGltf);
+type State = {
+  gltfScene: THREE.Object3D | null;
+  clone: THREE.Object3D | null;
+  graph: ReturnType<typeof buildGraph> | null;
+};
