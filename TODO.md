@@ -1,19 +1,21 @@
 # TODO
 
-- 🚧 currently must re-run `pnpm gen-starship-sheets` per obstacle polygon change
+- ✅ currently must re-run `pnpm gen-starship-sheets` per obstacle polygon change
   - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
   - could automate this... we still avoid "changing spritesheet problem"
   - ✅ assets.json has number `hash.obstacles`
   - ❌ `pnpm gen-assets-json` triggers `pnpm gen-starship-sheets` onchange hash.obstacles
     - we'll keep `hash.obstacles` though
-  - 🚧 support `public/starship-symbol/masks`
+  - ✅ support `public/starship-symbol/masks`
     - used when drawing obstacle sprite-sheets
     - ✅ example of mask
     - ✅ in `pnpm gen-starship-sheets` we should account for masks
     - ✅ put restrict to obstacle polys under `--prod`
       - probably should run in a git hook
     - ✅ clean up gen code
-    - 🚧 run `pnpm gen-starship-sheets --prod` on commit or push
+    - ✅ run `pnpm gen-starship-sheets --prod` on commit or push
+    - ✅ move invert colours to script
+    - ✅ can trigger refresh in dev via tanstack query devtools
 
 - ✅ avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
 

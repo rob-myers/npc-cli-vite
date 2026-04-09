@@ -2,8 +2,8 @@ import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat, Vect } from "@npc-cli/util/geom";
-import { invertCanvas } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
+import { useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";
@@ -33,7 +33,7 @@ export default function Obstacles(_props: Props) {
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       /** itemSize 1 */
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
-      images: [],
+      images: [] as HTMLImageElement[],
 
       addUvs() {
         if (!w.sheets) return;
@@ -84,7 +84,7 @@ export default function Obstacles(_props: Props) {
       },
 
       async draw() {
-        if (!w.sheets) return;
+        if (!w.sheets || state.images.length === 0) return;
         const { ct } = w.texObs;
         const { maxSymbolSheetDim, symbolSheetDims } = w.sheets;
 
@@ -93,24 +93,10 @@ export default function Obstacles(_props: Props) {
           width: maxSymbolSheetDim.width,
           height: maxSymbolSheetDim.height,
         });
-
-        // 🚧 cache image and only update on dev event (triggered by watching spritesheet PNGs)
-        if (state.images.length > 0) return;
-
-        state.images = Array.from({ length: symbolSheetDims.length }).map(() => new Image());
-        for (let sheetId = 0; sheetId < symbolSheetDims.length; sheetId++) {
-          const img = state.images[sheetId];
-          img.src = `/sheet/symbols.${sheetId}.png${getDevCacheBustQueryParam()}`;
-          await new Promise<void>((resolve) => {
-            img.onload = () => {
-              ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-              ct.drawImage(img, 0, 0);
-              invertCanvas(ct.canvas, copyCtxt, maskCtxt);
-              w.texObs.updateIndex(sheetId);
-              resolve();
-            };
-          });
-          await pause();
+        for (let sheetId = 0; sheetId < state.images.length; sheetId++) {
+          ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+          ct.drawImage(state.images[sheetId], 0, 0);
+          w.texObs.updateIndex(sheetId);
         }
       },
 
@@ -201,6 +187,15 @@ export default function Obstacles(_props: Props) {
     return { texNode: texNode.depth(uvTexIds), uid: generateUUID() };
   }, [w.texObs.hash]);
 
+  state.images =
+    useQuery({
+      queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+      async queryFn() {
+        return loadObstacleImages(w.sheets.symbolSheetDims.length);
+      },
+      enabled: !!w.sheets,
+    }).data ?? state.images;
+
   React.useEffect(() => {
     state.addUvs();
     state.transformAndColorObstacles();
@@ -211,7 +206,7 @@ export default function Obstacles(_props: Props) {
       state.sendDataToGpu();
       w.update();
     });
-  }, [w.mapKey, w.hash, w.gmsData.count.obstacles]);
+  }, [w.mapKey, w.hash, w.gmsData.count.obstacles, state.images]);
 
   const skirtCount = w.gmsData.count.obstacles * 4;
 
@@ -284,5 +279,29 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
-const copyCtxt = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
-const maskCtxt = document.createElement("canvas").getContext("2d") as CanvasRenderingContext2D;
+function loadImage(src: string): Promise<HTMLImageElement> {
+  const img = new Image();
+  img.src = src;
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+  });
+}
+
+async function loadObstacleImages(numSheets: number): Promise<HTMLImageElement[]> {
+  const images: HTMLImageElement[] = [];
+  for (let sheetId = 0; sheetId < numSheets; sheetId++) {
+    let img: HTMLImageElement;
+    if (import.meta.env.DEV) {
+      img = await loadImage(`/sheet/symbols.${sheetId}.png${getDevCacheBustQueryParam()}`);
+    } else {
+      try {
+        img = await loadImage(`/sheet/symbols.prod.${sheetId}.png`);
+      } catch {
+        img = await loadImage(`/sheet/symbols.${sheetId}.png`);
+      }
+    }
+    images.push(img);
+  }
+  return images;
+}
