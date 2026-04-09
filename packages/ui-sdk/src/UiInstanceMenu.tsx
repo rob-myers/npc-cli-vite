@@ -46,11 +46,13 @@ export function UiInstanceMenu({
         side="right"
         sideOffset={4}
         triggerClassName={cn(uiClassName, "cursor-pointer")}
+        className="flex flex-col gap-0 p-0"
         trigger={<DotsThreeOutlineVerticalIcon data-icon-type="menu" weight="duotone" className="size-5" />}
       >
+        <div className="text-xs font-semibold text-black/50 border-b border-black/20 pb-1 p-2 ">{meta.title}</div>
         <button
           type="button"
-          className={"cursor-pointer"}
+          className="cursor-pointer text-sm text-left py-0.5 rounded hover:bg-white/20"
           onPointerDown={(e) => {
             e.stopPropagation();
             const itemId = e.currentTarget.dataset.itemId as string;
