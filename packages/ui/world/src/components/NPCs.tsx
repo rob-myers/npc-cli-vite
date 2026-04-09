@@ -1,6 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
-import { SkinnedMeshTemplateDemo } from "./demo";
+import { SkinnedMeshTemplateDemo } from "./SkinnedMeshTemplateDemo";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
