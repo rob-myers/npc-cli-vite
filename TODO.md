@@ -19,9 +19,11 @@
 
 - ✅ avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
 
-- 🚧 try add shadow quad to blockbench file
+- ✅ try add shadow quad to skinnedMesh
   - ✅ can export quad as another SkinnedMesh and show
   - ✅ add parent root to Blockbench file: root -> skeleton-root -> ...
+  - ✅ augment skinnedMesh geometry with quad so still only one mesh
+  - ✅ clean
 
 - fix precision in `assets.json`
 
