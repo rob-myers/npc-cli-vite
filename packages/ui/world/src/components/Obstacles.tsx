@@ -27,11 +27,8 @@ export default function Obstacles(_props: Props) {
       quad: createXzQuad(),
       skirtQuad: createXyQuad(),
 
-      /** itemSize 2 */
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
-      /** itemSize 2 */
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
-      /** itemSize 1 */
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
       images: [] as HTMLImageElement[],
 
