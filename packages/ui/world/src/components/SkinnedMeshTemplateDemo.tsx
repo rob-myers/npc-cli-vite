@@ -8,6 +8,7 @@ import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { createSkinnedXzQuad, mergeWithGroups } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 export function SkinnedMeshTemplateDemo() {
@@ -20,12 +21,15 @@ export function SkinnedMeshTemplateDemo() {
   }).data;
 
   const state = useStateRef(
-    (): State => ({ gltfScene: null, clone: null, graph: null, mixer: new THREE.AnimationMixer({} as THREE.Object3D) }),
+    (): State => ({ gltfScene: null, clone: null, graph: null, geometry: null, mixer: new THREE.AnimationMixer({} as THREE.Object3D) }),
   );
   if (gltf && state.gltfScene !== gltf.scene) {
     state.gltfScene = gltf.scene;
     state.clone = SkeletonUtils.clone(gltf.scene);
     state.graph = buildGraph(state.clone);
+    const clonedRoot = state.graph.nodes.root as THREE.SkinnedMesh;
+    const shadowQuad = createSkinnedXzQuad(0.8, 0.8);
+    state.geometry = mergeWithGroups(clonedRoot.geometry, shadowQuad);
   }
 
   const nodes = state.graph?.nodes;
@@ -72,15 +76,19 @@ export function SkinnedMeshTemplateDemo() {
     mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
     return mat;
   }, [texture]);
+  const shadowMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: "black", opacity: 0.25, transparent: true }),
+    [],
+  );
 
-  if (!root) return <group ref={groupRef} />;
+  if (!root || !state.geometry) return <group ref={groupRef} />;
 
   return (
     <group ref={groupRef}>
       <skinnedMesh
         name="root"
-        geometry={root.geometry}
-        material={material}
+        geometry={state.geometry}
+        material={[material, shadowMaterial]}
         skeleton={root.skeleton}
         scale={0.65} // 🚧
         position={[5, 0.1, 7.5]}
@@ -101,5 +109,6 @@ type State = {
   gltfScene: THREE.Object3D | null;
   clone: THREE.Object3D | null;
   graph: ReturnType<typeof buildGraph> | null;
+  geometry: THREE.BufferGeometry | null;
   mixer: THREE.AnimationMixer;
 };
