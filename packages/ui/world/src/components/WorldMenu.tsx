@@ -7,15 +7,13 @@ import { CaretRightIcon, ListIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useContext } from "react";
 import { brightnessStorageKey } from "../const";
-import { useMapManifest } from "../hooks/useMapManifest";
 import { WorldContext } from "./world-context";
 
 export function WorldContextMenu() {
   const { uiStoreApi } = useContext(UiContext);
 
   const w = useContext(WorldContext);
-  const { data: mapManifest } = useMapManifest();
-  const mapKeys = mapManifest ? Object.keys(mapManifest.byKey) : [];
+  const mapKeys = Object.keys(w.assets?.map ?? {});
 
   const state = useStateRef(() => ({
     y: tryLocalStorageGetParsed(storageKey(w.id)) ?? 40,

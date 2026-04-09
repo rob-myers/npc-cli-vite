@@ -17,6 +17,15 @@
       "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 2444},
       "type": "map",
       "key": "demo-map-0"
+    },
+    "small-map-0": {
+      "filename": "small-map-0.json",
+      "thumbnailFilename": "small-map-0.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 622},
+      "type": "map",
+      "key": "small-map-0"
     }
   }
 }

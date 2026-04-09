@@ -34,9 +34,10 @@
 - default is not empty-map (although still exists)
 - saw mobile fail to load initially but works after component update
 
-- start generating documentation in README.md
 
+- start generating documentation in README.md
 - check glsl fallback e.g. incognito or force
+- support deleting symbols/maps from MapEdit
 
 - improve thumbnails
   - generate map thumbnails (currently blank)
