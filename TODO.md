@@ -29,18 +29,18 @@
 
 - ✅ ensure multiple worlds work
   - saw work on desktop
-- 🚧 can scroll through tabs on mobile
+- ✅ can scroll through tabs on mobile
   - first attempt failed i.e. `overflow-x-auto` plus `shrink-0`
+- ✅ can drop tab outside Tabs
 - default is not empty-map (although still exists)
 - saw mobile fail to load initially but works after component update
-
 
 - start generating documentation in README.md
 - check glsl fallback e.g. incognito or force
 - support deleting symbols/maps from MapEdit
 
 - improve thumbnails
-  - generate map thumbnails (currently blank)
+  - generate map thumbnails (🔔 currently blank)
   - clean symbol thumbnails
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols

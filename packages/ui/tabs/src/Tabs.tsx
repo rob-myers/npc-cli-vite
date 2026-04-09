@@ -1,5 +1,6 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { draggable, dropTargetForElements, monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { preventUnhandled } from "@atlaskit/pragmatic-drag-and-drop/prevent-unhandled";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
@@ -15,6 +16,7 @@ import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const { layoutApi, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
+  const rootRef = useRef<HTMLDivElement>(null);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +86,15 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     { deps: [meta, layoutApi] },
   );
 
+  // Root-level drop target so drops anywhere on this Tabs are "handled"
+  useEffect(() => {
+    if (!rootRef.current) return;
+    return dropTargetForElements({
+      element: rootRef.current,
+      canDrop: ({ source }) => source.data.type === "tab",
+    });
+  }, []);
+
   useEffect(() => {
     const el = tabBarRef.current;
     if (!el) return;
@@ -132,10 +143,35 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     });
   }, [meta.id]);
 
+  // Dragging a tab outside all Tabs containers breaks it out onto the grid
+  useEffect(() => {
+    return monitorForElements({
+      canMonitor: ({ source }) => source.data.type === "tab" && source.data.tabsMetaId === meta.id,
+      onDragStart() {
+        preventUnhandled.start();
+      },
+      onDrop({ source, location }) {
+        preventUnhandled.stop();
+        // If dropped on any drop target (another Tabs bar or tab item), let those handlers handle it
+        if (location.current.dropTargets.length > 0) return;
+
+        const tabId = source.data.id as string;
+        const gridPos = layoutApi.screenToGrid(location.current.input.clientX, location.current.input.clientY);
+
+        state.onDeleteTab({ id: tabId } as UiInstanceMeta, { preservePortal: true });
+        uiStore.setState((draft) => {
+          const item = draft.byId[tabId];
+          if (item) item.meta.parentId = undefined;
+        });
+        layoutApi.appendLayoutItems([{ i: tabId, x: gridPos?.x ?? 0, y: gridPos?.y ?? 0, w: 2, h: 4 }]);
+      },
+    });
+  }, [meta.id]);
+
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
-    <div className="flex flex-col size-full overflow-auto font-mono">
+    <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
       <div className="flex justify-between min-h-12 w-full border-b border-outline">
         <div
           ref={tabBarRef}
