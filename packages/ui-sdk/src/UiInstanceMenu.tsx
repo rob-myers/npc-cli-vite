@@ -1,6 +1,6 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { allowReactGridDragClassName, BasicPopover, cn } from "@npc-cli/util";
-import { LayoutIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
+import { DotsThreeOutlineVerticalIcon, LayoutIcon, PlayCircleIcon } from "@phosphor-icons/react";
 import { uiClassName } from "./const";
 
 export function UiInstanceMenu({
@@ -46,7 +46,7 @@ export function UiInstanceMenu({
         side="right"
         sideOffset={4}
         triggerClassName={cn(uiClassName, "cursor-pointer")}
-        trigger={<XIcon data-icon-type="remove" weight="duotone" className="grayscale size-5" />}
+        trigger={<DotsThreeOutlineVerticalIcon data-icon-type="menu" weight="duotone" className="size-5" />}
       >
         <button
           type="button"
@@ -58,7 +58,7 @@ export function UiInstanceMenu({
           }}
           data-item-id={meta.id}
         >
-          confirm
+          close
         </button>
       </BasicPopover>
     </div>
