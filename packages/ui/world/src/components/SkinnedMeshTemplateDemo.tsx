@@ -1,7 +1,7 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { useAnimations, useTexture } from "@react-three/drei";
-import { buildGraph } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
+import { buildGraph, useFrame } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
@@ -19,8 +19,9 @@ export function SkinnedMeshTemplateDemo() {
     queryFn: () => new GLTFLoader().loadAsync(url.templateTest0Gltf),
   }).data;
 
-  // clone and buildGraph in useStateRef fixes HMR
-  const state = useStateRef((): State => ({ gltfScene: null, clone: null, graph: null }));
+  const state = useStateRef(
+    (): State => ({ gltfScene: null, clone: null, graph: null, mixer: new THREE.AnimationMixer({} as THREE.Object3D) }),
+  );
   if (gltf && state.gltfScene !== gltf.scene) {
     state.gltfScene = gltf.scene;
     state.clone = SkeletonUtils.clone(gltf.scene);
@@ -28,10 +29,34 @@ export function SkinnedMeshTemplateDemo() {
   }
 
   const nodes = state.graph?.nodes;
-  const { actions } = useAnimations(gltf?.animations ?? [], groupRef);
-
   const root = nodes?.root as THREE.SkinnedMesh | undefined;
   const bones = nodes ? Object.values(nodes).filter((n) => n instanceof THREE.Bone) : [];
+
+  useFrame((_state, delta) => state.mixer.update(delta));
+
+  useEffect(() => {
+    if (!gltf || !groupRef.current) return;
+    // rebind mixer to current group so it can find bones by name
+    (state.mixer as unknown as { _root: THREE.Object3D })._root = groupRef.current;
+
+    const clips = gltf.animations;
+    const idleClip = clips.find((c) => c.name === animationName.idle);
+    const walkClip = clips.find((c) => c.name === animationName.walk);
+    if (!idleClip || !walkClip) return;
+
+    const idle = state.mixer.clipAction(idleClip);
+    idle.play();
+    setTimeout(() => {
+      idle.fadeOut(0.5);
+      state.mixer.clipAction(walkClip).reset().fadeIn(0.5).play();
+    }, 0);
+
+    const group = groupRef.current;
+    return () => {
+      state.mixer.stopAllAction();
+      if (group) state.mixer.uncacheRoot(group);
+    };
+  }, [gltf]);
 
   const texture = useTexture(url.templateTexture, (texture) => {
     texture.flipY = false;
@@ -47,18 +72,6 @@ export function SkinnedMeshTemplateDemo() {
     mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
     return mat;
   }, [texture]);
-
-  useEffect(() => {
-    actions[animationName.idle]?.play();
-    setTimeout(() => {
-      actions[animationName.idle]?.fadeOut(0.5);
-      actions[animationName.walk]?.reset().fadeIn(0.5).play();
-    }, 0);
-
-    return () => {
-      Object.values(actions).forEach((a) => a?.stop());
-    };
-  }, [actions]);
 
   if (!root) return <group ref={groupRef} />;
 
@@ -88,4 +101,5 @@ type State = {
   gltfScene: THREE.Object3D | null;
   clone: THREE.Object3D | null;
   graph: ReturnType<typeof buildGraph> | null;
+  mixer: THREE.AnimationMixer;
 };
