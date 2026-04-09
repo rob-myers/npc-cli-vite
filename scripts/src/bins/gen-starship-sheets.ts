@@ -172,6 +172,18 @@ for (const [sheetId, bin] of bins.entries()) {
     }
   }
 
+  // Invert colors while preserving transparency
+  const maskCanvas = new Canvas(bin.width, bin.height);
+  const maskCt = maskCanvas.getContext("2d");
+  maskCt.drawImage(canvas, 0, 0);
+  maskCt.globalCompositeOperation = "source-in";
+  maskCt.fillStyle = "#ffffff";
+  maskCt.fillRect(0, 0, bin.width, bin.height);
+  maskCt.globalCompositeOperation = "source-over";
+  ct.globalCompositeOperation = "difference";
+  ct.drawImage(maskCanvas, 0, 0);
+  ct.globalCompositeOperation = "source-over";
+
   await canvas.toFile(`${baseSymbolsSheetPath}.${opts.values.prod ? `prod.${sheetId}` : sheetId}.png`);
 }
 
