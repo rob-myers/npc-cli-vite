@@ -27,10 +27,12 @@
 
 - fix precision in `assets.json`
 
+- ✅ ensure multiple worlds work
+  - saw work on desktop
 - 🚧 can scroll through tabs on mobile
   - first attempt failed i.e. `overflow-x-auto` plus `shrink-0`
 - default is not empty-map (although still exists)
-- ensure multiple worlds work
+- saw mobile fail to load initially but works after component update
 
 - start generating documentation in README.md
 
