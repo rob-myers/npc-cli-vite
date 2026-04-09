@@ -243,6 +243,16 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
             overrideContextMenuOpts: { refObject, addItem },
           });
         },
+        screenToGrid(clientX, clientY) {
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (!rect) return null;
+          const gridItemWidth = rect.width / cols;
+          const gridItemHeight = (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
+          return {
+            x: Math.floor((clientX - rect.left) / gridItemWidth),
+            y: Math.floor((clientY - rect.top) / gridItemHeight),
+          };
+        },
       }),
     [setLayouts],
   );
