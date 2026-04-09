@@ -44,6 +44,8 @@ export default function WorldWorker() {
   );
 
   useEffect(() => {
+    if (!w.threeReady) return;
+
     /**
      * 🔔 HMR can break if the webworker shares modules with main thread,
      * e.g. don't want full-page-reload on edit packages/ui/world/src/const.ts
@@ -59,7 +61,7 @@ export default function WorldWorker() {
       worker.removeEventListener("message", state.handleWorkerMessage);
       worker.terminate();
     };
-  }, [state.reloads]); // setup worker
+  }, [w.threeReady, state.reloads]); // setup worker
 
   useEffect(() => {
     if (w.hash === 0) return; // wait for initial world load
