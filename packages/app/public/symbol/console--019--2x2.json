@@ -58,10 +58,10 @@
           "name": "obstacle table y=0.6",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": 0.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
           "type": "rect",
-          "baseRect": {"width": 31, "height": 120},
-          "cssTransform": "matrix(1, 0, 0, 1, -1, 0.5)"
+          "baseRect": {"width": 31, "height": 121},
+          "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
         },
         {
           "id": "50504741-4463-4d74-9043-e52c958582bd",

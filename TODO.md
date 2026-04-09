@@ -6,8 +6,16 @@
   - ✅ assets.json has number `hash.obstacles`
   - ❌ `pnpm gen-assets-json` triggers `pnpm gen-starship-sheets` onchange hash.obstacles
     - we'll keep `hash.obstacles` though
+  - 🚧 support `public/starship-symbol/masks`
+    - used when drawing obstacle sprite-sheets
+    - ✅ example of mask
+    - ✅ in `pnpm gen-starship-sheets` we should account for masks
+    - ✅ put restrict to obstacle polys under `--prod`
+      - probably should run in a git hook
+    - ✅ clean up gen code
+    - 🚧 run `pnpm gen-starship-sheets` on commit or push
 
-- 🚧 avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
+- ✅ avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
 
 - 🚧 try add shadow quad to blockbench file
   - ✅ can export quad as another SkinnedMesh and show
