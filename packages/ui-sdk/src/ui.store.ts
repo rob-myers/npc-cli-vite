@@ -32,7 +32,9 @@ export const uiStoreApi = {
   },
   getAllUis() {
     const { byId } = uiStore.getState();
-    return Object.values(byId).flatMap((ui) => ui.meta.items?.map((id) => byId[id]).filter(Boolean) ?? ui);
+    return Object.values(byId).flatMap((ui) =>
+      Array.isArray(ui.meta.items) ? [ui, ...ui.meta.items.map((id) => byId[id]).filter(Boolean)] : ui,
+    );
   },
   /**
    * - For example `blog-1` in case `blog-0` and `blog-2` already exist.
@@ -46,6 +48,12 @@ export const uiStoreApi = {
         .flatMap(({ meta }) => (meta.uiKey === uiKey && titleRegExp.test(meta.title) ? Number(RegExp.$1) : [])),
     );
     return `${prefix ?? uiKey.toLowerCase()}-${[...Array(suffices.size + 1)].findIndex((_, i) => !suffices.has(i))}`;
+  },
+  getTabsInstances(excludeId?: string) {
+    const { byId } = uiStore.getState();
+    return Object.values(byId)
+      .filter(({ meta }) => meta.uiKey === "Tabs" && meta.id !== excludeId)
+      .map(({ meta }) => meta);
   },
   getSubUis(id: string) {
     const { byId } = uiStore.getState();

@@ -32,8 +32,12 @@
 - ✅ can scroll through tabs on mobile
   - first attempt failed i.e. `overflow-x-auto` plus `shrink-0`
 - ✅ can drop tab outside Tabs
+- ✅ can move UIs inside Tabs
+- ✅ unify menu styles
 - default is not empty-map (although still exists)
 - saw mobile fail to load initially but works after component update
+- fix remove bug i.e. next tab not set
+  - need repro
 
 - start generating documentation in README.md
 - check glsl fallback e.g. incognito or force

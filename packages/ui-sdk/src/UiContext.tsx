@@ -30,6 +30,7 @@ export type LayoutApi = {
   appendLayoutItems(items: LayoutItem[]): void;
   getUiGridRect(id: string): { x: number; y: number; w: number; h: number } | null;
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
+  removeLayoutItem(id: string): void;
   screenToGrid(clientX: number, clientY: number): { x: number; y: number } | null;
 };
 
@@ -54,6 +55,9 @@ export function getFallbackLayoutApi(): LayoutApi {
     },
     overrideContextMenu: () => {
       console.warn("overrideContextMenu called before UiGrid layoutApi was set");
+    },
+    removeLayoutItem() {
+      console.warn("removeLayoutItem called before UiGrid layoutApi was set");
     },
     screenToGrid() {
       console.warn("screenToGrid called before UiGrid layoutApi was set");

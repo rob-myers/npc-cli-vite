@@ -4,7 +4,7 @@ import { getFallbackLayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { deepClone } from "@npc-cli/util/legacy/generic";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { UiGrid } from "../components/UiGrid";
 import { UiPortalContainer } from "../components/UiPortalContainer";
@@ -33,6 +33,8 @@ function Index() {
     uiStore,
     uiStoreApi,
   }));
+  // uiRegistry & uiStore maintain value under HMR but uiStoreApi doesn't
+  useMemo(() => setContextValue((prev) => ({ ...prev, uiStoreApi })), [uiStoreApi]);
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>

@@ -237,6 +237,9 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           const found = layouts.current.lg.find((item) => item.i === id);
           return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
         },
+        removeLayoutItem(id) {
+          setLayouts({ lg: layouts.current.lg.filter((item) => item.i !== id) });
+        },
         overrideContextMenu({ refObject, addItem }) {
           state.set({
             contextMenuOpen: true,
@@ -330,7 +333,6 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                       <UiInstanceMenu
                         className={cn("z-999 absolute top-1", meta.menuPosition === "left" ? "left-1" : "right-1")}
                         meta={meta}
-                        uiStoreApi={uiStoreApi}
                       />
                     )}
                     <DraggableOverlay />
