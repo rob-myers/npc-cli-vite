@@ -56,16 +56,26 @@ export function DraggableEditToggle({
         <button
           type="button"
           className="cursor-pointer"
-          onClick={() => {
-            window.scrollTo(0, 0);
-            document.documentElement.style.zoom = "1";
-          }}
+          onClick={resetZoom}
         >
           <ArrowsInIcon className="size-5" />
         </button>
       )}
     </motion.div>
   );
+}
+
+function resetZoom() {
+  // Temporarily add a viewport meta tag that forces scale=1, then remove it
+  const meta = document.createElement("meta");
+  meta.name = "viewport";
+  meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+  document.head.appendChild(meta);
+  window.scrollTo(0, 0);
+  setTimeout(() => {
+    meta.content = "width=device-width, initial-scale=1.0";
+    setTimeout(() => meta.remove(), 200);
+  }, 200);
 }
 
 function useVisualViewportOffset() {
