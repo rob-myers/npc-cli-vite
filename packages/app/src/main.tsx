@@ -18,6 +18,9 @@ declare module "@tanstack/react-router" {
   }
 }
 
+// Remove zoom restriction added in index.html (prevents zoom flash on load)
+document.querySelector('meta[name="viewport"]')?.setAttribute("content", "width=device-width, initial-scale=1.0");
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   // <StrictMode>
   <QueryClientProvider client={queryClientApi.queryClient}>
