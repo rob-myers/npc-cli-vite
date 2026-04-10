@@ -34,7 +34,8 @@
 - ✅ can drop tab outside Tabs
 - ✅ can move UIs inside Tabs
 - ✅ unify menu styles
-- default is not empty-map (although still exists)
+- ✅ default is not empty-map (although still exists)
+  - defaultMapKey has value "small-map-0"
 - saw mobile fail to load initially but works after component update
 - fix remove bug i.e. next tab not set
   - need repro
