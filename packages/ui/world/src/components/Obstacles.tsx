@@ -135,6 +135,8 @@ export default function Obstacles(_props: Props) {
         if (!state.skirtInst) return;
         let sId = 0;
 
+        state.skirtInst.instanceMatrix.array.fill(0);
+
         w.gms.forEach(({ obstacles, transform: gmTransform, determinant }) => {
           obstacles.forEach(({ origPoly, transform: obTransform, height }) => {
             tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
