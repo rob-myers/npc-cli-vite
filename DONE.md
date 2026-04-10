@@ -259,6 +259,20 @@
 - ✅ can "reset file" in dev/prod, cannot delete file in prod
 - ✅ remove MainMenu > Open
 
+
+- ❌ sync navmesh recomputation with MapEdit
+  - DEV edit symbol -> recompute assets.json -> refetch + change `w.hash` -> floor redraw
+  - ❌ try await nav recomputation in world query
+  - ✅ BUG: PROD webworker is refetching assets without changing it
+    - need to send the localStorage drafts to webworker
+
+- ✅ sync symbols in other instances
+  - symbol thumbnails driven by meta.localVersion updated on `assetsJsonChanged`
+
+- ✅ migrate to `node:util` parseArgs i.e. discard `getopts`
+  - keep it for `@npc-cli/cli`
+
+
 ## By 11th Mar 2016
 
 - ❌ migrate existing character to Blockbench

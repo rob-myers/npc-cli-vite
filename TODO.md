@@ -25,7 +25,7 @@
   - ✅ augment skinnedMesh geometry with quad so still only one mesh
   - ✅ clean
 
-- fix precision in `assets.json`
+- 🚧 fix precision in `assets.json`
 
 - ✅ ensure multiple worlds work
   - saw work on desktop
@@ -61,28 +61,15 @@
 
 ## Long running
 
-- ❌ sync navmesh recomputation with MapEdit
-  - DEV edit symbol -> recompute assets.json -> refetch + change `w.hash` -> floor redraw
-  - ❌ try await nav recomputation in world query
-  - ✅ BUG: PROD webworker is refetching assets without changing it
-    - need to send the localStorage drafts to webworker
-  - transition needs thought
-
-
 - 🚧 extend existing symbols with missing decor/obstacle
   - ✅ stateroom-012 🚧 ...
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
-- ✅ sync symbols in other instances
-  - symbol thumbnails driven by meta.localVersion updated on `assetsJsonChanged`
 - drafts fighting: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
-
-- ✅ migrate to `node:util` parseArgs i.e. discard `getopts`
-  - keep it for `@npc-cli/cli`
 
 - 🚧 shell refinement
   - ✅ finish migrating semantics
@@ -96,10 +83,9 @@
   - ❌ improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
   - sometimes on hot reload need to ctrl-c
 
-- 🚧 future tabs
+- ✅ future tabs
   - ✅ try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - ✅ can drag between different tabs components
   - can drag into tabs from outer ui
   - can drag out of tabs to outside (not another tabs)
-  - detect responsive tabs change and revert on return (?)
