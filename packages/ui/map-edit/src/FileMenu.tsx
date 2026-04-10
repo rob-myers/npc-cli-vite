@@ -1,7 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
 import { symbolByGroup } from "@npc-cli/media/starship-symbol";
-import { emptyMapKey } from "@npc-cli/ui__world/const";
+import { defaultMapKey } from "@npc-cli/ui__world/const";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
@@ -52,7 +52,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
                     } else {
                       state.openFresh(
                         folderType === "map"
-                          ? { type: "map", filename: "empty-map.json", key: emptyMapKey }
+                          ? { type: "map", filename: `${defaultMapKey}.json`, key: defaultMapKey }
                           : { type: "symbol", filename: `${defaultSymbolKey}.json`, key: defaultSymbolKey },
                       );
                     }

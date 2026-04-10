@@ -51,6 +51,10 @@ export const floorTextureDimension = Math.ceil(geomorphPngRectWidth * worldToSgu
 
 /** Assumed to exist inside `assets.json` `map` lookup */
 export const emptyMapKey = "empty-map";
+
+/** Assumed to exist inside `assets.json` `map` lookup */
+export const defaultMapKey = "small-map-0";
+
 /** The value of @see {emptyMapKey} */
 export const emptyMapDef: import("./assets.schema").AssetsMapDef = {
   key: emptyMapKey,
