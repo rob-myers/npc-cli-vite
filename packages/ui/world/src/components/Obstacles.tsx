@@ -210,7 +210,7 @@ export default function Obstacles(_props: Props) {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.6);
-    mat.colorNode = vec4(color("#777").mul(ndotv), 1);
+    mat.colorNode = vec4(color("#555").mul(ndotv), 1);
     return mat;
   }, []);
 
