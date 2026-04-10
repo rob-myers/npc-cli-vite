@@ -11,6 +11,7 @@ import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
+import { cameraPosition, color, normalWorld, positionWorld, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
@@ -205,6 +206,13 @@ export default function Obstacles(_props: Props) {
   }, [w.mapKey, w.hash, w.gmsData.count.obstacles, state.images]);
 
   const skirtCount = w.gmsData.count.obstacles * 4;
+  const skirtMaterial = useMemo(() => {
+    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
+    const viewDir = cameraPosition.sub(positionWorld).normalize();
+    const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.6);
+    mat.colorNode = vec4(color("#777").mul(ndotv), 1);
+    return mat;
+  }, []);
 
   return (
     <>
@@ -237,8 +245,9 @@ export default function Obstacles(_props: Props) {
           ref={state.ref("skirtInst")}
           args={[state.skirtQuad, undefined, skirtCount]}
           frustumCulled={false}
+          material={skirtMaterial}
         >
-          <meshBasicMaterial color="#333" side={THREE.DoubleSide} />
+          {/* <meshBasicMaterial color="#333" side={THREE.DoubleSide} /> */}
         </instancedMesh>
       )}
     </>
