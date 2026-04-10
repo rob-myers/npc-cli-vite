@@ -3,7 +3,7 @@ import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretRightIcon, ListIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, ListIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useContext } from "react";
 import { brightnessStorageKey } from "../const";
@@ -44,7 +44,7 @@ export function WorldContextMenu() {
           <Menu.Positioner className="z-50" sideOffset={4} align="start">
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
               <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                <span className="w-16">Brightness</span>
+                <SunIcon className="size-4" />
                 <input
                   type="range"
                   min="0.5"
