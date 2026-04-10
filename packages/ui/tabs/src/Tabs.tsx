@@ -1,7 +1,11 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { draggable, dropTargetForElements, monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { preventUnhandled } from "@atlaskit/pragmatic-drag-and-drop/prevent-unhandled";
+import {
+  draggable,
+  dropTargetForElements,
+  monitorForElements,
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
+import { preventUnhandled } from "@atlaskit/pragmatic-drag-and-drop/prevent-unhandled";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -9,7 +13,7 @@ import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { ArrowUpRightIcon, DotsThreeOutlineVerticalIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
@@ -175,7 +179,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       <div className="flex justify-between min-h-12 w-full border-b border-outline">
         <div
           ref={tabBarRef}
-          className={cn("flex items-end overflow-x-auto [scrollbar-width:thin] touch-pan-x", state.isDropTarget && "bg-blue-400/10")}
+          className={cn(
+            "flex items-end overflow-x-auto [scrollbar-width:thin] touch-pan-x",
+            state.isDropTarget && "bg-blue-400/10",
+          )}
         >
           {tabs.map((tab) => (
             <TabItem
@@ -199,7 +206,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             <PlusCircleIcon className="size-6" weight="duotone" />
           </button>
         </div>
-        <UiInstanceMenu meta={meta} className="self-end" uiStoreApi={uiStoreApi} />
+        <UiInstanceMenu meta={meta} className="self-end" />
       </div>
       <div className="pt-4 px-0 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
@@ -237,6 +244,15 @@ function TabItem({
   uiStore,
   uiStoreApi,
 }: TabItemProps) {
+  const byId = useStore(uiStore, (s) => s.byId);
+  const allTabs = useMemo(
+    () =>
+      Object.values(byId)
+        .filter(({ meta: m }) => m.uiKey === "Tabs")
+        .map(({ meta: m }) => m),
+    [byId],
+  );
+
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
     isDragging: false,
@@ -368,7 +384,7 @@ function TabItem({
             trigger={
               <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
             }
-            className="bg-black p-0"
+            className="bg-black p-0 flex flex-col"
             arrowClassName="fill-black"
             side="bottom"
           >
@@ -388,6 +404,46 @@ function TabItem({
                 />
               </button>
             </div>
+            {allTabs.length > 1 && (
+              <div className="border-t border-white/20 py-1">
+                {allTabs.map((targetTabs) => {
+                  const isCurrent = targetTabs.id === tabsMetaId;
+                  return (
+                    <button
+                      key={targetTabs.id}
+                      type="button"
+                      disabled={isCurrent}
+                      className={cn(
+                        "block w-full text-left text-sm px-2 py-0.5 text-white",
+                        isCurrent ? "font-bold text-blue-400" : "cursor-pointer hover:bg-white/20",
+                      )}
+                      onPointerDown={(e) => {
+                        if (isCurrent) return;
+                        e.stopPropagation();
+                        uiStore.setState((draft) => {
+                          const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
+                          const targetMeta = draft.byId[targetTabs.id]?.meta as TabsUiMeta | undefined;
+                          const item = draft.byId[tab.id];
+                          if (!sourceMeta || !targetMeta || !item) return;
+                          // Remove from source
+                          sourceMeta.items = sourceMeta.items.filter((id) => id !== tab.id);
+                          if (sourceMeta.currentTabId === tab.id) {
+                            sourceMeta.currentTabId = sourceMeta.items[0];
+                          }
+                          // Add to target
+                          item.meta.parentId = targetTabs.id;
+                          item.meta.disabled = targetMeta.disabled;
+                          targetMeta.items.push(tab.id);
+                          targetMeta.currentTabId = tab.id;
+                        });
+                      }}
+                    >
+                      {targetTabs.title}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </BasicPopover>
         )}
       </div>
@@ -403,8 +459,13 @@ function setupTouchLongPressDrag(el: HTMLElement) {
 
   let timer = 0;
   const setDrag = (v: boolean) => el.setAttribute("draggable", String(v));
-  const cancel = () => { clearTimeout(timer); setDrag(false); };
-  const start = () => { timer = window.setTimeout(() => setDrag(true), 300); };
+  const cancel = () => {
+    clearTimeout(timer);
+    setDrag(false);
+  };
+  const start = () => {
+    timer = window.setTimeout(() => setDrag(true), 300);
+  };
 
   setDrag(false);
   el.addEventListener("touchstart", start, { passive: true });
@@ -412,7 +473,12 @@ function setupTouchLongPressDrag(el: HTMLElement) {
   el.addEventListener("touchend", cancel);
 
   return Object.assign(
-    () => { cancel(); el.removeEventListener("touchstart", start); el.removeEventListener("touchmove", cancel); el.removeEventListener("touchend", cancel); },
+    () => {
+      cancel();
+      el.removeEventListener("touchstart", start);
+      el.removeEventListener("touchmove", cancel);
+      el.removeEventListener("touchend", cancel);
+    },
     { resetDraggable: () => setDrag(false) },
   );
 }
