@@ -25,8 +25,6 @@
   - ✅ augment skinnedMesh geometry with quad so still only one mesh
   - ✅ clean
 
-- 🚧 fix precision in `assets.json`
-
 - ✅ ensure multiple worlds work
   - saw work on desktop
 - ✅ can scroll through tabs on mobile
@@ -36,14 +34,11 @@
 - ✅ unify menu styles
 - ✅ default is not empty-map (although still exists)
   - defaultMapKey has value "small-map-0"
-- saw mobile fail to load initially but works after component update
-- fix remove bug i.e. next tab not set
-  - need repro
 
+- fix precision in `assets.json`
 - start generating documentation in README.md
 - check glsl fallback e.g. incognito or force
 - support deleting symbols/maps from MapEdit
-
 - improve thumbnails
   - generate map thumbnails (🔔 currently blank)
   - clean symbol thumbnails
@@ -66,6 +61,9 @@
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
+- saw mobile fail to load initially but works after component update
+- fix remove bug i.e. next tab not set
+  - need repro
 - drafts fighting: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
