@@ -35,13 +35,21 @@
 - ✅ default is not empty-map (although still exists)
   - defaultMapKey has value "small-map-0"
 
+- 🚧 support object-picking
+  - ✅ read pixel on pointer down
+  - ✅ mounting `<NPCs>` late seems to fix things?!
+
+- on add grid item to UiGrid can we try to use maximum available height and width?
+
+- for doors try track they "openess ratio" via persistent array on gpu
+  - https://share.google/aimode/EreUiTQQkX01nIvv2
+
 - fix precision in `assets.json`
 - start generating documentation in README.md
 - check glsl fallback e.g. incognito or force
 - support deleting symbols/maps from MapEdit
-- improve thumbnails
-  - generate map thumbnails (🔔 currently blank)
-  - clean symbol thumbnails
+- improve hull symbol thumbnail e.g. add room outlines
+- improve map thumbnail (🔔 currently blank)
 - do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - more generally use sub-stratification

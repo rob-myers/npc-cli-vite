@@ -70,7 +70,7 @@ export function SkinnedMeshTemplateDemo() {
     texture.generateMipmaps = false;
   });
   const material = useMemo(() => {
-    const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9 });
+    const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
     const texNode = tslTexture(texture);
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.6);
@@ -90,12 +90,12 @@ export function SkinnedMeshTemplateDemo() {
   return state.gltf ? (
     <group ref={state.groupRef}>
       <skinnedMesh
-        name="root"
         geometry={state.geometry!}
         material={[material, shadowMaterial]}
         skeleton={root!.skeleton}
         scale={0.65} // 🚧
         position={[5, 0.1, 7.5]}
+        // renderOrder={3}
       >
         {bones.length > 0 && <primitive object={bones[0]} />}
       </skinnedMesh>
