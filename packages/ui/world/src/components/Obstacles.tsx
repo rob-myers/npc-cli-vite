@@ -166,8 +166,8 @@ export default function Obstacles(_props: Props) {
         state.quad.getAttribute("uvDimensions").needsUpdate = true;
         state.quad.getAttribute("uvTextureIds").needsUpdate = true;
 
-        state.inst.instanceMatrix.needsUpdate = true;
-        if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
+        if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
+        if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
       },
     }),

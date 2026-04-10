@@ -77,14 +77,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: null,
       navPending: true,
 
+      // 🚧 must supply value else hmr removes field
+      assets: null as any,
+      r3f: null as any,
+      sheets: null as any,
+
       // biome-ignore format: meaningful newlines
       ...{} as Pick<State, (
-        | "assets"
-        | "sheets"
-        //
-        | "r3f"
         | "worker"
-        //
         | "ceil"
         | "floor"
         | "obs"
@@ -219,7 +219,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   return (
     <WorldContext.Provider value={state}>
       <div className="relative size-full">
-        {/* 🔔 outer suspense avoids sporadic silent fail */}
+        {/* 🔔 suspense avoids sporadic silent fail */}
         <Suspense>
           <WorldView className={cn(uiClassName, "bg-gray-500")}>
             <ambientLight intensity={0.85} color="#ffffff" />
@@ -227,7 +227,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <Ceiling />
             <Walls />
             <Obstacles />
-            <NPCs />
+            {/* 🔔 delay to avoid breaking object-pick async pixel read */}
+            {state.assets && <NPCs />}
             <Debug />
           </WorldView>
           <WorldWorker />

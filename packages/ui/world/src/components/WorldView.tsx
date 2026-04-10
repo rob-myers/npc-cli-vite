@@ -33,6 +33,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       rootEl: null as any,
 
+      pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
+
       canvasRef(canvasEl) {
         if (canvasEl !== null) {
           state.canvas = canvasEl;
@@ -72,6 +74,30 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.texFloor.update();
         w.update(); // e.g. show stats
       },
+      async onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+        const { gl, scene, camera } = w.r3f;
+        const renderer = gl as unknown as THREE.WebGPURenderer;
+
+        const x = Math.floor(e.nativeEvent.offsetX * devicePixelRatio);
+        const y = Math.floor(e.nativeEvent.offsetY * devicePixelRatio);
+
+        const rt = state.pickRT;
+        const rtCamera = camera;
+        const size = new THREE.Vector2();
+        renderer.getDrawingBufferSize(size);
+        rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
+        // camera.updateProjectionMatrix();
+
+        renderer.setRenderTarget(rt);
+        renderer.render(scene, rtCamera);
+
+        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then(([r, g, b, a]) => {
+          console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
+        });
+
+        renderer.setRenderTarget(null);
+        rtCamera.clearViewOffset();
+      },
       syncRenderMode() {
         if (w.disabled === true) {
           w.r3f?.set({ frameloop: "demand" });
@@ -101,11 +127,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
         onCreated={state.onCreated}
+        onPointerDown={state.onPointerDown}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
       >
-        {props.children}
-
         {state.rootEl && (
           <Stats
             showPanel={0}
@@ -132,6 +157,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // onStart={state.onControlsStart}
           {...state.ctrlOpts}
         />
+
+        {props.children}
       </Canvas>
     </motion.div>
   );
@@ -141,10 +168,12 @@ export type State = {
   canvas: HTMLCanvasElement;
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
+  pickRT: THREE.RenderTarget;
   rootEl: HTMLDivElement;
 
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   onCreated(rootState: RootState): void;
+  onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   syncRenderMode(): RootState["frameloop"];
 };
