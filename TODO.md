@@ -44,7 +44,8 @@
     - MRT could still be useful for drag-select
   - ✅ Floor/Ceiling/Walls/Obstacles shader support objectPick uniform
 
-- fix obstacles texture disappearing on remount stuff inside World.tsx
+- ✅ fix obstacles texture disappearing on remount stuff inside World.tsx
+  - hot reload was resetting canvas width/height to 1
 
 - compute roomPolys correctly i.e. need to include doors
 
