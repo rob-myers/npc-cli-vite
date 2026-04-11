@@ -70,10 +70,23 @@ export default function Ceiling() {
         const { tops, polyDecals } = w.gmsData.byKey[gmKey];
 
         // wall/door tops
-        drawPolygons(ct, tops.nonHull, { fillStyle: "#444", strokeStyle: "#000", lineWidth: thickLineWidth });
-        drawPolygons(ct, tops.window, { fillStyle: "#000", strokeStyle: wallsHighlight, lineWidth: thickLineWidth });
-        drawPolygons(ct, tops.broad, { fillStyle: "#000", strokeStyle: grey90, lineWidth: thinLineWidth });
-        drawPolygons(ct, tops.hull, { fillStyle: "#000", strokeStyle: wallsHighlight, lineWidth: thickLineWidth }); // hull walls and doors
+        const { ceiling: tc } = w.getTheme();
+        drawPolygons(ct, tops.nonHull, {
+          fillStyle: tc.nonHull.fill,
+          strokeStyle: tc.nonHull.stroke,
+          lineWidth: thickLineWidth,
+        });
+        drawPolygons(ct, tops.window, {
+          fillStyle: tc.hull.fill,
+          strokeStyle: tc.hull.stroke,
+          lineWidth: thickLineWidth,
+        });
+        drawPolygons(ct, tops.broad, { fillStyle: tc.hull.fill, strokeStyle: grey90, lineWidth: thinLineWidth });
+        drawPolygons(ct, tops.hull, {
+          fillStyle: tc.hull.fill,
+          strokeStyle: tc.hull.stroke,
+          lineWidth: thickLineWidth,
+        }); // hull walls and doors
 
         // decals
         polyDecals
@@ -128,7 +141,7 @@ export default function Ceiling() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.nav, w.gmsData]);
+  }, [w.hash, w.nav, w.gmsData, w.themeKey]);
 
   return (
     <instancedMesh
@@ -170,7 +183,6 @@ export type State = {
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 const wallsColor = "#333";
-const wallsHighlight = "#666";
 const grey90 = "rgb(90, 90, 90)";
 const thinLineWidth = 0.04;
 const thickLineWidth = 0.06;

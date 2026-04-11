@@ -61,6 +61,7 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
   flattened: {},
   stratifiedSymbolNodes: [],
   layout: {},
+  theme: {},
   hash: { obstacles: 0 },
 };
 

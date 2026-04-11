@@ -14,6 +14,7 @@ import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
   brightnessStorageKey,
+  defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
   mapEditSymbolSavedEvent,
@@ -42,6 +43,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       key: meta.worldKey,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
+      themeKey: meta.themeKey,
       worldQueryPrefix: ["world", meta.worldKey],
 
       brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? 1,
@@ -78,6 +80,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmsData: new DerivedGmsData(),
       nav: null,
       navPending: true,
+      customTheme: null,
 
       assets: null as any,
       ceil: null as any,
@@ -123,6 +126,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {
         return this.seenGmKeys.indexOf(gmKey);
       },
+      getTheme() {
+        return state.customTheme ?? state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
+      },
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
@@ -146,6 +152,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   state.disabled = meta.disabled;
   state.mapKey = meta.mapKey;
+  state.themeKey = meta.themeKey;
 
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
@@ -219,7 +226,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       <div className="relative size-full">
         {/* 🔔 suspense avoids sporadic silent fail */}
         <Suspense>
-          <WorldView className={cn(uiClassName, "bg-gray-800")}>
+          <WorldView className={cn(uiClassName, state.getTheme().background)}>
             <ambientLight intensity={0.85} color="#ffffff" />
             <Floor />
             <Ceiling />
@@ -241,6 +248,8 @@ export type State = {
   key: WorldUiMeta["worldKey"];
   disabled: boolean;
   mapKey: string;
+  themeKey: string;
+  customTheme: import("../assets.schema").WorldTheme | null;
   worldQueryPrefix: ["world", worldKey: string];
 
   brightness: number;
@@ -279,6 +288,7 @@ export type State = {
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
+  getTheme(): import("../assets.schema").WorldTheme;
   onTick(): void;
   prodSetupHullAssetsSync(): void;
   stopTick(): void;

@@ -59,6 +59,7 @@
 - for doors try track they "openess ratio" via persistent array on gpu
   - https://share.google/aimode/EreUiTQQkX01nIvv2
 
+- why is boolean uniform `objectPick` being set as `1` after we drag world?
 - fix precision in `assets.json`
 - start generating documentation in README.md
 - check glsl fallback e.g. incognito or force

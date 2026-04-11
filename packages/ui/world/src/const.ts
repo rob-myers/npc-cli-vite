@@ -67,6 +67,16 @@ export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 export const brightnessStorageKey = `world-brightness-value`;
 
+export const defaultThemeKey = "default";
+
+export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
+  background: "bg-gray-800",
+  ceiling: {
+    hull: { fill: "#000", stroke: "#666" },
+    nonHull: { fill: "#444", stroke: "#000" },
+  },
+};
+
 export const wallHeight = 2;
 
 export const MAX_GEOMORPH_INSTANCES = 64;

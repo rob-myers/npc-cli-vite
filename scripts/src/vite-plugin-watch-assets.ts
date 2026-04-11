@@ -1,12 +1,16 @@
 import childProcess from "node:child_process";
-import { promises as fs } from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
-import { AssetsSchema } from "@npc-cli/ui__world/assets.schema";
+
+import { WorldThemeSchema } from "@npc-cli/ui__world/assets.schema";
+import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import type { Plugin, ViteDevServer } from "vite";
+
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
+const ASSETS_JSON_PATH = path.join(PUBLIC_DIR, "assets.json");
 const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.ts");
 const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
 
@@ -75,6 +79,25 @@ export function watchAssetsPlugin(): Plugin {
 
       server.watcher.on("change", onFileChange);
       server.watcher.on("add", onFileChange);
+
+      server.middlewares.use(async (req, res, next) => {
+        const match = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
+        if (!match || req.method !== "POST") return next();
+
+        let body = "";
+        for await (const chunk of req) body += chunk;
+        const parsed = jsonParser.pipe(WorldThemeSchema).safeParse(body);
+        if (!parsed.success) {
+          res.writeHead(400).end();
+          return;
+        }
+
+        const assets = JSON.parse(fs.readFileSync(ASSETS_JSON_PATH, "utf-8"));
+        assets.theme ??= {};
+        assets.theme[decodeURIComponent(match[1])] = parsed.data;
+        fs.writeFileSync(ASSETS_JSON_PATH, safeJsonCompact(assets));
+        res.writeHead(200).end();
+      });
     },
   };
 }
@@ -87,7 +110,7 @@ const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-jso
 async function _getAssetsJsonOrNull() {
   return (
     jsonParser
-      .pipe(AssetsSchema)
-      .safeParse(await fs.readFile(path.join(PUBLIC_DIR, "assets.json"), "utf-8").catch(() => null))?.data ?? null
+      .safeParse(await fs.promises.readFile(path.join(PUBLIC_DIR, "assets.json"), "utf-8").catch(() => null))?.data ??
+    null
   );
 }
