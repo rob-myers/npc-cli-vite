@@ -6,6 +6,12 @@ export class QueryClientApi {
 
   constructor() {
     this.queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          refetchOnReconnect: import.meta.env.DEV ? false : undefined,
+          refetchOnWindowFocus: import.meta.env.DEV ? false : undefined,
+        },
+      },
       queryCache: new QueryCache({
         // Always log query errors
         onError: (error) => console.error(error),
