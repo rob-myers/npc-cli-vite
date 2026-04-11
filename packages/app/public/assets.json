@@ -5140,5 +5140,6 @@
       "navRects": [{"x": 0.35, "y": 0.35, "width": 29.3, "height": 14.745}]
     }
   },
+  "theme": {},
   "hash": {"obstacles": 256462835}
 }

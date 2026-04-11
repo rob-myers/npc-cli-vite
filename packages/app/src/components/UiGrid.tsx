@@ -250,27 +250,52 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           for (const o of layouts.current.lg) {
             if (o.i === id) continue;
             for (let r = o.y; r < Math.min(o.y + o.h, rows); r++)
-              for (let c = o.x; c < Math.min(o.x + o.w, cols); c++)
-                occupied[r][c] = 1;
+              for (let c = o.x; c < Math.min(o.x + o.w, cols); c++) occupied[r][c] = 1;
           }
 
           // try both orderings and pick the larger area
           const expand = (widthFirst: boolean) => {
-            let x1 = Math.max(0, target.x), y1 = Math.max(0, target.y);
-            let x2 = Math.min(cols, target.x + target.w), y2 = Math.min(rows, target.y + target.h);
+            let x1 = Math.max(0, target.x),
+              y1 = Math.max(0, target.y);
+            let x2 = Math.min(cols, target.x + target.w),
+              y2 = Math.min(rows, target.y + target.h);
             let changed = true;
             while (changed) {
               changed = false;
               if (widthFirst) {
-                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) { x1--; changed = true; }
-                if (x2 < cols && colFree(occupied, x2, y1, y2)) { x2++; changed = true; }
-                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) { y1--; changed = true; }
-                if (y2 < rows && rowFree(occupied, y2, x1, x2)) { y2++; changed = true; }
+                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) {
+                  x1--;
+                  changed = true;
+                }
+                if (x2 < cols && colFree(occupied, x2, y1, y2)) {
+                  x2++;
+                  changed = true;
+                }
+                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) {
+                  y1--;
+                  changed = true;
+                }
+                if (y2 < rows && rowFree(occupied, y2, x1, x2)) {
+                  y2++;
+                  changed = true;
+                }
               } else {
-                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) { y1--; changed = true; }
-                if (y2 < rows && rowFree(occupied, y2, x1, x2)) { y2++; changed = true; }
-                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) { x1--; changed = true; }
-                if (x2 < cols && colFree(occupied, x2, y1, y2)) { x2++; changed = true; }
+                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) {
+                  y1--;
+                  changed = true;
+                }
+                if (y2 < rows && rowFree(occupied, y2, x1, x2)) {
+                  y2++;
+                  changed = true;
+                }
+                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) {
+                  x1--;
+                  changed = true;
+                }
+                if (x2 < cols && colFree(occupied, x2, y1, y2)) {
+                  x2++;
+                  changed = true;
+                }
               }
             }
             return { x1, y1, w: x2 - x1, h: y2 - y1 };
@@ -286,9 +311,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           setLayouts({ lg: newLg });
         },
         minimizeItem(id) {
-          const newLg = layouts.current.lg.map((item) =>
-            item.i === id ? { ...item, w: 2, h: 4 } : item,
-          );
+          const newLg = layouts.current.lg.map((item) => (item.i === id ? { ...item, w: 2, h: 4 } : item));
           layouts.current.lg = newLg;
           setLayouts({ lg: newLg });
         },
