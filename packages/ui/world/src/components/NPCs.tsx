@@ -1,6 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { Suspense, useContext } from "react";
-import { SkinnedMeshTemplateDemo } from "./SkinnedMeshTemplateDemo";
+import { SkinnedMeshDemo } from "./SkinnedMeshDemo";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -11,10 +11,10 @@ export default function NPCs() {
     <group>
       {/* 🔔 fixes weird remount and object-pick async pixel read */}
       <Suspense>
-        <SkinnedMeshTemplateDemo />
+        <SkinnedMeshDemo />
       </Suspense>
       {/* <group position={[1, 0, 1]}>
-        <SkinnedMeshTemplateDemo />
+        <SkinnedMeshDemo />
       </group> */}
     </group>
   );

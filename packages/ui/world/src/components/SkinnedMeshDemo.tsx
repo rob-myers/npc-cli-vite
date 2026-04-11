@@ -11,7 +11,7 @@ import * as THREE from "three/webgpu";
 import { createSkinnedXzQuad, mergeWithGroups } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
-export function SkinnedMeshTemplateDemo() {
+export function SkinnedMeshDemo() {
   const w = React.useContext(WorldContext);
 
   const state = useStateRef(
