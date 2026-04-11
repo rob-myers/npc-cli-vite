@@ -63,12 +63,14 @@ export function SkinnedMeshTemplateDemo() {
 
   useFrame((_state, delta) => state.mixer.update(delta));
 
+  // necessiates <Suspense> parent
   const texture = useTexture(url.templateTexture, (texture) => {
     texture.flipY = false;
     texture.minFilter = THREE.NearestFilter;
     texture.magFilter = THREE.NearestFilter;
     texture.generateMipmaps = false;
   });
+
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
     const texNode = tslTexture(texture);
