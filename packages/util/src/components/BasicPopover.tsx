@@ -17,10 +17,11 @@ export function BasicPopover(
     trigger?: React.ReactNode;
     side?: "top" | "right" | "bottom" | "left";
     sideOffset?: number;
+    handle?: Popover.Handle<unknown>;
   }>,
 ) {
   return (
-    <Popover.Root>
+    <Popover.Root handle={props.handle}>
       <Popover.Trigger
         className={cn(preventReactGridDragClassName, "cursor-pointer", props.triggerClassName)}
       >
