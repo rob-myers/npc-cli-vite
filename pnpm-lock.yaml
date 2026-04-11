@@ -135,6 +135,9 @@ catalogs:
     maath:
       specifier: ^0.10.8
       version: 0.10.8
+    mathcat:
+      specifier: ^0.0.11
+      version: 0.0.11
     maxrects-packer:
       specifier: ^2.7.3
       version: 2.7.3
@@ -755,6 +758,9 @@ importers:
       maath:
         specifier: 'catalog:'
         version: 0.10.8(@types/three@0.182.0)(three@0.182.0)
+      mathcat:
+        specifier: 'catalog:'
+        version: 0.0.11
       motion:
         specifier: 'catalog:'
         version: 12.23.26(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

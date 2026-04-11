@@ -24,12 +24,18 @@ declare namespace WW {
    */
   type GmGeomForNav = {
     key: import("@npc-cli/media/starship-symbol").StarShipGeomorphKey;
-    doorways: Geom.GeoJsonPolygon[];
+    doorways: GmDoorwayForNav[];
     triangulation: Geom.TriangulationJson;
     determinant: number;
     worldBounds: Geom.RectJson;
     gridRect: Geom.RectJson;
     inverseMat3: Geom.AffineTransform;
     mat4Array: number[]; // 16 numbers, column-major
+  };
+
+  type GmDoorwayForNav = {
+    gmId: number;
+    doorId: number;
+    polygon: GeoJSON.Polygon;
   };
 }

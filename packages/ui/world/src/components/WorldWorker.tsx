@@ -72,9 +72,9 @@ export default function WorldWorker() {
       // - tailored data avoids worker dependency on "main thread modules"
       // - in PROD we send assets mutations too
       gmGeoms: w.gms.map<WW.GmGeomForNav>(
-        ({ key, doors, bounds, determinant, gridRect, matrix, inverseMatrix, mat4, navDecomp }) => ({
+        ({ key, doors, bounds, determinant, gridRect, matrix, inverseMatrix, mat4, navDecomp }, gmId) => ({
           key,
-          doorways: doors.map((connector) => connector.poly.geoJson),
+          doorways: doors.map((connector, doorId) => ({ gmId, doorId, polygon: connector.poly.geoJson })),
           triangulation: navDecomp, // implicit Vect -> {x, y}
           worldBounds: bounds.clone().applyMatrix(matrix),
           determinant,
