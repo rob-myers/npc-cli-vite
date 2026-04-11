@@ -1,11 +1,12 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { instancedArray, instanceIndex, vec4 } from "three/tsl";
+import { float, instancedArray, instanceIndex, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createXyQuad } from "../service/geometry";
+import { objectPick, PICK_TYPE, withPickOutput } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -38,6 +39,16 @@ export default function Walls() {
           },
           { yScale: height ?? wallHeight, yHeight: baseHeight, mat4: tmpMatFour1 },
         );
+      },
+
+      decodeInstanceId(instanceId: number) {
+        let id = instanceId;
+        const gmId = w.gms.findIndex(({ key }) => {
+          const count = w.gmsData.byKey[key].wallSegs.length;
+          return id < count || ((id -= count), false);
+        });
+        const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
+        return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
       },
 
       positionInstances() {
@@ -74,6 +85,8 @@ export default function Walls() {
     }),
   );
 
+  w.walls = state;
+
   const wallCount = w.gmsData.count.wall;
 
   const mat = useMemo(() => {
@@ -90,7 +103,8 @@ export default function Walls() {
     });
     const instanceColor = colorsBuffer.element(instanceIndex);
     material.colorNode = vec4(instanceColor.x, instanceColor.y, instanceColor.z, 1.0);
-    material.opacityNode = instanceColor.w;
+    material.opacityNode = objectPick.equal(1).select(float(1), instanceColor.w);
+    material.outputNode = withPickOutput(PICK_TYPE.walls);
 
     return { material, colorsBuffer };
   }, [wallCount]);
@@ -110,9 +124,10 @@ export default function Walls() {
   ) : null;
 }
 
-type State = {
+export type State = {
   inst: null | THREE.InstancedMesh;
   quad: THREE.BufferGeometry;
+  decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
   getWallMat: (
     seg: [Geom.Vect, Geom.Vect],
     transform: Geom.AffineTransform,

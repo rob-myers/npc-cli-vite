@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { useContext } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
+import { decodePick, objectPick } from "../service/pick";
 import { CameraControls } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
@@ -86,17 +87,37 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const size = new THREE.Vector2();
         renderer.getDrawingBufferSize(size);
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
-        // camera.updateProjectionMatrix();
 
+        objectPick.value = 1;
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
-
-        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then(([r, g, b, a]) => {
-          console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
-        });
-
+        objectPick.value = 0;
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
+
+        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then(([r, g, b, _a]) => {
+          // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
+          const pick = decodePick(r, g, b);
+          let picked = null as null | Record<string, any>;
+
+          if (!pick) {
+            // NOOP
+          } else if (pick.type === "floor" || pick.type === "ceiling") {
+            const gm = w.gms[pick.instanceId];
+            if (gm) {
+              // 🚧 transform click to local coords for roomId lookup via pickRoomId
+              picked = { ...pick, gmKey: gm.key };
+            }
+          } else if (pick.type === "walls") {
+            const decoded = w.walls.decodeInstanceId(pick.instanceId);
+            picked = { ...pick, ...decoded };
+          } else if (pick.type === "obstacles") {
+            const decoded = w.obs.decodeInstanceId(pick.instanceId);
+            picked = { ...pick, ...decoded };
+          }
+
+          console.log("picked", picked);
+        });
       },
       syncRenderMode() {
         if (w.disabled === true) {

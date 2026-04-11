@@ -7,6 +7,7 @@ import { CaretRightIcon, ListIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useContext } from "react";
 import { brightnessStorageKey } from "../const";
+import { objectPick } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export function WorldContextMenu() {
@@ -61,6 +62,20 @@ export function WorldContextMenu() {
                 />
                 <span className="w-6 text-right">{w.brightness.toFixed(1)}</span>
               </div>
+
+              <div className="my-1 border-t border-slate-700" />
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick
+                onClick={() => {
+                  const next = objectPick.value === 1 ? 0 : 1;
+                  objectPick.value = next;
+                  if (next === 1) w.r3f?.invalidate();
+                }}
+              >
+                {objectPick.value === 1 ? "Hide" : "Show"} pick colors
+              </Menu.Item>
 
               <div className="my-1 border-t border-slate-700" />
 

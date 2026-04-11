@@ -12,6 +12,7 @@ import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
+import { PICK_TYPE, withPickOutput } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Ceiling() {
@@ -120,7 +121,7 @@ export default function Ceiling() {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode: texNode.depth(uvTexIds), uid: generateUUID() };
+    return { texNode: texNode.depth(uvTexIds), pickNode: withPickOutput(PICK_TYPE.ceiling), uid: generateUUID() };
   }, [w.texCeil.hash]);
 
   useEffect(() => {
@@ -148,6 +149,7 @@ export default function Ceiling() {
         side={THREE.DoubleSide}
         transparent
         colorNode={shaderMeta.texNode}
+        outputNode={shaderMeta.pickNode}
         depthWrite={false}
       />
     </instancedMesh>
