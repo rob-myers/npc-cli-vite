@@ -464,6 +464,9 @@ importers:
       '@npc-cli/ui__blog':
         specifier: workspace:^
         version: link:../ui/blog
+      '@npc-cli/ui__demo':
+        specifier: workspace:^
+        version: link:../ui/demo
       '@npc-cli/ui__global':
         specifier: workspace:^
         version: link:../ui/global
@@ -547,6 +550,24 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+
+  packages/ui/demo:
+    dependencies:
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.1(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
 
   packages/ui/global:
     dependencies:
