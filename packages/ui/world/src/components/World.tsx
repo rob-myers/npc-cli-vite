@@ -52,6 +52,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       timer: new Timer(),
 
       hash: 0,
+
+      // hmr recreates but not named canvas
       texFloor: new TexArray({
         ctKey: "floor-tex",
         numTextures: 3, // can change
@@ -77,20 +79,15 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: null,
       navPending: true,
 
-      // 🚧 extend to all
       assets: null as any,
+      ceil: null as any,
+      floor: null as any,
       r3f: null as any,
+      obs: null as any,
       sheets: null as any,
-
-      // biome-ignore format: meaningful newlines
-      ...{} as Pick<State, (
-        | "worker"
-        | "ceil"
-        | "floor"
-        | "obs"
-        | "view"
-        | "walls"
-      )>,
+      view: null as any,
+      walls: null as any,
+      worker: null as any,
 
       devSetupAssetsSync() {
         const hot = import.meta.hot;

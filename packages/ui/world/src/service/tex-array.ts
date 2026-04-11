@@ -3,7 +3,9 @@ import * as THREE from "three";
 
 interface TexArrayOpts {
   numTextures: number;
+  /** Minimum `1` */
   width: number;
+  /** Minimum `1` */
   height: number;
   /** key for cached canvas context */
   ctKey: string;
@@ -32,8 +34,11 @@ export class TexArray {
 
     this.opts = opts;
     this.ct = getContext2d(opts.ctKey, { willReadFrequently: true });
-    this.ct.canvas.width = opts.width;
-    this.ct.canvas.height = opts.height;
+
+    // 🔔 avoid overwrite named canvas dimensions via `opts.width === opts.height === 1`
+    // - can happen during hot-reload of World useStateRef
+    this.ct.canvas.width = opts.width === 1 ? this.ct.canvas.width || 1 : opts.width;
+    this.ct.canvas.height = opts.height === 1 ? this.ct.canvas.height || 1 : opts.height;
 
     const data =
       opts.type === THREE.FloatType
