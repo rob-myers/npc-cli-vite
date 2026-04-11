@@ -5140,6 +5140,14 @@
       "navRects": [{"x": 0.35, "y": 0.35, "width": 29.3, "height": 14.745}]
     }
   },
-  "theme": {},
+  "theme": {
+    "test-theme": {
+      "background": "bg-white",
+      "ceiling": {
+        "hull": {"fill": "#000", "stroke": "#666"},
+        "nonHull": {"fill": "#444", "stroke": "#000"}
+      }
+    }
+  },
   "hash": {"obstacles": 256462835}
 }

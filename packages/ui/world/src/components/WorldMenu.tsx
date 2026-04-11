@@ -3,9 +3,10 @@ import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretRightIcon, ListIcon, SunIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretRightIcon, ListIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
-import { useContext } from "react";
+import { useContext, useRef } from "react";
+import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
 import { objectPick } from "../service/pick";
 import { WorldContext } from "./world-context";
@@ -15,11 +16,26 @@ export function WorldContextMenu() {
 
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
+  const themeKeys = ["default", ...Object.keys(w.assets?.theme ?? {})];
+  const themeEditorRef = useRef<HTMLTextAreaElement>(null);
 
   const state = useStateRef(() => ({
     y: tryLocalStorageGetParsed(storageKey(w.id)) ?? 40,
     onDragEnd() {
       tryLocalStorageSet(storageKey(w.id), String(y.get()));
+    },
+    themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
+    themeDirty: false,
+    saveTheme() {
+      if (!state.themeDirty) return;
+      state.themeDirty = false;
+      const theme = w.assets?.theme?.[w.themeKey];
+      if (!theme) return;
+      fetch(`/api/assets/theme/${encodeURIComponent(w.themeKey)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(theme),
+      });
     },
   }));
 
@@ -67,14 +83,13 @@ export function WorldContextMenu() {
 
               <Menu.Item
                 className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick
+                closeOnClick={false}
                 onClick={() => {
-                  const next = objectPick.value === 1 ? 0 : 1;
-                  objectPick.value = next;
-                  if (next === 1) w.r3f?.invalidate();
+                  objectPick.value = objectPick.value === 1 ? 0 : 1;
+                  w.r3f?.invalidate();
                 }}
               >
-                {objectPick.value === 1 ? "Hide" : "Show"} pick colors
+                Toggle pick colors
               </Menu.Item>
 
               <div className="my-1 border-t border-slate-700" />
@@ -109,6 +124,93 @@ export function WorldContextMenu() {
                   </Menu.Positioner>
                 </Menu.Portal>
               </Menu.SubmenuRoot>
+
+              <div className="my-1 border-t border-slate-700" />
+
+              {themeKeys.map((key) => (
+                <Menu.Item
+                  key={key}
+                  closeOnClick={false}
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
+                    "hover:bg-slate-700",
+                    key === w.themeKey && "text-green-400",
+                  )}
+                  onClick={() => {
+                    uiStoreApi.setUiMeta(w.id, (draft) => {
+                      draft.themeKey = key;
+                    });
+                  }}
+                >
+                  {key}
+                </Menu.Item>
+              ))}
+
+              {import.meta.env.DEV && (
+                <>
+                  <div
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      state.themeEditorOpen = !state.themeEditorOpen;
+                      tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
+                      w.update();
+                    }}
+                  >
+                    {state.themeEditorOpen ? (
+                      <CaretDownIcon className="size-3" />
+                    ) : (
+                      <CaretRightIcon className="size-3" />
+                    )}
+                    edit
+                  </div>
+                  {state.themeEditorOpen && (
+                    <div className="p-2 pt-0 flex flex-col gap-1">
+                      <textarea
+                        ref={themeEditorRef}
+                        className="w-48 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                        defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => {
+                          try {
+                            const parsed = WorldThemeSchema.safeParse(JSON.parse(themeEditorRef.current?.value ?? ""));
+                            if (!parsed.success || !w.assets) return;
+                            w.assets.theme ??= {};
+                            w.assets.theme[w.themeKey] = parsed.data;
+                            state.themeDirty = true;
+                            w.ceil.draw().then(() => w.update());
+                          } catch {
+                            // invalid JSON, ignore
+                          }
+                        }}
+                        onBlur={() => state.saveTheme()}
+                      />
+                      <button
+                        type="button"
+                        className="cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const name = prompt("Theme name:");
+                          if (!name || !w.assets) return;
+                          const theme = structuredClone(w.getTheme());
+                          const res = await fetch(`/api/assets/theme/${encodeURIComponent(name)}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(theme),
+                          });
+                          if (!res.ok) return console.warn("Failed to save theme:", await res.text());
+                          w.assets.theme ??= {};
+                          w.assets.theme[name] = theme;
+                          w.update();
+                        }}
+                      >
+                        add theme
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
@@ -118,3 +220,4 @@ export function WorldContextMenu() {
 }
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
+const themeEditorStorageKey = "world-theme-editor-open";

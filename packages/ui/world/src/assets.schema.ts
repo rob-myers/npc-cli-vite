@@ -132,12 +132,22 @@ export type AssetsMapDef = z.infer<typeof AssetsMapDefSchema>;
 export const AssetsSymbolLookupSchema = z.partialRecord(StarShipSymbolImageKeySchema, AssetsSymbolSchema);
 export type AssetsSymbolLookup = z.infer<typeof AssetsSymbolLookupSchema>;
 
+export const WorldThemeSchema = z.object({
+  background: z.string(),
+  ceiling: z.object({
+    hull: z.object({ fill: z.string(), stroke: z.string() }),
+    nonHull: z.object({ fill: z.string(), stroke: z.string() }),
+  }),
+});
+export type WorldTheme = z.infer<typeof WorldThemeSchema>;
+
 export const AssetsSchema = z.object({
   symbol: AssetsSymbolLookupSchema,
   map: z.partialRecord(MapKeySchema, AssetsMapDefSchema),
   flattened: z.partialRecord(StarShipSymbolImageKeySchema, AssetsFlatSymbolSchema),
   stratifiedSymbolNodes: z.array(z.array(SymbolGraphNodeSchema)),
   layout: z.partialRecord(StarShipGeomorphKeySchema, GeomorphLayoutSchema),
+  theme: z.partialRecord(z.string(), WorldThemeSchema),
   hash: z.object({
     /** Over all symbols */
     obstacles: z.number(),
