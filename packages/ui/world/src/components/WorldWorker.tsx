@@ -74,7 +74,12 @@ export default function WorldWorker() {
       gmGeoms: w.gms.map<WW.GmGeomForNav>(
         ({ key, doors, bounds, determinant, gridRect, matrix, inverseMatrix, mat4, navDecomp }, gmId) => ({
           key,
-          doorways: doors.map((connector, doorId) => ({ gmId, doorId, polygon: connector.poly.geoJson })),
+          doorways: doors.map((connector, doorId) => ({
+            gmId,
+            doorId,
+            // 🔔 geomorph instance polygons are untransformed
+            polygon: connector.poly.clone().applyMatrix(matrix).geoJson,
+          })),
           triangulation: navDecomp, // implicit Vect -> {x, y}
           worldBounds: bounds.clone().applyMatrix(matrix),
           determinant,
