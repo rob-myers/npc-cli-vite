@@ -118,7 +118,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       className="size-full"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.25, delay: 0.1 }}
+      transition={{ duration: 2, delay: 0.1 }}
     >
       <Canvas
         className={props.className}

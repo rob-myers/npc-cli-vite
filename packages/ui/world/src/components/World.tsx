@@ -77,7 +77,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: null,
       navPending: true,
 
-      // 🚧 must supply value else hmr removes field
+      // 🚧 extend to all
       assets: null as any,
       r3f: null as any,
       sheets: null as any,
@@ -221,14 +221,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       <div className="relative size-full">
         {/* 🔔 suspense avoids sporadic silent fail */}
         <Suspense>
-          <WorldView className={cn(uiClassName, "bg-gray-500")}>
+          <WorldView className={cn(uiClassName, "bg-gray-800")}>
             <ambientLight intensity={0.85} color="#ffffff" />
             <Floor />
             <Ceiling />
             <Walls />
             <Obstacles />
-            {/* 🔔 delay to avoid breaking object-pick async pixel read */}
-            {state.assets && <NPCs />}
+            <NPCs />
             <Debug />
           </WorldView>
           <WorldWorker />
