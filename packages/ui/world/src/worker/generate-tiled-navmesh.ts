@@ -3,9 +3,10 @@
  */
 
 import { warn } from "@npc-cli/util/legacy/generic";
-import { generateTiledNavMesh, type TiledNavMeshInput, type TiledNavMeshOptions } from "navcat/blocks";
+import type { TiledNavMeshInput, TiledNavMeshOptions } from "navcat/blocks";
 import { getPositionsAndIndices } from "navcat/three";
 import * as THREE from "three";
+import { generateTiledNavMesh } from "./custom-tiled-mesh";
 import { computeGmInstanceMeshes } from "./nav-util";
 
 /* navmesh generation parameters */
@@ -85,7 +86,8 @@ export async function generateTiledNavMeshResult(
     detailSampleMaxError,
   };
 
-  return generateTiledNavMesh(navMeshInput, navMeshConfig);
+  const doorways = gmGeoms.flatMap((gmGeom) => gmGeom.doorways);
+  return generateTiledNavMesh(navMeshInput, navMeshConfig, doorways);
 }
 
 function computeNavOriginFixingMesh(meshes: THREE.Mesh[]) {

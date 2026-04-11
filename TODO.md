@@ -50,7 +50,9 @@
 - 🚧 navmesh should account for doors
   - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/examples/src/example-doors-and-keys.ts#L201
   - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/blocks/generators/generate-tiled-nav-mesh.ts
-  - 🚧 make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
+  - ✅ make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
+  - 🚧 saw working in untransformed but maybe not transformed geomorphs
+  - 🚧 better encoding of `(gmId, doorId)`
 
 - compute room polygons correctly i.e. need to include doors
 

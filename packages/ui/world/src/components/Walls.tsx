@@ -90,6 +90,7 @@ export default function Walls() {
   const wallCount = w.gmsData.count.wall;
 
   const mat = useMemo(() => {
+    // 🚧 move elsewhere
     const colorsBuffer = instancedArray(wallCount, "vec4");
     const colorData = colorsBuffer.value.array as Float32Array;
     for (let i = 0; i < wallCount; i++) {
