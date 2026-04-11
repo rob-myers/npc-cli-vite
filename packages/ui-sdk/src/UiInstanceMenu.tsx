@@ -1,6 +1,14 @@
+import { Popover } from "@base-ui/react/popover";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { allowReactGridDragClassName, BasicPopover, cn } from "@npc-cli/util";
-import { DotsThreeOutlineVerticalIcon, LayoutIcon, PlayCircleIcon } from "@phosphor-icons/react";
+import {
+  CornersOutIcon,
+  DotsThreeOutlineVerticalIcon,
+  LayoutIcon,
+  MinusIcon,
+  PlayCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { useContext } from "react";
 import { uiClassName } from "./const";
 import { UiContext } from "./UiContext";
@@ -46,31 +54,62 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
 function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
   const { layoutApi, uiStore, uiStoreApi } = useContext(UiContext);
   const tabsInstances = uiStoreApi.getTabsInstances(meta.parentId);
+  const handle = Popover.createHandle();
 
   return (
     <BasicPopover
+      handle={handle}
       side="right"
       sideOffset={4}
       triggerClassName={cn(uiClassName, "cursor-pointer")}
-      className="flex flex-col gap-0 p-0 bg-black text-white"
-      arrowClassName="fill-black"
+      className="flex flex-col gap-0 p-0 bg-slate-800 text-slate-200"
+      arrowClassName="fill-slate-800"
       trigger={
         <DotsThreeOutlineVerticalIcon data-icon-type="menu" weight="duotone" className="size-5">
           <title>{meta.title}</title>
         </DotsThreeOutlineVerticalIcon>
       }
     >
-      <div className="flex flex-col items-center justify-between p-1 border-b border-black/20">
+      <div className="flex items-center p-1 border-b border-slate-700 gap-1">
         <button
           type="button"
-          className="cursor-pointer hover:bg-white/20 rounded"
+          className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
           onPointerDown={(e) => {
             e.stopPropagation();
-            uiStoreApi.removeItem(meta.id);
+            handle.close();
+            requestAnimationFrame(() => layoutApi.fitItem(meta.id));
           }}
         >
-          close
+          <CornersOutIcon weight="bold" className="size-4" />
         </button>
+        <button
+          type="button"
+          className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            handle.close();
+            requestAnimationFrame(() => layoutApi.minimizeItem(meta.id));
+          }}
+        >
+          <MinusIcon weight="bold" className="size-4" />
+        </button>
+        <BasicPopover
+          triggerClassName="bg-slate-700 hover:bg-slate-600 rounded p-1"
+          trigger={<XIcon weight="bold" className="size-4" />}
+          side="right"
+          sideOffset={4}
+        >
+          <button
+            type="button"
+            className="cursor-pointer"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              uiStoreApi.removeItem(meta.id);
+            }}
+          >
+            confirm
+          </button>
+        </BasicPopover>
       </div>
       {meta.uiKey !== "Tabs" &&
         tabsInstances.length > 0 &&
@@ -78,7 +117,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
           <button
             key={tabs.id}
             type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-black/20"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-700"
             onPointerDown={(e) => {
               e.stopPropagation();
               uiStore.setState((draft) => {

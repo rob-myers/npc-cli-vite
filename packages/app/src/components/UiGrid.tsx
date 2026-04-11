@@ -233,6 +233,65 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         appendLayoutItems: (ls) => {
           setLayouts({ lg: layouts.current.lg.concat(ls) });
         },
+        fitItem(id) {
+          const containerHeight = containerRef.current?.clientHeight ?? 0;
+          const rowHeight = (state.gridConfig.rowHeight || 30) + 2 * (state.gridConfig.margin?.[1] || 8);
+          const viewportRows = Math.max(1, Math.floor(containerHeight / rowHeight));
+
+          const target = layouts.current.lg.find((item) => item.i === id);
+          if (!target) return;
+
+          // rows must cover both viewport and all existing items
+          const contentRows = layouts.current.lg.reduce((max, item) => Math.max(max, item.y + item.h), 0);
+          const rows = Math.max(viewportRows, contentRows);
+
+          // build occupancy grid
+          const occupied = Array.from({ length: rows }, () => new Uint8Array(cols));
+          for (const o of layouts.current.lg) {
+            if (o.i === id) continue;
+            for (let r = o.y; r < Math.min(o.y + o.h, rows); r++)
+              for (let c = o.x; c < Math.min(o.x + o.w, cols); c++)
+                occupied[r][c] = 1;
+          }
+
+          // try both orderings and pick the larger area
+          const expand = (widthFirst: boolean) => {
+            let x1 = Math.max(0, target.x), y1 = Math.max(0, target.y);
+            let x2 = Math.min(cols, target.x + target.w), y2 = Math.min(rows, target.y + target.h);
+            let changed = true;
+            while (changed) {
+              changed = false;
+              if (widthFirst) {
+                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) { x1--; changed = true; }
+                if (x2 < cols && colFree(occupied, x2, y1, y2)) { x2++; changed = true; }
+                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) { y1--; changed = true; }
+                if (y2 < rows && rowFree(occupied, y2, x1, x2)) { y2++; changed = true; }
+              } else {
+                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) { y1--; changed = true; }
+                if (y2 < rows && rowFree(occupied, y2, x1, x2)) { y2++; changed = true; }
+                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) { x1--; changed = true; }
+                if (x2 < cols && colFree(occupied, x2, y1, y2)) { x2++; changed = true; }
+              }
+            }
+            return { x1, y1, w: x2 - x1, h: y2 - y1 };
+          };
+          const wFirst = expand(true);
+          const hFirst = expand(false);
+          const best = wFirst.w * wFirst.h >= hFirst.w * hFirst.h ? wFirst : hFirst;
+
+          const newLg = layouts.current.lg.map((item) =>
+            item.i === id ? { ...item, x: best.x1, y: best.y1, w: best.w, h: best.h } : item,
+          );
+          layouts.current.lg = newLg;
+          setLayouts({ lg: newLg });
+        },
+        minimizeItem(id) {
+          const newLg = layouts.current.lg.map((item) =>
+            item.i === id ? { ...item, w: 2, h: 4 } : item,
+          );
+          layouts.current.lg = newLg;
+          setLayouts({ lg: newLg });
+        },
         getUiGridRect: (id) => {
           const found = layouts.current.lg.find((item) => item.i === id);
           return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
@@ -310,6 +369,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               onDragStop={state.onDragStop}
               onLayoutChange={(layout) => {
                 layouts.current.lg = layout;
+                setLayouts({ lg: layout }); // sync hook state with rendered layout
               }}
             >
               {topLevelUis.map(({ meta, portal }) => {
@@ -443,6 +503,15 @@ type Props = {
  * Instead, UIs should use `uiClassName` to avoid being covered.
  */
 const DraggableOverlay = () => <div className={cn(allowReactGridDragClassName, "absolute z-0 inset-0 cursor-move")} />;
+
+function colFree(grid: Uint8Array[], col: number, y1: number, y2: number) {
+  for (let r = y1; r < y2; r++) if (grid[r][col]) return false;
+  return true;
+}
+function rowFree(grid: Uint8Array[], row: number, x1: number, x2: number) {
+  for (let c = x1; c < x2; c++) if (grid[row][c]) return false;
+  return true;
+}
 
 export type GridApi = UiContextValue["layoutApi"];
 

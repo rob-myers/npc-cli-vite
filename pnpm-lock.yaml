@@ -504,6 +504,9 @@ importers:
 
   packages/ui-sdk:
     dependencies:
+      '@base-ui/react':
+        specifier: 'catalog:'
+        version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@npc-cli/theme':
         specifier: workspace:^
         version: link:../theme

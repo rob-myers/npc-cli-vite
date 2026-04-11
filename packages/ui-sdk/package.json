@@ -15,6 +15,7 @@
   },
   "scripts": {},
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@npc-cli/theme": "workspace:^",
     "@npc-cli/ui-registry": "workspace:^",
     "@npc-cli/util": "workspace:^",
