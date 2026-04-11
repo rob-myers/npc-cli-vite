@@ -1,7 +1,11 @@
 import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { geomService } from "@npc-cli/util";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Poly } from "@npc-cli/util/geom/poly";
-import { wallHeight } from "../const";
+import { floorTextureDimension, gmFloorExtraScale, wallHeight, worldToSguScale } from "../const";
+import { getContext2d } from "./tex-array";
+
+const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
 export default class DerivedGmsData {
   count = {
@@ -72,6 +76,23 @@ export default class DerivedGmsData {
       nonHull: Poly.union(nonHullWallsTouchCeil).flatMap((x) => geomService.createInset(x, 0.02)),
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
+
+    // room pick canvas: each room filled with rgb(roomId+1, 0, 0)
+    if (!gmData.roomCanvas) {
+      gmData.roomCanvas = getContext2d(`room-pick-${gm.key}`, { willReadFrequently: true });
+    }
+    const roomCt = gmData.roomCanvas;
+    roomCt.canvas.width = floorTextureDimension;
+    roomCt.canvas.height = floorTextureDimension;
+    roomCt.resetTransform();
+    roomCt.clearRect(0, 0, roomCt.canvas.width, roomCt.canvas.height);
+    roomCt.setTransform(
+      worldToCanvas, 0, 0, worldToCanvas,
+      -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas,
+    );
+    for (const [roomId, room] of gm.rooms.entries()) {
+      drawPolygons(roomCt, [room], { fillStyle: `rgb(${roomId + 1}, 0, 0)`, strokeStyle: null });
+    }
 
     gmData.unseen = false;
   }

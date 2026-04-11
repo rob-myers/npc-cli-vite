@@ -35,16 +35,18 @@
 - ✅ default is not empty-map (although still exists)
   - defaultMapKey has value "small-map-0"
 
-- 🚧 support object-picking
+- ✅ support object-picking
   - ✅ read pixel on pointer down
   - ✅ mounting `<NPCs>` late seems to fix things?!
   - ✅ Putting `<Suspense>` directly around NPC component seems to fix it
     - `useTexture` took too long?
   - Delay MRT: may want different scene for object-pick e.g. no walls
     - MRT could still be useful for drag-select
-  - 🚧 Floor/Ceiling/Walls/Obstacles shader support objectPick uniform
+  - ✅ Floor/Ceiling/Walls/Obstacles shader support objectPick uniform
 
 - fix obstacles texture disappearing on remount stuff inside World.tsx
+
+- compute roomPolys correctly i.e. need to include doors
 
 - on add grid item to UiGrid can we try to use maximum available height and width?
 

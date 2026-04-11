@@ -13,6 +13,7 @@ import { geomorphGridMeters, gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, worldToS
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { getGridPattern } from "../service/grid-pattern";
+import { PICK_TYPE, withPickOutput } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -166,7 +167,7 @@ export default function Floor() {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode: texNode.depth(instanceIndex), uid: generateUUID() };
+    return { texNode: texNode.depth(instanceIndex), pickNode: withPickOutput(PICK_TYPE.floor), uid: generateUUID() };
   }, [w.texFloor.hash]);
 
   useEffect(() => {
@@ -193,6 +194,7 @@ export default function Floor() {
         transparent
         alphaTest={0.8}
         colorNode={shaderMeta.texNode}
+        outputNode={shaderMeta.pickNode}
         depthWrite={false}
       />
     </instancedMesh>

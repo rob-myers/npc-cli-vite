@@ -16,6 +16,7 @@ import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
+import { PICK_TYPE, withPickOutput } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -183,7 +184,7 @@ export default function Obstacles(_props: Props) {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode: texNode.depth(uvTexIds), uid: generateUUID() };
+    return { texNode: texNode.depth(uvTexIds), pickNode: withPickOutput(PICK_TYPE.obstacles), uid: generateUUID() };
   }, [w.texObs.hash]);
 
   state.images =
@@ -238,6 +239,7 @@ export default function Obstacles(_props: Props) {
           transparent
           alphaTest={0.5}
           colorNode={shaderMeta.texNode}
+          outputNode={shaderMeta.pickNode}
         />
       </instancedMesh>
 

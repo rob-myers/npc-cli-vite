@@ -89,6 +89,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         | "floor"
         | "obs"
         | "view"
+        | "walls"
       )>,
 
       devSetupAssetsSync() {
@@ -273,6 +274,7 @@ export type State = {
   floor: UseStateRef<import("./Floor").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   view: UseStateRef<import("./WorldView").State>;
+  walls: UseStateRef<import("./Walls").State>;
 
   worker: UseStateRef<import("./WorldWorker").State>;
   nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
