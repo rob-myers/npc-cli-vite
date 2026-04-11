@@ -47,7 +47,12 @@
 - ✅ fix obstacles texture disappearing on remount stuff inside World.tsx
   - hot reload was resetting canvas width/height to 1
 
-- compute roomPolys correctly i.e. need to include doors
+- 🚧 navmesh should account for doors
+  - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/examples/src/example-doors-and-keys.ts#L201
+  - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/blocks/generators/generate-tiled-nav-mesh.ts
+  - 🚧 make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
+
+- compute room polygons correctly i.e. need to include doors
 
 - on add grid item to UiGrid can we try to use maximum available height and width?
 

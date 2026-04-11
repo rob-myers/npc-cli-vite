@@ -24,6 +24,7 @@ declare namespace WW {
    */
   type GmGeomForNav = {
     key: import("@npc-cli/media/starship-symbol").StarShipGeomorphKey;
+    doorways: Geom.GeoJsonPolygon[];
     triangulation: Geom.TriangulationJson;
     determinant: number;
     worldBounds: Geom.RectJson;
