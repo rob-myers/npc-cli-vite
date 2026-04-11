@@ -53,13 +53,17 @@
   - ✅ make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
   - ✅ saw working in untransformed but maybe not transformed geomorphs
   - 🚧 better encoding of `(gmId, doorId)`
+  - can run navQuery using queryFilter specifying door areas
 
 - compute room polygons correctly i.e. need to include doors
 
 - on add grid item to UiGrid can we try to use maximum available height and width?
 
-- for doors try track they "openess ratio" via persistent array on gpu
+- for doors try track "openess ratio" via persistent array on gpu
   - https://share.google/aimode/EreUiTQQkX01nIvv2
+
+- minecraft skin templates
+  - https://minecraft.fandom.com/wiki/Skin#Templates
 
 - why is boolean uniform `objectPick` being set as `1` after we drag world?
 - fix precision in `assets.json`
