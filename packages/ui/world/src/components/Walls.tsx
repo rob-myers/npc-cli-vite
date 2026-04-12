@@ -121,6 +121,7 @@ export default function Walls() {
       ref={state.ref("inst")}
       args={[state.quad, undefined, wallCount]}
       material={mat.material}
+      renderOrder={4}
     />
   ) : null;
 }
