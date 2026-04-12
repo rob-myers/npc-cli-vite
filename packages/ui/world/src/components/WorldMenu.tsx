@@ -11,7 +11,7 @@ import { brightnessStorageKey } from "../const";
 import { objectPick } from "../service/pick";
 import { WorldContext } from "./world-context";
 
-export function WorldContextMenu() {
+export function WorldMenu() {
   const { uiStoreApi } = useContext(UiContext);
 
   const w = useContext(WorldContext);
@@ -39,13 +39,16 @@ export function WorldContextMenu() {
     },
   }));
 
-  const y = useMotionValue(state.y);
+  const minY = 10;
+  const maxY = (w.view.rootEl?.clientHeight ?? Infinity) - 120;
+  const y = useMotionValue(Math.min(maxY, Math.max(minY, state.y)));
 
   return (
     <motion.div
       className={cn(uiClassName, "absolute top-0 left-0 z-9999 touch-none select-none")}
       style={{ y }}
       drag="y"
+      dragConstraints={{ top: minY, bottom: maxY }}
       dragMomentum={false}
       onDragEnd={state.onDragEnd}
     >
