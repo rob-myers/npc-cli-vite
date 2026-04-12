@@ -19,7 +19,7 @@
     {
       "id": "1a3e8093-738f-409e-bcf1-8cbd65935bf2",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -27,7 +27,7 @@
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 10, "f": 360},
           "type": "symbol",
@@ -39,7 +39,7 @@
         {
           "id": "6d56cb79-5d36-44e1-a9b6-01b4412608b4",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 360, "f": 592.5},
           "type": "symbol",
@@ -51,7 +51,7 @@
         {
           "id": "f41febf1-40e0-41cd-abf9-97b391685c63",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 960, "f": 592.5},
           "type": "symbol",
@@ -63,7 +63,7 @@
         {
           "id": "9491dce9-e8ab-4f33-b1ae-d4a67d518f9d",
           "name": "iris-valves--005--1x1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1192.5, "f": 240},
           "type": "symbol",
@@ -75,7 +75,7 @@
         {
           "id": "7a8d3144-d2d1-453c-9c0d-efeaeda7f260",
           "name": "office--001--2x2",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 960, "f": 120},
           "type": "symbol",
@@ -87,7 +87,7 @@
         {
           "id": "d96f2083-134d-402f-a819-5551d0ee818d",
           "name": "stateroom--036--2x4",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
           "type": "symbol",
@@ -101,7 +101,7 @@
     {
       "id": "0b8b6c16-fb39-44ba-adb8-70cfdc665e85",
       "name": "hull",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -109,7 +109,7 @@
         {
           "id": "5b1221cd-415e-4161-97c6-18bbb93ec7da",
           "name": "wall hull _window",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -120,7 +120,7 @@
         {
           "id": "f87ec34f-cfae-4eab-a11a-31ff0f74fcd5",
           "name": "window hull y=1.1 h=0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -131,7 +131,7 @@
         {
           "id": "641dc7ea-4182-4c87-a917-70512fa499af",
           "name": "_window hull y=1.1 h=0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -142,7 +142,7 @@
         {
           "id": "f8f73e11-b694-4adb-ac5d-c86b3dcbb122",
           "name": "wall hull sans-n--20x10",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -153,7 +153,7 @@
         {
           "id": "325d2489-59ab-44ad-9e1f-da00e87cf8a2",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -164,7 +164,7 @@
         {
           "id": "ad1f2763-b28b-4cb0-95df-a688d7b29c35",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
