@@ -18,7 +18,7 @@ export function DraggableEditToggle({
     }
   }, []);
 
-  const y = useMotionValue(storedY);
+  const y = useMotionValue(Math.max(minY, storedY));
   const dragged = useRef(false);
   const vpOffset = useVisualViewportOffset();
 
@@ -32,32 +32,26 @@ export function DraggableEditToggle({
       }}
       drag="y"
       dragMomentum={false}
+      dragConstraints={{ top: minY, bottom: window.innerHeight - minY }}
       onDragStart={() => {
         dragged.current = true;
       }}
       onDragEnd={() => {
         localStorage.setItem(storageKey, String(y.get()));
       }}
+      onPointerUp={() => {
+        if (dragged.current) {
+          dragged.current = false;
+          return;
+        }
+        state.set({ editMode: !state.editMode });
+      }}
     >
-      <button
-        type="button"
-        className="cursor-pointer"
-        onClick={() => {
-          if (dragged.current) {
-            dragged.current = false;
-            return;
-          }
-          state.set({ editMode: !state.editMode });
-        }}
-      >
+      <button type="button" className="cursor-pointer">
         {state.editMode ? <PenIcon className="size-5" /> : <LockIcon className="size-5" />}
       </button>
       {vpOffset.zoomed && (
-        <button
-          type="button"
-          className="cursor-pointer"
-          onClick={resetZoom}
-        >
+        <button type="button" className="cursor-pointer" onClick={resetZoom}>
           <ArrowsInIcon className="size-5" />
         </button>
       )}
@@ -93,3 +87,5 @@ function useVisualViewportOffset() {
 
   return offset;
 }
+
+const minY = 120;

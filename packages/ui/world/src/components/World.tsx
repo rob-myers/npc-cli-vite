@@ -31,7 +31,7 @@ import Floor from "./Floor";
 import NPCs from "./NPCs";
 import Obstacles from "./Obstacles";
 import Walls from "./Walls";
-import { WorldContextMenu } from "./WorldMenu";
+import { WorldMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
 import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
@@ -237,7 +237,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           </WorldView>
           <WorldWorker />
         </Suspense>
-        <WorldContextMenu />
+        <WorldMenu />
       </div>
     </WorldContext.Provider>
   );
