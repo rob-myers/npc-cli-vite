@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const storageKey = "ui-grid-edit-toggle-y";
 
-export function DraggableEditToggle({
+export function DraggableResizeToggle({
   state,
 }: {
-  state: { editMode: boolean; set: (partial: { editMode?: boolean }) => void };
+  state: { resizeMode: boolean; set: (partial: { resizeMode?: boolean }) => void };
 }) {
   const storedY = useMemo(() => {
     try {
@@ -21,6 +21,16 @@ export function DraggableEditToggle({
   const y = useMotionValue(Math.max(minY, storedY));
   const dragged = useRef(false);
   const vpOffset = useVisualViewportOffset();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && state.resizeMode) {
+        state.set({ resizeMode: false });
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state]);
 
   return (
     <motion.div
@@ -44,11 +54,11 @@ export function DraggableEditToggle({
           dragged.current = false;
           return;
         }
-        state.set({ editMode: !state.editMode });
+        state.set({ resizeMode: !state.resizeMode });
       }}
     >
       <button type="button" className="cursor-pointer">
-        {state.editMode ? <PenIcon className="size-5" /> : <LockIcon className="size-5" />}
+        {state.resizeMode ? <PenIcon className="size-5" /> : <LockIcon className="size-5" />}
       </button>
       {vpOffset.zoomed && (
         <button type="button" className="cursor-pointer" onClick={resetZoom}>
