@@ -27,7 +27,7 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import type { GridConfig, ResizeConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
-import { DraggableEditToggle } from "./DraggableEditToggle";
+import { DraggableResizeToggle } from "./DraggableResizeToggle";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -62,12 +62,12 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         margin: [8, 8],
         containerPadding: [0, 0],
       },
-      editMode: false,
+      resizeMode: false,
       numTouches: 0,
       overrideContextMenuOpts: null,
       preventTransition: true,
       resizeConfig: {
-        editMode: { handles: ["n", "ne", "e", "se", "s", "sw", "w", "nw"] },
+        resizeMode: { handles: ["n", "ne", "e", "se", "s", "sw", "w", "nw"] },
         default: { handles: isTouchDevice() ? [] : ["se"] },
       },
       resizing: false,
@@ -384,7 +384,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                 // threshold: 10, // Touch doesn't work
               }}
               gridConfig={state.gridConfig}
-              resizeConfig={state.editMode ? state.resizeConfig.editMode : state.resizeConfig.default}
+              resizeConfig={state.resizeMode ? state.resizeConfig.resizeMode : state.resizeConfig.default}
               layout={layout}
               onResizeStart={state.onResizeStart}
               onResizeStop={state.onResizeStop}
@@ -403,7 +403,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
                     className={cn(
                       "relative border border-on-background/20",
                       "*:first:transition-all",
-                      ...(state.editMode
+                      ...(state.resizeMode
                         ? [
                             allowReactGridDragClassName,
                             "cursor-move *:first:p-5 *:first:pointer-events-none *:first:grayscale *:first:contrast-70 border-blue-500/60",
@@ -424,7 +424,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               })}
             </GridLayout>
 
-            <DraggableEditToggle state={state} />
+            <DraggableResizeToggle state={state} />
           </div>
         </ContextMenu.Trigger>
 
@@ -557,12 +557,12 @@ type State = {
     ui: (props: UiBootstrapProps) => React.ReactNode;
   };
   gridConfig: Partial<GridConfig>;
-  editMode: boolean;
+  resizeMode: boolean;
   numTouches: number;
   overrideContextMenuOpts: null | OverrideContextMenuOpts;
   preventTransition: boolean;
   resizeConfig: {
-    editMode: Partial<ResizeConfig>;
+    resizeMode: Partial<ResizeConfig>;
     default: Partial<ResizeConfig>;
   };
   resizing: boolean;
