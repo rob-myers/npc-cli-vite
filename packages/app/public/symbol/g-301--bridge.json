@@ -109,7 +109,7 @@
         {
           "id": "5b1221cd-415e-4161-97c6-18bbb93ec7da",
           "name": "wall hull _window",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -120,7 +120,7 @@
         {
           "id": "f87ec34f-cfae-4eab-a11a-31ff0f74fcd5",
           "name": "window hull y=1.1 h=0.6",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -253,6 +253,18 @@
       "type": "rect",
       "baseRect": {"width": 97.5, "height": 9},
       "cssTransform": "matrix(1, 0, 0, 1, 850, 595)"
+    },
+    {
+      "id": "113d27ed-c41b-42f3-b405-fb861667acca",
+      "name": "bridge--042--8x9",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 60},
+      "type": "symbol",
+      "srcKey": "bridge--042--8x9",
+      "baseRect": {"width": 480, "height": 540},
+      "offset": {"x": -5, "y": -18},
+      "cssTransform": "matrix(1, 0, 0, 1, 355, 42)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
