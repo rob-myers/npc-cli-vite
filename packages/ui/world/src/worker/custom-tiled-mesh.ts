@@ -41,7 +41,7 @@ import {
   type TiledNavMeshOptions,
   type TiledNavMeshResult,
 } from "navcat/blocks";
-import { buildDoorwayGrid, type EnrichedDoorway } from "./nav-util";
+import { buildDoorwayGrid, encodeDoorAreaId, type EnrichedDoorway } from "./nav-util";
 
 const buildNavMeshTile = ({
   doorways,
@@ -173,8 +173,6 @@ const buildNavMeshTile = ({
 
   const compactHeightfield = buildCompactHeightfield(ctx, walkableHeightVoxels, walkableClimbVoxels, heightfield);
 
-  // 🚧 encode (gmId, doorId) in areaId
-  const DOORS_AREA_START = 10;
   const boundsRect = new Rect(
     tileBounds[0],
     tileBounds[2],
@@ -193,7 +191,7 @@ const buildNavMeshTile = ({
         walkableHeightVoxels * cellHeight,
         door.rect.y + door.rect.height,
       ],
-      DOORS_AREA_START + door.globalDoorId, // area id
+      encodeDoorAreaId(door.gmId, door.doorId),
       compactHeightfield,
     );
   }

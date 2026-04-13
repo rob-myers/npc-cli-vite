@@ -162,10 +162,22 @@ function getTileTriangles(tile: NavMeshTile): [number[], number[]] {
 
 export type EnrichedDoorway = WW.GmDoorwayForNav & {
   rect: Rect;
-  globalDoorId: number;
 };
 
 export type DoorwayGrid = { [key in `${number},${number}`]: EnrichedDoorway[] };
+
+/** Area IDs below this are reserved (0 = unwalkable, 1 = default walkable flag, etc.) */
+export const DOORS_AREA_START = 10;
+const MAX_DOORS_PER_GEOMORPH = 64;
+
+export function encodeDoorAreaId(gmId: number, doorId: number): number {
+  return DOORS_AREA_START + gmId * MAX_DOORS_PER_GEOMORPH + doorId;
+}
+
+export function decodeDoorAreaId(areaId: number): { gmId: number; doorId: number } {
+  const id = areaId - DOORS_AREA_START;
+  return { gmId: Math.floor(id / MAX_DOORS_PER_GEOMORPH), doorId: id % MAX_DOORS_PER_GEOMORPH };
+}
 
 export function buildDoorwayGrid(
   doorways: WW.GmDoorwayForNav[],
@@ -173,10 +185,9 @@ export function buildDoorwayGrid(
   meshBoundsMinZ: number,
   tileSizeWorld: number,
 ): DoorwayGrid {
-  const enrichedDoorways: EnrichedDoorway[] = doorways.map((door, globalDoorId) => ({
+  const enrichedDoorways: EnrichedDoorway[] = doorways.map((door) => ({
     ...door,
     rect: Poly.from(door.polygon).rect,
-    globalDoorId,
   }));
 
   const grid: DoorwayGrid = {};
