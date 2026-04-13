@@ -58,7 +58,8 @@
     - ✅ can query navcat and show in `<Debug>`
     - can constrain doorways i.e. areas
 
-- compute room polygons correctly i.e. need to include doors
+- 🚧 compute room polygons correctly i.e. need to include doors
+  - seems ok already?
 
 - on add grid item to UiGrid can we try to use maximum available height and width?
 
@@ -101,6 +102,11 @@
   - ✅ stateroom-012 🚧 ...
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
+
+- 🚧 ISSUE obstacle sprite-sheet when polygon aabb overlap
+  - e.g. bridge--042: curved window vs. adjacent desk
+    - when adjacent can fix via same height
+  - technically can fix by creating an "extra symbol"
 
 - saw mobile fail to load initially but works after component update
 - fix remove bug i.e. next tab not set

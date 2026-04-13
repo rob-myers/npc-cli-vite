@@ -8,13 +8,13 @@
       "name": "bridge--042--8x9",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": -18},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": -14},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "bridge--042--8x9",
       "baseRect": {"width": 489.20000000000005, "height": 558},
       "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, -5, -18)"
+      "cssTransform": "matrix(1, 0, 0, 1, -4.5, -14)"
     },
     {
       "id": "bd898e7d-4f14-40ea-a3ea-dfff8ce4ab2a",
@@ -26,39 +26,75 @@
       "children": [
         {
           "id": "8c0ddce7-acc2-4ffd-9c82-7367ef95b0fc",
-          "name": "console--051--0.4x0.6",
+          "name": "console--051--0.4x0.6 y=0.5",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 165, "f": 60.5},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 165.5, "f": 65},
           "type": "symbol",
           "srcKey": "console--051--0.4x0.6",
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 0, "y": -0.7},
-          "cssTransform": "matrix(0, 1, -1, 0, 165, 59.8)"
+          "cssTransform": "matrix(0, 1, -1, 0, 165.5, 64.3)"
+        },
+        {
+          "id": "836d3775-b233-4b44-a235-1dda5d320e7e",
+          "name": "console--051--0.4x0.6 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 285, "f": 65},
+          "type": "symbol",
+          "srcKey": "console--051--0.4x0.6",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0, "y": -0.7},
+          "cssTransform": "matrix(0, 1, -1, 0, 285, 64.3)"
+        },
+        {
+          "id": "888554fd-b41b-4de0-b777-2c902f0b4532",
+          "name": "console--051--0.4x0.6 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 345, "f": 65},
+          "type": "symbol",
+          "srcKey": "console--051--0.4x0.6",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0, "y": -0.7},
+          "cssTransform": "matrix(0, 1, -1, 0, 345, 64.3)"
+        },
+        {
+          "id": "218105cc-13c8-4cc5-9441-dadb8ff1e5d7",
+          "name": "console--051--0.4x0.6 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 225, "f": 65},
+          "type": "symbol",
+          "srcKey": "console--051--0.4x0.6",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0, "y": -0.7},
+          "cssTransform": "matrix(0, 1, -1, 0, 225, 64.3)"
         }
       ]
     },
     {
       "id": "d13b07f6-877c-4926-abfc-9675ac7b8fe7",
-      "name": "obstacle y=0.8",
+      "name": "obstacle y=0.81",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",
       "d": "M 84.427 54.951 L 101.395 41.86 L 118.996 30.851 L 137.914 20.826 L 157.491 12.795 L 177.375 6.469 L 198.138 1.911 L 218.98 -0.8 L 239.824 -1.458 L 261.417 -0.798 L 261.447 -0.794 L 261.457 -0.793 L 282.257 1.99 L 302.55 6.595 L 322.985 12.95 L 342.343 20.985 L 361.218 30.832 L 378.889 42.13 L 395.631 55.202 L 401.905 60.8 L 346.707 60.8 L 334.862 54.57 L 324.14 54.57 L 312.921 60.8 L 285.376 60.8 L 275.591 54.357 L 264.606 54.357 L 253.678 60.8 L 225.946 60.8 L 214.503 54.31 L 206.01 54.31 L 193.599 60.8 L 165.91 60.8 L 154.685 54.022 L 145.815 54.022 L 133.703 60.8 L 77.311 60.8 L 79.036 59.382 L 84.427 54.951 Z",
       "baseRect": {"width": 480, "height": 540},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, -5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
       "id": "101fb0b7-71f8-4ae1-809d-f9bf1f1ad12b",
-      "name": "obstacle y=1.08 window-base",
+      "name": "obstacle y=0.8 window-base",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",
       "d": "M 77.414 45.379 L 95.081 31.756 L 113.72 19.96 L 133.167 9.603 L 153.631 1.292 L 174.562 -5.534 L 196.385 -10.098 L 218.202 -12.977 L 240.396 -13.734 L 262.214 -12.956 L 283.932 -10.063 L 305.438 -5.463 L 326.764 1.428 L 347.278 9.742 L 366.956 20.263 L 385.33 31.824 L 403.184 45.698 L 420 61.313 L 411.702 71.542 L 395.298 56.399 L 378.596 43.361 L 360.986 32.106 L 342.174 22.294 L 322.878 14.289 L 302.512 7.959 L 282.28 3.371 L 261.552 0.6 L 240 -0.059 L 219.206 0.6 L 198.441 3.304 L 177.747 7.85 L 157.934 14.157 L 138.417 22.166 L 119.571 32.158 L 102.019 43.138 L 85.116 56.185 L 69.571 70.705 L 61.023 60.33 L 77.414 45.379 Z",
       "baseRect": {"width": 480, "height": 540},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, -5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
       "id": "521acaa7-0ee2-4731-9d08-26982a7961b6",
@@ -105,7 +141,7 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": {"x": -5, "y": -18, "width": 489.2, "height": 558},
+  "bounds": {"x": -4.5, "y": -14, "width": 489.2, "height": 558},
   "type": "symbol",
   "key": "bridge--042--8x9"
 }
