@@ -223,10 +223,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <div className="relative size-full">
+      <div className={cn(uiClassName, "relative size-full")}>
         {/* 🔔 suspense avoids sporadic silent fail */}
         <Suspense>
-          <WorldView className={cn(uiClassName, state.getTheme().background)}>
+          <WorldView className={state.getTheme().background}>
             <ambientLight intensity={0.85} color="#ffffff" />
             <Floor />
             <Ceiling />
