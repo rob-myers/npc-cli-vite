@@ -1,10 +1,12 @@
-import { ArrowsInIcon, LockIcon, PenIcon } from "@phosphor-icons/react";
+import { Menu } from "@base-ui/react/menu";
+import { themeApi, useThemeName } from "@npc-cli/theme";
+import { ArrowsInIcon, ListIcon, MoonIcon, PenIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const storageKey = "ui-grid-edit-toggle-y";
 
-export function DraggableResizeToggle({
+export function DraggableUiGridMenu({
   state,
 }: {
   state: { resizeMode: boolean; set: (partial: { resizeMode?: boolean }) => void };
@@ -21,6 +23,7 @@ export function DraggableResizeToggle({
   const y = useMotionValue(Math.max(minY, storedY));
   const dragged = useRef(false);
   const vpOffset = useVisualViewportOffset();
+  const theme = useThemeName();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -34,7 +37,7 @@ export function DraggableResizeToggle({
 
   return (
     <motion.div
-      className="cursor-pointer fixed text-white bg-gray-800 p-2 z-9999 touch-none flex flex-col gap-1"
+      className="fixed text-white bg-gray-800 p-2 z-9999 touch-none flex flex-col gap-1"
       style={{
         y,
         left: vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - 36,
@@ -49,17 +52,52 @@ export function DraggableResizeToggle({
       onDragEnd={() => {
         localStorage.setItem(storageKey, String(y.get()));
       }}
-      onPointerUp={() => {
-        if (dragged.current) {
-          dragged.current = false;
-          return;
-        }
-        state.set({ resizeMode: !state.resizeMode });
-      }}
     >
-      <button type="button" className="cursor-pointer">
-        {state.resizeMode ? <PenIcon className="size-5" /> : <LockIcon className="size-5" />}
-      </button>
+      <Menu.Root
+        onOpenChange={(open) => {
+          if (open && dragged.current) {
+            dragged.current = false;
+          }
+        }}
+      >
+        <Menu.Trigger
+          className="cursor-pointer"
+          onPointerUp={() => {
+            if (dragged.current) {
+              dragged.current = false;
+            }
+          }}
+        >
+          <ListIcon className="size-5" weight="bold" />
+        </Menu.Trigger>
+
+        <Menu.Portal>
+          <Menu.Positioner className="z-9999" sideOffset={4} side="left" align="start">
+            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40">
+              <Menu.Item
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => state.set({ resizeMode: !state.resizeMode })}
+              >
+                <PenIcon className="size-4" />
+                Resize all
+              </Menu.Item>
+
+              <div className="my-1 border-t border-slate-700" />
+
+              <Menu.Item
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => themeApi.setOther()}
+              >
+                {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </Menu.Item>
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+
       {vpOffset.zoomed && (
         <button type="button" className="cursor-pointer" onClick={resetZoom}>
           <ArrowsInIcon className="size-5" />
