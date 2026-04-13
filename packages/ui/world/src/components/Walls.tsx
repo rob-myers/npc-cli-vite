@@ -94,7 +94,7 @@ export default function Walls() {
     const colorsBuffer = instancedArray(wallCount, "vec4");
     const colorData = colorsBuffer.value.array as Float32Array;
     for (let i = 0; i < wallCount; i++) {
-      colorData[i * 4 + 3] = 0.3; // partial transparency
+      colorData[i * 4 + 3] = 0.5; // partial transparency
     }
 
     const material = new THREE.MeshStandardNodeMaterial({
