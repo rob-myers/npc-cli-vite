@@ -44,11 +44,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       async createRenderer(props: DefaultGLProps) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
-        // > "The depth stencil attachment [TextureView of Texture "depthBuffer"] size (width: 300, height: 150) does not match the size of the other attachments' base plane (width: 1190, height: 1296). "
+        // - "The depth stencil attachment [TextureView of Texture "depthBuffer"] size (width: 300, height: 150) does not match the size of the other attachments' base plane (width: 1190, height: 1296). "
         const canvas = props.canvas as HTMLCanvasElement;
-        const parentRect = canvas.parentElement!.getBoundingClientRect();
-        canvas.width = parentRect.width * devicePixelRatio;
-        canvas.height = parentRect.height * devicePixelRatio;
+        const parent = canvas.parentElement as HTMLDivElement;
+        const parentRect = parent.getBoundingClientRect();
+        if (parentRect.width > 0 && parentRect.height > 0) {
+          canvas.width = parentRect.width * devicePixelRatio;
+          canvas.height = parentRect.height * devicePixelRatio;
+        }
 
         const renderer = new THREE.WebGPURenderer({
           canvas,
@@ -61,10 +64,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           console.warn("WebGPU device lost", event);
         };
 
-        // renderer.toneMapping = 3;
-        // renderer.toneMappingExposure = 1;
-        // // renderer.logarithmicDepthBuffer = true; // set via constructor if needed
-        // renderer.setPixelRatio(window.devicePixelRatio);
         await renderer.init();
         return renderer;
       },
