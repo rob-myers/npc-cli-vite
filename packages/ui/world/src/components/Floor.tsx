@@ -72,8 +72,8 @@ export default function Floor() {
         const hullFloor = geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
         drawPolygons(ct, hullFloor, { fillStyle: "#000", strokeStyle: null });
 
-        // 🚧 offset grid by geomorph position
         // grid
+        // 🚧 must offset by geomorph position (currently slightly off)
         // ct.save();
         // drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#f00", strokeStyle: null });
         // ct.setTransform(1, 0, 0, 1, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
@@ -83,8 +83,7 @@ export default function Floor() {
         // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
         // ct.restore();
 
-        // wall bases: dark works better with transparent walls
-        // drawPolygons(ct, layout.walls, { fillStyle: "#fff2", strokeStyle: null });
+        // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.025 });
 
         // draw nav mesh (gmId specific)
@@ -119,6 +118,11 @@ export default function Floor() {
           ),
         );
         drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
+
+        // room outlines
+        for (const room of layout.rooms) {
+          drawPolygons(ct, [room], { fillStyle: null, strokeStyle: "#ff01", lineWidth: 0.025 });
+        }
 
         // // uniform directional wall shadows
         // ct.save();

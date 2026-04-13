@@ -19,7 +19,7 @@
     {
       "id": "bd898e7d-4f14-40ea-a3ea-dfff8ce4ab2a",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -27,7 +27,7 @@
         {
           "id": "8c0ddce7-acc2-4ffd-9c82-7367ef95b0fc",
           "name": "console--051--0.4x0.6 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 165.5, "f": 65},
           "type": "symbol",
@@ -39,7 +39,7 @@
         {
           "id": "836d3775-b233-4b44-a235-1dda5d320e7e",
           "name": "console--051--0.4x0.6 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 285, "f": 65},
           "type": "symbol",
@@ -51,7 +51,7 @@
         {
           "id": "888554fd-b41b-4de0-b777-2c902f0b4532",
           "name": "console--051--0.4x0.6 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 345, "f": 65},
           "type": "symbol",
@@ -63,7 +63,7 @@
         {
           "id": "218105cc-13c8-4cc5-9441-dadb8ff1e5d7",
           "name": "console--051--0.4x0.6 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 225, "f": 65},
           "type": "symbol",
@@ -71,6 +71,36 @@
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 0, "y": -0.7},
           "cssTransform": "matrix(0, 1, -1, 0, 225, 64.3)"
+        },
+        {
+          "id": "f2a4143a-76c9-4fbe-a8e4-66d2497aab1a",
+          "name": "door",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 187.5},
+          "type": "rect",
+          "baseRect": {"width": 9.5, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, -4.5, 187.5)"
+        },
+        {
+          "id": "17783229-5fd3-4013-8770-da0f371e9a6e",
+          "name": "door",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 175},
+          "type": "rect",
+          "baseRect": {"width": 52.5, "height": 9.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 240, 175)"
+        },
+        {
+          "id": "50f4058b-e508-4b43-8951-5240b220f752",
+          "name": "door",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 475, "f": 187.5},
+          "type": "rect",
+          "baseRect": {"width": 9.5, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, 475, 187.5)"
         }
       ]
     },
