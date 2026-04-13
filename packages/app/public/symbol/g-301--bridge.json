@@ -95,6 +95,18 @@
           "baseRect": {"width": 120, "height": 240},
           "offset": {"x": 2, "y": -2},
           "cssTransform": "matrix(-1, 0, 0, 1, 1202, -2)"
+        },
+        {
+          "id": "bfc41b9e-cc3f-4f6a-b4d0-2753af6f6ffd",
+          "name": "bridge--042--8x9",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 60},
+          "type": "symbol",
+          "srcKey": "bridge--042--8x9",
+          "baseRect": {"width": 480, "height": 540},
+          "offset": {"x": -4.5, "y": -14},
+          "cssTransform": "matrix(1, 0, 0, 1, 355.5, 46)"
         }
       ]
     },
