@@ -103,7 +103,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
               "outline-1 outline-white/0",
               "origin-top-left",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
-              node.locked === true && "pointer-events-none opacity-25",
+              node.locked === true ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
           >
             <title>{node.name}</title>
@@ -133,7 +133,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
               "outline-1 outline-white/0",
               "opacity-75 outline-green-500/50 outline-dashed",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
-              node.locked === true && "pointer-events-none opacity-25",
+              node.locked === true ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
           >
             <title>{node.name}</title>
@@ -151,7 +151,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             className={cn(
               "fill-amber-500/50 stroke-amber-700 stroke-1",
               root.selectedIds.has(node.id) && "stroke-blue-500 stroke-2",
-              node.locked && "pointer-events-none opacity-25",
+              node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
           >
             <title>{node.name}</title>
@@ -177,7 +177,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
               "fill-green-700/50",
               // isSelected && "outline outline-blue-500",
               isSelected && "stroke-blue-500",
-              cn(node.locked && "pointer-events-none opacity-25"),
+              cn(node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto"),
             )}
           >
             <title>{node.name}</title>
