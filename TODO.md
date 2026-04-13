@@ -52,8 +52,8 @@
   - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/blocks/generators/generate-tiled-nav-mesh.ts
   - ✅ make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
   - ✅ saw working in untransformed but maybe not transformed geomorphs
-  - 🚧 better encoding of `(gmId, doorId)`
-  - can run navQuery using queryFilter specifying door areas
+  - ✅ better encoding of `(gmId, doorId)`
+  - 🚧 can run navQuery using queryFilter specifying door areas
 
 - compute room polygons correctly i.e. need to include doors
 
