@@ -65,6 +65,14 @@
 - minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
+- change ui `Global` to `Layout`
+  - remove theme toggle
+  - option to group layout into a single Tabs
+  - option to flatten layout (no Tabs)
+  - option to reset layout to default layout
+    - Tabs with `world-0`, `tty-0` and `layout-0`
+  - layout schema and layouts.json
+    - can CRUD in DEV
 - why is boolean uniform `objectPick` being set as `1` after we drag world?
 - fix precision in `assets.json`
 - start generating documentation in README.md
