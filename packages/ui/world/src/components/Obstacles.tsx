@@ -208,7 +208,7 @@ export default function Obstacles(_props: Props) {
     });
   }, [w.mapKey, w.hash, w.gmsData.count.obstacles, state.images]);
 
-  const skirtCount = w.gmsData.count.obstacles * 4;
+  const skirtCount = w.gmsData.count.obstacleSkirtEdges;
   const skirtMaterial = useMemo(() => {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     const viewDir = cameraPosition.sub(positionWorld).normalize();

@@ -12,6 +12,7 @@ export default class DerivedGmsData {
     door: 0,
     wall: 0,
     obstacles: 0,
+    obstacleSkirtEdges: 0,
     wallPolySegs: [] as number[],
   };
 
@@ -27,6 +28,10 @@ export default class DerivedGmsData {
     this.count.door = gms.reduce((sum, { key }) => sum + this.byKey[key].doorSegs.length, 0);
     this.count.wall = gms.reduce((sum, { key }) => sum + this.byKey[key].wallSegs.length, 0);
     this.count.obstacles = gms.reduce((sum, { obstacles }) => sum + obstacles.length, 0);
+    this.count.obstacleSkirtEdges = gms.reduce(
+      (sum, { obstacles }) => sum + obstacles.reduce((s, o) => s + o.origPoly.outline.length, 0),
+      0,
+    );
     this.count.wallPolySegs = gms.map(({ key: gmKey }) =>
       this.byKey[gmKey].wallPolySegCounts.reduce((sum, count) => sum + count, 0),
     );
