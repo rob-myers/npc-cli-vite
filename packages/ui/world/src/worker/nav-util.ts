@@ -1,4 +1,5 @@
 import { Mat } from "@npc-cli/util/geom/mat";
+import { Poly } from "@npc-cli/util/geom/poly";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { Vect } from "@npc-cli/util/geom/vect";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
@@ -157,6 +158,41 @@ function getTileTriangles(tile: NavMeshTile): [number[], number[]] {
   }
 
   return [positions, indices];
+}
+
+export type EnrichedDoorway = WW.GmDoorwayForNav & {
+  rect: Rect;
+  globalDoorId: number;
+};
+
+export type DoorwayGrid = { [key in `${number},${number}`]: EnrichedDoorway[] };
+
+export function buildDoorwayGrid(
+  doorways: WW.GmDoorwayForNav[],
+  meshBoundsMinX: number,
+  meshBoundsMinZ: number,
+  tileSizeWorld: number,
+): DoorwayGrid {
+  const enrichedDoorways: EnrichedDoorway[] = doorways.map((door, globalDoorId) => ({
+    ...door,
+    rect: Poly.from(door.polygon).rect,
+    globalDoorId,
+  }));
+
+  const grid: DoorwayGrid = {};
+  for (const door of enrichedDoorways) {
+    const minGX = Math.floor((door.rect.x - meshBoundsMinX) / tileSizeWorld);
+    const minGY = Math.floor((door.rect.y - meshBoundsMinZ) / tileSizeWorld);
+    const maxGX = Math.floor((door.rect.x + door.rect.width - meshBoundsMinX) / tileSizeWorld);
+    const maxGY = Math.floor((door.rect.y + door.rect.height - meshBoundsMinZ) / tileSizeWorld);
+    for (let gx = minGX; gx <= maxGX; gx++) {
+      for (let gy = minGY; gy <= maxGY; gy++) {
+        const key = `${gx},${gy}` as `${number},${number}`;
+        (grid[key] ??= []).push(door);
+      }
+    }
+  }
+  return grid;
 }
 
 const tmpRect = new Rect();

@@ -4,7 +4,7 @@
  * - https://navcat.dev/examples/#example-doors-and-keys
  */
 
-import { Poly, Rect } from "@npc-cli/util/geom";
+import { Rect } from "@npc-cli/util/geom";
 import { type Box3, box3, vec2 } from "mathcat";
 import {
   addTile,
@@ -41,6 +41,7 @@ import {
   type TiledNavMeshOptions,
   type TiledNavMeshResult,
 } from "navcat/blocks";
+import { buildDoorwayGrid, type EnrichedDoorway } from "./nav-util";
 
 const buildNavMeshTile = ({
   doorways,
@@ -65,7 +66,7 @@ const buildNavMeshTile = ({
   detailSampleDistance,
   detailSampleMaxError,
 }: {
-  doorways: WW.GmDoorwayForNav[];
+  doorways: EnrichedDoorway[];
   // ...
   ctx: BuildContextState;
   positions: ArrayLike<number>;
@@ -180,14 +181,7 @@ const buildNavMeshTile = ({
     tileBounds[3] - tileBounds[0],
     tileBounds[5] - tileBounds[2],
   );
-  const enrichedDoorways = doorways.map((door, globalDoorId) => ({
-    ...door,
-    rect: Poly.from(door.polygon).rect,
-    globalDoorId,
-  }));
-
-  // 🚧 surprisingly seems to work!
-  const intersectingDoors = enrichedDoorways.flatMap((door) => (boundsRect.intersects(door.rect) ? door : []));
+  const intersectingDoors = doorways.flatMap((door) => (boundsRect.intersects(door.rect) ? door : []));
   // console.log("intersectingDoors", intersectingDoors);
   for (const door of intersectingDoors) {
     markBoxArea(
@@ -307,6 +301,10 @@ export function generateTiledNavMesh(
 
   const inputChunkyTriMesh = chunkyTriMesh.create(positions, indices);
 
+  /* 2b. build doorway spatial grid (1.5×1.5 cells, matching tileSizeWorld) */
+
+  const doorwayGrid = buildDoorwayGrid(doorways, meshBounds[0], meshBounds[2], tileSizeWorld);
+
   /* 3. initialize intermediates for debugging */
 
   const intermediates: TiledNavMeshIntermediates = {
@@ -342,7 +340,7 @@ export function generateTiledNavMesh(
       ];
 
       const { triAreaIds, polyMesh, polyMeshDetail, heightfield, compactHeightfield, contourSet } = buildNavMeshTile({
-        doorways,
+        doorways: doorwayGrid[`${tileX},${tileY}`] ?? [],
         ctx,
         positions,
         inputChunkyTriMesh,
