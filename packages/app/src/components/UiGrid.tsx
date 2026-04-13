@@ -27,7 +27,7 @@ import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from 
 import type { GridConfig, ResizeConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
-import { DraggableResizeToggle } from "./DraggableResizeToggle";
+import { DraggableUiGridMenu } from "./DraggableUiGridMenu";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -424,7 +424,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               })}
             </GridLayout>
 
-            <DraggableResizeToggle state={state} />
+            <DraggableUiGridMenu state={state} />
           </div>
         </ContextMenu.Trigger>
 
