@@ -68,7 +68,8 @@ export default function Floor() {
         // biome-ignore format: succinct
         ct.setTransform( worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
 
-        const hullFloor = layout.hullPoly.map((x) => x.clone().removeHoles());
+        // try inset by half hull doorway to avoid adjacent doorway overlap
+        const hullFloor = geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
         drawPolygons(ct, hullFloor, { fillStyle: "#000", strokeStyle: null });
 
         // 🚧 offset grid by geomorph position
@@ -101,12 +102,12 @@ export default function Floor() {
           }
         });
 
-        // hull doorways
-        drawPolygons(
-          ct,
-          layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
-          { fillStyle: "#000", strokeStyle: "#000", lineWidth: 0 },
-        );
+        // // hull doorways
+        // drawPolygons(
+        //   ct,
+        //   layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
+        //   { fillStyle: "#000", strokeStyle: "#000", lineWidth: 0 },
+        // );
 
         // lights  🚧 cache
         drawLights(ct, layout, hullFloor);
