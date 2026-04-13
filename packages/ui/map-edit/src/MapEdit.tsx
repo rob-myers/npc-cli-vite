@@ -502,10 +502,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       duplicateNode(rootNodeId, seenDuringClone) {
         if (state.isReadOnly()) return null;
-        const [node] = findNodeById(state.nodes, rootNodeId);
+        const [node, parent] = findNodeById(state.nodes, rootNodeId);
         if (!node) return null;
         const clone = state.cloneNode(node, seenDuringClone);
-        state.nodes.push(clone);
+        (parent?.children ?? state.nodes).push(clone);
         return clone;
       },
       duplicateSelected() {
