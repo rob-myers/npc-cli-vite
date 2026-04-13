@@ -40,7 +40,7 @@ export default class DerivedGmsData {
   async computeGmKey(gm: Geomorph.Layout) {
     const gmData = this.byKey[gm.key];
 
-    gmData.doorSegs = gm.doors.map(({ seg }) => seg);
+    gmData.doorSegs = gm.doors.map(({ seg, meta }) => ({ seg, hull: meta.hull === true }));
     gmData.polyDecals = gm.unsorted.filter((x) => x.meta.poly === true);
     gmData.wallSegs = [
       ...gm.walls.flatMap((x) => x.lineSegs.map((seg) => ({ seg, meta: x.meta }))),

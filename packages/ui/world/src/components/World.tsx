@@ -30,6 +30,7 @@ import { Debug } from "./Debug";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import Obstacles from "./Obstacles";
+import Doors from "./Doors";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
@@ -231,6 +232,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <Floor />
             <Ceiling />
             <Walls />
+            <Doors />
             <Obstacles />
             <NPCs />
             <Debug />

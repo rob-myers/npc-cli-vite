@@ -16,7 +16,7 @@ declare namespace Geomorph {
 
   type GmData = {
     gmKey: StarShipGeomorphKey;
-    doorSegs: [Geom.Vect, Geom.Vect][];
+    doorSegs: { seg: [Geom.Vect, Geom.Vect]; hull: boolean }[];
     polyDecals: Geom.Poly[];
     tops: { broad: Geom.Poly[]; hull: Geom.Poly[]; nonHull: Geom.Poly[]; window: Geom.Poly[] };
     unseen: boolean;
