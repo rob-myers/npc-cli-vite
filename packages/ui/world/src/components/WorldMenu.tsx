@@ -39,7 +39,7 @@ export function WorldMenu() {
     },
   }));
 
-  const minY = 10;
+  const minY = 40;
   const maxY = (w.view.rootEl?.clientHeight ?? Infinity) - 120;
   const y = useMotionValue(Math.min(maxY, Math.max(minY, state.y)));
 
