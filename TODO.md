@@ -54,6 +54,9 @@
   - ✅ saw working in untransformed but maybe not transformed geomorphs
   - ✅ better encoding of `(gmId, doorId)`
   - 🚧 can run navQuery using queryFilter specifying door areas
+    - ✅ `<Debug>` can show instanced navPaths using unit quad
+    - ✅ can query navcat and show in `<Debug>`
+    - can constrain doorways i.e. areas
 
 - compute room polygons correctly i.e. need to include doors
 
