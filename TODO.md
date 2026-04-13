@@ -47,19 +47,25 @@
 - ✅ fix obstacles texture disappearing on remount stuff inside World.tsx
   - hot reload was resetting canvas width/height to 1
 
-- 🚧 navmesh should account for doors
+- ✅ navmesh should account for doors
   - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/examples/src/example-doors-and-keys.ts#L201
   - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/blocks/generators/generate-tiled-nav-mesh.ts
   - ✅ make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
   - ✅ saw working in untransformed but maybe not transformed geomorphs
   - ✅ better encoding of `(gmId, doorId)`
-  - 🚧 can run navQuery using queryFilter specifying door areas
+  - ✅ can run navQuery using queryFilter specifying door areas
     - ✅ `<Debug>` can show instanced navPaths using unit quad
     - ✅ can query navcat and show in `<Debug>`
     - can constrain doorways i.e. areas
 
-- 🚧 compute room polygons correctly i.e. need to include doors
+- ✅ compute room polygons correctly i.e. need to include doors
   - seems ok already?
+
+- ✅ BUG hull width mismatch
+  - demo-map-0 had stale 101 symbol (no offset)
+
+- show closed Doors using instancedMesh cubes
+- show lintels above Doors
 
 - on add grid item to UiGrid can we try to use maximum available height and width?
 
