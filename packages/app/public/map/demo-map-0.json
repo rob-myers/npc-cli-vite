@@ -16,16 +16,16 @@
       "cssTransform": "matrix(1, 0, 0, 1, -5.5, -22)"
     },
     {
-      "id": "47c6228a-0119-4adc-9075-c92977e4fa07",
+      "id": "fc9e999c-5dc4-4bc7-9f18-aac6b2612bac",
       "name": "g-101--multipurpose",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 599},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 600},
       "type": "symbol",
       "srcKey": "g-101--multipurpose",
       "baseRect": {"width": 1200, "height": 1200},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, -2.5, 599)"
+      "offset": {"x": -5.5, "y": -5.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -5.5, 594.5)"
     },
     {
       "id": "e00ad195-2dd4-4555-84a3-12501f995a21",
