@@ -12,7 +12,6 @@ import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
-import { getGridPattern } from "../service/grid-pattern";
 import { PICK_TYPE, withPickOutput } from "../service/pick";
 import { WorldContext } from "./world-context";
 
@@ -23,7 +22,6 @@ export default function Floor() {
     (): State => ({
       inst: null,
       quad: createXzQuad(),
-      gridPattern: getGridPattern(geomorphGridMeters * worldToCanvas, "rgba(100, 100, 100, 0.8)"),
 
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
@@ -72,17 +70,6 @@ export default function Floor() {
         const hullFloor = geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
         drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
 
-        // grid
-        // 🚧 must offset by geomorph position (currently slightly off)
-        // ct.save();
-        // drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#f00", strokeStyle: null });
-        // ct.setTransform(1, 0, 0, 1, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
-        // ct.fillStyle = state.gridPattern;
-        // ct.fillRect(0, 0, ct.canvas.width, ct.canvas.height);
-        // // biome-ignore format: succinct
-        // ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
-        // ct.restore();
-
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.025 });
 
@@ -119,22 +106,22 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout);
 
-        // // uniform directional wall shadows
-        // ct.save();
-        // drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
-        // const shadowQuads = layout.walls.flatMap((w) =>
-        //   w.outline.map((p1, i) => {
-        //     const p2 = w.outline[(i + 1) % w.outline.length];
-        //     return new Poly([
-        //       new Vect(p1.x, p1.y),
-        //       new Vect(p2.x, p2.y),
-        //       new Vect(p2.x + shadowDx, p2.y + shadowDy),
-        //       new Vect(p1.x + shadowDx, p1.y + shadowDy),
-        //     ]);
-        //   }),
-        // );
-        // drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 1)", strokeStyle: null });
-        // ct.restore();
+        // uniform directional wall shadows
+        ct.save();
+        drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
+        const shadowQuads = layout.walls.flatMap((w) =>
+          w.outline.map((p1, i) => {
+            const p2 = w.outline[(i + 1) % w.outline.length];
+            return new Poly([
+              new Vect(p1.x, p1.y),
+              new Vect(p2.x, p2.y),
+              new Vect(p2.x + shadowDx, p2.y + shadowDy),
+              new Vect(p1.x + shadowDx, p1.y + shadowDy),
+            ]);
+          }),
+        );
+        drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 0.25)", strokeStyle: null });
+        ct.restore();
       },
 
       transformInstances() {
@@ -155,7 +142,6 @@ export default function Floor() {
         state.inst.computeBoundingSphere();
       },
     }),
-    { reset: { gridPattern: true } },
   );
 
   w.floor = state;
@@ -204,7 +190,6 @@ export default function Floor() {
 export type State = {
   inst: null | THREE.InstancedMesh;
   quad: THREE.BufferGeometry;
-  gridPattern: CanvasPattern;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   addUvs(): void;
@@ -218,7 +203,7 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
   ct.lineJoin = "round";
   ct.lineCap = "round";
   ct.lineWidth = 0.04;
-  ct.strokeStyle = "rgba(100, 100, 100, 1)";
+  ct.strokeStyle = "rgba(0, 0, 0, 0.6)";
   const insetAmount = 0.4;
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
@@ -271,7 +256,7 @@ const sciFiFloorPattern = (() => {
   const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
   // base dark metallic
-  ctx.fillStyle = "rgba(40, 42, 48, 0.05)";
+  ctx.fillStyle = "rgba(40, 42, 48, 0.25)";
   ctx.fillRect(0, 0, s, s);
 
   // tile grid lines
@@ -320,6 +305,6 @@ const sciFiFloorPattern = (() => {
 })();
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
-const shadowDx = Math.cos(Math.PI / 4) * 0.25;
-const shadowDy = Math.sin(Math.PI / 4) * 0.25;
+const shadowDx = Math.cos(Math.PI / 4) * 4;
+const shadowDy = Math.sin(Math.PI / 4) * 0;
 const tmpMat1 = new Mat();
