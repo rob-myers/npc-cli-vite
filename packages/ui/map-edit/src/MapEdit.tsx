@@ -716,7 +716,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             node.cssTransform = computeNodeCssTransform(node);
           }
         }
-        state.set({ nodes: state.nodes });
+        // recreate selectedIds to trigger recompute multiSelectionBounds
+        state.set({ nodes: state.nodes, selectedIds: new Set(state.selectedIds) });
       },
 
       onRename(id, newName) {
