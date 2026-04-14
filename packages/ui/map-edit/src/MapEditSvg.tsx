@@ -62,12 +62,13 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
       {resizableNode && <ResizeHandles selectedNode={resizableNode} root={root} />}
       {multiSelectionBounds && (
         <rect
-          x={multiSelectionBounds.x}
-          y={multiSelectionBounds.y}
+          data-multi-bounds=""
+          x={multiSelectionBounds.x + root.selectionBoundsOffset.x}
+          y={multiSelectionBounds.y + root.selectionBoundsOffset.y}
           width={multiSelectionBounds.width}
           height={multiSelectionBounds.height}
           strokeWidth={2 / root.zoom}
-          className="stroke-blue-700 fill-none pointer-events-none"
+          className="stroke-blue-700 fill-transparent cursor-move"
         />
       )}
     </svg>

@@ -157,6 +157,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       nodes: emptyNodes,
       selectedIds: new Set<string>(),
       selectionBox: null as SelectionBox | null,
+      selectionBoundsOffset: { x: 0, y: 0 },
       editingId: null,
       asideWidth: defaultAsideWidth,
       lastAsideWidth: defaultAsideWidth,
@@ -716,8 +717,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             node.cssTransform = computeNodeCssTransform(node);
           }
         }
-        // recreate selectedIds to trigger recompute multiSelectionBounds
-        state.set({ nodes: state.nodes, selectedIds: new Set(state.selectedIds) });
+        state.set({
+          nodes: state.nodes,
+          selectionBoundsOffset: { x: state.selectionBoundsOffset.x + dx, y: state.selectionBoundsOffset.y + dy },
+        });
+      },
+
+      applyBoundsOffset() {
+        if (state.selectionBoundsOffset.x === 0 && state.selectionBoundsOffset.y === 0) return;
+        // trigger multiSelectionBounds recompute by recreating selectedIds
+        state.set({ selectionBoundsOffset: { x: 0, y: 0 }, selectedIds: new Set(state.selectedIds) });
       },
 
       onRename(id, newName) {
@@ -838,6 +847,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
 
         if (!nodeId) {
+          // clicking on multiselect bounds rect starts drag
+          if (target.dataset.multiBounds !== undefined && state.selectedIds.size > 1) {
+            state.startDragSelection(e);
+            return;
+          }
           state.dragEl = null; // cancel any pending drag
           if (e.shiftKey) {
             // shift+drag empty space draws selection box
@@ -900,6 +914,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               node.transform.e = Math.round((startPos.x + dx) / increment) * increment;
               node.transform.f = Math.round((startPos.y + dy) / increment) * increment;
               node.cssTransform = computeNodeCssTransform(node);
+            }
+            // track offset so multiSelectionBounds rect moves without recomputing
+            const firstStart = state.dragEl.starts.values().next().value;
+            if (firstStart) {
+              const firstId = state.dragEl.starts.keys().next().value;
+              const [firstNode] = findNodeById(state.nodes, firstId!);
+              if (isNodeTransformable(firstNode)) {
+                state.selectionBoundsOffset = {
+                  x: firstNode.transform.e - firstStart.x,
+                  y: firstNode.transform.f - firstStart.y,
+                };
+              }
             }
             state.update();
             break;
@@ -990,7 +1016,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.set({ selectedIds });
         }
 
+        const wasMoveSelection = state.dragEl?.type === "move-selection";
         state.dragEl = null;
+        if (wasMoveSelection) state.applyBoundsOffset();
       },
       startDragSelection(e) {
         if (state.isReadOnly()) return;
@@ -1432,9 +1460,17 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        state.applyBoundsOffset();
+      }
+    };
+
     document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
     };
   }, [state.wrapperEl]);
 
@@ -1602,6 +1638,7 @@ export type State = {
 
   selectedIds: Set<string>;
   selectionBox: SelectionBox | null;
+  selectionBoundsOffset: { x: number; y: number };
   editingId: string | null;
   asideWidth: number;
   lastAsideWidth: number;
@@ -1694,6 +1731,7 @@ export type State = {
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
+  applyBoundsOffset: () => void;
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
