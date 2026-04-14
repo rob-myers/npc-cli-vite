@@ -18,6 +18,7 @@ import { SymbolGraph, type SymbolGraphNode } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
+import { defaultWorldTheme } from "@npc-cli/ui__world/const";
 import {
   createLayout,
   createMapDefFromSavedFile,
@@ -64,6 +65,9 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
   theme: {},
   hash: { obstacles: 0 },
 };
+
+assets.theme ??= {};
+assets.theme.default ??= defaultWorldTheme;
 
 perf("symbols/maps");
 updateChangedSymbolsAndMaps(changedFiles, assets);

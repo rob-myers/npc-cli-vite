@@ -16,7 +16,7 @@ export function WorldMenu() {
 
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
-  const themeKeys = ["default", ...Object.keys(w.assets?.theme ?? {})];
+  const themeKeys = Object.keys(w.assets?.theme ?? {});
   const themeEditorRef = useRef<HTMLTextAreaElement>(null);
 
   const state = useStateRef(() => ({
