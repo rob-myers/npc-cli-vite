@@ -72,15 +72,15 @@ export function DraggableUiGridMenu({
         </Menu.Trigger>
 
         <Menu.Portal>
-          <Menu.Positioner className="z-9999" sideOffset={4} side="left" align="start">
-            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40">
+          <Menu.Positioner className="z-9999" sideOffset={4} side="left" align="center">
+            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
               <Menu.Item
                 className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                 closeOnClick={false}
                 onClick={() => state.set({ resizeMode: !state.resizeMode })}
               >
                 <PenIcon className="size-4" />
-                Resize all
+                Resize
               </Menu.Item>
 
               <div className="my-1 border-t border-slate-700" />
@@ -91,7 +91,7 @@ export function DraggableUiGridMenu({
                 onClick={() => themeApi.setOther()}
               >
                 {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-                {theme === "dark" ? "Light mode" : "Dark mode"}
+                {theme === "dark" ? "Light" : "Dark"}
               </Menu.Item>
             </Menu.Popup>
           </Menu.Positioner>
