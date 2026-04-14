@@ -84,6 +84,9 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout);
 
+        // room lights
+        drawRoomLights(ct, layout);
+
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
@@ -180,13 +183,46 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
   ct.lineCap = "round";
   ct.lineWidth = 0.08;
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
-  const insetAmount = 0.2;
+  const insetAmount = 0.1;
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
     sciFiFloorPattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
     ct.fillStyle = sciFiFloorPattern;
     fillRoundedPolys(ct, geomService.createInset(noHoles, insetAmount), insetAmount);
   }
+  ct.restore();
+}
+
+function drawRoomLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
+  ct.save();
+  ct.globalCompositeOperation = "lighten";
+  ct.lineJoin = "round";
+  ct.lineCap = "round";
+
+  const panelInset = 0.8; // initial inset from room edge
+  const panelWidth = 0.4; // width of each light panel
+  const gapWidth = 0.25; // gap between panels
+  const step = panelWidth + gapWidth;
+  const cornerRadius = 0.3;
+
+  for (const room of layout.rooms) {
+    const noHoles = room.clone().removeHoles();
+
+    // draw concentric light panels by progressively insetting
+    for (let depth = 0; depth < 5; depth++) {
+      const insetAmount = panelInset + depth * step;
+      const panels = geomService.createInset(noHoles, insetAmount);
+      if (panels.length === 0) break;
+
+      // brighter toward center
+      const alpha = 0.12 + depth * 0.03;
+      ct.fillStyle = `rgba(255, 255, 240, ${alpha})`;
+      ct.strokeStyle = `rgba(200, 200, 180, ${alpha + 0.1})`;
+      ct.lineWidth = 0.02;
+      fillRoundedPolys(ct, panels, cornerRadius);
+    }
+  }
+
   ct.restore();
 }
 
