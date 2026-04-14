@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
-import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useContext, useRef } from "react";
@@ -25,17 +25,23 @@ export function WorldMenu() {
       tryLocalStorageSet(storageKey(w.id), String(y.get()));
     },
     themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
-    themeDirty: false,
-    saveTheme() {
-      if (!state.themeDirty) return;
-      state.themeDirty = false;
+    saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
+    async saveTheme() {
       const theme = w.assets?.theme?.[w.themeKey];
       if (!theme) return;
-      fetch(`/api/assets/theme/${encodeURIComponent(w.themeKey)}`, {
+      const res = await fetch(`/api/assets/theme/${encodeURIComponent(w.themeKey)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(theme),
       });
+      if (res.ok) {
+        w.hash = hashJson(w.assets);
+        w.update();
+      }
+    },
+    saveThemeDebounced() {
+      clearTimeout(state.saveTimer);
+      state.saveTimer = setTimeout(() => state.saveTheme(), 300);
     },
   }));
 
@@ -151,24 +157,23 @@ export function WorldMenu() {
                   {state.themeEditorOpen && (
                     <div className="p-2 pt-0 flex flex-col gap-1">
                       <textarea
+                        key={w.themeKey}
                         ref={themeEditorRef}
                         className="w-48 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
                         defaultValue={JSON.stringify(w.getTheme(), null, 2)}
                         onKeyDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => {
-                          try {
-                            const parsed = WorldThemeSchema.safeParse(JSON.parse(themeEditorRef.current?.value ?? ""));
-                            if (!parsed.success || !w.assets) return;
-                            w.assets.theme ??= {};
-                            w.assets.theme[w.themeKey] = parsed.data;
-                            state.themeDirty = true;
-                            w.ceil.draw().then(() => w.update());
-                          } catch {
-                            // invalid JSON, ignore
-                          }
+                          const parsed = WorldThemeSchema.safeParse(JSON.parse(themeEditorRef.current?.value ?? ""));
+                          if (!parsed.success || !w.assets) return;
+                          w.assets.theme ??= {};
+                          w.assets.theme[w.themeKey] = parsed.data;
+                          state.saveThemeDebounced();
                         }}
-                        onBlur={() => state.saveTheme()}
+                        onBlur={() => {
+                          clearTimeout(state.saveTimer);
+                          state.saveTheme();
+                        }}
                       />
                       <button
                         type="button"

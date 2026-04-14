@@ -56,8 +56,7 @@ export default function Walls() {
         if (!ws) return;
 
         let instanceId = 0;
-        const instanceIds: number[] = [];
-        const color = new THREE.Color(0, 0, 0);
+        const color = new THREE.Color(w.getTheme().walls.color);
 
         for (const [_gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
           for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
@@ -72,15 +71,13 @@ export default function Walls() {
               ),
             );
 
-            color.set(meta.lintel ? 1 : 0, 0, 0);
-            ws.setColorAt(instanceId, color);
-            instanceIds.push(instanceId++);
+            ws.setColorAt(instanceId++, color);
           }
         }
 
-        state.quad.setAttribute("instanceIds", new THREE.InstancedBufferAttribute(new Uint32Array(instanceIds), 1));
         ws.computeBoundingSphere();
         ws.instanceMatrix.needsUpdate = true;
+        if (ws.instanceColor) ws.instanceColor.needsUpdate = true;
       },
     }),
   );
@@ -103,7 +100,8 @@ export default function Walls() {
 
   useEffect(() => {
     state.positionInstances();
-  }, [w.mapKey, w.hash, w.gms.length]);
+    w.update(); // 🔔 must sync onchange theme
+  }, [w.mapKey, w.hash, w.gms.length, w.themeKey]);
 
   return wallCount ? (
     <instancedMesh

@@ -64,8 +64,8 @@
 - ✅ BUG hull width mismatch
   - demo-map-0 had stale 101 symbol (no offset)
 
-- show closed Doors using instancedMesh cubes
-- show lintels above Doors
+- ✅ show closed Doors using instancedMesh cubes
+- ❌ show lintels above Doors
 
 - on add grid item to UiGrid can we try to use maximum available height and width?
 
