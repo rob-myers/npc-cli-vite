@@ -226,7 +226,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       <div className={cn(uiClassName, "relative size-full")}>
         {/* 🔔 suspense avoids sporadic silent fail */}
         <Suspense>
-          <WorldView className={state.getTheme().background}>
+          <WorldView
+            className={cn(
+              state.getTheme().background,
+              "bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-black)_20%,transparent)]",
+            )}
+          >
             <ambientLight intensity={0.85} color="#ffffff" />
             <Floor />
             <Ceiling />
