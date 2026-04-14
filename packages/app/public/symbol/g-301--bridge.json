@@ -253,18 +253,38 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 250, "f": 595.5},
       "type": "rect",
-      "baseRect": {"width": 97.5, "height": 9},
+      "baseRect": {"width": 47.5, "height": 9},
       "cssTransform": "matrix(1, 0, 0, 1, 250, 595.5)"
     },
     {
-      "id": "7633b9fe-3d77-430e-9161-4489b7c440ac",
+      "id": "33a253de-353e-45d6-a4c6-e684f2fb7bd3",
+      "name": "door hull edge=s",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 300, "f": 595.5},
+      "type": "rect",
+      "baseRect": {"width": 47.5, "height": 9},
+      "cssTransform": "matrix(1, 0, 0, 1, 300, 595.5)"
+    },
+    {
+      "id": "773d28b8-504f-435c-9988-ed1123c8b2a5",
       "name": "door hull edge=s",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 850, "f": 595},
       "type": "rect",
-      "baseRect": {"width": 97.5, "height": 9},
+      "baseRect": {"width": 47.5, "height": 9},
       "cssTransform": "matrix(1, 0, 0, 1, 850, 595)"
+    },
+    {
+      "id": "9ee8e967-41ef-412b-ac20-b943beec73fa",
+      "name": "door hull edge=s",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 900, "f": 595},
+      "type": "rect",
+      "baseRect": {"width": 47.5, "height": 9},
+      "cssTransform": "matrix(1, 0, 0, 1, 900, 595)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
