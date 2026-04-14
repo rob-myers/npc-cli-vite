@@ -6512,7 +6512,7 @@
         "hull": {"fill": "#000", "stroke": "#666"},
         "nonHull": {"fill": "#444", "stroke": "#000"}
       },
-      "walls": {"color": "#000", "opacity": 1}
+      "walls": {"color": "#000", "opacity": 0.2}
     },
     "default": {
       "background": "bg-gray-800",
