@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
-import { ArrowsInIcon, ListIcon, MoonIcon, PenIcon, SunIcon } from "@phosphor-icons/react";
+import { ArrowsInIcon, GearIcon, MoonIcon, PenIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -68,7 +68,7 @@ export function DraggableUiGridMenu({
             }
           }}
         >
-          <ListIcon className="size-5" weight="bold" />
+          <GearIcon className="size-5" weight="bold" />
         </Menu.Trigger>
 
         <Menu.Portal>

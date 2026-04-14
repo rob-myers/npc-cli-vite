@@ -3,7 +3,7 @@ import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretDownIcon, CaretRightIcon, ListIcon, SunIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useContext, useRef } from "react";
 import { WorldThemeSchema } from "../assets.schema";
@@ -55,7 +55,7 @@ export function WorldMenu() {
       <Menu.Root>
         <Menu.Trigger className="cursor-pointer">
           <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
-            <ListIcon className="size-5" weight="bold" />
+            <GlobeStandIcon className="size-5" weight="bold" />
             {w.navPending && <Spinner className="size-4" />}
           </div>
         </Menu.Trigger>
@@ -84,22 +84,9 @@ export function WorldMenu() {
                     tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-20 accent-slate-400"
+                  className="w-20 accent-white"
                 />
               </div>
-
-              <div className="my-1 border-t border-slate-700" />
-
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => {
-                  objectPick.value = objectPick.value === 1 ? 0 : 1;
-                  w.r3f?.invalidate();
-                }}
-              >
-                Toggle picking
-              </Menu.Item>
 
               <div className="my-1 border-t border-slate-700" />
 
@@ -208,6 +195,19 @@ export function WorldMenu() {
                   )}
                 </>
               )}
+
+              <div className="my-1 border-t border-slate-700" />
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => {
+                  objectPick.value = objectPick.value === 1 ? 0 : 1;
+                  w.r3f?.invalidate();
+                }}
+              >
+                Debug Pick
+              </Menu.Item>
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
@@ -221,14 +221,16 @@ function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void
   const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
   return (
     <div className="relative size-4 cursor-pointer" onClick={onClick}>
-      <SunIcon className="size-4 text-slate-500" />
+      <SunIcon className="size-4 text-white" />
       {ratio > 0 && (
         <svg className="absolute inset-0 size-4" viewBox="0 0 16 16">
           <path
-            d={ratio >= 1
-              ? "M8,8 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"
-              : `M8,8 L8,0 A8,8 0 ${a > Math.PI ? 1 : 0},1 ${8 + 8 * Math.sin(a)},${8 - 8 * Math.cos(a)} Z`}
-            fill="rgba(250,220,100,0.7)"
+            d={
+              ratio >= 1
+                ? "M8,8 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"
+                : `M8,8 L8,0 A8,8 0 ${a > Math.PI ? 1 : 0},1 ${8 + 8 * Math.sin(a)},${8 - 8 * Math.cos(a)} Z`
+            }
+            fill="rgba(250,220,100,0.45)"
           />
         </svg>
       )}
