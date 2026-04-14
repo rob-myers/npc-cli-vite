@@ -195,7 +195,7 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
 
 function drawRoomLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
   ct.save();
-  ct.globalCompositeOperation = "lighten";
+  ct.globalCompositeOperation = "darken";
   ct.lineJoin = "round";
   ct.lineCap = "round";
 
@@ -218,9 +218,9 @@ function drawRoomLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
       if (panels.length === 0) break;
 
       // brighter toward center
-      const alpha = 0.12 + depth * 0.03;
-      ct.fillStyle = `rgba(255, 255, 240, ${alpha})`;
-      ct.strokeStyle = `rgba(200, 200, 180, ${alpha + 0.1})`;
+      const alpha = 0.32 + depth * 0.03;
+      ct.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+      ct.strokeStyle = `rgba(0, 0, 0, 1)`;
       ct.lineWidth = 0.02;
       fillRoundedPolys(ct, panels, cornerRadius);
     }
