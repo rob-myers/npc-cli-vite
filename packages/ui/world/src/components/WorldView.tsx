@@ -162,7 +162,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           />
         )}
 
-        <PerspectiveCamera position={[0, 18, 0]} makeDefault fov={30} zoom={1} />
+        <PerspectiveCamera position={[0, 18, 0]} makeDefault fov={60} zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
