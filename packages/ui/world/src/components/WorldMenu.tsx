@@ -64,7 +64,14 @@ export function WorldMenu() {
           <Menu.Positioner className="z-50" sideOffset={4} align="start">
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
               <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                <SunIcon className="size-4" />
+                <BrightnessPie
+                  ratio={brightnessToRatio(w.brightness)}
+                  onClick={() => {
+                    w.brightness = 1;
+                    w.update();
+                    tryLocalStorageSet(brightnessStorageKey, "1");
+                  }}
+                />
                 <input
                   type="range"
                   min="0.5"
@@ -79,7 +86,6 @@ export function WorldMenu() {
                   onClick={(e) => e.stopPropagation()}
                   className="w-20 accent-slate-400"
                 />
-                <span className="w-6 text-right">{w.brightness.toFixed(1)}</span>
               </div>
 
               <div className="my-1 border-t border-slate-700" />
@@ -92,53 +98,41 @@ export function WorldMenu() {
                   w.r3f?.invalidate();
                 }}
               >
-                Toggle pick colors
+                Toggle picking
               </Menu.Item>
 
               <div className="my-1 border-t border-slate-700" />
 
-              <Menu.SubmenuRoot>
-                <Menu.SubmenuTrigger className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer w-full">
-                  <span>Maps</span>
-                  <CaretRightIcon className="size-4" />
-                </Menu.SubmenuTrigger>
-                <Menu.Portal>
-                  <Menu.Positioner className="z-50" sideOffset={4}>
-                    <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
-                      {mapKeys.map((key) => (
-                        <Menu.Item
-                          key={key}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-300 cursor-pointer",
-                            "hover:bg-slate-700",
-                            key === w.mapKey && "text-green-400",
-                          )}
-                          closeOnClick
-                          onClick={() => {
-                            uiStoreApi.setUiMeta(w.id, (draft) => {
-                              draft.mapKey = key;
-                            });
-                          }}
-                        >
-                          {key}
-                        </Menu.Item>
-                      ))}
-                    </Menu.Popup>
-                  </Menu.Positioner>
-                </Menu.Portal>
-              </Menu.SubmenuRoot>
+              {mapKeys.map((key) => (
+                <Menu.Item
+                  key={key}
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
+                    "hover:bg-slate-700",
+                    key === w.mapKey && "text-green-400",
+                  )}
+                  closeOnClick
+                  onClick={() => {
+                    uiStoreApi.setUiMeta(w.id, (draft) => {
+                      draft.mapKey = key;
+                    });
+                  }}
+                >
+                  {key}
+                </Menu.Item>
+              ))}
 
               <div className="my-1 border-t border-slate-700" />
 
               {themeKeys.map((key) => (
                 <Menu.Item
                   key={key}
-                  closeOnClick={false}
                   className={cn(
                     "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
                     "hover:bg-slate-700",
                     key === w.themeKey && "text-green-400",
                   )}
+                  closeOnClick={false}
                   onClick={() => {
                     uiStoreApi.setUiMeta(w.id, (draft) => {
                       draft.themeKey = key;
@@ -220,6 +214,31 @@ export function WorldMenu() {
       </Menu.Root>
     </motion.div>
   );
+}
+
+/** Sun icon with a pie-chart fill showing brightness ratio (0–1) */
+function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void }) {
+  const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
+  return (
+    <div className="relative size-4 cursor-pointer" onClick={onClick}>
+      <SunIcon className="size-4 text-slate-500" />
+      {ratio > 0 && (
+        <svg className="absolute inset-0 size-4" viewBox="0 0 16 16">
+          <path
+            d={ratio >= 1
+              ? "M8,8 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"
+              : `M8,8 L8,0 A8,8 0 ${a > Math.PI ? 1 : 0},1 ${8 + 8 * Math.sin(a)},${8 - 8 * Math.cos(a)} Z`}
+            fill="rgba(250,220,100,0.7)"
+          />
+        </svg>
+      )}
+    </div>
+  );
+}
+
+/** Map brightness (0.5–2.0) so that 1.0 = 50% pie fill */
+function brightnessToRatio(b: number) {
+  return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
 }
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
