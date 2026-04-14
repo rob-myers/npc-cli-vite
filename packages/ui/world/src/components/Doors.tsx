@@ -38,7 +38,7 @@ export default function Doors() {
             tmpMat.transformPoint(tmpV1);
             tmpMat.transformPoint(tmpV2);
 
-            const dx = tmpV2.x - tmpV1.x;
+            const dx = tmpV2.x - tmpV1.x - 0.01; // fix z-fighting
             const dz = tmpV2.y - tmpV1.y; // Vect.y → world Z
             const len = tmpV1.distanceTo(tmpV2);
             const nx = len > 0 ? dx / len : 1;

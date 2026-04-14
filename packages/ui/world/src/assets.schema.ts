@@ -138,7 +138,12 @@ export const WorldThemeSchema = z.object({
     hull: z.object({ fill: z.string(), stroke: z.string() }),
     nonHull: z.object({ fill: z.string(), stroke: z.string() }),
   }),
-  walls: z.object({ color: z.string().default("#000000") }).default({ color: "#000000" }),
+  walls: z
+    .object({
+      color: z.string().default("#000000"),
+      opacity: z.number().min(0).max(1).default(0.5),
+    })
+    .default({ color: "#000000", opacity: 0.5 }),
 });
 export type WorldTheme = z.infer<typeof WorldThemeSchema>;
 
