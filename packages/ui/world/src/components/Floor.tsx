@@ -73,21 +73,6 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.025 });
 
-        // draw nav mesh (gmId specific)
-        ct.lineJoin = "round";
-        ct.lineWidth = 0.01;
-        const fillStyle = "#4442";
-        const strokeStyle = "#4444";
-        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
-        (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
-          for (let i = 0; i < positions.length; i += 9) {
-            triangle.outline[0].set(positions[i], positions[i + 2]);
-            triangle.outline[1].set(positions[i + 3], positions[i + 5]);
-            triangle.outline[2].set(positions[i + 6], positions[i + 8]);
-            drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
-          }
-        });
-
         // obstacle drop shadows
         const shadowPolys = Poly.union(
           layout.obstacles.flatMap((x) =>
@@ -99,23 +84,20 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout);
 
-        // // uniform directional wall shadows
-        // ct.save();
-        // drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
-        // const shadowQuads = layout.walls.flatMap((w) =>
-        //   w.outline.map((p1, i) => {
-        //     const p2 = w.outline[(i + 1) % w.outline.length];
-        //     return new Poly([
-        //       new Vect(p1.x, p1.y),
-        //       new Vect(p2.x, p2.y),
-        //       new Vect(p2.x + shadowDx, p2.y + shadowDy),
-        //       new Vect(p1.x + shadowDx, p1.y + shadowDy),
-        //     ]);
-        //   }),
-        // );
-        // // 🚧 can throw
-        // drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 0.25)", strokeStyle: null });
-        // ct.restore();
+        // draw nav mesh (gmId specific)
+        ct.lineJoin = "round";
+        ct.lineWidth = 0.01;
+        const fillStyle = "#fff2";
+        const strokeStyle = "#000f";
+        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
+        (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
+          for (let i = 0; i < positions.length; i += 9) {
+            triangle.outline[0].set(positions[i], positions[i + 2]);
+            triangle.outline[1].set(positions[i + 3], positions[i + 5]);
+            triangle.outline[2].set(positions[i + 6], positions[i + 8]);
+            drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
+          }
+        });
       },
 
       transformInstances() {
@@ -196,9 +178,9 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
   ct.save();
   ct.lineJoin = "round";
   ct.lineCap = "round";
-  ct.lineWidth = 0.04;
-  ct.strokeStyle = "rgba(100, 100, 100, 1)";
-  const insetAmount = 0.4;
+  ct.lineWidth = 0.08;
+  ct.strokeStyle = "rgba(0, 0, 0, 1)";
+  const insetAmount = 0.2;
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
     sciFiFloorPattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
@@ -262,7 +244,7 @@ const sciFiFloorPattern = (() => {
   const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
   // base dark metallic
-  ctx.fillStyle = "rgba(40, 42, 48, 0.25)";
+  ctx.fillStyle = "rgba(40, 42, 48, 1)";
   ctx.fillRect(0, 0, s, s);
 
   // tile grid lines
@@ -311,6 +293,4 @@ const sciFiFloorPattern = (() => {
 })();
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
-const shadowDx = Math.cos(Math.PI / 4) * 0.4;
-const shadowDy = Math.sin(Math.PI / 4) * 0.4;
 const tmpMat1 = new Mat();

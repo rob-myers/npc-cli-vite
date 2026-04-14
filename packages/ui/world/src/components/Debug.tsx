@@ -75,8 +75,9 @@ export function Debug() {
         args={[quad, undefined, maxPathSegments]}
         frustumCulled={false}
         position={[0, 0.5, 0]}
+        renderOrder={-6}
       >
-        <meshBasicMaterial color="rgb(255, 50, 0)" transparent opacity={0.25} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
     </>
   );
