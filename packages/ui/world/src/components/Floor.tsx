@@ -208,10 +208,11 @@ function drawRoomLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
 
-    // if (room.rect.area < 10) continue; // skip small rooms
+    const area = noHoles.rect.area;
+    const maxDepth = area < 6 ? 1 : area < 15 ? 2 : 5;
 
     // draw concentric light panels by progressively insetting
-    for (let depth = 0; depth < 5; depth++) {
+    for (let depth = 0; depth < maxDepth; depth++) {
       const insetAmount = panelInset + depth * step;
       const panels = geomService.createInset(noHoles, insetAmount);
       if (panels.length === 0) break;
