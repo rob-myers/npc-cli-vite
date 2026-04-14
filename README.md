@@ -93,6 +93,8 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
+#### ⚠️ Sometimes worth playing World to debug out-of-sync updates
+
 #### ⚠️ The starship-symbol spritesheet will draw "leaf nodes" in the assets.json stratifiedSymbolNodes
 
 This means WIP composite symbols should have at least one sub-symbol.

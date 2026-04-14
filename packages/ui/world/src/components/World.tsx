@@ -27,10 +27,10 @@ import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
+import Doors from "./Doors";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import Obstacles from "./Obstacles";
-import Doors from "./Doors";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
@@ -81,7 +81,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmsData: new DerivedGmsData(),
       nav: null,
       navPending: true,
-      customTheme: null,
 
       assets: null as any,
       ceil: null as any,
@@ -128,7 +127,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         return this.seenGmKeys.indexOf(gmKey);
       },
       getTheme() {
-        return state.customTheme ?? state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
+        return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
@@ -251,7 +250,6 @@ export type State = {
   disabled: boolean;
   mapKey: string;
   themeKey: string;
-  customTheme: import("../assets.schema").WorldTheme | null;
   worldQueryPrefix: ["world", worldKey: string];
 
   brightness: number;
