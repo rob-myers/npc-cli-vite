@@ -70,8 +70,13 @@ export function Debug() {
         <meshBasicMaterial color="red" transparent opacity={0.1} />
       </mesh>
 
-      <instancedMesh ref={instRef} args={[quad, undefined, maxPathSegments]} frustumCulled={false}>
-        <meshBasicMaterial color="rgb(255, 50, 0)" transparent opacity={0.8} side={THREE.DoubleSide} />
+      <instancedMesh
+        ref={instRef}
+        args={[quad, undefined, maxPathSegments]}
+        frustumCulled={false}
+        position={[0, 0.5, 0]}
+      >
+        <meshBasicMaterial color="rgb(255, 50, 0)" transparent opacity={0.25} side={THREE.DoubleSide} />
       </instancedMesh>
     </>
   );
