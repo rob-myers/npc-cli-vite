@@ -68,7 +68,7 @@ export default function Floor() {
 
         // try inset by half hull doorway to avoid adjacent doorway overlap
         const hullFloor = geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
-        drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
+        drawPolygons(ct, hullFloor, { fillStyle: "#000", strokeStyle: null });
 
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.025 });
@@ -90,8 +90,8 @@ export default function Floor() {
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
-        const fillStyle = "#fff2";
-        const strokeStyle = "#000f";
+        const fillStyle = "#fff1";
+        const strokeStyle = "#000c";
         const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
@@ -200,13 +200,15 @@ function drawRoomLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
   ct.lineCap = "round";
 
   const panelInset = 0.8; // initial inset from room edge
-  const panelWidth = 0.4; // width of each light panel
-  const gapWidth = 0.25; // gap between panels
+  const panelWidth = 0.2; // width of each light panel
+  const gapWidth = 0.8; // gap between panels
   const step = panelWidth + gapWidth;
   const cornerRadius = 0.3;
 
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
+
+    // if (room.rect.area < 10) continue; // skip small rooms
 
     // draw concentric light panels by progressively insetting
     for (let depth = 0; depth < 5; depth++) {
