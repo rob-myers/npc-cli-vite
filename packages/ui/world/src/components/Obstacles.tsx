@@ -213,7 +213,7 @@ export default function Obstacles(_props: Props) {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.6);
-    mat.colorNode = vec4(color("#555").mul(ndotv), 1);
+    mat.colorNode = vec4(color("#000").mul(ndotv), 1);
     return mat;
   }, []);
 
@@ -250,9 +250,7 @@ export default function Obstacles(_props: Props) {
           args={[state.skirtQuad, undefined, skirtCount]}
           frustumCulled={false}
           material={skirtMaterial}
-        >
-          {/* <meshBasicMaterial color="#333" side={THREE.DoubleSide} /> */}
-        </instancedMesh>
+        ></instancedMesh>
       )}
     </>
   );
@@ -280,7 +278,7 @@ export type State = {
   sendDataToGpu(): void;
 };
 
-const skirtDepth = 0.15;
+const skirtDepth = 0.5;
 const tmpMat1 = new Mat();
 const tmpMat2 = new Mat();
 const tmpVec1 = new Vect();

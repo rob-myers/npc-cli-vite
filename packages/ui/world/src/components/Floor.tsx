@@ -88,13 +88,6 @@ export default function Floor() {
           }
         });
 
-        // // hull doorways
-        // drawPolygons(
-        //   ct,
-        //   layout.hullDoors.flatMap(({ poly }) => geomService.createInset(poly, 0.025)),
-        //   { fillStyle: "#000", strokeStyle: "#000", lineWidth: 0 },
-        // );
-
         // obstacle drop shadows
         const shadowPolys = Poly.union(
           layout.obstacles.flatMap((x) =>
@@ -106,22 +99,23 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout);
 
-        // uniform directional wall shadows
-        ct.save();
-        drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
-        const shadowQuads = layout.walls.flatMap((w) =>
-          w.outline.map((p1, i) => {
-            const p2 = w.outline[(i + 1) % w.outline.length];
-            return new Poly([
-              new Vect(p1.x, p1.y),
-              new Vect(p2.x, p2.y),
-              new Vect(p2.x + shadowDx, p2.y + shadowDy),
-              new Vect(p1.x + shadowDx, p1.y + shadowDy),
-            ]);
-          }),
-        );
-        drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 0.25)", strokeStyle: null });
-        ct.restore();
+        // // uniform directional wall shadows
+        // ct.save();
+        // drawPolygons(ct, hullFloor, { fillStyle: "#f00", strokeStyle: null, clip: true });
+        // const shadowQuads = layout.walls.flatMap((w) =>
+        //   w.outline.map((p1, i) => {
+        //     const p2 = w.outline[(i + 1) % w.outline.length];
+        //     return new Poly([
+        //       new Vect(p1.x, p1.y),
+        //       new Vect(p2.x, p2.y),
+        //       new Vect(p2.x + shadowDx, p2.y + shadowDy),
+        //       new Vect(p1.x + shadowDx, p1.y + shadowDy),
+        //     ]);
+        //   }),
+        // );
+        // // 🚧 can throw
+        // drawPolygons(ct, Poly.union(shadowQuads), { fillStyle: "rgba(0, 0, 0, 0.25)", strokeStyle: null });
+        // ct.restore();
       },
 
       transformInstances() {
@@ -203,7 +197,7 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
   ct.lineJoin = "round";
   ct.lineCap = "round";
   ct.lineWidth = 0.04;
-  ct.strokeStyle = "rgba(0, 0, 0, 0.6)";
+  ct.strokeStyle = "rgba(100, 100, 100, 1)";
   const insetAmount = 0.4;
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
@@ -317,6 +311,6 @@ const sciFiFloorPattern = (() => {
 })();
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
-const shadowDx = Math.cos(Math.PI / 4) * 4;
-const shadowDy = Math.sin(Math.PI / 4) * 0;
+const shadowDx = Math.cos(Math.PI / 4) * 0.4;
+const shadowDy = Math.sin(Math.PI / 4) * 0.4;
 const tmpMat1 = new Mat();
