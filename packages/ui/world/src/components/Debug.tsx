@@ -76,6 +76,7 @@ export function Debug() {
         frustumCulled={false}
         position={[0, 0.5, 0]}
         renderOrder={-6}
+        visible={false}
       >
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
