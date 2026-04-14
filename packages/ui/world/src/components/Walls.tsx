@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { float, instancedArray, instanceIndex, vec4 } from "three/tsl";
+import { float } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -90,24 +90,15 @@ export default function Walls() {
   const wallCount = w.gmsData.count.wall;
 
   const mat = useMemo(() => {
-    // 🚧 move elsewhere
-    const colorsBuffer = instancedArray(wallCount, "vec4");
-    const colorData = colorsBuffer.value.array as Float32Array;
-    for (let i = 0; i < wallCount; i++) {
-      colorData[i * 4 + 3] = 0.5; // partial transparency
-    }
-
     const material = new THREE.MeshStandardNodeMaterial({
       side: THREE.DoubleSide,
       transparent: true,
       depthWrite: false,
     });
-    const instanceColor = colorsBuffer.element(instanceIndex);
-    material.colorNode = vec4(instanceColor.x, instanceColor.y, instanceColor.z, 1.0);
-    material.opacityNode = objectPick.equal(1).select(float(1), instanceColor.w);
+    material.opacityNode = objectPick.equal(1).select(float(1), float(0.5));
     material.outputNode = withPickOutput(PICK_TYPE.walls);
 
-    return { material, colorsBuffer };
+    return { material };
   }, [wallCount]);
 
   useEffect(() => {
