@@ -6852,7 +6852,7 @@
         "hull": {"fill": "#000", "stroke": "#fff"},
         "nonHull": {"fill": "#fff", "stroke": "#000"}
       },
-      "walls": {"color": "#000", "opacity": 0.3}
+      "walls": {"color": "#000", "opacity": 0.4}
     }
   },
   "hash": {"obstacles": 1480284142}

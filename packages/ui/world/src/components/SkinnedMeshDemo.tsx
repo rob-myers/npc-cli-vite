@@ -1,6 +1,6 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { useTexture } from "@react-three/drei";
+import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph, useFrame } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
@@ -44,12 +44,23 @@ export function SkinnedMeshDemo() {
   );
 
   // won't support hot reload onchange gltf
-  state.gltf =
+  const queryData =
     useQuery({
       queryKey: [...w.worldQueryPrefix, "template-gltf"],
-      queryFn: () => new GLTFLoader().loadAsync(url.templateTest0Gltf),
+      queryFn: async () => {
+        const [gltf, texture] = await Promise.all([
+          new GLTFLoader().loadAsync(url.templateTest0Gltf),
+          new THREE.TextureLoader().loadAsync(`${url.templateTexture}${getDevCacheBustQueryParam()}`),
+        ]);
+        texture.flipY = false;
+        texture.minFilter = THREE.NearestFilter;
+        texture.magFilter = THREE.NearestFilter;
+        texture.generateMipmaps = false;
+        return { gltf, texture };
+      },
       staleTime: Infinity, // avoid refetch on HMR
     }).data ?? null;
+  state.gltf = queryData?.gltf ?? null;
 
   // bootstrap after gltf loaded
   if (state.gltf && !state.gltfScene) {
@@ -63,15 +74,10 @@ export function SkinnedMeshDemo() {
 
   useFrame((_state, delta) => state.mixer.update(delta));
 
-  // necessiates <Suspense> parent
-  const texture = useTexture(url.templateTexture, (texture) => {
-    texture.flipY = false;
-    texture.minFilter = THREE.NearestFilter;
-    texture.magFilter = THREE.NearestFilter;
-    texture.generateMipmaps = false;
-  });
+  const texture = queryData?.texture ?? null;
 
   const material = useMemo(() => {
+    if (!texture) return null;
     const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
     const texNode = tslTexture(texture);
     const viewDir = cameraPosition.sub(positionWorld).normalize();
@@ -89,7 +95,7 @@ export function SkinnedMeshDemo() {
   const root = nodes?.root as THREE.SkinnedMesh | undefined;
   const bones = nodes ? Object.values(nodes).filter((n) => n instanceof THREE.Bone) : [];
 
-  return state.gltf ? (
+  return state.gltf && material ? (
     <group ref={state.groupRef}>
       <skinnedMesh
         geometry={state.geometry!}
