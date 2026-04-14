@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const storageKey = "ui-grid-edit-toggle-y";
 
-export function DraggableUiGridMenu({
+export function UiGridMenu({
   state,
 }: {
   state: { resizeMode: boolean; set: (partial: { resizeMode?: boolean }) => void };
