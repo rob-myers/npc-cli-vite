@@ -72,7 +72,7 @@ export default function Doors() {
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
     const edge = new THREE.MeshStandardMaterial({ color: "#000000", metalness: 0.8, roughness: 0.3 });
-    const top = new THREE.MeshStandardMaterial({ color: "#ffffff", metalness: 0.6, roughness: 0.3 });
+    const top = new THREE.MeshStandardMaterial({ color: "#000000", metalness: 0.6, roughness: 0.3 });
 
     const { atlas, count } = createPanelAtlas();
     const panel = new THREE.MeshStandardNodeMaterial({
@@ -83,7 +83,7 @@ export default function Doors() {
     });
     const texNode = texture(atlas, uv());
     panel.colorNode = texNode.depth(instanceIndex.mod(int(count)));
-    panel.opacityNode = float(0.8);
+    panel.opacityNode = float(0.7);
 
     return [edge, edge, top, edge, panel, panel];
   }, []);
