@@ -160,7 +160,7 @@ export function getNodeBounds(...nodes: MapNode[]): Geom.RectJson {
 
   switch (node.type) {
     case "group": {
-      return node.children.reduce((bounds, child) => bounds.union(getNodeBounds(child)), new Rect()).json;
+      return Rect.fromRects(...node.children.map((child) => getNodeBounds(child))).json;
     }
     case "rect": {
       return {
