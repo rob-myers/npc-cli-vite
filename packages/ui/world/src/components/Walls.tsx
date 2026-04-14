@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { float } from "three/tsl";
+import { float, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -87,19 +87,21 @@ export default function Walls() {
   const wallCount = w.gmsData.count.wall;
 
   const mat = useMemo(() => {
+    const opacityUniform = uniform(0.5);
     const material = new THREE.MeshStandardNodeMaterial({
       side: THREE.DoubleSide,
       transparent: true,
       depthWrite: false,
     });
-    material.opacityNode = objectPick.equal(1).select(float(1), float(0.5));
+    material.opacityNode = objectPick.equal(1).select(float(1), opacityUniform);
     material.outputNode = withPickOutput(PICK_TYPE.walls);
 
-    return { material };
+    return { material, opacityUniform };
   }, [wallCount]);
 
   useEffect(() => {
     state.positionInstances();
+    mat.opacityUniform.value = w.getTheme().walls.opacity;
     w.update(); // 🔔 must sync onchange theme
   }, [w.mapKey, w.hash, w.gms.length, w.themeKey]);
 
