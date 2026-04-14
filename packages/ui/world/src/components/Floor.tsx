@@ -216,7 +216,19 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
 
 function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number) {
   for (const poly of polys) {
-    const pts = poly.outline;
+    // filter out points too close together so short edges don't prevent rounding
+    const minDist = cornerRadius * 0.5;
+    const pts: Geom.Vect[] = [];
+    for (const p of poly.outline) {
+      const last = pts[pts.length - 1];
+      if (!last || Math.hypot(p.x - last.x, p.y - last.y) >= minDist) {
+        pts.push(p);
+      }
+    }
+    // also check last-to-first
+    while (pts.length > 3 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < minDist) {
+      pts.pop();
+    }
     if (pts.length < 3) continue;
     ct.beginPath();
     const n = pts.length;

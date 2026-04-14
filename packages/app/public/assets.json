@@ -6847,12 +6847,12 @@
       "walls": {"color": "#000", "opacity": 0.2}
     },
     "default-theme": {
-      "background": "bg-zinc-500",
+      "background": "bg-black",
       "ceiling": {
-        "hull": {"fill": "#000", "stroke": "#666"},
-        "nonHull": {"fill": "#444", "stroke": "#000"}
+        "hull": {"fill": "#000", "stroke": "#fff"},
+        "nonHull": {"fill": "#fff", "stroke": "#000"}
       },
-      "walls": {"color": "#000", "opacity": 0.5}
+      "walls": {"color": "#000", "opacity": 0.3}
     }
   },
   "hash": {"obstacles": 1480284142}
