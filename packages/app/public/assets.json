@@ -6846,7 +6846,7 @@
       },
       "walls": {"color": "#000", "opacity": 0.2}
     },
-    "default": {
+    "default-theme": {
       "background": "bg-zinc-500",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
