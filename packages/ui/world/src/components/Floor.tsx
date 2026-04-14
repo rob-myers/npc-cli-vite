@@ -70,7 +70,7 @@ export default function Floor() {
 
         // try inset by half hull doorway to avoid adjacent doorway overlap
         const hullFloor = geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
-        drawPolygons(ct, hullFloor, { fillStyle: "#000", strokeStyle: null });
+        drawPolygons(ct, hullFloor, { fillStyle: "#fff", strokeStyle: null });
 
         // grid
         // 🚧 must offset by geomorph position (currently slightly off)
@@ -108,9 +108,6 @@ export default function Floor() {
         //   { fillStyle: "#000", strokeStyle: "#000", lineWidth: 0 },
         // );
 
-        // lights  🚧 cache
-        drawLights(ct, layout, hullFloor);
-
         // obstacle drop shadows
         const shadowPolys = Poly.union(
           layout.obstacles.flatMap((x) =>
@@ -120,9 +117,7 @@ export default function Floor() {
         drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
 
         // room outlines
-        for (const room of layout.rooms) {
-          drawPolygons(ct, [room], { fillStyle: null, strokeStyle: "#ff01", lineWidth: 0.025 });
-        }
+        drawRoomOutlines(ct, layout);
 
         // // uniform directional wall shadows
         // ct.save();
@@ -218,22 +213,111 @@ export type State = {
   transformInstances(): void;
 };
 
-function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, _hullFloor: Geom.Poly[]) {
+function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
   ct.save();
-  ct.globalCompositeOperation = "lighten";
+  ct.lineJoin = "round";
+  ct.lineCap = "round";
+  ct.lineWidth = 0.04;
+  ct.strokeStyle = "rgba(100, 100, 100, 1)";
+  const insetAmount = 0.4;
   for (const room of layout.rooms) {
-    const { x, y } = room.center;
-    const radius = Math.sqrt(room.rect.area) * 1;
-    const grad = ct.createRadialGradient(x, y, 0, x, y, radius);
-    grad.addColorStop(0, "rgba(100, 100, 100, 0.2)");
-    grad.addColorStop(0.5, "rgba(100,100, 100, 0.05)");
-    grad.addColorStop(1, "rgba(100, 100, 100, 0)");
-    ct.fillStyle = grad;
-    ct.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    const noHoles = room.clone().removeHoles();
+    sciFiFloorPattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
+    ct.fillStyle = sciFiFloorPattern;
+    fillRoundedPolys(ct, geomService.createInset(noHoles, insetAmount), insetAmount);
   }
   ct.restore();
-  ct.globalCompositeOperation = "source-over";
 }
+
+function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number) {
+  for (const poly of polys) {
+    const pts = poly.outline;
+    if (pts.length < 3) continue;
+    ct.beginPath();
+    const n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const prev = pts[(i - 1 + n) % n];
+      const curr = pts[i];
+      const next = pts[(i + 1) % n];
+      const toPrevX = prev.x - curr.x,
+        toPrevY = prev.y - curr.y;
+      const toNextX = next.x - curr.x,
+        toNextY = next.y - curr.y;
+      const lenPrev = Math.hypot(toPrevX, toPrevY);
+      const lenNext = Math.hypot(toNextX, toNextY);
+      const r = Math.min(cornerRadius, lenPrev / 2, lenNext / 2);
+      const ax = curr.x + (toPrevX / lenPrev) * r;
+      const ay = curr.y + (toPrevY / lenPrev) * r;
+      const bx = curr.x + (toNextX / lenNext) * r;
+      const by = curr.y + (toNextY / lenNext) * r;
+      if (i === 0) ct.moveTo(ax, ay);
+      else ct.lineTo(ax, ay);
+      ct.quadraticCurveTo(curr.x, curr.y, bx, by);
+    }
+    ct.closePath();
+    ct.stroke();
+    ct.fill();
+  }
+}
+
+const sciFiFloorPattern = (() => {
+  const tileWorld = geomorphGridMeters; // match grid
+  const scale = worldToSguScale * gmFloorExtraScale;
+  const size = Math.round(tileWorld * scale);
+  const c = document.createElement("canvas");
+  c.width = size * 2;
+  c.height = size * 2;
+  const s = c.width;
+  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
+
+  // base dark metallic
+  ctx.fillStyle = "rgba(40, 42, 48, 0.05)";
+  ctx.fillRect(0, 0, s, s);
+
+  // tile grid lines
+  ctx.strokeStyle = "rgba(80, 85, 95, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, size, size);
+  ctx.strokeRect(size, 0, size, size);
+  ctx.strokeRect(0, size, size, size);
+  ctx.strokeRect(size, size, size, size);
+
+  // inner tile bevels (inset lines)
+  const m = 4;
+  ctx.strokeStyle = "rgba(100, 110, 120, 0.2)";
+  ctx.lineWidth = 1;
+  for (const [ox, oy] of [
+    [0, 0],
+    [size, 0],
+    [0, size],
+    [size, size],
+  ]) {
+    ctx.strokeRect(ox + m, oy + m, size - m * 2, size - m * 2);
+  }
+
+  // rivet dots in corners of each tile
+  ctx.fillStyle = "rgba(130, 140, 150, 1)";
+  const d = 6;
+  for (const [ox, oy] of [
+    [0, 0],
+    [size, 0],
+    [0, size],
+    [size, size],
+  ]) {
+    for (const [rx, ry] of [
+      [d, d],
+      [size - d, d],
+      [d, size - d],
+      [size - d, size - d],
+    ]) {
+      ctx.beginPath();
+      ctx.arc(ox + rx, oy + ry, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  return ctx.createPattern(c, "repeat") as CanvasPattern;
+})();
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 const shadowDx = Math.cos(Math.PI / 4) * 0.25;
