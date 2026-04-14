@@ -67,7 +67,7 @@ export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 export const brightnessStorageKey = `world-brightness-value`;
 
-export const defaultThemeKey = "default";
+export const defaultThemeKey = "default-theme";
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   background: "bg-gray-800",

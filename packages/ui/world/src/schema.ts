@@ -4,7 +4,7 @@ import z from "zod";
 // Avoid HMR issue
 // const emptyMapKey: typeof import("./const").emptyMapKey = "empty-map";
 const defaultMapKey: typeof import("./const").defaultMapKey = "small-map-0";
-const defaultThemeKey: typeof import("./const").defaultThemeKey = "default";
+const defaultThemeKey: typeof import("./const").defaultThemeKey = "default-theme";
 
 export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
