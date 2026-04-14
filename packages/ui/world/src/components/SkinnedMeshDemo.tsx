@@ -95,7 +95,7 @@ export function SkinnedMeshDemo() {
         geometry={state.geometry!}
         material={[material, shadowMaterial]}
         skeleton={root!.skeleton}
-        scale={0.65} // 🚧
+        scale={0.6} // 🚧
         position={[5, 0.1, 7.5]}
         // renderOrder={3}
       >
