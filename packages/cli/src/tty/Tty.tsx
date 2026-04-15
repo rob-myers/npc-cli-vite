@@ -101,8 +101,7 @@ export function Tty(props: Props) {
 
         const { session } = baseRef.current;
         if (session.ttyShell.isInitialized() && !session.ttyShell.isInteractive()) {
-          state.canContOrStop =
-            session.process[0].status === toProcessStatus.Running ? "STOP" : "CONT";
+          state.canContOrStop = session.process[0].status === toProcessStatus.Running ? "STOP" : "CONT";
         } else {
           state.canContOrStop = null;
         }
@@ -133,8 +132,7 @@ export function Tty(props: Props) {
 
         const { session } = baseRef.current;
         if (session.ttyShell.isInitialized() && !session.ttyShell.isInteractive()) {
-          state.canContOrStop =
-            session.process[0].status === toProcessStatus.Running ? "STOP" : "CONT";
+          state.canContOrStop = session.process[0].status === toProcessStatus.Running ? "STOP" : "CONT";
         } else {
           state.canContOrStop = null;
         }
@@ -282,13 +280,8 @@ export function Tty(props: Props) {
   }, [baseRef.current?.session, props.disabled]);
 
   return (
-    <div className="h-full w-full" ref={rootRef}>
-      <BaseTty
-        ref={baseRef}
-        sessionKey={props.sessionKey}
-        env={props.env}
-        onUnmount={state.reboot}
-      />
+    <div className="size-full p-1" ref={rootRef}>
+      <BaseTty ref={baseRef} sessionKey={props.sessionKey} env={props.env} onUnmount={state.reboot} />
       {baseRef.current?.session && (
         <TtyMenu
           canContOrStop={state.canContOrStop}
