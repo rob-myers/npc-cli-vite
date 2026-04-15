@@ -13,7 +13,28 @@ export function Debug() {
   const state = useStateRef(
     () => ({
       originShown: false,
+      openDoorsOnClick: true,
+      doorAnims: new Map<number, number>(), // instanceId → raf
       navPath: [] as Vec3[],
+
+      animateDoor(instanceId: number, target: number) {
+        const existing = state.doorAnims.get(instanceId);
+        if (existing !== undefined) cancelAnimationFrame(existing);
+        let lastT = performance.now();
+        const step = (now: number) => {
+          const cur = w.doors.openDoorsRatio[instanceId];
+          const next = cur + Math.sign(target - cur) * ((now - lastT) / 1000) * doorSpeed;
+          lastT = now;
+          if ((target - cur) * (target - next) <= 0) {
+            w.doors.setOpen(instanceId, target);
+            state.doorAnims.delete(instanceId);
+          } else {
+            w.doors.setOpen(instanceId, next);
+            state.doorAnims.set(instanceId, requestAnimationFrame(step));
+          }
+        };
+        state.doorAnims.set(instanceId, requestAnimationFrame(step));
+      },
 
       computeDemoPath() {
         const gm = w.gms[0];
@@ -54,7 +75,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { originShown: true },
+      reset: { originShown: true, openDoorsOnClick: true },
     },
   );
 
@@ -62,6 +83,24 @@ export function Debug() {
     state.computeDemoPath();
     state.updateInstances();
   }, [w.nav]);
+
+  useEffect(() => {
+    const sub = w.events.subscribe({
+      next(event) {
+        if (!state.openDoorsOnClick) return;
+        if (event.key === "picked" && event.meta.type === "doors") {
+          const { instanceId } = event.meta;
+          const current = w.doors.openDoorsRatio[instanceId] ?? 0;
+          state.animateDoor(instanceId, current > 0 ? 0 : 0.8);
+        }
+      },
+    });
+    return () => {
+      sub.unsubscribe();
+      for (const raf of state.doorAnims.values()) cancelAnimationFrame(raf);
+      state.doorAnims.clear();
+    };
+  }, [state.openDoorsOnClick]);
 
   return (
     <>
@@ -84,6 +123,7 @@ export function Debug() {
   );
 }
 
+const doorSpeed = 2; // ratio units per second
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const tmpMat4 = new THREE.Matrix4();
