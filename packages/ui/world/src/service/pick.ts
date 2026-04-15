@@ -5,7 +5,7 @@ import { gmFloorExtraScale, worldToSguScale } from "../const";
 export const objectPick = uniform(0);
 
 /** Object type IDs — spaced out for visual debug */
-export const PICK_TYPE = { floor: 50, ceiling: 100, walls: 150, obstacles: 200 } as const;
+export const PICK_TYPE = { floor: 50, ceiling: 100, doors: 150, walls: 200, obstacles: 250 } as const;
 
 type PickType = (typeof PICK_TYPE)[keyof typeof PICK_TYPE];
 const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v]) => [v, k])) as Record<
@@ -19,12 +19,7 @@ const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v])
  */
 export function withPickOutput(typeId: number) {
   const idx = float(instanceIndex);
-  const pickVec = vec4(
-    float(typeId).div(255),
-    idx.div(256).floor().div(255),
-    idx.mod(256).div(255),
-    output.a,
-  );
+  const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
   return objectPick.equal(1).select(pickVec, output);
 }
 

@@ -67,6 +67,36 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         await renderer.init();
         return renderer;
       },
+      getPickedFromPixel([r, g, b, _a]) {
+        // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
+        const pick = decodePick(r, g, b);
+
+        switch (pick?.type) {
+          case "floor":
+          case "ceiling": {
+            const gm = w.gms[pick.instanceId];
+            if (gm) {
+              // 🚧 transform click to local coords for roomId lookup via pickRoomId
+              return { ...pick, gmKey: gm.key };
+            }
+            return null;
+          }
+          case "walls": {
+            const decoded = w.walls.decodeInstanceId(pick.instanceId);
+            return { ...pick, ...decoded };
+          }
+          case "obstacles": {
+            const decoded = w.obs.decodeInstanceId(pick.instanceId);
+            return { ...pick, ...decoded };
+          }
+          case "doors": {
+            const decoded = w.doors.decodeInstanceId(pick.instanceId);
+            return { ...pick, ...decoded };
+          }
+          default:
+            return null;
+        }
+      },
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
@@ -94,27 +124,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
-        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then(([r, g, b, _a]) => {
-          // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
-          const pick = decodePick(r, g, b);
-          let picked = null as null | Record<string, any>;
-
-          if (!pick) {
-            // NOOP
-          } else if (pick.type === "floor" || pick.type === "ceiling") {
-            const gm = w.gms[pick.instanceId];
-            if (gm) {
-              // 🚧 transform click to local coords for roomId lookup via pickRoomId
-              picked = { ...pick, gmKey: gm.key };
-            }
-          } else if (pick.type === "walls") {
-            const decoded = w.walls.decodeInstanceId(pick.instanceId);
-            picked = { ...pick, ...decoded };
-          } else if (pick.type === "obstacles") {
-            const decoded = w.obs.decodeInstanceId(pick.instanceId);
-            picked = { ...pick, ...decoded };
-          }
-
+        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
+          const picked = state.getPickedFromPixel(rgba);
           console.log("picked", picked);
         });
       },
@@ -195,5 +206,8 @@ export type State = {
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   onCreated(rootState: RootState): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
+  getPickedFromPixel(
+    rgba: THREE.TypedArray | [number, number, number, number],
+  ): { type: string; instanceId: number; gmKey?: string } | null;
   syncRenderMode(): RootState["frameloop"];
 };
