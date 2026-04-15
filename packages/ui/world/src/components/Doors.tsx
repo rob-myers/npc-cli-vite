@@ -11,20 +11,28 @@ export default function Doors() {
   const w = useContext(WorldContext);
   const doorCount = w.gmsData.count.door;
 
-  const box = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-
   const state = useStateRef(
     (): State => ({
+      box: new THREE.BoxGeometry(1, 1, 1),
       inst: null,
 
       decodeInstanceId(instanceId: number) {
-        let id = instanceId;
+        let doorId = instanceId; // one seg per door
         const gmId = w.gms.findIndex(({ key }) => {
           const count = w.gmsData.byKey[key].doorSegs.length;
-          return id < count || ((id -= count), false);
+          return doorId < count || ((doorId -= count), false);
         });
-        const doorSeg = w.gmsData.byKey[w.gms[gmId].key].doorSegs[id];
-        return { gmId, seg: doorSeg.seg, hull: doorSeg.hull };
+        const gm = w.gms[gmId];
+        const door = gm.doors[doorId];
+
+        const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
+        const { meta } = door;
+
+        const slideDirection = Array.isArray(meta.slideDirection)
+          ? new Vect(...meta.slideDirection)
+          : seg[1].clone().sub(seg[0]).normalize();
+
+        return { gmId, doorId, seg, hull, ...meta, slideDirection };
       },
 
       positionInstances() {
@@ -107,7 +115,7 @@ export default function Doors() {
     <instancedMesh
       name="doors"
       ref={state.ref("inst")}
-      args={[box, undefined, doorCount]}
+      args={[state.box, undefined, doorCount]}
       material={materials}
       renderOrder={3}
     />
@@ -115,8 +123,14 @@ export default function Doors() {
 }
 
 export type State = {
+  box: THREE.BoxGeometry;
   inst: null | THREE.InstancedMesh;
-  decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; hull: boolean };
+  decodeInstanceId: (instanceId: number) => {
+    gmId: number;
+    doorId: number;
+    seg: [Geom.Vect, Geom.Vect];
+    hull: boolean;
+  };
   positionInstances: () => void;
 };
 

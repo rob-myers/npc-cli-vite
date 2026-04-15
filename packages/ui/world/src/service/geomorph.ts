@@ -39,7 +39,7 @@ import { embedXZMat4 } from "./geometry";
  * - when doors are close (e.g. coincide) remove later door
  * - ensure resp. switches removed, set other two as "inner"
  */
-function computeFlattenedDoors(
+function computeFlatDoorsAndDecor(
   logPrefix: string,
   symbol: Geomorph.Symbol,
   flats: Geomorph.FlatSymbol[],
@@ -566,7 +566,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     }
   });
 
-  const { flatDoors, flatDecor } = computeFlattenedDoors(symbol.key, symbol, flats);
+  const { flatDoors, flatDecor } = computeFlatDoorsAndDecor(symbol.key, symbol, flats);
 
   return (flattened[key] = {
     key,
@@ -602,8 +602,6 @@ export function instantiateFlatSymbol(
 
   const decor = sym.decor.map((poly) => poly.cleanClone(mat, transformDecorMeta(poly.meta, mat, meta.y)));
 
-  // 🚧 when apply, transform-origin should be center
-
   return {
     key: sym.key,
     isHull: sym.isHull,
@@ -611,7 +609,12 @@ export function instantiateFlatSymbol(
     height: sym.height,
     bounds: sym.bounds,
     decor,
-    doors: sym.doors.map((poly) => poly.cleanClone(mat)),
+    doors: sym.doors.map((poly) => {
+      const sd = poly.meta.slideDirection;
+      if (!Array.isArray(sd)) return poly.cleanClone(mat);
+      const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
+      return poly.cleanClone(mat, { slideDirection: [v.x, v.y] });
+    }),
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {
         // aggregate height from MapEdit symbols
