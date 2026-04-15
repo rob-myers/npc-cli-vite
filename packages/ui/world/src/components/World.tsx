@@ -84,6 +84,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       assets: null as any,
       ceil: null as any,
+      doors: null as any,
       floor: null as any,
       r3f: null as any,
       obs: null as any,
@@ -282,6 +283,7 @@ export type State = {
   gmsData: DerivedGmsData;
 
   ceil: UseStateRef<import("./Ceiling").State>;
+  doors: UseStateRef<import("./Doors").State>;
   floor: UseStateRef<import("./Floor").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   view: UseStateRef<import("./WorldView").State>;

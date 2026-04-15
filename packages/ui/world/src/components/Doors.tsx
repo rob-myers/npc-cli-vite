@@ -3,6 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { float, instanceIndex, int, texture, uv } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { objectPick, PICK_TYPE, withPickOutput } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -14,6 +15,16 @@ export default function Doors() {
   const state = useStateRef(
     (): State => ({
       inst: null,
+
+      decodeInstanceId(instanceId: number) {
+        let id = instanceId;
+        const gmId = w.gms.findIndex(({ key }) => {
+          const count = w.gmsData.byKey[key].doorSegs.length;
+          return id < count || ((id -= count), false);
+        });
+        const doorSeg = w.gmsData.byKey[w.gms[gmId].key].doorSegs[id];
+        return { gmId, seg: doorSeg.seg, hull: doorSeg.hull };
+      },
 
       positionInstances() {
         const { inst } = state;
@@ -65,6 +76,8 @@ export default function Doors() {
     }),
   );
 
+  w.doors = state;
+
   useEffect(() => {
     state.positionInstances();
   }, [w.mapKey, w.hash, w.gms.length]);
@@ -75,17 +88,18 @@ export default function Doors() {
     const top = new THREE.MeshStandardMaterial({ color: "#000000", metalness: 0.6, roughness: 0.3 });
 
     const { atlas, count } = createPanelAtlas();
-    const panel = new THREE.MeshStandardNodeMaterial({
+    const material = new THREE.MeshStandardNodeMaterial({
       metalness: 0.7,
       roughness: 0.25,
       side: THREE.DoubleSide,
       transparent: true,
     });
     const texNode = texture(atlas, uv());
-    panel.colorNode = texNode.depth(instanceIndex.mod(int(count)));
-    panel.opacityNode = float(0.7);
+    material.colorNode = texNode.depth(instanceIndex.mod(int(count)));
+    material.opacityNode = objectPick.equal(1).select(float(1), float(0.7));
+    material.outputNode = withPickOutput(PICK_TYPE.doors);
 
-    return [edge, edge, top, edge, panel, panel];
+    return [edge, edge, top, edge, material, material];
   }, []);
 
   return doorCount ? (
@@ -94,7 +108,7 @@ export default function Doors() {
       ref={state.ref("inst")}
       args={[box, undefined, doorCount]}
       material={materials}
-      renderOrder={6}
+      renderOrder={3}
     />
   ) : null;
 }
@@ -451,8 +465,9 @@ const logos: LogoFn[] = [
     })(ct, cx, cy, r),
 ];
 
-type State = {
+export type State = {
   inst: null | THREE.InstancedMesh;
+  decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; hull: boolean };
   positionInstances: () => void;
 };
 
