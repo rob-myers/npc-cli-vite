@@ -67,13 +67,19 @@
 - ✅ show closed Doors using instancedMesh cubes
 - ❌ show lintels above Doors
 
+- 🚧 some doors have no room to slide
+  - 🚧 mark them `meta.collapse`
+  - when transform them also scale
+
 - on add grid item to UiGrid can we try to use maximum available height and width?
 
-- for doors try track "openess ratio" via persistent array on gpu
+- ✅ for doors try track "openess ratio" via persistent array on gpu
   - https://share.google/aimode/EreUiTQQkX01nIvv2
 
-- minecraft skin templates
-  - https://minecraft.fandom.com/wiki/Skin#Templates
+- do not recompute all symbols when only edit a hull symbol (DEV)
+  - done in prod for hull-symbols
+  - more generally use sub-stratification
+- import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 
 - change ui `Global` to `Layout`
   - remove theme toggle
@@ -87,13 +93,10 @@
 - fix precision in `assets.json`
 - start generating documentation in README.md
 - check glsl fallback e.g. incognito or force
+  - Walls and Doors don't draw i.e. too many
 - support deleting symbols/maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
-- do not recompute all symbols when only edit a hull symbol (DEV)
-  - done in prod for hull-symbols
-  - more generally use sub-stratification
-- import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - can connect Tty to World
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - symbols can have optional door supported by instantiateFlatSymbol
@@ -101,6 +104,8 @@
 - symbol can have optional wall supported by instantiateFlatSymbol
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue
   - need repro e.g. move stateroom inside 301
+- minecraft skin templates
+  - https://minecraft.fandom.com/wiki/Skin#Templates
 
 ## Long running
 

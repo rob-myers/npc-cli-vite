@@ -175,7 +175,7 @@ export default function Doors() {
       ref={state.ref("inst")}
       args={[state.box, undefined, doorCount]}
       material={materials}
-      renderOrder={3}
+      renderOrder={5}
     />
   ) : null;
 }
