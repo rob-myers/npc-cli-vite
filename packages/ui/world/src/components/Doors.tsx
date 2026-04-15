@@ -152,18 +152,21 @@ export default function Doors() {
     const top = new THREE.MeshStandardMaterial({ color: "#000000", metalness: 0.6, roughness: 0.3 });
 
     const { atlas, count } = createPanelAtlas();
-    const material = new THREE.MeshStandardNodeMaterial({
+    const frontOrBack = new THREE.MeshStandardNodeMaterial({
       metalness: 0.7,
       roughness: 0.25,
       side: THREE.DoubleSide,
       transparent: true,
     });
     const texNode = texture(atlas, uv());
-    material.colorNode = texNode.depth(instanceIndex.mod(int(count)));
-    material.opacityNode = objectPick.equal(1).select(float(1), float(0.7));
-    material.outputNode = withPickOutput(PICK_TYPE.doors);
 
-    return [edge, edge, top, edge, material, material];
+    frontOrBack.colorNode = texNode.depth(instanceIndex.mod(int(count)));
+    frontOrBack.opacityNode = objectPick.equal(1).select(float(1), float(0.7));
+
+    frontOrBack.outputNode = withPickOutput(PICK_TYPE.doors);
+    top.outputNode = withPickOutput(PICK_TYPE.doors);
+
+    return [edge, edge, top, edge, frontOrBack, frontOrBack];
   }, []);
 
   return doorCount ? (
@@ -193,7 +196,7 @@ export type State = {
   positionInstances: () => void;
 };
 
-const doorHeight = 2;
+const doorHeight = 2 - 0.001; // fix ceiling z-fighting
 const panelDepth = 0.08;
 const hullPanelDepth = 0.2;
 const tmpMat = new Mat();
