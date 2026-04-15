@@ -32,6 +32,7 @@ export function Debug() {
             w.doors.setOpen(instanceId, next);
             state.doorAnims.set(instanceId, requestAnimationFrame(step));
           }
+          if (w.disabled) w.r3f.invalidate();
         };
         state.doorAnims.set(instanceId, requestAnimationFrame(step));
       },
