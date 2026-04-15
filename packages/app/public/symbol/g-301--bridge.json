@@ -251,10 +251,10 @@
       "name": "door hull edge=s slideDirection=[-1,0]",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 250, "f": 595.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 252.5, "f": 595.5},
       "type": "rect",
       "baseRect": {"width": 47.5, "height": 9},
-      "cssTransform": "matrix(1, 0, 0, 1, 250, 595.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 252.5, 595.5)"
     },
     {
       "id": "33a253de-353e-45d6-a4c6-e684f2fb7bd3",
@@ -271,10 +271,10 @@
       "name": "door hull edge=s slideDirection=[-1,0]",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 850, "f": 595},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 852.5, "f": 595},
       "type": "rect",
       "baseRect": {"width": 47.5, "height": 9},
-      "cssTransform": "matrix(1, 0, 0, 1, 850, 595)"
+      "cssTransform": "matrix(1, 0, 0, 1, 852.5, 595)"
     },
     {
       "id": "9ee8e967-41ef-412b-ac20-b943beec73fa",
