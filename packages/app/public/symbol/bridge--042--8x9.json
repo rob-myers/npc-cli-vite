@@ -74,7 +74,7 @@
         },
         {
           "id": "f2a4143a-76c9-4fbe-a8e4-66d2497aab1a",
-          "name": "door",
+          "name": "door slideDirection=[0,1]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 187.5},
@@ -84,7 +84,7 @@
         },
         {
           "id": "17783229-5fd3-4013-8770-da0f371e9a6e",
-          "name": "door",
+          "name": "door slideDirection=[-1,0]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 175},
@@ -94,7 +94,7 @@
         },
         {
           "id": "50f4058b-e508-4b43-8951-5240b220f752",
-          "name": "door",
+          "name": "door slideDirection=[0,1]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 475, "f": 187.5},
