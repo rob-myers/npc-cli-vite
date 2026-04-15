@@ -15,6 +15,9 @@ export default function Doors() {
     (): State => ({
       box: new THREE.BoxGeometry(1, 1, 1),
       inst: null,
+      openDoorsRatio: new Float32Array(0),
+      /** Per-instance [closedX, closedZ, slideDirX, slideDirZ, len] (stride 5) */
+      slideData: new Float32Array(0),
 
       decodeInstanceId(instanceId: number) {
         let doorId = instanceId; // one seg per door
@@ -35,14 +38,38 @@ export default function Doors() {
         return { gmId, doorId, seg, hull, ...meta, slideDirection };
       },
 
+      setOpen(instanceId: number, ratio: number) {
+        const { inst, openDoorsRatio, slideData } = state;
+        if (!inst || instanceId < 0 || instanceId >= openDoorsRatio.length) return;
+        openDoorsRatio[instanceId] = ratio;
+
+        const i = instanceId * 5;
+        const offset = ratio * slideData[i + 4]; // len
+        inst.getMatrixAt(instanceId, tmpMat4);
+        tmpMat4.elements[12] = slideData[i] + offset * slideData[i + 2];
+        tmpMat4.elements[14] = slideData[i + 1] + offset * slideData[i + 3];
+        inst.setMatrixAt(instanceId, tmpMat4);
+        inst.instanceMatrix.needsUpdate = true;
+      },
+
       positionInstances() {
         const { inst } = state;
         if (!inst) return;
 
+        const n = w.gmsData.count.door;
+        if (state.openDoorsRatio.length !== n) {
+          state.openDoorsRatio = new Float32Array(n);
+          state.slideData = new Float32Array(n * 5);
+        }
+
         let instanceId = 0;
-        for (const { key: gmKey, transform, determinant } of w.gms) {
+        for (const gm of w.gms) {
+          const { key: gmKey, transform, determinant } = gm;
           tmpMat.setMatrixValue(transform);
-          for (const door of w.gmsData.byKey[gmKey].doorSegs) {
+          const doorSegs = w.gmsData.byKey[gmKey].doorSegs;
+
+          for (let localId = 0; localId < doorSegs.length; localId++) {
+            const door = doorSegs[localId];
             if (!("seg" in door)) continue; // stale HMR data
             const {
               seg: [u, v],
@@ -67,6 +94,25 @@ export default function Doors() {
             const mz = (tmpV1.y + tmpV2.y) / 2;
             const depth = hull ? hullPanelDepth : panelDepth;
 
+            // store per-instance slide data: [closedX, closedZ, slideDirX, slideDirZ, len]
+            const i = instanceId * 5;
+            state.slideData[i] = mx;
+            state.slideData[i + 1] = mz;
+            state.slideData[i + 4] = len;
+
+            // SVG (x,y) → world (x, 0, y), transformed by geomorph
+            const connector = gm.doors[localId];
+            const sd = connector?.meta?.slideDirection;
+            if (Array.isArray(sd)) {
+              tmpV1.set(sd[0], sd[1]);
+              tmpMat.transformSansTranslate(tmpV1);
+              state.slideData[i + 2] = tmpV1.x;
+              state.slideData[i + 3] = tmpV1.y;
+            } else {
+              state.slideData[i + 2] = nx;
+              state.slideData[i + 3] = nz;
+            }
+
             // x-axis along door width, y-axis up, z-axis along panel depth
             // biome-ignore format: matrix layout
             tmpMat4.set(
@@ -75,6 +121,15 @@ export default function Doors() {
               len * nz,  0,            depth * nx,   mz,
               0,         0,            0,            1,
             );
+
+            // apply existing open ratio
+            const r = state.openDoorsRatio[instanceId];
+            if (r > 0) {
+              const offset = r * len;
+              tmpMat4.elements[12] += offset * state.slideData[i + 2];
+              tmpMat4.elements[14] += offset * state.slideData[i + 3];
+            }
+
             inst.setMatrixAt(instanceId++, tmpMat4);
           }
         }
@@ -125,12 +180,16 @@ export default function Doors() {
 export type State = {
   box: THREE.BoxGeometry;
   inst: null | THREE.InstancedMesh;
+  openDoorsRatio: Float32Array;
+  /** Per-instance [closedX, closedZ, slideDirX, slideDirZ, len] (stride 5) */
+  slideData: Float32Array;
   decodeInstanceId: (instanceId: number) => {
     gmId: number;
     doorId: number;
     seg: [Geom.Vect, Geom.Vect];
     hull: boolean;
   };
+  setOpen: (instanceId: number, ratio: number) => void;
   positionInstances: () => void;
 };
 

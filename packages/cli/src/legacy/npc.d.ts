@@ -19,6 +19,18 @@ declare namespace NPC {
     datum: Datum;
   }
 
-  type Event = { key: "disabled" } | { key: "enabled" } | { key: "nav-updated" };
+  type Event =
+    | { key: "disabled" }
+    | { key: "enabled" }
+    | { key: "nav-updated" }
+    | {
+        key: "picked";
+        // 🚧 refine...
+        meta: {
+          type: string;
+          instanceId: number;
+          gmKey?: string;
+        };
+      };
   // 🚧 ...
 }

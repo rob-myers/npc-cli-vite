@@ -127,6 +127,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
           const picked = state.getPickedFromPixel(rgba);
           console.log("picked", picked);
+          picked !== null && w.events.next({ key: "picked", meta: picked });
         });
       },
       syncRenderMode() {
