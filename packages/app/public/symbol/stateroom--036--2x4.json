@@ -116,7 +116,7 @@
     },
     {
       "id": "72181c75-63b1-45c2-a943-5f49761ebfd8",
-      "name": "door",
+      "name": "door slideDirection=[-1,0]",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 67.5, "f": 235},
@@ -126,7 +126,7 @@
     },
     {
       "id": "c6ba555b-b88b-4c90-a80f-6513a017c7ba",
-      "name": "door",
+      "name": "door slideDirection=[-1,0]",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 67.5, "f": 55},
