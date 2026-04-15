@@ -6850,9 +6850,9 @@
       "background": "bg-black",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#fff"},
-        "nonHull": {"fill": "#000", "stroke": "#000"}
+        "nonHull": {"fill": "#999", "stroke": "#000"}
       },
-      "walls": {"color": "#000", "opacity": 0.3}
+      "walls": {"color": "#000", "opacity": 0.5}
     }
   },
   "hash": {"obstacles": 1480284142}

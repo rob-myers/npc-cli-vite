@@ -71,7 +71,7 @@ export default function Floor() {
         drawPolygons(ct, hullFloor, { fillStyle: "#000", strokeStyle: null });
 
         // wall bases
-        drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.025 });
+        drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.05 });
 
         // obstacle drop shadows
         const shadowPolys = Poly.union(
@@ -83,9 +83,6 @@ export default function Floor() {
 
         // room outlines
         drawRoomOutlines(ct, layout);
-
-        // room lights
-        drawRoomLights(ct, layout);
 
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
@@ -183,49 +180,15 @@ function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout)
   ct.lineCap = "round";
   ct.lineWidth = 0.08;
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
-  const insetAmount = 0.1;
+
+  const insetAmount = 0.5;
+
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
     sciFiFloorPattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
     ct.fillStyle = sciFiFloorPattern;
     fillRoundedPolys(ct, geomService.createInset(noHoles, insetAmount), insetAmount);
   }
-  ct.restore();
-}
-
-function drawRoomLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
-  ct.save();
-  ct.globalCompositeOperation = "darken";
-  ct.lineJoin = "round";
-  ct.lineCap = "round";
-
-  const panelInset = 0.8; // initial inset from room edge
-  const panelWidth = 0.2; // width of each light panel
-  const gapWidth = 0.8; // gap between panels
-  const step = panelWidth + gapWidth;
-  const cornerRadius = 0.3;
-
-  for (const room of layout.rooms) {
-    const noHoles = room.clone().removeHoles();
-
-    const area = noHoles.rect.area;
-    const maxDepth = area < 6 ? 1 : area < 15 ? 2 : 5;
-
-    // draw concentric light panels by progressively insetting
-    for (let depth = 0; depth < maxDepth; depth++) {
-      const insetAmount = panelInset + depth * step;
-      const panels = geomService.createInset(noHoles, insetAmount);
-      if (panels.length === 0) break;
-
-      // brighter toward center
-      const alpha = 0.32 + depth * 0.03;
-      ct.fillStyle = `rgba(0, 0, 0, ${alpha})`;
-      ct.strokeStyle = `rgba(0, 0, 0, 1)`;
-      ct.lineWidth = 0.02;
-      fillRoundedPolys(ct, panels, cornerRadius);
-    }
-  }
-
   ct.restore();
 }
 
@@ -283,7 +246,7 @@ const sciFiFloorPattern = (() => {
   const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
   // base dark metallic
-  ctx.fillStyle = "rgba(40, 42, 48, 1)";
+  ctx.fillStyle = "rgba(20, 22, 28, 1)";
   ctx.fillRect(0, 0, s, s);
 
   // tile grid lines
@@ -296,7 +259,7 @@ const sciFiFloorPattern = (() => {
 
   // inner tile bevels (inset lines)
   const m = 4;
-  ctx.strokeStyle = "rgba(100, 110, 120, 0.2)";
+  ctx.strokeStyle = "rgba(100, 110, 220, 0.25)";
   ctx.lineWidth = 1;
   for (const [ox, oy] of [
     [0, 0],
@@ -308,7 +271,7 @@ const sciFiFloorPattern = (() => {
   }
 
   // rivet dots in corners of each tile
-  ctx.fillStyle = "rgba(130, 140, 150, 1)";
+  ctx.fillStyle = "rgba(0, 0, 0, 1)";
   const d = 6;
   for (const [ox, oy] of [
     [0, 0],
