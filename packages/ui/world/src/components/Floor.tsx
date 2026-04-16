@@ -9,10 +9,11 @@ import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
 import { int } from "three/src/nodes/tsl/TSLCore.js";
 import * as THREE from "three/webgpu";
-import { geomorphGridMeters, gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, worldToSguScale } from "../const";
+import { MAX_GEOMORPH_INSTANCES } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { PICK_TYPE, withPickOutput } from "../service/pick";
+import { drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -174,125 +175,4 @@ export type State = {
   transformInstances(): void;
 };
 
-function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
-  ct.save();
-  ct.lineJoin = "round";
-  ct.lineCap = "round";
-  ct.lineWidth = 0.08;
-  ct.strokeStyle = "rgba(0, 0, 0, 1)";
-
-  const insetAmount = 0.5;
-
-  for (const room of layout.rooms) {
-    const noHoles = room.clone().removeHoles();
-    sciFiFloorPattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
-    ct.fillStyle = sciFiFloorPattern;
-    fillRoundedPolys(ct, geomService.createInset(noHoles, insetAmount), insetAmount);
-  }
-  ct.restore();
-}
-
-function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number) {
-  for (const poly of polys) {
-    // filter out points too close together so short edges don't prevent rounding
-    const minDist = cornerRadius * 0.5;
-    const pts: Geom.Vect[] = [];
-    for (const p of poly.outline) {
-      const last = pts[pts.length - 1];
-      if (!last || Math.hypot(p.x - last.x, p.y - last.y) >= minDist) {
-        pts.push(p);
-      }
-    }
-    // also check last-to-first
-    while (pts.length > 3 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < minDist) {
-      pts.pop();
-    }
-    if (pts.length < 3) continue;
-    ct.beginPath();
-    const n = pts.length;
-    for (let i = 0; i < n; i++) {
-      const prev = pts[(i - 1 + n) % n];
-      const curr = pts[i];
-      const next = pts[(i + 1) % n];
-      const toPrevX = prev.x - curr.x,
-        toPrevY = prev.y - curr.y;
-      const toNextX = next.x - curr.x,
-        toNextY = next.y - curr.y;
-      const lenPrev = Math.hypot(toPrevX, toPrevY);
-      const lenNext = Math.hypot(toNextX, toNextY);
-      const r = Math.min(cornerRadius, lenPrev / 2, lenNext / 2);
-      const ax = curr.x + (toPrevX / lenPrev) * r;
-      const ay = curr.y + (toPrevY / lenPrev) * r;
-      const bx = curr.x + (toNextX / lenNext) * r;
-      const by = curr.y + (toNextY / lenNext) * r;
-      if (i === 0) ct.moveTo(ax, ay);
-      else ct.lineTo(ax, ay);
-      ct.quadraticCurveTo(curr.x, curr.y, bx, by);
-    }
-    ct.closePath();
-    ct.stroke();
-    ct.fill();
-  }
-}
-
-const sciFiFloorPattern = (() => {
-  const tileWorld = geomorphGridMeters; // match grid
-  const scale = worldToSguScale * gmFloorExtraScale;
-  const size = Math.round(tileWorld * scale);
-  const c = document.createElement("canvas");
-  c.width = size * 2;
-  c.height = size * 2;
-  const s = c.width;
-  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-
-  // base dark metallic
-  ctx.fillStyle = "rgba(20, 22, 28, 1)";
-  ctx.fillRect(0, 0, s, s);
-
-  // tile grid lines
-  ctx.strokeStyle = "rgba(80, 85, 95, 0.5)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, size, size);
-  ctx.strokeRect(size, 0, size, size);
-  ctx.strokeRect(0, size, size, size);
-  ctx.strokeRect(size, size, size, size);
-
-  // inner tile bevels (inset lines)
-  const m = 4;
-  ctx.strokeStyle = "rgba(100, 110, 220, 0.25)";
-  ctx.lineWidth = 1;
-  for (const [ox, oy] of [
-    [0, 0],
-    [size, 0],
-    [0, size],
-    [size, size],
-  ]) {
-    ctx.strokeRect(ox + m, oy + m, size - m * 2, size - m * 2);
-  }
-
-  // rivet dots in corners of each tile
-  ctx.fillStyle = "rgba(0, 0, 0, 1)";
-  const d = 6;
-  for (const [ox, oy] of [
-    [0, 0],
-    [size, 0],
-    [0, size],
-    [size, size],
-  ]) {
-    for (const [rx, ry] of [
-      [d, d],
-      [size - d, d],
-      [d, size - d],
-      [size - d, size - d],
-    ]) {
-      ctx.beginPath();
-      ctx.arc(ox + rx, oy + ry, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  return ctx.createPattern(c, "repeat") as CanvasPattern;
-})();
-
-const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 const tmpMat1 = new Mat();
