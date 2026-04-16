@@ -185,7 +185,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           )}
         >
           {tabs.map((tab) => (
-            <TabItem
+            <TabHeaderItem
               key={tab.id}
               tab={tab}
               isCurrentTab={meta.currentTabId === tab.id}
@@ -208,6 +208,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         </div>
         <UiInstanceMenu meta={meta} className="self-end" />
       </div>
+
       <div className="pt-4 px-0 flex-1 size-full overflow-auto">
         {tabs.map((tab) => (
           <div
@@ -215,7 +216,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             data-tab-content={tab.id}
             className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}
           >
-            {byId[tab.id] && <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />}
+            {byId[tab.id] && meta.currentTabId === tab.id && (
+              <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
+            )}
           </div>
         ))}
       </div>
@@ -223,7 +226,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   );
 }
 
-interface TabItemProps {
+interface TabHeaderItemProps {
   tab: UiInstanceMeta;
   isCurrentTab: boolean;
   onClickTab: () => void;
@@ -234,7 +237,7 @@ interface TabItemProps {
   uiStoreApi: typeof import("@npc-cli/ui-sdk/ui.store").uiStoreApi;
 }
 
-function TabItem({
+function TabHeaderItem({
   tab,
   isCurrentTab,
   onClickTab,
@@ -243,7 +246,7 @@ function TabItem({
   tabsMetaId,
   uiStore,
   uiStoreApi,
-}: TabItemProps) {
+}: TabHeaderItemProps) {
   const byId = useStore(uiStore, (s) => s.byId);
   const allTabs = useMemo(
     () =>
