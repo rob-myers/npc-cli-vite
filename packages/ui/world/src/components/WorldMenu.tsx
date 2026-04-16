@@ -52,11 +52,12 @@ export function WorldMenu() {
   return (
     <motion.div
       className={cn(uiClassName, "absolute top-0 left-0 z-9999 touch-none select-none")}
-      style={{ y }}
+      style={{ x: 0, y }}
       drag="y"
       dragConstraints={{ top: minY, bottom: maxY }}
       dragMomentum={false}
       onDragEnd={state.onDragEnd}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <Menu.Root>
         <Menu.Trigger className="cursor-pointer">

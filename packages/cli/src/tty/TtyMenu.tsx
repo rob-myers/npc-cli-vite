@@ -21,7 +21,10 @@ export function TtyMenu(props: Props) {
   React.useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
-  const y = useMotionValue(tryLocalStorageGetParsed(menuYStorageKey) ?? 0);
+
+  const getMaxY = () => Math.max(0, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
+  const storedY = Number(tryLocalStorageGetParsed(menuYStorageKey)) || 0;
+  const y = useMotionValue(Math.max(0, Math.min(storedY, getMaxY())));
 
   const state = useStateRef(
     () => ({
@@ -119,13 +122,15 @@ export function TtyMenu(props: Props) {
       )}
       style={{ y }}
       drag="y"
-      dragConstraints={props.constraintsRef}
+      dragConstraints={{ top: 0, bottom: getMaxY() }}
       dragMomentum={false}
       onDragStart={() => {
         dragged.current = true;
       }}
       onDragEnd={() => {
-        tryLocalStorageSet(menuYStorageKey, String(y.get()));
+        const clamped = Math.max(0, Math.min(y.get(), getMaxY()));
+        y.set(clamped);
+        tryLocalStorageSet(menuYStorageKey, String(clamped));
         requestAnimationFrame(() => {
           dragged.current = false;
         });
