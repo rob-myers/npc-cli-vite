@@ -365,7 +365,7 @@ export function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.
   ct.lineWidth = 0.08;
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
-  const insetAmount = 0.5;
+  const insetAmount = 0.75;
 
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
@@ -434,7 +434,7 @@ const sciFiFloorPattern = (() => {
   ctx.fillRect(0, 0, s, s);
 
   // tile grid lines
-  ctx.strokeStyle = "rgba(80, 85, 95, 0.5)";
+  ctx.strokeStyle = "rgba(0, 200, 0, 0.2)";
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, size, size);
   ctx.strokeRect(size, 0, size, size);
@@ -443,7 +443,7 @@ const sciFiFloorPattern = (() => {
 
   // inner tile bevels (inset lines)
   const m = 4;
-  ctx.strokeStyle = "rgba(100, 110, 220, 0.25)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
   ctx.lineWidth = 1;
   for (const [ox, oy] of [
     [0, 0],
