@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="png" href="#object-1" path="3573d1c9cad6c8fc.png"/>
+      <bx:file format="png" path="3573d1c9cad6c8fc.png"/>
+    </bx:export>
+  </defs>
+  <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAABF1BMVEUAAAD///8cHBwgICAiIiInJycpKCksS+AzMjNHS+BKMDpNTU1OTk5PT09QUFBRSnhSS0lSUlJTUlNUVFRYWFhZWVlcPF5dXV1lb4JwcFpzYWF5Z4CCbm6Ei6OIrrqLi4uRhImUYGCeVzek2N6nEie0tLS6Eie6ZkG6urq7cD68cj/AdUPA7ubB2NjCeEfCwsLC2dnDe0rGxsbGyc/HwsLJICDJv7vJycnJydvL4uLNxsbN29vPknfP5eXP+PTQ5ubRj3vTm4LYrk3a09Pa6Oja6enb6+vc1tbg2tri2trk29vn4eHn+Pjp4+Pp6entupjt5eXt+Pju5ubw+vry+vry/v7z/v706en179X85eX8/Pz+7OP/2ashwb8OAAAAAnRSTlMAAHaTzTgAAAOsSURBVFjD3ZZrW9MwFICDKKLbqmPU6azCrFjHZJQ5UCmTIRAvIFUrRbH//3d4Lk1ou5Z14Cdf99hkNO9ObicRIsbJIMbJ/TLxV2cDcJxnhOOLKQFBtwv/LccIsbz1S4j7j0oLNrrdTnfD8bn91AFgBB2MwF/eAlDQHvnRlIIOCraIK0TQIRKz8PjJU/Hg3kORmqfC9r5qaL8ibF84vg+fiZPoTCAtcDLrAj+rq/GrvV5PtdLfsSBTSFpQwC9GQK8XKcO44KKS6QL+2t6OE91Fxd3I2dlLR8Cf4hVNv7YTXQiiHfqqA/+cTu7GcDLDsBp3QOFkBPiefdHGHhtHnj3V3M6fBRum9/17mF5bTx6PjRao+bcLtzW8YResIi8Mw2azuajq74ZE/BgO1fdB4LojP7G4ZmZmSggO04LRKE+wYOQKDufn5uazAr+U4M+fIkG2Cx4CgoUF6Ef43cOf9oLq+Xk1oPLwgBgGgJRray4h5QTBSrW2ErLgGJsekwAULJBBoAUtJKyDgFStXRKsV2vrm2nBUr9QYFmWAQJ4tKwWRRCu12qbm5ulImggVoMFltXgLoAgE4Fc6kspXXdsDBoMCAzDgMIhwILAw/LBdxqbg1DiMyeCc+bkN3ACBRKEL6vVl2E5wT4z+AQMoMCClUplJS2gDlotBkpa8AUxze0fwNezszMWGNWqkRbgAoqiEQO7VgvMmBpQhycJTscFvg+LuN1mQbvt5wsAjqBuGPVMBNxQCUZa0GTMRcCEwqUCXzNKbaYr8x8KYLS8qQW0ieO6oQThm/ICWpo6PXutYkH/EgGvbIH5AB67QrBgV+XCyyKoIFZlYrRS9KXuq0jkgwpDdV0QqQDC8JrTSIJQivD0VM9WqAUfkfjNRDElmLwOTPNfrcSbN6cWUDKA7Yz5AIvjo089lqUiuDV7azZnCPWYlZ4F3BOLkFxU3XWDQCeRKwsgIZUWGEZeBNcWlOiCR+NlUEIlIKGqs5DvB65bJOAG0DpXIIOfACoKBXxkwXbzPBKouqcF/aW0oJ8UVOJDz+K7gtGIj0Gol4sAEoLaynDSo6ChUGMg+0tSjwHVISnkzcIJcq45weZreLQf8PGeH8HHz7Srj74diQGyrxmo87wVn+9x8uN6XgTbyBfN9gfF29vP8cFv4RMqeflgMACBaSrBQAte33lxIWDF2ELCbFCvm0nq6j5AR7M61pNjQHkA8gHdEZrNWlKA94Xce8El+eBGnGAUZnwtGKn7QVbwF7wiiZCPXiwLAAAAAElFTkSuQmCC" width="64" height="64" style="image-rendering: pixelated; pointer-events: none;" id="object-1">
+    <title>3573d1c9cad6c8fc</title>
+  </image>
+  <g style="visibility: hidden;">
+    <rect x="8" width="0.96221" height="5" style="stroke-width: 0.2px; opacity: 0.5;" y="9" id="object-0"/>
+    <rect x="15" width="0.96221" height="5" style="stroke-width: 0.2px; opacity: 0.5;" y="9" id="rect-1"/>
+    <rect x="8" width="8" height="1" style="stroke-width: 0.2px; opacity: 0.5;" y="8" id="rect-2"/>
+    <rect x="8" width="8" height="1" style="stroke-width: 0.2px; opacity: 0.5;" y="14" id="rect-3"/>
+  </g>
+</svg>
