@@ -3,38 +3,38 @@ packages:
   - packages/**
 
 catalog:
-  '@atlaskit/pragmatic-drag-and-drop': ^1.7.7
-  '@atlaskit/pragmatic-drag-and-drop-hitbox': ^1.1.0
-  '@base-ui/react': 1.1.0
-  '@biomejs/biome': ^2.4.8
-  '@dragdroptouch/drag-drop-touch': ^2.0.3
-  '@gltf-transform/core': ^4.3.0
-  '@gltf-transform/extensions': ^4.3.0
-  '@gltf-transform/functions': ^4.3.0
-  '@inquirer/prompts': ^8.1.0
-  '@phosphor-icons/react': ^2.1.10
-  '@react-three/drei': ^10.7.7
-  '@react-three/fiber': ^9.5.0
-  '@redux-devtools/extension': ^3.3.0
-  '@tailwindcss/vite': ^4.1.17
-  '@tanstack/react-query': 5.90.12
-  '@tanstack/react-query-devtools': ^5.94.5
-  '@tanstack/react-router': ^1.140.1
-  '@tanstack/react-router-devtools': ^1.140.1
-  '@tanstack/router-plugin': ^1.140.1
-  '@thednp/dommatrix': ^3.0.2
-  '@types/braces': ^3.0.5
-  '@types/earcut': ^3.0.0
-  '@types/node': ^24.12.0
-  '@types/react': ^19.2.14
-  '@types/react-beforeunload': 2.1.5
-  '@types/react-dom': ^19.2.3
-  '@types/react-resizable': ^3.0.8
-  '@types/svg-path-parser': ^1.1.6
-  '@types/three': ^0.182.0
-  '@typescript/native-preview': 7.0.0-dev.20260312.1
-  '@vitejs/plugin-basic-ssl': ^2.1.4
-  '@vitejs/plugin-react-swc': 4.2.3
+  "@atlaskit/pragmatic-drag-and-drop": ^1.7.7
+  "@atlaskit/pragmatic-drag-and-drop-hitbox": ^1.1.0
+  "@base-ui/react": 1.1.0
+  "@biomejs/biome": ^2.4.8
+  "@dragdroptouch/drag-drop-touch": ^2.0.3
+  "@gltf-transform/core": ^4.3.0
+  "@gltf-transform/extensions": ^4.3.0
+  "@gltf-transform/functions": ^4.3.0
+  "@inquirer/prompts": ^8.1.0
+  "@phosphor-icons/react": ^2.1.10
+  "@react-three/drei": ^10.7.7
+  "@react-three/fiber": ^9.5.0
+  "@redux-devtools/extension": ^3.3.0
+  "@tailwindcss/vite": ^4.1.17
+  "@tanstack/react-query": 5.90.12
+  "@tanstack/react-query-devtools": ^5.94.5
+  "@tanstack/react-router": ^1.140.1
+  "@tanstack/react-router-devtools": ^1.140.1
+  "@tanstack/router-plugin": ^1.140.1
+  "@thednp/dommatrix": ^3.0.2
+  "@types/braces": ^3.0.5
+  "@types/earcut": ^3.0.0
+  "@types/node": ^24.12.0
+  "@types/react": ^19.2.14
+  "@types/react-beforeunload": 2.1.5
+  "@types/react-dom": ^19.2.3
+  "@types/react-resizable": ^3.0.8
+  "@types/svg-path-parser": ^1.1.6
+  "@types/three": ^0.182.0
+  "@typescript/native-preview": 7.0.0-dev.20260312.1
+  "@vitejs/plugin-basic-ssl": ^2.1.4
+  "@vitejs/plugin-react-swc": 4.2.3
   braces: ^3.0.3
   chalk: ^4.1.2
   cli-columns: ^4.0.0
@@ -68,7 +68,7 @@ catalog:
   svg-path-parser: ^1.1.0
   tailwind-merge: ^3.4.0
   tailwindcss: ^4.1.17
-  three: ^0.182.0
+  three: ^0.183.2
   three-stdlib: ^2.36.1
   tsx: ^4.21.0
   type-fest: ^5.3.1
