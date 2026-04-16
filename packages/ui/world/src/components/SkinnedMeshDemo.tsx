@@ -81,7 +81,7 @@ export function SkinnedMeshDemo() {
     const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
     const texNode = tslTexture(texture);
     const viewDir = cameraPosition.sub(positionWorld).normalize();
-    const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.6);
+    const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
     mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
     return mat;
   }, [texture]);
