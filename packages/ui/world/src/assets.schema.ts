@@ -138,6 +138,11 @@ export const WorldThemeSchema = z.object({
     hull: z.object({ fill: z.string(), stroke: z.string() }),
     nonHull: z.object({ fill: z.string(), stroke: z.string() }),
   }),
+  floor: z
+    .object({
+      navStroke: z.string().default("#000c"),
+    })
+    .default({ navStroke: "#000c" }),
   walls: z
     .object({
       color: z.string().default("#000000"),
@@ -176,23 +181,6 @@ export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   isHullDoor: z.function({ input: [z.number()], output: z.boolean() }),
 });
 export type GeomorphLayoutInstance = z.infer<typeof GeomorphLayoutInstanceSchema>;
-
-// 🚧 TODO use during assets.json build?
-// export const ObstacleKeySchema = z.templateLiteral([StarShipSymbolImageKeySchema, z.literal(" "), z.number()]);
-// export type ObstacleKey = z.infer<typeof ObstacleKeySchema>;
-// export const ObstacleSheetRectCtxtSchema = z.object({
-//   symbolKey: StarShipSymbolImageKeySchema,
-//   /**
-//    * Index inside symbol (0-based)
-//    * _NOTE_: often only one obstacle in a given symbol
-//    */
-//   obstacleId: z.number(),
-//   /** Spritesheet id (0-based) */
-//   sheetId: z.number(),
-//   /** e.g. `chair` */
-//   type: z.string(),
-// });
-// export type ObstacleSheetRectCtxt = z.infer<typeof ObstacleSheetRectCtxtSchema>;
 
 export const StarShipSymbolSheetDatumSchema = z.object({
   key: StarShipSymbolImageKeySchema,
