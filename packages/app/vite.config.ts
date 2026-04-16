@@ -3,7 +3,6 @@ import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
@@ -23,8 +22,6 @@ export default defineConfig({
     mdx(),
     react(),
     tailwindcss(),
-    // pnpm dev-hotspot needs https for crypto
-    process.env.USE_HTTPS ? basicSsl() : undefined,
     mapEditApiPlugin(),
     watchAssetsPlugin(),
 

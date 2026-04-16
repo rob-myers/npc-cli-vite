@@ -153,6 +153,9 @@ catalogs:
     poly2tri:
       specifier: ^1.5.0
       version: 1.5.0
+    polyfill-crypto-methods:
+      specifier: ^1.0.0
+      version: 1.0.0
     polygon-clipping:
       specifier: ^0.15.7
       version: 0.15.7
@@ -528,6 +531,9 @@ importers:
       immer:
         specifier: 'catalog:'
         version: 11.1.3
+      polyfill-crypto-methods:
+        specifier: 'catalog:'
+        version: 1.0.0
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -3237,6 +3243,9 @@ packages:
 
   poly2tri@1.5.0:
     resolution: {integrity: sha512-5yACqznqRrlFA9RhdWyD2blNPVhlB3qK+iRYJCfHtJGINb+XNBgKTw+pJOsJZ+oaGxFsIyFmOVapuREHnRhXPg==}
+
+  polyfill-crypto-methods@1.0.0:
+    resolution: {integrity: sha512-1/oLepJ06Lo/cu+zjVdEwA9sprX94mXCBlrj5Al9YT66jrC8dE/N3LQ2xy+I4nnoikweOvZWcpvwzIdCUCZbNQ==}
 
   polygon-clipping@0.15.7:
     resolution: {integrity: sha512-nhfdr83ECBg6xtqOAJab1tbksbBAOMUltN60bU+llHVOL0e5Onm1WpAXXWXVB39L8AJFssoIhEVuy/S90MmotA==}
@@ -6083,6 +6092,8 @@ snapshots:
   picomatch@4.0.4: {}
 
   poly2tri@1.5.0: {}
+
+  polyfill-crypto-methods@1.0.0: {}
 
   polygon-clipping@0.15.7:
     dependencies:
