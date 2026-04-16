@@ -7132,7 +7132,7 @@
         "nonHull": {"fill": "#999", "stroke": "#000"}
       },
       "floor": {"navStroke": "#ff02"},
-      "walls": {"color": "#000", "opacity": 0.25}
+      "walls": {"color": "#000", "opacity": 0.5}
     }
   },
   "hash": {"obstacles": 1480284142}
