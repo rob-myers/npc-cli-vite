@@ -25,6 +25,7 @@
     "debounce": "^3.0.0",
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
