@@ -12,10 +12,11 @@ export function Debug() {
 
   const state = useStateRef(
     () => ({
+      demoNavPath: [] as Vec3[],
+      demoNavPathShown: true,
       originShown: false,
       openDoorsOnClick: true,
       doorAnims: new Map<number, number>(), // instanceId → raf
-      navPath: [] as Vec3[],
 
       animateDoor(instanceId: number, target: number) {
         const existing = state.doorAnims.get(instanceId);
@@ -40,7 +41,7 @@ export function Debug() {
       computeDemoPath() {
         const gm = w.gms[0];
         const navMesh = w.nav?.navMesh;
-        if (!navMesh || !gm) return void (state.navPath = []);
+        if (!navMesh || !gm) return void (state.demoNavPath = []);
 
         const { x, y, height } = gm.gridRect;
         const result = findPath(
@@ -50,13 +51,13 @@ export function Debug() {
           [0.5, 0.1, 0.5],
           ANY_QUERY_FILTER,
         );
-        state.navPath = result.success ? result.path.map((p) => p.position) : [];
+        state.demoNavPath = result.success ? result.path.map((p) => p.position) : [];
       },
 
       updateInstances() {
         const inst = instRef.current;
         if (!inst) return;
-        const { navPath: ps } = state;
+        const { demoNavPath: ps } = state;
         inst.count = Math.max(0, ps.length - 1);
 
         for (let i = 0; i + 1 < ps.length; i++) {
@@ -76,7 +77,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { originShown: true, openDoorsOnClick: true },
+      reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true },
     },
   );
 
@@ -113,9 +114,9 @@ export function Debug() {
         ref={instRef}
         args={[quad, undefined, maxPathSegments]}
         frustumCulled={false}
-        position={[0, 0.5, 0]}
+        position={[0, 1, 0]}
         renderOrder={-6}
-        visible={false}
+        visible={state.demoNavPathShown}
       >
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>

@@ -69,17 +69,26 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
 assets.theme ??= {};
 assets.theme[defaultThemeKey] ??= defaultWorldTheme;
 
+// 🔔 avoid needless updates
+const changedSymbolKeys = changedFiles.map((f) => path.basename(f, ".json"));
+const someSymbolCreated = changedSymbolKeys.some((symbolKey) => !(symbolKey in assets.symbol));
+const stratifiedStartIndex = someSymbolCreated
+  ? 0
+  : assets.stratifiedSymbolNodes.findIndex((level) => level.some(({ id }) => changedSymbolKeys.includes(id)));
+
 perf("symbols/maps");
 updateChangedSymbolsAndMaps(changedFiles, assets);
 perf("symbols/maps");
 
 perf("stratify symbols");
-const symbolGraph = SymbolGraph.from(assets.symbol);
-assets.stratifiedSymbolNodes = symbolGraph.stratify();
+if (someSymbolCreated) {
+  const symbolGraph = SymbolGraph.from(assets.symbol);
+  assets.stratifiedSymbolNodes = symbolGraph.stratify();
+}
 perf("stratify symbols");
 
 perf("flatten symbols");
-flattenSymbols(assets.stratifiedSymbolNodes, assets);
+flattenSymbols(assets.stratifiedSymbolNodes.slice(stratifiedStartIndex), assets);
 perf("flatten symbols");
 
 perf("create layouts");
@@ -123,7 +132,8 @@ function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType)
 }
 
 function flattenSymbols(symbolsStratified: SymbolGraphNode[][], assets: AssetsType) {
-  const flattened: AssetsType["flattened"] = {};
+  // const flattened: AssetsType["flattened"] = {};
+  const flattened: AssetsType["flattened"] = assets.flattened ?? {};
   for (const level of symbolsStratified) {
     for (const { id: symbolKey } of level) {
       const symbol = assets.symbol[symbolKey];
