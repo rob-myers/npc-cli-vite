@@ -20,6 +20,7 @@ import { TtyMenu } from "./TtyMenu";
  */
 export function Tty(props: Props) {
   const [rootRef, bounds] = useMeasure({ debounce: 0, scroll: false });
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const baseRef = React.useRef<BaseTtyState>(null);
 
   const state = useStateRef(
@@ -280,11 +281,18 @@ export function Tty(props: Props) {
   }, [baseRef.current?.session, props.disabled]);
 
   return (
-    <div className="size-full p-1" ref={rootRef}>
+    <div
+      className="relative size-full px-1 overflow-hidden"
+      ref={(el) => {
+        rootRef(el);
+        containerRef.current = el;
+      }}
+    >
       <BaseTty ref={baseRef} sessionKey={props.sessionKey} env={props.env} onUnmount={state.reboot} />
       {baseRef.current?.session && (
         <TtyMenu
           canContOrStop={state.canContOrStop}
+          constraintsRef={containerRef}
           disabled={props.disabled}
           session={baseRef.current.session}
           setTabsEnabled={props.setTabsEnabled}

@@ -1,9 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import {
-  tryLocalStorageGet,
-  tryLocalStorageGetParsed,
-  tryLocalStorageSet,
-} from "@npc-cli/util/legacy/generic";
+import { tryLocalStorageGet, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -13,14 +9,23 @@ import {
   PaintBrushIcon,
   SkullIcon,
 } from "@phosphor-icons/react";
-import React from "react";
+import { motion, useMotionValue } from "motion/react";
+import React, { useRef } from "react";
 import { localStorageKey, spawnBgPausedDefault } from "../shell/const";
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 
 export function TtyMenu(props: Props) {
+  const dragged = useRef(false);
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+  const y = useMotionValue(tryLocalStorageGetParsed(menuYStorageKey) ?? 0);
+
   const state = useStateRef(
     () => ({
+      rootEl: null as HTMLDivElement | null,
       /**
        * Given `props.disabled`, should interactively spawned
        * background processes also start paused?
@@ -89,6 +94,8 @@ export function TtyMenu(props: Props) {
 
   state.xterm = props.session.ttyShell.xterm;
 
+  console.log(state.xterm.xterm.element?.clientHeight);
+
   React.useMemo(() => {
     if (!tryLocalStorageGet(localStorageKey.touchTtyCanType)) {
       tryLocalStorageSet(localStorageKey.touchTtyCanType, JSON.stringify(false));
@@ -96,35 +103,58 @@ export function TtyMenu(props: Props) {
     if (!tryLocalStorageGet(localStorageKey.touchTtyOpen)) {
       tryLocalStorageSet(localStorageKey.touchTtyOpen, JSON.stringify(false));
     }
-    // state.xterm.setCanType(tryLocalStorageGetParsed(localStorageKey.touchTtyCanType) === true);
     state.xterm.setCanType(true);
     state.touchMenuOpen = tryLocalStorageGetParsed(localStorageKey.touchTtyOpen) === true;
   }, []);
 
   return (
-    <div
+    <motion.div
+      ref={state.ref("rootEl")}
       className={cn(
-        "absolute z-110 top-0 right-0",
-        "[--menu-width:32px] w-(--menu-width) h-[calc(100%-32px)]",
-        "flex flex-col text-sm leading-1 border-[0_0_2px_2px] border-none text-white/80",
-        "transition-transform duration-500",
-        state.touchMenuOpen
-          ? "transform-[translate(0px,0px)] [&_.toggle]:bg-[rgba(0,0,0,0.5)]"
-          : "transform-[translate(var(--menu-width),0px)]",
+        "absolute z-2 top-0 right-0 touch-none transition-opacity duration-300",
+        "[--menu-width:32px]",
+        "flex flex-col text-sm leading-1 border-none text-white/80",
+        state.touchMenuOpen ? "w-(--menu-width)" : "w-0",
+        visible ? "opacity-100" : "opacity-0",
       )}
-      onClick={state.onClickMenu}
+      style={{ y }}
+      drag="y"
+      dragConstraints={props.constraintsRef}
+      dragMomentum={false}
+      onDragStart={() => {
+        dragged.current = true;
+      }}
+      onDragEnd={() => {
+        tryLocalStorageSet(menuYStorageKey, String(y.get()));
+        requestAnimationFrame(() => {
+          dragged.current = false;
+        });
+      }}
+      onClick={(e: React.MouseEvent) => {
+        if (dragged.current) {
+          dragged.current = false;
+          return;
+        }
+        state.onClickMenu(e);
+      }}
     >
-      <div className="absolute top-0 right-(--menu-width)">
+      <div className={cn("absolute top-0", state.touchMenuOpen ? "right-(--menu-width)" : "right-0")}>
         <div
           className="h-8 pr-2 flex justify-end items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
-          onClick={state.toggleTouchMenu}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!dragged.current) state.toggleTouchMenu();
+          }}
         >
           {state.touchMenuOpen ? ">" : "<"}
         </div>
         {props.canContOrStop != null && (
           <div
             className="pr-1 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
-            onClick={state.contOrStopInteractive}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!dragged.current) state.contOrStopInteractive();
+            }}
             title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
           >
             {props.canContOrStop}
@@ -132,62 +162,59 @@ export function TtyMenu(props: Props) {
         )}
         {props.disabled && (
           <div
-            className={cn(
-              "cursor-pointer pr-2 pt-1 text-[#777]",
-              !state.spawnBgPaused && "text-[#cc6]",
-            )}
-            onClick={state.setSpawnBgPaused.bind(null, undefined)}
-            title={
-              state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"
-            }
+            className={cn("cursor-pointer pr-2 pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!dragged.current) state.setSpawnBgPaused();
+            }}
+            title={state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"}
           >
             BG
           </div>
         )}
       </div>
 
-      <div
-        className={cn(
-          "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
-        )}
-      >
-        {/* <div
-          className={cn(icon, "can-type", state.xterm.canType() ? "text-[#cfc]" : "text-[#999]")}
-          title={`text input ${state.xterm.canType() ? "enabled" : "disabled"}`}
+      {state.touchMenuOpen && (
+        <div
+          className={cn(
+            "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
+            "mb-8",
+          )}
         >
-          $
-        </div> */}
-        <div className={cn(icon, "paste")} title="paste (Cmd+V)">
-          <PaintBrushIcon weight="light" />
+          <div className={cn(icon, "paste")} title="paste (Cmd+V)">
+            <PaintBrushIcon weight="light" />
+          </div>
+          <div className={cn(icon, "enter")} title="or press Enter">
+            <KeyReturnIcon size={18} weight="fill" />
+          </div>
+          <div className={cn(icon, "up")} title="or press Up">
+            <ArrowLeftIcon weight="fill" />
+          </div>
+          <div className={cn(icon, "down")} title="or press Down">
+            <ArrowRightIcon weight="fill" />
+          </div>
+          <div className={cn(icon, "ctrl-c")} title="or press Ctrl+C">
+            <SkullIcon weight="fill" />
+          </div>
+          <div className={cn(icon, "clear")} title="or press Ctrl+L">
+            <ArrowUpIcon weight="fill" />
+          </div>
+          <div className={cn(icon, "delete")} title="or press Backspace">
+            <EraserIcon weight="fill" />
+          </div>
         </div>
-        <div className={cn(icon, "enter")} title="or press Enter">
-          <KeyReturnIcon size={18} weight="fill" />
-        </div>
-        <div className={cn(icon, "up")} title="or press Up">
-          <ArrowLeftIcon weight="fill" />
-        </div>
-        <div className={cn(icon, "down")} title="or press Down">
-          <ArrowRightIcon weight="fill" />
-        </div>
-        <div className={cn(icon, "ctrl-c")} title="or press Ctrl+C">
-          <SkullIcon weight="fill" />
-        </div>
-        <div className={cn(icon, "clear")} title="or press Ctrl+L">
-          <ArrowUpIcon weight="fill" />
-        </div>
-        <div className={cn(icon, "delete")} title="or press Backspace">
-          <EraserIcon weight="fill" />
-        </div>
-      </div>
-    </div>
+      )}
+    </motion.div>
   );
 }
 
 interface Props {
   canContOrStop: null | "CONT" | "STOP";
+  constraintsRef: React.RefObject<HTMLDivElement | null>;
   disabled?: boolean;
   session: Session;
   setTabsEnabled(next: boolean): void;
 }
 
 const icon = cn("flex justify-center h-6 cursor-pointer");
+const menuYStorageKey = "tty-menu-y";
