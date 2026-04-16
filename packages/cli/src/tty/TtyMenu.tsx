@@ -1,8 +1,8 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGet, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
+  ArrowArcLeftIcon,
+  ArrowDownIcon,
   ArrowUpIcon,
   EraserIcon,
   KeyReturnIcon,
@@ -97,8 +97,6 @@ export function TtyMenu(props: Props) {
 
   state.xterm = props.session.ttyShell.xterm;
 
-  console.log(state.xterm.xterm.element?.clientHeight);
-
   React.useMemo(() => {
     if (!tryLocalStorageGet(localStorageKey.touchTtyCanType)) {
       tryLocalStorageSet(localStorageKey.touchTtyCanType, JSON.stringify(false));
@@ -116,8 +114,7 @@ export function TtyMenu(props: Props) {
       className={cn(
         "absolute z-2 top-0 right-0 touch-none transition-opacity duration-300",
         "[--menu-width:32px]",
-        "flex flex-col text-sm leading-1 border-none text-white/80",
-        state.touchMenuOpen ? "w-(--menu-width)" : "w-0",
+        "text-sm leading-1 border-none text-white/80",
         visible ? "opacity-100" : "opacity-0",
       )}
       style={{ y }}
@@ -143,47 +140,54 @@ export function TtyMenu(props: Props) {
         state.onClickMenu(e);
       }}
     >
-      <div className={cn("absolute top-0", state.touchMenuOpen ? "right-(--menu-width)" : "right-0")}>
-        <div
-          className="h-8 pr-2 flex justify-end items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!dragged.current) state.toggleTouchMenu();
-          }}
-        >
-          {state.touchMenuOpen ? ">" : "<"}
+      <div
+        className={cn(
+          "flex transition-transform duration-500",
+          state.touchMenuOpen ? "translate-x-0" : "translate-x-(--menu-width)",
+        )}
+      >
+        <div>
+          <div
+            className={
+              "h-8 pr-2 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!dragged.current) state.toggleTouchMenu();
+            }}
+          >
+            {state.touchMenuOpen ? ">" : "<"}
+          </div>
+          {props.canContOrStop != null && (
+            <div
+              className="pr-1 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!dragged.current) state.contOrStopInteractive();
+              }}
+              title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
+            >
+              {props.canContOrStop}
+            </div>
+          )}
+          {props.disabled && (
+            <div
+              className={cn("cursor-pointer pr-2 pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!dragged.current) state.setSpawnBgPaused();
+              }}
+              title={state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"}
+            >
+              BG
+            </div>
+          )}
         </div>
-        {props.canContOrStop != null && (
-          <div
-            className="pr-1 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!dragged.current) state.contOrStopInteractive();
-            }}
-            title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
-          >
-            {props.canContOrStop}
-          </div>
-        )}
-        {props.disabled && (
-          <div
-            className={cn("cursor-pointer pr-2 pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!dragged.current) state.setSpawnBgPaused();
-            }}
-            title={state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"}
-          >
-            BG
-          </div>
-        )}
-      </div>
 
-      {state.touchMenuOpen && (
         <div
           className={cn(
             "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
-            "mb-8",
+            "mb-8 w-(--menu-width)",
           )}
         >
           <div className={cn(icon, "paste")} title="paste (Cmd+V)">
@@ -193,22 +197,22 @@ export function TtyMenu(props: Props) {
             <KeyReturnIcon size={18} weight="fill" />
           </div>
           <div className={cn(icon, "up")} title="or press Up">
-            <ArrowLeftIcon weight="fill" />
+            <ArrowUpIcon weight="fill" />
           </div>
           <div className={cn(icon, "down")} title="or press Down">
-            <ArrowRightIcon weight="fill" />
+            <ArrowDownIcon weight="fill" />
           </div>
           <div className={cn(icon, "ctrl-c")} title="or press Ctrl+C">
             <SkullIcon weight="fill" />
           </div>
           <div className={cn(icon, "clear")} title="or press Ctrl+L">
-            <ArrowUpIcon weight="fill" />
+            <ArrowArcLeftIcon weight="fill" />
           </div>
           <div className={cn(icon, "delete")} title="or press Backspace">
             <EraserIcon weight="fill" />
           </div>
         </div>
-      )}
+      </div>
     </motion.div>
   );
 }
