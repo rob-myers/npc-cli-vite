@@ -30,6 +30,7 @@ declare namespace NPC {
           type: string;
           instanceId: number;
           gmKey?: string;
+          collapse?: boolean;
         };
       };
   // 🚧 ...
