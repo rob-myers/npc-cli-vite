@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm -F @npc-cli/app dev",
-    "dev-hotspot": "export USE_HTTPS=true && pnpm dev --host",
+    "dev-hotspot": "pnpm dev --host",
     "build": "pnpm -F @npc-cli/app build",
     "build:analyze": "export BUILD_AND_ANALYZE=true; pnpm -F @npc-cli/app build",
     "build:wasm": "pnpm -F @npc-cli/parse-sh build:wasm",

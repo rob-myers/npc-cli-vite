@@ -4,6 +4,7 @@ import type { Layout } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import "polyfill-crypto-methods"; // support non-https local dev on mobile
 
 import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";

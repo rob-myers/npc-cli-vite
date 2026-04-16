@@ -21,6 +21,7 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "immer": "catalog:",
+    "polyfill-crypto-methods": "catalog:",
     "react": "catalog:",
     "react-reverse-portal": "catalog:",
     "zod": "catalog:",
