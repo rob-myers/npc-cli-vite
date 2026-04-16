@@ -1,9 +1,9 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { float, instanceIndex, int, texture, uv } from "three/tsl";
+import { attribute, float, instanceIndex, int, normalLocal, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { objectPick, PICK_TYPE, withPickOutput } from "../service/pick";
+import { PICK_TYPE, withPickOutput } from "../service/pick";
 import { createPanelAtlas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -13,10 +13,14 @@ export default function Doors() {
 
   const state = useStateRef(
     (): State => ({
-      box: new THREE.BoxGeometry(1, 1, 1),
+      box: (() => {
+        const g = new THREE.BoxGeometry(1, 1, 1);
+        g.setAttribute("collapseScale", new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));
+        return g;
+      })(),
+      collapseScales: new Float32Array(0),
       inst: null,
       openDoorsRatio: new Float32Array(0),
-      /** Per-instance [closedX, closedZ, slideDirX, slideDirZ, len] (stride 5) */
       slideData: new Float32Array(0),
 
       decodeInstanceId(instanceId: number) {
@@ -43,13 +47,16 @@ export default function Doors() {
         if (!inst || instanceId < 0 || instanceId >= openDoorsRatio.length) return;
         openDoorsRatio[instanceId] = ratio;
 
-        const i = instanceId * 5;
-        const offset = ratio * slideData[i + 4]; // len
         inst.getMatrixAt(instanceId, tmpMat4);
-        tmpMat4.elements[12] = slideData[i] + offset * slideData[i + 2];
-        tmpMat4.elements[14] = slideData[i + 1] + offset * slideData[i + 3];
+        applyOpenRatio(slideData, instanceId, ratio, tmpMat4);
         inst.setMatrixAt(instanceId, tmpMat4);
         inst.instanceMatrix.needsUpdate = true;
+
+        const isCollapse = slideData[instanceId * SD_STRIDE + SD_COLLAPSE];
+        if (isCollapse) {
+          state.collapseScales[instanceId] = 1 - ratio;
+          (state.box.getAttribute("collapseScale") as THREE.BufferAttribute).needsUpdate = true;
+        }
       },
 
       positionInstances() {
@@ -59,7 +66,9 @@ export default function Doors() {
         const n = w.gmsData.count.door;
         if (state.openDoorsRatio.length !== n) {
           state.openDoorsRatio = new Float32Array(n);
-          state.slideData = new Float32Array(n * 5);
+          state.slideData = new Float32Array(n * SD_STRIDE);
+          state.collapseScales = new Float32Array(n).fill(1);
+          state.box.setAttribute("collapseScale", new THREE.InstancedBufferAttribute(state.collapseScales, 1));
         }
 
         let instanceId = 0;
@@ -94,24 +103,25 @@ export default function Doors() {
             const mz = (tmpV1.y + tmpV2.y) / 2;
             const depth = hull ? hullPanelDepth : panelDepth;
 
-            // store per-instance slide data: [closedX, closedZ, slideDirX, slideDirZ, len]
-            const i = instanceId * 5;
-            state.slideData[i] = mx;
-            state.slideData[i + 1] = mz;
-            state.slideData[i + 4] = len;
-
-            // SVG (x,y) → world (x, 0, y), transformed by geomorph
             const connector = gm.doors[localId];
             const sd = connector?.meta?.slideDirection;
+
+            const i = instanceId * SD_STRIDE;
+            state.slideData[i + SD_MX] = mx;
+            state.slideData[i + SD_MZ] = mz;
             if (Array.isArray(sd)) {
               tmpV1.set(sd[0], sd[1]);
               tmpMat.transformSansTranslate(tmpV1);
-              state.slideData[i + 2] = tmpV1.x;
-              state.slideData[i + 3] = tmpV1.y;
+              state.slideData[i + SD_SLIDE_X] = tmpV1.x;
+              state.slideData[i + SD_SLIDE_Z] = tmpV1.y;
             } else {
-              state.slideData[i + 2] = nx;
-              state.slideData[i + 3] = nz;
+              state.slideData[i + SD_SLIDE_X] = nx;
+              state.slideData[i + SD_SLIDE_Z] = nz;
             }
+            state.slideData[i + SD_LEN] = len;
+            state.slideData[i + SD_LEN_NX] = len * nx;
+            state.slideData[i + SD_LEN_NZ] = len * nz;
+            state.slideData[i + SD_COLLAPSE] = connector?.meta?.collapse ? 1 : 0;
 
             // x-axis along door width, y-axis up, z-axis along panel depth
             // biome-ignore format: matrix layout
@@ -122,12 +132,13 @@ export default function Doors() {
               0,         0,            0,            1,
             );
 
-            // apply existing open ratio
+            // restore existing open ratio (e.g. after map change)
             const r = state.openDoorsRatio[instanceId];
             if (r > 0) {
-              const offset = r * len;
-              tmpMat4.elements[12] += offset * state.slideData[i + 2];
-              tmpMat4.elements[14] += offset * state.slideData[i + 3];
+              applyOpenRatio(state.slideData, instanceId, r, tmpMat4);
+              if (state.slideData[i + SD_COLLAPSE]) {
+                state.collapseScales[instanceId] = 1 - r;
+              }
             }
 
             inst.setMatrixAt(instanceId++, tmpMat4);
@@ -148,23 +159,31 @@ export default function Doors() {
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
-    const edge = new THREE.MeshStandardMaterial({ color: "#000000", metalness: 0.8, roughness: 0.3 });
-    const top = new THREE.MeshStandardMaterial({ color: "#000000", metalness: 0.6, roughness: 0.3 });
+    const edge = new THREE.MeshStandardMaterial({ color: "#fff", metalness: 0.8, roughness: 0.3 });
+    const top = new THREE.MeshStandardMaterial({ color: "#fff", metalness: 0.6, roughness: 0.3 });
 
     const { atlas, count } = createPanelAtlas();
     const frontOrBack = new THREE.MeshStandardNodeMaterial({
       metalness: 0.7,
       roughness: 0.25,
       side: THREE.DoubleSide,
-      transparent: true,
+      // 🔔 issues with walls and other doors
+      transparent: false,
+      depthWrite: true,
     });
-    const texNode = texture(atlas, uv());
+    // crop U so texture doesn't deform when door width is scaled down
+    // front (+z): anchored edge at u=0, crop to [0, scale]
+    // back  (-z): anchored edge at u=1, crop to [1-scale, 1]
+    const collapseUvScale = attribute("collapseScale", "float");
+    const scaledU = uv().x.mul(collapseUvScale);
+    const adjustedU = normalLocal.z.greaterThan(0).select(scaledU, scaledU.add(float(1).sub(collapseUvScale)));
+    const adjustedUv = vec2(adjustedU, uv().y);
+    const texNode = texture(atlas, adjustedUv);
 
     frontOrBack.colorNode = texNode.depth(instanceIndex.mod(int(count)));
-    frontOrBack.opacityNode = objectPick.equal(1).select(float(1), float(0.7));
-
-    frontOrBack.outputNode = withPickOutput(PICK_TYPE.doors);
-    top.outputNode = withPickOutput(PICK_TYPE.doors);
+    for (const mat of [edge, top, frontOrBack]) {
+      mat.outputNode = withPickOutput(PICK_TYPE.doors);
+    }
 
     return [edge, edge, top, edge, frontOrBack, frontOrBack];
   }, []);
@@ -180,11 +199,27 @@ export default function Doors() {
   ) : null;
 }
 
+/** Apply slide or collapse transform to the door matrix based on open ratio. */
+function applyOpenRatio(slideData: Float32Array, instanceId: number, ratio: number, mat4: THREE.Matrix4) {
+  const i = instanceId * SD_STRIDE;
+  if (slideData[i + SD_COLLAPSE]) {
+    const scale = 1 - ratio;
+    mat4.elements[0] = slideData[i + SD_LEN_NX] * scale;
+    mat4.elements[8] = slideData[i + SD_LEN_NZ] * scale;
+    mat4.elements[12] = slideData[i + SD_MX] + (ratio * slideData[i + SD_LEN_NX]) / 2;
+    mat4.elements[14] = slideData[i + SD_MZ] + (ratio * slideData[i + SD_LEN_NZ]) / 2;
+  } else {
+    const offset = ratio * slideData[i + SD_LEN];
+    mat4.elements[12] = slideData[i + SD_MX] + offset * slideData[i + SD_SLIDE_X];
+    mat4.elements[14] = slideData[i + SD_MZ] + offset * slideData[i + SD_SLIDE_Z];
+  }
+}
+
 export type State = {
   box: THREE.BoxGeometry;
+  collapseScales: Float32Array;
   inst: null | THREE.InstancedMesh;
   openDoorsRatio: Float32Array;
-  /** Per-instance [closedX, closedZ, slideDirX, slideDirZ, len] (stride 5) */
   slideData: Float32Array;
   decodeInstanceId: (instanceId: number) => {
     gmId: number;
@@ -195,6 +230,17 @@ export type State = {
   setOpen: (instanceId: number, ratio: number) => void;
   positionInstances: () => void;
 };
+
+// slideData layout: stride 8 per instance
+const SD_STRIDE = 8;
+const SD_MX = 0;
+const SD_MZ = 1;
+const SD_SLIDE_X = 2;
+const SD_SLIDE_Z = 3;
+const SD_LEN = 4;
+const SD_LEN_NX = 5;
+const SD_LEN_NZ = 6;
+const SD_COLLAPSE = 7;
 
 const doorHeight = 2 - 0.001; // fix ceiling z-fighting
 const panelDepth = 0.08;
