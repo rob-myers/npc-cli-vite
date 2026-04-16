@@ -108,8 +108,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { gl, scene, camera } = w.r3f;
         const renderer = gl as unknown as THREE.WebGPURenderer;
 
-        const x = Math.floor(e.nativeEvent.offsetX * devicePixelRatio);
-        const y = Math.floor(e.nativeEvent.offsetY * devicePixelRatio);
+        const x = Math.floor(e.nativeEvent.offsetX * gl.getPixelRatio());
+        const y = Math.floor(e.nativeEvent.offsetY * gl.getPixelRatio());
 
         const rt = state.pickRT;
         const rtCamera = camera;
