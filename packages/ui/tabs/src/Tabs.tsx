@@ -172,6 +172,13 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     });
   }, [meta.id]);
 
+  useEffect(() => {
+    uiStore.setState((draft) => {
+      const item = draft.byId?.[meta.currentTabId ?? ""];
+      if (item) item.everSeen = true;
+    });
+  }, [meta.currentTabId]); // lazy mount
+
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (

@@ -20,6 +20,7 @@ export const uiStoreApi = {
           draft.byId[meta.id] = {
             meta: result.success ? result.data : meta,
             portal: castDraft(new HtmlPortalWrapper()),
+            everSeen: !meta.parentId, // uis without parents are seen
           };
         }
       }
@@ -133,6 +134,7 @@ export type UiStoreState = {
 export type UiStoreByIdEntry = {
   meta: UiInstanceMeta;
   portal: HtmlPortalWrapper;
+  everSeen: boolean;
 };
 
 export type UiGridLayout = {
