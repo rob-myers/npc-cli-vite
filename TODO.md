@@ -76,11 +76,14 @@
 - ✅ for doors try track "openess ratio" via persistent array on gpu
   - https://share.google/aimode/EreUiTQQkX01nIvv2
 
-- do not recompute all symbols when only edit a hull symbol (DEV)
+- 🚧 do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
-  - more generally use sub-stratification
+  - ✅ use sub-stratification
+  - could do client-side and ignore server update
+
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 
+- object-pick sometimes out of sync since upgrade three.js `0.183.2`
 - change ui `Global` to `Layout`
   - remove theme toggle
   - option to group layout into a single Tabs

@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { WorldThemeSchema } from "@npc-cli/ui__world/assets.schema";
-import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { jsonParser } from "@npc-cli/util/json-parser";
+import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import type { Plugin, ViteDevServer } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
@@ -109,8 +109,7 @@ const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-jso
 
 async function _getAssetsJsonOrNull() {
   return (
-    jsonParser
-      .safeParse(await fs.promises.readFile(path.join(PUBLIC_DIR, "assets.json"), "utf-8").catch(() => null))?.data ??
-    null
+    jsonParser.safeParse(await fs.promises.readFile(path.join(PUBLIC_DIR, "assets.json"), "utf-8").catch(() => null))
+      ?.data ?? null
   );
 }
