@@ -7131,7 +7131,7 @@
         "hull": {"fill": "#000", "stroke": "#fff"},
         "nonHull": {"fill": "#999", "stroke": "#000"}
       },
-      "floor": {"navStroke": "#0f02"},
+      "floor": {"navStroke": "#ff02"},
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
