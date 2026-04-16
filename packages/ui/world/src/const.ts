@@ -75,6 +75,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     hull: { fill: "#000", stroke: "#666" },
     nonHull: { fill: "#444", stroke: "#000" },
   },
+  floor: { navStroke: "#000c" },
   walls: { color: "#000000", opacity: 0.5 },
 };
 

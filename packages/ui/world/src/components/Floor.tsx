@@ -89,7 +89,7 @@ export default function Floor() {
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
         const fillStyle = "#fff1";
-        const strokeStyle = "#000c";
+        const strokeStyle = w.getTheme().floor.navStroke;
         const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
           for (let i = 0; i < positions.length; i += 9) {
@@ -137,7 +137,7 @@ export default function Floor() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.nav, w.gmsData]);
+  }, [w.hash, w.nav, w.gmsData, w.themeKey]);
 
   return (
     <instancedMesh
