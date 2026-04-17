@@ -22,7 +22,8 @@ export function TtyMenu(props: Props) {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  const getMaxY = () => Math.max(60, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
+  const minY = 40;
+  const getMaxY = () => Math.max(minY, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
   const storedY = Number(tryLocalStorageGetParsed(menuYStorageKey)) || 0;
   const y = useMotionValue(Math.max(0, Math.min(storedY, getMaxY())));
 
@@ -120,7 +121,7 @@ export function TtyMenu(props: Props) {
       )}
       style={{ y }}
       drag="y"
-      dragConstraints={{ top: 0, bottom: getMaxY() }}
+      dragConstraints={{ top: minY, bottom: getMaxY() }}
       dragMomentum={false}
       onDragStart={() => {
         dragged.current = true;

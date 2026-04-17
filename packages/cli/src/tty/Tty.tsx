@@ -47,7 +47,7 @@ export function Tty(props: Props) {
           baseRef.current.xterm.forceResize();
           baseRef.current.fitAddon.fit();
         }
-      }, 300),
+      }, 30),
       handleExternalMsg({ msg }: ExternalMessage) {
         switch (msg.key) {
           case "auto-re-source-file": {
@@ -283,7 +283,7 @@ export function Tty(props: Props) {
 
   return (
     <div
-      className="relative size-full px-1 overflow-hidden"
+      className="relative size-full p-1 overflow-hidden"
       ref={(el) => {
         rootRef(el);
         containerRef.current = el;
