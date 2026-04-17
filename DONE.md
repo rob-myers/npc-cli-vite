@@ -1,5 +1,98 @@
 # DONE
 
+## By 17th Apr 2016
+
+- ✅ currently must re-run `pnpm gen-starship-sheets` per obstacle polygon change
+  - 🔔 triangle in `console--019--2x2` whose rect extension exposes part of a chair
+  - could automate this... we still avoid "changing spritesheet problem"
+  - ✅ assets.json has number `hash.obstacles`
+  - ❌ `pnpm gen-assets-json` triggers `pnpm gen-starship-sheets` onchange hash.obstacles
+    - we'll keep `hash.obstacles` though
+  - ✅ support `public/starship-symbol/masks`
+    - used when drawing obstacle sprite-sheets
+    - ✅ example of mask
+    - ✅ in `pnpm gen-starship-sheets` we should account for masks
+    - ✅ put restrict to obstacle polys under `--prod`
+      - probably should run in a git hook
+    - ✅ clean up gen code
+    - ✅ run `pnpm gen-starship-sheets --prod` on commit or push
+    - ✅ move invert colours to script
+    - ✅ can trigger refresh in dev via tanstack query devtools
+
+- ✅ avoid `<Obstacles>` flicker by only uploading to GPU once drawing finished
+
+- ✅ try add shadow quad to skinnedMesh
+  - ✅ can export quad as another SkinnedMesh and show
+  - ✅ add parent root to Blockbench file: root -> skeleton-root -> ...
+  - ✅ augment skinnedMesh geometry with quad so still only one mesh
+  - ✅ clean
+
+- ✅ ensure multiple worlds work
+  - saw work on desktop
+- ✅ can scroll through tabs on mobile
+  - first attempt failed i.e. `overflow-x-auto` plus `shrink-0`
+- ✅ can drop tab outside Tabs
+- ✅ can move UIs inside Tabs
+- ✅ unify menu styles
+- ✅ default is not empty-map (although still exists)
+  - defaultMapKey has value "small-map-0"
+
+- ✅ support object-picking
+  - ✅ read pixel on pointer down
+  - ✅ mounting `<NPCs>` late seems to fix things?!
+  - ✅ Putting `<Suspense>` directly around NPC component seems to fix it
+    - `useTexture` took too long?
+  - Delay MRT: may want different scene for object-pick e.g. no walls
+    - MRT could still be useful for drag-select
+  - ✅ Floor/Ceiling/Walls/Obstacles shader support objectPick uniform
+
+- ✅ fix obstacles texture disappearing on remount stuff inside World.tsx
+  - hot reload was resetting canvas width/height to 1
+
+- ✅ navmesh should account for doors
+  - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/examples/src/example-doors-and-keys.ts#L201
+  - https://github.com/isaac-mason/navcat/blob/9a8379e05cc28bf842405df214271885046833d8/blocks/generators/generate-tiled-nav-mesh.ts
+  - ✅ make our own `generateTiledNavMesh` with own `buildNavMeshTile` which "marks door areas"
+  - ✅ saw working in untransformed but maybe not transformed geomorphs
+  - ✅ better encoding of `(gmId, doorId)`
+  - ✅ can run navQuery using queryFilter specifying door areas
+    - ✅ `<Debug>` can show instanced navPaths using unit quad
+    - ✅ can query navcat and show in `<Debug>`
+    - can constrain doorways i.e. areas
+
+- ✅ compute room polygons correctly i.e. need to include doors
+  - seems ok already?
+
+- ✅ BUG hull width mismatch
+  - demo-map-0 had stale 101 symbol (no offset)
+
+- ✅ show closed Doors using instancedMesh cubes
+- ❌ show lintels above Doors
+
+- ✅ some doors have no room to slide
+  - ✅ mark them `meta.collapse`
+  - ✅ when transform them also scale
+  - ✅ adjust UVs so scale does not deform texture
+
+- ❌ on add grid item to UiGrid can we try to use maximum available height and width?
+
+- ✅ for doors try track "openess ratio" via persistent array on gpu
+  - https://share.google/aimode/EreUiTQQkX01nIvv2
+
+- ✅ why is boolean uniform `objectPick` being set as `0` after we drag world?
+  - because onPointerDown we do another object pick
+- ✅ fix remove bug i.e. next tab not set
+  - need repro
+
+- ✅ future tabs
+  - ✅ try make basic tabs components with draggable tabs
+    - https://atlassian.design/components/pragmatic-drag-and-drop/about
+  - ✅ can drag between different tabs components
+  - ✅ can drag out of tabs to outside (not another tabs)
+  - ❌ can drag into tabs from outer ui
+  - ✅ can move component into tabs from outer ui
+
+
 ## By 7th Apr 2016
 
 - ✅ start using `navcat`
