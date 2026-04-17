@@ -7,8 +7,13 @@
     - ✅ extend schema
     - ✅ extend bootstrap
   - ✅ complete `awaitWorld`
+```sh
+import core
+awaitWorld
+```
 
-- can spawn npc in World
+- ✅ can spawn npc via `w.npc.spawn({ npcKey, position })`
+- can spawn from tty
 
 - change ui `Global` to `Layout`
   - remove theme toggle

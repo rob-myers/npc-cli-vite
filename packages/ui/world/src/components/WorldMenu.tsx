@@ -5,6 +5,7 @@ import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
+import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useContext, useRef } from "react";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
@@ -203,6 +204,34 @@ export function WorldMenu() {
               )}
 
               <div className="my-1 border-t border-slate-700" />
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => {
+                  if (!w.nav || !w.npc) return;
+                  const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
+                  if (!result.success) return;
+                  const [x, y, z] = result.position;
+                  const key = `npc-${Date.now().toString(36)}`;
+                  w.npc.spawn({ npcKey: key, position: [x, y, z] });
+                }}
+              >
+                Spawn NPC
+              </Menu.Item>
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => {
+                  if (!w.npc) return;
+                  for (const key of Object.keys(w.npc.npc)) {
+                    w.npc.remove(key);
+                  }
+                }}
+              >
+                Clear NPCs
+              </Menu.Item>
 
               <Menu.Item
                 className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"

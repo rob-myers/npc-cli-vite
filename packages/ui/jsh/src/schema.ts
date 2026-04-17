@@ -9,6 +9,7 @@ export const JshUiSchema = z.object({
     `
 source /etc/util.sh
 source /etc/util.js.sh
+source /etc/core.js.sh
   `.trim(),
   ),
 });

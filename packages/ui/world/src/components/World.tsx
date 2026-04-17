@@ -91,6 +91,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       sheets: null as any,
       view: null as any,
       walls: null as any,
+      npc: null as any,
       worker: null as any,
 
       devSetupAssetsSync() {
@@ -136,7 +137,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
-        // 🚧 tick subcomponents
+        state.npc?.onTick(state.timer.getDelta());
       },
       prodSetupHullAssetsSync() {
         const cb = () => {
@@ -291,6 +292,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   view: UseStateRef<import("./WorldView").State>;
   walls: UseStateRef<import("./Walls").State>;
+  npc: UseStateRef<import("./NPCs").State>;
 
   worker: UseStateRef<import("./WorldWorker").State>;
   nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
