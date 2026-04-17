@@ -67,11 +67,12 @@
 - ✅ show closed Doors using instancedMesh cubes
 - ❌ show lintels above Doors
 
-- 🚧 some doors have no room to slide
-  - 🚧 mark them `meta.collapse`
-  - when transform them also scale
+- ✅ some doors have no room to slide
+  - ✅ mark them `meta.collapse`
+  - ✅ when transform them also scale
+  - ✅ adjust UVs so scale does not deform texture
 
-- on add grid item to UiGrid can we try to use maximum available height and width?
+- ❌ on add grid item to UiGrid can we try to use maximum available height and width?
 
 - ✅ for doors try track "openess ratio" via persistent array on gpu
   - https://share.google/aimode/EreUiTQQkX01nIvv2
@@ -80,23 +81,28 @@
   - done in prod for hull-symbols
   - ✅ use sub-stratification
   - could do client-side and ignore server update
+  - createLayout optimization
+    - saw `48ms`
 
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 
-- object-pick sometimes out of sync since upgrade three.js `0.183.2`
 - change ui `Global` to `Layout`
   - remove theme toggle
-  - option to group layout into a single Tabs
-  - option to flatten layout (no Tabs)
-  - option to reset layout to default layout
-    - Tabs with `world-0`, `tty-0` and `layout-0`
+  - can set one tab layout
+  - can set two tab layout (vert or horizontal)
+  - reset has layout, tty, world
+  - responsive?
+  - ❌ option to flatten layout (no Tabs)
   - layout schema and layouts.json
     - can CRUD in DEV
-- why is boolean uniform `objectPick` being set as `1` after we drag world?
+
+- ✅ why is boolean uniform `objectPick` being set as `0` after we drag world?
+  - because onPointerDown we do another object pick
+- 🚧 check glsl fallback e.g. incognito or force
+  - Walls and Doors don't draw i.e. too many
+- object-pick sometimes out of sync since upgrade three.js `0.183.2`
 - fix precision in `assets.json`
 - start generating documentation in README.md
-- check glsl fallback e.g. incognito or force
-  - Walls and Doors don't draw i.e. too many
 - support deleting symbols/maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
@@ -122,8 +128,9 @@
     - when adjacent can fix via same height
   - technically can fix by creating an "extra symbol"
 
-- saw mobile fail to load initially but works after component update
-- fix remove bug i.e. next tab not set
+- saw mobile fail to load initially but works after "resize"
+  - still happening
+- ✅ fix remove bug i.e. next tab not set
   - need repro
 - drafts fighting: with 2 instances open for same file
 - try deform limbs of blockbench model, saving as separate file
@@ -146,5 +153,6 @@
   - ✅ try make basic tabs components with draggable tabs
     - https://atlassian.design/components/pragmatic-drag-and-drop/about
   - ✅ can drag between different tabs components
-  - can drag into tabs from outer ui
-  - can drag out of tabs to outside (not another tabs)
+  - ✅ can drag out of tabs to outside (not another tabs)
+  - ❌ can drag into tabs from outer ui
+  - ✅ can move component into tabs from outer ui
