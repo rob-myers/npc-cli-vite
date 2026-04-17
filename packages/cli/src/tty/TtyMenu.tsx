@@ -22,7 +22,7 @@ export function TtyMenu(props: Props) {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  const getMaxY = () => Math.max(0, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
+  const getMaxY = () => Math.max(60, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
   const storedY = Number(tryLocalStorageGetParsed(menuYStorageKey)) || 0;
   const y = useMotionValue(Math.max(0, Math.min(storedY, getMaxY())));
 
@@ -112,6 +112,7 @@ export function TtyMenu(props: Props) {
     <motion.div
       ref={state.ref("rootEl")}
       className={cn(
+        "pointer-events-none",
         "absolute z-2 top-0 right-0 touch-none transition-opacity duration-300",
         "[--menu-width:32px]",
         "text-sm leading-1 border-none text-white/80",
@@ -146,7 +147,7 @@ export function TtyMenu(props: Props) {
           state.touchMenuOpen ? "translate-x-0" : "translate-x-(--menu-width)",
         )}
       >
-        <div>
+        <div className="*:pointer-events-auto">
           <div
             className={
               "h-8 pr-2 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
@@ -188,6 +189,7 @@ export function TtyMenu(props: Props) {
           className={cn(
             "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
             "mb-8 w-(--menu-width)",
+            "*:pointer-events-auto",
           )}
         >
           <div className={cn(icon, "paste")} title="paste (Cmd+V)">
