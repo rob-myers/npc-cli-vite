@@ -18,10 +18,10 @@ function NpcInstance({ npc, material, shadowMaterial, gltf }: Props) {
 
           const idle = npc.mixer.clipAction(idleClip);
           idle.play();
-          setTimeout(() => {
-            idle.fadeOut(0.5);
-            npc.mixer.clipAction(walkClip).reset().fadeIn(0.5).play();
-          }, 0);
+          // setTimeout(() => {
+          //   idle.fadeOut(0.5);
+          //   npc.mixer.clipAction(walkClip).reset().fadeIn(0.5).play();
+          // }, 0);
         } else {
           npc.mixer.stopAllAction();
         }
