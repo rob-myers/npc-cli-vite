@@ -14,6 +14,38 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
+ * Examples:
+ * ```sh
+ * events
+ * events | filter /picked/
+ * events /picked/
+ * events 'e => e.key === "picked"'
+ * events where:'e => e.key === "picked"'
+ * ```
+ * @template {JshCli.Event} [T=JshCli.Event]
+ * @param {JshCli.RunArg} ctxt
+ * @param {{ where?(e: JshCli.Event): e is T }} [opts]
+ */
+export async function* events({ api, args, w }, opts = api.jsArg(args)) {
+  const filter = !args[0] ? undefined : (opts.where ?? api.generateSelector(api.parseFnOrStr(args[0]), []));
+  const asyncIterable = api.observableToAsyncIterable(w.events);
+  const handlers = api.handleStatus({
+    cleanups() {
+      asyncIterable.return?.();
+    },
+  });
+
+  for await (const event of asyncIterable) {
+    if (filter === undefined || filter(event)) {
+      yield/** @type {T} */ (event);
+    }
+  }
+  // get here via ctrl-c or `kill`
+  handlers.dispose();
+  throw api.getKillError();
+}
+
+/**
  * Usage:
  * ```sh
  * w
