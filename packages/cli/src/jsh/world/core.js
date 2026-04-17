@@ -8,13 +8,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 
   yield `${api.ansi.Cyan}awaiting ${api.ansi.White}${WORLD_KEY}`;
 
-  // 🚧
-  // while (api.getCached(WORLD_KEY)?.isReady(api.meta.sessionKey) !== true) {
-  //   await api.sleep(0.05);
-  // }
-
-  // tabs.updateTabMeta({
-  //   key: /** @type {Key.TabId} */ (api.meta.sessionKey),
-  //   ttyWorldKey: /** @type {Key.TabId} */ (WORLD_KEY),
-  // });
+  while (api.getCached(WORLD_KEY)?.isReady(api.meta.sessionKey) !== true) {
+    await api.sleep(0.05);
+  }
 }
