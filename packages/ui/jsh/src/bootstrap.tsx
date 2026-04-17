@@ -24,7 +24,13 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
 
       props.addInstance({
         sessionKey: state.sessionKey as `tty-${number}`,
-        env: parseEnvString(state.env),
+        env: {
+          CACHE_SHORTCUTS: {
+            // uppercase variable name, lowercase value e.g. world-0
+            w: "WORLD_KEY",
+          },
+          ...parseEnvString(state.env),
+        },
         title: state.sessionKey,
       } satisfies Partial<JshUiMeta>);
     },
@@ -50,7 +56,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
           type="text"
           autoCorrect="off"
           className={cn(
-            "w-full p-1 border border-black/30 invalid:bg-red-200 outline-black font-mono bg-white text-black text-sm",
+            "w-full p-1 border border-black/30 invalid:bg-red-200 outline-black font-mono text-green-600 text-sm",
           )}
           placeholder="ENV_VAR=value ..."
           onChange={(e) => state.set({ env: e.currentTarget.value })}

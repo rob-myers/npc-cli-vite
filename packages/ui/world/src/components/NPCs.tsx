@@ -27,14 +27,19 @@ export default function NPCs() {
       epoch: 0,
 
       spawn({ npcKey, position }) {
+        if (typeof npcKey !== "string") throw Error("opts.npcKey: must be a string");
+        // 🚧 generic point type {x,y}, {x,y,z}, [x,y], [x,y,z]
+        if (!Array.isArray(position) || !position.every((x) => typeof x === "number"))
+          throw Error("opts.position: must be a numeric array");
+
         if (!npcKeyPattern.test(npcKey)) {
-          throw new Error(`npcKey must match ${npcKeyPattern}: got "${npcKey}"`);
+          throw Error(`npcKey must match ${npcKeyPattern}: got "${npcKey}"`);
         }
         if (npcKey in state.npc) {
-          throw new Error(`npcKey "${npcKey}" already exists`);
+          throw Error(`npcKey "${npcKey}" already exists`);
         }
         if (!state.gltf) {
-          throw new Error("GLTF not loaded yet");
+          throw Error("GLTF not loaded yet");
         }
 
         const clone = SkeletonUtils.clone(state.gltf.scene);
@@ -56,7 +61,6 @@ export default function NPCs() {
         state.npc[npcKey] = npc;
         state.epoch++;
         state.update();
-        return npc;
       },
       remove(npcKey) {
         const npc = state.npc[npcKey];
@@ -148,7 +152,7 @@ export type State = {
   npc: Record<string, Npc>;
   epoch: number;
 
-  spawn(args: { npcKey: string; position: [number, number, number] }): Npc;
+  spawn(args: { npcKey: string; position: [number, number, number] }): void;
   remove(npcKey: string): void;
   onTick(delta: number): void;
 };

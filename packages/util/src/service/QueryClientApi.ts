@@ -10,6 +10,7 @@ export class QueryClientApi {
         queries: {
           refetchOnReconnect: import.meta.env.DEV ? false : undefined,
           refetchOnWindowFocus: import.meta.env.DEV ? false : undefined,
+          gcTime: Infinity,
         },
       },
       queryCache: new QueryCache({
