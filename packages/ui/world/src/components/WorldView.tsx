@@ -1,3 +1,4 @@
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -11,6 +12,7 @@ import { CameraControls } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
+  const { uiStoreApi } = useContext(UiContext);
   const w = useContext(WorldContext);
 
   const state = useStateRef<State>(
@@ -67,6 +69,32 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         await renderer.init();
         return renderer;
       },
+      doObjectPick(offsetX, offsetY) {
+        const { gl, scene, camera } = w.r3f;
+        const renderer = gl as unknown as THREE.WebGPURenderer;
+
+        const x = Math.floor(offsetX * gl.getPixelRatio());
+        const y = Math.floor(offsetY * gl.getPixelRatio());
+
+        const rt = state.pickRT;
+        const rtCamera = camera;
+        const size = new THREE.Vector2();
+        renderer.getDrawingBufferSize(size);
+        rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
+
+        objectPick.value = 1;
+        renderer.setRenderTarget(rt);
+        renderer.render(scene, rtCamera);
+        objectPick.value = 0;
+        renderer.setRenderTarget(null);
+        rtCamera.clearViewOffset();
+
+        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
+          const picked = state.getPickedFromPixel(rgba);
+          console.log("picked", picked);
+          picked !== null && w.events.next({ key: "picked", meta: picked });
+        });
+      },
       getPickedFromPixel([r, g, b, _a]) {
         // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
         const pick = decodePick(r, g, b);
@@ -103,32 +131,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
         w.texFloor.update();
         w.update(); // e.g. show stats
+        document.addEventListener("keydown", state.onKeyDown);
+      },
+      onKeyDown(e: KeyboardEvent) {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (e.key === "Escape") {
+          uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
+        } else if (e.key === "Enter") {
+          uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
+        }
       },
       async onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-        const { gl, scene, camera } = w.r3f;
-        const renderer = gl as unknown as THREE.WebGPURenderer;
+        state.doObjectPick(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
 
-        const x = Math.floor(e.nativeEvent.offsetX * gl.getPixelRatio());
-        const y = Math.floor(e.nativeEvent.offsetY * gl.getPixelRatio());
-
-        const rt = state.pickRT;
-        const rtCamera = camera;
-        const size = new THREE.Vector2();
-        renderer.getDrawingBufferSize(size);
-        rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
-
-        objectPick.value = 1;
-        renderer.setRenderTarget(rt);
-        renderer.render(scene, rtCamera);
-        objectPick.value = 0;
-        renderer.setRenderTarget(null);
-        rtCamera.clearViewOffset();
-
-        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
-          const picked = state.getPickedFromPixel(rgba);
-          console.log("picked", picked);
-          picked !== null && w.events.next({ key: "picked", meta: picked });
-        });
+        e.currentTarget.focus();
       },
       syncRenderMode() {
         if (w.disabled === true) {
@@ -162,6 +179,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onPointerDown={state.onPointerDown}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
+        tabIndex={0}
       >
         {state.rootEl && (
           <Stats
@@ -205,7 +223,9 @@ export type State = {
 
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
+  doObjectPick(offsetX: number, offsetY: number): void;
   onCreated(rootState: RootState): void;
+  onKeyDown(e: KeyboardEvent): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(
     rgba: THREE.TypedArray | [number, number, number, number],
