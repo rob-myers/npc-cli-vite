@@ -17,13 +17,26 @@ export default function Jsh(props: { meta: JshUiMeta }) {
       setTabsEnabled={() => {}}
       updateTabMeta={() => {}}
       disabled={props.meta.disabled}
-      env={{}}
+      env={{}} // 🚧
       tabKey="my-tab-key"
       onKey={() => {}}
+      // actual JS
       modules={modules}
+      // shell code + js wrapped as shell functions
       shFiles={shellFunctionFiles}
-      // can also `import util`
-      profile={`source /etc/util.sh\nsource /etc/util.js.sh`}
+      /**
+       * Ways to import JS as shell functions:
+       * ```sh
+       * source /etc/util.js.sh
+       * import util
+       * import call from util
+       * import call expr from util
+       * ```
+       */
+      profile={`
+source /etc/util.sh
+source /etc/util.js.sh
+      `.trim()}
     />
   );
 }

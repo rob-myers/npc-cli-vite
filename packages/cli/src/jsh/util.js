@@ -1,4 +1,4 @@
-/// <reference types="../legacy/npc.d.ts" />
+//// <reference types="../legacy/npc.d.ts" />
 import { speak } from "@npc-cli/util/legacy/dom";
 import { ansi } from "../shell/const";
 import { ttyError } from "../shell/shell";
@@ -11,7 +11,7 @@ import { stripAnsi } from "../shell/util";
  * call "({ home }) => home.foo"
  * call '({ args }) => `Hello, ${args[0]}`' Rob
  * ```
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* call(ct) {
   if (ct.args[0] in ct.lib) {
@@ -31,7 +31,7 @@ export async function* call(ct) {
  * expr window.navigator.vendor
  * expr '((x) => [x, x, x])("a lady")'
  * ```
- * @param {NPC.RunArg} ctxt
+ * @param {JshCli.RunArg} ctxt
  */
 export const expr = ({ api, args }) => {
   const input = args.join(" ");
@@ -44,22 +44,17 @@ export const expr = ({ api, args }) => {
  * seq 10 | filter 'x => !(x % 2)'
  * expr window | keysAll | split | filter /^n/
  * ```
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* filter(ct) {
   let { api, args, datum } = ct;
   const { operands, opts } = api.getOpts(args, { boolean: ["ansi"] });
 
-  const func = api.generateSelector(
-    api.parseFnOrStr(operands[0]),
-    operands.slice(1).map(api.parseJsArg),
-  );
+  const func = api.generateSelector(api.parseFnOrStr(operands[0]), operands.slice(1).map(api.parseJsArg));
 
   while ((datum = await api.read(true)) !== api.eof)
     if (api.isDataChunk(datum) === true)
-      yield api.dataChunk(
-        datum.items.filter((x) => func(opts.ansi === true ? stripAnsi(x) : x, ct)),
-      );
+      yield api.dataChunk(datum.items.filter((x) => func(opts.ansi === true ? stripAnsi(x) : x, ct)));
     else if (func(opts.ansi === true ? stripAnsi(datum) : datum, ct)) yield datum;
 }
 
@@ -72,7 +67,7 @@ export async function* filter(ct) {
  * { range 5; range 10; } | flatMap 'x => x'
  * expr '{ items: [1, 2, 3] }' | flatMap items
  * ```
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* flatMap(ct) {
   let { api, args, datum } = ct;
@@ -108,9 +103,7 @@ export function* globals() {
     }
   }
 
-  document.body.removeChild(
-    /** @type {HTMLElement} */ (document.getElementById("globals-temp-iframe")?.parentNode),
-  );
+  document.body.removeChild(/** @type {HTMLElement} */ (document.getElementById("globals-temp-iframe")?.parentNode));
 
   yield* keys;
 }
@@ -123,7 +116,7 @@ export function* globals() {
  * ```
  * - ℹ️ `map console.log` would log 2nd arg too
  * - ℹ️ logs chunks larger than 1000, so e.g. `seq 1000000 | log` works
- * @param {NPC.RunArg} ctxt
+ * @param {JshCli.RunArg} ctxt
  * @returns
  */
 export async function* log({ api, args, datum }) {
@@ -146,7 +139,7 @@ export async function* log({ api, args, datum }) {
  * expr window | map navigator.connection | log
  * ```
  * - ℹ️ To use `await`, the provided function must begin with `async`.
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* map(ct) {
   let { api, args, datum } = ct;
@@ -193,13 +186,10 @@ export async function* map(ct) {
         if (api.isDataChunk(datum) === true) {
           if (isAsync === false) {
             // fast on chunks
-            yield api.dataChunk(
-              datum.items.map((x) => func(x, ct, provideCount === true ? count++ : undefined)),
-            );
+            yield api.dataChunk(datum.items.map((x) => func(x, ct, provideCount === true ? count++ : undefined)));
           } else {
             // unwind chunks
-            for (const item of datum.items)
-              yield await func(item, ct, provideCount === true ? count++ : undefined);
+            for (const item of datum.items) yield await func(item, ct, provideCount === true ? count++ : undefined);
           }
         } else {
           yield await func(datum, ct, provideCount === true ? count++ : undefined);
@@ -234,7 +224,7 @@ export async function* map(ct) {
  * ```
  * - ℹ️ We do not support chunks.
  * - ℹ️ To use `await`, the one-arg-function must begin with `async`.
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* mapBasic(ct) {
   let { api, args, datum } = ct;
@@ -267,7 +257,7 @@ export async function* mapBasic(ct) {
  * narrate {a..z} as:'Google UK English Female'
  * narrate words:"$( echo {1..5} )"
  * ```
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  * @param {{
  *   words?: string;
  *   voice?: string;
@@ -279,9 +269,7 @@ export async function narrate({ api, args }, opts = api.jsArg(args, { as: "voice
   if (opts.list === "voices") {
     // List available voices
     return api.dataChunk(
-      window.speechSynthesis
-        .getVoices()
-        .map(({ name, lang }) => `${name} (${ansi.YellowBright}${lang}${ansi.White})`),
+      window.speechSynthesis.getVoices().map(({ name, lang }) => `${name} (${ansi.YellowBright}${lang}${ansi.White})`),
     );
   }
 
@@ -320,7 +308,7 @@ export async function narrate({ api, args }, opts = api.jsArg(args, { as: "voice
 }
 
 /**
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function pause(ct) {
   ct.api.pause();
@@ -329,7 +317,7 @@ export async function pause(ct) {
 }
 
 /**
- * @param {NPC.RunArg} ctxt
+ * @param {JshCli.RunArg} ctxt
  */
 export async function* poll({ api, args }) {
   yield* api.poll(args);
@@ -337,7 +325,7 @@ export async function* poll({ api, args }) {
 
 /**
  * Reduce all items from stdin
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* reduce({ api, args, datum }) {
   const inputs = []; // eslint-disable-next-line no-new-func
@@ -354,7 +342,7 @@ export async function* reduce({ api, args, datum }) {
 
 /**
  * Like `take` but outputs nothing.
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function sink(ct) {
   for await (const _ of take(ct));
@@ -374,7 +362,7 @@ export async function sink(ct) {
  * # split by whitespace
  * echo foo   bar   baz | split '/\s+/'
  * ```
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* split({ api, args, datum }) {
   const splitStringArg = api.parseJsArg(args[0] || "");
@@ -395,7 +383,7 @@ export async function* split({ api, args, datum }) {
 
 /**
  * Collect stdin into a single array
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* sponge({ api, datum }) {
   const outputs = [];
@@ -412,7 +400,7 @@ export async function* sponge({ api, datum }) {
 /**
  * Usage
  * - `poll 1 | while x=$( take 1 ); do echo ${x} ${x}; done`
- * @param {NPC.RunArg} ct
+ * @param {JshCli.RunArg} ct
  */
 export async function* take({ api, args, datum }) {
   try {

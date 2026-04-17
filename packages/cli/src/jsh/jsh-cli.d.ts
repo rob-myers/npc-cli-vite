@@ -1,4 +1,4 @@
-declare namespace NPC {
+declare namespace JshCli {
   type ProcessApi = import("../shell/command").ProcessApi;
   type ProcessContext = import("../shell/command").ProcessContext;
 

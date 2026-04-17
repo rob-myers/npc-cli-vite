@@ -1,13 +1,11 @@
 # TODO
 
-- 🚧 do not recompute all symbols when only edit a hull symbol (DEV)
-  - done in prod for hull-symbols
-  - ✅ use sub-stratification
-  - could do client-side and ignore server update
-  - createLayout optimization
-    - saw `48ms`
-
-- import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
+- 🚧 can connect Tty to World
+  - ✅ namespace `JshCli`
+  - ✅ cli/src/world/core.js exists
+  - 🚧 can provide env.WORLD_KEY to `<Jsh>`
+  - can provide PROFILE to `<Jsh>`
+- can spawn npc in World
 
 - change ui `Global` to `Layout`
   - remove theme toggle
@@ -19,6 +17,7 @@
   - layout schema and layouts.json
     - can CRUD in DEV
 
+- import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - 🚧 check glsl fallback e.g. incognito or force
   - Walls and Doors don't draw i.e. too many
 - object-pick sometimes out of sync since upgrade three.js `0.183.2`
@@ -27,7 +26,6 @@
 - support deleting symbols/maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
-- can connect Tty to World
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
@@ -38,6 +36,13 @@
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
 ## Long running
+
+- 🚧 do not recompute all symbols when only edit a hull symbol (DEV)
+  - done in prod for hull-symbols
+  - ✅ use sub-stratification
+  - could do client-side and ignore server update
+  - createLayout optimization
+    - saw `48ms`
 
 - 🚧 extend existing symbols with missing decor/obstacle
   - ✅ stateroom-012 🚧 ...
