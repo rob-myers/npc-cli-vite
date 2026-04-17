@@ -23,14 +23,14 @@ export function Debug() {
         if (existing !== undefined) cancelAnimationFrame(existing);
         let lastT = performance.now();
         const step = (now: number) => {
-          const cur = w.doors.openDoorsRatio[instanceId];
+          const cur = w.door.openDoorsRatio[instanceId];
           const next = cur + Math.sign(target - cur) * ((now - lastT) / 1000) * doorSpeed;
           lastT = now;
           if ((target - cur) * (target - next) <= 0) {
-            w.doors.setOpen(instanceId, target);
+            w.door.setOpen(instanceId, target);
             state.doorAnims.delete(instanceId);
           } else {
-            w.doors.setOpen(instanceId, next);
+            w.door.setOpen(instanceId, next);
             state.doorAnims.set(instanceId, requestAnimationFrame(step));
           }
           if (w.disabled) w.r3f.invalidate();
@@ -91,7 +91,7 @@ export function Debug() {
       next(event) {
         if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "doors") {
           const { instanceId } = event.meta;
-          const current = w.doors.openDoorsRatio[instanceId] ?? 0;
+          const current = w.door.openDoorsRatio[instanceId] ?? 0;
           state.animateDoor(instanceId, current > 0 ? 0 : 0.8);
         }
       },

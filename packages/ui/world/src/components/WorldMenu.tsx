@@ -215,6 +215,7 @@ export function WorldMenu() {
                   const [x, y, z] = result.position;
                   const key = `npc-${Date.now().toString(36)}`;
                   w.npc.spawn({ npcKey: key, position: [x, y, z] });
+                  w.update();
                 }}
               >
                 Spawn NPC
@@ -228,6 +229,7 @@ export function WorldMenu() {
                   for (const key of Object.keys(w.npc.npc)) {
                     w.npc.remove(key);
                   }
+                  w.update();
                 }}
               >
                 Clear NPCs

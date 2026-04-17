@@ -82,7 +82,7 @@ export default function Walls() {
     }),
   );
 
-  w.walls = state;
+  w.wall = state;
 
   const wallCount = w.gmsData.count.wall;
 

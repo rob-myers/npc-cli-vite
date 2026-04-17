@@ -13,7 +13,13 @@ awaitWorld
 ```
 
 - ✅ can spawn npc via `w.npc.spawn({ npcKey, position })`
-- can spawn from tty
+- ✅ tty supports `w` via `CACHE_SHORTCUTS`
+- ✅ can spawn from tty
+```sh
+w npc.spawn '{ npcKey: "rob", position: [0, 0, 0] }'
+w npc.remove rob && w update
+expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
+```
 
 - change ui `Global` to `Layout`
   - remove theme toggle

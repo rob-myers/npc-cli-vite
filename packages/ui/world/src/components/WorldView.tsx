@@ -82,7 +82,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             return null;
           }
           case "walls": {
-            const decoded = w.walls.decodeInstanceId(pick.instanceId);
+            const decoded = w.wall.decodeInstanceId(pick.instanceId);
             return { ...pick, ...decoded };
           }
           case "obstacles": {
@@ -90,7 +90,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             return { ...pick, ...decoded };
           }
           case "doors": {
-            const decoded = w.doors.decodeInstanceId(pick.instanceId);
+            const decoded = w.door.decodeInstanceId(pick.instanceId);
             return { ...pick, ...decoded };
           }
           default:

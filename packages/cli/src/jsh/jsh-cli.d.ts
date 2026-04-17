@@ -9,8 +9,7 @@ declare namespace JshCli {
       getCached(key: "__WORLD_KEY_VALUE__"): WorldState;
     };
     args: string[];
-    // w: WorldState;
-    // tabs: TabsState['api'];
+    w: WorldState;
 
     etc: ProcessContext["etc"];
     home: ProcessContext["home"] & {

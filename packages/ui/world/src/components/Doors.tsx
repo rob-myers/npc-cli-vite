@@ -151,7 +151,7 @@ export default function Doors() {
     }),
   );
 
-  w.doors = state;
+  w.door = state;
 
   useEffect(() => {
     state.positionInstances();
