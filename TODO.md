@@ -1,10 +1,13 @@
 # TODO
 
-- 🚧 can connect Tty to World
+- ✅ can connect Tty to World
   - ✅ namespace `JshCli`
   - ✅ cli/src/world/core.js exists
-  - 🚧 can provide env.WORLD_KEY to `<Jsh>`
-  - can provide PROFILE to `<Jsh>`
+  - ✅ can provide profile and env to `<Jsh>`
+    - ✅ extend schema
+    - ✅ extend bootstrap
+  - ✅ complete `awaitWorld`
+
 - can spawn npc in World
 
 - change ui `Global` to `Layout`

@@ -11,3 +11,5 @@ export default defineUi({
 
 import "./geomorph.d.ts";
 import "./world-worker.d.ts";
+
+export type WorldState = import("./components/World.tsx").State;

@@ -130,6 +130,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
+      isReady(_connectionKey) {
+        return !!state.assets && !!state.nav;
+      },
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
@@ -296,6 +299,7 @@ export type State = {
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
+  isReady(connectionKey: string): boolean;
   onTick(): void;
   prodSetupHullAssetsSync(): void;
   stopTick(): void;

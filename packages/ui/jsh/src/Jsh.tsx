@@ -17,7 +17,8 @@ export default function Jsh(props: { meta: JshUiMeta }) {
       setTabsEnabled={() => {}}
       updateTabMeta={() => {}}
       disabled={props.meta.disabled}
-      env={{}} // 🚧
+      // 🚧 provide
+      env={props.meta.env}
       tabKey="my-tab-key"
       onKey={() => {}}
       // actual JS
@@ -33,10 +34,8 @@ export default function Jsh(props: { meta: JshUiMeta }) {
        * import call expr from util
        * ```
        */
-      profile={`
-source /etc/util.sh
-source /etc/util.js.sh
-      `.trim()}
+      // 🚧 provide
+      profile={props.meta.profile}
     />
   );
 }
