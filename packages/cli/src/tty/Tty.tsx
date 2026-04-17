@@ -247,8 +247,9 @@ export function Tty(props: Props) {
     }
   }, [
     baseRef.current?.session,
-    ...Object.entries(props.shFiles).flatMap((x) => x),
-    ...Object.entries(props.modules).flatMap((x) => x),
+    ...Object.entries(props.shFiles).flat(),
+    // 🔔 spread modules fixes: TypeError: Cannot convert object to primitive value
+    ...Object.entries(props.modules).flatMap(([k, v]) => [k, { ...(v as any) }]),
   ]);
 
   React.useEffect(() => {

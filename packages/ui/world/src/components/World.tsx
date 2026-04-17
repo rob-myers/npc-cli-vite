@@ -260,7 +260,7 @@ export type State = {
 
   brightness: number;
 
-  events: Broadcaster<NPC.Event>;
+  events: Broadcaster<JshCli.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };
   reqAnimId: number;
   threeReady: boolean;
