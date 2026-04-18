@@ -41,8 +41,7 @@ function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
         skeleton={root.skeleton}
         scale={0.6}
         position={npc.position}
-        // renderOrder={-4}
-        renderOrder={4}
+        renderOrder={0}
       >
         {bones.length > 0 && <primitive object={bones[0]} />}
       </skinnedMesh>
