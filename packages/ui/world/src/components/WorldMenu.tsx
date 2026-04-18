@@ -33,13 +33,14 @@ export function WorldMenu() {
       saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
 
       getMaxY() {
-        return (w.view.rootEl?.clientHeight ?? Infinity) - 120;
+        return Math.max(state.minY, (w.view.rootEl?.clientHeight ?? Infinity) - 120);
       },
       getClampedY(y: number) {
         return Math.min(state.getMaxY(), Math.max(state.minY, y));
       },
       onResize() {
         y.set(state.getClampedY(y.get()));
+        state.update();
       },
       async saveTheme() {
         const theme = w.assets?.theme?.[w.themeKey];
