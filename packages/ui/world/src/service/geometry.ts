@@ -131,6 +131,69 @@ export function createSkinnedXzQuad(width: number, depth: number, jointIndex = 0
 }
 
 /**
+ * Create a billboard label quad with skinning attributes.
+ * All 4 vertices share the same position so skinning moves them identically.
+ * Corner offsets are stored in a `billboardOffset` vec2 attribute
+ * and applied in the vertex shader in view space.
+ */
+export function createSkinnedLabelQuad(width: number, height: number, yOffset: number, jointIndex: number) {
+  const geo = new THREE.BufferGeometry();
+  // biome-ignore format: meaningful newlines
+  geo.setAttribute("position", new THREE.Float32BufferAttribute([
+    0, yOffset, 0,
+    0, yOffset, 0,
+    0, yOffset, 0,
+    0, yOffset, 0,
+  ], 3));
+  // biome-ignore format: meaningful newlines
+  geo.setAttribute("normal", new THREE.Float32BufferAttribute([
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+  ], 3));
+  // biome-ignore format: meaningful newlines
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute([
+    // aligned to canvas drawing
+    0, 1,
+    1, 1,
+    1, 0,
+    0, 0,
+  ], 2));
+  const hw = width / 2;
+  const hh = height / 2;
+  // biome-ignore format: meaningful newlines
+  geo.setAttribute("billboardOffset", new THREE.Float32BufferAttribute([
+    -hw, -hh,
+     hw, -hh,
+     hw,  hh,
+    -hw,  hh,
+  ], 2));
+  // biome-ignore format: meaningful newlines
+  geo.setIndex([
+    0, 2, 1,
+    0, 3, 2,
+  ]);
+
+  const skinIndices = new Uint16Array(16);
+  const skinWeights = new Float32Array(16);
+  for (let i = 0; i < 4; i++) {
+    skinIndices[i * 4] = jointIndex;
+    skinWeights[i * 4] = 1;
+  }
+  geo.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(skinIndices, 4));
+  geo.setAttribute("skinWeight", new THREE.Float32BufferAttribute(skinWeights, 4));
+  return geo;
+}
+
+/** Add a zero-filled `billboardOffset` vec2 attribute to a geometry. */
+export function addEmptyBillboardOffset(geo: THREE.BufferGeometry) {
+  const count = geo.getAttribute("position").count;
+  geo.setAttribute("billboardOffset", new THREE.Float32BufferAttribute(new Float32Array(count * 2), 2));
+  return geo;
+}
+
+/**
  * Merge a base geometry with extra geometries, assigning each a material group index.
  * Returns the merged geometry with groups set up for a material array.
  */
