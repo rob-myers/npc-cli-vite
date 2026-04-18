@@ -1,3 +1,5 @@
+import { isStringInt, removeFirst } from "@npc-cli/util/legacy/generic";
+
 /**
  * @param {JshCli.RunArg} ctxt
  */
@@ -10,6 +12,100 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 
   while (api.getCached(WORLD_KEY)?.isReady(api.meta.sessionKey) !== true) {
     await api.sleep(0.05);
+  }
+}
+
+/**
+ * ```sh
+ * # unbounded unblocking left clicks
+ * click
+ * # exactly 1 blocking click
+ * click 1
+ * click | map meta.type
+ * ```
+ *
+ * - Shows number of clicks in decor
+ * @param {JshCli.RunArg} ct
+ */
+export async function* click(ct) {
+  const { args, api, w } = ct;
+  let { opts, operands } = ct.api.getOpts(args, {
+    boolean: [
+      "left", // left clicks only
+      "right", // right clicks only
+      "long", // long press only
+      "any", // left or right permitted
+      "block", // e.g. `click --block`
+      "clear", // clear all colours
+      "keep", // keep clicks of current color
+      // --red, --blue, --green (default black)
+    ],
+  });
+
+  if (opts["right"] === false && opts["any"] === false) {
+    opts.left = true; // default to left clicks only
+  }
+  if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
+    operands = [operands[1], operands[0]]; // support reverse order `click meta.nav 2`
+  }
+
+  /** Number of clicks remaining */
+  let numClicks = isStringInt(operands[0]) ? parseInt(operands[0]) : Number.MAX_SAFE_INTEGER;
+  // const totalClicks = numClicks;
+  const clickId = isStringInt(operands[0]) || opts.block === true ? api.getUid() : undefined;
+  const blocking = clickId !== undefined;
+
+  // support `click meta.nav`
+  // support `click '({ meta }, ct) => meta.nav && ct.home.myTest'`
+  const filterDef = isStringInt(operands[0]) ? operands[1] : operands[0];
+  const filter = filterDef !== undefined ? api.generateSelector(api.parseFnOrStr(filterDef), [ct]) : undefined;
+
+  /** @type {import('@npc-cli/util').BasicSubscription} */
+  let eventsSub;
+
+  // suspend/resume handled by `api.isRunning()` below
+  const handlers = api.handleStatus({
+    cleanups() {
+      blocking === true && removeFirst(w.view.clickIds, clickId);
+      eventsSub?.unsubscribe();
+    },
+  });
+
+  try {
+    while (numClicks > 0) {
+      blocking === true && w.view.clickIds.push(clickId);
+
+      const e = await /** @type {Promise<JshCli.PickEvent>} */ (
+        new Promise((resolve, reject) => {
+          eventsSub = w.events.subscribe({
+            next(e) {
+              if (e.key !== "picked") {
+                return;
+              } else if (api.isRunning() === false) {
+                return;
+              } else if (e.clickId !== undefined && clickId === undefined) {
+                return; // `click {n}` overrides `click`
+              } else if (e.clickId !== undefined && clickId !== e.clickId) {
+                return; // later `click {n}` overrides earlier `click {n}`
+              }
+              resolve(e); // Must resolve before tear-down induced by unsubscribe
+              eventsSub.unsubscribe();
+            },
+          });
+          eventsSub.add(() => reject(api.getKillError()));
+        })
+      );
+
+      // 🚧 provide position maybe earlier
+      const output = e;
+
+      if (filter === undefined || filter?.(output)) {
+        numClicks--;
+        yield output;
+      }
+    }
+  } finally {
+    handlers.dispose();
   }
 }
 
