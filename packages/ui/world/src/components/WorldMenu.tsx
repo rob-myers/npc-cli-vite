@@ -12,6 +12,8 @@ import { brightnessStorageKey } from "../const";
 import { objectPick } from "../service/pick";
 import { WorldContext } from "./world-context";
 
+const minY = 40;
+
 export function WorldMenu() {
   const { uiStoreApi } = useContext(UiContext);
 
@@ -20,10 +22,17 @@ export function WorldMenu() {
   const themeKeys = Object.keys(w.assets?.theme ?? {});
   const themeEditorRef = useRef<HTMLTextAreaElement>(null);
 
+  const maxY = (w.view.rootEl?.clientHeight ?? 120) - 120;
+  function getClampedY(y: number) {
+    return Math.min(maxY, Math.max(minY, y));
+  }
+
   const state = useStateRef(() => ({
-    y: tryLocalStorageGetParsed(storageKey(w.id)) ?? 40,
-    onDragEnd() {
-      tryLocalStorageSet(storageKey(w.id), String(y.get()));
+    dragged: false,
+    menuOpen: false,
+    y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
+    persistY() {
+      tryLocalStorageSet(storageKey(w.id), `${getClampedY(y.get())}`);
     },
     themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
     saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
@@ -46,9 +55,7 @@ export function WorldMenu() {
     },
   }));
 
-  const minY = 40;
-  const maxY = (w.view.rootEl?.clientHeight ?? Infinity) - 120;
-  const y = useMotionValue(Math.min(maxY, Math.max(minY, state.y)));
+  const y = useMotionValue(getClampedY(state.y));
 
   return (
     <motion.div
@@ -56,12 +63,27 @@ export function WorldMenu() {
       style={{ x: 0, y }}
       drag="y"
       dragConstraints={{ top: minY, bottom: maxY }}
-      dragMomentum={false}
-      onDragEnd={state.onDragEnd}
-      onPointerDown={(e) => e.stopPropagation()}
+      dragMomentum
+      onDragStart={() => (state.dragged = true)}
+      onDragEnd={() => {
+        state.persistY();
+        requestAnimationFrame(() => (state.dragged = false));
+      }}
     >
-      <Menu.Root>
-        <Menu.Trigger className="cursor-pointer">
+      <Menu.Root
+        open={state.menuOpen}
+        onOpenChange={(open) => {
+          state.set({ menuOpen: open });
+        }}
+      >
+        <Menu.Trigger
+          className="cursor-pointer"
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={() => {
+            if (state.dragged) return;
+            state.set({ menuOpen: !state.menuOpen });
+          }}
+        >
           <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
             <GlobeStandIcon className="size-5" weight="bold" />
             {w.navPending && <Spinner className="size-4" />}
