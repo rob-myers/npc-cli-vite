@@ -244,13 +244,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             )}
           >
             <ambientLight intensity={0.85} color="#ffffff" />
-            <Floor />
-            <Ceiling />
-            <Walls />
-            <Doors />
-            <Obstacles />
-            <NPCs />
-            <Debug />
+            <Floor key="floor" />
+            <Ceiling key="ceiling" />
+            <Walls key="walls" />
+            <Doors key="doors" />
+            <Obstacles key="obstacles" />
+            <NPCs key="npcs" />
+            <Debug key="debug" />
           </WorldView>
           <WorldWorker />
         </Suspense>

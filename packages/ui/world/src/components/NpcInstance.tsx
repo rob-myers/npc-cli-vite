@@ -31,13 +31,18 @@ function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
   const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
 
   return (
-    <group ref={state.groupRef}>
+    <group
+      ref={state.groupRef}
+      position={[0, 0.01, 0]} // for shadow
+    >
       <skinnedMesh
         geometry={npc.geometry}
         material={[npc.material, shadowMaterial]}
         skeleton={root.skeleton}
         scale={0.6}
         position={npc.position}
+        // renderOrder={-4}
+        renderOrder={4}
       >
         {bones.length > 0 && <primitive object={bones[0]} />}
       </skinnedMesh>
@@ -49,7 +54,7 @@ export const MemoNpcInstance = memo(NpcInstance);
 
 type Props = {
   npc: Npc;
-  shadowMaterial: THREE.MeshBasicMaterial;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
   gltf: GLTF;
   epoch: number;
 };
