@@ -3,10 +3,10 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, useContext } from "react";
+import { Suspense, useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
+import { cameraPosition, float, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { createSkinnedXzQuad, mergeWithGroups } from "../service/geometry";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
@@ -23,7 +23,7 @@ export default function NPCs() {
       byPickId: {} as Record<number, Npc>,
       gltf: null,
       nextPickId: 0,
-      shadowMaterial: new THREE.MeshBasicMaterial({ color: "black", opacity: 0.25, transparent: true }),
+      shadowMaterial: createShadowMaterial(),
       texture: null,
       npc: {},
       epoch: 0,
@@ -56,7 +56,7 @@ export default function NPCs() {
         const clone = SkeletonUtils.clone(state.gltf.scene);
         const graph = buildGraph(clone);
         const clonedRoot = graph.nodes.root as THREE.SkinnedMesh;
-        const shadowQuad = createSkinnedXzQuad(0.8, 0.8);
+        const shadowQuad = createSkinnedXzQuad(1, 1);
         const geometry = mergeWithGroups(clonedRoot.geometry, shadowQuad);
 
         const npc: Npc = {
@@ -87,12 +87,24 @@ export default function NPCs() {
         state.epoch++;
         state.update();
       },
+      refreshMaterials() {
+        if (!state.texture) return;
+        for (const npc of Object.values(state.npc)) {
+          npc.material.dispose();
+          npc.material = state.createNpcMaterial();
+        }
+        state.epoch++;
+        state.update();
+      },
       onTick(delta) {
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
         }
       },
     }),
+    {
+      reset: { shadowMaterial: true },
+    },
   );
 
   w.npc = state;
@@ -116,6 +128,12 @@ export default function NPCs() {
 
   state.gltf = queryData?.gltf ?? null;
   state.texture = queryData?.texture ?? null;
+
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      state.refreshMaterials();
+    }
+  }, []);
 
   const { gltf } = state;
 
@@ -153,15 +171,26 @@ export type State = {
   byPickId: Record<number, Npc>;
   gltf: GLTF | null;
   nextPickId: number;
-  shadowMaterial: THREE.MeshBasicMaterial;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
   texture: THREE.Texture | null;
   npc: Record<string, Npc>;
   epoch: number;
 
   createNpcMaterial(): THREE.MeshStandardNodeMaterial;
+  refreshMaterials(): void;
   spawn(args: { npcKey: string; position: [number, number, number] }): void;
   remove(npcKey: string): void;
   onTick(delta: number): void;
 };
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
+
+function createShadowMaterial() {
+  const center = uv().sub(0.5);
+  const dist = center.dot(center).mul(4);
+  const alpha = float(1).sub(dist).clamp(0, 1);
+  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, opacity: 1 });
+  mat.colorNode = vec4(0, 0, 0, 1);
+  mat.opacityNode = alpha.mul(0.6);
+  return mat;
+}

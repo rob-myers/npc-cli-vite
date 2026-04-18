@@ -52,7 +52,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * w key
  * w mapKey
  * w | keys
- * w npc.spawn '{ npcKey: "rob", position: [0,0,0] }'
+ * w npc.spawn '{ npcKey: "foo", position: [6, 0, 7.5] }'
  * ```
  *
  * - can always `ctrl-c`, even without cleaning up ongoing computations
