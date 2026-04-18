@@ -103,10 +103,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         switch (pick?.type) {
           case "floor":
           case "ceiling": {
-            const gm = w.gms[pick.instanceId];
+            const gmId = pick.instanceId;
+            const gm = w.gms[gmId];
             if (gm) {
               // 🚧 transform click to local coords for roomId lookup via pickRoomId
-              return { ...pick, gmKey: gm.key };
+              return { ...pick, gmId, gmKey: gm.key };
             }
             return null;
           }
@@ -121,6 +122,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "doors": {
             const decoded = w.door.decodeInstanceId(pick.instanceId);
             return { ...pick, ...decoded };
+          }
+          case "npcs": {
+            const npc = w.npc.byPickId[pick.instanceId];
+            if (npc) return { ...pick, npcKey: npc.key };
+            return null;
           }
           default:
             return null;

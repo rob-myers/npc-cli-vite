@@ -3,12 +3,13 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, useContext, useMemo } from "react";
+import { Suspense, useContext } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, vec4 } from "three/tsl";
+import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { createSkinnedXzQuad, mergeWithGroups } from "../service/geometry";
+import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { MemoNpcInstance } from "./NpcInstance";
 import { WorldContext } from "./world-context";
 
@@ -19,19 +20,29 @@ export default function NPCs() {
 
   const state = useStateRef(
     (): State => ({
+      byPickId: {} as Record<number, Npc>,
       gltf: null,
-      texture: null,
-      material: null,
+      nextPickId: 0,
       shadowMaterial: new THREE.MeshBasicMaterial({ color: "black", opacity: 0.25, transparent: true }),
+      texture: null,
       npc: {},
       epoch: 0,
 
+      createNpcMaterial() {
+        if (!state.texture) throw Error("texture not loaded yet");
+        const pickId = uniform(state.nextPickId++);
+        const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
+        const texNode = tslTexture(state.texture);
+        const viewDir = cameraPosition.sub(positionWorld).normalize();
+        const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
+        mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
+        mat.outputNode = withPickOutputId(PICK_TYPE.npcs, pickId);
+        return mat;
+      },
       spawn({ npcKey, position }) {
         if (typeof npcKey !== "string") throw Error("opts.npcKey: must be a string");
-        // 🚧 generic point type {x,y}, {x,y,z}, [x,y], [x,y,z]
         if (!Array.isArray(position) || !position.every((x) => typeof x === "number"))
           throw Error("opts.position: must be a numeric array");
-
         if (!npcKeyPattern.test(npcKey)) {
           throw Error(`npcKey must match ${npcKeyPattern}: got "${npcKey}"`);
         }
@@ -50,8 +61,10 @@ export default function NPCs() {
 
         const npc: Npc = {
           key: npcKey,
+          pickId: state.nextPickId,
           position,
           group: null,
+          material: state.createNpcMaterial(),
           mixer: emptyAnimationMixer,
           clone,
           graph,
@@ -59,6 +72,7 @@ export default function NPCs() {
         };
 
         state.npc[npcKey] = npc;
+        state.byPickId[npc.pickId] = npc;
         state.epoch++;
         state.update();
       },
@@ -66,7 +80,9 @@ export default function NPCs() {
         const npc = state.npc[npcKey];
         if (!npc) return;
         npc.mixer.stopAllAction();
+        npc.material.dispose();
         npc.geometry.dispose();
+        delete state.byPickId[npc.pickId];
         delete state.npc[npcKey];
         state.epoch++;
         state.update();
@@ -101,29 +117,16 @@ export default function NPCs() {
   state.gltf = queryData?.gltf ?? null;
   state.texture = queryData?.texture ?? null;
 
-  const material = useMemo(() => {
-    if (!state.texture) return null;
-    const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
-    const texNode = tslTexture(state.texture);
-    const viewDir = cameraPosition.sub(positionWorld).normalize();
-    const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
-    mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
-    return mat;
-  }, [state.texture]);
-  state.material = material;
-
   const { gltf } = state;
 
   return (
     <group>
       <Suspense>
-        {material &&
-          gltf &&
+        {gltf &&
           Object.values(state.npc).map((npc) => (
             <MemoNpcInstance
               key={npc.key}
               npc={npc}
-              material={material}
               shadowMaterial={state.shadowMaterial}
               gltf={gltf}
               epoch={state.epoch}
@@ -136,8 +139,10 @@ export default function NPCs() {
 
 export type Npc = {
   key: string;
+  pickId: number;
   position: [number, number, number];
   group: THREE.Group | null;
+  material: THREE.MeshStandardNodeMaterial;
   mixer: THREE.AnimationMixer;
   clone: THREE.Object3D;
   graph: ReturnType<typeof buildGraph>;
@@ -145,13 +150,15 @@ export type Npc = {
 };
 
 export type State = {
+  byPickId: Record<number, Npc>;
   gltf: GLTF | null;
-  texture: THREE.Texture | null;
-  material: THREE.MeshStandardNodeMaterial | null;
+  nextPickId: number;
   shadowMaterial: THREE.MeshBasicMaterial;
+  texture: THREE.Texture | null;
   npc: Record<string, Npc>;
   epoch: number;
 
+  createNpcMaterial(): THREE.MeshStandardNodeMaterial;
   spawn(args: { npcKey: string; position: [number, number, number] }): void;
   remove(npcKey: string): void;
   onTick(delta: number): void;

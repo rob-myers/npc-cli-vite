@@ -68,8 +68,8 @@ export function WorldMenu() {
 
   return (
     <motion.div
-      className={cn(uiClassName, "absolute top-0 left-0 z-9999 touch-none select-none")}
-      style={{ x: 0, y }}
+      className={cn(uiClassName, "absolute top-0 left-0.25 z-9999 touch-none select-none")}
+      style={{ y }}
       drag="y"
       dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
       dragMomentum={false}
