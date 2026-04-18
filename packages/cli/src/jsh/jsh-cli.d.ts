@@ -26,6 +26,7 @@ declare namespace JshCli {
     | { key: "nav-updated" }
     | {
         key: "picked";
+        clickId?: string;
         // 🚧 refine...
         meta: {
           type: string;
@@ -35,4 +36,6 @@ declare namespace JshCli {
         };
       };
   // 🚧 ...
+
+  type PickEvent = Pretty<Extract<Event, { key: "picked" }>>;
 }

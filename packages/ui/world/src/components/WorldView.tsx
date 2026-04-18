@@ -16,10 +16,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   const { uiStoreApi } = useContext(UiContext);
   const w = useContext(WorldContext);
 
-  const state = useStateRef<State>(
-    () => ({
+  const state = useStateRef(
+    (): State => ({
       canvas: null as any,
       controls: null as any,
+      clickIds: [],
       ctrlOpts: {
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
@@ -93,7 +94,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
           const picked = state.getPickedFromPixel(rgba);
           console.log("picked", picked);
-          picked !== null && w.events.next({ key: "picked", meta: picked });
+          picked !== null && w.events.next({ key: "picked", meta: picked, clickId: state.clickIds.pop() });
         });
       },
       getPickedFromPixel([r, g, b, _a]) {
@@ -237,6 +238,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
 export type State = {
   canvas: HTMLCanvasElement;
+  clickIds: string[];
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
   pickRT: THREE.RenderTarget;

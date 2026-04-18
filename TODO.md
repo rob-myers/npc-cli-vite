@@ -34,8 +34,10 @@ expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
 - ✅ fix disappearing WorldMenu on resize Tabs whilst other tab open
 - ✅ can pick npcs
 - ✅ npc has label quad
+- ✅ on drag unseen tab onto grid it should mount
 
-- on drag unseen tab onto grid it should mount
+- 🚧 basic `click`
+  - 🚧 forward position clicked computed in `PickEvent`
 
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
