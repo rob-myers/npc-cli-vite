@@ -165,7 +165,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         state.onDeleteTab({ id: tabId } as UiInstanceMeta, { preservePortal: true });
         uiStore.setState((draft) => {
           const item = draft.byId[tabId];
-          if (item) item.meta.parentId = undefined;
+          if (item) {
+            item.meta.parentId = undefined;
+            item.everSeen = true;
+          }
         });
         layoutApi.appendLayoutItems([{ i: tabId, x: gridPos?.x ?? 0, y: gridPos?.y ?? 0, w: 2, h: 4 }]);
       },
