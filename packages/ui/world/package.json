@@ -30,10 +30,14 @@
     "motion": "catalog:",
     "navcat": "catalog:",
     "react": "catalog:",
+    "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
     "three": "catalog:",
     "three-stdlib": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react-beforeunload": "catalog:"
   }
 }

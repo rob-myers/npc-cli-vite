@@ -6,13 +6,11 @@ import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli
 import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
-import { useContext, useRef } from "react";
+import { useContext } from "react";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
 import { objectPick } from "../service/pick";
 import { WorldContext } from "./world-context";
-
-const minY = 40;
 
 export function WorldMenu() {
   const { uiStoreApi } = useContext(UiContext);
@@ -20,49 +18,56 @@ export function WorldMenu() {
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
   const themeKeys = Object.keys(w.assets?.theme ?? {});
-  const themeEditorRef = useRef<HTMLTextAreaElement>(null);
 
-  const maxY = (w.view.rootEl?.clientHeight ?? 120) - 120;
-  function getClampedY(y: number) {
-    return Math.min(maxY, Math.max(minY, y));
-  }
+  const state = useStateRef(
+    (): State => ({
+      dragged: false,
+      menuOpen: false,
+      minY: 40,
+      themeEditorRef: null as any,
+      y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
+      persistY() {
+        tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
+      },
+      themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
+      saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
 
-  const state = useStateRef(() => ({
-    dragged: false,
-    menuOpen: false,
-    y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
-    persistY() {
-      tryLocalStorageSet(storageKey(w.id), `${getClampedY(y.get())}`);
-    },
-    themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
-    saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
-    async saveTheme() {
-      const theme = w.assets?.theme?.[w.themeKey];
-      if (!theme) return;
-      const res = await fetch(`/api/assets/theme/${encodeURIComponent(w.themeKey)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(theme),
-      });
-      if (res.ok) {
-        w.hash = hashJson(w.assets);
-        w.update();
-      }
-    },
-    saveThemeDebounced() {
-      clearTimeout(state.saveTimer);
-      state.saveTimer = setTimeout(() => state.saveTheme(), 300);
-    },
-  }));
+      getMaxY() {
+        return (w.view.rootEl?.clientHeight ?? Infinity) - 120;
+      },
+      getClampedY(y: number) {
+        return Math.min(state.getMaxY(), Math.max(state.minY, y));
+      },
+      async saveTheme() {
+        const theme = w.assets?.theme?.[w.themeKey];
+        if (!theme) return;
+        const res = await fetch(`/api/assets/theme/${encodeURIComponent(w.themeKey)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(theme),
+        });
+        if (res.ok) {
+          w.hash = hashJson(w.assets);
+          w.update();
+        }
+      },
+      saveThemeDebounced() {
+        clearTimeout(state.saveTimer);
+        state.saveTimer = setTimeout(() => state.saveTheme(), 300);
+      },
+    }),
+  );
 
-  const y = useMotionValue(getClampedY(state.y));
+  w.menu = state;
+
+  const y = useMotionValue(state.getClampedY(state.y));
 
   return (
     <motion.div
       className={cn(uiClassName, "absolute top-0 left-0 z-9999 touch-none select-none")}
       style={{ x: 0, y }}
       drag="y"
-      dragConstraints={{ top: minY, bottom: maxY }}
+      dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
       dragMomentum
       onDragStart={() => (state.dragged = true)}
       onDragEnd={() => {
@@ -182,13 +187,13 @@ export function WorldMenu() {
                     <div className="p-2 pt-0 flex flex-col gap-1">
                       <textarea
                         key={w.themeKey}
-                        ref={themeEditorRef}
+                        ref={state.ref("themeEditorRef")}
                         className="w-48 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
                         defaultValue={JSON.stringify(w.getTheme(), null, 2)}
                         onKeyDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => {
-                          const parsed = WorldThemeSchema.safeParse(JSON.parse(themeEditorRef.current?.value ?? ""));
+                          const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
                           if (!parsed.success || !w.assets) return;
                           w.assets.theme ??= {};
                           w.assets.theme[w.themeKey] = parsed.data;
@@ -301,6 +306,21 @@ function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void
 function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
 }
+
+export type State = {
+  dragged: boolean;
+  menuOpen: boolean;
+  themeEditorRef: HTMLTextAreaElement;
+  y: number;
+  themeEditorOpen: boolean;
+  saveTimer: ReturnType<typeof setTimeout> | 0;
+  minY: number;
+  getMaxY(): number;
+  getClampedY(y: number): number;
+  persistY(): void;
+  saveTheme(): Promise<void>;
+  saveThemeDebounced(): void;
+};
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";

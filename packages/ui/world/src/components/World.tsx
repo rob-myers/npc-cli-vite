@@ -7,6 +7,7 @@ import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect } from "react";
+import { useBeforeunload } from "react-beforeunload";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
@@ -91,6 +92,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       sheets: null as any,
       view: null as any,
       wall: null as any,
+      menu: null as any,
       npc: null as any,
       worker: null as any,
 
@@ -226,6 +228,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     }
   }, []); // sync assets in dev/prod
 
+  useBeforeunload(() => {
+    state.menu?.persistY();
+  });
+
   return (
     <WorldContext.Provider value={state}>
       <div className={cn(uiClassName, "relative size-full")}>
@@ -292,6 +298,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   view: UseStateRef<import("./WorldView").State>;
   wall: UseStateRef<import("./Walls").State>;
+  menu: UseStateRef<import("./WorldMenu").State>;
   npc: UseStateRef<import("./NPCs").State>;
 
   worker: UseStateRef<import("./WorldWorker").State>;
