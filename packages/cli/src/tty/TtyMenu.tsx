@@ -10,13 +10,12 @@ import {
   SkullIcon,
 } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
-import React, { useRef } from "react";
+import React from "react";
 import { localStorageKey, spawnBgPausedDefault } from "../shell/const";
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 
 export function TtyMenu(props: Props) {
-  const dragged = useRef(false);
   const [visible, setVisible] = React.useState(false);
   React.useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -29,6 +28,7 @@ export function TtyMenu(props: Props) {
 
   const state = useStateRef(
     () => ({
+      dragged: false,
       rootEl: null as HTMLDivElement | null,
       /**
        * Given `props.disabled`, should interactively spawned
@@ -124,19 +124,19 @@ export function TtyMenu(props: Props) {
       dragConstraints={{ top: minY, bottom: getMaxY() }}
       dragMomentum={false}
       onDragStart={() => {
-        dragged.current = true;
+        state.dragged = true;
       }}
       onDragEnd={() => {
         const clamped = Math.max(0, Math.min(y.get(), getMaxY()));
         y.set(clamped);
         tryLocalStorageSet(menuYStorageKey, String(clamped));
         requestAnimationFrame(() => {
-          dragged.current = false;
+          state.dragged = false;
         });
       }}
       onClick={(e: React.MouseEvent) => {
-        if (dragged.current) {
-          dragged.current = false;
+        if (state.dragged) {
+          state.dragged = false;
           return;
         }
         state.onClickMenu(e);
@@ -155,7 +155,7 @@ export function TtyMenu(props: Props) {
             }
             onClick={(e) => {
               e.stopPropagation();
-              if (!dragged.current) state.toggleTouchMenu();
+              if (!state.dragged) state.toggleTouchMenu();
             }}
           >
             {state.touchMenuOpen ? ">" : "<"}
@@ -165,7 +165,7 @@ export function TtyMenu(props: Props) {
               className="pr-1 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
               onClick={(e) => {
                 e.stopPropagation();
-                if (!dragged.current) state.contOrStopInteractive();
+                if (!state.dragged) state.contOrStopInteractive();
               }}
               title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
             >
@@ -177,7 +177,7 @@ export function TtyMenu(props: Props) {
               className={cn("cursor-pointer pr-2 pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!dragged.current) state.setSpawnBgPaused();
+                if (!state.dragged) state.setSpawnBgPaused();
               }}
               title={state.spawnBgPaused ? "spawning background paused" : "spawning background unpaused"}
             >
