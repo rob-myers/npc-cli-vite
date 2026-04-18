@@ -18,6 +18,7 @@ function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
 
           const idle = npc.mixer.clipAction(idleClip);
           idle.play();
+          npc.mixer.update(0);
         } else {
           npc.mixer.stopAllAction();
         }
