@@ -771,7 +771,7 @@ importers:
         specifier: 'catalog:'
         version: 0.182.0
       debounce:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.0
       maath:
         specifier: 'catalog:'
