@@ -4,7 +4,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three/webgpu";
 import type { Npc } from "./NPCs";
 
-function NpcInstance({ npc, material, shadowMaterial, gltf }: Props) {
+function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
   const state = useStateRef(
     (): State => ({
       groupRef(group) {
@@ -18,10 +18,6 @@ function NpcInstance({ npc, material, shadowMaterial, gltf }: Props) {
 
           const idle = npc.mixer.clipAction(idleClip);
           idle.play();
-          // setTimeout(() => {
-          //   idle.fadeOut(0.5);
-          //   npc.mixer.clipAction(walkClip).reset().fadeIn(0.5).play();
-          // }, 0);
         } else {
           npc.mixer.stopAllAction();
         }
@@ -37,7 +33,7 @@ function NpcInstance({ npc, material, shadowMaterial, gltf }: Props) {
     <group ref={state.groupRef}>
       <skinnedMesh
         geometry={npc.geometry}
-        material={[material, shadowMaterial]}
+        material={[npc.material, shadowMaterial]}
         skeleton={root.skeleton}
         scale={0.6}
         position={npc.position}
@@ -52,7 +48,6 @@ export const MemoNpcInstance = memo(NpcInstance);
 
 type Props = {
   npc: Npc;
-  material: THREE.MeshStandardNodeMaterial;
   shadowMaterial: THREE.MeshBasicMaterial;
   gltf: GLTF;
   epoch: number;
