@@ -169,7 +169,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   useEffect(() => {
     if (!state.rootEl) return;
-    const ro = new ResizeObserver(() => state.onResize());
+    const ro = new ResizeObserver(([entry]) => {
+      // only trigger when visible
+      entry.contentRect.width && state.onResize();
+    });
     ro.observe(state.rootEl);
     return () => ro.disconnect();
   }, [state.rootEl]);

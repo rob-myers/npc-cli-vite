@@ -9,27 +9,24 @@ import {
   PaintBrushIcon,
   SkullIcon,
 } from "@phosphor-icons/react";
-import { motion, useMotionValue } from "motion/react";
+import { type MotionValue, motion, useMotionValue } from "motion/react";
 import React from "react";
 import { localStorageKey, spawnBgPausedDefault } from "../shell/const";
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 
-export function TtyMenu(props: Props) {
+export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null> }) {
   const [visible, setVisible] = React.useState(false);
   React.useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  const minY = 40;
-  const getMaxY = () => Math.max(minY, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
-  const storedY = Number(tryLocalStorageGetParsed(menuYStorageKey)) || 0;
-  const y = useMotionValue(Math.max(0, Math.min(storedY, getMaxY())));
-
-  const state = useStateRef(
-    () => ({
+  const state = useStateRef<State>(
+    (): State => ({
       dragged: false,
-      rootEl: null as HTMLDivElement | null,
+      minY: 40,
+      motionY: null as any,
+      rootEl: null as any,
       /**
        * Given `props.disabled`, should interactively spawned
        * background processes also start paused?
@@ -38,6 +35,16 @@ export function TtyMenu(props: Props) {
       touchMenuOpen: true,
       xterm: props.session.ttyShell.xterm,
 
+      getMaxY() {
+        return Math.max(state.minY, (props.constraintsRef.current?.clientHeight ?? 400) - 300);
+      },
+      getClampedY(v: number) {
+        return Math.min(state.getMaxY(), Math.max(state.minY, v));
+      },
+      onResize() {
+        state.motionY.set(state.getClampedY(state.motionY.get()));
+        state.update();
+      },
       contOrStopInteractive() {
         switch (props.canContOrStop) {
           case "CONT":
@@ -96,7 +103,11 @@ export function TtyMenu(props: Props) {
     { deps: [props.canContOrStop] },
   );
 
+  const storedY = Number(tryLocalStorageGetParsed(menuYStorageKey)) || 0;
+  const y = useMotionValue(state.getClampedY(storedY));
+  state.motionY = y;
   state.xterm = props.session.ttyShell.xterm;
+  if (props.stateRef) (props.stateRef as React.RefObject<State | null>).current = state;
 
   React.useMemo(() => {
     if (!tryLocalStorageGet(localStorageKey.touchTtyCanType)) {
@@ -121,13 +132,13 @@ export function TtyMenu(props: Props) {
       )}
       style={{ y }}
       drag="y"
-      dragConstraints={{ top: minY, bottom: getMaxY() }}
+      dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
       dragMomentum={false}
       onDragStart={() => {
         state.dragged = true;
       }}
       onDragEnd={() => {
-        const clamped = Math.max(0, Math.min(y.get(), getMaxY()));
+        const clamped = state.getClampedY(y.get());
         y.set(clamped);
         tryLocalStorageSet(menuYStorageKey, String(clamped));
         requestAnimationFrame(() => {
@@ -227,6 +238,24 @@ interface Props {
   session: Session;
   setTabsEnabled(next: boolean): void;
 }
+
+export type State = {
+  dragged: boolean;
+  minY: number;
+  motionY: MotionValue<number>;
+  rootEl: HTMLDivElement | null;
+  spawnBgPaused: boolean;
+  touchMenuOpen: boolean;
+  xterm: Session["ttyShell"]["xterm"];
+
+  getMaxY(): number;
+  getClampedY(v: number): number;
+  onResize(): void;
+  contOrStopInteractive(): void;
+  onClickMenu(e: React.MouseEvent): Promise<void>;
+  setSpawnBgPaused(next?: boolean): void;
+  toggleTouchMenu(): void;
+};
 
 const icon = cn("flex justify-center h-6 cursor-pointer");
 const menuYStorageKey = "tty-menu-y";

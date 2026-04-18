@@ -10,7 +10,7 @@ import type { ExternalMessage, ExternalMessageProcessLeader } from "../shell/io"
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 import { BaseTty, type State as BaseTtyState } from "./BaseTty";
-import { TtyMenu } from "./TtyMenu";
+import { TtyMenu, type State as TtyMenuState } from "./TtyMenu";
 
 /**
  * A `BaseTty` which can be:
@@ -22,6 +22,7 @@ export function Tty(props: Props) {
   const [rootRef, bounds] = useMeasure({ debounce: 0, scroll: false });
   const containerRef = React.useRef<HTMLDivElement>(null);
   const baseRef = React.useRef<BaseTtyState>(null);
+  const ttyMenuRef = React.useRef<TtyMenuState>(null);
 
   const state = useStateRef(
     () => ({
@@ -115,6 +116,7 @@ export function Tty(props: Props) {
       },
       async resize() {
         if (baseRef.current) state.fitDebounced();
+        ttyMenuRef.current?.onResize();
       },
       resumeByPtags() {
         if (!baseRef.current) return;
@@ -292,6 +294,7 @@ export function Tty(props: Props) {
       <BaseTty ref={baseRef} sessionKey={props.sessionKey} env={props.env} onUnmount={state.reboot} />
       {baseRef.current?.session && (
         <TtyMenu
+          stateRef={ttyMenuRef}
           canContOrStop={state.canContOrStop}
           constraintsRef={containerRef}
           disabled={props.disabled}
