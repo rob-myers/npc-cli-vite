@@ -16,11 +16,6 @@ import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 
 export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null> }) {
-  const [visible, setVisible] = React.useState(false);
-  React.useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
-
   const state = useStateRef<State>(
     (): State => ({
       dragged: false,
@@ -125,10 +120,10 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
       ref={state.ref("rootEl")}
       className={cn(
         "pointer-events-none",
-        "absolute z-2 top-0 right-0 touch-none transition-opacity duration-300",
+        "absolute z-2 top-0 right-0 touch-none",
+        "transition-opacity duration-300 delay-300 opacity-100 starting:opacity-0",
         "[--menu-width:32px]",
         "text-sm leading-1 border-none text-white/80",
-        visible ? "opacity-100" : "opacity-0",
       )}
       style={{ y }}
       drag="y"
