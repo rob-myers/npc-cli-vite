@@ -159,7 +159,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
           state.touchMenuOpen ? "translate-x-0" : "translate-x-(--menu-width)",
         )}
       >
-        <div className="*:pointer-events-auto">
+        <div className="touch-none *:pointer-events-auto">
           <div
             className={
               "h-8 pr-2 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
@@ -201,7 +201,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
           className={cn(
             "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
             "mb-8 w-(--menu-width)",
-            "*:pointer-events-auto",
+            "*:pointer-events-auto touch-none",
           )}
         >
           <div className={cn(icon, "paste")} title="paste (Cmd+V)">
