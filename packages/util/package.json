@@ -23,7 +23,7 @@
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "clsx": "catalog:",
-    "debounce": "^3.0.0",
+    "debounce": "catalog:",
     "earcut": "catalog:",
     "javascript-stringify": "catalog:",
     "json-stringify-pretty-compact": "catalog:",

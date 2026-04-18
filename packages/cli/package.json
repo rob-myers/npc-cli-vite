@@ -22,7 +22,7 @@
     "@xterm/xterm": "^6.0.0",
     "braces": "catalog:",
     "cli-columns": "catalog:",
-    "debounce": "^3.0.0",
+    "debounce": "catalog:",
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
     "motion": "catalog:",

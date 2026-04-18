@@ -31,6 +31,11 @@ expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
   - layout schema and layouts.json
     - can CRUD in DEV
 
+- ✅ fix disappearing WorldMenu on resize Tabs whilst other tab open
+
+- try fix mobile persist issues via `visibilitychanged`
+  - we'll wrap useBeforeunload and ensure callback only called once
+
 - import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - 🚧 check glsl fallback e.g. incognito or force
   - Walls and Doors don't draw i.e. too many
