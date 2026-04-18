@@ -3,8 +3,9 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
+import debounce from "debounce";
 import { motion } from "motion/react";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { decodePick, objectPick } from "../service/pick";
@@ -133,6 +134,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.update(); // e.g. show stats
         document.addEventListener("keydown", state.onKeyDown);
       },
+      onResize: debounce(() => {
+        console.log("onResize");
+        w.menu?.onResize();
+      }, 100),
       onKeyDown(e: KeyboardEvent) {
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
@@ -161,6 +166,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   );
 
   w.view = state;
+
+  useEffect(() => {
+    if (!state.rootEl) return;
+    const ro = new ResizeObserver(() => state.onResize());
+    ro.observe(state.rootEl);
+    return () => ro.disconnect();
+  }, [state.rootEl]);
 
   return (
     <motion.div
@@ -226,6 +238,7 @@ export type State = {
   doObjectPick(offsetX: number, offsetY: number): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
+  onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(
     rgba: THREE.TypedArray | [number, number, number, number],

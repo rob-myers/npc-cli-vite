@@ -38,6 +38,9 @@ export function WorldMenu() {
       getClampedY(y: number) {
         return Math.min(state.getMaxY(), Math.max(state.minY, y));
       },
+      onResize() {
+        y.set(state.getClampedY(y.get()));
+      },
       async saveTheme() {
         const theme = w.assets?.theme?.[w.themeKey];
         if (!theme) return;
@@ -68,7 +71,7 @@ export function WorldMenu() {
       style={{ x: 0, y }}
       drag="y"
       dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
-      dragMomentum
+      dragMomentum={false}
       onDragStart={() => (state.dragged = true)}
       onDragEnd={() => {
         state.persistY();
@@ -317,6 +320,7 @@ export type State = {
   minY: number;
   getMaxY(): number;
   getClampedY(y: number): number;
+  onResize(): void;
   persistY(): void;
   saveTheme(): Promise<void>;
   saveThemeDebounced(): void;

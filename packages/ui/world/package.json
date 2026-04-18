@@ -25,6 +25,7 @@
     "@react-three/fiber": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@types/three": "catalog:",
+    "debounce": "catalog:",
     "maath": "catalog:",
     "mathcat": "catalog:",
     "motion": "catalog:",
