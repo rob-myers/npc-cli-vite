@@ -67,6 +67,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.onDeviceLost = (event) => {
           console.warn("WebGPU device lost", event);
         };
+        renderer.setPixelRatio(window.devicePixelRatio);
 
         await renderer.init();
         return renderer;
