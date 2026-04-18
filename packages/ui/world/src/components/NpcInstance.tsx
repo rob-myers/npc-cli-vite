@@ -2,6 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { memo } from "react";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three/webgpu";
+import { npcScale } from "../const";
 import type { Npc } from "./NPCs";
 
 function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
@@ -37,9 +38,9 @@ function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
     >
       <skinnedMesh
         geometry={npc.geometry}
-        material={[npc.material, shadowMaterial]}
+        material={[npc.material, shadowMaterial, npc.labelMaterial]}
         skeleton={root.skeleton}
-        scale={0.6}
+        scale={npcScale}
         position={npc.position}
         renderOrder={0}
       >

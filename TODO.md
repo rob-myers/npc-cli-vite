@@ -33,6 +33,7 @@ expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
 
 - ✅ fix disappearing WorldMenu on resize Tabs whilst other tab open
 - ✅ can pick npcs
+- ✅ npc has label quad
 
 - on drag unseen tab onto grid it should mount
 

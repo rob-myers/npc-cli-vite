@@ -6,10 +6,31 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense, useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { cameraPosition, float, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
+import {
+  attribute,
+  cameraPosition,
+  cameraProjectionMatrix,
+  cameraViewMatrix,
+  float,
+  modelWorldMatrix,
+  normalWorld,
+  positionLocal,
+  positionWorld,
+  texture as tslTexture,
+  uniform,
+  uv,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
-import { createSkinnedXzQuad, mergeWithGroups } from "../service/geometry";
+import { MAX_NPCS, npcScale } from "../const";
+import {
+  addEmptyBillboardOffset,
+  createSkinnedLabelQuad,
+  createSkinnedXzQuad,
+  mergeWithGroups,
+} from "../service/geometry";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
+import { TexArray } from "../service/tex-array";
 import { MemoNpcInstance } from "./NpcInstance";
 import { WorldContext } from "./world-context";
 
@@ -22,6 +43,7 @@ export default function NPCs() {
     (): State => ({
       byPickId: {} as Record<number, Npc>,
       gltf: null,
+      labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       nextPickId: 0,
       shadowMaterial: createShadowMaterial(),
       texture: null,
@@ -56,15 +78,26 @@ export default function NPCs() {
         const clone = SkeletonUtils.clone(state.gltf.scene);
         const graph = buildGraph(clone);
         const clonedRoot = graph.nodes.root as THREE.SkinnedMesh;
+        const headBoneIndex = clonedRoot.skeleton.bones.findIndex((b) => b.name === "head");
+
         const shadowQuad = createSkinnedXzQuad(1, 1);
-        const geometry = mergeWithGroups(clonedRoot.geometry, shadowQuad);
+        // 0.5 / 0.125 = 4:1, matching 256 x 64
+        const labelQuad = createSkinnedLabelQuad(0.5, 0.125, 1.25 / npcScale, headBoneIndex >= 0 ? headBoneIndex : 0);
+        addEmptyBillboardOffset(clonedRoot.geometry);
+        addEmptyBillboardOffset(shadowQuad);
+        const geometry = mergeWithGroups(clonedRoot.geometry, shadowQuad, labelQuad);
+
+        const labelLayerIndex = state.nextPickId;
+        drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
 
         const npc: Npc = {
           key: npcKey,
           pickId: state.nextPickId,
+          labelLayerIndex,
           position,
           group: null,
           material: state.createNpcMaterial(),
+          labelMaterial: createLabelMaterial(state.labelTexArray, labelLayerIndex),
           mixer: emptyAnimationMixer,
           clone,
           graph,
@@ -81,6 +114,7 @@ export default function NPCs() {
         if (!npc) return;
         npc.mixer.stopAllAction();
         npc.material.dispose();
+        npc.labelMaterial.dispose();
         npc.geometry.dispose();
         delete state.byPickId[npc.pickId];
         delete state.npc[npcKey];
@@ -158,9 +192,11 @@ export default function NPCs() {
 export type Npc = {
   key: string;
   pickId: number;
+  labelLayerIndex: number;
   position: [number, number, number];
   group: THREE.Group | null;
   material: THREE.MeshStandardNodeMaterial;
+  labelMaterial: THREE.MeshBasicNodeMaterial;
   mixer: THREE.AnimationMixer;
   clone: THREE.Object3D;
   graph: ReturnType<typeof buildGraph>;
@@ -170,6 +206,7 @@ export type Npc = {
 export type State = {
   byPickId: Record<number, Npc>;
   gltf: GLTF | null;
+  labelTexArray: TexArray;
   nextPickId: number;
   shadowMaterial: THREE.MeshBasicNodeMaterial;
   texture: THREE.Texture | null;
@@ -184,6 +221,37 @@ export type State = {
 };
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
+
+function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) {
+  const { ct } = texArray;
+  const { width, height } = ct.canvas;
+  ct.clearRect(0, 0, width, height);
+  ct.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ct.roundRect(0, 0, width, height, 8);
+  ct.fill();
+  ct.fillStyle = "white";
+  ct.font = "36px sans-serif";
+  ct.textAlign = "center";
+  ct.textBaseline = "middle";
+  ct.fillText(npcKey, width / 2, height / 2);
+  texArray.updateIndex(layerIndex);
+}
+
+function createLabelMaterial(texArray: TexArray, layerIndex: number) {
+  const texNode = tslTexture(texArray.tex);
+  const layerNode = texNode.depth(uniform(layerIndex));
+  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  mat.colorNode = layerNode;
+  mat.opacityNode = layerNode.a;
+
+  const offset = attribute("billboardOffset", "vec2");
+  const worldCenter = modelWorldMatrix.mul(vec4(positionLocal, 1));
+  const viewCenter = cameraViewMatrix.mul(worldCenter);
+  const viewPos = viewCenter.add(vec4(offset, 0, 0));
+  mat.vertexNode = cameraProjectionMatrix.mul(viewPos);
+
+  return mat;
+}
 
 function createShadowMaterial() {
   const center = uv().sub(0.5);
