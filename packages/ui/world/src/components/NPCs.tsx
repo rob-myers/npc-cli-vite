@@ -58,7 +58,7 @@ export default function NPCs() {
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
-        mat.outputNode = withPickOutputId(PICK_TYPE.npcs, pickId);
+        mat.outputNode = withPickOutputId(PICK_TYPE.npc, pickId);
         return mat;
       },
       spawn({ npcKey, position }) {

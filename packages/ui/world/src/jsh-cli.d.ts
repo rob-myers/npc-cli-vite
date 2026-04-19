@@ -5,7 +5,6 @@ declare namespace JshCli {
     key: "picked";
 
     clickId?: string;
-    intersection: Pick<THREE.Intersection, "distance" | "point" | "face">;
 
     // 🚧 refine...
     meta: {
@@ -14,7 +13,7 @@ declare namespace JshCli {
       gmKey?: string;
       collapse?: boolean;
     };
-  };
+  } & Pick<THREE.Intersection, "distance" | "point" | "face">;
 
   type DecodedObjectPick = Meta<{
     type: import("@npc-cli/ui__world").ObjectPickKey;

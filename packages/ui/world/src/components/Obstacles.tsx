@@ -184,7 +184,7 @@ export default function Obstacles(_props: Props) {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode: texNode.depth(uvTexIds), pickNode: withPickOutput(PICK_TYPE.obstacles), uid: generateUUID() };
+    return { texNode: texNode.depth(uvTexIds), pickNode: withPickOutput(PICK_TYPE.obstacle), uid: generateUUID() };
   }, [w.texObs.hash]);
 
   state.images =

@@ -16,18 +16,55 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
+ * Examples:
+ * ```sh
+ * events
+ * events | filter /picked/
+ * events /picked/
+ * events 'e => e.key === "picked"'
+ * events where:'e => e.key === "picked"'
+ * ```
+ * @template {JshCli.Event} [T=JshCli.Event]
+ * @param {JshCli.RunArg} ctxt
+ * @param {{ where?(e: JshCli.Event): e is T }} [opts]
+ */
+export async function* events({ api, args, w }, opts = api.jsArg(args)) {
+  const filter = !args[0] ? undefined : (opts.where ?? api.generateSelector(api.parseFnOrStr(args[0]), []));
+  const asyncIterable = api.observableToAsyncIterable(w.events);
+  const handlers = api.handleStatus({
+    cleanups() {
+      asyncIterable.return?.();
+    },
+  });
+
+  for await (const event of asyncIterable) {
+    if (filter === undefined || filter(event)) {
+      yield/** @type {T} */ (event);
+    }
+  }
+  // get here via ctrl-c or `kill`
+  handlers.dispose();
+  throw api.getKillError();
+}
+
+/**
  * ```sh
  * # unbounded unblocking left clicks
- * click
+ * pick
  * # exactly 1 blocking click
- * click 1
- * click | map meta.type
+ * pick 1
+ * pick meta.floor
+ * pick meta.ceiling
+ * pick meta.wall
+ * pick | map meta.type
+ * pick '({ meta }, ct) => meta.type === "floor" && ct.home.foo == 42'
+ * pick | map point
  * ```
  *
- * - Shows number of clicks in decor
+ * 🚧 clean and clarify below
  * @param {JshCli.RunArg} ct
  */
-export async function* click(ct) {
+export async function* pick(ct) {
   const { args, api, w } = ct;
   let { opts, operands } = ct.api.getOpts(args, {
     boolean: [
@@ -55,8 +92,8 @@ export async function* click(ct) {
   const clickId = isStringInt(operands[0]) || opts.block === true ? api.getUid() : undefined;
   const blocking = clickId !== undefined;
 
-  // support `click meta.nav`
-  // support `click '({ meta }, ct) => meta.nav && ct.home.myTest'`
+  // support `pick meta.floor`
+  // support `pick '({ meta }, ct) => meta.type === "floor"'`
   const filterDef = isStringInt(operands[0]) ? operands[1] : operands[0];
   const filter = filterDef !== undefined ? api.generateSelector(api.parseFnOrStr(filterDef), [ct]) : undefined;
 
@@ -110,38 +147,6 @@ export async function* click(ct) {
 }
 
 /**
- * Examples:
- * ```sh
- * events
- * events | filter /picked/
- * events /picked/
- * events 'e => e.key === "picked"'
- * events where:'e => e.key === "picked"'
- * ```
- * @template {JshCli.Event} [T=JshCli.Event]
- * @param {JshCli.RunArg} ctxt
- * @param {{ where?(e: JshCli.Event): e is T }} [opts]
- */
-export async function* events({ api, args, w }, opts = api.jsArg(args)) {
-  const filter = !args[0] ? undefined : (opts.where ?? api.generateSelector(api.parseFnOrStr(args[0]), []));
-  const asyncIterable = api.observableToAsyncIterable(w.events);
-  const handlers = api.handleStatus({
-    cleanups() {
-      asyncIterable.return?.();
-    },
-  });
-
-  for await (const event of asyncIterable) {
-    if (filter === undefined || filter(event)) {
-      yield/** @type {T} */ (event);
-    }
-  }
-  // get here via ctrl-c or `kill`
-  handlers.dispose();
-  throw api.getKillError();
-}
-
-/**
  * Usage:
  * ```sh
  * w
@@ -160,7 +165,7 @@ export async function* w(ct) {
   const { api, args, w } = ct;
 
   // support piped inputs via hyphen args -
-  // e.g. `click 1 | w npc.findRoomContaining -`
+  // e.g. `pick 1 | w npc.findRoomContaining -`
   const stdinInputChar = "-";
   const readStdin = args.slice(1).some((arg) => arg === stdinInputChar);
 
