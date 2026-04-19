@@ -94,7 +94,7 @@ export default function Walls() {
       depthWrite: false,
     });
     material.opacityNode = objectPick.equal(1).select(float(1), opacityUniform);
-    material.outputNode = withPickOutput(PICK_TYPE.walls);
+    material.outputNode = withPickOutput(PICK_TYPE.wall);
 
     return { material, opacityUniform };
   }, [wallCount]);

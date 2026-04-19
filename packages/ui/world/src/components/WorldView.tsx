@@ -83,25 +83,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "ceiling": {
             const gmId = pick.instanceId;
             const gm = w.gms[gmId];
-            if (gm) {
-              // 🚧 transform click to local coords for roomId lookup via pickRoomId
-              return { ...pick, gmId, gmKey: gm.key };
-            }
-            return null;
+            if (!gm) return null;
+            // 🚧 transform click to local coords for roomId lookup via pickRoomId
+            return { ...pick, gmId, gmKey: gm.key, ...(pick.type === "floor" ? { floor: true } : { ceiling: true }) };
           }
-          case "walls": {
-            const decoded = w.wall.decodeInstanceId(pick.instanceId);
-            return { ...pick, ...decoded };
+          case "wall": {
+            const { gmId, meta } = w.wall.decodeInstanceId(pick.instanceId);
+            return { ...pick, gmId, ...meta };
           }
-          case "obstacles": {
+          case "obstacle": {
             const decoded = w.obs.decodeInstanceId(pick.instanceId);
             return { ...pick, ...decoded };
           }
-          case "doors": {
+          case "door": {
             const decoded = w.door.decodeInstanceId(pick.instanceId);
             return { ...pick, ...decoded };
           }
-          case "npcs": {
+          case "npc": {
             const npc = w.npc.byPickId[pick.instanceId];
             if (npc) return { ...pick, npcKey: npc.key };
             return null;
@@ -127,19 +125,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "floor":
             mesh = getTempInstanceMesh(w.floor.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          case "walls":
+          case "wall":
             mesh = getTempInstanceMesh(w.wall.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          case "npcs":
+          case "npc":
             mesh = w.npc.npc[picked.npcKey].skinnedMesh;
             break;
-          case "doors":
+          case "door":
             mesh = getTempInstanceMesh(w.door.inst as THREE.InstancedMesh, picked.instanceId);
             break;
           // case "quad":
           //   mesh = getTempInstanceMesh(w.decor.quadInst, decoded.instanceId);
           //   break;
-          case "obstacles":
+          case "obstacle":
             mesh = getTempInstanceMesh(w.obs.inst as THREE.InstancedMesh, picked.instanceId);
             break;
           case "ceiling":
@@ -211,11 +209,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           if (intersection === null) return;
 
           const { distance, point, face } = intersection;
+          const clickId = state.clickIds.pop();
           w.events.next({
             key: "picked",
+            ...(clickId && { clickId }),
             meta: picked,
-            clickId: state.clickIds.pop(),
-            intersection: { distance, point, face },
+            distance,
+            point,
+            face,
           });
         });
       },
@@ -314,7 +315,7 @@ export type State = {
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(
     rgba: THREE.TypedArray | [number, number, number, number],
-  ): { type: ObjectPickKey; instanceId: number; gmKey?: string } | null;
+  ): Meta<{ type: ObjectPickKey; instanceId: number; gmKey?: string }> | null;
   getRaycastIntersection: (e: PointerEvent, picked: JshCli.DecodedObjectPick) => null | THREE.Intersection;
   syncRenderMode(): RootState["frameloop"];
 };

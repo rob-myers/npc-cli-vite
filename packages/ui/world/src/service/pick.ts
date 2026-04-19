@@ -5,7 +5,7 @@ import { gmFloorExtraScale, worldToSguScale } from "../const";
 export const objectPick = uniform(0);
 
 /** Object type IDs — spaced out for visual debug */
-export const PICK_TYPE = { floor: 25, ceiling: 50, doors: 75, walls: 100, obstacles: 125, npcs: 150 } as const;
+export const PICK_TYPE = { floor: 25, ceiling: 50, door: 75, wall: 100, obstacle: 125, npc: 150 } as const;
 
 export type ObjectPickKey = keyof typeof PICK_TYPE;
 

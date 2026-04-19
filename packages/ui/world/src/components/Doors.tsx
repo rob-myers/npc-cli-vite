@@ -182,7 +182,7 @@ export default function Doors() {
 
     frontOrBack.colorNode = texNode.depth(instanceIndex.mod(int(count)));
     for (const mat of [edge, top, frontOrBack]) {
-      mat.outputNode = withPickOutput(PICK_TYPE.doors);
+      mat.outputNode = withPickOutput(PICK_TYPE.door);
     }
 
     return [edge, edge, top, edge, frontOrBack, frontOrBack];
