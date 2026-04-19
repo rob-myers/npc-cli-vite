@@ -256,10 +256,7 @@ export function WorldMenu() {
                 className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                 closeOnClick={false}
                 onClick={() => {
-                  if (!w.npc) return;
-                  for (const key of Object.keys(w.npc.npc)) {
-                    w.npc.remove(key);
-                  }
+                  w.npc?.remove(...Object.keys(w.npc.npc));
                   w.update();
                 }}
               >

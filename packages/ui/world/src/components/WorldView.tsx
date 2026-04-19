@@ -1,5 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -8,7 +9,8 @@ import { motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
-import { decodePick, objectPick } from "../service/pick";
+import { getTempInstanceMesh } from "../service/geometry";
+import { decodePick, type ObjectPickKey, objectPick } from "../service/pick";
 import { CameraControls } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
@@ -36,9 +38,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
         // zoomToCursor: true, // breaks follow zoom on HMR
       },
-      rootEl: null as any,
-
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
+      raycaster: new THREE.Raycaster(),
+      rootEl: null as any,
 
       canvasRef(canvasEl) {
         if (canvasEl !== null) {
@@ -71,32 +73,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         await renderer.init();
         return renderer;
-      },
-      doObjectPick(offsetX, offsetY) {
-        const { gl, scene, camera } = w.r3f;
-        const renderer = gl as unknown as THREE.WebGPURenderer;
-
-        const x = Math.floor(offsetX * gl.getPixelRatio());
-        const y = Math.floor(offsetY * gl.getPixelRatio());
-
-        const rt = state.pickRT;
-        const rtCamera = camera;
-        const size = new THREE.Vector2();
-        renderer.getDrawingBufferSize(size);
-        rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
-
-        objectPick.value = 1;
-        renderer.setRenderTarget(rt);
-        renderer.render(scene, rtCamera);
-        objectPick.value = 0;
-        renderer.setRenderTarget(null);
-        rtCamera.clearViewOffset();
-
-        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
-          const picked = state.getPickedFromPixel(rgba);
-          console.log("picked", picked);
-          picked !== null && w.events.next({ key: "picked", meta: picked, clickId: state.clickIds.pop() });
-        });
       },
       getPickedFromPixel([r, g, b, _a]) {
         // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
@@ -134,6 +110,54 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             return null;
         }
       },
+      getRaycastIntersection(e, picked) {
+        let mesh: THREE.Mesh;
+
+        // handle fractional device pixel ratio e.g. 2.625 on Pixel
+        const glPixelRatio = w.r3f.gl.getPixelRatio();
+        const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
+
+        const normalizedDeviceCoords = new THREE.Vector2(
+          -1 + 2 * (((e.clientX - left) * glPixelRatio) / w.view.canvas.width),
+          +1 - 2 * (((e.clientY - top) * glPixelRatio) / w.view.canvas.height),
+        );
+        w.view.raycaster.setFromCamera(normalizedDeviceCoords, w.r3f.camera);
+
+        switch (picked.type) {
+          case "floor":
+            mesh = getTempInstanceMesh(w.floor.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
+          case "walls":
+            mesh = getTempInstanceMesh(w.wall.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
+          case "npcs":
+            mesh = w.npc.npc[picked.npcKey].skinnedMesh;
+            break;
+          case "doors":
+            mesh = getTempInstanceMesh(w.door.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
+          // case "quad":
+          //   mesh = getTempInstanceMesh(w.decor.quadInst, decoded.instanceId);
+          //   break;
+          case "obstacles":
+            mesh = getTempInstanceMesh(w.obs.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
+          case "ceiling":
+            mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
+          // case "cuboid":
+          //   mesh = getTempInstanceMesh(w.decor.cuboidInst, decoded.instanceId);
+          //   break;
+          // case "lock-light":
+          //   mesh = getTempInstanceMesh(w.door.lockSigInst, decoded.instanceId);
+          //   break;
+          default:
+            throw testNever(picked.type);
+        }
+
+        const [intersection] = state.raycaster.intersectObject(mesh);
+        return intersection !== undefined ? intersection : null;
+      },
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
@@ -156,9 +180,44 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       async onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-        state.doObjectPick(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-
+        state.pickObject(e);
         e.currentTarget.focus();
+      },
+      pickObject(e) {
+        const { gl, scene, camera } = w.r3f;
+        const renderer = gl as unknown as THREE.WebGPURenderer;
+
+        const x = Math.floor(e.nativeEvent.offsetX * gl.getPixelRatio());
+        const y = Math.floor(e.nativeEvent.offsetY * gl.getPixelRatio());
+
+        const rt = state.pickRT;
+        const rtCamera = camera;
+        const size = new THREE.Vector2();
+        renderer.getDrawingBufferSize(size);
+        rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
+
+        objectPick.value = 1;
+        renderer.setRenderTarget(rt);
+        renderer.render(scene, rtCamera);
+        objectPick.value = 0;
+        renderer.setRenderTarget(null);
+        rtCamera.clearViewOffset();
+
+        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
+          const picked = state.getPickedFromPixel(rgba);
+          if (picked === null) return;
+          const intersection = state.getRaycastIntersection(e.nativeEvent, picked);
+          console.log("picked", picked, intersection);
+          if (intersection === null) return;
+
+          const { distance, point, face } = intersection;
+          w.events.next({
+            key: "picked",
+            meta: picked,
+            clickId: state.clickIds.pop(),
+            intersection: { distance, point, face },
+          });
+        });
       },
       syncRenderMode() {
         if (w.disabled === true) {
@@ -243,17 +302,19 @@ export type State = {
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
   pickRT: THREE.RenderTarget;
+  raycaster: THREE.Raycaster;
   rootEl: HTMLDivElement;
 
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
-  doObjectPick(offsetX: number, offsetY: number): void;
+  pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(
     rgba: THREE.TypedArray | [number, number, number, number],
-  ): { type: string; instanceId: number; gmKey?: string } | null;
+  ): { type: ObjectPickKey; instanceId: number; gmKey?: string } | null;
+  getRaycastIntersection: (e: PointerEvent, picked: JshCli.DecodedObjectPick) => null | THREE.Intersection;
   syncRenderMode(): RootState["frameloop"];
 };
