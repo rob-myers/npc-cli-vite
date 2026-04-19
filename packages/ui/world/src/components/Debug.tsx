@@ -89,7 +89,7 @@ export function Debug() {
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {
-        if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "doors") {
+        if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "door") {
           const { instanceId } = event.meta;
           const current = w.door.openDoorsRatio[instanceId] ?? 0;
           state.animateDoor(instanceId, current > 0 ? 0 : 0.8);

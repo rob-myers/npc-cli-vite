@@ -1,6 +1,8 @@
 declare namespace JshCli {
   type Event = { key: "disabled" } | { key: "enabled" } | { key: "nav-updated" } | PickEvent;
 
+  type ObjectPickKey = import("@npc-cli/ui__world").ObjectPickKey;
+
   type PickEvent = {
     key: "picked";
 
@@ -8,7 +10,7 @@ declare namespace JshCli {
 
     // 🚧 refine...
     meta: {
-      type: string;
+      type: ObjectPickKey;
       instanceId: number;
       gmKey?: string;
       collapse?: boolean;
@@ -16,7 +18,7 @@ declare namespace JshCli {
   } & Pick<THREE.Intersection, "distance" | "point" | "face">;
 
   type DecodedObjectPick = Meta<{
-    type: import("@npc-cli/ui__world").ObjectPickKey;
+    type: ObjectPickKey;
     instanceId: number;
   }>;
 }
