@@ -4289,6 +4289,18 @@ func easyjson6a975c40DecodeGithubComRobMyersNpcCliVitePackagesCliProcessor30(in 
 				}
 				in.Delim(']')
 			}
+		case "Left":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.Left).UnmarshalEasyJSON(in)
+			}
+		case "Right":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.Right).UnmarshalEasyJSON(in)
+			}
 		case "Pos":
 			if in.IsNull() {
 				in.Skip()
@@ -4345,6 +4357,16 @@ func easyjson6a975c40EncodeGithubComRobMyersNpcCliVitePackagesCliProcessor30(out
 			}
 			out.RawByte(']')
 		}
+	}
+	{
+		const prefix string = ",\"Left\":"
+		out.RawString(prefix)
+		(in.Left).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"Right\":"
+		out.RawString(prefix)
+		(in.Right).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"Pos\":"

@@ -120,6 +120,8 @@ type CmdSubst struct {
 	TempFile bool
 	ReplyVar bool
 	Stmts []Stmt
+	Left Pos
+	Right Pos
 	Pos Pos
 	End Pos
 }
@@ -948,6 +950,8 @@ func mapWordPart(part syntax.WordPart) WordPart {
 				TempFile: part.TempFile,
 				ReplyVar: part.ReplyVar,
 				Stmts: mapStmts(part.Stmts),
+				Left: mapPos(part.Left),
+				Right: mapPos(part.Right),
 				Pos: mapPos(part.Pos()),
 				End: mapPos(part.End()),
 			}

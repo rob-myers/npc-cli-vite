@@ -247,3 +247,16 @@ export function getTempInstanceMesh(inst: THREE.InstancedMesh, instanceId: numbe
 }
 
 //#endregion
+
+export function parseGroundPoint(
+  input: [number, number, number] | [number, number] | { x: number; y: number; z: number } | { x: number; y: number },
+) {
+  if (Array.isArray(input)) {
+    return input.length === 3 ? { x: input[0], y: input[2] } : { x: input[0], y: input[1] };
+  }
+  return { x: input.x, y: "z" in input ? input.z : input.y };
+}
+
+export function groundPointToVector3(point: { x: number; y: number }) {
+  return new THREE.Vector3(point.x, 0, point.y);
+}

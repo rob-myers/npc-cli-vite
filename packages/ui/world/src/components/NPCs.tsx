@@ -27,7 +27,9 @@ import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
   createSkinnedXzQuad,
+  groundPointToVector3,
   mergeWithGroups,
+  parseGroundPoint,
 } from "../service/geometry";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
@@ -74,19 +76,20 @@ export default function NPCs() {
         state.epoch++;
         state.update();
       },
-      spawn({ npcKey, position }) {
-        if (typeof npcKey !== "string") throw Error("opts.npcKey: must be a string");
-        if (!Array.isArray(position) || !position.every((x) => typeof x === "number"))
-          throw Error("opts.position: must be a numeric array");
-        if (!npcKeyPattern.test(npcKey)) {
-          throw Error(`npcKey must match ${npcKeyPattern}: got "${npcKey}"`);
+      spawn({ npcKey, point }) {
+        if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
+          throw Error(`npcKey must match ${npcKeyPattern}: saw "${npcKey}"`);
         }
         if (npcKey in state.npc) {
+          // 🚧 respawn
           throw Error(`npcKey "${npcKey}" already exists`);
         }
         if (!state.gltf) {
           throw Error("GLTF not loaded yet");
         }
+
+        if (!point) throw Error("opts.point: must exist");
+        const groundPoint = parseGroundPoint(point);
 
         const clone = SkeletonUtils.clone(state.gltf.scene);
         const graph = buildGraph(clone);
@@ -108,7 +111,7 @@ export default function NPCs() {
           key: npcKey,
           pickId,
           labelLayerIndex,
-          position,
+          position: groundPointToVector3(groundPoint),
           group: null,
           material: state.createNpcMaterial(pickId),
           labelMaterial: createLabelMaterial(state.labelTexArray, labelLayerIndex),
@@ -194,7 +197,8 @@ export type Npc = {
   key: string;
   pickId: number;
   labelLayerIndex: number;
-  position: [number, number, number];
+  position: THREE.Vector3;
+  /** On mount */
   group: THREE.Group | null;
   material: THREE.MeshStandardNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
@@ -216,7 +220,7 @@ export type State = {
 
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devRefreshMaterials(): void;
-  spawn(args: { npcKey: string; position: [number, number, number] }): void;
+  spawn(args: { npcKey: string; point: [number, number, number] }): void;
   remove(...npcKeys: string[]): void;
   onTick(delta: number): void;
 };
