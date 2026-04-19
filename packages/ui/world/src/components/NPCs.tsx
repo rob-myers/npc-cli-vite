@@ -50,16 +50,25 @@ export default function NPCs() {
       npc: {},
       epoch: 0,
 
-      createNpcMaterial() {
+      createNpcMaterial(pickId) {
         if (!state.texture) throw Error("texture not loaded yet");
-        const pickId = uniform(state.nextPickId++);
+        const pickIdNode = uniform(pickId);
         const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
         const texNode = tslTexture(state.texture);
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
-        mat.outputNode = withPickOutputId(PICK_TYPE.npc, pickId);
+        mat.outputNode = withPickOutputId(PICK_TYPE.npc, pickIdNode);
         return mat;
+      },
+      devRefreshMaterials() {
+        if (!state.texture) return;
+        for (const npc of Object.values(state.npc)) {
+          npc.material.dispose();
+          npc.material = state.createNpcMaterial(npc.pickId);
+        }
+        state.epoch++;
+        state.update();
       },
       spawn({ npcKey, position }) {
         if (typeof npcKey !== "string") throw Error("opts.npcKey: must be a string");
@@ -90,13 +99,14 @@ export default function NPCs() {
         const labelLayerIndex = state.nextPickId;
         drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
 
+        const pickId = state.nextPickId;
         const npc: Npc = {
           key: npcKey,
-          pickId: state.nextPickId,
+          pickId,
           labelLayerIndex,
           position,
           group: null,
-          material: state.createNpcMaterial(),
+          material: state.createNpcMaterial(pickId),
           labelMaterial: createLabelMaterial(state.labelTexArray, labelLayerIndex),
           mixer: emptyAnimationMixer,
           skinnedMesh: clonedSkinnedMesh,
@@ -106,6 +116,7 @@ export default function NPCs() {
 
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
+        state.nextPickId++;
         state.epoch++;
         state.update();
       },
@@ -124,15 +135,6 @@ export default function NPCs() {
         if (Object.keys(state.npc).length === 0) {
           state.nextPickId = 0;
         }
-        state.update();
-      },
-      refreshMaterials() {
-        if (!state.texture) return;
-        for (const npc of Object.values(state.npc)) {
-          npc.material.dispose();
-          npc.material = state.createNpcMaterial();
-        }
-        state.epoch++;
         state.update();
       },
       onTick(delta) {
@@ -170,7 +172,7 @@ export default function NPCs() {
 
   useEffect(() => {
     if (import.meta.env.DEV) {
-      state.refreshMaterials();
+      state.devRefreshMaterials();
     }
   }, []);
 
@@ -218,8 +220,8 @@ export type State = {
   npc: Record<string, Npc>;
   epoch: number;
 
-  createNpcMaterial(): THREE.MeshStandardNodeMaterial;
-  refreshMaterials(): void;
+  createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
+  devRefreshMaterials(): void;
   spawn(args: { npcKey: string; position: [number, number, number] }): void;
   remove(...npcKeys: string[]): void;
   onTick(delta: number): void;
