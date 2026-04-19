@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./geomorph.d.ts": "./src/geomorph.d.ts",
+    "./jsh-cli.d.ts": "./src/jsh-cli.d.ts",
     "./geomorph": "./src/service/geomorph.ts",
     "./decor.schema": "./src/decor.schema.ts",
     "./assets.schema": "./src/assets.schema.ts",

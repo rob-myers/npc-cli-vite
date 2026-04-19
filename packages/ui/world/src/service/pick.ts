@@ -7,6 +7,8 @@ export const objectPick = uniform(0);
 /** Object type IDs — spaced out for visual debug */
 export const PICK_TYPE = { floor: 25, ceiling: 50, doors: 75, walls: 100, obstacles: 125, npcs: 150 } as const;
 
+export type ObjectPickKey = keyof typeof PICK_TYPE;
+
 type PickType = (typeof PICK_TYPE)[keyof typeof PICK_TYPE];
 const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v]) => [v, k])) as Record<
   PickType,

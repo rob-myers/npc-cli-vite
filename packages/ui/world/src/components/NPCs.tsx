@@ -77,15 +77,15 @@ export default function NPCs() {
 
         const clone = SkeletonUtils.clone(state.gltf.scene);
         const graph = buildGraph(clone);
-        const clonedRoot = graph.nodes.root as THREE.SkinnedMesh;
-        const headBoneIndex = clonedRoot.skeleton.bones.findIndex((b) => b.name === "head");
+        const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
+        const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
 
         const shadowQuad = createSkinnedXzQuad(1, 1);
         // 0.5 / 0.125 = 4:1, matching 256 x 64
         const labelQuad = createSkinnedLabelQuad(0.5, 0.125, 1.25 / npcScale, headBoneIndex >= 0 ? headBoneIndex : 0);
-        addEmptyBillboardOffset(clonedRoot.geometry);
+        addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
         addEmptyBillboardOffset(shadowQuad);
-        const geometry = mergeWithGroups(clonedRoot.geometry, shadowQuad, labelQuad);
+        const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
 
         const labelLayerIndex = state.nextPickId;
         drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
@@ -99,7 +99,7 @@ export default function NPCs() {
           material: state.createNpcMaterial(),
           labelMaterial: createLabelMaterial(state.labelTexArray, labelLayerIndex),
           mixer: emptyAnimationMixer,
-          clone,
+          skinnedMesh: clonedSkinnedMesh,
           graph,
           geometry,
         };
@@ -109,16 +109,21 @@ export default function NPCs() {
         state.epoch++;
         state.update();
       },
-      remove(npcKey) {
-        const npc = state.npc[npcKey];
-        if (!npc) return;
-        npc.mixer.stopAllAction();
-        npc.material.dispose();
-        npc.labelMaterial.dispose();
-        npc.geometry.dispose();
-        delete state.byPickId[npc.pickId];
-        delete state.npc[npcKey];
+      remove(...npcKeys) {
+        for (const npcKey of npcKeys) {
+          const npc = state.npc[npcKey];
+          if (!npc) continue;
+          npc.mixer.stopAllAction();
+          npc.material.dispose();
+          npc.labelMaterial.dispose();
+          npc.geometry.dispose();
+          delete state.byPickId[npc.pickId];
+          delete state.npc[npcKey];
+        }
         state.epoch++;
+        if (Object.keys(state.npc).length === 0) {
+          state.nextPickId = 0;
+        }
         state.update();
       },
       refreshMaterials() {
@@ -198,7 +203,7 @@ export type Npc = {
   material: THREE.MeshStandardNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
   mixer: THREE.AnimationMixer;
-  clone: THREE.Object3D;
+  skinnedMesh: THREE.SkinnedMesh;
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
 };
@@ -216,7 +221,7 @@ export type State = {
   createNpcMaterial(): THREE.MeshStandardNodeMaterial;
   refreshMaterials(): void;
   spawn(args: { npcKey: string; position: [number, number, number] }): void;
-  remove(npcKey: string): void;
+  remove(...npcKeys: string[]): void;
   onTick(delta: number): void;
 };
 

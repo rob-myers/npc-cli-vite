@@ -35,6 +35,7 @@ expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
 - ✅ can pick npcs
 - ✅ npc has label quad
 - ✅ on drag unseen tab onto grid it should mount
+- ✅ `pick` event provides intersection
 
 - 🚧 basic `click`
   - 🚧 forward position clicked computed in `PickEvent`

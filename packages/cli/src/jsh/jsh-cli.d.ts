@@ -20,22 +20,5 @@ declare namespace JshCli {
     datum: Datum;
   }
 
-  type Event =
-    | { key: "disabled" }
-    | { key: "enabled" }
-    | { key: "nav-updated" }
-    | {
-        key: "picked";
-        clickId?: string;
-        // 🚧 refine...
-        meta: {
-          type: string;
-          instanceId: number;
-          gmKey?: string;
-          collapse?: boolean;
-        };
-      };
-  // 🚧 ...
-
-  type PickEvent = Pretty<Extract<Event, { key: "picked" }>>;
+  // 🔔 extended in packages/ui/world/src/jsh-cli.d.ts
 }

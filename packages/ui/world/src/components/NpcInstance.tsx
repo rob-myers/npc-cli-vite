@@ -28,7 +28,7 @@ function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
   );
 
   const nodes = npc.graph.nodes;
-  const root = nodes.root as THREE.SkinnedMesh;
+  const root = npc.skinnedMesh;
   const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
 
   return (

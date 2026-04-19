@@ -229,3 +229,21 @@ function decompToXZAttribs(decomp: Geom.Triangulation) {
   const uvs = decomp.vs.flatMap(({ x, y }) => [(x - bounds.x) / bounds.width, (y - bounds.y) / bounds.height]);
   return { vertices, indices, uvs };
 }
+
+//#region for raycast after object-pick
+
+const tempInstanceMesh = new THREE.Mesh();
+tempInstanceMesh.material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+const tempInstanceLocalMatrix = new THREE.Matrix4();
+const tempInstanceWorldMatrix = new THREE.Matrix4();
+
+export function getTempInstanceMesh(inst: THREE.InstancedMesh, instanceId: number) {
+  if (inst.boundingSphere === null) inst.computeBoundingSphere();
+  const matrixWorld = inst.matrixWorld;
+  tempInstanceMesh.geometry = inst.geometry;
+  inst.getMatrixAt(instanceId, tempInstanceLocalMatrix);
+  tempInstanceMesh.matrixWorld = tempInstanceWorldMatrix.multiplyMatrices(matrixWorld, tempInstanceLocalMatrix);
+  return tempInstanceMesh;
+}
+
+//#endregion
