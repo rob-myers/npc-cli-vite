@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, useContext, useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
@@ -66,6 +66,10 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           npc.material.dispose();
           npc.material = state.createNpcMaterial(npc.pickId);
+          npc.labelMaterial.dispose();
+          npc.labelMaterial = createLabelMaterial(state.labelTexArray, npc.labelLayerIndex);
+          const labelLayerIndex = npc.pickId;
+          drawLabelLayer(state.labelTexArray, labelLayerIndex, npc.key);
         }
         state.epoch++;
         state.update();
@@ -96,10 +100,10 @@ export default function NPCs() {
         addEmptyBillboardOffset(shadowQuad);
         const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
 
-        const labelLayerIndex = state.nextPickId;
+        const pickId = state.nextPickId;
+        const labelLayerIndex = pickId;
         drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
 
-        const pickId = state.nextPickId;
         const npc: Npc = {
           key: npcKey,
           pickId,
@@ -179,20 +183,10 @@ export default function NPCs() {
   const { gltf } = state;
 
   return (
-    <group>
-      <Suspense>
-        {gltf &&
-          Object.values(state.npc).map((npc) => (
-            <MemoNpcInstance
-              key={npc.key}
-              npc={npc}
-              shadowMaterial={state.shadowMaterial}
-              gltf={gltf}
-              epoch={state.epoch}
-            />
-          ))}
-      </Suspense>
-    </group>
+    gltf &&
+    Object.values(state.npc).map((npc) => (
+      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} gltf={gltf} epoch={state.epoch} />
+    ))
   );
 }
 
@@ -233,8 +227,8 @@ function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) 
   const { ct } = texArray;
   const { width, height } = ct.canvas;
   ct.clearRect(0, 0, width, height);
-  ct.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ct.roundRect(0, 0, width, height, 8);
+  // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
+  // ct.roundRect(0, 0, width, height, 8);
   ct.fill();
   ct.fillStyle = "white";
   ct.font = "36px sans-serif";
@@ -247,7 +241,12 @@ function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) 
 function createLabelMaterial(texArray: TexArray, layerIndex: number) {
   const texNode = tslTexture(texArray.tex);
   const layerNode = texNode.depth(uniform(layerIndex));
-  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  const mat = new THREE.MeshBasicNodeMaterial({
+    transparent: true,
+    depthWrite: true,
+    alphaTest: Number.EPSILON,
+    side: THREE.DoubleSide,
+  });
   mat.colorNode = layerNode;
   mat.opacityNode = layerNode.a;
 
