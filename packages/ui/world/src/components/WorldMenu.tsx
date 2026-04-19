@@ -245,7 +245,7 @@ export function WorldMenu() {
                   if (!result.success) return;
                   const [x, y, z] = result.position;
                   const key = `npc-${Date.now().toString(36)}`;
-                  w.npc.spawn({ npcKey: key, position: [x, y, z] });
+                  w.npc.spawn({ npcKey: key, point: [x, y, z] });
                   w.update();
                 }}
               >

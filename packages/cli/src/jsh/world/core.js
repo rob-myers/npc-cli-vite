@@ -59,6 +59,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * pick | map meta.type
  * pick '({ meta }, ct) => meta.type === "floor" && ct.home.foo == 42'
  * pick | map point
+ * w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
  * ```
  *
  * 🚧 clean and clarify below
@@ -153,7 +154,8 @@ export async function* pick(ct) {
  * w key
  * w mapKey
  * w | keys
- * w npc.spawn '{ npcKey: "foo", position: [6, 0, 7.5] }'
+ * w npc.spawn '{ npcKey: "foo", point: [6, 0, 7.5] }'
+ * w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
  * ```
  *
  * - can always `ctrl-c`, even without cleaning up ongoing computations

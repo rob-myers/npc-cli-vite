@@ -12,13 +12,13 @@ import core
 awaitWorld
 ```
 
-- ✅ can spawn npc via `w.npc.spawn({ npcKey, position })`
+- ✅ can spawn npc via `w.npc.spawn({ npcKey, point })`
 - ✅ tty supports `w` via `CACHE_SHORTCUTS`
 - ✅ can spawn from tty
 ```sh
-w npc.spawn '{ npcKey: "rob", position: [0, 0, 0] }'
+w npc.spawn '{ npcKey: "rob", point: [0, 0, 0] }'
 w npc.remove rob && w update
-expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
+expr '{ npcKey: "rob", point: [0, 0, 0] }' | w npc.spawn -
 ```
 
 - change ui `Global` to `Layout`
@@ -39,6 +39,12 @@ expr '{ npcKey: "rob", position: [0, 0, 0] }' | w npc.spawn -
 
 - ✅ `click` -> `pick` command
 - ✅ `pick` command provides top-level distance, point, face (not in intersection)
+
+- ✅ sh parse error `echo $( pick 1 | map point )`
+- ✅ can programatically spawn
+```sh
+w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
+```
 
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
