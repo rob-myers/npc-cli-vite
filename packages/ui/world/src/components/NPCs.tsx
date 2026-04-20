@@ -35,6 +35,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       byPickId: {} as Record<number, Npc>,
+      clips: { idle: null, walk: null, run: null },
       crowd: crowdApi.create(0.3),
       gltf: null,
       labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
@@ -59,7 +60,7 @@ export default function NPCs() {
         for (const [key, old] of Object.entries(state.npc)) {
           old.material.dispose();
           old.labelMaterial.dispose();
-          const npc = new Npc(state, {
+          const npc = new Npc(w, {
             key: old.key,
             pickId: old.pickId,
             labelLayerIndex: old.labelLayerIndex,
@@ -79,7 +80,17 @@ export default function NPCs() {
       },
       move({ npcKey, to }) {
         const npc = state.npc[npcKey];
-        if (!npc?.agentId || !w.nav) return;
+
+        if (!w.nav) {
+          throw Error("w.nav must exist");
+        }
+        if (typeof npcKey !== "string" || !npc) {
+          throw Error(`npcKey "${npcKey}" must exist`);
+        }
+        if (!npc.agentId) {
+          throw Error("npcKey has no agent");
+        }
+
         const target = parseGroundPoint(to);
         const targetPos: [number, number, number] = [target.x, 0, target.y];
         const result = findNearestPoly(
@@ -186,7 +197,7 @@ export default function NPCs() {
         const labelLayerIndex = pickId;
         drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
 
-        const npc = new Npc(state, {
+        const npc = new Npc(w, {
           key: npcKey,
           pickId,
           labelLayerIndex,
@@ -254,6 +265,12 @@ export default function NPCs() {
 
   state.gltf = queryData?.gltf ?? null;
   state.texture = queryData?.texture ?? null;
+  if (state.gltf) {
+    const anims = state.gltf.animations;
+    state.clips.idle = anims.find((c) => c.name === "idle") ?? null;
+    state.clips.walk = anims.find((c) => c.name === "walk") ?? null;
+    state.clips.run = anims.find((c) => c.name === "run") ?? null;
+  }
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -273,6 +290,7 @@ export default function NPCs() {
 
 export type State = {
   byPickId: Record<number, Npc>;
+  clips: { idle: THREE.AnimationClip | null; walk: THREE.AnimationClip | null; run: THREE.AnimationClip | null };
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   labelTexArray: TexArray;
