@@ -5,6 +5,7 @@ import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -21,7 +22,7 @@ import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
 import { MemoNpcInstance } from "./NpcInstance";
-import { Npc, type NpcState } from "./npc";
+import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
@@ -30,7 +31,7 @@ export default function NPCs() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
-    (): NpcState => ({
+    (): State => ({
       byPickId: {} as Record<number, Npc>,
       gltf: null,
       labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
@@ -82,8 +83,8 @@ export default function NPCs() {
         if (!at) throw Error("opts.at: must exist");
         const groundPoint = parseGroundPoint(at);
 
+        // respawn
         if (npcKey in state.npc) {
-          // respawn
           const npc = state.npc[npcKey] as Npc;
           npc.position.copy(groundPointToVector3(groundPoint));
           w.view.forceRender();
@@ -188,4 +189,18 @@ export default function NPCs() {
   );
 }
 
-export type { NpcState as State } from "./npc";
+export type State = {
+  byPickId: Record<number, Npc>;
+  gltf: GLTF | null;
+  labelTexArray: TexArray;
+  nextPickId: number;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
+  texture: THREE.Texture | null;
+  npc: Record<string, Npc>;
+
+  createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
+  devHotReload(): void;
+  spawn(opts: JshCli.SpawnOpts): void;
+  remove(...npcKeys: string[]): void;
+  onTick(delta: number): void;
+};
