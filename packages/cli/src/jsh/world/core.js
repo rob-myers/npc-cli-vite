@@ -49,9 +49,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 
 /**
  * ```sh
- * # unbounded unblocking left clicks
  * pick
- * # exactly 1 blocking click
  * pick 1
  * pick meta.floor
  * pick meta.ceiling
@@ -59,7 +57,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * pick | map meta.type
  * pick '({ meta }, ct) => meta.type === "floor" && ct.home.foo == 42'
  * pick | map point
- * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 | map point ) }"
+ * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 ) }"
  * ```
  *
  * 🚧 clean and clarify below
@@ -147,22 +145,20 @@ export async function* pick(ct) {
   }
 }
 
-// /**
-//  * ```sh
-//  * spawn npc:rob at:$( click 1 )
-//  * spawn npc:rob at:$( click 1 ) granted:.
-//  * spawn npc:rob at:$( click 1 ) as:soldier-0,soldier-0,base,base
-//  * spawn npc:rob at:$( click 1 ) skin:,,base,base
-//  * ```
-//  * @param {JshCli.RunArg} ctxt
-//  * @param {{ granted?: string } & JshCli.SpawnOpts} [opts]
-//  */
-// export async function* spawn({ api, args, w }, opts = api.jsArg(args, { npc: 'npcKey', skin: 'as' })) {
-//   await w.npc.spawn(opts);
-//   if (typeof opts.granted === 'string') {
-//     w.e.grantAccess(opts.granted, opts.npcKey);
-//   }
-// }
+/**
+ * ```sh
+ * spawn npc:foo-bar-baz at:[7,0,7]
+ * spawn npc:rob at:$( pick 1 | map point )
+ * ```
+ * @param {JshCli.RunArg} ctxt
+ * @param {{ granted?: string } & JshCli.SpawnOpts} [opts]
+ */
+export async function spawn({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", skin: "as" })) {
+  await w.npc.spawn(opts);
+  // if (typeof opts.granted === 'string') {
+  //   w.e.grantAccess(opts.granted, opts.npcKey);
+  // }
+}
 
 /**
  * Usage:
@@ -173,6 +169,7 @@ export async function* pick(ct) {
  * w | keys
  * w npc.spawn '{ npcKey: "foo", at: [6, 0, 7.5] }'
  * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 | map point ) }"
+ * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 ) }"
  * ```
  *
  * - can always `ctrl-c`, even without cleaning up ongoing computations

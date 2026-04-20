@@ -17,8 +17,11 @@ export class Npc {
   skinnedMesh!: THREE.SkinnedMesh;
   graph!: ReturnType<typeof buildGraph>;
   geometry!: THREE.BufferGeometry;
-  epoch = 0;
   gltf: GLTF;
+
+  epoch = 0;
+  spawns = 0;
+  resolve?: () => void;
 
   constructor(npcsState: NpcsState, init: NpcInit) {
     this.gltf = npcsState.gltf as GLTF;
@@ -34,6 +37,8 @@ export class Npc {
     this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
     this.position = this.skinnedMesh.position;
     this.mixer = new THREE.AnimationMixer(group);
+
+    this.resolve?.();
 
     const gltf = this.gltf;
     if (!gltf) return;

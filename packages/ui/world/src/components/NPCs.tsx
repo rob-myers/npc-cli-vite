@@ -73,7 +73,7 @@ export default function NPCs() {
         }
         state.update();
       },
-      spawn({ npcKey, at }) {
+      async spawn({ npcKey, at }) {
         if (!state.gltf) {
           throw Error("GLTF not loaded yet");
         }
@@ -87,6 +87,7 @@ export default function NPCs() {
         if (npcKey in state.npc) {
           const npc = state.npc[npcKey] as Npc;
           npc.position.copy(groundPointToVector3(groundPoint));
+          npc.spawns++;
           w.view.forceRender();
           return;
         }
@@ -122,7 +123,14 @@ export default function NPCs() {
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
         state.nextPickId++;
+
         state.update();
+
+        if (npc.spawns++ === 0) {
+          await new Promise<void>((resolve) => {
+            npc.resolve = resolve;
+          });
+        }
       },
       remove(...npcKeys) {
         for (const npcKey of npcKeys) {
@@ -200,7 +208,7 @@ export type State = {
 
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devHotReload(): void;
-  spawn(opts: JshCli.SpawnOpts): void;
+  spawn(opts: JshCli.SpawnOpts): Promise<void>;
   remove(...npcKeys: string[]): void;
   onTick(delta: number): void;
 };

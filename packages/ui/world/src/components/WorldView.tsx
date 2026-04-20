@@ -225,6 +225,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             point,
             faceIndex: intersection.faceIndex,
             normal: intersection.normal,
+            ...point, // can provide as point
           });
         });
       },
