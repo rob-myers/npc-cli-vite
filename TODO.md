@@ -47,6 +47,12 @@ w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
 ```
 - ✅ can await spawn
 
+- ✅ spawn adds agent to crowd when `w.nav` exists
+- ✅ BUG `npc.agentId` becomes `null` on HMR
+- ✅ respawn compatible with crowd
+- ✅ can `w npc.move "{ npcKey: 'rob', to: $( pick 1 ) }"`
+  - no walk/run animation yet
+
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
 
