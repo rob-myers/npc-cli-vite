@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { ANY_QUERY_FILTER } from "navcat";
+import { ANY_QUERY_FILTER, createFindNearestPolyResult, findNearestPoly } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
@@ -70,11 +70,90 @@ export default function NPCs() {
             graph: old.graph,
             geometry: old.geometry,
           });
+          npc.agentId = old.agentId;
           drawLabelLayer(state.labelTexArray, npc.labelLayerIndex, npc.key);
           state.npc[key] = npc;
           state.byPickId[npc.pickId] = npc;
         }
         state.update();
+      },
+      move({ npcKey, to }) {
+        const npc = state.npc[npcKey];
+        if (!npc?.agentId || !w.nav) return;
+        const target = parseGroundPoint(to);
+        const targetPos: [number, number, number] = [target.x, 0, target.y];
+        const result = findNearestPoly(
+          createFindNearestPolyResult(),
+          w.nav.navMesh,
+          targetPos,
+          [0.1, 0.1, 0.1],
+          ANY_QUERY_FILTER,
+        );
+        if (result.success) {
+          crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, result.position);
+        } else {
+          throw Error("move failed");
+        }
+      },
+      onTick(delta) {
+        if (w.nav) {
+          crowdApi.update(state.crowd, w.nav.navMesh, delta);
+          for (const npc of Object.values(state.npc)) {
+            if (npc.agentId) {
+              const agent = state.crowd.agents[npc.agentId];
+              if (agent) {
+                npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
+              }
+            }
+            npc.mixer.update(delta);
+          }
+        } else {
+          for (const npc of Object.values(state.npc)) {
+            npc.mixer.update(delta);
+          }
+        }
+      },
+      remove(...npcKeys) {
+        for (const npcKey of npcKeys) {
+          const npc = state.npc[npcKey];
+          if (!npc) continue;
+          npc.mixer.stopAllAction();
+          if (npc.agentId) crowdApi.removeAgent(state.crowd, npc.agentId);
+          npc.material.dispose();
+          npc.labelMaterial.dispose();
+          npc.geometry.dispose();
+          delete state.byPickId[npc.pickId];
+          delete state.npc[npcKey];
+        }
+        if (Object.keys(state.npc).length === 0) {
+          state.nextPickId = 0;
+        }
+        state.update();
+      },
+      respawn(npc, groundPoint) {
+        const targetTuple = [groundPoint.x, 0, groundPoint.y] as [number, number, number];
+        const result =
+          w.nav && npc.agentId !== null
+            ? findNearestPoly(
+                createFindNearestPolyResult(),
+                w.nav.navMesh,
+                targetTuple,
+                [0.1, 0.1, 0.1],
+                ANY_QUERY_FILTER,
+              )
+            : null;
+
+        if (npc.agentId !== null && result?.success) {
+          const agent = state.crowd.agents[npc.agentId];
+          agent.position[0] = groundPoint.x;
+          agent.position[2] = groundPoint.y;
+          crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, targetTuple);
+        } else {
+          npc.position.copy(groundPointToVector3(groundPoint));
+        }
+
+        npc.spawns++;
+        w.view.forceRender();
       },
       async spawn({ npcKey, at }) {
         if (!state.gltf) {
@@ -86,18 +165,8 @@ export default function NPCs() {
         if (!at) throw Error("opts.at: must exist");
         const groundPoint = parseGroundPoint(at);
 
-        // respawn
         if (npcKey in state.npc) {
-          const npc = state.npc[npcKey] as Npc;
-          if (npc.agentId) {
-            const agent = state.crowd.agents[npc.agentId];
-            agent.position[0] = groundPoint.x;
-            agent.position[2] = groundPoint.y;
-          } else {
-            npc.position.copy(groundPointToVector3(groundPoint));
-          }
-          npc.spawns++;
-          w.view.forceRender();
+          state.respawn(state.npc[npcKey], groundPoint);
           return;
         }
 
@@ -158,41 +227,6 @@ export default function NPCs() {
           });
         }
       },
-      remove(...npcKeys) {
-        for (const npcKey of npcKeys) {
-          const npc = state.npc[npcKey];
-          if (!npc) continue;
-          npc.mixer.stopAllAction();
-          if (npc.agentId) crowdApi.removeAgent(state.crowd, npc.agentId);
-          npc.material.dispose();
-          npc.labelMaterial.dispose();
-          npc.geometry.dispose();
-          delete state.byPickId[npc.pickId];
-          delete state.npc[npcKey];
-        }
-        if (Object.keys(state.npc).length === 0) {
-          state.nextPickId = 0;
-        }
-        state.update();
-      },
-      onTick(delta) {
-        if (w.nav) {
-          crowdApi.update(state.crowd, w.nav.navMesh, delta);
-          for (const npc of Object.values(state.npc)) {
-            if (npc.agentId) {
-              const agent = state.crowd.agents[npc.agentId];
-              if (agent) {
-                npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
-              }
-            }
-            npc.mixer.update(delta);
-          }
-        } else {
-          for (const npc of Object.values(state.npc)) {
-            npc.mixer.update(delta);
-          }
-        }
-      },
     }),
     {
       reset: { shadowMaterial: true },
@@ -249,7 +283,9 @@ export type State = {
 
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devHotReload(): void;
-  spawn(opts: JshCli.SpawnOpts): Promise<void>;
-  remove(...npcKeys: string[]): void;
+  move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
+  remove(...npcKeys: string[]): void;
+  respawn(npc: Npc, groundPoint: JshCli.GroundPoint): void;
+  spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
