@@ -19,6 +19,7 @@ export class Npc {
   geometry!: THREE.BufferGeometry;
   gltf: GLTF;
 
+  agentId: string | null = null;
   epoch = 0;
   spawns = 0;
   resolve?: () => void;

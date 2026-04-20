@@ -257,7 +257,7 @@ export function WorldMenu() {
                 closeOnClick={false}
                 onClick={() => {
                   w.npc?.remove(...Object.keys(w.npc.npc));
-                  w.update();
+                  w.view.forceRender();
                 }}
               >
                 Clear NPCs
