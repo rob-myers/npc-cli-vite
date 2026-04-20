@@ -169,13 +169,12 @@ export default function NPCs() {
       },
       respawn(npc, at) {
         const target = parseGroundPoint(at);
-        const result = npc.agentId ? state.getClosestPoly(target) : emptyFailedResult;
+        const result = npc.agentId !== null ? state.getClosestPoly(target) : emptyFailedResult;
 
-        if (npc.agentId && result.success) {
+        if (npc.agentId !== null && result.success) {
           // teleport
-          const agent = state.crowd.agents[npc.agentId];
-          agent.position[0] = target.x;
-          agent.position[2] = target.y;
+          // crowdApi.resetMoveTarget(state.crowd, npc.agentId);
+          npc.position.copy(groundPointToVector3(target));
           // pin to point
           crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(target));
         } else {
@@ -228,10 +227,13 @@ export default function NPCs() {
           geometry,
         });
 
-        if (w.nav) {
+        const result = state.getClosestPoly(npc.position);
+
+        if (w.nav && result.success) {
           const pos = npc.position;
+
           npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, [pos.x, pos.y, pos.z], {
-            radius: 0.2,
+            radius: 0.25,
             height: 1.2,
             maxAcceleration: 4,
             maxSpeed: 1,
@@ -243,6 +245,14 @@ export default function NPCs() {
               crowdApi.CrowdUpdateFlags.SEPARATION,
             queryFilter: ANY_QUERY_FILTER,
           });
+
+          // pin to point
+          crowdApi.requestMoveTarget(
+            state.crowd,
+            npc.agentId,
+            result.nodeRef,
+            groudPointToTuple(parseGroundPoint(npc.position)),
+          );
         }
 
         state.npc[npcKey] = npc;

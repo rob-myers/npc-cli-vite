@@ -1,6 +1,7 @@
 import { float, instanceIndex, output, uniform, vec4 } from "three/tsl";
 import { gmFloorExtraScale, worldToSguScale } from "../const";
 
+// 🚧 what about multiple worlds?
 /** Shared uniform — 0 = normal render, 1 = pick render */
 export const objectPick = uniform(0);
 

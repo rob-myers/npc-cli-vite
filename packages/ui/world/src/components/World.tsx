@@ -6,7 +6,7 @@ import { debug, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
@@ -96,6 +96,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npc: null as any,
       worker: null as any,
 
+      rootEl: null as any,
+
       devSetupAssetsSync() {
         const hot = import.meta.hot;
         if (!import.meta.env.DEV || !hot) return;
@@ -168,7 +170,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     state.timer.reset();
-    state.view.syncRenderMode();
+    state.view?.syncRenderMode();
     if (!state.disabled) state.onTick();
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
     return () => state.stopTick();
@@ -234,9 +236,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <div className={cn(uiClassName, "relative size-full")}>
-        {/* 🔔 suspense avoids sporadic silent fail */}
-        <Suspense>
+      <div ref={state.ref("rootEl")} className={cn(uiClassName, "relative size-full")}>
+        {state.rootEl && (
           <WorldView
             className={cn(
               state.getTheme().background,
@@ -252,8 +253,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <NPCs key="npcs" />
             <Debug key="debug" />
           </WorldView>
-          <WorldWorker />
-        </Suspense>
+        )}
+        <WorldWorker />
         <WorldMenu />
       </div>
     </WorldContext.Provider>
@@ -304,6 +305,7 @@ export type State = {
   worker: UseStateRef<import("./WorldWorker").State>;
   nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
   navPending: boolean;
+  rootEl: HTMLDivElement;
 
   devSetupAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
