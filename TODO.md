@@ -45,6 +45,7 @@ expr '{ npcKey: "rob", point: [0, 0, 0] }' | w npc.spawn -
 ```sh
 w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
 ```
+- ✅ can await spawn
 
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
