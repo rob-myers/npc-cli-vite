@@ -38,7 +38,7 @@ export default function NPCs() {
     (): State => ({
       byPickId: {} as Record<number, Npc>,
       clips: { idle: null, walk: null, run: null },
-      crowd: crowdApi.create(0.3),
+      crowd: crowdApi.create(0.5),
       gltf: null,
       labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       nextPickId: 0,
@@ -59,9 +59,11 @@ export default function NPCs() {
       },
       devHotReload() {
         if (!state.texture) return;
+
         for (const [key, old] of Object.entries(state.npc)) {
           old.material.dispose();
           old.labelMaterial.dispose();
+
           const npc = new Npc(w, {
             key: old.key,
             pickId: old.pickId,
@@ -79,7 +81,7 @@ export default function NPCs() {
             npc.agentId = crowdApi.addAgent(
               state.crowd,
               w.nav!.navMesh,
-              groudPointToTuple(npc.position),
+              groudPointToTuple(parseGroundPoint(npc.position)),
               getAgentParams(),
             );
           }
@@ -328,11 +330,11 @@ export type State = {
 
 function getAgentParams(): crowd.AgentParams {
   return {
-    radius: 0.25,
+    radius: 0.4,
     height: 1.2,
-    maxAcceleration: 4,
-    maxSpeed: 1,
-    collisionQueryRange: 1,
+    maxAcceleration: 8,
+    maxSpeed: 2,
+    collisionQueryRange: 8,
     separationWeight: 0.5,
     updateFlags:
       crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
