@@ -18,6 +18,7 @@ export class Npc {
   geometry!: THREE.BufferGeometry;
   agentId: string | null = null;
   epoch = 0;
+  moving = false;
   spawns = 0;
   resolve?: () => void;
 
@@ -26,6 +27,33 @@ export class Npc {
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
     Object.assign(this, init);
+  }
+
+  startWalking() {
+    const { walk, idle } = this.w.npc.clips;
+    if (!walk) return;
+    this.moving = true;
+    const idleAction = idle ? this.mixer.clipAction(idle) : null;
+    const walkAction = this.mixer.clipAction(walk);
+    idleAction?.fadeOut(0.3);
+    walkAction.reset().fadeIn(0.3).play();
+  }
+
+  startIdle() {
+    const { walk, idle } = this.w.npc.clips;
+    if (!idle) return;
+    this.moving = false;
+    const walkAction = walk ? this.mixer.clipAction(walk) : null;
+    const idleAction = this.mixer.clipAction(idle);
+    walkAction?.fadeOut(0.3);
+    idleAction.reset().fadeIn(0.3).play();
+  }
+
+  syncAnimation(speed: number) {
+    const { walk } = this.w.npc.clips;
+    if (!walk || !this.moving) return;
+    const walkAction = this.mixer.clipAction(walk);
+    walkAction.timeScale = Math.max(0.6, speed);
   }
 
   groupRef = (group: THREE.Group | null): void => {

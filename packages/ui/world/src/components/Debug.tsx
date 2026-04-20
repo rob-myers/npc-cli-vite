@@ -92,7 +92,7 @@ export function Debug() {
         if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "door") {
           const { instanceId } = event.meta;
           const current = w.door.openDoorsRatio[instanceId] ?? 0;
-          state.animateDoor(instanceId, current > 0 ? 0 : 0.8);
+          state.animateDoor(instanceId, current > 0 ? 0 : debugDoorOpenTarget);
         }
       },
     });
@@ -128,3 +128,4 @@ const doorSpeed = 2; // ratio units per second
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const tmpMat4 = new THREE.Matrix4();
+const debugDoorOpenTarget = 0.9;

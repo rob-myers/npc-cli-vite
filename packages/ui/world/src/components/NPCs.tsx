@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { ANY_QUERY_FILTER, createFindNearestPolyResult, findNearestPoly } from "navcat";
+import { ANY_QUERY_FILTER, createFindNearestPolyResult, type FindNearestPolyResult, findNearestPoly } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
@@ -16,10 +16,12 @@ import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
   createSkinnedXzQuad,
+  groudPointToTuple,
   groundPointToVector3,
   mergeWithGroups,
   parseGroundPoint,
 } from "../service/geometry";
+import { emptyFailedResult } from "../service/nav";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
@@ -78,6 +80,16 @@ export default function NPCs() {
         }
         state.update();
       },
+      getClosestPoly(targetPos) {
+        if (!w.nav) return emptyFailedResult;
+        return findNearestPoly(
+          createFindNearestPolyResult(),
+          w.nav.navMesh,
+          groudPointToTuple(parseGroundPoint(targetPos)),
+          [0.1, 0.1, 0.1],
+          ANY_QUERY_FILTER,
+        );
+      },
       move({ npcKey, to }) {
         const npc = state.npc[npcKey];
 
@@ -92,16 +104,11 @@ export default function NPCs() {
         }
 
         const target = parseGroundPoint(to);
-        const targetPos: [number, number, number] = [target.x, 0, target.y];
-        const result = findNearestPoly(
-          createFindNearestPolyResult(),
-          w.nav.navMesh,
-          targetPos,
-          [0.1, 0.1, 0.1],
-          ANY_QUERY_FILTER,
-        );
+        const result = state.getClosestPoly(target);
+
         if (result.success) {
           crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, result.position);
+          npc.startWalking();
         } else {
           throw Error("move failed");
         }
@@ -113,7 +120,26 @@ export default function NPCs() {
             if (npc.agentId) {
               const agent = state.crowd.agents[npc.agentId];
               if (agent) {
-                npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
+                const vx = agent.velocity[0];
+                const vz = agent.velocity[2];
+                const speed = Math.sqrt(vx * vx + vz * vz);
+                if (npc.moving) {
+                  npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
+                  if (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.3) && speed < 0.2) {
+                    npc.startIdle();
+                    crowdApi.resetMoveTarget(state.crowd, npc.agentId);
+                  } else {
+                    if (speed > 0.05) {
+                      const target = Math.atan2(vx, vz) + Math.PI;
+                      let diff = target - npc.skinnedMesh.rotation.y;
+                      diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+                      if (diff < -Math.PI) diff += Math.PI * 2;
+                      const t = 1 - Math.exp(-5 * delta);
+                      npc.skinnedMesh.rotation.y += diff * t;
+                    }
+                    npc.syncAnimation(Math.max(speed, 0.5));
+                  }
+                }
               }
             }
             npc.mixer.update(delta);
@@ -141,26 +167,19 @@ export default function NPCs() {
         }
         state.update();
       },
-      respawn(npc, groundPoint) {
-        const targetTuple = [groundPoint.x, 0, groundPoint.y] as [number, number, number];
-        const result =
-          w.nav && npc.agentId !== null
-            ? findNearestPoly(
-                createFindNearestPolyResult(),
-                w.nav.navMesh,
-                targetTuple,
-                [0.1, 0.1, 0.1],
-                ANY_QUERY_FILTER,
-              )
-            : null;
+      respawn(npc, at) {
+        const target = parseGroundPoint(at);
+        const result = npc.agentId ? state.getClosestPoly(target) : emptyFailedResult;
 
-        if (npc.agentId !== null && result?.success) {
+        if (npc.agentId && result.success) {
+          // teleport
           const agent = state.crowd.agents[npc.agentId];
-          agent.position[0] = groundPoint.x;
-          agent.position[2] = groundPoint.y;
-          crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, targetTuple);
+          agent.position[0] = target.x;
+          agent.position[2] = target.y;
+          // pin to point
+          crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(target));
         } else {
-          npc.position.copy(groundPointToVector3(groundPoint));
+          npc.position.copy(groundPointToVector3(target));
         }
 
         npc.spawns++;
@@ -177,7 +196,7 @@ export default function NPCs() {
         const groundPoint = parseGroundPoint(at);
 
         if (npcKey in state.npc) {
-          state.respawn(state.npc[npcKey], groundPoint);
+          state.respawn(state.npc[npcKey], at);
           return;
         }
 
@@ -214,8 +233,8 @@ export default function NPCs() {
           npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, [pos.x, pos.y, pos.z], {
             radius: 0.2,
             height: 1.2,
-            maxAcceleration: 8,
-            maxSpeed: 2,
+            maxAcceleration: 4,
+            maxSpeed: 1,
             collisionQueryRange: 1,
             separationWeight: 0.5,
             updateFlags:
@@ -301,9 +320,10 @@ export type State = {
 
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devHotReload(): void;
+  getClosestPoly(targetPos: JshCli.PointAnyFormat): FindNearestPolyResult;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
   remove(...npcKeys: string[]): void;
-  respawn(npc: Npc, groundPoint: JshCli.GroundPoint): void;
+  respawn(npc: Npc, at: JshCli.PointAnyFormat): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
