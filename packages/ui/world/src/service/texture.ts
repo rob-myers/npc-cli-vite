@@ -538,5 +538,6 @@ export function createShadowMaterial() {
   mat.opacityNode = alpha.mul(0.6);
   // could also set a special colour preventing close clicks
   mat.outputNode = objectPick.equal(1).select(vec4(0, 0, 0, 0), output);
+  // mat.outputNode = objectPick.equal(1).select(vec4(0, 255, 0, 1), output);
   return mat;
 }

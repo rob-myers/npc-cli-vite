@@ -19,6 +19,8 @@ export class Npc {
   agentId: string | null = null;
   epoch = 0;
   moving = false;
+  stuckAccum = 0;
+  lastPos = { x: 0, z: 0 };
   spawns = 0;
   resolve?: () => void;
 
@@ -33,6 +35,8 @@ export class Npc {
     const { walk, idle } = this.w.npc.clips;
     if (!walk) return;
     this.moving = true;
+    this.stuckAccum = 0;
+    this.lastPos = { x: this.position.x, z: this.position.z };
     const idleAction = idle ? this.mixer.clipAction(idle) : null;
     const walkAction = this.mixer.clipAction(walk);
     idleAction?.fadeOut(0.3);
@@ -47,6 +51,20 @@ export class Npc {
     const idleAction = this.mixer.clipAction(idle);
     walkAction?.fadeOut(0.3);
     idleAction.reset().fadeIn(0.3).play();
+  }
+
+  updateStuck(delta: number): boolean {
+    const dx = this.position.x - this.lastPos.x;
+    const dz = this.position.z - this.lastPos.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    // 🚧 delay stuck a bit
+    if (dist < 0.0065) {
+      this.stuckAccum += delta;
+    } else {
+      this.stuckAccum = 0;
+    }
+    this.lastPos = { x: this.position.x, z: this.position.z };
+    return this.stuckAccum > 0.4;
   }
 
   syncAnimation(speed: number) {
