@@ -3,6 +3,8 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
+import { ANY_QUERY_FILTER } from "navcat";
+import { crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -33,6 +35,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       byPickId: {} as Record<number, Npc>,
+      crowd: crowdApi.create(0.3),
       gltf: null,
       labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       nextPickId: 0,
@@ -86,7 +89,13 @@ export default function NPCs() {
         // respawn
         if (npcKey in state.npc) {
           const npc = state.npc[npcKey] as Npc;
-          npc.position.copy(groundPointToVector3(groundPoint));
+          if (npc.agentId) {
+            const agent = state.crowd.agents[npc.agentId];
+            agent.position[0] = groundPoint.x;
+            agent.position[2] = groundPoint.y;
+          } else {
+            npc.position.copy(groundPointToVector3(groundPoint));
+          }
           npc.spawns++;
           w.view.forceRender();
           return;
@@ -120,6 +129,23 @@ export default function NPCs() {
           geometry,
         });
 
+        if (w.nav) {
+          const pos = npc.position;
+          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, [pos.x, pos.y, pos.z], {
+            radius: 0.2,
+            height: 1.2,
+            maxAcceleration: 8,
+            maxSpeed: 2,
+            collisionQueryRange: 2,
+            separationWeight: 1,
+            updateFlags:
+              crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
+              crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
+              crowdApi.CrowdUpdateFlags.SEPARATION,
+            queryFilter: ANY_QUERY_FILTER,
+          });
+        }
+
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
         state.nextPickId++;
@@ -137,6 +163,7 @@ export default function NPCs() {
           const npc = state.npc[npcKey];
           if (!npc) continue;
           npc.mixer.stopAllAction();
+          if (npc.agentId) crowdApi.removeAgent(state.crowd, npc.agentId);
           npc.material.dispose();
           npc.labelMaterial.dispose();
           npc.geometry.dispose();
@@ -149,8 +176,21 @@ export default function NPCs() {
         state.update();
       },
       onTick(delta) {
-        for (const npc of Object.values(state.npc)) {
-          npc.mixer.update(delta);
+        if (w.nav) {
+          crowdApi.update(state.crowd, w.nav.navMesh, delta);
+          for (const npc of Object.values(state.npc)) {
+            if (npc.agentId) {
+              const agent = state.crowd.agents[npc.agentId];
+              if (agent) {
+                npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
+              }
+            }
+            npc.mixer.update(delta);
+          }
+        } else {
+          for (const npc of Object.values(state.npc)) {
+            npc.mixer.update(delta);
+          }
         }
       },
     }),
@@ -199,6 +239,7 @@ export default function NPCs() {
 
 export type State = {
   byPickId: Record<number, Npc>;
+  crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   labelTexArray: TexArray;
   nextPickId: number;
