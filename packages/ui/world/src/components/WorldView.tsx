@@ -40,19 +40,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
-      rootEl: null as any,
 
-      canvasRef(canvasEl) {
-        if (canvasEl !== null) {
-          state.canvas = canvasEl;
-          state.rootEl = canvasEl.parentElement?.parentElement as HTMLDivElement;
-        }
-      },
       async createRenderer(props: DefaultGLProps) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
         // - "The depth stencil attachment [TextureView of Texture "depthBuffer"] size (width: 300, height: 150) does not match the size of the other attachments' base plane (width: 1190, height: 1296). "
         const canvas = props.canvas as HTMLCanvasElement;
-        const parent = canvas.parentElement as HTMLDivElement;
+        const parent = w.rootEl as HTMLDivElement;
         const parentRect = parent.getBoundingClientRect();
         if (parentRect.width > 0 && parentRect.height > 0) {
           canvas.width = parentRect.width * devicePixelRatio;
@@ -171,7 +164,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         document.addEventListener("keydown", state.onKeyDown);
       },
       onResize: debounce(() => {
-        console.log("onResize");
         w.menu?.onResize();
       }, 100),
       onKeyDown(e: KeyboardEvent) {
@@ -245,14 +237,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   w.view = state;
 
   useEffect(() => {
-    if (!state.rootEl) return;
+    if (!w.rootEl) return;
     const ro = new ResizeObserver(([entry]) => {
       // only trigger when visible
       entry.contentRect.width && state.onResize();
     });
-    ro.observe(state.rootEl);
+    ro.observe(w.rootEl);
     return () => ro.disconnect();
-  }, [state.rootEl]);
+  }, [w.rootEl]); // debounced resize
 
   return (
     <motion.div
@@ -264,7 +256,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <Canvas
         className={props.className}
         style={{ filter: `brightness(${w.brightness})` }}
-        ref={state.canvasRef}
+        ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
         onCreated={state.onCreated}
@@ -273,14 +265,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
         tabIndex={0}
       >
-        {state.rootEl && (
+        {w.rootEl && (
           <Stats
             showPanel={0}
             className={cn(
               w.disabled && "pointer-events-none filter grayscale(1) brightness(0.5)",
               "absolute! z-500! left-[unset]! right-0",
             )}
-            parent={{ current: state.rootEl as HTMLDivElement }}
+            parent={{ current: w.rootEl as HTMLDivElement }}
           />
         )}
 
@@ -313,9 +305,7 @@ export type State = {
   ctrlOpts: MapControlsProps;
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
-  rootEl: HTMLDivElement;
 
-  canvasRef(canvasEl: null | HTMLCanvasElement): void;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceRender(): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;

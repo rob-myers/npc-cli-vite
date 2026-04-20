@@ -49,6 +49,17 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 
 /**
  * ```sh
+ * move npc:rob to:$( pick 1 )
+ * ```
+ * @param {JshCli.RunArg} ctxt
+ * @param {{ npcKey: string; to: JshCli.PointAnyFormat }} [opts]
+ */
+export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  await w.npc.move(opts);
+}
+
+/**
+ * ```sh
  * pick
  * pick 1
  * pick meta.floor
