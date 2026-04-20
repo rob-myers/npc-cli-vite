@@ -53,6 +53,15 @@ w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
 - ✅ can `w npc.move "{ npcKey: 'rob', to: $( pick 1 ) }"`
   - no walk/run animation yet
 
+- 🚧 tweak walking until its clean
+```sh
+spawn npc:rob at:$( pick 1 )
+spawn npc:kate at:$( pick 1 )
+while true; do
+  move npc:rob to:"$( pick 1 )"
+done
+```
+
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
 
