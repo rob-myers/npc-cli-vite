@@ -6,21 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import {
-  attribute,
-  cameraPosition,
-  cameraProjectionMatrix,
-  cameraViewMatrix,
-  float,
-  modelWorldMatrix,
-  normalWorld,
-  positionLocal,
-  positionWorld,
-  texture as tslTexture,
-  uniform,
-  uv,
-  vec4,
-} from "three/tsl";
+import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale } from "../const";
 import {
@@ -33,6 +19,7 @@ import {
 } from "../service/geometry";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
+import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
 import { MemoNpcInstance } from "./NpcInstance";
 import { WorldContext } from "./world-context";
 
@@ -227,49 +214,3 @@ export type State = {
 };
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
-
-function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) {
-  const { ct } = texArray;
-  const { width, height } = ct.canvas;
-  ct.clearRect(0, 0, width, height);
-  // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
-  // ct.roundRect(0, 0, width, height, 8);
-  ct.fill();
-  ct.fillStyle = "white";
-  ct.font = "36px sans-serif";
-  ct.textAlign = "center";
-  ct.textBaseline = "middle";
-  ct.fillText(npcKey, width / 2, height / 2);
-  texArray.updateIndex(layerIndex);
-}
-
-function createLabelMaterial(texArray: TexArray, layerIndex: number) {
-  const texNode = tslTexture(texArray.tex);
-  const layerNode = texNode.depth(uniform(layerIndex));
-  const mat = new THREE.MeshBasicNodeMaterial({
-    transparent: true,
-    depthWrite: true,
-    alphaTest: Number.EPSILON,
-    side: THREE.DoubleSide,
-  });
-  mat.colorNode = layerNode;
-  mat.opacityNode = layerNode.a;
-
-  const offset = attribute("billboardOffset", "vec2");
-  const worldCenter = modelWorldMatrix.mul(vec4(positionLocal, 1));
-  const viewCenter = cameraViewMatrix.mul(worldCenter);
-  const viewPos = viewCenter.add(vec4(offset, 0, 0));
-  mat.vertexNode = cameraProjectionMatrix.mul(viewPos);
-
-  return mat;
-}
-
-function createShadowMaterial() {
-  const center = uv().sub(0.5);
-  const dist = center.dot(center).mul(4);
-  const alpha = float(1).sub(dist).clamp(0, 1);
-  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, opacity: 1 });
-  mat.colorNode = vec4(0, 0, 0, 1);
-  mat.opacityNode = alpha.mul(0.6);
-  return mat;
-}

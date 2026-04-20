@@ -1,6 +1,19 @@
 import { geomService } from "@npc-cli/util";
+import {
+  attribute,
+  cameraProjectionMatrix,
+  cameraViewMatrix,
+  float,
+  modelWorldMatrix,
+  positionLocal,
+  texture as tslTexture,
+  uniform,
+  uv,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
+import type { TexArray } from "./tex-array";
 
 const texW = 256;
 const texH = 512;
@@ -477,3 +490,49 @@ const sciFiFloorPattern = (() => {
 
   return ctx.createPattern(c, "repeat") as CanvasPattern;
 })();
+
+export function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) {
+  const { ct } = texArray;
+  const { width, height } = ct.canvas;
+  ct.clearRect(0, 0, width, height);
+  // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
+  // ct.roundRect(0, 0, width, height, 8);
+  ct.fill();
+  ct.fillStyle = "white";
+  ct.font = "36px sans-serif";
+  ct.textAlign = "center";
+  ct.textBaseline = "middle";
+  ct.fillText(npcKey, width / 2, height / 2);
+  texArray.updateIndex(layerIndex);
+}
+
+export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
+  const texNode = tslTexture(texArray.tex);
+  const layerNode = texNode.depth(uniform(layerIndex));
+  const mat = new THREE.MeshBasicNodeMaterial({
+    transparent: true,
+    depthWrite: true,
+    alphaTest: Number.EPSILON,
+    side: THREE.DoubleSide,
+  });
+  mat.colorNode = layerNode;
+  mat.opacityNode = layerNode.a;
+
+  const offset = attribute("billboardOffset", "vec2");
+  const worldCenter = modelWorldMatrix.mul(vec4(positionLocal, 1));
+  const viewCenter = cameraViewMatrix.mul(worldCenter);
+  const viewPos = viewCenter.add(vec4(offset, 0, 0));
+  mat.vertexNode = cameraProjectionMatrix.mul(viewPos);
+
+  return mat;
+}
+
+export function createShadowMaterial() {
+  const center = uv().sub(0.5);
+  const dist = center.dot(center).mul(4);
+  const alpha = float(1).sub(dist).clamp(0, 1);
+  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, opacity: 1 });
+  mat.colorNode = vec4(0, 0, 0, 1);
+  mat.opacityNode = alpha.mul(0.6);
+  return mat;
+}
