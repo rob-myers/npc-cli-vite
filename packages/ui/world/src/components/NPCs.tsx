@@ -5,7 +5,7 @@ import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
-import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale } from "../const";
@@ -21,6 +21,7 @@ import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
 import { MemoNpcInstance } from "./NpcInstance";
+import { Npc, type NpcState } from "./npc";
 import { WorldContext } from "./world-context";
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
@@ -29,7 +30,7 @@ export default function NPCs() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
-    (): State => ({
+    (): NpcState => ({
       byPickId: {} as Record<number, Npc>,
       gltf: null,
       labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
@@ -49,16 +50,25 @@ export default function NPCs() {
         mat.outputNode = withPickOutputId(PICK_TYPE.npc, pickIdNode);
         return mat;
       },
-      devRefreshMaterials() {
+      devHotReload() {
         if (!state.texture) return;
-        for (const npc of Object.values(state.npc)) {
-          npc.material.dispose();
-          npc.material = state.createNpcMaterial(npc.pickId);
-          npc.labelMaterial.dispose();
-          npc.labelMaterial = createLabelMaterial(state.labelTexArray, npc.labelLayerIndex);
-          const labelLayerIndex = npc.pickId;
-          drawLabelLayer(state.labelTexArray, labelLayerIndex, npc.key);
-          npc.epoch++;
+        for (const [key, old] of Object.entries(state.npc)) {
+          old.material.dispose();
+          old.labelMaterial.dispose();
+          const npc = new Npc(state, {
+            key: old.key,
+            pickId: old.pickId,
+            labelLayerIndex: old.labelLayerIndex,
+            position: old.position,
+            material: state.createNpcMaterial(old.pickId),
+            labelMaterial: createLabelMaterial(state.labelTexArray, old.labelLayerIndex),
+            skinnedMesh: old.skinnedMesh,
+            graph: old.graph,
+            geometry: old.geometry,
+          });
+          drawLabelLayer(state.labelTexArray, npc.labelLayerIndex, npc.key);
+          state.npc[key] = npc;
+          state.byPickId[npc.pickId] = npc;
         }
         state.update();
       },
@@ -96,20 +106,17 @@ export default function NPCs() {
         const labelLayerIndex = pickId;
         drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
 
-        const npc: Npc = {
+        const npc = new Npc(state, {
           key: npcKey,
           pickId,
           labelLayerIndex,
           position: groundPointToVector3(groundPoint),
-          group: null,
           material: state.createNpcMaterial(pickId),
           labelMaterial: createLabelMaterial(state.labelTexArray, labelLayerIndex),
-          mixer: emptyAnimationMixer,
           skinnedMesh: clonedSkinnedMesh,
           graph,
           geometry,
-          epoch: 0,
-        };
+        });
 
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
@@ -167,7 +174,7 @@ export default function NPCs() {
 
   useEffect(() => {
     if (import.meta.env.DEV) {
-      state.devRefreshMaterials();
+      state.devHotReload();
     }
   }, []);
 
@@ -176,41 +183,9 @@ export default function NPCs() {
   return (
     gltf &&
     Object.values(state.npc).map((npc) => (
-      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} gltf={gltf} epoch={npc.epoch} />
+      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} epoch={npc.epoch} />
     ))
   );
 }
 
-export type Npc = {
-  key: string;
-  pickId: number;
-  labelLayerIndex: number;
-  position: THREE.Vector3;
-  /** On mount */
-  group: THREE.Group | null;
-  material: THREE.MeshStandardNodeMaterial;
-  labelMaterial: THREE.MeshBasicNodeMaterial;
-  mixer: THREE.AnimationMixer;
-  skinnedMesh: THREE.SkinnedMesh;
-  graph: ReturnType<typeof buildGraph>;
-  geometry: THREE.BufferGeometry;
-  epoch: number;
-};
-
-export type State = {
-  byPickId: Record<number, Npc>;
-  gltf: GLTF | null;
-  labelTexArray: TexArray;
-  nextPickId: number;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
-  texture: THREE.Texture | null;
-  npc: Record<string, Npc>;
-
-  createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
-  devRefreshMaterials(): void;
-  spawn(opts: JshCli.SpawnOpts): void;
-  remove(...npcKeys: string[]): void;
-  onTick(delta: number): void;
-};
-
-const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
+export type { NpcState as State } from "./npc";
