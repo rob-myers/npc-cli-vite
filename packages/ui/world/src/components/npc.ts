@@ -1,7 +1,6 @@
+import type { UseStateRef } from "@npc-cli/util";
 import type { buildGraph } from "@react-three/fiber";
-import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three/webgpu";
-import type { State as NpcsState } from "./NPCs";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
@@ -17,15 +16,15 @@ export class Npc {
   skinnedMesh!: THREE.SkinnedMesh;
   graph!: ReturnType<typeof buildGraph>;
   geometry!: THREE.BufferGeometry;
-  gltf: GLTF;
-
   agentId: string | null = null;
   epoch = 0;
   spawns = 0;
   resolve?: () => void;
 
-  constructor(npcsState: NpcsState, init: NpcInit) {
-    this.gltf = npcsState.gltf as GLTF;
+  w: UseStateRef<import("./World").State>;
+
+  constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
+    this.w = w;
     Object.assign(this, init);
   }
 
@@ -41,11 +40,9 @@ export class Npc {
 
     this.resolve?.();
 
-    const gltf = this.gltf;
-    if (!gltf) return;
-    const idleClip = gltf.animations.find((c) => c.name === "idle");
-    if (idleClip) {
-      this.mixer.clipAction(idleClip).play();
+    const { idle } = this.w.npc.clips;
+    if (idle) {
+      this.mixer.clipAction(idle).play();
       this.mixer.update(0);
     }
   };
