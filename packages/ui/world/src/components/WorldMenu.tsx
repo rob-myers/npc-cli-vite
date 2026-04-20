@@ -245,7 +245,7 @@ export function WorldMenu() {
                   if (!result.success) return;
                   const [x, y, z] = result.position;
                   const key = `npc-${Date.now().toString(36)}`;
-                  w.npc.spawn({ npcKey: key, point: [x, y, z] });
+                  w.npc.spawn({ npcKey: key, at: [x, y, z] });
                   w.update();
                 }}
               >
@@ -268,7 +268,7 @@ export function WorldMenu() {
                 closeOnClick={false}
                 onClick={() => {
                   objectPick.value = objectPick.value === 1 ? 0 : 1;
-                  w.r3f?.invalidate();
+                  w.view.forceRender();
                 }}
               >
                 Debug Pick

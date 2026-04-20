@@ -248,15 +248,49 @@ export function getTempInstanceMesh(inst: THREE.InstancedMesh, instanceId: numbe
 
 //#endregion
 
-export function parseGroundPoint(
-  input: [number, number, number] | [number, number] | { x: number; y: number; z: number } | { x: number; y: number },
-) {
+export function parseGroundPoint(input: PointAnyFormat): GroundPoint {
   if (Array.isArray(input)) {
     return input.length === 3 ? { x: input[0], y: input[2] } : { x: input[0], y: input[1] };
   }
   return { x: input.x, y: "z" in input ? input.z : input.y };
 }
 
-export function groundPointToVector3(point: { x: number; y: number }) {
+export function groundPointToVector3(point: GroundPoint) {
   return new THREE.Vector3(point.x, 0, point.y);
+}
+
+/**
+ * Array or object, 2d or 3d
+ */
+export type PointAnyFormat =
+  | [number, number, number]
+  | [number, number]
+  | { x: number; y: number; z: number }
+  | { x: number; y: number };
+
+export type GroundPoint = Geom.VectJson;
+
+const tempNormal = {
+  tri: new THREE.Triangle(),
+  indices: new THREE.Vector3(),
+  mat3: new THREE.Matrix3(),
+};
+
+/**
+ * Convert `interseciton.normal` into world coordinates.
+ */
+export function computeIntersectionNormal(mesh: THREE.Mesh, intersection: THREE.Intersection) {
+  const { indices, mat3, tri } = tempNormal;
+  const output = new THREE.Vector3();
+  const offset = (intersection.faceIndex as number) * 3;
+  if (mesh.geometry.index === null) {
+    indices.set(offset, offset + 1, offset + 2);
+  } else {
+    indices.fromArray(mesh.geometry.index.array, offset);
+  }
+  tri.setFromAttributeAndIndices(mesh.geometry.attributes.position, indices.x, indices.y, indices.z);
+  tri.getNormal(output);
+  const normalMatrix = mat3.getNormalMatrix(mesh.matrixWorld);
+  output.applyNormalMatrix(normalMatrix);
+  return output;
 }

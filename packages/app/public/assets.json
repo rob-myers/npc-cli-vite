@@ -7123,7 +7123,7 @@
         "nonHull": {"fill": "#444", "stroke": "#000"}
       },
       "floor": {"navStroke": "#000c"},
-      "walls": {"color": "#000", "opacity": 0.2}
+      "walls": {"color": "#000", "opacity": 0.25}
     },
     "default-theme": {
       "background": "bg-black",

@@ -9,20 +9,26 @@ function NpcInstance({ npc, shadowMaterial, gltf }: Props) {
   const state = useStateRef(
     (): State => ({
       groupRef(group) {
-        npc.group = group;
-        if (group) {
-          npc.mixer = new THREE.AnimationMixer(group);
-          const clips = gltf.animations;
-          const idleClip = clips.find((c) => c.name === "idle");
-          const walkClip = clips.find((c) => c.name === "walk");
-          if (!idleClip || !walkClip) return;
-
-          const idle = npc.mixer.clipAction(idleClip);
-          idle.play();
-          npc.mixer.update(0);
-        } else {
+        if (!group) {
           npc.mixer.stopAllAction();
+          return;
         }
+
+        // overwrite placeholders
+        npc.group = group;
+        npc.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
+        npc.position = npc.skinnedMesh.position;
+        npc.mixer = new THREE.AnimationMixer(group);
+
+        // 🚧 move to NPCs
+        const clips = gltf.animations;
+        const idleClip = clips.find((c) => c.name === "idle");
+        const walkClip = clips.find((c) => c.name === "walk");
+        if (!idleClip || !walkClip) return;
+
+        const idle = npc.mixer.clipAction(idleClip);
+        idle.play();
+        npc.mixer.update(0);
       },
     }),
   );

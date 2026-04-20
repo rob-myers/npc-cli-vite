@@ -50,7 +50,6 @@ export default function NPCs() {
       shadowMaterial: createShadowMaterial(),
       texture: null,
       npc: {},
-      epoch: 0,
 
       createNpcMaterial(pickId) {
         if (!state.texture) throw Error("texture not loaded yet");
@@ -72,24 +71,27 @@ export default function NPCs() {
           npc.labelMaterial = createLabelMaterial(state.labelTexArray, npc.labelLayerIndex);
           const labelLayerIndex = npc.pickId;
           drawLabelLayer(state.labelTexArray, labelLayerIndex, npc.key);
+          npc.epoch++;
         }
-        state.epoch++;
         state.update();
       },
-      spawn({ npcKey, point }) {
-        if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
-          throw Error(`npcKey must match ${npcKeyPattern}: saw "${npcKey}"`);
-        }
-        if (npcKey in state.npc) {
-          // 🚧 respawn
-          throw Error(`npcKey "${npcKey}" already exists`);
-        }
+      spawn({ npcKey, at }) {
         if (!state.gltf) {
           throw Error("GLTF not loaded yet");
         }
+        if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
+          throw Error(`npcKey "${npcKey}" must match: ${npcKeyPattern}`);
+        }
+        if (!at) throw Error("opts.at: must exist");
+        const groundPoint = parseGroundPoint(at);
 
-        if (!point) throw Error("opts.point: must exist");
-        const groundPoint = parseGroundPoint(point);
+        if (npcKey in state.npc) {
+          // respawn
+          const npc = state.npc[npcKey] as Npc;
+          npc.position.copy(groundPointToVector3(groundPoint));
+          w.view.forceRender();
+          return;
+        }
 
         const clone = SkeletonUtils.clone(state.gltf.scene);
         const graph = buildGraph(clone);
@@ -119,12 +121,12 @@ export default function NPCs() {
           skinnedMesh: clonedSkinnedMesh,
           graph,
           geometry,
+          epoch: 0,
         };
 
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
         state.nextPickId++;
-        state.epoch++;
         state.update();
       },
       remove(...npcKeys) {
@@ -138,7 +140,6 @@ export default function NPCs() {
           delete state.byPickId[npc.pickId];
           delete state.npc[npcKey];
         }
-        state.epoch++;
         if (Object.keys(state.npc).length === 0) {
           state.nextPickId = 0;
         }
@@ -188,7 +189,7 @@ export default function NPCs() {
   return (
     gltf &&
     Object.values(state.npc).map((npc) => (
-      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} gltf={gltf} epoch={state.epoch} />
+      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} gltf={gltf} epoch={npc.epoch} />
     ))
   );
 }
@@ -206,6 +207,7 @@ export type Npc = {
   skinnedMesh: THREE.SkinnedMesh;
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
+  epoch: number;
 };
 
 export type State = {
@@ -216,11 +218,10 @@ export type State = {
   shadowMaterial: THREE.MeshBasicNodeMaterial;
   texture: THREE.Texture | null;
   npc: Record<string, Npc>;
-  epoch: number;
 
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devRefreshMaterials(): void;
-  spawn(args: { npcKey: string; point: [number, number, number] }): void;
+  spawn(opts: JshCli.SpawnOpts): void;
   remove(...npcKeys: string[]): void;
   onTick(delta: number): void;
 };

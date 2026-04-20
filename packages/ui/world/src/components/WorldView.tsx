@@ -9,7 +9,7 @@ import { motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
-import { getTempInstanceMesh } from "../service/geometry";
+import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick, type ObjectPickKey, objectPick } from "../service/pick";
 import { CameraControls } from "./CameraControls";
 import { WorldContext } from "./world-context";
@@ -73,6 +73,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         await renderer.init();
         return renderer;
+      },
+      forceRender() {
+        w.r3f?.invalidate();
       },
       getPickedFromPixel([r, g, b, _a]) {
         // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
@@ -154,7 +157,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
 
         const [intersection] = state.raycaster.intersectObject(mesh);
-        return intersection !== undefined ? intersection : null;
+        if (!intersection) return null;
+
+        intersection.normal = computeIntersectionNormal(mesh, intersection);
+        return intersection;
       },
       onCreated(rootState) {
         w.threeReady = true;
@@ -208,15 +214,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           console.log("picked", picked, intersection);
           if (intersection === null) return;
 
-          const { distance, point, face } = intersection;
+          const { distance, point } = intersection;
           const clickId = state.clickIds.pop();
+
           w.events.next({
             key: "picked",
             ...(clickId && { clickId }),
             meta: picked,
             distance,
             point,
-            face,
+            faceIndex: intersection.faceIndex,
+            normal: intersection.normal,
           });
         });
       },
@@ -308,6 +316,7 @@ export type State = {
 
   canvasRef(canvasEl: null | HTMLCanvasElement): void;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
+  forceRender(): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
