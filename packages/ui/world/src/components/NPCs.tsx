@@ -4,7 +4,7 @@ import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { ANY_QUERY_FILTER, createFindNearestPolyResult, type FindNearestPolyResult, findNearestPoly } from "navcat";
-import { crowd as crowdApi } from "navcat/blocks";
+import { type crowd, crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -73,7 +73,17 @@ export default function NPCs() {
             graph: old.graph,
             geometry: old.geometry,
           });
-          npc.agentId = old.agentId;
+
+          if (old.agentId !== null) {
+            crowdApi.removeAgent(state.crowd, old.agentId);
+            npc.agentId = crowdApi.addAgent(
+              state.crowd,
+              w.nav!.navMesh,
+              groudPointToTuple(npc.position),
+              getAgentParams(),
+            );
+          }
+
           drawLabelLayer(state.labelTexArray, npc.labelLayerIndex, npc.key);
           state.npc[key] = npc;
           state.byPickId[npc.pickId] = npc;
@@ -191,7 +201,10 @@ export default function NPCs() {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`npcKey "${npcKey}" must match: ${npcKeyPattern}`);
         }
-        if (!at) throw Error("opts.at: must exist");
+        if (!at) {
+          throw Error("opts.at: must exist");
+        }
+
         const groundPoint = parseGroundPoint(at);
 
         if (npcKey in state.npc) {
@@ -230,29 +243,10 @@ export default function NPCs() {
         const result = state.getClosestPoly(npc.position);
 
         if (w.nav && result.success) {
-          const pos = npc.position;
-
-          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, [pos.x, pos.y, pos.z], {
-            radius: 0.25,
-            height: 1.2,
-            maxAcceleration: 4,
-            maxSpeed: 1,
-            collisionQueryRange: 1,
-            separationWeight: 0.5,
-            updateFlags:
-              crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
-              crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
-              crowdApi.CrowdUpdateFlags.SEPARATION,
-            queryFilter: ANY_QUERY_FILTER,
-          });
+          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
 
           // pin to point
-          crowdApi.requestMoveTarget(
-            state.crowd,
-            npc.agentId,
-            result.nodeRef,
-            groudPointToTuple(parseGroundPoint(npc.position)),
-          );
+          crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(groundPoint));
         }
 
         state.npc[npcKey] = npc;
@@ -301,16 +295,10 @@ export default function NPCs() {
     state.clips.run = anims.find((c) => c.name === "run") ?? null;
   }
 
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      state.devHotReload();
-    }
-  }, []);
-
-  const { gltf } = state;
+  useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
   return (
-    gltf &&
+    state.gltf &&
     Object.values(state.npc).map((npc) => (
       <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} epoch={npc.epoch} />
     ))
@@ -337,3 +325,19 @@ export type State = {
   respawn(npc: Npc, at: JshCli.PointAnyFormat): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
+
+function getAgentParams(): crowd.AgentParams {
+  return {
+    radius: 0.25,
+    height: 1.2,
+    maxAcceleration: 4,
+    maxSpeed: 1,
+    collisionQueryRange: 1,
+    separationWeight: 0.5,
+    updateFlags:
+      crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
+      crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
+      crowdApi.CrowdUpdateFlags.SEPARATION,
+    queryFilter: ANY_QUERY_FILTER,
+  };
+}
