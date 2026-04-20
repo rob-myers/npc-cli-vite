@@ -1,7 +1,7 @@
 import type { buildGraph } from "@react-three/fiber";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three/webgpu";
-import type { TexArray } from "../service/tex-array";
+import type { State as NpcsState } from "./NPCs";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
@@ -18,10 +18,10 @@ export class Npc {
   graph!: ReturnType<typeof buildGraph>;
   geometry!: THREE.BufferGeometry;
   epoch = 0;
-  npcState: NpcState;
+  gltf: GLTF;
 
-  constructor(npcState: NpcState, init: NpcInit) {
-    this.npcState = npcState;
+  constructor(npcsState: NpcsState, init: NpcInit) {
+    this.gltf = npcsState.gltf as GLTF;
     Object.assign(this, init);
   }
 
@@ -35,7 +35,7 @@ export class Npc {
     this.position = this.skinnedMesh.position;
     this.mixer = new THREE.AnimationMixer(group);
 
-    const gltf = this.npcState.gltf;
+    const gltf = this.gltf;
     if (!gltf) return;
     const idleClip = gltf.animations.find((c) => c.name === "idle");
     if (idleClip) {
@@ -55,20 +55,4 @@ export type NpcInit = {
   skinnedMesh: THREE.SkinnedMesh;
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
-};
-
-export type NpcState = {
-  byPickId: Record<number, Npc>;
-  gltf: GLTF | null;
-  labelTexArray: TexArray;
-  nextPickId: number;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
-  texture: THREE.Texture | null;
-  npc: Record<string, Npc>;
-
-  createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
-  devHotReload(): void;
-  spawn(opts: JshCli.SpawnOpts): void;
-  remove(...npcKeys: string[]): void;
-  onTick(delta: number): void;
 };
