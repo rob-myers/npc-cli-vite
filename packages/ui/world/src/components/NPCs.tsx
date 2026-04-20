@@ -205,8 +205,8 @@ export default function NPCs() {
             height: 1.2,
             maxAcceleration: 8,
             maxSpeed: 2,
-            collisionQueryRange: 2,
-            separationWeight: 1,
+            collisionQueryRange: 1,
+            separationWeight: 0.5,
             updateFlags:
               crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
               crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
