@@ -237,7 +237,15 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <div ref={state.ref("rootEl")} className={cn(uiClassName, "relative size-full")}>
+      <div
+        ref={state.ref("rootEl")}
+        className={cn(
+          uiClassName,
+          state.disabled ? "grayscale-100 brightness-75" : "grayscale-0 brightness-100",
+          "transition-[filter] duration-1000",
+          "relative size-full",
+        )}
+      >
         {state.rootEl && (
           <WorldView
             className={cn(
