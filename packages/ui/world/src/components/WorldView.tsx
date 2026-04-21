@@ -248,7 +248,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   return (
     <motion.div
-      className="size-full"
+      className={cn(
+        "size-full",
+        w.disabled ? "grayscale-100 brightness-75" : "grayscale-0 brightness-100",
+        "transition-[filter] duration-1000",
+      )}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 2, delay: 0.1 }}
