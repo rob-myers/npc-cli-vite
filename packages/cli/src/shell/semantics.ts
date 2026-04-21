@@ -1,9 +1,4 @@
-import {
-  collectIfClauses,
-  computeJShSource,
-  type JSh,
-  reconstructReplParamExp,
-} from "@npc-cli/parse-sh";
+import { collectIfClauses, computeJShSource, type JSh, reconstructReplParamExp } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { jsStringify, last, parseJsArg, pause, safeJsonParse } from "@npc-cli/util/legacy/generic";
 import braces from "braces";
@@ -76,9 +71,7 @@ export class JShSemantics {
     const device = sessionApi.resolve(2, node.meta);
     if (device !== undefined) {
       const lines = message.split(/\r?\n/);
-      device.writeData(
-        `${lines.map((line) => formatMessage(line, "error")).join("\n")}${ansi.Reset}`,
-      );
+      device.writeData(`${lines.map((line) => formatMessage(line, "error")).join("\n")}${ansi.Reset}`);
     } else {
       ttyError(`${node.meta.sessionKey}: pid ${node.meta.pid}: stderr does not exist`, message);
     }
@@ -295,9 +288,7 @@ export class JShSemantics {
         try {
           // Clone, connecting stdout to stdin of subsequent process
           const clones = stmts.map((x) => this.wrapInFile(cloneParsed(x), { ppid, pgid }));
-          fifos.forEach(
-            (fifo, i) => void (clones[i + 1].meta.fd[0] = clones[i].meta.fd[1] = fifo.key),
-          );
+          fifos.forEach((fifo, i) => void (clones[i + 1].meta.fd[0] = clones[i].meta.fd[1] = fifo.key));
 
           const errors = [] as any[];
           let exitCode = undefined as undefined | number;
@@ -311,10 +302,7 @@ export class JShSemantics {
                     by: "|",
                     localVar: true,
                     // e.g. `take 3 | true`:
-                    cleanups:
-                      i === 0 && isTtyAt(file.meta, 0)
-                        ? [() => ttyShell.finishedReading()]
-                        : undefined,
+                    cleanups: i === 0 && isTtyAt(file.meta, 0) ? [() => ttyShell.finishedReading()] : undefined,
                     // 🔔 despite new process group we do not delete ptags.interactive
                   });
                 } catch (e) {
@@ -342,11 +330,7 @@ export class JShSemantics {
           // e.g. call '() => { throw "☹️" }' | true; true | { sleep 1; echo 🔔; }
           await pause(cleanupSetupMs);
 
-          if (
-            exitCode === undefined ||
-            exitCode === 130 ||
-            process.status === toProcessStatus.Killed
-          ) {
+          if (exitCode === undefined || exitCode === 130 || process.status === toProcessStatus.Killed) {
             node.exitCode = errors[0]?.exitCode ?? 1;
             throw killError(node.meta);
           } else {
@@ -410,7 +394,7 @@ export class JShSemantics {
     const cmdStackIndex = node.meta.stack.length;
     try {
       await sem.applyRedirects(node, Redirs);
-      // biome-ignore lint/suspicious/noExplicitAny: TODO justify
+
       let generator: AsyncGenerator<any, void, unknown>;
       if (node.type === "CallExpr") {
         generator = this.CallExpr(node);
@@ -448,6 +432,7 @@ export class JShSemantics {
             throw new ShError("not implemented", 2);
         }
       }
+
       const process = sessionApi.getProcess(node.meta);
       let stdoutFd = node.meta.fd[1];
       let device = sessionApi.resolve(1, node.meta);
@@ -476,17 +461,12 @@ export class JShSemantics {
       const command = node.type === "CallExpr" ? (node.Args[0]?.string ?? "CallExpr") : node.type;
       stack.splice(cmdStackIndex, 0, command);
       // normalize error
-      const error =
-        e instanceof ShError || e instanceof SigKillError ? e : new ShError("", 1, e as Error);
+      const error = e instanceof ShError || e instanceof SigKillError ? e : new ShError("", 1, e as Error);
       error.message = `${stack.join(": ")}: ${(e as Error).message || e}`;
       if (command === "run" && stack.length === 1) {
         // when directly using `run` append helpful format message
         error.message +=
-          "\n" +
-          formatMessage(
-            `usage: run '({ api:{read} }) { yield "foo"; yield await read(); }'`,
-            "error",
-          );
+          "\n" + formatMessage(`usage: run '({ api:{read} }) { yield "foo"; yield await read(); }'`, "error");
       }
       sem.handleShError(node, error);
     }
@@ -666,10 +646,7 @@ export class JShSemantics {
 
         try {
           const values = device.readAll();
-          const wordParts =
-            node.parent?.type === "Word" || node.parent?.type === "DblQuoted"
-              ? node.parent.Parts
-              : [];
+          const wordParts = node.parent?.type === "Word" || node.parent?.type === "DblQuoted" ? node.parent.Parts : [];
 
           if (wordParts.length === 1 && (node.parent as JSh.ParsedSh).parent?.type === "Assign") {
             yield this.expand(values); // When `foo=$( bar )` forward non-string values
@@ -812,9 +789,7 @@ export class JShSemantics {
       switch (Exp.Op) {
         case ":-": {
           const value = this.expandParameter(meta, Param.Value);
-          yield value === "" && Exp.Word
-            ? await this.lastExpanded(this.Expand(Exp.Word))
-            : this.expand(value);
+          yield value === "" && Exp.Word ? await this.lastExpanded(this.Expand(Exp.Word)) : this.expand(value);
           break;
         }
         default:
