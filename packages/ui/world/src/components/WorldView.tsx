@@ -269,16 +269,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
         tabIndex={0}
       >
-        {w.rootEl && (
-          <Stats
-            showPanel={0}
-            className={cn(
-              w.disabled && "pointer-events-none filter grayscale(1) brightness(0.5)",
-              "absolute! z-500! left-[unset]! right-0",
-            )}
-            parent={{ current: w.rootEl as HTMLDivElement }}
-          />
-        )}
+        <Stats
+          showPanel={0}
+          className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-500! left-[unset]! right-0")}
+          parent={{ current: w.rootEl as HTMLDivElement }}
+        />
 
         <PerspectiveCamera fov={40} position={[0, 18, 0]} makeDefault zoom={1} />
 
