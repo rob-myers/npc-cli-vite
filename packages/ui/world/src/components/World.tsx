@@ -99,7 +99,21 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       rootEl: null as any,
 
-      devSetupAssetsSync() {
+      getGmKeyTexId(gmKey: StarShipGeomorphKey) {
+        return this.seenGmKeys.indexOf(gmKey);
+      },
+      getTheme() {
+        return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
+      },
+      isReady(_connectionKey) {
+        return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
+      },
+      onTick() {
+        state.reqAnimId = requestAnimationFrame(state.onTick);
+        state.timer.update();
+        state.npc?.onTick(state.timer.getDelta());
+      },
+      setupDevAssetsSync() {
         const hot = import.meta.hot;
         if (!import.meta.env.DEV || !hot) return;
 
@@ -130,21 +144,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }
         };
       },
-      getGmKeyTexId(gmKey: StarShipGeomorphKey) {
-        return this.seenGmKeys.indexOf(gmKey);
-      },
-      getTheme() {
-        return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
-      },
-      isReady(_connectionKey) {
-        return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
-      },
-      onTick() {
-        state.reqAnimId = requestAnimationFrame(state.onTick);
-        state.timer.update();
-        state.npc?.onTick(state.timer.getDelta());
-      },
-      prodSetupHullAssetsSync() {
+      setupProdHullAssetsSync() {
         const cb = () => {
           debug("[World] symbol saved, refetching");
           state.set({ navPending: true });
@@ -224,10 +224,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     if (import.meta.env.DEV && import.meta.hot) {
-      return state.devSetupAssetsSync();
+      return state.setupDevAssetsSync();
     }
     if (import.meta.env.PROD) {
-      return state.prodSetupHullAssetsSync();
+      return state.setupProdHullAssetsSync();
     }
   }, []); // sync assets in dev/prod
 
@@ -308,12 +308,12 @@ export type State = {
   navPending: boolean;
   rootEl: HTMLDivElement;
 
-  devSetupAssetsSync(): void;
+  setupDevAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
   isReady(connectionKey: string): boolean;
   onTick(): void;
-  prodSetupHullAssetsSync(): void;
+  setupProdHullAssetsSync(): void;
   stopTick(): void;
 };
 
