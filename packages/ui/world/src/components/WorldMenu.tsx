@@ -256,7 +256,7 @@ export function WorldMenu() {
                 closeOnClick={false}
                 onClick={() => {
                   w.npc.remove(...Object.keys(w.npc.npc));
-                  w.view.forceRender();
+                  w.view.forceUpdate();
                 }}
               >
                 Clear NPCs
@@ -267,7 +267,7 @@ export function WorldMenu() {
                 closeOnClick={false}
                 onClick={() => {
                   objectPick.value = objectPick.value === 1 ? 0 : 1;
-                  w.view.forceRender();
+                  w.view.forceUpdate();
                 }}
               >
                 Debug Pick

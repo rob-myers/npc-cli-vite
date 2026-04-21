@@ -67,8 +67,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         await renderer.init();
         return renderer;
       },
-      forceRender() {
+      forceUpdate() {
         w.r3f?.invalidate();
+        w.update();
       },
       getPickedFromPixel([r, g, b, _a]) {
         // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
@@ -306,7 +307,7 @@ export type State = {
   raycaster: THREE.Raycaster;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
-  forceRender(): void;
+  forceUpdate(): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
