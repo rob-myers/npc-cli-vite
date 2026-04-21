@@ -39,13 +39,11 @@ export function Debug() {
       },
 
       computeDemoPath() {
-        const gm = w.gms[0];
-        const navMesh = w.nav?.navMesh;
-        if (!navMesh || !gm) return void (state.demoNavPath = []);
-
+        const [gm] = w.gms;
+        if (!gm) return;
         const { x, y, height } = gm.gridRect;
         const result = findPath(
-          navMesh,
+          w.nav.navMesh,
           [x + 0.5, 0, y + 0.5],
           [x + 0.5, 0, y + height * 0.95],
           [0.5, 0.1, 0.5],

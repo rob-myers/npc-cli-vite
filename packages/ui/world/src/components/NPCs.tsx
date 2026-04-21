@@ -80,7 +80,7 @@ export default function NPCs() {
             crowdApi.removeAgent(state.crowd, old.agentId);
             npc.agentId = crowdApi.addAgent(
               state.crowd,
-              w.nav!.navMesh,
+              w.nav.navMesh,
               groudPointToTuple(parseGroundPoint(npc.position)),
               getAgentParams(),
             );
@@ -93,7 +93,6 @@ export default function NPCs() {
         state.update();
       },
       getClosestPoly(targetPos) {
-        if (!w.nav) return emptyFailedResult;
         return findNearestPoly(
           createFindNearestPolyResult(),
           w.nav.navMesh,
@@ -105,9 +104,6 @@ export default function NPCs() {
       move({ npcKey, to }) {
         const npc = state.npc[npcKey];
 
-        if (!w.nav) {
-          throw Error("w.nav must exist");
-        }
         if (typeof npcKey !== "string" || !npc) {
           throw Error(`npcKey "${npcKey}" must exist`);
         }
@@ -127,8 +123,6 @@ export default function NPCs() {
         }
       },
       onTick(delta) {
-        if (!w.nav) return;
-
         crowdApi.update(state.crowd, w.nav.navMesh, delta);
 
         for (const npc of Object.values(state.npc)) {
@@ -250,8 +244,7 @@ export default function NPCs() {
         });
 
         const result = state.getClosestPoly(npc.position);
-
-        if (w.nav && result.success) {
+        if (result.success) {
           npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
 
           // pin to point

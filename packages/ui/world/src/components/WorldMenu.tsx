@@ -240,7 +240,6 @@ export function WorldMenu() {
                 className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                 closeOnClick={false}
                 onClick={() => {
-                  if (!w.nav || !w.npc) return;
                   const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
                   if (!result.success) return;
                   const [x, y, z] = result.position;
