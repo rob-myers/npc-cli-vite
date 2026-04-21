@@ -54,6 +54,7 @@ w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
   - no walk/run animation yet
 
 - 🚧 tweak walking until its clean
+  - ✅ unify pinning as `w.npc.pinTo`
 ```sh
 spawn npc:rob at:$( pick 1 )
 spawn npc:kate at:$( pick 1 )
