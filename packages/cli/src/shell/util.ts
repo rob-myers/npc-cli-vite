@@ -68,9 +68,7 @@ export function computeNormalizedParts(varPath: string, pwd: string): string[] {
   if (varPath === "~") varPath = "/home";
   if (varPath.startsWith("~/")) varPath = `/home/${varPath.slice(2)}`;
 
-  const absParts = varPath.startsWith("/")
-    ? varPath.split("/")
-    : pwd.split("/").concat(varPath.split("/"));
+  const absParts = varPath.startsWith("/") ? varPath.split("/") : pwd.split("/").concat(varPath.split("/"));
   return normalizeAbsParts(absParts);
 }
 
@@ -80,9 +78,7 @@ export function formatMessage(msg: string, level: "info" | "error") {
 
 export function getPtagsPreview(ptags: Ptags) {
   return Object.keys(ptags).map((key) =>
-    key in ProcessTagPreview
-      ? ProcessTagPreview[key as keyof typeof ProcessTagPreview]
-      : `[${key[0]}]`,
+    key in ProcessTagPreview ? ProcessTagPreview[key as keyof typeof ProcessTagPreview] : `[${key[0]}]`,
   );
 }
 
