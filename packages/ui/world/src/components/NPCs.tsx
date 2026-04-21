@@ -106,10 +106,10 @@ export default function NPCs() {
         const npc = state.npc[npcKey];
 
         if (typeof npcKey !== "string" || !npc) {
-          throw Error(`npcKey "${npcKey}" must exist`);
+          throw Error(`opts.npcKey must exist: saw ${npcKey}`);
         }
-        if (!npc.agentId) {
-          throw Error("npcKey has no agent");
+        if (npc.agentId === null) {
+          throw Error(`npc has no agent: ${npcKey}`);
         }
 
         const groundPoint = parseGroundPoint(to);
@@ -196,14 +196,14 @@ export default function NPCs() {
         }
 
         npc.spawns++;
-        w.view.forceRender();
+        w.view.forceUpdate();
       },
       async spawn({ npcKey, at }) {
         if (!state.gltf) {
           throw Error("GLTF not loaded yet");
         }
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
-          throw Error(`npcKey "${npcKey}" must match: ${npcKeyPattern}`);
+          throw Error(`npcKey must match: ${npcKeyPattern}`);
         }
         if (!at) {
           throw Error("opts.at: must exist");
@@ -244,6 +244,7 @@ export default function NPCs() {
           geometry,
         });
 
+        npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
         state.pinTo(npc, npc.position);
 
         state.npc[npcKey] = npc;
