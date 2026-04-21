@@ -362,6 +362,8 @@ type Stmt struct {
 type SubShell struct {
 	Type string
 	Stmts []Stmt
+	Lparen Pos
+	Rparen Pos
 	Pos Pos
 	End Pos
 }

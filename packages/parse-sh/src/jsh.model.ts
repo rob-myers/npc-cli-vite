@@ -393,7 +393,7 @@ export class ConvertMvdanShToJsh {
       return this.CaseClause(node);
     } else if ("Lbrace" in node) {
       return this.Block(node);
-    } else if ("Lparen" in node) {
+    } else if ("Stmts" in node) {
       return this.Subshell(node);
     } else if ("Y" in node) {
       return this.BinaryCmd(node);
