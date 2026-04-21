@@ -66,7 +66,7 @@ done
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
 
-- import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
+- ✅ import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - 🚧 check glsl fallback e.g. incognito or force
   - Walls and Doors don't draw i.e. too many
 - object-pick sometimes out of sync since upgrade three.js `0.183.2`
