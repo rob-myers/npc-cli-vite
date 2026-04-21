@@ -12,7 +12,13 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { ArrowUpRightIcon, DotsThreeOutlineVerticalIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  ArrowUpRightIcon,
+  DotsThreeOutlineVerticalIcon,
+  PlayCircleIcon,
+  PlusCircleIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
@@ -389,75 +395,90 @@ function TabHeaderItem({
       )}
       onClick={onClickTab}
     >
-      <div className={"flex p-1 border border-on-background/20"}>
+      <div className={"flex items-center p-1 border border-on-background/20"}>
         <pre className="p-1">{tab.title}</pre>
 
         {isCurrentTab && (
-          <BasicPopover
-            trigger={
-              <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
-            }
-            className="bg-black p-0 flex flex-col"
-            arrowClassName="fill-black"
-            side="bottom"
-          >
-            <div className="flex">
-              <button type="button" className="px-0.5 py-1">
-                <ArrowUpRightIcon
-                  weight="thin"
-                  className="cursor-pointer size-5 bg-black/40 text-white"
-                  onPointerDown={onBreakOutTab}
-                />
-              </button>
-              <button type="button" className="px-0.5 py-1">
-                <TrashIcon
-                  weight="thin"
-                  className="cursor-pointer size-5 bg-black/40 text-white"
-                  onPointerDown={onDeleteTab}
-                />
-              </button>
-            </div>
-            {allTabs.length > 1 && (
-              <div className="border-t border-white/20 py-1">
-                {allTabs.map((targetTabs) => {
-                  const isCurrent = targetTabs.id === tabsMetaId;
-                  return (
-                    <button
-                      key={targetTabs.id}
-                      type="button"
-                      disabled={isCurrent}
-                      className={cn(
-                        "block w-full text-left text-sm px-2 py-0.5 text-white",
-                        isCurrent ? "font-bold text-blue-400" : "cursor-pointer hover:bg-white/20",
-                      )}
-                      onPointerDown={(e) => {
-                        if (isCurrent) return;
-                        e.stopPropagation();
-                        uiStore.setState((draft) => {
-                          const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
-                          const targetMeta = draft.byId[targetTabs.id]?.meta as TabsUiMeta | undefined;
-                          const item = draft.byId[tab.id];
-                          if (!sourceMeta || !targetMeta || !item) return;
-                          // Remove from source
-                          sourceMeta.items = sourceMeta.items.filter((id) => id !== tab.id);
-                          if (sourceMeta.currentTabId === tab.id) {
-                            sourceMeta.currentTabId = sourceMeta.items[0];
-                          }
-                          // Add to target
-                          item.meta.parentId = targetTabs.id;
-                          item.meta.disabled = targetMeta.disabled;
-                          targetMeta.items.push(tab.id);
-                          targetMeta.currentTabId = tab.id;
-                        });
-                      }}
-                    >
-                      {targetTabs.title}
-                    </button>
-                  );
-                })}
+          <>
+            <BasicPopover
+              trigger={
+                <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
+              }
+              className="bg-black p-0 flex flex-col"
+              arrowClassName="fill-black"
+              side="bottom"
+            >
+              <div className="flex">
+                <button type="button" className="px-0.5 py-1">
+                  <ArrowUpRightIcon
+                    weight="thin"
+                    className="cursor-pointer size-5 bg-black/40 text-white"
+                    onPointerDown={onBreakOutTab}
+                  />
+                </button>
+                <button type="button" className="px-0.5 py-1">
+                  <TrashIcon
+                    weight="thin"
+                    className="cursor-pointer size-5 bg-black/40 text-white"
+                    onPointerDown={onDeleteTab}
+                  />
+                </button>
               </div>
-            )}
-          </BasicPopover>
+              {allTabs.length > 1 && (
+                <div className="border-t border-white/20 py-1">
+                  {allTabs.map((targetTabs) => {
+                    const isCurrent = targetTabs.id === tabsMetaId;
+                    return (
+                      <button
+                        key={targetTabs.id}
+                        type="button"
+                        disabled={isCurrent}
+                        className={cn(
+                          "block w-full text-left text-sm px-2 py-0.5 text-white",
+                          isCurrent ? "font-bold text-blue-400" : "cursor-pointer hover:bg-white/20",
+                        )}
+                        onPointerDown={(e) => {
+                          if (isCurrent) return;
+                          e.stopPropagation();
+                          uiStore.setState((draft) => {
+                            const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
+                            const targetMeta = draft.byId[targetTabs.id]?.meta as TabsUiMeta | undefined;
+                            const item = draft.byId[tab.id];
+                            if (!sourceMeta || !targetMeta || !item) return;
+                            // Remove from source
+                            sourceMeta.items = sourceMeta.items.filter((id) => id !== tab.id);
+                            if (sourceMeta.currentTabId === tab.id) {
+                              sourceMeta.currentTabId = sourceMeta.items[0];
+                            }
+                            // Add to target
+                            item.meta.parentId = targetTabs.id;
+                            item.meta.disabled = targetMeta.disabled;
+                            targetMeta.items.push(tab.id);
+                            targetMeta.currentTabId = tab.id;
+                          });
+                        }}
+                      >
+                        {targetTabs.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </BasicPopover>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                uiStoreApi.setUiMeta(tab.id, (draft) => (draft.disabled = !draft.disabled));
+              }}
+            >
+              <PlayCircleIcon
+                weight="duotone"
+                className={cn("size-5 cursor-pointer mr-0.5", tab.disabled ? "text-gray-500" : "text-green-700")}
+              />
+            </button>
+          </>
         )}
       </div>
     </div>
