@@ -56,12 +56,16 @@ w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
 - 🚧 tweak walking until its clean
   - ✅ unify pinning as `w.npc.pinTo`
 ```sh
+# keep walking without throwing
 spawn npc:rob at:$( pick 1 )
-spawn npc:kate at:$( pick 1 )
 while true; do
-  move npc:rob to:"$( pick 1 )"
+  move --force npc:rob to:$( pick 1 )
 done
 ```
+
+- ✅ can ignore throw inside while somehow
+  - decided against `foo || true` because `foo` might write to stderr
+  - ✅ support e.g. `move --force npc:rob to:$( pick 1 )`
 
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once

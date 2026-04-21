@@ -111,11 +111,7 @@ class CmdService {
           ({ ttyTextKey, linkCtxtsFactory }) =>
             void (
               linkCtxtsFactory !== undefined &&
-              sessionApi.addTtyLineCtxts(
-                node.meta.sessionKey,
-                ttyTextKey,
-                linkCtxtsFactory(resolve),
-              )
+              sessionApi.addTtyLineCtxts(node.meta.sessionKey, ttyTextKey, linkCtxtsFactory(resolve))
             ),
         );
       });
@@ -125,9 +121,7 @@ class CmdService {
       }
       handlers!.dispose();
       // ℹ️ currently assume one time usage
-      parsedLines.forEach(
-        ({ ttyTextKey }) => void sessionApi.removeTtyLineCtxts(node.meta.sessionKey, ttyTextKey),
-      );
+      parsedLines.forEach(({ ttyTextKey }) => void sessionApi.removeTtyLineCtxts(node.meta.sessionKey, ttyTextKey));
     }
   }
 
@@ -232,9 +226,7 @@ class CmdService {
       let proms = [] as Promise<void>[];
       let datum = await cmdService.read(this.meta);
       while (datum !== EOF) {
-        const resolved = await Promise.race(
-          (proms = [loopBody(datum), cmdService.read(this.meta)]),
-        );
+        const resolved = await Promise.race((proms = [loopBody(datum), cmdService.read(this.meta)]));
         if (resolved === undefined) {
           // Finished loopBody
           datum = await proms[1];
@@ -541,10 +533,7 @@ class CmdService {
       }
       case "cd": {
         if (args.length > 1) {
-          throw new ShError(
-            "usage: `cd /`, `cd`, `cd foo/bar`, `cd /foo/bar`, `cd ..` and `cd -`",
-            1,
-          );
+          throw new ShError("usage: `cd /`, `cd`, `cd foo/bar`, `cd /foo/bar`, `cd ..` and `cd -`", 1);
         }
         const prevPwd: string = sessionApi.getVar(meta, "OLDPWD");
         const currPwd: string = sessionApi.getVar(meta, "PWD");
@@ -639,10 +628,7 @@ class CmdService {
           for (const { key, src } of funcs) {
             if (prefixes && !prefixes.some((x) => key.startsWith(x))) continue;
             if (exactMatch && key !== exactMatch) continue;
-            const lines =
-              `${ansi.BlueBold}${key}${ansi.White} ()${ansi.BoldReset} ${src}${ansi.Reset}`.split(
-                /\r?\n/,
-              );
+            const lines = `${ansi.BlueBold}${key}${ansi.White} ()${ansi.BoldReset} ${src}${ansi.Reset}`.split(/\r?\n/);
             yield* lines;
             yield "";
           }
@@ -758,10 +744,7 @@ class CmdService {
       }
       case "jsArg": {
         const { opts, operands } = getOpts(args, {
-          string: [
-            "alias" /** e.g. '{ points: "ps" }' */,
-            "opts" /** e.g. '{ array: { to: true } }' */,
-          ],
+          string: ["alias" /** e.g. '{ points: "ps" }' */, "opts" /** e.g. '{ array: { to: true } }' */],
         });
         yield jsArg(
           operands,
@@ -792,9 +775,7 @@ class CmdService {
           const session = sessionApi.getSession(meta.sessionKey);
           pids = Object.keys(session.process).map(Number);
         } else {
-          pids = operands
-            .map((x) => parseJsonArg(x))
-            .filter((x): x is number => Number.isFinite(x));
+          pids = operands.map((x) => parseJsonArg(x)).filter((x): x is number => Number.isFinite(x));
         }
 
         sessionApi.kill(meta.sessionKey, pids, {
@@ -856,17 +837,12 @@ class CmdService {
             const metas =
               opts.r !== undefined
                 ? keys.map(
-                    (x) =>
-                      deepGet(obj, x.split("/"))?.constructor?.name ||
-                      (obj[x] === null ? "null" : "undefined"),
+                    (x) => deepGet(obj, x.split("/"))?.constructor?.name || (obj[x] === null ? "null" : "undefined"),
                   )
-                : keys.map(
-                    (x) => obj[x]?.constructor?.name || (obj[x] === null ? "null" : "undefined"),
-                  );
+                : keys.map((x) => obj[x]?.constructor?.name || (obj[x] === null ? "null" : "undefined"));
             const metasWidth = Math.max(...metas.map((x) => x.length));
             items = keys.map(
-              (x, i) =>
-                `${ansi.YellowBright}${metas[i].padEnd(metasWidth)}${ansi.White} ${x}${ansi.Reset}`,
+              (x, i) => `${ansi.YellowBright}${metas[i].padEnd(metasWidth)}${ansi.White} ${x}${ansi.Reset}`,
             );
           } else if (opts[1]) {
             items = keys;
@@ -908,8 +884,7 @@ class CmdService {
           const ptagPreviews = opts.s === true ? [] : getPtagsPreview(p.ptags);
           const tagsOrEmpty = `${ansi.YellowBright}${opts.s === true ? jsStringify(p.ptags) : `${ptagPreviews.join("")}${ptagPreviews.length > 0 ? " " : ""}`}${ansi.Reset}`;
           const oneLineSrcOrEmpty = opts.s === false ? truncateOneLine(p.src.trimStart(), 30) : "";
-          const oneLineSrcColour =
-            p.status === toProcessStatus.Suspended ? statusColour[p.status] : "";
+          const oneLineSrcColour = p.status === toProcessStatus.Suspended ? statusColour[p.status] : "";
           const line = `${statusColour[p.status]}${info}${ansi.Reset}${tagsOrEmpty}${oneLineSrcColour}${oneLineSrcOrEmpty}`;
           return line;
         }
@@ -977,7 +952,7 @@ class CmdService {
       /**
        * ```sh
        * run '({ api:{read} }) { yield "foo"; yield await read(); }'
-       * run game move npcKey:rob to:$( click 1 )
+       * run core spawn npcKey:rob at:$( pick 1 )
        * ```
        */
       case "run": {
@@ -990,19 +965,17 @@ class CmdService {
             const process = sessionApi.getProcess(meta);
             process.reboot = {
               apply() {
-                if (this.applying === true)
-                  return warn(`already rebooting process ${process.key}: ${process.src}`);
+                if (this.applying === true) return warn(`already rebooting process ${process.key}: ${process.src}`);
                 this.applying = true;
-                const removed = process.cleanups.splice(
-                  this.cleanupId,
-                  process.cleanups.length - this.cleanupId,
-                );
+                const removed = process.cleanups.splice(this.cleanupId, process.cleanups.length - this.cleanupId);
                 removed.forEach((cleanup) => void cleanup());
               },
               applying: false,
               cleanupId: process.cleanups.length,
             };
             meta.stack.push(`${args[0]}.${args[1]}`);
+
+            const ignoreThrow = args[2] === "--force";
 
             while (true) {
               try {
@@ -1011,7 +984,7 @@ class CmdService {
                   throw Error(`not found`);
                 }
 
-                ct.args = args.slice(2); // discard 2nd arg too
+                ct.args = args.slice(2); // discard e.g. "core spawn"
 
                 if (functionOrAsync.includes(func.constructor.name)) {
                   yield await func(ct); // support all sh/src/* functions
@@ -1021,11 +994,11 @@ class CmdService {
 
                 break;
               } catch (e) {
+                if (ignoreThrow) {
+                  return;
+                }
                 // 🔔 distinguish hot-reload from error
-                if (
-                  process.reboot.applying === false ||
-                  process.status === toProcessStatus.Killed
-                ) {
+                if (process.reboot.applying === false || process.status === toProcessStatus.Killed) {
                   throw e;
                 }
                 process.reboot.applying = false;
