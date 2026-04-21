@@ -173,7 +173,7 @@ export class JShSemantics {
         yield* sem.Stmt(node);
       } finally {
         parent.exitCode = node.exitCode;
-        sessionApi.setLastExitCode(node.meta, node.exitCode);
+        // sessionApi.setLastExitCode(node.meta, node.exitCode);
       }
     }
   }

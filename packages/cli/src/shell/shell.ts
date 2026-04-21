@@ -146,9 +146,7 @@ export class TtyShell {
         this.oneTimeReaders.length = 0;
 
         this.prompt("$");
-        jShSemantics.handleTopLevelProcessError(
-          new SigKillError({ pid: 0, sessionKey: this.sessionKey }),
-        );
+        jShSemantics.handleTopLevelProcessError(new SigKillError({ pid: 0, sessionKey: this.sessionKey }));
         break;
       }
       case "send-line": {
@@ -200,8 +198,7 @@ export class TtyShell {
    * Importantly this sets `this.profileHasRun` as `true`.
    */
   async runProfile() {
-    const profile =
-      sessionApi.getVar({ pid: 0, sessionKey: this.sessionKey } as JSh.BaseMeta, "PROFILE") || "";
+    const profile = sessionApi.getVar({ pid: 0, sessionKey: this.sessionKey } as JSh.BaseMeta, "PROFILE") || "";
 
     try {
       this.xterm.historyEnabled = false;
@@ -385,12 +382,11 @@ export class TtyShell {
         // Unreachable: yielded values already sent to devices:
         // - (tty, fifo, null, var, voice)
       }
-      term.meta.verbose === true &&
-        warn(
-          `${meta.sessionKey}${meta.background ? " (background)" : ""}: ${meta.pid}: exit ${
-            term.exitCode
-          }`,
-        );
+      if (term.meta.verbose === true) {
+        warn(`${meta.sessionKey}${meta.background ? " (background)" : ""}: ${meta.pid}: exit ${term.exitCode}`);
+      }
+
+      term.exitCode = term.Stmts.at(-1)?.exitCode ?? term.exitCode;
     } catch (e) {
       if (e instanceof SigKillError) {
         // possibly via preProcessWrite
