@@ -16,6 +16,14 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
+ * @param {JshCli.RunArg} ctxt
+ */
+export function clear({ w }) {
+  w.npc.remove(...Object.keys(w.npc.npc));
+  w.view.forceUpdate();
+}
+
+/**
  * Examples:
  * ```sh
  * events
@@ -56,6 +64,20 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  */
 export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
   await w.npc.move(opts);
+}
+
+/**
+ * @param {JshCli.RunArg} ctxt
+ */
+export function pause({ w }) {
+  w.setDisabled(true);
+}
+
+/**
+ * @param {JshCli.RunArg} ctxt
+ */
+export function play({ w }) {
+  w.setDisabled(false);
 }
 
 /**

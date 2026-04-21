@@ -1,12 +1,13 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { debug, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
@@ -40,6 +41,8 @@ import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
 
 export default function World({ meta }: { meta: WorldUiMeta }) {
+  const { uiStoreApi } = useContext(UiContext);
+
   const state = useStateRef(
     (): State => ({
       id: meta.id,
@@ -112,6 +115,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
         state.npc?.onTick(state.timer.getDelta());
+      },
+      setDisabled(disabled) {
+        uiStoreApi.setUiMeta(meta.id, (draft) => {
+          draft.disabled = disabled ?? !state.disabled;
+        });
       },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
@@ -308,6 +316,7 @@ export type State = {
   navPending: boolean;
   rootEl: HTMLDivElement;
 
+  setDisabled(nextDisabled?: boolean): void;
   setupDevAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
