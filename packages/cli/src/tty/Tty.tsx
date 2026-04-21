@@ -247,12 +247,7 @@ export function Tty(props: Props) {
     if (baseRef.current?.session?.ttyShell.isInitialized()) {
       state.storeAndSourceFuncs();
     }
-  }, [
-    baseRef.current?.session,
-    ...Object.entries(props.shFiles).flat(),
-    // 🔔 spread modules fixes: TypeError: Cannot convert object to primitive value
-    ...Object.entries(props.modules).flatMap(([k, v]) => [k, { ...(v as any) }]),
-  ]);
+  }, [baseRef.current?.session, props.shFiles, props.modules]);
 
   React.useEffect(() => {
     // sync ~/PROFILE
