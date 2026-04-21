@@ -1,6 +1,6 @@
+import { deltaAngle } from "maath/misc";
 import * as THREE from "three";
 import { EventDispatcher, PerspectiveCamera, TOUCH } from "three";
-import { deltaAngle } from "maath/misc";
 
 /**
  * Based on:
@@ -68,9 +68,7 @@ export class CameraControls extends EventDispatcher {
     TOUCH_DOLLY_ROTATE: 6,
   });
 
-  state = /** @type {-1 | 0 | 1 | 2 | 3 | 4 | 5 | 6} */ (
-    this.STATE.NONE
-  );
+  state = /** @type {-1 | 0 | 1 | 2 | 3 | 4 | 5 | 6} */ (this.STATE.NONE);
 
   /** Update state */
   u = {
@@ -98,18 +96,18 @@ export class CameraControls extends EventDispatcher {
   };
 
   pointers = /** @type {PointerEvent[]} */ ([]);
-  pointerPositions = /** @type {{ [key: string]: THREE.Vector2 }} */ ({})
+  pointerPositions = /** @type {{ [key: string]: THREE.Vector2 }} */ ({});
 
   //#region MapControls
   /** if false, pan orthogonal to world-space direction camera.up */
   screenSpacePanning = false; // pan orthogonal to world-space direction camera.up
-  
+
   touches = {
     // ONE: THREE.TOUCH.ROTATE,
     ONE: THREE.TOUCH.PAN,
     // TWO: THREE.TOUCH.DOLLY_PAN,
     TWO: THREE.TOUCH.DOLLY_ROTATE,
-  }
+  };
   //#endregion
 
   //#region Custom
@@ -124,8 +122,8 @@ export class CameraControls extends EventDispatcher {
   //#endregion
 
   /**
-   * @param {PerspectiveCamera} object 
-   * @param {HTMLElement} domElement 
+   * @param {PerspectiveCamera} object
+   * @param {HTMLElement} domElement
    */
   constructor(object, domElement) {
     super();
@@ -150,27 +148,27 @@ export class CameraControls extends EventDispatcher {
     // disables touch scroll
     // touch-action needs to be defined for pointer events to work on mobile
     // https://stackoverflow.com/a/48254578
-    this.domElement.style.touchAction = 'none';
+    this.domElement.style.touchAction = "none";
 
-    this.domElement.addEventListener('contextmenu', this.onContextMenu);
-    this.domElement.addEventListener('pointerdown', this.onPointerDown);
-    this.domElement.addEventListener('pointercancel', this.onPointerUp);
-    this.domElement.addEventListener('wheel', this.onMouseWheel);
+    this.domElement.addEventListener("contextmenu", this.onContextMenu);
+    this.domElement.addEventListener("pointerdown", this.onPointerDown);
+    this.domElement.addEventListener("pointercancel", this.onPointerUp);
+    this.domElement.addEventListener("wheel", this.onMouseWheel);
   }
-  
+
   /** @param {number} dist */
   clampDistance(dist) {
     return Math.max(this.minDistance, Math.min(this.maxDistance, dist));
   }
 
   dispose() {
-    this.domElement.style.touchAction = 'auto'; // 🚧
-    this.domElement.removeEventListener('contextmenu', this.onContextMenu);
-    this.domElement.removeEventListener('pointerdown', this.onPointerDown);
-    this.domElement.removeEventListener('pointercancel', this.onPointerUp);
-    this.domElement.removeEventListener('wheel', this.onMouseWheel);
-    this.domElement.ownerDocument.removeEventListener('pointermove', this.onPointerMove);
-    this.domElement.ownerDocument.removeEventListener('pointerup', this.onPointerUp);
+    this.domElement.style.touchAction = "auto"; // 🚧
+    this.domElement.removeEventListener("contextmenu", this.onContextMenu);
+    this.domElement.removeEventListener("pointerdown", this.onPointerDown);
+    this.domElement.removeEventListener("pointercancel", this.onPointerUp);
+    this.domElement.removeEventListener("wheel", this.onMouseWheel);
+    this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
+    this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
   }
 
   /** @param {number} dollyScale */
@@ -201,8 +199,9 @@ export class CameraControls extends EventDispatcher {
     return this.pointerPositions[pointer.pointerId];
   }
 
-  getZoomScale() {// closer to 1 is slower
-    return Math.pow(0.95, this.zoomSpeed);
+  getZoomScale() {
+    // closer to 1 is slower
+    return 0.95 ** this.zoomSpeed;
   }
 
   /** @param {MouseEvent} event */
@@ -223,41 +222,41 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {MouseEvent} event */
   handleMouseMoveDolly(event) {
-    this.u.dollyEnd.set(event.clientX, event.clientY)
-    this.u.dollyDelta.subVectors(this.u.dollyEnd, this.u.dollyStart)
+    this.u.dollyEnd.set(event.clientX, event.clientY);
+    this.u.dollyDelta.subVectors(this.u.dollyEnd, this.u.dollyStart);
 
     if (this.u.dollyDelta.y > 0) {
-      this.dollyOut(this.getZoomScale())
+      this.dollyOut(this.getZoomScale());
     } else if (this.u.dollyDelta.y < 0) {
-      this.dollyIn(this.getZoomScale())
+      this.dollyIn(this.getZoomScale());
     }
 
-    this.u.dollyStart.copy(this.u.dollyEnd)
-    this.update()
+    this.u.dollyStart.copy(this.u.dollyEnd);
+    this.update();
   }
 
   /** @param {MouseEvent} event */
   handleMouseMovePan(event) {
-    this.u.panEnd.set(event.clientX, event.clientY)
-    this.u.panDelta.subVectors(this.u.panEnd, this.u.panStart).multiplyScalar(this.panSpeed)
-    this.pan(this.u.panDelta.x, this.u.panDelta.y)
-    this.u.panStart.copy(this.u.panEnd)
-    this.update()
+    this.u.panEnd.set(event.clientX, event.clientY);
+    this.u.panDelta.subVectors(this.u.panEnd, this.u.panStart).multiplyScalar(this.panSpeed);
+    this.pan(this.u.panDelta.x, this.u.panDelta.y);
+    this.u.panStart.copy(this.u.panEnd);
+    this.update();
   }
 
   /** @param {MouseEvent} event */
   handleMouseMoveRotate(event) {
-    this.u.rotateEnd.set(event.clientX, event.clientY)
-    this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed)
+    this.u.rotateEnd.set(event.clientX, event.clientY);
+    this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
 
-    const element = this.domElement
+    const element = this.domElement;
 
     if (element) {
-      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight) // yes, height
-      this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight)
+      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight); // yes, height
+      this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
-    this.u.rotateStart.copy(this.u.rotateEnd)
-    this.update()
+    this.u.rotateStart.copy(this.u.rotateEnd);
+    this.update();
   }
 
   /** @param {WheelEvent} event */
@@ -274,56 +273,56 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {PointerEvent} event */
   handleTouchMoveDolly(event) {
-    const position = this.getSecondPointerPosition(event)
-    const dx = event.pageX - position.x
-    const dy = event.pageY - position.y
-    const distance = Math.hypot(dx, dy)
+    const position = this.getSecondPointerPosition(event);
+    const dx = event.pageX - position.x;
+    const dy = event.pageY - position.y;
+    const distance = Math.hypot(dx, dy);
 
-    this.u.dollyEnd.set(0, distance)
-    this.u.dollyDelta.set(0, Math.pow(this.u.dollyEnd.y / this.u.dollyStart.y, this.zoomSpeed));
-    this.dollyOut(this.u.dollyDelta.y)
-    this.u.dollyStart.copy(this.u.dollyEnd)
+    this.u.dollyEnd.set(0, distance);
+    this.u.dollyDelta.set(0, (this.u.dollyEnd.y / this.u.dollyStart.y) ** this.zoomSpeed);
+    this.dollyOut(this.u.dollyDelta.y);
+    this.u.dollyStart.copy(this.u.dollyEnd);
   }
 
   /**
-   * @param {PointerEvent} event 
+   * @param {PointerEvent} event
    */
   handleTouchMoveDollyPan(event) {
-    if (this.enableZoom === true) this.handleTouchMoveDolly(event)
-    if (this.enablePan === true) this.handleTouchMovePan(event)
+    if (this.enableZoom === true) this.handleTouchMoveDolly(event);
+    if (this.enablePan === true) this.handleTouchMovePan(event);
   }
 
   /** @param {PointerEvent} event */
   handleTouchMoveDollyRotate(event) {
-    if (this.enableZoom === true) this.handleTouchMoveDolly(event)
-    if (this.enableRotate === true) this.handleTouchMoveRotate(event)
+    if (this.enableZoom === true) this.handleTouchMoveDolly(event);
+    if (this.enableRotate === true) this.handleTouchMoveRotate(event);
   }
 
   /** @param {PointerEvent} event */
   handleTouchMovePan(event) {
     if (this.pointers.length == 1) {
-      this.u.panEnd.set(event.pageX, event.pageY)
+      this.u.panEnd.set(event.pageX, event.pageY);
     } else {
-      const position = this.getSecondPointerPosition(event)
-      const x = 0.5 * (event.pageX + position.x)
-      const y = 0.5 * (event.pageY + position.y)
-      this.u.panEnd.set(x, y)
+      const position = this.getSecondPointerPosition(event);
+      const x = 0.5 * (event.pageX + position.x);
+      const y = 0.5 * (event.pageY + position.y);
+      this.u.panEnd.set(x, y);
     }
 
     this.u.panDelta.subVectors(this.u.panEnd, this.u.panStart).multiplyScalar(this.panSpeed);
-    this.pan(this.u.panDelta.x, this.u.panDelta.y)
-    this.u.panStart.copy(this.u.panEnd)
+    this.pan(this.u.panDelta.x, this.u.panDelta.y);
+    this.u.panStart.copy(this.u.panEnd);
   }
 
   /** @param {PointerEvent} event */
   handleTouchMoveRotate(event) {
     if (this.pointers.length == 1) {
-      this.u.rotateEnd.set(event.pageX, event.pageY)
+      this.u.rotateEnd.set(event.pageX, event.pageY);
     } else {
-      const position = this.getSecondPointerPosition(event)
-      const x = 0.5 * (event.pageX + position.x)
-      const y = 0.5 * (event.pageY + position.y)
-      this.u.rotateEnd.set(x, y)
+      const position = this.getSecondPointerPosition(event);
+      const x = 0.5 * (event.pageX + position.x);
+      const y = 0.5 * (event.pageY + position.y);
+      this.u.rotateEnd.set(x, y);
     }
 
     this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
@@ -331,8 +330,8 @@ export class CameraControls extends EventDispatcher {
     const element = this.domElement;
 
     if (element) {
-      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight) // yes, height
-      this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight)
+      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight); // yes, height
+      this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
   }
@@ -393,7 +392,11 @@ export class CameraControls extends EventDispatcher {
 
     if (newRadius !== null) {
       if (this.screenSpacePanning === true) {
-        this.target.set(0, 0, -1).transformDirection(this.object.matrix).multiplyScalar(newRadius).add(this.object.position);
+        this.target
+          .set(0, 0, -1)
+          .transformDirection(this.object.matrix)
+          .multiplyScalar(newRadius)
+          .add(this.object.position);
       } else {
         this.ray.origin.copy(this.object.position);
         this.ray.direction.set(0, 0, -1).transformDirection(this.object.matrix);
@@ -411,7 +414,7 @@ export class CameraControls extends EventDispatcher {
   onContextMenu = (event) => {
     if (this.enabled === false) return;
     event.preventDefault();
-  }
+  };
 
   /** @param {MouseEvent} event */
   onMouseDown = (event) => {
@@ -420,12 +423,19 @@ export class CameraControls extends EventDispatcher {
 
     let mouseAction;
     switch (event.button) {
-      case 0: mouseAction = THREE.MOUSE.PAN; break;
-      case 1: mouseAction = THREE.MOUSE.DOLLY; break;
-      case 2: mouseAction = THREE.MOUSE.ROTATE; break;
-      default: mouseAction = -1;
+      case 0:
+        mouseAction = THREE.MOUSE.PAN;
+        break;
+      case 1:
+        mouseAction = THREE.MOUSE.DOLLY;
+        break;
+      case 2:
+        mouseAction = THREE.MOUSE.ROTATE;
+        break;
+      default:
+        mouseAction = -1;
     }
-    
+
     switch (mouseAction) {
       case THREE.MOUSE.DOLLY:
         if (this.enableZoom === false) return;
@@ -443,17 +453,17 @@ export class CameraControls extends EventDispatcher {
           this.state = this.STATE.ROTATE;
         }
         break;
-        case THREE.MOUSE.PAN:
-          if (event.ctrlKey === true || event.metaKey === true || event.shiftKey === true) {
-            if (this.enableRotate === false) return;
-            this.handleMouseDownRotate(event);
-            this.state = this.STATE.ROTATE;
-          } else {
-            if (this.enablePan === false) return;
-            this.handleMouseDownPan(event);
-            this.state = this.STATE.PAN;
-          }
-          break;
+      case THREE.MOUSE.PAN:
+        if (event.ctrlKey === true || event.metaKey === true || event.shiftKey === true) {
+          if (this.enableRotate === false) return;
+          this.handleMouseDownRotate(event);
+          this.state = this.STATE.ROTATE;
+        } else {
+          if (this.enablePan === false) return;
+          this.handleMouseDownPan(event);
+          this.state = this.STATE.PAN;
+        }
+        break;
       default:
         this.state = this.STATE.NONE;
         break;
@@ -462,39 +472,36 @@ export class CameraControls extends EventDispatcher {
     if (this.state !== this.STATE.NONE) {
       this.dispatchEvent(startEvent);
     }
-  }
+  };
 
   /** @param {MouseEvent} event */
-  onMouseMove(event)  {
+  onMouseMove(event) {
     if (this.enabled === false) return;
 
     switch (this.state) {
       case this.STATE.ROTATE:
-        if (this.enableRotate === false) return
-        this.handleMouseMoveRotate(event)
-        break
+        if (this.enableRotate === false) return;
+        this.handleMouseMoveRotate(event);
+        break;
 
       case this.STATE.DOLLY:
-        if (this.enableZoom === false) return
-        this.handleMouseMoveDolly(event)
-        break
+        if (this.enableZoom === false) return;
+        this.handleMouseMoveDolly(event);
+        break;
 
       case this.STATE.PAN:
-        if (this.enablePan === false) return
-        this.handleMouseMovePan(event)
-        break
+        if (this.enablePan === false) return;
+        this.handleMouseMovePan(event);
+        break;
     }
   }
 
   /** @param {WheelEvent} event */
   onMouseWheel = (event) => {
     if (
-      this.enabled === false
-      || this.enableZoom === false
-      || !(
-        this.state === this.STATE.NONE
-        || this.state === this.STATE.TOUCH_DOLLY_PAN
-      )
+      this.enabled === false ||
+      this.enableZoom === false ||
+      !(this.state === this.STATE.NONE || this.state === this.STATE.TOUCH_DOLLY_PAN)
     ) {
       return;
     }
@@ -503,38 +510,38 @@ export class CameraControls extends EventDispatcher {
     this.dispatchEvent(startEvent);
     this.handleMouseWheel(event);
     this.dispatchEvent(endEvent);
-  }
+  };
 
   /** @param {PointerEvent} event */
   onPointerDown = (event) => {
     if (this.enabled === false) return;
-    
+
     if (this.pointers.length === 0) {
-      this.domElement?.ownerDocument.addEventListener('pointermove', this.onPointerMove)
-      this.domElement?.ownerDocument.addEventListener('pointerup', this.onPointerUp)
+      this.domElement?.ownerDocument.addEventListener("pointermove", this.onPointerMove);
+      this.domElement?.ownerDocument.addEventListener("pointerup", this.onPointerUp);
       this.pointerFirstDown.x = event.clientX;
       this.pointerFirstDown.y = event.clientY;
     }
 
     this.addPointer(event);
 
-    if (event.pointerType === 'touch') {
-      this.onTouchStart(event)
+    if (event.pointerType === "touch") {
+      this.onTouchStart(event);
     } else {
-      this.onMouseDown(event)
+      this.onMouseDown(event);
     }
-  }
+  };
 
   /** @param {PointerEvent} event */
   onPointerMove = (event) => {
     if (this.enabled === false) return;
 
-    if (event.pointerType === 'touch') {
-      this.onTouchMove(event)
+    if (event.pointerType === "touch") {
+      this.onTouchMove(event);
     } else {
       this.onMouseMove(event);
     }
-  }
+  };
 
   /** @param {PointerEvent} event */
   onPointerUp = (event) => {
@@ -546,57 +553,59 @@ export class CameraControls extends EventDispatcher {
 
     if (this.pointers.length === 0) {
       this.domElement.releasePointerCapture(event.pointerId);
-      this.domElement.ownerDocument.removeEventListener('pointermove', this.onPointerMove)
-      this.domElement.ownerDocument.removeEventListener('pointerup', this.onPointerUp)
+      this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
+      this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
       this.pointerLastUp.x = event.clientX;
       this.pointerLastUp.y = event.clientY;
-      this.lastPointerDistance = Math.hypot(this.pointerLastUp.x - this.pointerFirstDown.x, this.pointerLastUp.y - this.pointerFirstDown.y);
+      this.lastPointerDistance = Math.hypot(
+        this.pointerLastUp.x - this.pointerFirstDown.x,
+        this.pointerLastUp.y - this.pointerFirstDown.y,
+      );
     }
-    
+
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
-  }
+  };
 
   /** @param {PointerEvent} event */
   onTouchMove = (event) => {
-    this.trackPointer(event)
+    this.trackPointer(event);
 
     switch (this.state) {
       case this.STATE.TOUCH_ROTATE:
-        if (this.enableRotate === false) return
-        this.handleTouchMoveRotate(event)
-        this.update()
-        break
+        if (this.enableRotate === false) return;
+        this.handleTouchMoveRotate(event);
+        this.update();
+        break;
 
       case this.STATE.TOUCH_PAN:
-        if (this.enablePan === false) return
-        this.handleTouchMovePan(event)
-        this.update()
-        break
+        if (this.enablePan === false) return;
+        this.handleTouchMovePan(event);
+        this.update();
+        break;
 
       case this.STATE.TOUCH_DOLLY_PAN:
-        if (this.enableZoom === false && this.enablePan === false) return
-        this.handleTouchMoveDollyPan(event)
-        this.update()
-        break
+        if (this.enableZoom === false && this.enablePan === false) return;
+        this.handleTouchMoveDollyPan(event);
+        this.update();
+        break;
 
       case this.STATE.TOUCH_DOLLY_ROTATE:
-        if (this.enableZoom === false && this.enableRotate === false) return
-        this.handleTouchMoveDollyRotate(event)
-        this.update()
-        break
+        if (this.enableZoom === false && this.enableRotate === false) return;
+        this.handleTouchMoveDollyRotate(event);
+        this.update();
+        break;
 
       default:
         this.state = this.STATE.NONE;
     }
-  }
+  };
 
   /** @param {PointerEvent} event */
   onTouchStart = (event) => {
-    this.trackPointer(event)
+    this.trackPointer(event);
 
     if (this.pointers.length === 1) {
-
       switch (this.touches.ONE) {
         case TOUCH.ROTATE:
           if (this.enableRotate === false) return;
@@ -610,32 +619,28 @@ export class CameraControls extends EventDispatcher {
           break;
         default:
       }
-      
+
       this.dispatchEvent(startEvent);
-
     } else if (this.pointers.length === 2) {
-
       switch (this.touches.TWO) {
         case TOUCH.DOLLY_PAN:
           if (this.enableZoom === false && this.enablePan === true) return;
           this.handleTouchStartDollyPan();
           this.state = this.STATE.TOUCH_DOLLY_PAN;
-        break;
+          break;
         case TOUCH.DOLLY_ROTATE:
           if (this.enableZoom === false && this.enableRotate === false) return;
           this.handleTouchStartDollyRotate();
           this.state = this.STATE.TOUCH_DOLLY_ROTATE;
           break;
         default:
-
       }
 
       this.dispatchEvent(startEvent);
-
     } else {
       this.state = this.STATE.NONE;
     }
-  }
+  };
 
   /**
    * @param {number} deltaX pointer delta x
@@ -650,7 +655,7 @@ export class CameraControls extends EventDispatcher {
     }
 
     const position = this.object.position;
-    offset.copy(position).sub(this.target)
+    offset.copy(position).sub(this.target);
     let targetDistance = offset.length();
 
     // half of the fov is center to top of screen
@@ -662,39 +667,39 @@ export class CameraControls extends EventDispatcher {
   }
 
   /**
-   * @param {number} distance 
-   * @param {THREE.Matrix4} objectMatrix 
+   * @param {number} distance
+   * @param {THREE.Matrix4} objectMatrix
    */
   panLeft(distance, objectMatrix) {
     const v = tempVector3Two;
-    v.setFromMatrixColumn(objectMatrix, 0) // get X column of objectMatrix
-    v.multiplyScalar(-distance)
+    v.setFromMatrixColumn(objectMatrix, 0); // get X column of objectMatrix
+    v.multiplyScalar(-distance);
 
-    this.u.panOffset.add(v)
+    this.u.panOffset.add(v);
   }
 
   /**
-   * @param {number} distance 
-   * @param {THREE.Matrix4} objectMatrix 
+   * @param {number} distance
+   * @param {THREE.Matrix4} objectMatrix
    */
   panUp(distance, objectMatrix) {
     const v = tempVector3Two;
     if (this.screenSpacePanning === true) {
-      v.setFromMatrixColumn(objectMatrix, 1)
+      v.setFromMatrixColumn(objectMatrix, 1);
     } else {
-      v.setFromMatrixColumn(objectMatrix, 0)
-      v.crossVectors(this.object.up, v)
+      v.setFromMatrixColumn(objectMatrix, 0);
+      v.crossVectors(this.object.up, v);
     }
 
-    v.multiplyScalar(distance)
+    v.multiplyScalar(distance);
 
-    this.u.panOffset.add(v)
+    this.u.panOffset.add(v);
   }
 
   /** @param {PointerEvent} event */
   removePointer(event) {
     delete this.pointerPositions[event.pointerId];
-    const index = this.pointers.findIndex(p => p.pointerId === event.pointerId);
+    const index = this.pointers.findIndex((p) => p.pointerId === event.pointerId);
     if (index >= 0) {
       this.pointers.splice(index, 1);
     }
@@ -707,7 +712,7 @@ export class CameraControls extends EventDispatcher {
     this.object.updateProjectionMatrix();
 
     this.dispatchEvent(changeEvent);
-    
+
     this.update();
 
     this.state = this.STATE.NONE;
@@ -726,7 +731,7 @@ export class CameraControls extends EventDispatcher {
   }
 
   /**
-   * @param {number} angle 
+   * @param {number} angle
    * @returns {void}
    */
   rotateUp(angle) {
@@ -741,7 +746,7 @@ export class CameraControls extends EventDispatcher {
   setParams(params) {
     Object.assign(this.params, params);
   }
-  
+
   saveState() {
     this.target0.copy(this.target);
     this.position0.copy(this.object.position);
@@ -762,14 +767,14 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {PointerEvent} event */
   trackPointer(event) {
-    let position = this.pointerPositions[event.pointerId]
+    let position = this.pointerPositions[event.pointerId];
 
     if (position === undefined) {
       position = new THREE.Vector2();
-      this.pointerPositions[event.pointerId] = position
+      this.pointerPositions[event.pointerId] = position;
     }
 
-    position.set(event.pageX, event.pageY)
+    position.set(event.pageX, event.pageY);
   }
 
   update() {
@@ -781,7 +786,7 @@ export class CameraControls extends EventDispatcher {
     const fixedPolar = this.params.fixedPolar === true ? this.getPolarAngle() : null;
 
     u.offset.copy(position).sub(this.target);
-    
+
     // (x, y, z) -> { r, theta, phi }
     this.spherical.setFromVector3(u.offset);
 
@@ -801,7 +806,10 @@ export class CameraControls extends EventDispatcher {
       if (min <= max) {
         this.spherical.theta = Math.max(min, Math.min(max, this.spherical.theta));
       } else {
-        this.spherical.theta = this.spherical.theta > (min + max) / 2 ? Math.max(min, this.spherical.theta) : Math.min(max, this.spherical.theta);
+        this.spherical.theta =
+          this.spherical.theta > (min + max) / 2
+            ? Math.max(min, this.spherical.theta)
+            : Math.min(max, this.spherical.theta);
       }
     }
 
@@ -837,8 +845,8 @@ export class CameraControls extends EventDispatcher {
     this.u.zoomingToCursor = false;
 
     if (
-      this.u.lastPosition.distanceToSquared(this.object.position) > this.EPS
-      || 8 * (1 - this.u.lastQuaternion.dot(this.object.quaternion)) > this.EPS
+      this.u.lastPosition.distanceToSquared(this.object.position) > this.EPS ||
+      8 * (1 - this.u.lastQuaternion.dot(this.object.quaternion)) > this.EPS
     ) {
       this.dispatchEvent(changeEvent);
       this.u.lastPosition.copy(this.object.position);
@@ -867,14 +875,13 @@ export class CameraControls extends EventDispatcher {
       .set(this.u.mouse.x, this.u.mouse.y, 1)
       .unproject(this.object) // 🚧
       .sub(this.object.position)
-      .normalize()
-    ;
+      .normalize();
   }
 }
 
-const startEvent = /** @type {const} */ ({ type: 'start' });
-const endEvent = /** @type {const} */ ({ type: 'end' });
-const changeEvent = /** @type {const} */ ({ type: 'change' });
+const startEvent = /** @type {const} */ ({ type: "start" });
+const endEvent = /** @type {const} */ ({ type: "end" });
+const changeEvent = /** @type {const} */ ({ type: "change" });
 
 const defaultDampingFactor = 0.05;
 
