@@ -23,24 +23,22 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
         "flex gap-1 p-1 rounded text-on-background bg-background/80 border border-on-background/10  *:p-0.5-1 *:py-1",
       )}
     >
-      <button
-        type="button"
-        data-item-id={meta.id}
-        className={cn(uiClassName, "cursor-pointer")}
-        onClick={() => {
-          // toggle item disabled and sync sub-uis
-          uiStoreApi.setUiMeta(meta.id, (draft) => (draft.disabled = !draft.disabled));
-          uiStoreApi.getSubUis(meta.id)?.forEach(({ meta: subMeta }) => {
-            uiStoreApi.setUiMeta(subMeta.id, (draft) => (draft.disabled = !draft.disabled));
-          });
-        }}
-      >
-        <PlayCircleIcon
-          data-icon-type="play"
-          weight="duotone"
-          className={cn("size-5", meta.disabled ? "text-gray-500" : "text-green-700")}
-        />
-      </button>
+      {!Array.isArray((meta as any).items) && (
+        <button
+          type="button"
+          data-item-id={meta.id}
+          className={cn(uiClassName, "cursor-pointer")}
+          onClick={() => {
+            uiStoreApi.setUiMeta(meta.id, (draft) => (draft.disabled = !draft.disabled));
+          }}
+        >
+          <PlayCircleIcon
+            data-icon-type="play"
+            weight="duotone"
+            className={cn("size-5", meta.disabled ? "text-gray-500" : "text-green-700")}
+          />
+        </button>
+      )}
 
       <button type="button" data-item-id={meta.id} className={cn(allowReactGridDragClassName, "cursor-move")}>
         <LayoutIcon data-icon-type="layout" weight="duotone" className="size-5" />
