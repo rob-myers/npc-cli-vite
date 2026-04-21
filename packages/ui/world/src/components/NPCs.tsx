@@ -130,15 +130,15 @@ export default function NPCs() {
           npc.mixer.update(delta);
 
           if (npc.agentId === null) continue;
-          const agent = state.crowd.agents[npc.agentId];
-          if (!agent) continue;
-          const vx = agent.velocity[0];
-          const vz = agent.velocity[2];
-          const speed = Math.sqrt(vx * vx + vz * vz);
 
+          const agent = state.crowd.agents[npc.agentId];
           npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
 
+          const [vx, , vz] = agent.velocity;
+          const speed = Math.sqrt(vx * vx + vz * vz);
+
           if (speed > 0.05) {
+            // 🚧 clean
             const target = Math.atan2(vx, vz) + Math.PI;
             let diff = target - npc.skinnedMesh.rotation.y;
             diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
@@ -152,12 +152,10 @@ export default function NPCs() {
 
           if (npc.moving && (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) || stuck)) {
             npc.startIdle();
-            const result = state.getClosestPoly([
-              npc.position.x + agent.velocity[0] * delta * 10,
-              npc.position.y,
-              npc.position.z + agent.velocity[2] * delta * 10,
-            ]);
-            crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, result.position);
+            state.pinTo(npc, {
+              x: npc.position.x + agent.velocity[0] * delta * 10,
+              y: npc.position.z + agent.velocity[2] * delta * 10,
+            });
           }
         }
       },
