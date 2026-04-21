@@ -41,8 +41,9 @@ export async function generateTiledNavMeshResult(
   const { meshes } = await computeGmInstanceMeshes(gmGeoms);
 
   if (meshes.length === 0) {
-    warn("🤖 nav.worker: map has no meshes, adding dummy 10x10 plane");
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial());
+    const dummyPlaneDim = 0.1;
+    warn(`🤖 nav.worker: map has no meshes, adding dummy ${dummyPlaneDim}x${dummyPlaneDim} plane`);
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(dummyPlaneDim, dummyPlaneDim), new THREE.MeshBasicMaterial());
     plane.rotation.x = -Math.PI / 2;
     meshes.push(plane);
   }

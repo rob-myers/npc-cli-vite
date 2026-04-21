@@ -22,6 +22,7 @@ import {
 } from "../const";
 import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
+import { emptyTiledNavmeshResponse } from "../service/empty-nav-response";
 import { createLayoutInstance } from "../service/geomorph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
@@ -80,7 +81,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
-      nav: null,
+      nav: emptyTiledNavmeshResponse,
       navPending: true,
 
       assets: null as any,
@@ -136,7 +137,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
       isReady(_connectionKey) {
-        return !!state.assets && !!state.nav;
+        return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
       },
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
@@ -303,7 +304,7 @@ export type State = {
   npc: UseStateRef<import("./NPCs").State>;
 
   worker: UseStateRef<import("./WorldWorker").State>;
-  nav: null | Pretty<Omit<WW.TiledNavMeshResponse, "type">>;
+  nav: WW.TiledNavMeshResponse;
   navPending: boolean;
   rootEl: HTMLDivElement;
 
