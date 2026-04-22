@@ -1,4 +1,3 @@
-import { themeApi } from "@npc-cli/theme";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { BasicPopover, cn } from "@npc-cli/util";
@@ -10,18 +9,6 @@ export default function Global() {
   return (
     <div className="flex flex-col items-center h-full overflow-auto gap-4">
       <div className="p-4 flex flex-wrap items-center h-full gap-2 *:px-2">
-        <button
-          type="button"
-          className={cn(
-            uiClassName,
-            "cursor-pointer",
-            "overflow-auto border rounded",
-            "flex justify-center items-center bg-button-background",
-          )}
-          onPointerDown={themeApi.setOther}
-        >
-          {themeApi.getOther()}
-        </button>
         <BasicPopover
           triggerClassName={cn(
             uiClassName,
