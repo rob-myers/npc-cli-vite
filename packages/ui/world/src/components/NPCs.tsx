@@ -135,21 +135,14 @@ export default function NPCs() {
           npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
 
           const [vx, , vz] = agent.velocity;
-          const speed = Math.sqrt(vx * vx + vz * vz);
+          const speed = Math.hypot(vx, vz);
 
           if (speed > 0.05) {
-            // 🚧 clean
-            const target = Math.atan2(vx, vz) + Math.PI;
-            let diff = target - npc.skinnedMesh.rotation.y;
-            diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
-            if (diff < -Math.PI) diff += Math.PI * 2;
-            const t = 1 - Math.exp(-5 * delta);
-            npc.skinnedMesh.rotation.y += diff * t;
+            npc.smoothRotateToward(vx, vz, delta);
           }
           npc.syncAnimation(Math.max(speed, 0.5));
 
           const stuck = npc.updateStuck(delta);
-          // const stuck = false;
 
           if (npc.moving && (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) || stuck)) {
             npc.startIdle();
