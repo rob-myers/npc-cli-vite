@@ -72,7 +72,6 @@ export class Npc {
 
   updateStuck(delta: number): boolean {
     // delay stuck a bit
-    // if (Math.hypot(this.position.x - this.lastPinPos.x, this.position.z - this.lastPinPos.y) < 0.1) {
     if (this.w.timer.getElapsedTime() - this.lastPinTime < 2.5) {
       return false;
     }
@@ -83,6 +82,14 @@ export class Npc {
     this.stuckAccum += dist < 0.0065 ? delta : 0;
     this.lastPos = { x: this.position.x, y: this.position.z };
     return this.stuckAccum > 0.4;
+  }
+
+  smoothRotateToward(vx: number, vz: number, delta: number) {
+    const target = Math.atan2(vx, vz) + Math.PI;
+    let diff = target - this.skinnedMesh.rotation.y;
+    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+    if (diff < -Math.PI) diff += Math.PI * 2;
+    this.skinnedMesh.rotation.y += diff * (1 - Math.exp(-5 * delta));
   }
 
   syncAnimation(speed: number) {
