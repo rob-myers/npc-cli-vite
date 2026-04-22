@@ -21,7 +21,6 @@ import {
   mergeWithGroups,
   parseGroundPoint,
 } from "../service/geometry";
-import { emptyFailedResult } from "../service/nav";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
@@ -84,7 +83,7 @@ export default function NPCs() {
               groudPointToTuple(parseGroundPoint(npc.position)),
               getAgentParams(),
             );
-            state.pinTo(npc, npc.position);
+            npc.pinTo(npc.position);
           }
 
           drawLabelLayer(state.labelTexArray, npc.labelLayerIndex, npc.key);
@@ -118,7 +117,8 @@ export default function NPCs() {
         if (result.success) {
           crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(groundPoint));
           npc.startWalking();
-          // state.crowd.agents[npc.agentId].separationWeight = 0.5;
+          const agent = state.crowd.agents[npc.agentId];
+          agent.separationWeight = walkSeparationWeight;
         } else {
           throw Error("move failed");
         }
@@ -149,22 +149,19 @@ export default function NPCs() {
           npc.syncAnimation(Math.max(speed, 0.5));
 
           const stuck = npc.updateStuck(delta);
+          // const stuck = false;
 
           if (npc.moving && (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) || stuck)) {
             npc.startIdle();
-            state.pinTo(npc, {
+            agent.separationWeight = idleSeparationWeight;
+            npc.pinTo({
               x: npc.position.x + agent.velocity[0] * delta * 10,
               y: npc.position.z + agent.velocity[2] * delta * 10,
             });
           }
         }
       },
-      pinTo(npc, at) {
-        if (npc.agentId === null) return emptyFailedResult;
-        const result = state.getClosestPoly(at);
-        result.success && crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, result.position);
-        return result;
-      },
+
       remove(...npcKeys) {
         for (const npcKey of npcKeys) {
           const npc = state.npc[npcKey];
@@ -184,7 +181,7 @@ export default function NPCs() {
       },
       respawn(npc, at) {
         const target = parseGroundPoint(at);
-        const result = state.pinTo(npc, target);
+        const result = npc.pinTo(target);
 
         // teleport
         if (npc.agentId !== null && result.success) {
@@ -199,9 +196,6 @@ export default function NPCs() {
         w.view.forceUpdate();
       },
       async spawn({ npcKey, at }) {
-        if (!state.gltf) {
-          throw Error("GLTF not loaded yet");
-        }
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`npcKey must match: ${npcKeyPattern}`);
         }
@@ -216,7 +210,7 @@ export default function NPCs() {
           return;
         }
 
-        const clone = SkeletonUtils.clone(state.gltf.scene);
+        const clone = SkeletonUtils.clone(state.gltf!.scene);
         const graph = buildGraph(clone);
         const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
         const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
@@ -245,7 +239,7 @@ export default function NPCs() {
         });
 
         npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
-        state.pinTo(npc, npc.position);
+        npc.pinTo(npc.position);
 
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
@@ -319,7 +313,6 @@ export type State = {
   getClosestPoly(targetPos: JshCli.PointAnyFormat): FindNearestPolyResult;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
-  pinTo(npc: Npc, at: JshCli.PointAnyFormat): FindNearestPolyResult;
   remove(...npcKeys: string[]): void;
   respawn(npc: Npc, at: JshCli.PointAnyFormat): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
@@ -327,9 +320,9 @@ export type State = {
 
 function getAgentParams(): crowd.AgentParams {
   return {
-    radius: 0.25,
+    radius: 0.2,
     height: 1.2,
-    maxAcceleration: 5.0,
+    maxAcceleration: 8.0,
     maxSpeed: 1.5,
     collisionQueryRange: 0.75,
     separationWeight: 0.5,
@@ -342,3 +335,6 @@ function getAgentParams(): crowd.AgentParams {
     queryFilter: ANY_QUERY_FILTER,
   };
 }
+
+const idleSeparationWeight = 0.5;
+const walkSeparationWeight = 0.25;

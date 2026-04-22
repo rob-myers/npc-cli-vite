@@ -53,8 +53,10 @@ w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
 - ✅ can `w npc.move "{ npcKey: 'rob', to: $( pick 1 ) }"`
   - no walk/run animation yet
 
-- 🚧 tweak walking until its clean
+- ✅ tweak walking until its cleaner
   - ✅ unify pinning as `w.npc.pinTo`
+  - ✅ different idle/walk separation weight
+  - ✅ walk loop shell script
 ```sh
 # keep walking without throwing
 spawn npc:rob at:$( pick 1 )
@@ -62,6 +64,7 @@ while true; do
   move --force npc:rob to:$( pick 1 )
 done
 ```
+  - ✅ basic stuck detection
 
 - ✅ can ignore throw inside while somehow
   - decided against `foo || true` because `foo` might write to stderr

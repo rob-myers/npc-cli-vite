@@ -1,14 +1,17 @@
 import type { UseStateRef } from "@npc-cli/util";
 import type { buildGraph } from "@react-three/fiber";
+import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
+import { parseGroundPoint } from "../service/geometry";
+import { emptyFailedResult } from "../service/nav";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
 export class Npc {
   key!: string;
   pickId!: number;
+
   labelLayerIndex!: number;
-  position!: THREE.Vector3;
   group: THREE.Group | null = null;
   material!: THREE.MeshStandardNodeMaterial;
   labelMaterial!: THREE.MeshBasicNodeMaterial;
@@ -16,11 +19,15 @@ export class Npc {
   skinnedMesh!: THREE.SkinnedMesh;
   graph!: ReturnType<typeof buildGraph>;
   geometry!: THREE.BufferGeometry;
+
+  position!: THREE.Vector3;
+
   agentId: string | null = null;
   epoch = 0;
   moving = false;
   stuckAccum = 0;
-  lastPos = { x: 0, z: 0 };
+  lastPinPos = { x: 0, y: 0 };
+  lastPos = { x: 0, y: 0 };
   spawns = 0;
   resolve?: () => void;
 
@@ -31,12 +38,20 @@ export class Npc {
     Object.assign(this, init);
   }
 
+  pinTo(at: JshCli.PointAnyFormat) {
+    if (this.agentId === null) return emptyFailedResult;
+    this.lastPinPos = parseGroundPoint(at);
+    const result = this.w.npc.getClosestPoly(at);
+    result.success && crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
+    return result;
+  }
+
   startWalking() {
     const { walk, idle } = this.w.npc.clips;
     if (!walk) return;
     this.moving = true;
     this.stuckAccum = 0;
-    this.lastPos = { x: this.position.x, z: this.position.z };
+    this.lastPos = { x: this.position.x, y: this.position.z };
     const idleAction = idle ? this.mixer.clipAction(idle) : null;
     const walkAction = this.mixer.clipAction(walk);
     idleAction?.fadeOut(0.3);
@@ -54,16 +69,12 @@ export class Npc {
   }
 
   updateStuck(delta: number): boolean {
-    const dx = this.position.x - this.lastPos.x;
-    const dz = this.position.z - this.lastPos.z;
-    const dist = Math.sqrt(dx * dx + dz * dz);
     // 🚧 delay stuck a bit
-    if (dist < 0.0065) {
-      this.stuckAccum += delta;
-    } else {
-      this.stuckAccum = 0;
-    }
-    this.lastPos = { x: this.position.x, z: this.position.z };
+    const dx = this.position.x - this.lastPos.x;
+    const dz = this.position.z - this.lastPos.y;
+    const dist = Math.hypot(dx, dz);
+    this.stuckAccum += dist < 0.0065 ? delta : 0;
+    this.lastPos = { x: this.position.x, y: this.position.z };
     return this.stuckAccum > 0.4;
   }
 
