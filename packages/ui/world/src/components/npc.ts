@@ -26,6 +26,7 @@ export class Npc {
   epoch = 0;
   moving = false;
   stuckAccum = 0;
+  lastPinTime = 0;
   lastPinPos = { x: 0, y: 0 };
   lastPos = { x: 0, y: 0 };
   spawns = 0;
@@ -41,6 +42,7 @@ export class Npc {
   pinTo(at: JshCli.PointAnyFormat) {
     if (this.agentId === null) return emptyFailedResult;
     this.lastPinPos = parseGroundPoint(at);
+    this.lastPinTime = this.w.timer.getElapsedTime();
     const result = this.w.npc.getClosestPoly(at);
     result.success && crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
     return result;
@@ -69,7 +71,12 @@ export class Npc {
   }
 
   updateStuck(delta: number): boolean {
-    // 🚧 delay stuck a bit
+    // delay stuck a bit
+    // if (Math.hypot(this.position.x - this.lastPinPos.x, this.position.z - this.lastPinPos.y) < 0.1) {
+    if (this.w.timer.getElapsedTime() - this.lastPinTime < 2.5) {
+      return false;
+    }
+
     const dx = this.position.x - this.lastPos.x;
     const dz = this.position.z - this.lastPos.y;
     const dist = Math.hypot(dx, dz);

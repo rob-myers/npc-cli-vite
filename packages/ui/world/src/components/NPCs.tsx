@@ -325,13 +325,13 @@ function getAgentParams(): crowd.AgentParams {
     maxAcceleration: 8.0,
     maxSpeed: 1.5,
     collisionQueryRange: 0.75,
-    separationWeight: 0.5,
+    separationWeight: idleSeparationWeight,
     updateFlags:
       crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
       crowdApi.CrowdUpdateFlags.SEPARATION |
-      crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
-      crowdApi.CrowdUpdateFlags.OPTIMIZE_TOPO |
-      crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS,
+      crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE,
+    // crowdApi.CrowdUpdateFlags.OPTIMIZE_TOPO |
+    // crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS,
     queryFilter: ANY_QUERY_FILTER,
   };
 }
