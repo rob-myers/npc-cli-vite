@@ -24,10 +24,10 @@ export class Npc {
 
   agentId: string | null = null;
   epoch = 0;
+  lookAt: JshCli.GroundPoint | null = null;
   moving = false;
   stuckAccum = 0;
   lastPinTime = 0;
-  lastPinPos = { x: 0, y: 0 };
   lastPos = { x: 0, y: 0 };
   spawns = 0;
   resolve?: () => void;
@@ -39,19 +39,29 @@ export class Npc {
     Object.assign(this, init);
   }
 
-  pinTo(at: JshCli.PointAnyFormat) {
+  pinTo(at: JshCli.PointAnyFormat, lookAt?: JshCli.PointAnyFormat) {
     if (this.agentId === null) return emptyFailedResult;
-    this.lastPinPos = parseGroundPoint(at);
     this.lastPinTime = this.w.timer.getElapsedTime();
+    this.lookAt = lookAt ? parseGroundPoint(lookAt) : null;
     const result = this.w.npc.getClosestPoly(at);
     result.success && crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
     return result;
+  }
+
+  updateLookAt(delta: number) {
+    if (this.lookAt === null) return;
+    const dx = this.lookAt.x - this.position.x;
+    const dz = this.lookAt.y - this.position.z;
+    if (dx * dx + dz * dz > 0.001) {
+      this.smoothRotateToward(dx, dz, delta);
+    }
   }
 
   startWalking() {
     const { walk, idle } = this.w.npc.clips;
     if (!walk) return;
     this.moving = true;
+    this.lookAt = null;
     this.stuckAccum = 0;
     this.lastPos = { x: this.position.x, y: this.position.z };
     const idleAction = idle ? this.mixer.clipAction(idle) : null;
