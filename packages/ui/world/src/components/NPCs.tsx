@@ -134,22 +134,26 @@ export default function NPCs() {
           const agent = state.crowd.agents[npc.agentId];
           npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
 
+          if (npc.moving === false) {
+            npc.updateLookAt(delta);
+            continue;
+          }
+
           const [vx, , vz] = agent.velocity;
           const speed = Math.hypot(vx, vz);
+          npc.syncAnimation(Math.max(speed, 0.5));
 
           if (speed > 0.05) {
             npc.smoothRotateToward(vx, vz, delta);
           }
-          npc.syncAnimation(Math.max(speed, 0.5));
 
           const stuck = npc.updateStuck(delta);
-
-          if (npc.moving && (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) || stuck)) {
+          if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
             npc.startIdle();
             agent.separationWeight = idleSeparationWeight;
-            npc.pinTo({
-              x: npc.position.x + agent.velocity[0] * delta * 10,
-              y: npc.position.z + agent.velocity[2] * delta * 10,
+            npc.pinTo(npc.position, {
+              x: npc.position.x + vx,
+              y: npc.position.z + vz,
             });
           }
         }
