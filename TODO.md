@@ -21,16 +21,6 @@ w npc.remove rob && w update
 expr '{ npcKey: "rob", point: [0, 0, 0] }' | w npc.spawn -
 ```
 
-- change ui `Global` to `Layout`
-  - remove theme toggle
-  - can set one tab layout
-  - can set two tab layout (vert or horizontal)
-  - reset has layout, tty, world
-  - responsive?
-  - ❌ option to flatten layout (no Tabs)
-  - layout schema and layouts.json
-    - can CRUD in DEV
-
 - ✅ fix disappearing WorldMenu on resize Tabs whilst other tab open
 - ✅ can pick npcs
 - ✅ npc has label quad
@@ -70,10 +60,19 @@ done
   - decided against `foo || true` because `foo` might write to stderr
   - ✅ support e.g. `move --force npc:rob to:$( pick 1 )`
 
+- ✅ import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
+- 🚧 change ui `Global` to `Layout`
+  - ✅ remove theme toggle
+  - can set one tab layout
+  - can set two tab layout (vert or horizontal)
+  - reset has layout, tty, world
+  - responsive?
+  - ❌ option to flatten layout (no Tabs)
+  - layout schema and layouts.json
+    - can CRUD in DEV
+
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
-
-- ✅ import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - 🚧 check glsl fallback e.g. incognito or force
   - Walls and Doors don't draw i.e. too many
 - object-pick sometimes out of sync since upgrade three.js `0.183.2`
