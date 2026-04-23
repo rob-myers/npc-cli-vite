@@ -12,6 +12,9 @@ import type { WithImmer } from "./with-immer-type.d.ts";
 
 export const uiStoreApi = {
   addUis({ metas, overwrite = true }: { metas: UiInstanceMeta[]; overwrite?: boolean }): void {
+    // safety: on ui key rename/remove ignore persisted
+    metas = metas.filter((meta) => meta.uiKey in uiRegistry);
+
     uiStore.setState((draft) => {
       for (const meta of metas) {
         // initial parse ensures e.g. Tabs `items` array
@@ -157,6 +160,6 @@ function getDefaultLayout(): UiGridLayout {
 }
 
 function getDefaultUiMeta(): UiInstanceMeta {
-  const globalUiId = `ui-${crypto.randomUUID()}`;
-  return { id: globalUiId, title: "global-0", uiKey: "Global" };
+  const layoutUiId = `ui-${crypto.randomUUID()}`;
+  return { id: layoutUiId, title: "layout-0", uiKey: "Layout" };
 }

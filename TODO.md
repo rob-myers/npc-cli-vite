@@ -63,7 +63,8 @@ done
 - ✅ import `crowd` from `navcat/blocks` and `crowd.update(agents, navMesh, clampedDeltaTime)`
 - 🚧 change ui `Global` to `Layout`
   - ✅ remove theme toggle
-  - can set one tab layout
+  - ✅ rename `ui/global` -> `ui/layout` etc.
+  - 🚧 can set one tab layout
   - can set two tab layout (vert or horizontal)
   - reset has layout, tty, world
   - responsive?

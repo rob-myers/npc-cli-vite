@@ -1,5 +1,5 @@
 {
-  "name": "@npc-cli/ui__global",
+  "name": "@npc-cli/ui__layout",
   "private": true,
   "type": "module",
   "exports": {
