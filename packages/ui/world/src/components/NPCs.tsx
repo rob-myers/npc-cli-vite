@@ -59,31 +59,31 @@ export default function NPCs() {
       devHotReload() {
         if (!state.texture) return;
 
-        for (const [key, old] of Object.entries(state.npc)) {
-          old.material.dispose();
-          old.labelMaterial.dispose();
+        for (const [key, oldNpc] of Object.entries(state.npc)) {
+          oldNpc.material.dispose();
+          oldNpc.labelMaterial.dispose();
 
           const npc = new Npc(w, {
-            key: old.key,
-            pickId: old.pickId,
-            labelLayerIndex: old.labelLayerIndex,
-            position: old.position,
-            material: state.createNpcMaterial(old.pickId),
-            labelMaterial: createLabelMaterial(state.labelTexArray, old.labelLayerIndex),
-            skinnedMesh: old.skinnedMesh,
-            graph: old.graph,
-            geometry: old.geometry,
+            key: oldNpc.key,
+            pickId: oldNpc.pickId,
+            labelLayerIndex: oldNpc.labelLayerIndex,
+            position: oldNpc.position,
+            material: state.createNpcMaterial(oldNpc.pickId),
+            labelMaterial: createLabelMaterial(state.labelTexArray, oldNpc.labelLayerIndex),
+            skinnedMesh: oldNpc.skinnedMesh,
+            graph: oldNpc.graph,
+            geometry: oldNpc.geometry,
           });
 
-          if (old.agentId !== null) {
-            crowdApi.removeAgent(state.crowd, old.agentId);
+          if (oldNpc.agentId !== null) {
+            crowdApi.removeAgent(state.crowd, oldNpc.agentId);
             npc.agentId = crowdApi.addAgent(
               state.crowd,
               w.nav.navMesh,
               groudPointToTuple(parseGroundPoint(npc.position)),
               getAgentParams(),
             );
-            npc.pinTo(npc.position);
+            npc.pinTo(state.getClosestPoly(npc.position));
           }
 
           drawLabelLayer(state.labelTexArray, npc.labelLayerIndex, npc.key);
@@ -148,17 +148,19 @@ export default function NPCs() {
           }
 
           const stuck = npc.updateStuck(delta);
+
+          // 🚧 npc.setIdle()
           if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
             npc.startIdle();
             agent.separationWeight = idleSeparationWeight;
-            npc.pinTo(npc.position, {
+            npc.pinTo(state.getClosestPoly(npc.position));
+            npc.lookAt = parseGroundPoint({
               x: npc.position.x + vx,
               y: npc.position.z + vz,
             });
           }
         }
       },
-
       remove(...npcKeys) {
         for (const npcKey of npcKeys) {
           const npc = state.npc[npcKey];
@@ -178,7 +180,7 @@ export default function NPCs() {
       },
       respawn(npc, at) {
         const groundPoint = parseGroundPoint(at);
-        const result = npc.pinTo(groundPoint);
+        const result = state.getClosestPoly(groundPoint);
 
         // npc has agent iff near navmesh
         if (result.success && npc.agentId === null) {
@@ -187,6 +189,8 @@ export default function NPCs() {
           crowdApi.removeAgent(state.crowd, npc.agentId);
           npc.agentId = null;
         }
+
+        npc.pinTo(result); // needs agentId
 
         // teleport
         if (npc.agentId !== null) {
@@ -243,11 +247,10 @@ export default function NPCs() {
           geometry,
         });
 
-        // 🚧 simplify pinTo
         const result = state.getClosestPoly(at);
         if (result.success === true) {
           npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
-          npc.pinTo(npc.position);
+          npc.pinTo(result);
         }
 
         state.npc[npcKey] = npc;
