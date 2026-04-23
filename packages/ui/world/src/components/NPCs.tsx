@@ -177,16 +177,24 @@ export default function NPCs() {
         state.update();
       },
       respawn(npc, at) {
-        const target = parseGroundPoint(at);
-        const result = npc.pinTo(target);
+        const groundPoint = parseGroundPoint(at);
+        const result = npc.pinTo(groundPoint);
+
+        // npc has agent iff near navmesh
+        if (result.success && npc.agentId === null) {
+          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
+        } else if (result.success === false && npc.agentId !== null) {
+          crowdApi.removeAgent(state.crowd, npc.agentId);
+          npc.agentId = null;
+        }
 
         // teleport
-        if (npc.agentId !== null && result.success) {
+        if (npc.agentId !== null) {
           const agent = state.crowd.agents[npc.agentId];
-          agent.position[0] = target.x;
-          agent.position[2] = target.y;
+          agent.position[0] = groundPoint.x;
+          agent.position[2] = groundPoint.y;
         } else {
-          npc.position.copy(groundPointToVector3(target));
+          npc.position.copy(groundPointToVector3(groundPoint));
         }
 
         npc.spawns++;
