@@ -3,7 +3,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { BasicPopover, cn } from "@npc-cli/util";
 import { useContext } from "react";
 
-export default function Global() {
+export default function Layout() {
   const { uiStoreApi } = useContext(UiContext);
 
   return (

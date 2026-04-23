@@ -32,7 +32,7 @@
       "path": "./packages/ui/blog"
     },
     {
-      "path": "./packages/ui/global"
+      "path": "./packages/ui/layout"
     },
     {
       "path": "./packages/ui/jsh"
