@@ -97,8 +97,8 @@ export default function NPCs() {
           createFindNearestPolyResult(),
           w.nav.navMesh,
           groudPointToTuple(parseGroundPoint(targetPos)),
-          [0.1, 0.1, 0.1],
-          ANY_QUERY_FILTER,
+          [closePolygonDistance, 0.05, closePolygonDistance],
+          ANY_QUERY_FILTER, // permits doorways
         );
       },
       move({ npcKey, to }) {
@@ -208,12 +208,12 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
-        const groundPoint = parseGroundPoint(at);
-
         if (npcKey in state.npc) {
           state.respawn(state.npc[npcKey], at);
           return;
         }
+
+        const groundPoint = parseGroundPoint(at);
 
         const clone = SkeletonUtils.clone(state.gltf!.scene);
         const graph = buildGraph(clone);
@@ -243,8 +243,12 @@ export default function NPCs() {
           geometry,
         });
 
-        npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
-        npc.pinTo(npc.position);
+        // 🚧 simplify pinTo
+        const result = state.getClosestPoly(at);
+        if (result.success === true) {
+          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
+          npc.pinTo(npc.position);
+        }
 
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
@@ -343,3 +347,5 @@ function getAgentParams(): crowd.AgentParams {
 
 const idleSeparationWeight = 0.5;
 const walkSeparationWeight = 0.25;
+
+const closePolygonDistance = 0.05;
