@@ -20,7 +20,8 @@ const config = {
   tileSizeVoxels: 15,
 
   cellHeight: 0.001,
-  walkableRadiusWorld: 0.1,
+  // walkableRadiusWorld: 0.1,
+  walkableRadiusWorld: 0,
   walkableClimbWorld: 0,
   walkableHeightWorld: 0.25,
   walkableSlopeAngleDegrees: 45,

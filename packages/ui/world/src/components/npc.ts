@@ -3,7 +3,6 @@ import type { buildGraph } from "@react-three/fiber";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
 import { parseGroundPoint } from "../service/geometry";
-import { emptyFailedResult } from "../service/nav";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
@@ -39,12 +38,15 @@ export class Npc {
     Object.assign(this, init);
   }
 
+  // 🚧 simplify: getClosestPoly elsewhere
   pinTo(at: JshCli.PointAnyFormat, lookAt?: JshCli.PointAnyFormat) {
-    if (this.agentId === null) return emptyFailedResult;
+    // if (this.agentId === null) return emptyFailedResult;
     this.lastPinTime = this.w.timer.getElapsedTime();
     this.lookAt = lookAt ? parseGroundPoint(lookAt) : null;
     const result = this.w.npc.getClosestPoly(at);
-    result.success && crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
+    if (result.success === true && this.agentId !== null) {
+      crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
+    }
     return result;
   }
 
