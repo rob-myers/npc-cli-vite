@@ -311,8 +311,17 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           layouts.current.lg = newLg;
           setLayouts({ lg: newLg });
         },
-        minimizeItem(id) {
-          const newLg = layouts.current.lg.map((item) => (item.i === id ? { ...item, w: 2, h: 4 } : item));
+        halveItem(id, direction) {
+          const newLg = layouts.current.lg.map((item) =>
+            item.i === id
+              ? {
+                  ...item,
+                  ...(direction === "horizontal"
+                    ? { w: Math.max(1, Math.ceil(item.w / 2)) }
+                    : { h: Math.max(1, Math.ceil(item.h / 2)) }),
+                }
+              : item,
+          );
           layouts.current.lg = newLg;
           setLayouts({ lg: newLg });
         },

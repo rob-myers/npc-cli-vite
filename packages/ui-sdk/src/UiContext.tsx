@@ -31,7 +31,7 @@ export type LayoutApi = {
   fitItem(id: string): void;
   getCols(): number;
   getViewportRows(): number;
-  minimizeItem(id: string): void;
+  halveItem(id: string, direction: "horizontal" | "vertical"): void;
   getUiGridRect(id: string): { x: number; y: number; w: number; h: number } | null;
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
   removeLayoutItem(id: string): void;
@@ -64,8 +64,8 @@ export function getFallbackLayoutApi(): LayoutApi {
       console.warn("getViewportRows called before UiGrid layoutApi was set");
       return 1;
     },
-    minimizeItem() {
-      console.warn("minimizeItem called before UiGrid layoutApi was set");
+    halveItem() {
+      console.warn("halveItem called before UiGrid layoutApi was set");
     },
     getUiGridRect() {
       console.warn("getUiGridRect called before UiGrid layoutApi was set");
