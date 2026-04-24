@@ -1,27 +1,141 @@
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { BasicPopover, cn } from "@npc-cli/util";
+import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
+import {
+  ArrowCounterClockwiseIcon,
+  SquareIcon,
+  SquareSplitHorizontalIcon,
+  SquareSplitVerticalIcon,
+} from "@phosphor-icons/react";
 import { useContext } from "react";
 
 export default function Layout() {
-  const { uiStoreApi } = useContext(UiContext);
+  const { layoutApi, uiStore, uiStoreApi } = useContext(UiContext);
+
+  const state = useStateRef(() => ({
+    resetLayout() {
+      const oldIds = Object.keys(uiStore.getState().byId);
+      uiStoreApi.resetLayout();
+      for (const id of oldIds) layoutApi.removeLayoutItem(id);
+      const meta = Object.values(uiStore.getState().byId)[0]?.meta;
+      if (meta) {
+        layoutApi.appendLayoutItems([{ i: meta.id, x: 0, y: 0, w: 6, h: 4 }]);
+        requestAnimationFrame(() => layoutApi.fitItem(meta.id));
+      }
+    },
+    gatherAndClearTabs(): string[] {
+      const { byId } = uiStore.getState();
+      const entries = Object.values(byId);
+
+      const leafIds = entries.filter(({ meta }) => meta.uiKey !== "Tabs").map(({ meta }) => meta.id);
+
+      for (const { meta } of entries) {
+        if (meta.uiKey === "Tabs") {
+          layoutApi.removeLayoutItem(meta.id);
+          uiStore.setState((draft) => {
+            delete draft.byId[meta.id];
+          });
+        }
+      }
+
+      uiStore.setState((draft) => {
+        for (const id of leafIds) {
+          if (draft.byId[id]) {
+            draft.byId[id].meta.parentId = undefined;
+          }
+          layoutApi.removeLayoutItem(id);
+        }
+      });
+
+      return leafIds;
+    },
+    createTabs(itemIds: string[]): string {
+      const tabsId = `ui-${crypto.randomUUID()}`;
+      uiStoreApi.addUis({
+        metas: [
+          {
+            id: tabsId,
+            title: uiStoreApi.getDefaultTitle("Tabs"),
+            uiKey: "Tabs",
+            items: itemIds,
+            currentTabId: itemIds[0],
+          },
+        ],
+      });
+      uiStore.setState((draft) => {
+        for (const id of itemIds) {
+          draft.byId[id].meta.parentId = tabsId;
+          draft.byId[id].meta.disabled = true;
+        }
+      });
+      return tabsId;
+    },
+    collectIntoTabs() {
+      const leafIds = state.gatherAndClearTabs();
+      if (!leafIds.length) return;
+      const tabsId = state.createTabs(leafIds);
+      layoutApi.appendLayoutItems([{ i: tabsId, x: 0, y: 0, w: 6, h: 4 }]);
+      requestAnimationFrame(() => layoutApi.fitItem(tabsId));
+    },
+    splitIntoTwoTabs(direction: "horizontal" | "vertical") {
+      const leafIds = state.gatherAndClearTabs();
+      if (!leafIds.length) return;
+
+      const mid = Math.ceil(leafIds.length / 2);
+      const tabsAId = state.createTabs(leafIds.slice(0, mid));
+      const tabsBId = leafIds.length > mid ? state.createTabs(leafIds.slice(mid)) : null;
+
+      const totalCols = layoutApi.getCols();
+      const totalRows = layoutApi.getViewportRows();
+
+      if (direction === "horizontal") {
+        const halfCols = Math.floor(totalCols / 2);
+        layoutApi.appendLayoutItems([
+          { i: tabsAId, x: 0, y: 0, w: tabsBId ? halfCols : totalCols, h: totalRows },
+          ...(tabsBId ? [{ i: tabsBId, x: halfCols, y: 0, w: totalCols - halfCols, h: totalRows }] : []),
+        ]);
+      } else {
+        const halfRows = Math.floor(totalRows / 2);
+        layoutApi.appendLayoutItems([
+          { i: tabsAId, x: 0, y: 0, w: totalCols, h: halfRows },
+          ...(tabsBId ? [{ i: tabsBId, x: 0, y: halfRows, w: totalCols, h: totalRows - halfRows }] : []),
+        ]);
+      }
+    },
+  }));
+
+  const buttonClassName = cn(
+    uiClassName,
+    "overflow-auto border rounded cursor-pointer gap-2 px-4 py-2",
+    "flex justify-center items-center bg-button-background",
+  );
 
   return (
-    <div className="flex flex-col items-center h-full overflow-auto gap-4">
-      <div className="p-4 flex flex-wrap items-center h-full gap-2 *:px-2">
+    <div className="flex justify-center items-center h-full overflow-auto gap-4">
+      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-24">
         <BasicPopover
-          triggerClassName={cn(
-            uiClassName,
-            "overflow-auto border rounded",
-            "flex justify-center items-center bg-button-background",
-          )}
-          trigger={"reset"}
+          triggerClassName={buttonClassName}
+          trigger={
+            <>
+              <ArrowCounterClockwiseIcon size={24} /> reset
+            </>
+          }
           side="bottom"
         >
-          <button type="button" className="cursor-pointer" onPointerDown={uiStoreApi.resetLayout}>
+          <button type="button" className="cursor-pointer" onPointerDown={state.resetLayout}>
             confirm
           </button>
         </BasicPopover>
+
+        <button type="button" className={buttonClassName} onPointerDown={state.collectIntoTabs}>
+          <SquareIcon size={24} /> union
+        </button>
+        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("horizontal")}>
+          <SquareSplitHorizontalIcon size={24} /> split
+        </button>
+        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("vertical")}>
+          <SquareSplitVerticalIcon size={24} /> split
+        </button>
       </div>
     </div>
   );

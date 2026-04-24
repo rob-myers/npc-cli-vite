@@ -64,13 +64,21 @@ done
 - 🚧 change ui `Global` to `Layout`
   - ✅ remove theme toggle
   - ✅ rename `ui/global` -> `ui/layout` etc.
-  - 🚧 can set one tab layout
-  - can set two tab layout (vert or horizontal)
-  - reset has layout, tty, world
-  - responsive?
+  - ✅ can set one tab layout
+  - ✅ can set two tab layout (vert or horizontal)
+  - ✅ responsive?
+  - 🚧 reset has layout, tty, world
   - ❌ option to flatten layout (no Tabs)
   - layout schema and layouts.json
     - can CRUD in DEV
+
+- when resizing always show cancel button
+
+- BUG ensure separate world instances
+  - play/pause via Enter/Escape
+  - object-pick
+
+- BUG ensure onchange layout that portals are disposed
 
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
