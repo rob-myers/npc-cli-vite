@@ -139,6 +139,7 @@ export default function Layout() {
     uiClassName,
     "overflow-auto border rounded cursor-pointer gap-2 px-4 py-2",
     "flex justify-center items-center bg-button-background",
+    "text-sm",
   );
 
   return (
@@ -148,7 +149,7 @@ export default function Layout() {
           triggerClassName={buttonClassName}
           trigger={
             <>
-              <ArrowCounterClockwiseIcon size={24} /> reset
+              <ArrowCounterClockwiseIcon size={iconSize} /> reset
             </>
           }
           side="bottom"
@@ -159,18 +160,20 @@ export default function Layout() {
         </BasicPopover>
 
         <button type="button" className={buttonClassName} onPointerDown={state.collectIntoTabs}>
-          <SquareIcon size={24} /> union
+          <SquareIcon size={iconSize} /> union
         </button>
         <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("vertical")}>
-          <SquareSplitVerticalIcon size={24} /> 2 row
+          <SquareSplitVerticalIcon size={iconSize} /> 2 row
         </button>
         <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("horizontal")}>
-          <SquareSplitHorizontalIcon size={24} /> 2 col
+          <SquareSplitHorizontalIcon size={iconSize} /> 2 col
         </button>
         <button type="button" className={buttonClassName} onPointerDown={state.splitIntoThreeTabs}>
-          <SquareSplitHorizontalIcon size={24} /> 3 col
+          <SquareSplitHorizontalIcon size={iconSize} /> 3 col
         </button>
       </div>
     </div>
   );
 }
+
+const iconSize = 18;
