@@ -134,7 +134,7 @@ export default function Layout() {
 
   return (
     <div className="flex justify-center items-center h-full overflow-auto gap-4">
-      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-28 *:h-16">
+      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-28 *:h-12">
         <BasicPopover
           triggerClassName={buttonClassName}
           trigger={
