@@ -29,6 +29,8 @@ export type UiContextValue = {
 export type LayoutApi = {
   appendLayoutItems(items: LayoutItem[]): void;
   fitItem(id: string): void;
+  getCols(): number;
+  getViewportRows(): number;
   minimizeItem(id: string): void;
   getUiGridRect(id: string): { x: number; y: number; w: number; h: number } | null;
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
@@ -53,6 +55,14 @@ export function getFallbackLayoutApi(): LayoutApi {
     },
     fitItem() {
       console.warn("fitItem called before UiGrid layoutApi was set");
+    },
+    getCols() {
+      console.warn("getCols called before UiGrid layoutApi was set");
+      return 12;
+    },
+    getViewportRows() {
+      console.warn("getViewportRows called before UiGrid layoutApi was set");
+      return 1;
     },
     minimizeItem() {
       console.warn("minimizeItem called before UiGrid layoutApi was set");

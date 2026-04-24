@@ -44,8 +44,16 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
     breakpoints: persistedLayout.breakpoints,
     cols: persistedLayout.cols,
     layouts: layouts.current,
-    onBreakpointChange(_bp, _cols) {
-      // Fixes overflow on slow/sudden change
+    onBreakpointChange(_bp, newCols) {
+      const oldCols = state.gridConfig.cols ?? newCols;
+      if (oldCols !== newCols) {
+        const scaled = layouts.current.lg.map((item) => ({
+          ...item,
+          x: Math.round((item.x / oldCols) * newCols),
+          w: Math.max(1, Math.round((item.w / oldCols) * newCols)),
+        }));
+        layouts.current = { lg: scaled };
+      }
       setLayouts((layouts.current = { ...layouts.current }));
     },
   });
@@ -231,71 +239,63 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
     () =>
       extendContextValue({
         appendLayoutItems: (ls) => {
-          setLayouts({ lg: layouts.current.lg.concat(ls) });
+          layouts.current.lg = layouts.current.lg.concat(ls);
+          setLayouts({ lg: layouts.current.lg });
+        },
+        getCols() {
+          return state.gridConfig.cols ?? cols;
+        },
+        getViewportRows() {
+          const el = containerRef.current;
+          const top = el?.getBoundingClientRect().top ?? 0;
+          const availableHeight = window.innerHeight - top;
+          const rowH = state.gridConfig.rowHeight || 30;
+          const marginY = state.gridConfig.margin?.[1] || 8;
+          const padY = state.gridConfig.containerPadding?.[1] || 0;
+          return Math.max(1, Math.floor((availableHeight - 2 * padY + marginY) / (rowH + marginY)));
         },
         fitItem(id) {
-          const containerHeight = containerRef.current?.clientHeight ?? 0;
-          const rowHeight = (state.gridConfig.rowHeight || 30) + 2 * (state.gridConfig.margin?.[1] || 8);
-          const viewportRows = Math.max(1, Math.floor(containerHeight / rowHeight));
+          const currentCols = state.gridConfig.cols ?? cols;
+          const el = containerRef.current;
+          const top = el?.getBoundingClientRect().top ?? 0;
+          const availableHeight = window.innerHeight - top;
+          const rowH = state.gridConfig.rowHeight || 30;
+          const marginY = state.gridConfig.margin?.[1] || 8;
+          const padY = state.gridConfig.containerPadding?.[1] || 0;
+          const viewportRows = Math.max(1, Math.floor((availableHeight - 2 * padY + marginY) / (rowH + marginY)));
 
           const target = layouts.current.lg.find((item) => item.i === id);
           if (!target) return;
 
-          // rows must cover both viewport and all existing items
-          const contentRows = layouts.current.lg.reduce((max, item) => Math.max(max, item.y + item.h), 0);
+          const others = layouts.current.lg.filter((item) => item.i !== id);
+          const contentRows = others.reduce((max, item) => Math.max(max, item.y + item.h), 0);
           const rows = Math.max(viewportRows, contentRows);
 
-          // build occupancy grid
-          const occupied = Array.from({ length: rows }, () => new Uint8Array(cols));
-          for (const o of layouts.current.lg) {
-            if (o.i === id) continue;
+          const occupied = Array.from({ length: rows }, () => new Uint8Array(currentCols));
+          for (const o of others) {
             for (let r = o.y; r < Math.min(o.y + o.h, rows); r++)
-              for (let c = o.x; c < Math.min(o.x + o.w, cols); c++) occupied[r][c] = 1;
+              for (let c = o.x; c < Math.min(o.x + o.w, currentCols); c++) occupied[r][c] = 1;
           }
 
-          // try both orderings and pick the larger area
+          // biome-ignore format: succinct
           const expand = (widthFirst: boolean) => {
             let x1 = Math.max(0, target.x),
               y1 = Math.max(0, target.y);
-            let x2 = Math.min(cols, target.x + target.w),
+            let x2 = Math.min(currentCols, target.x + target.w),
               y2 = Math.min(rows, target.y + target.h);
             let changed = true;
             while (changed) {
               changed = false;
               if (widthFirst) {
-                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) {
-                  x1--;
-                  changed = true;
-                }
-                if (x2 < cols && colFree(occupied, x2, y1, y2)) {
-                  x2++;
-                  changed = true;
-                }
-                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) {
-                  y1--;
-                  changed = true;
-                }
-                if (y2 < rows && rowFree(occupied, y2, x1, x2)) {
-                  y2++;
-                  changed = true;
-                }
+                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) { x1--; changed = true; }
+                if (x2 < currentCols && colFree(occupied, x2, y1, y2)) { x2++; changed = true; }
+                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) { y1--; changed = true; }
+                if (y2 < rows && rowFree(occupied, y2, x1, x2)) { y2++; changed = true; }
               } else {
-                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) {
-                  y1--;
-                  changed = true;
-                }
-                if (y2 < rows && rowFree(occupied, y2, x1, x2)) {
-                  y2++;
-                  changed = true;
-                }
-                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) {
-                  x1--;
-                  changed = true;
-                }
-                if (x2 < cols && colFree(occupied, x2, y1, y2)) {
-                  x2++;
-                  changed = true;
-                }
+                if (y1 > 0 && rowFree(occupied, y1 - 1, x1, x2)) { y1--; changed = true; }
+                if (y2 < rows && rowFree(occupied, y2, x1, x2)) { y2++; changed = true; }
+                if (x1 > 0 && colFree(occupied, x1 - 1, y1, y2)) { x1--; changed = true; }
+                if (x2 < currentCols && colFree(occupied, x2, y1, y2)) { x2++; changed = true; }
               }
             }
             return { x1, y1, w: x2 - x1, h: y2 - y1 };
@@ -320,7 +320,8 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
         },
         removeLayoutItem(id) {
-          setLayouts({ lg: layouts.current.lg.filter((item) => item.i !== id) });
+          layouts.current.lg = layouts.current.lg.filter((item) => item.i !== id);
+          setLayouts({ lg: layouts.current.lg });
         },
         overrideContextMenu({ refObject, addItem }) {
           state.set({
@@ -331,7 +332,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         screenToGrid(clientX, clientY) {
           const rect = containerRef.current?.getBoundingClientRect();
           if (!rect) return null;
-          const gridItemWidth = rect.width / cols;
+          const gridItemWidth = rect.width / (state.gridConfig.cols ?? cols);
           const gridItemHeight = (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
           return {
             x: Math.floor((clientX - rect.left) / gridItemWidth),
