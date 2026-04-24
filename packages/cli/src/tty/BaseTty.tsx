@@ -15,7 +15,7 @@ import "@xterm/xterm/css/xterm.css";
 
 export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Props, ref) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const theme = useThemeName();
+  const themeName = useThemeName();
 
   const state = useStateRef(
     (): State => ({
@@ -61,7 +61,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
       // rendererType: "canvas",
       // mobile: can select single word via long press
       rightClickSelectsWord: true,
-      theme: xtermThemes[theme],
+      theme: xtermThemes[themeName],
       convertEol: true, // fix mobile paste
       scrollback,
       rows: 50,
@@ -109,7 +109,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
 
     containerRef.current && xterm.open(containerRef.current);
 
-    // 🚧 try improve mobile predictive text e.g. firefox
+    // try improve mobile predictive text e.g. firefox
     xterm.textarea?.setAttribute("enterkeyhint", "send");
 
     return () => {
@@ -132,9 +132,9 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
 
   React.useEffect(() => {
     if (state.xterm) {
-      state.xterm.xterm.options.theme = xtermThemes[theme];
+      state.xterm.xterm.options.theme = xtermThemes[themeName];
     }
-  }, [theme]);
+  }, [themeName, state.xterm]);
 
   useBeforeunload(() => {
     sessionApi.persistHistory(props.sessionKey);
@@ -192,5 +192,7 @@ const xtermThemes: Record<ThemeName, ITheme> = {
     foreground: "#1a1a1a",
     cursor: "#333333",
     selectionBackground: "#b0c4de",
+
+    white: "gray",
   },
 };
