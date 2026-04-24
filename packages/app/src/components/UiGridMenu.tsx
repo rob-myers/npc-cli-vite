@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
-import { ArrowsInIcon, GearIcon, MoonIcon, PenIcon, SunIcon } from "@phosphor-icons/react";
+import { ArrowsInIcon, GearIcon, MoonIcon, PenIcon, SunIcon, XIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -53,50 +53,60 @@ export function UiGridMenu({
         localStorage.setItem(storageKey, String(y.get()));
       }}
     >
-      <Menu.Root
-        onOpenChange={(open) => {
-          if (open && dragged.current) {
-            dragged.current = false;
-          }
-        }}
-      >
-        <Menu.Trigger
+      {state.resizeMode ? (
+        <button
+          type="button"
           className="cursor-pointer"
-          onPointerUp={() => {
-            if (dragged.current) {
+          onClick={() => state.set({ resizeMode: false })}
+        >
+          <XIcon className="size-5" weight="bold" />
+        </button>
+      ) : (
+        <Menu.Root
+          onOpenChange={(open) => {
+            if (open && dragged.current) {
               dragged.current = false;
             }
           }}
         >
-          <GearIcon className="size-5" weight="bold" />
-        </Menu.Trigger>
+          <Menu.Trigger
+            className="cursor-pointer"
+            onPointerUp={() => {
+              if (dragged.current) {
+                dragged.current = false;
+              }
+            }}
+          >
+            <GearIcon className="size-5" weight="bold" />
+          </Menu.Trigger>
 
-        <Menu.Portal>
-          <Menu.Positioner className="z-9999" sideOffset={4} side="left" align="center">
-            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-              <Menu.Item
-                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => state.set({ resizeMode: !state.resizeMode })}
-              >
-                <PenIcon className="size-4" />
-                Resize
-              </Menu.Item>
+          <Menu.Portal>
+            <Menu.Positioner className="z-9999" sideOffset={4} side="left" align="center">
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
+                <Menu.Item
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => state.set({ resizeMode: !state.resizeMode })}
+                >
+                  <PenIcon className="size-4" />
+                  Resize
+                </Menu.Item>
 
-              <div className="my-1 border-t border-slate-700" />
+                <div className="my-1 border-t border-slate-700" />
 
-              <Menu.Item
-                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => themeApi.setOther()}
-              >
-                {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-                {theme === "dark" ? "Light" : "Dark"}
-              </Menu.Item>
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
+                <Menu.Item
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => themeApi.setOther()}
+                >
+                  {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+                  {theme === "dark" ? "Light" : "Dark"}
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      )}
 
       {vpOffset.zoomed && (
         <button type="button" className="cursor-pointer" onClick={resetZoom}>
