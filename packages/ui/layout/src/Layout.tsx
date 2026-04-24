@@ -72,6 +72,15 @@ export default function Layout() {
       return tabsId;
     },
     collectIntoTabs() {
+      const { byId } = uiStore.getState();
+      const entries = Object.values(byId);
+      const tabsEntries = entries.filter(({ meta }) => meta.uiKey === "Tabs");
+      const leafEntries = entries.filter(({ meta }) => meta.uiKey !== "Tabs");
+
+      if (tabsEntries.length === 1 && leafEntries.every(({ meta }) => meta.parentId === tabsEntries[0].meta.id)) {
+        return;
+      }
+
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
       const tabsId = state.createTabs(leafIds);
