@@ -77,6 +77,28 @@ export default function Layout() {
       layoutApi.appendLayoutItems([{ i: tabsId, x: 0, y: 0, w: 6, h: 4 }]);
       requestAnimationFrame(() => layoutApi.fitItem(tabsId));
     },
+    splitIntoThreeTabs() {
+      const leafIds = state.gatherAndClearTabs();
+      if (!leafIds.length) return;
+
+      const third1 = Math.ceil(leafIds.length / 3);
+      const third2 = Math.ceil((leafIds.length * 2) / 3);
+      const groups = [leafIds.slice(0, third1), leafIds.slice(third1, third2), leafIds.slice(third2)].filter(
+        (g) => g.length > 0,
+      );
+
+      const totalCols = layoutApi.getCols();
+      const totalRows = layoutApi.getViewportRows();
+      const colWidth = Math.floor(totalCols / groups.length);
+
+      groups.forEach((ids, i) => {
+        const tabsId = state.createTabs(ids);
+        const isLast = i === groups.length - 1;
+        layoutApi.appendLayoutItems([
+          { i: tabsId, x: colWidth * i, y: 0, w: isLast ? totalCols - colWidth * i : colWidth, h: totalRows },
+        ]);
+      });
+    },
     splitIntoTwoTabs(direction: "horizontal" | "vertical") {
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
@@ -112,7 +134,7 @@ export default function Layout() {
 
   return (
     <div className="flex justify-center items-center h-full overflow-auto gap-4">
-      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-24">
+      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-24 *:h-16">
         <BasicPopover
           triggerClassName={buttonClassName}
           trigger={
@@ -131,10 +153,13 @@ export default function Layout() {
           <SquareIcon size={24} /> union
         </button>
         <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("horizontal")}>
-          <SquareSplitHorizontalIcon size={24} /> split
+          <SquareSplitVerticalIcon size={24} /> 2 row
         </button>
         <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("vertical")}>
-          <SquareSplitVerticalIcon size={24} /> split
+          <SquareSplitHorizontalIcon size={24} /> 2 col
+        </button>
+        <button type="button" className={buttonClassName} onPointerDown={state.splitIntoThreeTabs}>
+          <SquareSplitHorizontalIcon size={24} /> 3 col
         </button>
       </div>
     </div>
