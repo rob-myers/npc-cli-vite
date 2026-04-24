@@ -34,6 +34,7 @@ import "react-resizable/css/styles.css";
 
 export function UiGrid({ extendContextValue, persistedLayout }: Props) {
   const layouts = useRef(persistedLayout.layouts);
+  const fitItemRef = useRef<((id: string) => void) | null>(null);
 
   const { width, containerRef } = useContainerWidth({
     initialWidth: window.innerWidth, // avoid initial animation
@@ -87,16 +88,15 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         } else {
           uiStoreApi.addUis({ metas: [uiMeta] });
 
-          setLayouts({
-            lg: layouts.current.lg.concat({
-              i: uiMeta.id,
-              x: gridRect.x,
-              y: gridRect.y,
-              w: gridRect.width,
-              h: gridRect.height,
-              isDraggable: true,
-            }),
+          layouts.current.lg = layouts.current.lg.concat({
+            i: uiMeta.id,
+            x: gridRect.x,
+            y: gridRect.y,
+            w: gridRect.width,
+            h: gridRect.height,
+            isDraggable: true,
           });
+          setLayouts({ lg: layouts.current.lg });
         }
       },
       closeContextMenu() {
@@ -176,6 +176,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
             },
             gridRect: { x: gridX, y: gridY, width: 2, height: 4 },
           });
+          requestAnimationFrame(() => fitItemRef.current?.(itemId));
         }
       },
       onDragStart() {
@@ -236,9 +237,9 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
   }, []);
 
   useEffect(
-    () =>
-      extendContextValue({
-        appendLayoutItems: (ls) => {
+    () => {
+      const api: UiContextValue["layoutApi"] = {
+        appendLayoutItems: (ls: Layout) => {
           layouts.current.lg = layouts.current.lg.concat(ls);
           setLayouts({ lg: layouts.current.lg });
         },
@@ -339,7 +340,10 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
             y: Math.floor((clientY - rect.top) / gridItemHeight),
           };
         },
-      }),
+      };
+      fitItemRef.current = api.fitItem;
+      return extendContextValue(api);
+    },
     [setLayouts],
   );
 
