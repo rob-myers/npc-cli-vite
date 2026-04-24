@@ -54,11 +54,7 @@ export function UiGridMenu({
       }}
     >
       {state.resizeMode ? (
-        <button
-          type="button"
-          className="cursor-pointer"
-          onClick={() => state.set({ resizeMode: false })}
-        >
+        <button type="button" className="cursor-pointer" onClick={() => state.set({ resizeMode: false })}>
           <XIcon className="size-5" weight="bold" />
         </button>
       ) : (
@@ -81,7 +77,7 @@ export function UiGridMenu({
           </Menu.Trigger>
 
           <Menu.Portal>
-            <Menu.Positioner className="z-9999" sideOffset={4} side="left" align="center">
+            <Menu.Positioner className="z-9999" sideOffset={4} side="bottom" align="center" collisionPadding={0}>
               <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
                 <Menu.Item
                   className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
