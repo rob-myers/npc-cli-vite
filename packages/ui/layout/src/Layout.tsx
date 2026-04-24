@@ -19,8 +19,9 @@ export default function Layout() {
       for (const id of oldIds) layoutApi.removeLayoutItem(id);
       const meta = Object.values(uiStore.getState().byId)[0]?.meta;
       if (meta) {
-        layoutApi.appendLayoutItems([{ i: meta.id, x: 0, y: 0, w: 6, h: 4 }]);
-        requestAnimationFrame(() => layoutApi.fitItem(meta.id));
+        layoutApi.appendLayoutItems([
+          { i: meta.id, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() },
+        ]);
       }
     },
     gatherAndClearTabs(): string[] {
@@ -74,8 +75,9 @@ export default function Layout() {
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
       const tabsId = state.createTabs(leafIds);
-      layoutApi.appendLayoutItems([{ i: tabsId, x: 0, y: 0, w: 6, h: 4 }]);
-      requestAnimationFrame(() => layoutApi.fitItem(tabsId));
+      layoutApi.appendLayoutItems([
+        { i: tabsId, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() },
+      ]);
     },
     splitIntoThreeTabs() {
       const leafIds = state.gatherAndClearTabs();
