@@ -75,9 +75,7 @@ export default function Layout() {
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
       const tabsId = state.createTabs(leafIds);
-      layoutApi.appendLayoutItems([
-        { i: tabsId, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() },
-      ]);
+      layoutApi.appendLayoutItems([{ i: tabsId, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() }]);
     },
     splitIntoThreeTabs() {
       const leafIds = state.gatherAndClearTabs();
@@ -136,7 +134,7 @@ export default function Layout() {
 
   return (
     <div className="flex justify-center items-center h-full overflow-auto gap-4">
-      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-24 *:h-16">
+      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-28 *:h-16">
         <BasicPopover
           triggerClassName={buttonClassName}
           trigger={
@@ -154,10 +152,10 @@ export default function Layout() {
         <button type="button" className={buttonClassName} onPointerDown={state.collectIntoTabs}>
           <SquareIcon size={24} /> union
         </button>
-        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("horizontal")}>
+        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("vertical")}>
           <SquareSplitVerticalIcon size={24} /> 2 row
         </button>
-        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("vertical")}>
+        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("horizontal")}>
           <SquareSplitHorizontalIcon size={24} /> 2 col
         </button>
         <button type="button" className={buttonClassName} onPointerDown={state.splitIntoThreeTabs}>
