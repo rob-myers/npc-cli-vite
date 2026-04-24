@@ -23,8 +23,16 @@ import { mapValues, pause } from "@npc-cli/util/legacy/generic";
 import type React from "react";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
-import { GridLayout, type Layout, useContainerWidth, useResponsiveLayout } from "react-grid-layout";
-import type { GridConfig, ResizeConfig } from "react-grid-layout/core";
+import {
+  cloneLayoutItem,
+  collides,
+  GridLayout,
+  type Layout,
+  useContainerWidth,
+  useResponsiveLayout,
+  verticalCompactor,
+} from "react-grid-layout";
+import type { Compactor, GridConfig, LayoutItem, ResizeConfig } from "react-grid-layout/core";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import { UiGridMenu } from "./UiGridMenu";
@@ -32,9 +40,65 @@ import { UiGridMenu } from "./UiGridMenu";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
+const USE_SWAP_COMPACTOR = true;
+
 export function UiGrid({ extendContextValue, persistedLayout }: Props) {
   const layouts = useRef(persistedLayout.layouts);
   const fitItemRef = useRef<((id: string) => void) | null>(null);
+
+  const dragSwapRef = useRef<{
+    isDragging: boolean;
+    draggedId: string | null;
+    preLayout: Layout | null;
+  }>({ isDragging: false, draggedId: null, preLayout: null });
+
+  const swapCompactor = useMemo(
+    (): Compactor => ({
+      type: "vertical",
+      allowOverlap: true,
+      compact(layout, cols) {
+        const { isDragging, draggedId, preLayout } = dragSwapRef.current;
+        if (!isDragging || !draggedId || !preLayout) {
+          return verticalCompactor.compact(layout, cols);
+        }
+        const dragged = layout.find((item) => item.i === draggedId);
+        if (!dragged) return verticalCompactor.compact(layout, cols);
+
+        const draggedPre = preLayout.find((item) => item.i === draggedId);
+        if (!draggedPre) return verticalCompactor.compact(layout, cols);
+
+        // Check overlaps against pre-drag positions (not current), so the
+        // result is deterministic for a given mouse position — no flip-flop
+        const overlapping = preLayout.filter((pre) => pre.i !== draggedId && collides(dragged, pre));
+
+        if (overlapping.length > 0) {
+          const candidates = preLayout.map((pre) => {
+            if (pre.i === draggedId) return dragged;
+            if (overlapping.some((o) => o.i === pre.i)) return { ...pre, x: draggedPre.x, y: draggedPre.y };
+            return pre;
+          });
+
+          const isDisjoint = candidates.every((a, i) => candidates.every((b, j) => i >= j || !collides(a, b)));
+
+          if (isDisjoint) {
+            return layout.map((item) => {
+              if (item.i === draggedId) return cloneLayoutItem(item);
+              const c = candidates.find((c) => c.i === item.i);
+              return cloneLayoutItem(c ? { ...item, x: c.x, y: c.y } : item);
+            });
+          }
+        }
+
+        // No swap — dragged at mouse, others at pre-drag positions
+        return layout.map((item) => {
+          if (item.i === draggedId) return cloneLayoutItem(item);
+          const pre = preLayout.find((p) => p.i === item.i);
+          return cloneLayoutItem(pre ? { ...item, x: pre.x, y: pre.y } : item);
+        });
+      },
+    }),
+    [],
+  );
 
   const { width, containerRef } = useContainerWidth({
     initialWidth: window.innerWidth, // avoid initial animation
@@ -236,50 +300,49 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
     return () => window.removeEventListener("resize", onChangeVisualViewport);
   }, []);
 
-  useEffect(
-    () => {
-      const api: UiContextValue["layoutApi"] = {
-        appendLayoutItems: (ls: Layout) => {
-          layouts.current.lg = layouts.current.lg.concat(ls);
-          setLayouts({ lg: layouts.current.lg });
-        },
-        getCols() {
-          return state.gridConfig.cols ?? cols;
-        },
-        getViewportRows() {
-          const el = containerRef.current;
-          const top = el?.getBoundingClientRect().top ?? 0;
-          const availableHeight = window.innerHeight - top;
-          const rowH = state.gridConfig.rowHeight || 30;
-          const marginY = state.gridConfig.margin?.[1] || 8;
-          const padY = state.gridConfig.containerPadding?.[1] || 0;
-          return Math.max(1, Math.floor((availableHeight - 2 * padY + marginY) / (rowH + marginY)));
-        },
-        fitItem(id) {
-          const currentCols = state.gridConfig.cols ?? cols;
-          const el = containerRef.current;
-          const top = el?.getBoundingClientRect().top ?? 0;
-          const availableHeight = window.innerHeight - top;
-          const rowH = state.gridConfig.rowHeight || 30;
-          const marginY = state.gridConfig.margin?.[1] || 8;
-          const padY = state.gridConfig.containerPadding?.[1] || 0;
-          const viewportRows = Math.max(1, Math.floor((availableHeight - 2 * padY + marginY) / (rowH + marginY)));
+  useEffect(() => {
+    const api: UiContextValue["layoutApi"] = {
+      appendLayoutItems: (ls: Layout) => {
+        layouts.current.lg = layouts.current.lg.concat(ls);
+        setLayouts({ lg: layouts.current.lg });
+      },
+      getCols() {
+        return state.gridConfig.cols ?? cols;
+      },
+      getViewportRows() {
+        const el = containerRef.current;
+        const top = el?.getBoundingClientRect().top ?? 0;
+        const availableHeight = window.innerHeight - top;
+        const rowH = state.gridConfig.rowHeight || 30;
+        const marginY = state.gridConfig.margin?.[1] || 8;
+        const padY = state.gridConfig.containerPadding?.[1] || 0;
+        return Math.max(1, Math.floor((availableHeight - 2 * padY + marginY) / (rowH + marginY)));
+      },
+      fitItem(id) {
+        const currentCols = state.gridConfig.cols ?? cols;
+        const el = containerRef.current;
+        const top = el?.getBoundingClientRect().top ?? 0;
+        const availableHeight = window.innerHeight - top;
+        const rowH = state.gridConfig.rowHeight || 30;
+        const marginY = state.gridConfig.margin?.[1] || 8;
+        const padY = state.gridConfig.containerPadding?.[1] || 0;
+        const viewportRows = Math.max(1, Math.floor((availableHeight - 2 * padY + marginY) / (rowH + marginY)));
 
-          const target = layouts.current.lg.find((item) => item.i === id);
-          if (!target) return;
+        const target = layouts.current.lg.find((item) => item.i === id);
+        if (!target) return;
 
-          const others = layouts.current.lg.filter((item) => item.i !== id);
-          const contentRows = others.reduce((max, item) => Math.max(max, item.y + item.h), 0);
-          const rows = Math.max(viewportRows, contentRows);
+        const others = layouts.current.lg.filter((item) => item.i !== id);
+        const contentRows = others.reduce((max, item) => Math.max(max, item.y + item.h), 0);
+        const rows = Math.max(viewportRows, contentRows);
 
-          const occupied = Array.from({ length: rows }, () => new Uint8Array(currentCols));
-          for (const o of others) {
-            for (let r = o.y; r < Math.min(o.y + o.h, rows); r++)
-              for (let c = o.x; c < Math.min(o.x + o.w, currentCols); c++) occupied[r][c] = 1;
-          }
+        const occupied = Array.from({ length: rows }, () => new Uint8Array(currentCols));
+        for (const o of others) {
+          for (let r = o.y; r < Math.min(o.y + o.h, rows); r++)
+            for (let c = o.x; c < Math.min(o.x + o.w, currentCols); c++) occupied[r][c] = 1;
+        }
 
-          // biome-ignore format: succinct
-          const expand = (widthFirst: boolean) => {
+        // biome-ignore format: succinct
+        const expand = (widthFirst: boolean) => {
             let x1 = Math.max(0, target.x),
               y1 = Math.max(0, target.y);
             let x2 = Math.min(currentCols, target.x + target.w),
@@ -301,60 +364,58 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
             }
             return { x1, y1, w: x2 - x1, h: y2 - y1 };
           };
-          const wFirst = expand(true);
-          const hFirst = expand(false);
-          const best = wFirst.w * wFirst.h >= hFirst.w * hFirst.h ? wFirst : hFirst;
+        const wFirst = expand(true);
+        const hFirst = expand(false);
+        const best = wFirst.w * wFirst.h >= hFirst.w * hFirst.h ? wFirst : hFirst;
 
-          const newLg = layouts.current.lg.map((item) =>
-            item.i === id ? { ...item, x: best.x1, y: best.y1, w: best.w, h: best.h } : item,
-          );
-          layouts.current.lg = newLg;
-          setLayouts({ lg: newLg });
-        },
-        halveItem(id, direction) {
-          const newLg = layouts.current.lg.map((item) =>
-            item.i === id
-              ? {
-                  ...item,
-                  ...(direction === "horizontal"
-                    ? { w: Math.max(1, Math.ceil(item.w / 2)) }
-                    : { h: Math.max(1, Math.ceil(item.h / 2)) }),
-                }
-              : item,
-          );
-          layouts.current.lg = newLg;
-          setLayouts({ lg: newLg });
-        },
-        getUiGridRect: (id) => {
-          const found = layouts.current.lg.find((item) => item.i === id);
-          return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
-        },
-        removeLayoutItem(id) {
-          layouts.current.lg = layouts.current.lg.filter((item) => item.i !== id);
-          setLayouts({ lg: layouts.current.lg });
-        },
-        overrideContextMenu({ refObject, addItem }) {
-          state.set({
-            contextMenuOpen: true,
-            overrideContextMenuOpts: { refObject, addItem },
-          });
-        },
-        screenToGrid(clientX, clientY) {
-          const rect = containerRef.current?.getBoundingClientRect();
-          if (!rect) return null;
-          const gridItemWidth = rect.width / (state.gridConfig.cols ?? cols);
-          const gridItemHeight = (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
-          return {
-            x: Math.floor((clientX - rect.left) / gridItemWidth),
-            y: Math.floor((clientY - rect.top) / gridItemHeight),
-          };
-        },
-      };
-      fitItemRef.current = api.fitItem;
-      return extendContextValue(api);
-    },
-    [setLayouts],
-  );
+        const newLg = layouts.current.lg.map((item) =>
+          item.i === id ? { ...item, x: best.x1, y: best.y1, w: best.w, h: best.h } : item,
+        );
+        layouts.current.lg = newLg;
+        setLayouts({ lg: newLg });
+      },
+      halveItem(id, direction) {
+        const newLg = layouts.current.lg.map((item) =>
+          item.i === id
+            ? {
+                ...item,
+                ...(direction === "horizontal"
+                  ? { w: Math.max(1, Math.ceil(item.w / 2)) }
+                  : { h: Math.max(1, Math.ceil(item.h / 2)) }),
+              }
+            : item,
+        );
+        layouts.current.lg = newLg;
+        setLayouts({ lg: newLg });
+      },
+      getUiGridRect: (id) => {
+        const found = layouts.current.lg.find((item) => item.i === id);
+        return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
+      },
+      removeLayoutItem(id) {
+        layouts.current.lg = layouts.current.lg.filter((item) => item.i !== id);
+        setLayouts({ lg: layouts.current.lg });
+      },
+      overrideContextMenu({ refObject, addItem }) {
+        state.set({
+          contextMenuOpen: true,
+          overrideContextMenuOpts: { refObject, addItem },
+        });
+      },
+      screenToGrid(clientX, clientY) {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return null;
+        const gridItemWidth = rect.width / (state.gridConfig.cols ?? cols);
+        const gridItemHeight = (state.gridConfig.rowHeight || 150) + 2 * (state.gridConfig.margin?.[1] || 10);
+        return {
+          x: Math.floor((clientX - rect.left) / gridItemWidth),
+          y: Math.floor((clientY - rect.top) / gridItemHeight),
+        };
+      },
+    };
+    fitItemRef.current = api.fitItem;
+    return extendContextValue(api);
+  }, [setLayouts]);
 
   const byId = useStore(uiStore, (s) => s.byId);
   const topLevelUis = useMemo(() => Object.values(byId).filter(({ meta }) => !meta.parentId), [byId]);
@@ -399,11 +460,26 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               }}
               gridConfig={state.gridConfig}
               resizeConfig={state.resizeMode ? state.resizeConfig.resizeMode : state.resizeConfig.default}
+              compactor={USE_SWAP_COMPACTOR ? swapCompactor : undefined}
               layout={layout}
               onResizeStart={state.onResizeStart}
               onResizeStop={state.onResizeStop}
-              onDragStart={state.onDragStart}
-              onDragStop={state.onDragStop}
+              onDragStart={(layout: Layout, oldItem: LayoutItem | null) => {
+                state.onDragStart();
+                if (USE_SWAP_COMPACTOR && oldItem) {
+                  dragSwapRef.current = {
+                    isDragging: true,
+                    draggedId: oldItem.i,
+                    preLayout: layout.map((l) => ({ ...l })),
+                  };
+                }
+              }}
+              onDragStop={() => {
+                state.onDragStop();
+                if (USE_SWAP_COMPACTOR) {
+                  dragSwapRef.current = { isDragging: false, draggedId: null, preLayout: null };
+                }
+              }}
               onLayoutChange={(layout) => {
                 layouts.current.lg = layout;
                 setLayouts({ lg: layout }); // sync hook state with rendered layout
