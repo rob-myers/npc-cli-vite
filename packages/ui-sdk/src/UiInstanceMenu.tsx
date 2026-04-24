@@ -20,7 +20,7 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
     <div
       className={cn(
         className,
-        "flex gap-1 p-1 rounded text-on-background bg-background/80 border border-on-background/10  *:p-0.5-1 *:py-1",
+        "flex items-center gap-1 p-1 rounded text-on-background bg-background/80 border border-on-background/10  *:p-0.5-1 *:py-1",
       )}
     >
       {!Array.isArray((meta as any).items) && (
@@ -57,7 +57,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
   return (
     <BasicPopover
       handle={handle}
-      side="right"
+      side="bottom"
       sideOffset={4}
       triggerClassName={cn(uiClassName, "cursor-pointer")}
       className="flex flex-col gap-0 p-0 bg-slate-800 text-slate-200"
@@ -68,7 +68,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
         </DotsThreeOutlineVerticalIcon>
       }
     >
-      <div className="flex items-center p-1 border-b border-slate-700 gap-1">
+      <div className="flex flex-col p-1 border-b border-slate-700 gap-1">
         <button
           type="button"
           className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
