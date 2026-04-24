@@ -72,7 +72,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           const item = draft.byId[tab.id];
           if (item) item.meta.parentId = undefined;
         });
-        layoutApi.appendLayoutItems([{ i: tab.id, x: 0, y: 0, w: 2, h: 1, ...layoutApi.getUiGridRect(meta.id) }]);
+        layoutApi.appendLayoutItems([{ i: tab.id, x: 0, y: 0, w: 2, h: 4, ...layoutApi.getUiGridRect(meta.id) }]);
+        requestAnimationFrame(() => layoutApi.fitItem(tab.id));
       },
       onClickTab(tab: UiInstanceMeta) {
         uiStore.setState((draft) => {
@@ -177,6 +178,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           }
         });
         layoutApi.appendLayoutItems([{ i: tabId, x: gridPos?.x ?? 0, y: gridPos?.y ?? 0, w: 2, h: 4 }]);
+        requestAnimationFrame(() => layoutApi.fitItem(tabId));
       },
     });
   }, [meta.id]);
