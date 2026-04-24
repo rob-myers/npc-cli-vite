@@ -357,6 +357,9 @@ importers:
       '@npc-cli/parse-sh':
         specifier: workspace:^
         version: link:../parse-sh
+      '@npc-cli/theme':
+        specifier: workspace:^
+        version: link:../theme
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../util
