@@ -69,7 +69,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
         </DotsThreeOutlineVerticalIcon>
       }
     >
-      <div className="flex flex-col p-1 border-b border-slate-700 gap-1">
+      <div className="flex p-1 border-b border-slate-700 gap-1">
         <button
           type="button"
           className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
