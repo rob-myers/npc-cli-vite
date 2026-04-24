@@ -166,8 +166,13 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         // If dropped on any drop target (another Tabs bar or tab item), let those handlers handle it
         if (location.current.dropTargets.length > 0) return;
 
+        // Only break out if dropped directly on the grid, not over another UI
+        const { clientX, clientY } = location.current.input;
+        const elUnder = document.elementFromPoint(clientX, clientY);
+        if (elUnder?.closest(".react-grid-item")) return;
+
         const tabId = source.data.id as string;
-        const gridPos = layoutApi.screenToGrid(location.current.input.clientX, location.current.input.clientY);
+        const gridPos = layoutApi.screenToGrid(clientX, clientY);
 
         state.onDeleteTab({ id: tabId } as UiInstanceMeta, { preservePortal: true });
         uiStore.setState((draft) => {
