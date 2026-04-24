@@ -96,7 +96,7 @@ export default function Walls() {
     material.opacityNode = objectPick.equal(1).select(float(1), opacityUniform);
     material.outputNode = withPickOutput(PICK_TYPE.wall);
 
-    return { material, opacityUniform };
+    return { material, opacityUniform, uuid: crypto.randomUUID() };
   }, [wallCount]);
 
   useEffect(() => {
@@ -108,6 +108,7 @@ export default function Walls() {
   return wallCount ? (
     <instancedMesh
       // visible={false}
+      key={mat.uuid}
       name="walls"
       ref={state.ref("inst")}
       args={[state.quad, undefined, wallCount]}
