@@ -86,7 +86,28 @@ export default function Layout() {
       const tabsId = state.createTabs(leafIds);
       layoutApi.appendLayoutItems([{ i: tabsId, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() }]);
     },
+    isAlreadySplit(expectedCount: number, direction: "horizontal" | "vertical") {
+      const { byId } = uiStore.getState();
+      const entries = Object.values(byId);
+      const tabsEntries = entries.filter(({ meta }) => meta.uiKey === "Tabs");
+      const leafEntries = entries.filter(({ meta }) => meta.uiKey !== "Tabs");
+
+      if (tabsEntries.length !== expectedCount) return false;
+
+      const tabsIds = new Set(tabsEntries.map(({ meta }) => meta.id));
+      if (!leafEntries.every(({ meta }) => meta.parentId && tabsIds.has(meta.parentId))) return false;
+
+      const rects = tabsEntries.flatMap(({ meta }) => layoutApi.getUiGridRect(meta.id) ?? []);
+      if (rects.length !== expectedCount) return false;
+
+      if (direction === "horizontal") {
+        return new Set(rects.map((r) => r.x)).size === expectedCount;
+      }
+      return new Set(rects.map((r) => r.y)).size === expectedCount;
+    },
     splitIntoThreeTabs() {
+      if (state.isAlreadySplit(3, "horizontal")) return;
+
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
 
@@ -109,6 +130,8 @@ export default function Layout() {
       });
     },
     splitIntoTwoTabs(direction: "horizontal" | "vertical") {
+      if (state.isAlreadySplit(2, direction)) return;
+
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
 
