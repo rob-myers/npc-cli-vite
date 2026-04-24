@@ -294,7 +294,8 @@ function TabHeaderItem({
           if (!contentEl || !parentEl) return;
 
           const { width, height } = parentEl.getBoundingClientRect();
-          const s = 0.4;
+          const previewWidth = 200;
+          const s = previewWidth / width;
 
           setCustomNativeDragPreview({
             nativeSetDragImage,
