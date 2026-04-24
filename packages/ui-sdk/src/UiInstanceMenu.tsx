@@ -5,8 +5,9 @@ import {
   CornersOutIcon,
   DotsThreeOutlineVerticalIcon,
   LayoutIcon,
-  MinusIcon,
   PlayCircleIcon,
+  SquareHalfBottomIcon,
+  SquareHalfIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { useContext } from "react";
@@ -86,10 +87,21 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
           onPointerDown={(e) => {
             e.stopPropagation();
             handle.close();
-            requestAnimationFrame(() => layoutApi.minimizeItem(meta.id));
+            layoutApi.halveItem(meta.id, "horizontal");
           }}
         >
-          <MinusIcon weight="bold" className="size-4" />
+          <SquareHalfIcon weight="bold" className="size-4" />
+        </button>
+        <button
+          type="button"
+          className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            handle.close();
+            layoutApi.halveItem(meta.id, "vertical");
+          }}
+        >
+          <SquareHalfBottomIcon weight="bold" className="size-4" />
         </button>
         {meta.uiKey === "Tabs" && Array.isArray(meta.items) && meta.items.length > 1 ? (
           <BasicPopover
