@@ -91,23 +91,37 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
         >
           <MinusIcon weight="bold" className="size-4" />
         </button>
-        <BasicPopover
-          triggerClassName="bg-slate-700 hover:bg-slate-600 rounded p-1"
-          trigger={<XIcon weight="bold" className="size-4" />}
-          side="right"
-          sideOffset={4}
-        >
+        {meta.uiKey === "Tabs" && Array.isArray(meta.items) && meta.items.length > 1 ? (
+          <BasicPopover
+            triggerClassName="bg-slate-700 hover:bg-slate-600 rounded p-1"
+            trigger={<XIcon weight="bold" className="size-4" />}
+            side="right"
+            sideOffset={4}
+          >
+            <button
+              type="button"
+              className="cursor-pointer"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                uiStoreApi.removeItem(meta.id);
+              }}
+            >
+              confirm
+            </button>
+          </BasicPopover>
+        ) : (
           <button
             type="button"
-            className="cursor-pointer"
+            className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
             onPointerDown={(e) => {
               e.stopPropagation();
               uiStoreApi.removeItem(meta.id);
+              layoutApi.removeLayoutItem(meta.id);
             }}
           >
-            confirm
+            <XIcon weight="bold" className="size-4" />
           </button>
-        </BasicPopover>
+        )}
       </div>
       {meta.uiKey !== "Tabs" &&
         tabsInstances.length > 0 &&
