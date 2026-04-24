@@ -4,14 +4,7 @@ import type { Terminal } from "@xterm/xterm";
 import debounce from "debounce";
 import { ansi, scrollback } from "./const";
 import { highlight } from "./highlight";
-import {
-  type DataChunk,
-  isDataChunk,
-  isProxy,
-  type MessageFromShell,
-  type MessageFromXterm,
-  type ShellIo,
-} from "./io";
+import { type DataChunk, isDataChunk, isProxy, type MessageFromShell, type MessageFromXterm, type ShellIo } from "./io";
 import { formatMessage } from "./util";
 
 export class TtyXterm {
@@ -427,7 +420,7 @@ export class TtyXterm {
       unregisterWriters();
     });
     // user indication after xterm has loaded but session hasn't
-    this.xterm.writeln(`${ansi.Italic}${ansi.WhiteBright}Loading...${ansi.Reset}`);
+    this.xterm.writeln(`${ansi.Italic}${ansi.GreenDark}Loading...${ansi.Reset}`);
   }
 
   /**
@@ -501,9 +494,7 @@ export class TtyXterm {
       return this.queueCommands([
         {
           key: "line",
-          line: `${ansi.YellowBright}${jsStringify({ ...msg }).slice(-this.maxStringifyLength)}${
-            ansi.Reset
-          }`,
+          line: `${ansi.YellowBright}${jsStringify({ ...msg }).slice(-this.maxStringifyLength)}${ansi.Reset}`,
         },
       ]);
     }
@@ -583,9 +574,7 @@ export class TtyXterm {
             },
           ]);
         } else {
-          const stringifiedTail = (jsStringify(other) || safeJsonCompact(other)).slice(
-            -this.maxStringifyLength,
-          );
+          const stringifiedTail = (jsStringify(other) || safeJsonCompact(other)).slice(-this.maxStringifyLength);
           const highlighted =
             stringifiedTail.length > this.maxHighlightLength
               ? `${ansi.Yellow}${stringifiedTail}`
@@ -736,9 +725,7 @@ export class TtyXterm {
     this.xterm.write("^C\r\n");
     this.cursor = 0;
     // Immediately forget any pending output
-    this.commandBuffer.forEach(
-      (cmd) => void (cmd.key === "resolve" || (cmd.key === "await-prompt" && cmd.reject?.())),
-    );
+    this.commandBuffer.forEach((cmd) => void (cmd.key === "resolve" || (cmd.key === "await-prompt" && cmd.reject?.())));
     this.commandBuffer.length = 0;
     // Reset controlling process
     this.session.io.writeToReaders({ key: "send-kill-sig" });

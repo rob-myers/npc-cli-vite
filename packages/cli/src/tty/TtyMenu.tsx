@@ -123,7 +123,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
         "absolute z-2 top-0 right-0 touch-none",
         "transition-opacity duration-300 delay-300 opacity-100 starting:opacity-0",
         "[--menu-width:32px]",
-        "text-sm leading-1 border-none text-white/80",
+        "text-sm leading-1 border-none text-on-background/80",
       )}
       style={{ y }}
       drag="y"
@@ -156,9 +156,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
       >
         <div className="touch-none *:pointer-events-auto">
           <div
-            className={
-              "h-8 pr-2 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-[rgba(0,0,0,0.5)] text-[#ddd] border-none"
-            }
+            className="h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] text-on-background border border-black/50"
             onClick={(e) => {
               e.stopPropagation();
               if (!state.dragged) state.toggleTouchMenu();
@@ -168,7 +166,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
           </div>
           {props.canContOrStop != null && (
             <div
-              className="pr-1 flex items-center writing-vertical-rl text-upright cursor-pointer py-2 border-none text-[#0f0b] bg-[rgba(0,0,0,0.5)] font-600 text-[0.6rem] tracking-[2px]"
+              className="size-8 flex items-center justify-center writing-vertical-rl text-upright cursor-pointer border-none text-[#0f0b] bg-black text-[0.6rem]"
               onClick={(e) => {
                 e.stopPropagation();
                 if (!state.dragged) state.contOrStopInteractive();
@@ -180,7 +178,10 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
           )}
           {props.disabled && (
             <div
-              className={cn("cursor-pointer pr-2 pt-1 text-[#777]", !state.spawnBgPaused && "text-[#cc6]")}
+              className={cn(
+                "cursor-pointer size-8 flex justify-center items-center bg-black text-[#777] text-[0.8rem]",
+                !state.spawnBgPaused && "text-[#cc6]",
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 if (!state.dragged) state.setSpawnBgPaused();

@@ -204,7 +204,7 @@ export class TtyShell {
       this.xterm.historyEnabled = false;
       sessionApi.writeMsg(
         this.sessionKey,
-        `${ansi.BlueBold}${this.sessionKey}${ansi.White} running ${ansi.BlueBold}/home/PROFILE${ansi.Reset}`,
+        `${ansi.BlueBold}${this.sessionKey}${ansi.Purple} running ${ansi.BlueBold}/home/PROFILE${ansi.Reset}`,
         "info",
       );
 
