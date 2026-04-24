@@ -296,29 +296,29 @@ function TabHeaderItem({
         element: el,
         getInitialData: () => ({ type: "tab", id, tabsMetaId }),
         onGenerateDragPreview: ({ nativeSetDragImage }) => {
-          const contentEl = el.closest(".flex.flex-col")?.querySelector<HTMLElement>(`[data-tab-content="${id}"]`);
-          const parentEl = contentEl?.parentElement;
-          if (!contentEl || !parentEl) return;
-
-          const { width, height } = parentEl.getBoundingClientRect();
-          const previewWidth = 200;
-          const s = previewWidth / width;
-
           setCustomNativeDragPreview({
             nativeSetDragImage,
             render: ({ container }) => {
-              container.innerHTML = `
-                <div style="width:${width * s}px; overflow:hidden; background:rgba(59,130,246,0.5)">
-                  <div data-tab style="background:var(--color-background,#222); color:var(--color-on-background,#fff); font-size:6px"></div>
-                  <div style="width:${width * s}px; height:${height * s}px; overflow:hidden; border:2px solid rgba(255,255,255,0.5)">
-                    <div data-content style="width:${width}px; height:${height}px; transform:scale(${s}); transform-origin:top left"></div>
-                  </div>
-                </div>
-              `;
-              container.querySelector("[data-tab]")?.appendChild(el.cloneNode(true));
-              const contentClone = contentEl.cloneNode(true) as HTMLElement;
-              contentClone.classList.remove("hidden");
-              container.querySelector("[data-content]")?.appendChild(contentClone);
+              const preview = document.createElement("div");
+              Object.assign(preview.style, {
+                width: "100px",
+                height: "80px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--color-background, #222)",
+                color: "var(--color-on-background, #fff)",
+                border: "2px solid rgba(255,255,255,0.5)",
+                fontFamily: "monospace",
+                fontSize: "12px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                padding: "8px",
+                textAlign: "center",
+                wordBreak: "break-word",
+              });
+              preview.textContent = tab.title ?? id;
+              container.appendChild(preview);
             },
           });
         },
