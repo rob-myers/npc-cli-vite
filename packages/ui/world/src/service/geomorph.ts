@@ -94,6 +94,7 @@ function computeFlatDoorsAndDecor(
   };
 }
 
+/** Browser only. */
 export function createLayoutInstance(
   layout: Geomorph.Layout,
   gmId: number,
@@ -114,15 +115,16 @@ export function createLayoutInstance(
     mat4: embedXZMat4(transform),
     determinant: matrix.determinant,
 
-    getOtherRoomId(_doorId, _roomId) {
-      // // We support case where roomIds are equal e.g. 303
-      // const { roomIds } = this.doors[doorId];
-      // return roomIds.find((x, i) => typeof x === "number" && roomIds[1 - i] === roomId) ?? -1;
-      return -1;
+    // use refs because we'll add roomIds
+    hullDoors: layout.doors.filter((d) => d.meta.hull === true),
+
+    getOtherRoomId(doorId, roomId) {
+      // We support case where roomIds are equal e.g. 303
+      const { roomIds } = this.doors[doorId];
+      return roomIds.find((x, i) => typeof x === "number" && roomIds[1 - i] === roomId) ?? -1;
     },
-    isHullDoor(_doorId) {
-      // return doorId < this.hullDoors.length;
-      return false;
+    isHullDoor(doorId) {
+      return doorId < this.hullDoors.length;
     },
   };
 }
@@ -135,7 +137,6 @@ function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol
 
     decor: [],
     doors: [],
-    hullDoors: [],
     hullPoly: [],
     labels: [],
     obstacles: [],
@@ -272,8 +273,8 @@ export function createLayout(
     num: getGeomorphNumber(gmKey),
 
     decor,
-    doors,
-    hullDoors: doors.filter((x) => x.meta.hull),
+    // ensure hull doors are 1st
+    doors: doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull)),
     hullPoly,
     labels,
     obstacles: flat.obstacles.map((o): Geomorph.LayoutObstacle => {

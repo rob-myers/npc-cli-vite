@@ -5,7 +5,7 @@
   - ✅ gms data includes room canvas for refined object-pick
   - ✅ can debug display geomorph hit canvases
   - 🚧 `w.npc.findGmIdContaining`
-    - 🚧 `w.gmGraph`
+    - ✅ `w.gmGraph`
     - can debug display the graph
   - `w.npc.findRoomContaining`
   - object-pick calls `w.findRoomContaining`
@@ -19,6 +19,7 @@
 
 - BUG ensure onchange layout that portals are disposed
 
+- world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
 - 🚧 check glsl fallback e.g. incognito or force

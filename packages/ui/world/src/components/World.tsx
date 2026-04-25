@@ -25,6 +25,7 @@ import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
 import { emptyTiledNavmeshResponse } from "../service/empty-nav-response";
 import { createLayoutInstance } from "../service/geomorph";
+import { GmGraph } from "../service/gm-graph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
@@ -84,6 +85,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
+      gmGraph: new GmGraph([]),
       nav: emptyTiledNavmeshResponse,
       navPending: true,
 
@@ -220,10 +222,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       state.hash = hashJson(state.assets);
 
-      // // 🚧 debug: try fix numTextures
-      // const dimension = floorTextureDimension;
-      // state.texFloor.resize({ width: dimension, height: dimension, numTextures: Math.max(1, state.gms.length) });
-      // state.texCeil.resize({ width: dimension, height: dimension, numTextures: Math.max(1, state.seenGmKeys.length) });
+      state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
 
       return null;
     },
@@ -301,6 +300,7 @@ export type State = {
    */
   seenGmKeys: StarShipGeomorphKey[];
   gmsData: DerivedGmsData;
+  gmGraph: GmGraph;
 
   ceil: UseStateRef<import("./Ceiling").State>;
   door: UseStateRef<import("./Doors").State>;

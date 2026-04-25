@@ -103,7 +103,6 @@ export const GeomorphLayoutSchema = z.object({
 
   decor: z.array(DecorSchema),
   doors: z.array(connectorCodec),
-  hullDoors: z.array(connectorCodec),
   hullPoly: z.array(polyCodec),
   labels: z.array(DecorPointSchema),
   obstacles: z.array(GeomorphLayoutObstacleSchema),
@@ -170,11 +169,13 @@ export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   gmId: z.number(),
   transform: AffineTransformSchema,
   matrix: matCodec,
-  gridRect: rectCodec,
   inverseMatrix: matCodec,
   mat4: z.instanceof(Matrix4),
   determinant: z.number(),
+  gridRect: rectCodec,
 
+  /** Prefix of `doors` */
+  hullDoors: z.array(connectorCodec),
   /** `getOtherRoomId(doorId: number, roomId: number): number` */
   getOtherRoomId: z.function({ input: [z.number(), z.number()], output: z.number() }),
   /** `isHullDoor(doorId: number): boolean` */
