@@ -86,27 +86,40 @@ export default function Layout() {
       const tabsId = state.createTabs(leafIds);
       layoutApi.appendLayoutItems([{ i: tabsId, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() }]);
     },
-    isAlreadySplit(expectedCount: number, direction: "horizontal" | "vertical") {
+    getExistingTabsIds(expectedCount: number): string[] | null {
       const { byId } = uiStore.getState();
       const entries = Object.values(byId);
       const tabsEntries = entries.filter(({ meta }) => meta.uiKey === "Tabs");
       const leafEntries = entries.filter(({ meta }) => meta.uiKey !== "Tabs");
 
-      if (tabsEntries.length !== expectedCount) return false;
+      if (tabsEntries.length !== expectedCount) return null;
 
       const tabsIds = new Set(tabsEntries.map(({ meta }) => meta.id));
-      if (!leafEntries.every(({ meta }) => meta.parentId && tabsIds.has(meta.parentId))) return false;
+      if (!leafEntries.every(({ meta }) => meta.parentId && tabsIds.has(meta.parentId))) return null;
 
-      const rects = tabsEntries.flatMap(({ meta }) => layoutApi.getUiGridRect(meta.id) ?? []);
-      if (rects.length !== expectedCount) return false;
-
-      if (direction === "horizontal") {
-        return new Set(rects.map((r) => r.x)).size === expectedCount;
-      }
-      return new Set(rects.map((r) => r.y)).size === expectedCount;
+      return tabsEntries.map(({ meta }) => meta.id);
     },
     splitIntoThreeTabs() {
-      if (state.isAlreadySplit(3, "horizontal")) return;
+      const totalCols = layoutApi.getCols();
+      const totalRows = layoutApi.getViewportRows();
+      const colWidth = Math.floor(totalCols / 3);
+
+      const existing = state.getExistingTabsIds(3);
+      if (existing) {
+        const sorted = existing
+          .map((id) => ({ id, rect: layoutApi.getUiGridRect(id) }))
+          .sort((a, b) => (a.rect?.x ?? 0) - (b.rect?.x ?? 0));
+        layoutApi.resizeLayoutItems(
+          sorted.map(({ id }, i) => ({
+            i: id,
+            x: colWidth * i,
+            y: 0,
+            w: i === sorted.length - 1 ? totalCols - colWidth * i : colWidth,
+            h: totalRows,
+          })),
+        );
+        return;
+      }
 
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
@@ -117,10 +130,6 @@ export default function Layout() {
         (g) => g.length > 0,
       );
 
-      const totalCols = layoutApi.getCols();
-      const totalRows = layoutApi.getViewportRows();
-      const colWidth = Math.floor(totalCols / groups.length);
-
       groups.forEach((ids, i) => {
         const tabsId = state.createTabs(ids);
         const isLast = i === groups.length - 1;
@@ -130,7 +139,33 @@ export default function Layout() {
       });
     },
     splitIntoTwoTabs(direction: "horizontal" | "vertical") {
-      if (state.isAlreadySplit(2, direction)) return;
+      const totalCols = layoutApi.getCols();
+      const totalRows = layoutApi.getViewportRows();
+
+      const existing = state.getExistingTabsIds(2);
+      if (existing) {
+        const sorted = existing
+          .map((id) => ({ id, rect: layoutApi.getUiGridRect(id) }))
+          .sort((a, b) =>
+            direction === "horizontal"
+              ? (a.rect?.x ?? 0) - (b.rect?.x ?? 0)
+              : (a.rect?.y ?? 0) - (b.rect?.y ?? 0),
+          );
+        if (direction === "horizontal") {
+          const halfCols = Math.floor(totalCols / 2);
+          layoutApi.resizeLayoutItems([
+            { i: sorted[0].id, x: 0, y: 0, w: halfCols, h: totalRows },
+            { i: sorted[1].id, x: halfCols, y: 0, w: totalCols - halfCols, h: totalRows },
+          ]);
+        } else {
+          const halfRows = Math.floor(totalRows / 2);
+          layoutApi.resizeLayoutItems([
+            { i: sorted[0].id, x: 0, y: 0, w: totalCols, h: halfRows },
+            { i: sorted[1].id, x: 0, y: halfRows, w: totalCols, h: totalRows - halfRows },
+          ]);
+        }
+        return;
+      }
 
       const leafIds = state.gatherAndClearTabs();
       if (!leafIds.length) return;
@@ -138,9 +173,6 @@ export default function Layout() {
       const mid = Math.ceil(leafIds.length / 2);
       const tabsAId = state.createTabs(leafIds.slice(0, mid));
       const tabsBId = leafIds.length > mid ? state.createTabs(leafIds.slice(mid)) : null;
-
-      const totalCols = layoutApi.getCols();
-      const totalRows = layoutApi.getViewportRows();
 
       if (direction === "horizontal") {
         const halfCols = Math.floor(totalCols / 2);

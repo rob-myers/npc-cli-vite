@@ -33,6 +33,7 @@ export type LayoutApi = {
   getViewportRows(): number;
   halveItem(id: string, direction: "horizontal" | "vertical"): void;
   getUiGridRect(id: string): { x: number; y: number; w: number; h: number } | null;
+  resizeLayoutItems(updates: { i: string; x: number; y: number; w: number; h: number }[]): void;
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
   removeLayoutItem(id: string): void;
   screenToGrid(clientX: number, clientY: number): { x: number; y: number } | null;
@@ -70,6 +71,9 @@ export function getFallbackLayoutApi(): LayoutApi {
     getUiGridRect() {
       console.warn("getUiGridRect called before UiGrid layoutApi was set");
       return null;
+    },
+    resizeLayoutItems() {
+      console.warn("resizeLayoutItems called before UiGrid layoutApi was set");
     },
     overrideContextMenu: () => {
       console.warn("overrideContextMenu called before UiGrid layoutApi was set");
