@@ -11,6 +11,7 @@ import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
   ArrowUpRightIcon,
@@ -165,6 +166,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         preventUnhandled.stop();
         // If dropped on any drop target (another Tabs bar or tab item), let those handlers handle it
         if (location.current.dropTargets.length > 0) return;
+
+        if (isTouchDevice()) return; // cannot drag tab outside on mobile
 
         // Only break out if dropped directly on the grid, not over another UI
         const { clientX, clientY } = location.current.input;
