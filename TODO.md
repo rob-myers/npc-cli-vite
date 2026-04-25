@@ -3,6 +3,8 @@
 - pick room should have roomId
 - pick door should have doorId
 
+- 🚧 BUG tty first load incognito not running PROFILE
+
 - BUG ensure separate world instances
   - play/pause via Enter/Escape
   - object-pick
