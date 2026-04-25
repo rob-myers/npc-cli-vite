@@ -11,6 +11,7 @@ export default defineUi({
 
 import "./geomorph.d.ts";
 import "./world-worker.d.ts";
+import "./world-graph.d.ts";
 
 export type { State as WorldState } from "./components/World.tsx";
 export type { ObjectPickKey } from "./service/pick";
