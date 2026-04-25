@@ -3,9 +3,9 @@
 - 🚧 pick room should have roomId
   - ✅ doors have roomIds
   - ✅ gms data includes room canvas for refined object-pick
-  - 🚧 can debug display geomorph hit canvases
-  - `w.findGmIdContaining`
-  - `w.findRoomContaining`
+  - ✅ can debug display geomorph hit canvases
+  - 🚧 `w.findGmIdContaining`
+  - 🚧 `w.findRoomContaining`
   - object-pick calls `w.findRoomContaining`
 - ✅ pick door should have doorId
 
