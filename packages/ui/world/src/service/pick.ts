@@ -50,7 +50,7 @@ export function pickRoomId(
   localY: number,
   bounds: Geom.RectJson,
 ): number | null {
-  const ct = gmData.roomCanvas;
+  const ct = gmData.roomHitCt;
   if (!ct) return null;
   const cx = Math.floor((localX - bounds.x) * worldToCanvas);
   const cy = Math.floor((localY - bounds.y) * worldToCanvas);

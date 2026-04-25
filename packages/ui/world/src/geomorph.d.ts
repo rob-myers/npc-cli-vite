@@ -23,8 +23,7 @@ declare namespace Geomorph {
     wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta }[];
     wallPolyCount: number;
     wallPolySegCounts: number[];
-    roomCanvas?: CanvasRenderingContext2D;
-    // 🚧 ...
+    roomHitCt: CanvasRenderingContext2D;
   };
 
   interface GmRoomId {
