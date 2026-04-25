@@ -1,4 +1,4 @@
-import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
+import { getDefaultUiMetas, type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft, type Draft } from "immer";
 import type { Layout } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
@@ -95,6 +95,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
             byId: {},
             ready: false,
             persistedItemToRect: {},
+            // 🚧 set
             persistedLayout: getDefaultLayout(),
           }),
           { name: "ui.store", anonymousActionType: "ui.store" },
@@ -158,26 +159,4 @@ function getDefaultLayout(): UiGridLayout {
     cols: { lg: 12, sm: 6 },
     toUi: Object.fromEntries(metas.map((m) => [m.id, m])),
   };
-}
-
-function getDefaultUiMetas(): UiInstanceMeta[] {
-  const uid = () => `ui-${crypto.randomUUID()}`;
-
-  const layoutMeta: UiInstanceMeta = { id: uid(), title: "layout-0", uiKey: "Layout" };
-  const jshMeta: UiInstanceMeta = { id: uid(), title: "tty-0", uiKey: "Jsh", sessionKey: "tty-0" };
-  const worldMeta: UiInstanceMeta = { id: uid(), title: "world-0", uiKey: "World", worldKey: "world-0" };
-
-  const tabsMeta: UiInstanceMeta = {
-    id: uid(),
-    title: "tabs-0",
-    uiKey: "Tabs",
-    items: [layoutMeta.id, worldMeta.id, jshMeta.id],
-    currentTabId: layoutMeta.id,
-  };
-
-  layoutMeta.parentId = tabsMeta.id;
-  jshMeta.parentId = tabsMeta.id;
-  worldMeta.parentId = tabsMeta.id;
-
-  return [tabsMeta, layoutMeta, jshMeta, worldMeta];
 }

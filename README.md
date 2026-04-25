@@ -93,6 +93,14 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
+#### ⚠️ TTY needs both WORLD_KEY and CACHE_SHORTCUTS to connect to world
+
+```sh
+# for example
+WORLD_KEY=world-0
+CACHE_SHORTCUTS="{ w: 'WORLD_KEY' }"
+```
+
 #### ⚠️ Sometimes worth playing World to debug out-of-sync updates
 
 #### ⚠️ The starship-symbol spritesheet will draw "leaf nodes" in the assets.json stratifiedSymbolNodes

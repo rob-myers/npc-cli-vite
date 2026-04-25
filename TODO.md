@@ -1,5 +1,8 @@
 # TODO
 
+- pick room should have roomId
+- pick door should have doorId
+
 - BUG ensure separate world instances
   - play/pause via Enter/Escape
   - object-pick
@@ -27,17 +30,17 @@
 
 ## Long running
 
+- 🚧 extend existing symbols with missing decor/obstacle
+  - ✅ stateroom-012 🚧 ...
+  - ✅ BUG thumbnail wrong for transformed decor: origin?
+    - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
+
 - 🚧 do not recompute all symbols when only edit a hull symbol (DEV)
   - done in prod for hull-symbols
   - ✅ use sub-stratification
   - could do client-side and ignore server update
   - createLayout optimization
     - saw `48ms`
-
-- 🚧 extend existing symbols with missing decor/obstacle
-  - ✅ stateroom-012 🚧 ...
-  - ✅ BUG thumbnail wrong for transformed decor: origin?
-    - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
 - 🚧 ISSUE obstacle sprite-sheet when polygon aabb overlap
   - e.g. bridge--042: curved window vs. adjacent desk
