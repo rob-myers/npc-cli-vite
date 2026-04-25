@@ -4,8 +4,10 @@
   - ✅ doors have roomIds
   - ✅ gms data includes room canvas for refined object-pick
   - ✅ can debug display geomorph hit canvases
-  - 🚧 `w.findGmIdContaining`
-  - 🚧 `w.findRoomContaining`
+  - 🚧 `w.npc.findGmIdContaining`
+    - 🚧 `w.gmGraph`
+    - can debug display the graph
+  - `w.npc.findRoomContaining`
   - object-pick calls `w.findRoomContaining`
 - ✅ pick door should have doorId
 
