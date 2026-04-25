@@ -249,15 +249,12 @@ export function Tty(props: Props) {
     }
   }, [baseRef.current?.session, props.shFiles, props.modules]);
 
-  React.useEffect(() => {
-    // sync ~/PROFILE
+  // useEffectNonStrict so it occurs after BaseTty's
+  // sync ~/PROFILE so ready for useEffectNonStrict
+  useEffectNonStrict(() => {
     if (baseRef.current?.session) {
       baseRef.current.session.var.PROFILE = props.profile;
     }
-  }, [baseRef.current?.session, props.profile]);
-
-  // useEffectNonStrict here so it occurs after BaseTty's
-  useEffectNonStrict(() => {
     // Boot profile (possibly while disabled)
     if (baseRef.current?.session && !state.booted) {
       const { xterm, session } = baseRef.current;
@@ -276,7 +273,7 @@ export function Tty(props: Props) {
         await session.ttyShell.runProfile();
       });
     }
-  }, [baseRef.current?.session, props.disabled]);
+  }, [baseRef.current?.session, props.disabled, props.profile]);
 
   return (
     <div
