@@ -9,6 +9,7 @@ declare namespace Geomorph {
   type SubSymbol = import("@npc-cli/ui__world/assets.schema").AssetsSubSymbol;
   type Symbol = import("@npc-cli/ui__world/assets.schema").AssetsSymbol;
 
+  type Connector = import("@npc-cli/ui__world/connector").Connector;
   type ConnectorJson = import("@npc-cli/ui__world/assets.schema").ConnectorJson;
 
   type StarshipSymbolImageKey = import("@npc-cli/media/starship-symbol").StarshipSymbolImageKey;
@@ -31,6 +32,13 @@ declare namespace Geomorph {
     grKey: Geomorph.GmRoomKey;
     gmId: number;
     roomId: number;
+  }
+
+  interface GmDoorId {
+    /** gmDoorKey `g{gmId}d${doorId}` */
+    gdKey: GmDoorKey;
+    gmId: number;
+    doorId: number;
   }
 
   /** `g${gmId}r${roomId}` */
@@ -75,4 +83,55 @@ declare namespace Geomorph {
   // type ObstacleSheetRectCtxt = import("@npc-cli/ui__world/assets.schema").ObstacleSheetRectCtxt;
 
   type GmIdGrid = { [gridKey in `${number},${number}`]: number };
+
+  type HullDoorMeta = Meta<{ edge: Geom.DirectionString }>;
+
+  // 🚧
+  interface DoorState extends Geomorph.GmDoorId {
+    /** gmDoorKey format i.e. `g{gmId}d{doorId}` */
+    gdKey: GmDoorKey;
+    door: Geomorph.Connector;
+    instanceId: number;
+
+    /** Is the door automatic? */
+    auto: boolean;
+    /** Is this an axis-aligned rectangle? */
+    axisAligned: boolean;
+    /** Is the door open? */
+    open: boolean;
+    /** Is the door locked? */
+    locked: boolean;
+
+    /** Is the door sealed? */
+    sealed: boolean;
+    /** Is this a hull door? */
+    hull: boolean;
+
+    /** Between `0.1` (open) and `1` (closed) */
+    ratio: number;
+    /** Src of transformed door segment */
+    src: Geom.VectJson;
+    /** Dst of transformed door segment */
+    dst: Geom.VectJson;
+    /** Center of transformed door */
+    center: Geom.Vect;
+    /** Direction of transformed door segment */
+    dir: Geom.VectJson;
+    normal: Geom.VectJson;
+    /** Length of `door.seg` */
+    segLength: number;
+    /** 1st entrance pointed to by `normal` */
+    entrances: [Geom.Seg, Geom.Seg];
+    /**
+     * Added to exits (a point on a segment door.entrances[i]) to compute "far exit".
+     * Used to avoid NPCs blocking the door.
+     */
+    farDeltas: [Geom.VectJson, Geom.VectJson];
+    /** As wide as door, slightly less deep than doorway. */
+    collidePoly: Geom.Poly;
+    /** Bounds of `doorway`. */
+    collideRect: Geom.Rect;
+
+    closeTimeoutId?: number;
+  }
 }

@@ -58,6 +58,18 @@ class GeomService {
     };
   }
 
+  getDeltaDirection(direction: Geom.Direction, delta: 0 | 1 | 2 | 3): Geom.Direction {
+    return ((direction + delta) % 4) as Geom.Direction;
+  }
+
+  getFlippedDirection(direction: Geom.Direction, axis: "x" | "y"): Geom.Direction {
+    if (axis === "x") {
+      return direction % 2 === 0 ? ((2 - direction) as Geom.Direction) : direction;
+    } else {
+      return direction % 2 === 1 ? ((4 - direction) as Geom.Direction) : direction;
+    }
+  }
+
   /**
    * Compute intersection of two infinite lines i.e.
    * 1. `lambda x. p0 + x * d0`.
@@ -96,6 +108,10 @@ class GeomService {
         ? edge[1].translate(lambda * tangents[i].x, lambda * tangents[i].y)
         : Vect.average([edge[1], nextEdge[0]]); // Fallback
     });
+  }
+
+  isDirectionChar(input: any): input is (typeof directionChars)[number] {
+    return directionChars.includes(input);
   }
 
   /**
@@ -208,3 +224,8 @@ export const geomService = new GeomService();
 
 const tempVect1 = new Vect();
 const tempVect2 = new Vect();
+
+/**
+ * Aligned to `Geom.Direction`.
+ */
+export const directionChars = ["n", "e", "s", "w"] as const;
