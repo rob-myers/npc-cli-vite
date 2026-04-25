@@ -1,7 +1,7 @@
 import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { geomService } from "@npc-cli/util";
-import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Poly } from "@npc-cli/util/geom/poly";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { floorTextureDimension, gmFloorExtraScale, wallHeight, worldToSguScale } from "../const";
 import { getContext2d } from "./tex-array";
 
@@ -59,12 +59,12 @@ export default class DerivedGmsData {
       ({ outline, holes }) => outline.length + holes.reduce((sum, hole) => sum + hole.length, 0),
     );
 
+    // 🚧 remove lintels?
     // lintels (2 quads per door):
     gmData.wallPolySegCounts.push(2 * gm.doors.length);
     // windows (upper/lower, may not be quads):
     gmData.wallPolySegCounts.push(2 * gm.windows.reduce((sum, x) => sum + x.poly.outline.length, 0));
 
-    // 🚧 ...
     const nonHullWallsTouchCeil = gm.walls.filter(
       (poly) =>
         poly.meta.hull !== true &&
@@ -82,24 +82,73 @@ export default class DerivedGmsData {
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
 
-    // room pick canvas: each room filled with rgb(roomId+1, 0, 0)
-    if (!gmData.roomCanvas) {
-      gmData.roomCanvas = getContext2d(`room-pick-${gm.key}`, { willReadFrequently: true });
-    }
-    const roomCt = gmData.roomCanvas;
+    // draw room/door pick canvas
+    const roomCt = gmData.roomHitCt;
     roomCt.canvas.width = floorTextureDimension;
     roomCt.canvas.height = floorTextureDimension;
     roomCt.resetTransform();
     roomCt.clearRect(0, 0, roomCt.canvas.width, roomCt.canvas.height);
-    roomCt.setTransform(
-      worldToCanvas, 0, 0, worldToCanvas,
-      -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas,
-    );
+    roomCt.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+    for (const [doorId, door] of gm.doors.entries()) {
+      drawPolygons(roomCt, [door.poly], { fillStyle: gmHitUtil.encodeDoor(doorId), strokeStyle: null });
+    }
     for (const [roomId, room] of gm.rooms.entries()) {
-      drawPolygons(roomCt, [room], { fillStyle: `rgb(${roomId + 1}, 0, 0)`, strokeStyle: null });
+      drawPolygons(roomCt, [room], { fillStyle: gmHitUtil.encodeRoom(roomId), strokeStyle: null });
     }
 
+    // populate connectors with adjacent roomIds
+    for (const connector of gm.doors) {
+      connector.roomIds = connector.entries.map((localPoint) => this.findRoomIdContaining(gm, localPoint)) as [
+        number | null,
+        number | null,
+      ];
+    }
+    for (const connector of gm.windows) {
+      connector.roomIds = connector.entries.map((localPoint) => this.findRoomIdContaining(gm, localPoint)) as [
+        number | null,
+        number | null,
+      ];
+    }
+    // 🚧
+    // gmData.roomGraph = RoomGraphClass.from(gm, `${gm.key}: `);
+
     gmData.unseen = false;
+  }
+
+  /**
+   * Lookup pixel in geomorph room hit canvas.
+   */
+  findRoomIdContaining(gm: Geomorph.Layout, localPoint: Geom.VectJson, includeDoors = true) {
+    const ct = this.byKey[gm.key].roomHitCt;
+    const scale = worldToSguScale * gmHitUtil.extraScale;
+    const { data: rgba } = ct.getImageData(
+      // transform to canvas coords
+      (localPoint.x - gm.bounds.x) * scale,
+      (localPoint.y - gm.bounds.y) * scale,
+      1,
+      1,
+      { colorSpace: "srgb" },
+    );
+
+    // console.log({ gmKey: gm.key, localPoint, rgba: Array.from(rgba) });
+    const decoded = gmHitUtil.decode(Array.from(rgba) as [number, number, number, number]);
+
+    if (decoded === null) {
+      return null;
+    }
+
+    if (decoded.type === "room") {
+      return decoded.roomId;
+    }
+
+    if (decoded.type === "door") {
+      if (includeDoors) {
+        // choose 1st roomId if exists
+        return gm.doors[decoded.doorId].roomIds.find((x) => typeof x === "number") ?? null;
+      } else {
+        return null;
+      }
+    }
   }
 }
 
@@ -121,5 +170,33 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     wallPolySegCounts: [],
     polyDecals: [],
     tops: { broad: [], hull: [], nonHull: [], window: [] },
+    roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
   };
 }
+
+const gmHitUtil = {
+  /** Smaller value like `1.5` breaks "wall in room" e.g. 102 lab */
+  extraScale: 2,
+
+  // Fix alpha as `1` otherwise get pre-multiplied values.
+  /** rgba encoding `(100, 0, doorId, 1)` */
+  redForDoor: 100,
+  /** rgba encoding `(200, roomId, 0, 1)` */
+  redForRoom: 200,
+
+  encodeDoor(doorId: number) {
+    return `rgba(${gmHitUtil.redForDoor}, 0, ${doorId}, 1)` as const;
+  },
+  encodeRoom(roomId: number) {
+    return `rgba(${gmHitUtil.redForRoom}, ${roomId}, 0, 1)` as const;
+  },
+  decode([red, roomId, doorId, _alpha]: [number, number, number, number]) {
+    if (red === gmHitUtil.redForDoor) {
+      return { type: "door", doorId } as const;
+    }
+    if (red === gmHitUtil.redForRoom) {
+      return { type: "room", roomId } as const;
+    }
+    return null;
+  },
+} as const;

@@ -33,13 +33,13 @@ export default function Doors() {
         const door = gm.doors[doorId];
 
         const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
-        const { meta } = door;
+        const { meta, roomIds } = door;
 
         const slideDirection = Array.isArray(meta.slideDirection)
           ? new Vect(...meta.slideDirection)
           : seg[1].clone().sub(seg[0]).normalize();
 
-        return { gmId, doorId, seg, hull, ...meta, slideDirection };
+        return { gmId, doorId, seg, hull, roomIds, ...meta, slideDirection };
       },
 
       setOpen(instanceId: number, ratio: number) {
