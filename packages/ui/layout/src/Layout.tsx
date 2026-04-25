@@ -17,10 +17,10 @@ export default function Layout() {
       const oldIds = Object.keys(uiStore.getState().byId);
       uiStoreApi.resetLayout();
       for (const id of oldIds) layoutApi.removeLayoutItem(id);
-      const meta = Object.values(uiStore.getState().byId)[0]?.meta;
-      if (meta) {
+      const tabsMeta = Object.values(uiStore.getState().byId).find(({ meta }) => meta.uiKey === "Tabs")?.meta;
+      if (tabsMeta) {
         layoutApi.appendLayoutItems([
-          { i: meta.id, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() },
+          { i: tabsMeta.id, x: 0, y: 0, w: layoutApi.getCols(), h: layoutApi.getViewportRows() },
         ]);
       }
     },

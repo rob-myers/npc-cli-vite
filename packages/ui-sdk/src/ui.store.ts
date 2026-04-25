@@ -76,7 +76,7 @@ export const uiStoreApi = {
   },
   resetLayout() {
     uiStoreApi.clearUis();
-    uiStoreApi.addUis({ metas: [getDefaultUiMeta()] });
+    uiStoreApi.addUis({ metas: getDefaultUiMetas() });
   },
   setUiMeta(id: string, uiMetaDraft: (state: Draft<UiInstanceMeta>) => void) {
     uiStore.setState((draft) => void uiMetaDraft(draft.byId[id].meta));
@@ -150,16 +150,34 @@ export type UiGridLayout = {
 };
 
 function getDefaultLayout(): UiGridLayout {
-  const meta = getDefaultUiMeta();
+  const metas = getDefaultUiMetas();
+  const tabsMeta = metas.find((m) => m.uiKey === "Tabs") as UiInstanceMeta;
   return {
-    layouts: { lg: [{ i: meta.id, x: 12, y: 1, w: 2, h: 2 }] },
+    layouts: { lg: [{ i: tabsMeta.id, x: 0, y: 0, w: 12, h: 20 }] },
     breakpoints: { lg: 1200, sm: 768 },
     cols: { lg: 12, sm: 6 },
-    toUi: { [meta.id]: meta },
+    toUi: Object.fromEntries(metas.map((m) => [m.id, m])),
   };
 }
 
-function getDefaultUiMeta(): UiInstanceMeta {
-  const layoutUiId = `ui-${crypto.randomUUID()}`;
-  return { id: layoutUiId, title: "layout-0", uiKey: "Layout" };
+function getDefaultUiMetas(): UiInstanceMeta[] {
+  const uid = () => `ui-${crypto.randomUUID()}`;
+
+  const layoutMeta: UiInstanceMeta = { id: uid(), title: "layout-0", uiKey: "Layout" };
+  const jshMeta: UiInstanceMeta = { id: uid(), title: "tty-0", uiKey: "Jsh", sessionKey: "tty-0" };
+  const worldMeta: UiInstanceMeta = { id: uid(), title: "world-0", uiKey: "World", worldKey: "world-0" };
+
+  const tabsMeta: UiInstanceMeta = {
+    id: uid(),
+    title: "tabs-0",
+    uiKey: "Tabs",
+    items: [layoutMeta.id, worldMeta.id, jshMeta.id],
+    currentTabId: layoutMeta.id,
+  };
+
+  layoutMeta.parentId = tabsMeta.id;
+  jshMeta.parentId = tabsMeta.id;
+  worldMeta.parentId = tabsMeta.id;
+
+  return [tabsMeta, layoutMeta, jshMeta, worldMeta];
 }
