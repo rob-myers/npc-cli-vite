@@ -1,9 +1,10 @@
+import { Dialog } from "@base-ui/react/dialog";
 import { Menu } from "@base-ui/react/menu";
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon, XIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useContext } from "react";
@@ -21,6 +22,7 @@ export function WorldMenu() {
 
   const state = useStateRef(
     (): State => ({
+      debugHitOpen: false,
       dragged: false,
       menuOpen: false,
       minY: 40,
@@ -66,7 +68,7 @@ export function WorldMenu() {
 
   const y = useMotionValue(state.getClampedY(state.y));
 
-  return (
+  return (<>
     <motion.div
       className={cn(uiClassName, "absolute top-0 left-0.25 z-9999 touch-none select-none")}
       style={{ y }}
@@ -272,11 +274,22 @@ export function WorldMenu() {
               >
                 Debug Pick
               </Menu.Item>
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => state.set({ debugHitOpen: true })}
+              >
+                Room Hit
+              </Menu.Item>
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
     </motion.div>
+
+    <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
+    </>
   );
 }
 
@@ -308,6 +321,7 @@ function brightnessToRatio(b: number) {
 }
 
 export type State = {
+  debugHitOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -325,3 +339,45 @@ export type State = {
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
+
+function RoomHitModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const w = useContext(WorldContext);
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Popup
+          className={cn(
+            uiClassName,
+            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
+            "max-w-3xl w-[90vw] max-h-[80vh] flex flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Room Hit Canvases</Dialog.Title>
+            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
+              <XIcon className="size-5 text-slate-400" />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 flex flex-wrap justify-center gap-4">
+            {w.seenGmKeys.map((gmKey) => (
+              <div key={gmKey} className="flex flex-col items-center gap-1">
+                <span className="text-xs text-slate-400">{gmKey}</span>
+                <div
+                  ref={(el) => {
+                    if (!el) return;
+                    const canvas = w.gmsData.byKey[gmKey].roomHitCt.canvas;
+                    el.replaceChildren(canvas);
+                    canvas.style.width = "200px";
+                    canvas.style.height = "auto";
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
