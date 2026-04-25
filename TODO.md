@@ -67,9 +67,9 @@ done
   - ✅ can set one tab layout
   - ✅ can set two tab layout (vert or horizontal)
   - ✅ responsive?
-  - 🚧 reset has layout, tty, world
+  - ✅ reset has layout, tty, world
   - ❌ option to flatten layout (no Tabs)
-  - layout schema and layouts.json
+  - 🚧 layout schema and layouts.json
     - can CRUD in DEV
 
 - when resizing always show cancel button
