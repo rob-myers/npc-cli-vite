@@ -384,6 +384,15 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         layouts.current.lg = newLg;
         setLayouts({ lg: newLg });
       },
+      resizeLayoutItems(updates: { i: string; x: number; y: number; w: number; h: number }[]) {
+        const map = new Map(updates.map((u) => [u.i, u]));
+        const newLg = layouts.current.lg.map((item) => {
+          const u = map.get(item.i);
+          return u ? { ...item, x: u.x, y: u.y, w: u.w, h: u.h } : item;
+        });
+        layouts.current.lg = newLg;
+        setLayouts({ lg: newLg });
+      },
       getUiGridRect: (id) => {
         const found = layouts.current.lg.find((item) => item.i === id);
         return found ? { x: found.x, y: found.y, w: found.w, h: found.h } : null;
