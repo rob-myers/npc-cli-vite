@@ -73,4 +73,6 @@ declare namespace Geomorph {
   type ObstacleKey = import("@npc-cli/ui__world/assets.schema").ObstacleKey;
 
   // type ObstacleSheetRectCtxt = import("@npc-cli/ui__world/assets.schema").ObstacleSheetRectCtxt;
+
+  type GmIdGrid = { [gridKey in `${number},${number}`]: number };
 }

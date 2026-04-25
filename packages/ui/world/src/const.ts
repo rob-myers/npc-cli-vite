@@ -88,3 +88,8 @@ export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 export const npcScale = 0.6;
 
 export const MAX_NPCS = 256;
+
+/** In meters, or equivalently 2 grid squares */
+export const decorGridSize = geomorphGridMeters * 2;
+
+export const gmIdGridDim = 600 * sguToWorldScale;
