@@ -8,8 +8,9 @@
     - ✅ `w.gmGraph`
     - ✅ `w npc.findGmIdContaining $( pick 1 )`
     - ✅ can debug display the graph
-  - 🚧 `w.npc.findRoomContaining`
-  - object-pick calls `w.findRoomContaining`
+  - ✅ `w.npc.findRoomContaining`
+    - `w npc.findRoomContaining $( pick 1 )`
+  - 🚧 object-pick calls `w.findRoomContaining`
 - ✅ pick door should have doorId
 
 - ✅ BUG tty: very first load incognito not running PROFILE

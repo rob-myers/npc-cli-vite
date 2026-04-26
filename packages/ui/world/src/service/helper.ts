@@ -11,6 +11,13 @@ export const helper = {
       return { grKey: helper.getGmRoomKey(input[0], input[1]), gmId: input[0], roomId: input[1] };
     }
   },
+
+  /**
+   * 🔔 Given `grKey` assume `gmId`, `roomId` too.
+   */
+  isGmRoomId(input: any): input is Geomorph.GmRoomId {
+    return !!input && typeof input.grKey === "string";
+  },
 };
 
 export type Helper = typeof helper;
