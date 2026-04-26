@@ -28,22 +28,19 @@ import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
-const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
-
 export default function NPCs() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
     (): State => ({
-      clips: { idle: null, walk: null, run: null },
+      clips: { idle: emptyAnimationClip, walk: emptyAnimationClip, run: emptyAnimationClip },
       crowd: crowdApi.create(0.5),
       gltf: null,
+      texture: null,
 
       byPickId: {} as Record<number, Npc>,
-      npc: {},
-
       nextPickId: 0,
-      texture: null,
+      npc: {},
 
       createNpcMaterial(pickId) {
         if (!state.texture) throw Error("texture not loaded yet");
@@ -313,9 +310,9 @@ export default function NPCs() {
   state.texture = queryData?.texture ?? null;
   if (state.gltf) {
     const anims = state.gltf.animations;
-    state.clips.idle = anims.find((c) => c.name === "idle") ?? null;
-    state.clips.walk = anims.find((c) => c.name === "walk") ?? null;
-    state.clips.run = anims.find((c) => c.name === "run") ?? null;
+    state.clips.idle = anims.find((c) => c.name === "idle") ?? emptyAnimationClip;
+    state.clips.walk = anims.find((c) => c.name === "walk") ?? emptyAnimationClip;
+    state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
   }
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
@@ -330,7 +327,7 @@ export default function NPCs() {
 
 export type State = {
   byPickId: Record<number, Npc>;
-  clips: { idle: THREE.AnimationClip | null; walk: THREE.AnimationClip | null; run: THREE.AnimationClip | null };
+  clips: { idle: THREE.AnimationClip; walk: THREE.AnimationClip; run: THREE.AnimationClip };
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   nextPickId: number;
@@ -367,7 +364,10 @@ function getAgentParams(): crowd.AgentParams {
   };
 }
 
+const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const idleSeparationWeight = 0.5;
 const walkSeparationWeight = 0.25;
-
 const closePolygonDistance = 0.05;
+
+const emptyAnimationClip = new THREE.AnimationClip();
+emptyAnimationClip.name = "empty-animation-clip";
