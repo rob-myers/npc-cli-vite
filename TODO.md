@@ -35,7 +35,8 @@
 - Layout supports 2 row with 2:1 ratio
   - mobile does not see 3 col or 2 col options
 
-- npcs support multiple skins
+- 🚧 npcs support multiple skins
+  - ✅ media/src/skin and link app/public/skin with 3 skins
 - spawn can specify skin
 - skin remapping
 
@@ -61,8 +62,11 @@
 
 ## Long running
 
-- 🚧 extend existing symbols with missing decor/obstacle
-  - ✅ stateroom-012 🚧 ...
+- 🚧 extend existing symbols with missing obstacles
+
+- 🚧 extend existing symbols with missing decor
+  - ✅ stateroom-012 has decor key=switch
+  - 🚧 ...
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
