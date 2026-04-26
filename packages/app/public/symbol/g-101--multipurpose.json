@@ -19,13 +19,13 @@
     {
       "id": "524c57f6-c710-4b34-bdaa-a90a28fc87ca",
       "name": "wall hull hull--20x20",
-      "locked": true,
+      "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1.5, "f": 1.5},
       "type": "path",
       "d": "M 2.80001 1194.8 L 1194.8 1194.8 L 1194.8 2.80001 L 2.80001 2.80001 L 2.80001 1194.8 Z M 1202.6 -5 L 1202.6 1202.6 L -5 1202.6 L -5 -5 L 1202.6 -5 Z",
       "baseRect": {"width": 1200, "height": 1200},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 1.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 1.5, 1.5)"
     },
     {
       "id": "4cc6d6a7-7986-4bf5-a54b-ac238ea3cedb",
@@ -114,7 +114,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1195, "f": 300},
       "type": "rect",
-      "baseRect": {"width": 9, "height": 47.5},
+      "baseRect": {"width": 10, "height": 47.5},
       "cssTransform": "matrix(1, 0, 0, 1, 1195, 300)"
     },
     {
@@ -124,7 +124,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1195, "f": 252.5},
       "type": "rect",
-      "baseRect": {"width": 9, "height": 47.5},
+      "baseRect": {"width": 10, "height": 47.5},
       "cssTransform": "matrix(1, 0, 0, 1, 1195, 252.5)"
     },
     {
@@ -132,20 +132,20 @@
       "name": "door hull edge=w slideDirection=[0,-1]",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": 252.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 252.5},
       "type": "rect",
-      "baseRect": {"width": 9, "height": 47.5},
-      "cssTransform": "matrix(1, 0, 0, 1, -5, 252.5)"
+      "baseRect": {"width": 9.5, "height": 47.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -4.5, 252.5)"
     },
     {
       "id": "8d8cc505-5390-4d12-a1be-1e77e028f434",
       "name": "door hull edge=w slideDirection=[0,1]",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": 300},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 300},
       "type": "rect",
-      "baseRect": {"width": 9, "height": 47.5},
-      "cssTransform": "matrix(1, 0, 0, 1, -5, 300)"
+      "baseRect": {"width": 9.5, "height": 47.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -4.5, 300)"
     },
     {
       "id": "1925cb97-90ad-4545-ae37-535628cdf25f",
