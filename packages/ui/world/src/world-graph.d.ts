@@ -54,7 +54,7 @@ declare namespace Graph {
 
   type GmGraphEdgeOpts = BaseEdgeOpts;
 
-  type GmGraph = import("./gm-graph").GmGraph;
+  type GmGraph = import("./service/gm-graph").GmGraph;
 
   /** Given a hull door, the respective ids in adjacent geomorph */
   interface GmAdjRoomCtxt {
@@ -99,4 +99,68 @@ declare namespace Graph {
       windowIds: number[];
     };
   };
+
+  //#region RoomGraph
+
+  type RoomGraph = import("./service/room-graph").RoomGraph;
+
+  interface RoomGraphNodeRoom {
+    type: "room";
+    /** `room-${roomId} */
+    id: string;
+    /** Index of `Geomorph.Layout['rooms']` */
+    roomId: number;
+  }
+  interface RoomGraphNodeDoor {
+    type: "door";
+    /** `door-${doorIndex} */
+    id: string;
+    /** Index of `Geomorph.Layout['doors']` */
+    doorId: number;
+  }
+
+  interface RoomGraphNodeWindow {
+    type: "window";
+    /** `window-${doorIndex} */
+    id: string;
+    /** Index of `Geomorph.Layout['windows']` */
+    windowId: number;
+  }
+
+  type RoomGraphNode = RoomGraphNodeRoom | RoomGraphNodeDoor | RoomGraphNodeWindow;
+
+  type RoomGraphNodeConnector = RoomGraphNodeDoor | RoomGraphNodeWindow;
+
+  type RoomGraphEdgeOpts = BaseEdgeOpts;
+
+  type RoomGraphJson = GraphJson<RoomGraphNode, RoomGraphEdgeOpts>;
+
+  //#endregion
+
+  //#region GmRoomGraph
+
+  type GmRoomGraph = import("./service/gm-room-graph").GmRoomGraph;
+
+  interface GmRoomGraphNode extends AStarNode {
+    /** `g{gmId}-r{roomId}` */
+    id: Geomorph.GmRoomKey;
+    gmId: number;
+    roomId: number;
+
+    /** Index into nodesArray for easy computation of astar.neighbours */
+    index: number;
+  }
+
+  interface GmWindowId {
+    gmId: number;
+    windowId: number;
+    // currently don't support hull windows
+  }
+
+  interface GmRoomGraphEdgeOpts extends BaseEdgeOpts {
+    doors: Geomorph.GmDoorId[];
+    windows: GmWindowId[];
+  }
+
+  //#endregion
 }

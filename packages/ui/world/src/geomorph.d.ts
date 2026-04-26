@@ -25,6 +25,8 @@ declare namespace Geomorph {
     wallPolyCount: number;
     wallPolySegCounts: number[];
     roomHitCt: CanvasRenderingContext2D;
+    /** Graph of rooms and doors within geomorph */
+    roomGraph: import("./service/room-graph").RoomGraph;
   };
 
   interface GmRoomId {
