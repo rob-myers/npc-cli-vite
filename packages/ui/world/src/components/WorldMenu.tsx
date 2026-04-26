@@ -24,6 +24,7 @@ export function WorldMenu() {
     (): State => ({
       debugHitOpen: false,
       gmGraphOpen: false,
+      gmRoomGraphOpen: false,
       dragged: false,
       menuOpen: false,
       minY: 40,
@@ -294,6 +295,14 @@ export function WorldMenu() {
               >
                 Gm Graph
               </Menu.Item>
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => state.set({ gmRoomGraphOpen: true })}
+              >
+                Room Graph
+              </Menu.Item>
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
@@ -302,6 +311,7 @@ export function WorldMenu() {
 
     <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
     <GmGraphModal open={state.gmGraphOpen} onOpenChange={(open) => state.set({ gmGraphOpen: open })} />
+    <GmRoomGraphModal open={state.gmRoomGraphOpen} onOpenChange={(open) => state.set({ gmRoomGraphOpen: open })} />
     </>
   );
 }
@@ -336,6 +346,7 @@ function brightnessToRatio(b: number) {
 export type State = {
   debugHitOpen: boolean;
   gmGraphOpen: boolean;
+  gmRoomGraphOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -499,6 +510,97 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                       fontSize={fontSize}
                     >
                       {label}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const w = useContext(WorldContext);
+
+  const { minX, minY, width, height } = useMemo(() => {
+    if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    for (const gm of w.gms) {
+      const r = gm.gridRect;
+      x1 = Math.min(x1, r.x);
+      y1 = Math.min(y1, r.y);
+      x2 = Math.max(x2, r.x + r.width);
+      y2 = Math.max(y2, r.y + r.height);
+    }
+    const pad = Math.max(x2 - x1, y2 - y1) * 0.15;
+    return { minX: x1 - pad, minY: y1 - pad, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad };
+  }, [w.gms]);
+
+  const nodeRadius = Math.max(width, height) * 0.006;
+  const fontSize = nodeRadius * 2;
+  const strokeWidth = Math.max(width, height) * 0.002;
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Popup
+          className={cn(
+            uiClassName,
+            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
+            "max-w-4xl w-[90vw] h-[85vh] flex flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Room Graph</Dialog.Title>
+            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
+              <XIcon className="size-5 text-slate-400" />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 min-h-0 overflow-auto p-2">
+            <svg viewBox={`${minX} ${minY} ${width} ${height}`} className="w-full mx-auto" style={{ aspectRatio: `${width} / ${height}` }}>
+              {w.gms.map((gm, gmId) => (
+                <image
+                  key={gmId}
+                  href={`/starship-symbol/${gm.key}.png`}
+                  x={gm.gridRect.x}
+                  y={gm.gridRect.y}
+                  width={gm.gridRect.width}
+                  height={gm.gridRect.height}
+                  opacity={0.3}
+                />
+              ))}
+              {w.gmRoomGraph.edgesArray.map((edge) => (
+                <line
+                  key={edge.id}
+                  x1={edge.src.astar.centroid.x}
+                  y1={edge.src.astar.centroid.y}
+                  x2={edge.dst.astar.centroid.x}
+                  y2={edge.dst.astar.centroid.y}
+                  stroke={edge.doors.length > 0 ? "white" : "cyan"}
+                  strokeWidth={strokeWidth}
+                  opacity={0.5}
+                />
+              ))}
+              {w.gmRoomGraph.nodesArray.map((node) => {
+                const cx = node.astar.centroid.x;
+                const cy = node.astar.centroid.y;
+                return (
+                  <g key={node.id}>
+                    <circle cx={cx} cy={cy} r={nodeRadius} fill="#60a5fa" opacity={0.85} />
+                    <text
+                      x={cx}
+                      y={cy - nodeRadius * 2}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="white"
+                      fontSize={fontSize}
+                    >
+                      {node.id}
                     </text>
                   </g>
                 );
