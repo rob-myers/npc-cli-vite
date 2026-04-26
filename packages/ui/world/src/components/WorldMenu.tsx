@@ -87,8 +87,11 @@ export function WorldMenu() {
         <Menu.Root
           open={state.menuOpen}
           onOpenChange={(open, { reason }) => {
-            if (!open && reason === "focus-out") return;
-            state.set({ menuOpen: open });
+            if (open) {
+              state.set({ menuOpen: true });
+            } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
+              state.set({ menuOpen: false });
+            }
           }}
         >
           <Menu.Trigger
