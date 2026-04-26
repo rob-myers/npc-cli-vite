@@ -7,7 +7,7 @@ import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli
 import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon, XIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
 import { objectPick } from "../service/pick";
@@ -23,6 +23,7 @@ export function WorldMenu() {
   const state = useStateRef(
     (): State => ({
       debugHitOpen: false,
+      gmGraphOpen: false,
       dragged: false,
       menuOpen: false,
       minY: 40,
@@ -264,6 +265,9 @@ export function WorldMenu() {
                 Clear NPCs
               </Menu.Item>
 
+              <div className="my-1 border-t border-slate-700" />
+              <div className="px-2 py-0.5 text-[10px] text-slate-500 uppercase tracking-wider">Debug</div>
+
               <Menu.Item
                 className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                 closeOnClick={false}
@@ -272,7 +276,7 @@ export function WorldMenu() {
                   w.view.forceUpdate();
                 }}
               >
-                Debug Pick
+                Pick
               </Menu.Item>
 
               <Menu.Item
@@ -282,6 +286,14 @@ export function WorldMenu() {
               >
                 Room Hit
               </Menu.Item>
+
+              <Menu.Item
+                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => state.set({ gmGraphOpen: true })}
+              >
+                Gm Graph
+              </Menu.Item>
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
@@ -289,6 +301,7 @@ export function WorldMenu() {
     </motion.div>
 
     <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
+    <GmGraphModal open={state.gmGraphOpen} onOpenChange={(open) => state.set({ gmGraphOpen: open })} />
     </>
   );
 }
@@ -322,6 +335,7 @@ function brightnessToRatio(b: number) {
 
 export type State = {
   debugHitOpen: boolean;
+  gmGraphOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -375,6 +389,121 @@ function RoomHitModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                 />
               </div>
             ))}
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const w = useContext(WorldContext);
+
+  const { minX, minY, width, height } = useMemo(() => {
+    if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    for (const gm of w.gms) {
+      const r = gm.gridRect;
+      x1 = Math.min(x1, r.x);
+      y1 = Math.min(y1, r.y);
+      x2 = Math.max(x2, r.x + r.width);
+      y2 = Math.max(y2, r.y + r.height);
+    }
+    const pad = Math.max(x2 - x1, y2 - y1) * 0.15;
+    return { minX: x1 - pad, minY: y1 - pad, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad };
+  }, [w.gms]);
+
+  const nodeRadius = Math.max(width, height) * 0.008;
+  const fontSize = nodeRadius * 2;
+  const strokeWidth = Math.max(width, height) * 0.003;
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Popup
+          className={cn(
+            uiClassName,
+            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
+            "max-w-4xl w-[90vw] h-[85vh] flex flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Gm Graph</Dialog.Title>
+            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
+              <XIcon className="size-5 text-slate-400" />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 min-h-0 overflow-auto p-2">
+            <svg viewBox={`${minX} ${minY} ${width} ${height}`} className="w-full mx-auto" style={{ aspectRatio: `${width} / ${height}` }}>
+              {w.gms.map((gm, gmId) => (
+                <image
+                  key={gmId}
+                  href={`/starship-symbol/${gm.key}.png`}
+                  x={gm.gridRect.x}
+                  y={gm.gridRect.y}
+                  width={gm.gridRect.width}
+                  height={gm.gridRect.height}
+                  opacity={0.3}
+                />
+              ))}
+              {w.gmGraph.edgesArray.map((edge) => (
+                <line
+                  key={edge.id}
+                  x1={edge.src.astar.centroid.x}
+                  y1={edge.src.astar.centroid.y}
+                  x2={edge.dst.astar.centroid.x}
+                  y2={edge.dst.astar.centroid.y}
+                  stroke="white"
+                  strokeWidth={strokeWidth}
+                  opacity={0.5}
+                />
+              ))}
+              {w.gmGraph.nodesArray.map((node) => {
+                const cx = node.astar.centroid.x;
+                const cy = node.astar.centroid.y;
+                const gm = w.gms[node.gmId];
+                const gmCx = gm.gridRect.x + gm.gridRect.width / 2;
+                const gmCy = gm.gridRect.y + gm.gridRect.height / 2;
+                const dx = cx - gmCx;
+                const dy = cy - gmCy;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const offset = nodeRadius * 4;
+                const labelX = cx + (dx / len) * offset;
+                const labelY = cy + (dy / len) * offset;
+                const label = node.type === "gm"
+                  ? `gm${node.gmId}`
+                  : `d${node.doorId}${node.sealed ? "✕" : ""}`;
+                return (
+                  <g key={node.id}>
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={nodeRadius}
+                      fill={
+                        node.type === "gm"
+                          ? "#4ade80"
+                          : node.sealed
+                            ? "#ef4444"
+                            : "#fb923c"
+                      }
+                      opacity={0.85}
+                    />
+                    <text
+                      x={labelX}
+                      y={labelY}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="white"
+                      fontSize={fontSize}
+                    >
+                      {label}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         </Dialog.Popup>
       </Dialog.Portal>
