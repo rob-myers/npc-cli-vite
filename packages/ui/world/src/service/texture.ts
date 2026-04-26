@@ -529,7 +529,7 @@ export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
   return mat;
 }
 
-export function createShadowMaterial() {
+function createShadowMaterial() {
   const center = uv().sub(0.5);
   const dist = center.dot(center).mul(4);
   const alpha = float(1).sub(dist).clamp(0, 1);
@@ -541,3 +541,5 @@ export function createShadowMaterial() {
   // mat.outputNode = objectPick.equal(1).select(vec4(0, 255, 0, 1), output);
   return mat;
 }
+
+export const shadowMaterial = createShadowMaterial();
