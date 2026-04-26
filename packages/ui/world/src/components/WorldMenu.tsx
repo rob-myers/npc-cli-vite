@@ -7,7 +7,7 @@ import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli
 import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon, XIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
-import { useContext, useMemo } from "react";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
 import { objectPick } from "../service/pick";
@@ -86,7 +86,8 @@ export function WorldMenu() {
       >
         <Menu.Root
           open={state.menuOpen}
-          onOpenChange={(open) => {
+          onOpenChange={(open, { reason }) => {
+            if (!open && reason === "focus-out") return;
             state.set({ menuOpen: open });
           }}
         >
@@ -366,6 +367,87 @@ export type State = {
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 
+function useSvgZoom(bounds: { minX: number; minY: number; width: number; height: number }) {
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
+
+  const viewBox = useMemo(() => {
+    const w = bounds.width / zoom;
+    const h = bounds.height / zoom;
+    const cx = bounds.minX + bounds.width / 2 + pan.x;
+    const cy = bounds.minY + bounds.height / 2 + pan.y;
+    return `${cx - w / 2} ${cy - h / 2} ${w} ${h}`;
+  }, [bounds, zoom, pan]);
+
+  const onWheel = useCallback(
+    (e: React.WheelEvent<SVGSVGElement>) => {
+      e.preventDefault();
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const fx = (e.clientX - rect.left) / rect.width;
+      const fy = (e.clientY - rect.top) / rect.height;
+
+      const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05;
+      const newZoom = Math.min(20, Math.max(0.5, zoom * factor));
+
+      const vw = bounds.width / zoom;
+      const vh = bounds.height / zoom;
+      const curVx = bounds.minX + bounds.width / 2 + pan.x - vw / 2;
+      const curVy = bounds.minY + bounds.height / 2 + pan.y - vh / 2;
+      const mouseVx = curVx + vw * fx;
+      const mouseVy = curVy + vh * fy;
+
+      const newVw = bounds.width / newZoom;
+      const newVh = bounds.height / newZoom;
+      const newCx = mouseVx - newVw * fx + newVw / 2;
+      const newCy = mouseVy - newVh * fy + newVh / 2;
+
+      setPan({
+        x: newCx - (bounds.minX + bounds.width / 2),
+        y: newCy - (bounds.minY + bounds.height / 2),
+      });
+      setZoom(newZoom);
+    },
+    [zoom, pan, bounds],
+  );
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<SVGSVGElement>) => {
+      if ((e.target as Element).closest?.(".edge-label")) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      dragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
+    },
+    [pan],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<SVGSVGElement>) => {
+      if (!dragRef.current) return;
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const scaleX = (bounds.width / zoom) / rect.width;
+      const scaleY = (bounds.height / zoom) / rect.height;
+      setPan({
+        x: dragRef.current.panX - (e.clientX - dragRef.current.startX) * scaleX,
+        y: dragRef.current.panY - (e.clientY - dragRef.current.startY) * scaleY,
+      });
+    },
+    [bounds, zoom],
+  );
+
+  const onPointerUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
+  const reset = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
+
+  return { viewBox, onWheel, onPointerDown, onPointerMove, onPointerUp, reset, zoom };
+}
+
 function RoomHitModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const w = useContext(WorldContext);
   return (
@@ -431,6 +513,7 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const nodeRadius = Math.max(width, height) * 0.005;
   const fontSize = Math.max(width, height) * 0.012;
   const strokeWidth = Math.max(width, height) * 0.003;
+  const svgZoom = useSvgZoom({ minX, minY, width, height });
 
   const labelPlacements = useMemo(() => {
     const nodes = w.gmGraph.nodesArray;
@@ -499,11 +582,15 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
               <XIcon className="size-5 text-slate-400" />
             </Dialog.Close>
           </div>
-          <div className="flex-1 min-h-0 overflow-auto p-2">
+          <div className="flex-1 min-h-0 overflow-hidden p-2">
             <svg
-              viewBox={`${minX} ${minY} ${width} ${height}`}
-              className="w-full mx-auto"
-              style={{ aspectRatio: `${width} / ${height}` }}
+              viewBox={svgZoom.viewBox}
+              onWheel={svgZoom.onWheel}
+              onPointerDown={svgZoom.onPointerDown}
+              onPointerMove={svgZoom.onPointerMove}
+              onPointerUp={svgZoom.onPointerUp}
+
+              className="size-full"
             >
               {w.gms.map((gm, gmId) => (
                 <image
@@ -578,6 +665,7 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
   const fontSize = Math.max(width, height) * 0.012;
   const strokeWidth = Math.max(width, height) * 0.002;
   const color = "#60a5fa";
+  const svgZoom = useSvgZoom({ minX, minY, width, height });
 
   const labelPlacements = useMemo(() => {
     const nodes = w.gmRoomGraph.nodesArray;
@@ -642,13 +730,17 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
               <XIcon className="size-5 text-slate-400" />
             </Dialog.Close>
           </div>
-          <div className="flex-1 min-h-0 overflow-auto p-2">
+          <div className="flex-1 min-h-0 overflow-hidden p-2">
             <svg
-              viewBox={`${minX} ${minY} ${width} ${height}`}
-              className="w-full mx-auto"
-              style={{ aspectRatio: `${width} / ${height}` }}
+              viewBox={svgZoom.viewBox}
+              onWheel={svgZoom.onWheel}
+              onPointerDown={svgZoom.onPointerDown}
+              onPointerMove={svgZoom.onPointerMove}
+              onPointerUp={svgZoom.onPointerUp}
+
+              className="size-full"
             >
-              <style>{`.edge-label { cursor: pointer; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
+              <style>{`.edge-label { cursor: text; user-select: text; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
               {w.gms.map((gm, gmId) => (
                 <image
                   key={gmId}
