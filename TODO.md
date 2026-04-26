@@ -39,6 +39,10 @@
   - ✅ media/src/skin and link app/public/skin with 3 skins
   - ✅ world loads skins into TexArray
   - ✅ WorldMenu has debug to see skins, tags and links
+  - 🚧 `w.npc.texture` should be replaced by the texture atlas `w.texSkin`
+    - ✅ each npc material should support uniform to specify which skin
+    - ✅ `npc.ts` should have a method `changeSkin` which changes the uniform
+    - 🚧 `npc.changeSkin` should support ids and keys
 - spawn can specify skin
 - skin remapping
 

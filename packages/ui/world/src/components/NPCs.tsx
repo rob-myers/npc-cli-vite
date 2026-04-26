@@ -1,6 +1,6 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { useContext, useEffect } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
+import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema } from "../assets.schema";
 import { npcScale } from "../const";
@@ -39,17 +39,15 @@ export default function NPCs() {
       crowd: crowdApi.create(0.5),
       gltf: null,
       skinManifest: null,
-      texture: null,
 
       byPickId: {} as Record<number, Npc>,
       nextPickId: 0,
       npc: {},
 
-      createNpcMaterial(pickId) {
-        if (!state.texture) throw Error("texture not loaded yet");
+      createNpcMaterial(pickId, skinIndexUniform) {
         const pickIdNode = uniform(pickId);
         const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
-        const texNode = tslTexture(state.texture);
+        const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
@@ -57,18 +55,18 @@ export default function NPCs() {
         return mat;
       },
       devHotReload() {
-        if (!state.texture) return;
-
         for (const [key, oldNpc] of Object.entries(state.npc)) {
           oldNpc.material.dispose();
           oldNpc.labelMaterial.dispose();
 
+          const skinIndexUniform = uniform(oldNpc.skinIndex);
           const npc = new Npc(w, {
             key: oldNpc.key,
             pickId: oldNpc.pickId,
+            skinIndexUniform,
             labelLayerIndex: oldNpc.labelLayerIndex,
             position: oldNpc.position,
-            material: state.createNpcMaterial(oldNpc.pickId),
+            material: state.createNpcMaterial(oldNpc.pickId, skinIndexUniform),
             labelMaterial: createLabelMaterial(w.texLabel, oldNpc.labelLayerIndex),
             skinnedMesh: oldNpc.skinnedMesh,
             graph: oldNpc.graph,
@@ -257,12 +255,14 @@ export default function NPCs() {
         const labelLayerIndex = pickId;
         drawLabelLayer(w.texLabel, labelLayerIndex, npcKey);
 
+        const skinIndexUniform = uniform(0);
         const npc = new Npc(w, {
           key: npcKey,
           pickId,
+          skinIndexUniform,
           labelLayerIndex,
           position: groundPointToVector3(groundPoint),
-          material: state.createNpcMaterial(pickId),
+          material: state.createNpcMaterial(pickId, skinIndexUniform),
           labelMaterial: createLabelMaterial(w.texLabel, labelLayerIndex),
           skinnedMesh: clonedSkinnedMesh,
           graph,
@@ -292,25 +292,14 @@ export default function NPCs() {
 
   w.npc = state;
 
-  const queryData =
+  state.gltf =
     useQuery({
       queryKey: [...w.worldQueryPrefix, "template-gltf"],
-      queryFn: async () => {
-        const [gltf, texture] = await Promise.all([
-          new GLTFLoader().loadAsync(url.templateTest0Gltf),
-          new THREE.TextureLoader().loadAsync(`${url.templateTexture}${getDevCacheBustQueryParam()}`),
-        ]);
-        texture.flipY = false;
-        texture.minFilter = THREE.NearestFilter;
-        texture.magFilter = THREE.NearestFilter;
-        texture.generateMipmaps = false;
-        return { gltf, texture };
-      },
+      queryFn: async () => await new GLTFLoader().loadAsync(url.templateTest0Gltf),
       staleTime: Infinity,
     }).data ?? null;
 
-  state.gltf = queryData?.gltf ?? null;
-  state.texture = queryData?.texture ?? null;
+  // 🚧 better way
   if (state.gltf) {
     const anims = state.gltf.animations;
     state.clips.idle = anims.find((c) => c.name === "idle") ?? emptyAnimationClip;
@@ -353,10 +342,13 @@ export type State = {
   gltf: GLTF | null;
   nextPickId: number;
   skinManifest: import("zod").infer<typeof AssetsSkinManifestSchema> | null;
-  texture: THREE.Texture | null;
+
   npc: Record<string, Npc>;
 
-  createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
+  createNpcMaterial(
+    pickId: number,
+    skinIndexUniform: ReturnType<typeof uniform<number>>,
+  ): THREE.MeshStandardNodeMaterial;
   devHotReload(): void;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;

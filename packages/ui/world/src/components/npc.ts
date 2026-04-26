@@ -2,6 +2,7 @@ import type { UseStateRef } from "@npc-cli/util";
 import type { buildGraph } from "@react-three/fiber";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
+import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -9,6 +10,8 @@ const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 export class Npc {
   key!: string;
   pickId!: number;
+  skinIndex = 0;
+  skinIndexUniform!: ReturnType<typeof uniform<number>>;
 
   labelLayerIndex!: number;
   group: THREE.Group | null = null;
@@ -36,6 +39,11 @@ export class Npc {
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
     Object.assign(this, init);
+  }
+
+  changeSkin(index: number) {
+    this.skinIndex = index;
+    this.skinIndexUniform.value = index;
   }
 
   pinTo(result: FindNearestPolyResult) {
@@ -130,6 +138,7 @@ export class Npc {
 export type NpcInit = {
   key: string;
   pickId: number;
+  skinIndexUniform: ReturnType<typeof uniform<number>>;
   labelLayerIndex: number;
   position: THREE.Vector3;
   material: THREE.MeshStandardNodeMaterial;
