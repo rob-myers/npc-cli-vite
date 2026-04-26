@@ -70,253 +70,254 @@ export function WorldMenu() {
 
   const y = useMotionValue(state.getClampedY(state.y));
 
-  return (<>
-    <motion.div
-      className={cn(uiClassName, "absolute top-0 left-0.25 z-9999 touch-none select-none")}
-      style={{ y }}
-      drag="y"
-      dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
-      dragMomentum={false}
-      onDragStart={() => (state.dragged = true)}
-      onDragEnd={() => {
-        state.persistY();
-        requestAnimationFrame(() => (state.dragged = false));
-      }}
-    >
-      <Menu.Root
-        open={state.menuOpen}
-        onOpenChange={(open) => {
-          state.set({ menuOpen: open });
+  return (
+    <>
+      <motion.div
+        className={cn(uiClassName, "absolute top-0 left-0.25 z-9999 touch-none select-none")}
+        style={{ y }}
+        drag="y"
+        dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
+        dragMomentum={false}
+        onDragStart={() => (state.dragged = true)}
+        onDragEnd={() => {
+          state.persistY();
+          requestAnimationFrame(() => (state.dragged = false));
         }}
       >
-        <Menu.Trigger
-          className="cursor-pointer"
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={() => {
-            if (state.dragged) return;
-            state.set({ menuOpen: !state.menuOpen });
+        <Menu.Root
+          open={state.menuOpen}
+          onOpenChange={(open) => {
+            state.set({ menuOpen: open });
           }}
         >
-          <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
-            <GlobeStandIcon className="size-5" weight="bold" />
-            {w.navPending && <Spinner className="size-4" />}
-          </div>
-        </Menu.Trigger>
+          <Menu.Trigger
+            className="cursor-pointer"
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => {
+              if (state.dragged) return;
+              state.set({ menuOpen: !state.menuOpen });
+            }}
+          >
+            <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
+              <GlobeStandIcon className="size-5" weight="bold" />
+              {w.navPending && <Spinner className="size-4" />}
+            </div>
+          </Menu.Trigger>
 
-        <Menu.Portal>
-          <Menu.Positioner className="z-50" sideOffset={4} align="start">
-            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
-              <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                <BrightnessPie
-                  ratio={brightnessToRatio(w.brightness)}
-                  onClick={() => {
-                    w.brightness = 1;
-                    w.update();
-                    tryLocalStorageSet(brightnessStorageKey, "1");
-                  }}
-                />
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={w.brightness}
-                  onChange={(e) => {
-                    w.brightness = Number(e.target.value);
-                    w.update();
-                    tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-20 accent-white"
-                />
-              </div>
-
-              <div className="my-1 border-t border-slate-700" />
-
-              {mapKeys.map((key) => (
-                <Menu.Item
-                  key={key}
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
-                    "hover:bg-slate-700",
-                    key === w.mapKey && "text-green-400",
-                  )}
-                  closeOnClick
-                  onClick={() => {
-                    uiStoreApi.setUiMeta(w.id, (draft) => {
-                      draft.mapKey = key;
-                    });
-                  }}
-                >
-                  {key}
-                </Menu.Item>
-              ))}
-
-              <div className="my-1 border-t border-slate-700" />
-
-              {themeKeys.map((key) => (
-                <Menu.Item
-                  key={key}
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
-                    "hover:bg-slate-700",
-                    key === w.themeKey && "text-green-400",
-                  )}
-                  closeOnClick={false}
-                  onClick={() => {
-                    uiStoreApi.setUiMeta(w.id, (draft) => {
-                      draft.themeKey = key;
-                    });
-                  }}
-                >
-                  {key}
-                </Menu.Item>
-              ))}
-
-              {import.meta.env.DEV && (
-                <>
-                  <div
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      state.themeEditorOpen = !state.themeEditorOpen;
-                      tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
+          <Menu.Portal>
+            <Menu.Positioner className="z-50" sideOffset={4} align="start">
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+                <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                  <BrightnessPie
+                    ratio={brightnessToRatio(w.brightness)}
+                    onClick={() => {
+                      w.brightness = 1;
                       w.update();
+                      tryLocalStorageSet(brightnessStorageKey, "1");
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={w.brightness}
+                    onChange={(e) => {
+                      w.brightness = Number(e.target.value);
+                      w.update();
+                      tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-20 accent-white"
+                  />
+                </div>
+
+                <div className="my-1 border-t border-slate-700" />
+
+                {mapKeys.map((key) => (
+                  <Menu.Item
+                    key={key}
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
+                      "hover:bg-slate-700",
+                      key === w.mapKey && "text-green-400",
+                    )}
+                    closeOnClick
+                    onClick={() => {
+                      uiStoreApi.setUiMeta(w.id, (draft) => {
+                        draft.mapKey = key;
+                      });
                     }}
                   >
-                    {state.themeEditorOpen ? (
-                      <CaretDownIcon className="size-3" />
-                    ) : (
-                      <CaretRightIcon className="size-3" />
+                    {key}
+                  </Menu.Item>
+                ))}
+
+                <div className="my-1 border-t border-slate-700" />
+
+                {themeKeys.map((key) => (
+                  <Menu.Item
+                    key={key}
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
+                      "hover:bg-slate-700",
+                      key === w.themeKey && "text-green-400",
                     )}
-                    edit
-                  </div>
-                  {state.themeEditorOpen && (
-                    <div className="p-2 pt-0 flex flex-col gap-1">
-                      <textarea
-                        key={w.themeKey}
-                        ref={state.ref("themeEditorRef")}
-                        className="w-48 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
-                        defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={() => {
-                          const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                          if (!parsed.success || !w.assets) return;
-                          w.assets.theme ??= {};
-                          w.assets.theme[w.themeKey] = parsed.data;
-                          state.saveThemeDebounced();
-                        }}
-                        onBlur={() => {
-                          clearTimeout(state.saveTimer);
-                          state.saveTheme();
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          const name = prompt("Theme name:");
-                          if (!name || !w.assets) return;
-                          const theme = structuredClone(w.getTheme());
-                          const res = await fetch(`/api/assets/theme/${encodeURIComponent(name)}`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(theme),
-                          });
-                          if (!res.ok) return console.warn("Failed to save theme:", await res.text());
-                          w.assets.theme ??= {};
-                          w.assets.theme[name] = theme;
-                          w.update();
-                        }}
-                      >
-                        add theme
-                      </button>
+                    closeOnClick={false}
+                    onClick={() => {
+                      uiStoreApi.setUiMeta(w.id, (draft) => {
+                        draft.themeKey = key;
+                      });
+                    }}
+                  >
+                    {key}
+                  </Menu.Item>
+                ))}
+
+                {import.meta.env.DEV && (
+                  <>
+                    <div
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        state.themeEditorOpen = !state.themeEditorOpen;
+                        tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
+                        w.update();
+                      }}
+                    >
+                      {state.themeEditorOpen ? (
+                        <CaretDownIcon className="size-3" />
+                      ) : (
+                        <CaretRightIcon className="size-3" />
+                      )}
+                      edit
                     </div>
-                  )}
-                </>
-              )}
+                    {state.themeEditorOpen && (
+                      <div className="p-2 pt-0 flex flex-col gap-1">
+                        <textarea
+                          key={w.themeKey}
+                          ref={state.ref("themeEditorRef")}
+                          className="w-48 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                          defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => {
+                            const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
+                            if (!parsed.success || !w.assets) return;
+                            w.assets.theme ??= {};
+                            w.assets.theme[w.themeKey] = parsed.data;
+                            state.saveThemeDebounced();
+                          }}
+                          onBlur={() => {
+                            clearTimeout(state.saveTimer);
+                            state.saveTheme();
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const name = prompt("Theme name:");
+                            if (!name || !w.assets) return;
+                            const theme = structuredClone(w.getTheme());
+                            const res = await fetch(`/api/assets/theme/${encodeURIComponent(name)}`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(theme),
+                            });
+                            if (!res.ok) return console.warn("Failed to save theme:", await res.text());
+                            w.assets.theme ??= {};
+                            w.assets.theme[name] = theme;
+                            w.update();
+                          }}
+                        >
+                          add theme
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
 
-              <div className="my-1 border-t border-slate-700" />
+                <div className="my-1 border-t border-slate-700" />
 
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => {
-                  const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
-                  if (!result.success) return;
-                  const [x, y, z] = result.position;
-                  const key = `npc-${Date.now().toString(36)}`;
-                  w.npc.spawn({ npcKey: key, at: [x, y, z] });
-                  w.update();
-                }}
-              >
-                Spawn NPC
-              </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => {
+                    const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
+                    if (!result.success) return;
+                    const [x, y, z] = result.position;
+                    const key = `npc-${Date.now().toString(36)}`;
+                    w.npc.spawn({ npcKey: key, at: [x, y, z] });
+                    w.update();
+                  }}
+                >
+                  Spawn NPC
+                </Menu.Item>
 
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => {
-                  w.npc.remove(...Object.keys(w.npc.npc));
-                  w.view.forceUpdate();
-                }}
-              >
-                Clear NPCs
-              </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => {
+                    w.npc.remove(...Object.keys(w.npc.npc));
+                    w.view.forceUpdate();
+                  }}
+                >
+                  Clear NPCs
+                </Menu.Item>
 
-              <div className="my-1 border-t border-slate-700" />
-              <div className="px-2 py-0.5 text-[10px] text-slate-500 uppercase tracking-wider">Debug</div>
+                <div className="my-1 border-t border-slate-700" />
+                <div className="px-2 py-0.5 text-[10px] text-slate-500 uppercase tracking-wider">Debug</div>
 
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => {
-                  objectPick.value = objectPick.value === 1 ? 0 : 1;
-                  w.view.forceUpdate();
-                }}
-              >
-                Pick
-              </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => {
+                    objectPick.value = objectPick.value === 1 ? 0 : 1;
+                    w.view.forceUpdate();
+                  }}
+                >
+                  Pick
+                </Menu.Item>
 
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => state.set({ debugHitOpen: true })}
-              >
-                Room Hit
-              </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => state.set({ debugHitOpen: true })}
+                >
+                  Room Hit
+                </Menu.Item>
 
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => state.set({ gmGraphOpen: true })}
-              >
-                Gm Graph
-              </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => state.set({ gmGraphOpen: true })}
+                >
+                  Gm Graph
+                </Menu.Item>
 
-              <Menu.Item
-                className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                closeOnClick={false}
-                onClick={() => state.set({ gmRoomGraphOpen: true })}
-              >
-                Room Graph
-              </Menu.Item>
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
-    </motion.div>
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => state.set({ gmRoomGraphOpen: true })}
+                >
+                  Gm Room Graph
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      </motion.div>
 
-    <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
-    <GmGraphModal open={state.gmGraphOpen} onOpenChange={(open) => state.set({ gmGraphOpen: open })} />
-    <GmRoomGraphModal open={state.gmRoomGraphOpen} onOpenChange={(open) => state.set({ gmRoomGraphOpen: open })} />
+      <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
+      <GmGraphModal open={state.gmGraphOpen} onOpenChange={(open) => state.set({ gmGraphOpen: open })} />
+      <GmRoomGraphModal open={state.gmRoomGraphOpen} onOpenChange={(open) => state.set({ gmRoomGraphOpen: open })} />
     </>
   );
 }
 
-/** Sun icon with a pie-chart fill showing brightness ratio (0–1) */
+/** Sun icon wi\th a pie-chart fill showing brightness ratio (0–1) */
 function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void }) {
   const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
   return (
@@ -412,7 +413,10 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
   const { minX, minY, width, height } = useMemo(() => {
     if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
-    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    let x1 = Infinity,
+      y1 = Infinity,
+      x2 = -Infinity,
+      y2 = -Infinity;
     for (const gm of w.gms) {
       const r = gm.gridRect;
       x1 = Math.min(x1, r.x);
@@ -447,7 +451,11 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
             </Dialog.Close>
           </div>
           <div className="flex-1 min-h-0 overflow-auto p-2">
-            <svg viewBox={`${minX} ${minY} ${width} ${height}`} className="w-full mx-auto" style={{ aspectRatio: `${width} / ${height}` }}>
+            <svg
+              viewBox={`${minX} ${minY} ${width} ${height}`}
+              className="w-full mx-auto"
+              style={{ aspectRatio: `${width} / ${height}` }}
+            >
               {w.gms.map((gm, gmId) => (
                 <image
                   key={gmId}
@@ -483,22 +491,14 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                 const offset = nodeRadius * 4;
                 const labelX = cx + (dx / len) * offset;
                 const labelY = cy + (dy / len) * offset;
-                const label = node.type === "gm"
-                  ? `gm${node.gmId}`
-                  : `d${node.doorId}${node.sealed ? "✕" : ""}`;
+                const label = node.type === "gm" ? `gm${node.gmId}` : `d${node.doorId}${node.sealed ? "✕" : ""}`;
                 return (
                   <g key={node.id}>
                     <circle
                       cx={cx}
                       cy={cy}
                       r={nodeRadius}
-                      fill={
-                        node.type === "gm"
-                          ? "#4ade80"
-                          : node.sealed
-                            ? "#ef4444"
-                            : "#fb923c"
-                      }
+                      fill={node.type === "gm" ? "#4ade80" : node.sealed ? "#ef4444" : "#fb923c"}
                       opacity={0.85}
                     />
                     <text
@@ -527,7 +527,10 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
 
   const { minX, minY, width, height } = useMemo(() => {
     if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
-    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    let x1 = Infinity,
+      y1 = Infinity,
+      x2 = -Infinity,
+      y2 = -Infinity;
     for (const gm of w.gms) {
       const r = gm.gridRect;
       x1 = Math.min(x1, r.x);
@@ -556,13 +559,17 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
           )}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-            <Dialog.Title className="text-sm font-semibold text-slate-200">Room Graph</Dialog.Title>
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Gm Room Graph</Dialog.Title>
             <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
               <XIcon className="size-5 text-slate-400" />
             </Dialog.Close>
           </div>
           <div className="flex-1 min-h-0 overflow-auto p-2">
-            <svg viewBox={`${minX} ${minY} ${width} ${height}`} className="w-full mx-auto" style={{ aspectRatio: `${width} / ${height}` }}>
+            <svg
+              viewBox={`${minX} ${minY} ${width} ${height}`}
+              className="w-full mx-auto"
+              style={{ aspectRatio: `${width} / ${height}` }}
+            >
               {w.gms.map((gm, gmId) => (
                 <image
                   key={gmId}
