@@ -6,7 +6,8 @@
   - ✅ can debug display geomorph hit canvases
   - 🚧 `w.npc.findGmIdContaining`
     - ✅ `w.gmGraph`
-    - can debug display the graph
+    - ✅ `w npc.findGmIdContaining $( pick 1 )`
+    - 🚧 can debug display the graph
   - `w.npc.findRoomContaining`
   - object-pick calls `w.findRoomContaining`
 - ✅ pick door should have doorId

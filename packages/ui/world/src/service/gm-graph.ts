@@ -6,8 +6,6 @@ import { createGmIdGrid, queryGmIdGrid } from "./grid";
 import { helper } from "./helper";
 import { AStar } from "./pathfinding/AStar";
 
-type Transform6 = [number, number, number, number, number, number];
-
 export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts> {
   gms: Geomorph.LayoutInstance[];
   gmNodeByGmId: { [gmId: number]: Graph.GmGraphNodeGm[] };
@@ -28,7 +26,7 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
   static computeHullDoorDirection(
     hullDoor: Geomorph.Connector,
     hullDoorId: number,
-    transform: Transform6,
+    transform: Geom.SixTuple,
     gmKey: StarShipGeomorphKey,
   ): null | Geom.DirectionString {
     const { edge: hullDir } = hullDoor.meta as Geomorph.HullDoorMeta;
@@ -67,10 +65,7 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
     this.gmIdGrid = {};
   }
 
-  findGmIdContaining(point: MaybeMeta<Geom.VectJson>): number | null {
-    if (typeof point.meta?.gmId === "number") {
-      return point.meta.gmId;
-    }
+  findGmIdContaining(point: Geom.VectJson): number | null {
     return queryGmIdGrid(this.gmIdGrid, point);
   }
 
@@ -323,15 +318,17 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
   }
 }
 
-function extractTransform(gm: { transform: { a: number; b: number; c: number; d: number; e: number; f: number } }): Transform6 {
+function extractTransform(gm: {
+  transform: { a: number; b: number; c: number; d: number; e: number; f: number };
+}): Geom.SixTuple {
   const { a, b, c, d, e, f } = gm.transform;
   return [a, b, c, d, e, f];
 }
 
-function getGmNodeId(gmNumber: StarshipGeomorphNumber, transform: Transform6, navRectId: number) {
+function getGmNodeId(gmNumber: StarshipGeomorphNumber, transform: Geom.SixTuple, navRectId: number) {
   return `gm-${gmNumber}-[${transform}]--${navRectId}`;
 }
 
-function getGmDoorNodeId(gmNumber: StarshipGeomorphNumber, transform: Transform6, hullDoorId: number) {
+function getGmDoorNodeId(gmNumber: StarshipGeomorphNumber, transform: Geom.SixTuple, hullDoorId: number) {
   return `door-${gmNumber}-[${transform}]--${hullDoorId}`;
 }
