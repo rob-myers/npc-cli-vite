@@ -37,8 +37,13 @@
 
 - 🚧 npcs support multiple skins
   - ✅ media/src/skin and link app/public/skin with 3 skins
+  - ✅ world loads skins into TexArray
+  - ✅ WorldMenu has debug to see skins, tags and links
 - spawn can specify skin
 - skin remapping
+
+- doors should block npcs
+  - navigation query should account for open doors
 
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`

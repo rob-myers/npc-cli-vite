@@ -84,6 +84,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         height: 1,
       }),
       texLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
+      texSkin: new TexArray({ ctKey: "npc-skins", width: 64, height: 64, numTextures: MAX_NPCS }),
 
       gms: [],
       seenGmKeys: [],
@@ -298,6 +299,7 @@ export type State = {
   texCeil: TexArray;
   texObs: TexArray;
   texLabel: TexArray;
+  texSkin: TexArray;
 
   gms: Geomorph.LayoutInstance[];
   /**
