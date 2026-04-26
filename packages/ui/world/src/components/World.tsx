@@ -26,6 +26,7 @@ import DerivedGmsData from "../service/DerivedGmsData";
 import { emptyTiledNavmeshResponse } from "../service/empty-nav-response";
 import { createLayoutInstance } from "../service/geomorph";
 import { GmGraph } from "../service/gm-graph";
+import { GmRoomGraph } from "../service/gm-room-graph";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
@@ -86,6 +87,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
       gmGraph: new GmGraph([]),
+      gmRoomGraph: new GmRoomGraph(),
       nav: emptyTiledNavmeshResponse,
       navPending: true,
 
@@ -223,6 +225,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.hash = hashJson(state.assets);
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
+      state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph, state.gmsData);
 
       return null;
     },
@@ -301,6 +304,7 @@ export type State = {
   seenGmKeys: StarShipGeomorphKey[];
   gmsData: DerivedGmsData;
   gmGraph: GmGraph;
+  gmRoomGraph: GmRoomGraph;
 
   ceil: UseStateRef<import("./Ceiling").State>;
   door: UseStateRef<import("./Doors").State>;

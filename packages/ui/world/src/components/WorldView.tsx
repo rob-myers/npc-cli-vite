@@ -213,11 +213,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             key: "picked",
             ...(clickId && { clickId }),
             meta: picked,
+            gmRoomId: typeof picked.gmId === "number" ? w.npc.findRoomContaining(point, true) : null,
+
             distance,
             point,
             faceIndex: intersection.faceIndex,
             normal: intersection.normal,
-            gmRoomId: typeof picked.gmId === "number" ? w.npc.findRoomContaining(point, true) : null,
+
             ...point, // can provide as point
           });
         });

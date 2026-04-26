@@ -16,7 +16,9 @@ declare namespace JshCli {
       gmKey?: string;
       collapse?: boolean;
     };
-  } & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">;
+
+    gmRoomId: Geomorph.GmRoomId | null;
+  } & (GroundPoint & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">);
 
   type DecodedObjectPick = Meta<{
     type: ObjectPickKey;

@@ -1,4 +1,22 @@
 export const helper = {
+  /**
+   * Usage:
+   * - `getGmDoorId(gdKey)`
+   * - `getGmDoorId(gmId, doorId)`
+   */
+  getGmDoorId(...input: [Geomorph.GmDoorKey] | [number, number]): Geomorph.GmDoorId {
+    if (typeof input[0] === "string") {
+      const [, gStr, dStr] = input[0].split(/[gd]/);
+      return { gdKey: input[0], gmId: Number(gStr), doorId: Number(dStr) };
+    } else {
+      return { gdKey: helper.getGmDoorKey(input[0], input[1]), gmId: input[0], doorId: input[1] };
+    }
+  },
+
+  getGmDoorKey(gmId: number, doorId: number): Geomorph.GmDoorKey {
+    return `g${gmId}d${doorId}`;
+  },
+
   getGmRoomKey(gmId: number, roomId: number): Geomorph.GmRoomKey {
     return `g${gmId}r${roomId}`;
   },

@@ -3,6 +3,7 @@ import { geomService } from "@npc-cli/util";
 import { Poly } from "@npc-cli/util/geom/poly";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { floorTextureDimension, gmFloorExtraScale, wallHeight, worldToSguScale } from "../const";
+import { RoomGraph } from "./room-graph";
 import { getContext2d } from "./tex-array";
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
@@ -109,8 +110,8 @@ export default class DerivedGmsData {
         number | null,
       ];
     }
-    // 🚧
-    // gmData.roomGraph = RoomGraphClass.from(gm, `${gm.key}: `);
+
+    gmData.roomGraph = RoomGraph.from(gm, `${gm.key}: `);
 
     gmData.unseen = false;
   }
@@ -170,6 +171,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     polyDecals: [],
     tops: { broad: [], hull: [], nonHull: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
+    roomGraph: new RoomGraph(),
   };
 }
 
