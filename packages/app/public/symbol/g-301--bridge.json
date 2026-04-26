@@ -285,6 +285,46 @@
       "type": "rect",
       "baseRect": {"width": 47.5, "height": 9},
       "cssTransform": "matrix(1, 0, 0, 1, 900, 595)"
+    },
+    {
+      "id": "1a4d93a0-62a7-45a3-8057-5128f2f79d76",
+      "name": "door hull edge=w slideDirection=[0,1]",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": 300},
+      "type": "rect",
+      "baseRect": {"width": 9, "height": 47.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -5, 300)"
+    },
+    {
+      "id": "2267cba7-1ce5-418b-ac19-e0d71468229e",
+      "name": "door hull edge=w slideDirection=[0,-1]",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": 252.5},
+      "type": "rect",
+      "baseRect": {"width": 9, "height": 47.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -5, 252.5)"
+    },
+    {
+      "id": "a9566cad-d538-4a5d-9a42-abff16cf3870",
+      "name": "door hull edge=e slideDirection=[0,-1]",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1195, "f": 252.5},
+      "type": "rect",
+      "baseRect": {"width": 9, "height": 47.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 1195, 252.5)"
+    },
+    {
+      "id": "1e5320ec-5545-4d87-bc38-f41b768a01db",
+      "name": "door hull edge=e slideDirection=[0,1]",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1195, "f": 300},
+      "type": "rect",
+      "baseRect": {"width": 9, "height": 47.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 1195, 300)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
