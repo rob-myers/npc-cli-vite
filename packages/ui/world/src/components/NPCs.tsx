@@ -23,7 +23,7 @@ import {
 } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
-import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
+import { createLabelMaterial, drawLabelLayer, shadowMaterial } from "../service/texture";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -35,14 +35,15 @@ export default function NPCs() {
 
   const state = useStateRef(
     (): State => ({
-      byPickId: {} as Record<number, Npc>,
       clips: { idle: null, walk: null, run: null },
       crowd: crowdApi.create(0.5),
       gltf: null,
-      nextPickId: 0,
-      shadowMaterial: createShadowMaterial(),
-      texture: null,
+
+      byPickId: {} as Record<number, Npc>,
       npc: {},
+
+      nextPickId: 0,
+      texture: null,
 
       createNpcMaterial(pickId) {
         if (!state.texture) throw Error("texture not loaded yet");
@@ -287,9 +288,6 @@ export default function NPCs() {
         }
       },
     }),
-    {
-      reset: { shadowMaterial: true },
-    },
   );
 
   w.npc = state;
@@ -325,7 +323,7 @@ export default function NPCs() {
   return (
     state.gltf &&
     Object.values(state.npc).map((npc) => (
-      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={state.shadowMaterial} epoch={npc.epoch} />
+      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={shadowMaterial} epoch={npc.epoch} />
     ))
   );
 }
@@ -336,7 +334,6 @@ export type State = {
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   nextPickId: number;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
   texture: THREE.Texture | null;
   npc: Record<string, Npc>;
 
