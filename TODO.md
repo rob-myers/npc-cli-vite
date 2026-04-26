@@ -20,8 +20,8 @@
   - ✅ derived data has roomGraph per geomorph
     - `w gmsData.byKey.g-301--bridge.roomGraph`
   - ✅ `w.gmRoomGraph`
-  - 🚧 can debug i.e. show via WorldMenu
-  - convert graphs to ts
+  - ✅ can debug i.e. show via WorldMenu
+  - 🚧 convert graphs to ts
 
 - BUG ensure separate world instances
   - play/pause via Enter/Escape
