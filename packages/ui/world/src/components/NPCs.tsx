@@ -325,7 +325,7 @@ export default function NPCs() {
         const res = await fetch("/skin/manifest.json");
         const manifest = AssetsSkinManifestSchema.parse(await res.json());
         const entries = Object.values(manifest.byKey);
-        const images = await Promise.all(entries.map((entry) => loadImage(`/skin/${entry.key}.png`)));
+        const images = await Promise.all(entries.map((entry) => loadImage(`/skin/${entry.filename}`)));
         entries.forEach((_entry, i) => {
           w.texSkin.ct.clearRect(0, 0, 64, 64);
           w.texSkin.ct.drawImage(images[i], 0, 0, 64, 64);

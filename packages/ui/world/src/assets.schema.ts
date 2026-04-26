@@ -214,6 +214,7 @@ export const SheetsSchema = z.object({
 export type SheetsType = z.infer<typeof SheetsSchema>;
 
 export const AssetsSkinSchema = z.object({
+  id: z.string(),
   key: z.string(),
   filename: z.string(),
   tags: z.array(z.string()),
