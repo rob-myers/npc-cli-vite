@@ -884,7 +884,7 @@ function pickBest(
 
 function SkinDebugModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const w = useContext(WorldContext);
-  const manifest = w.npc.skinManifest;
+  const { manifest } = w.npc.skin;
   const entries = useMemo(() => (manifest ? Object.values(manifest.byKey) : []), [manifest]);
 
   return (
@@ -934,7 +934,9 @@ function SkinDebugModal({ open, onOpenChange }: { open: boolean; onOpenChange: (
                 </a>
                 <div className="flex flex-wrap justify-center gap-2 mt-1">
                   {entry.tags.map((tag) => (
-                    <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">{tag}</span>
+                    <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>

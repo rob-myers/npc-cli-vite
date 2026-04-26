@@ -46,5 +46,6 @@ declare namespace JshCli {
     //  * - object permits brace-expansion of keys.
     //  */
     // as?: string | Record<string, SkinReMapValue>;
+    as?: string;
   }
 }
