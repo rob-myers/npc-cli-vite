@@ -614,17 +614,21 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
               className="size-full touch-none"
             >
               <style>{`text { cursor: text; user-select: text; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
-              {w.gms.map((gm, gmId) => (
-                <image
-                  key={gmId}
-                  href={`/starship-symbol/${gm.key}.png`}
-                  x={gm.gridRect.x}
-                  y={gm.gridRect.y}
-                  width={gm.gridRect.width}
-                  height={gm.gridRect.height}
-                  opacity={0.3}
-                />
-              ))}
+              {w.gms.map((gm, gmId) => {
+                const { a, b, c, d, e, f } = gm.transform;
+                return (
+                  <image
+                    key={gmId}
+                    href={`/starship-symbol/${gm.key}.png`}
+                    x={gm.bounds.x}
+                    y={gm.bounds.y}
+                    width={gm.bounds.width}
+                    height={gm.bounds.height}
+                    transform={`matrix(${a},${b},${c},${d},${e},${f})`}
+                    opacity={0.3}
+                  />
+                );
+              })}
 
               {/* Gm Graph edges */}
               {showGm &&
