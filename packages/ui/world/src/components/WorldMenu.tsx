@@ -630,7 +630,7 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
               onPointerUp={svgZoom.onPointerUp}
               className="size-full touch-none"
             >
-              <style>{`text { cursor: text; user-select: text; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
+              <style>{`text { user-select: none; cursor: default; } text:hover { user-select: text; cursor: text; } .edge-label:hover { font-size: ${fontSize * 0.6}px; fill: white; }`}</style>
               {w.gms.map((gm, gmId) => {
                 const { a, b, c, d, e, f } = gm.transform;
                 return (
