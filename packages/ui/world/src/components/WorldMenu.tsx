@@ -281,7 +281,7 @@ export function WorldMenu() {
                     w.view.forceUpdate();
                   }}
                 >
-                  Pick
+                  View Pick
                 </Menu.Item>
 
                 <Menu.Item
@@ -297,7 +297,7 @@ export function WorldMenu() {
                   closeOnClick={false}
                   onClick={() => state.set({ gmGraphsOpen: true })}
                 >
-                  Geomorph Graphs
+                  Gm Graphs
                 </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
@@ -419,8 +419,8 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
       if (!dragRef.current) return;
       const svg = e.currentTarget;
       const rect = svg.getBoundingClientRect();
-      const scaleX = (bounds.width / zoom) / rect.width;
-      const scaleY = (bounds.height / zoom) / rect.height;
+      const scaleX = bounds.width / zoom / rect.width;
+      const scaleY = bounds.height / zoom / rect.height;
       setPan({
         x: dragRef.current.panX - (e.clientX - dragRef.current.startX) * scaleX,
         y: dragRef.current.panY - (e.clientY - dragRef.current.startY) * scaleY,
@@ -485,15 +485,18 @@ function RoomHitModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
 function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const w = useContext(WorldContext);
-  const [activeGraph, setActiveGraph] = useState<"gm" | "room">(() =>
-    (tryLocalStorageGetParsed<string>(gmGraphsFilterKey) as "gm" | "room") || "room",
+  const [activeGraph, setActiveGraph] = useState<"gm" | "room">(
+    () => (tryLocalStorageGetParsed<string>(gmGraphsFilterKey) as "gm" | "room") || "room",
   );
   const showGm = activeGraph === "gm";
   const showRoom = activeGraph === "room";
 
   const { minX, minY, width, height } = useMemo(() => {
     if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
-    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    let x1 = Infinity,
+      y1 = Infinity,
+      x2 = -Infinity,
+      y2 = -Infinity;
     for (const gm of w.gms) {
       const r = gm.gridRect;
       x1 = Math.min(x1, r.x);
@@ -519,9 +522,7 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
     return nodes.map((node) => {
       const cx = node.astar.centroid.x;
       const cy = node.astar.centroid.y;
-      const label = node.type === "gm"
-        ? `gm${node.gmId}`
-        : `g${node.gmId}d${node.doorId}${node.sealed ? "✕" : ""}`;
+      const label = node.type === "gm" ? `gm${node.gmId}` : `g${node.gmId}d${node.doorId}${node.sealed ? "✕" : ""}`;
       const color = node.type === "gm" ? "#4ade80" : node.sealed ? "#ef4444" : "#fb923c";
       const tw = label.length * fontSize * 0.6 + fontSize * 1.2;
       const th = fontSize * 1.8;
@@ -567,7 +568,9 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
           )}
           ref={(el) => {
             if (!el) return;
-            const preventTouch = (e: TouchEvent) => { if (e.touches.length >= 2) e.preventDefault(); };
+            const preventTouch = (e: TouchEvent) => {
+              if (e.touches.length >= 2) e.preventDefault();
+            };
             el.addEventListener("touchstart", preventTouch, { passive: false });
             el.addEventListener("touchmove", preventTouch, { passive: false });
             el.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
@@ -579,14 +582,20 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
               <button
                 type="button"
                 className={cn(toggleClass, showGm ? "bg-green-900/50 text-green-400" : "text-slate-500")}
-                onClick={() => { setActiveGraph("gm"); tryLocalStorageSet(gmGraphsFilterKey, '"gm"'); }}
+                onClick={() => {
+                  setActiveGraph("gm");
+                  tryLocalStorageSet(gmGraphsFilterKey, '"gm"');
+                }}
               >
                 Gm
               </button>
               <button
                 type="button"
                 className={cn(toggleClass, showRoom ? "bg-blue-900/50 text-blue-400" : "text-slate-500")}
-                onClick={() => { setActiveGraph("room"); tryLocalStorageSet(gmGraphsFilterKey, '"room"'); }}
+                onClick={() => {
+                  setActiveGraph("room");
+                  tryLocalStorageSet(gmGraphsFilterKey, '"room"');
+                }}
               >
                 Room
               </button>
@@ -618,55 +627,69 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
               ))}
 
               {/* Gm Graph edges */}
-              {showGm && w.gmGraph.edgesArray.map((edge) => (
-                <line
-                  key={edge.id}
-                  x1={edge.src.astar.centroid.x}
-                  y1={edge.src.astar.centroid.y}
-                  x2={edge.dst.astar.centroid.x}
-                  y2={edge.dst.astar.centroid.y}
-                  stroke="white"
-                  strokeWidth={strokeWidth}
-                  opacity={0.5}
-                />
-              ))}
+              {showGm &&
+                w.gmGraph.edgesArray.map((edge) => (
+                  <line
+                    key={edge.id}
+                    x1={edge.src.astar.centroid.x}
+                    y1={edge.src.astar.centroid.y}
+                    x2={edge.dst.astar.centroid.x}
+                    y2={edge.dst.astar.centroid.y}
+                    stroke="white"
+                    strokeWidth={strokeWidth}
+                    opacity={0.5}
+                  />
+                ))}
 
               {/* Room Graph edges + door labels */}
-              {showRoom && w.gmRoomGraph.edgesArray.map((edge) => {
-                const x1 = edge.src.astar.centroid.x, y1 = edge.src.astar.centroid.y;
-                const x2 = edge.dst.astar.centroid.x, y2 = edge.dst.astar.centroid.y;
-                const edgeColor = edge.doors.length > 0 ? "white" : "cyan";
-                const doorLabel = edge.doors.map((d) => d.gdKey).join(",");
-                const edgeFontSize = fontSize * 0.7;
-                const t = 0.33;
-                const lx = x1 + (x2 - x1) * t;
-                const ly = y1 + (y2 - y1) * t;
-                const dx = x2 - x1, dy = y2 - y1;
-                const len = Math.sqrt(dx * dx + dy * dy) || 1;
-                const perpX = -dy / len, perpY = dx / len;
-                const perpOffset = edgeFontSize * 0.8;
-                return (
-                  <g key={edge.id}>
-                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={edgeColor} strokeWidth={strokeWidth * 0.7} opacity={0.4} />
-                    {doorLabel && (
-                      <text
-                        className="edge-label"
-                        x={lx + perpX * perpOffset}
-                        y={ly + perpY * perpOffset}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill="#94a3b8"
-                        fontSize={edgeFontSize}
-                        paintOrder="stroke"
-                        stroke="rgba(0,0,0,0.8)"
-                        strokeWidth={edgeFontSize * 0.3}
-                      >
-                        {doorLabel}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
+              {showRoom &&
+                w.gmRoomGraph.edgesArray.map((edge) => {
+                  const x1 = edge.src.astar.centroid.x,
+                    y1 = edge.src.astar.centroid.y;
+                  const x2 = edge.dst.astar.centroid.x,
+                    y2 = edge.dst.astar.centroid.y;
+                  const edgeColor = edge.doors.length > 0 ? "white" : "cyan";
+                  const doorLabel = edge.doors.map((d) => d.gdKey).join(",");
+                  const edgeFontSize = fontSize * 0.7;
+                  const t = 0.33;
+                  const lx = x1 + (x2 - x1) * t;
+                  const ly = y1 + (y2 - y1) * t;
+                  const dx = x2 - x1,
+                    dy = y2 - y1;
+                  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                  const perpX = -dy / len,
+                    perpY = dx / len;
+                  const perpOffset = edgeFontSize * 0.8;
+                  return (
+                    <g key={edge.id}>
+                      <line
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke={edgeColor}
+                        strokeWidth={strokeWidth * 0.7}
+                        opacity={0.4}
+                      />
+                      {doorLabel && (
+                        <text
+                          className="edge-label"
+                          x={lx + perpX * perpOffset}
+                          y={ly + perpY * perpOffset}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#94a3b8"
+                          fontSize={edgeFontSize}
+                          paintOrder="stroke"
+                          stroke="rgba(0,0,0,0.8)"
+                          strokeWidth={edgeFontSize * 0.3}
+                        >
+                          {doorLabel}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
 
               {/* Gm Graph nodes */}
               {gmLabels.map(({ cx, cy, color }, i) => (
@@ -680,8 +703,24 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
               {/* Gm Graph labels */}
               {gmLabels.map(({ label, color, lx, ly, tw, th }) => (
                 <g key={label}>
-                  <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={color} strokeWidth={strokeWidth * 0.5} />
-                  <text x={lx + tw / 2} y={ly + th / 2} textAnchor="middle" dominantBaseline="central" fill={color} fontSize={fontSize}>
+                  <rect
+                    x={lx}
+                    y={ly}
+                    width={tw}
+                    height={th}
+                    rx={fontSize * 0.25}
+                    fill="rgba(0,0,0,0.75)"
+                    stroke={color}
+                    strokeWidth={strokeWidth * 0.5}
+                  />
+                  <text
+                    x={lx + tw / 2}
+                    y={ly + th / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill={color}
+                    fontSize={fontSize}
+                  >
                     {label}
                   </text>
                 </g>
@@ -689,8 +728,24 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
               {/* Room Graph labels */}
               {roomLabels.map(({ label, lx, ly, tw, th }) => (
                 <g key={label}>
-                  <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={roomColor} strokeWidth={strokeWidth * 0.5} />
-                  <text x={lx + tw / 2} y={ly + th / 2} textAnchor="middle" dominantBaseline="central" fill={roomColor} fontSize={fontSize}>
+                  <rect
+                    x={lx}
+                    y={ly}
+                    width={tw}
+                    height={th}
+                    rx={fontSize * 0.25}
+                    fill="rgba(0,0,0,0.75)"
+                    stroke={roomColor}
+                    strokeWidth={strokeWidth * 0.5}
+                  />
+                  <text
+                    x={lx + tw / 2}
+                    y={ly + th / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill={roomColor}
+                    fontSize={fontSize}
+                  >
                     {label}
                   </text>
                 </g>
@@ -705,14 +760,14 @@ function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChan
 
 function octantCandidates(cx: number, cy: number, tw: number, th: number, gap: number) {
   return [
-    { x: cx + gap,          y: cy - th / 2 },
-    { x: cx - tw - gap,     y: cy - th / 2 },
-    { x: cx - tw / 2,       y: cy - gap - th },
-    { x: cx - tw / 2,       y: cy + gap },
-    { x: cx + gap,          y: cy - gap - th },
-    { x: cx - tw - gap,     y: cy - gap - th },
-    { x: cx + gap,          y: cy + gap },
-    { x: cx - tw - gap,     y: cy + gap },
+    { x: cx + gap, y: cy - th / 2 },
+    { x: cx - tw - gap, y: cy - th / 2 },
+    { x: cx - tw / 2, y: cy - gap - th },
+    { x: cx - tw / 2, y: cy + gap },
+    { x: cx + gap, y: cy - gap - th },
+    { x: cx - tw - gap, y: cy - gap - th },
+    { x: cx + gap, y: cy + gap },
+    { x: cx - tw - gap, y: cy + gap },
   ];
 }
 
@@ -732,8 +787,14 @@ function pickBest(
       const oy = Math.max(0, Math.min(cand.y + th, p.y + p.h) - Math.max(cand.y, p.y));
       overlap += ox * oy;
     }
-    if (overlap === 0) { bestIdx = c; break; }
-    if (overlap < bestOverlap) { bestOverlap = overlap; bestIdx = c; }
+    if (overlap === 0) {
+      bestIdx = c;
+      break;
+    }
+    if (overlap < bestOverlap) {
+      bestOverlap = overlap;
+      bestIdx = c;
+    }
   }
   return candidates[bestIdx];
 }

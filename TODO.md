@@ -23,6 +23,9 @@
   - ✅ can debug i.e. show via WorldMenu
   - 🚧 convert graphs to ts
 
+- ✅ BUG gmGraph: not showing some localEdges inside 101
+  - ✅ some hull doors in 101 have navRectId `-1`
+
 - BUG ensure separate world instances
   - play/pause via Enter/Escape
   - object-pick
