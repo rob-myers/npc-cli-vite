@@ -1,6 +1,6 @@
 # TODO
 
-- 🚧 pick room should have roomId
+- ✅ pick room should have roomId
   - ✅ doors have roomIds
   - ✅ gms data includes room canvas for refined object-pick
   - ✅ can debug display geomorph hit canvases
@@ -10,7 +10,8 @@
     - ✅ can debug display the graph
   - ✅ `w.npc.findRoomContaining`
     - `w npc.findRoomContaining $( pick 1 )`
-  - 🚧 object-pick calls `w.findRoomContaining`
+  - ✅ object-pick calls `w.findRoomContaining`
+  - ✅ pick provides `gmRoomId`
 - ✅ pick door should have doorId
 
 - ✅ BUG tty: very first load incognito not running PROFILE
