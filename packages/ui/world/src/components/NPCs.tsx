@@ -92,6 +92,12 @@ export default function NPCs() {
         }
         state.update();
       },
+      findGmIdContaining(input) {
+        if (typeof input.meta?.gmId === "number") {
+          return input.meta.gmId;
+        }
+        return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
+      },
       getClosestPoly(targetPos) {
         return findNearestPoly(
           createFindNearestPolyResult(),
@@ -322,6 +328,7 @@ export type State = {
 
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devHotReload(): void;
+  findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   getClosestPoly(targetPos: JshCli.PointAnyFormat): FindNearestPolyResult;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
