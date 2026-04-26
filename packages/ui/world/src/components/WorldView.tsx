@@ -81,7 +81,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             const gmId = pick.instanceId;
             const gm = w.gms[gmId];
             if (!gm) return null;
-            // 🚧 transform click to local coords for roomId lookup via pickRoomId
             return { ...pick, gmId, gmKey: gm.key, ...(pick.type === "floor" ? { floor: true } : { ceiling: true }) };
           }
           case "wall": {
@@ -218,6 +217,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             point,
             faceIndex: intersection.faceIndex,
             normal: intersection.normal,
+            gmRoomId: typeof picked.gmId === "number" ? w.npc.findRoomContaining(point, true) : null,
             ...point, // can provide as point
           });
         });
