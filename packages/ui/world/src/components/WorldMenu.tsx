@@ -428,9 +428,58 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
     return { minX: x1 - pad, minY: y1 - pad, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad };
   }, [w.gms]);
 
-  const nodeRadius = Math.max(width, height) * 0.008;
-  const fontSize = nodeRadius * 2;
+  const nodeRadius = Math.max(width, height) * 0.005;
+  const fontSize = Math.max(width, height) * 0.012;
   const strokeWidth = Math.max(width, height) * 0.003;
+
+  const labelPlacements = useMemo(() => {
+    const nodes = w.gmGraph.nodesArray;
+    if (!nodes.length) return [];
+
+    const gap = nodeRadius * 1.5;
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+
+    return nodes.map((node) => {
+      const cx = node.astar.centroid.x;
+      const cy = node.astar.centroid.y;
+      const label = node.type === "gm"
+        ? `gm${node.gmId}`
+        : `g${node.gmId}d${node.doorId}${node.sealed ? "✕" : ""}`;
+      const color = node.type === "gm" ? "#4ade80" : node.sealed ? "#ef4444" : "#fb923c";
+      const tw = label.length * fontSize * 0.6 + fontSize * 1.2;
+      const th = fontSize * 1.8;
+
+      // 8 candidate positions around the node
+      const candidates = [
+        { x: cx + gap,          y: cy - th / 2 },         // E
+        { x: cx - tw - gap,     y: cy - th / 2 },         // W
+        { x: cx - tw / 2,       y: cy - gap - th },       // N
+        { x: cx - tw / 2,       y: cy + gap },            // S
+        { x: cx + gap,          y: cy - gap - th },       // NE
+        { x: cx - tw - gap,     y: cy - gap - th },       // NW
+        { x: cx + gap,          y: cy + gap },            // SE
+        { x: cx - tw - gap,     y: cy + gap },            // SW
+      ];
+
+      let bestIdx = 0;
+      let bestOverlap = Infinity;
+      for (let c = 0; c < candidates.length; c++) {
+        const cand = candidates[c];
+        let overlap = 0;
+        for (const p of placed) {
+          const ox = Math.max(0, Math.min(cand.x + tw, p.x + p.w) - Math.max(cand.x, p.x));
+          const oy = Math.max(0, Math.min(cand.y + th, p.y + p.h) - Math.max(cand.y, p.y));
+          overlap += ox * oy;
+        }
+        if (overlap === 0) { bestIdx = c; break; }
+        if (overlap < bestOverlap) { bestOverlap = overlap; bestIdx = c; }
+      }
+
+      const pos = candidates[bestIdx];
+      placed.push({ x: pos.x, y: pos.y, w: tw, h: th });
+      return { cx, cy, label, color, lx: pos.x, ly: pos.y, tw, th };
+    });
+  }, [w.gmGraph.nodesArray, nodeRadius, fontSize]);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -479,41 +528,24 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                   opacity={0.5}
                 />
               ))}
-              {w.gmGraph.nodesArray.map((node) => {
-                const cx = node.astar.centroid.x;
-                const cy = node.astar.centroid.y;
-                const gm = w.gms[node.gmId];
-                const gmCx = gm.gridRect.x + gm.gridRect.width / 2;
-                const gmCy = gm.gridRect.y + gm.gridRect.height / 2;
-                const dx = cx - gmCx;
-                const dy = cy - gmCy;
-                const len = Math.sqrt(dx * dx + dy * dy) || 1;
-                const offset = nodeRadius * 4;
-                const labelX = cx + (dx / len) * offset;
-                const labelY = cy + (dy / len) * offset;
-                const label = node.type === "gm" ? `gm${node.gmId}` : `d${node.doorId}${node.sealed ? "✕" : ""}`;
-                return (
-                  <g key={node.id}>
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={nodeRadius}
-                      fill={node.type === "gm" ? "#4ade80" : node.sealed ? "#ef4444" : "#fb923c"}
-                      opacity={0.85}
-                    />
-                    <text
-                      x={labelX}
-                      y={labelY}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fill="white"
-                      fontSize={fontSize}
-                    >
-                      {label}
-                    </text>
-                  </g>
-                );
-              })}
+              {labelPlacements.map(({ cx, cy, color }, i) => (
+                <circle key={i} cx={cx} cy={cy} r={nodeRadius} fill={color} opacity={0.85} />
+              ))}
+              {labelPlacements.map(({ label, color, lx, ly, tw, th }) => (
+                <g key={label}>
+                  <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={color} strokeWidth={strokeWidth * 0.5} />
+                  <text
+                    x={lx + tw / 2}
+                    y={ly + th / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill={color}
+                    fontSize={fontSize}
+                  >
+                    {label}
+                  </text>
+                </g>
+              ))}
             </svg>
           </div>
         </Dialog.Popup>
@@ -542,9 +574,55 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
     return { minX: x1 - pad, minY: y1 - pad, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad };
   }, [w.gms]);
 
-  const nodeRadius = Math.max(width, height) * 0.006;
-  const fontSize = nodeRadius * 2;
+  const nodeRadius = Math.max(width, height) * 0.005;
+  const fontSize = Math.max(width, height) * 0.012;
   const strokeWidth = Math.max(width, height) * 0.002;
+  const color = "#60a5fa";
+
+  const labelPlacements = useMemo(() => {
+    const nodes = w.gmRoomGraph.nodesArray;
+    if (!nodes.length) return [];
+
+    const gap = nodeRadius * 1.5;
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+
+    return nodes.map((node) => {
+      const cx = node.astar.centroid.x;
+      const cy = node.astar.centroid.y;
+      const label = node.id;
+      const tw = label.length * fontSize * 0.6 + fontSize * 1.2;
+      const th = fontSize * 1.8;
+
+      const candidates = [
+        { x: cx + gap,          y: cy - th / 2 },
+        { x: cx - tw - gap,     y: cy - th / 2 },
+        { x: cx - tw / 2,       y: cy - gap - th },
+        { x: cx - tw / 2,       y: cy + gap },
+        { x: cx + gap,          y: cy - gap - th },
+        { x: cx - tw - gap,     y: cy - gap - th },
+        { x: cx + gap,          y: cy + gap },
+        { x: cx - tw - gap,     y: cy + gap },
+      ];
+
+      let bestIdx = 0;
+      let bestOverlap = Infinity;
+      for (let c = 0; c < candidates.length; c++) {
+        const cand = candidates[c];
+        let overlap = 0;
+        for (const p of placed) {
+          const ox = Math.max(0, Math.min(cand.x + tw, p.x + p.w) - Math.max(cand.x, p.x));
+          const oy = Math.max(0, Math.min(cand.y + th, p.y + p.h) - Math.max(cand.y, p.y));
+          overlap += ox * oy;
+        }
+        if (overlap === 0) { bestIdx = c; break; }
+        if (overlap < bestOverlap) { bestOverlap = overlap; bestIdx = c; }
+      }
+
+      const pos = candidates[bestIdx];
+      placed.push({ x: pos.x, y: pos.y, w: tw, h: th });
+      return { cx, cy, label, lx: pos.x, ly: pos.y, tw, th };
+    });
+  }, [w.gmRoomGraph.nodesArray, nodeRadius, fontSize]);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -570,6 +648,7 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
               className="w-full mx-auto"
               style={{ aspectRatio: `${width} / ${height}` }}
             >
+              <style>{`.edge-label { cursor: pointer; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
               {w.gms.map((gm, gmId) => (
                 <image
                   key={gmId}
@@ -581,37 +660,60 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                   opacity={0.3}
                 />
               ))}
-              {w.gmRoomGraph.edgesArray.map((edge) => (
-                <line
-                  key={edge.id}
-                  x1={edge.src.astar.centroid.x}
-                  y1={edge.src.astar.centroid.y}
-                  x2={edge.dst.astar.centroid.x}
-                  y2={edge.dst.astar.centroid.y}
-                  stroke={edge.doors.length > 0 ? "white" : "cyan"}
-                  strokeWidth={strokeWidth}
-                  opacity={0.5}
-                />
-              ))}
-              {w.gmRoomGraph.nodesArray.map((node) => {
-                const cx = node.astar.centroid.x;
-                const cy = node.astar.centroid.y;
+              {w.gmRoomGraph.edgesArray.map((edge) => {
+                const x1 = edge.src.astar.centroid.x, y1 = edge.src.astar.centroid.y;
+                const x2 = edge.dst.astar.centroid.x, y2 = edge.dst.astar.centroid.y;
+                const edgeColor = edge.doors.length > 0 ? "white" : "cyan";
+                const doorLabel = edge.doors.map((d) => d.gdKey).join(",");
+                const edgeFontSize = fontSize * 0.7;
+                // place label at 1/3 along edge (closer to src), offset perpendicular
+                const t = 0.33;
+                const lx = x1 + (x2 - x1) * t;
+                const ly = y1 + (y2 - y1) * t;
+                const dx = x2 - x1, dy = y2 - y1;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const perpX = -dy / len, perpY = dx / len;
+                const perpOffset = edgeFontSize * 0.8;
                 return (
-                  <g key={node.id}>
-                    <circle cx={cx} cy={cy} r={nodeRadius} fill="#60a5fa" opacity={0.85} />
-                    <text
-                      x={cx}
-                      y={cy - nodeRadius * 2}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fill="white"
-                      fontSize={fontSize}
-                    >
-                      {node.id}
-                    </text>
+                  <g key={edge.id}>
+                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={edgeColor} strokeWidth={strokeWidth} opacity={0.5} />
+                    {doorLabel && (
+                      <text
+                        className="edge-label"
+                        x={lx + perpX * perpOffset}
+                        y={ly + perpY * perpOffset}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill="#94a3b8"
+                        fontSize={edgeFontSize}
+                        paintOrder="stroke"
+                        stroke="rgba(0,0,0,0.8)"
+                        strokeWidth={edgeFontSize * 0.3}
+                      >
+                        {doorLabel}
+                      </text>
+                    )}
                   </g>
                 );
               })}
+              {labelPlacements.map(({ cx, cy }, i) => (
+                <circle key={i} cx={cx} cy={cy} r={nodeRadius} fill={color} opacity={0.85} />
+              ))}
+              {labelPlacements.map(({ label, lx, ly, tw, th }) => (
+                <g key={label}>
+                  <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={color} strokeWidth={strokeWidth * 0.5} />
+                  <text
+                    x={lx + tw / 2}
+                    y={ly + th / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill={color}
+                    fontSize={fontSize}
+                  >
+                    {label}
+                  </text>
+                </g>
+              ))}
             </svg>
           </div>
         </Dialog.Popup>
