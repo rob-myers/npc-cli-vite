@@ -16,12 +16,12 @@
 
 - ✅ BUG tty: very first load incognito not running PROFILE
 
-- 🚧 gmRoomGraph
+- ✅ gmRoomGraph
   - ✅ derived data has roomGraph per geomorph
     - `w gmsData.byKey.g-301--bridge.roomGraph`
   - ✅ `w.gmRoomGraph`
   - ✅ can debug i.e. show via WorldMenu
-  - 🚧 convert graphs to ts
+  - ✅ convert graphs to ts
 
 - ✅ BUG gmGraph: not showing some localEdges inside 101
   - ✅ some hull doors in 101 have navRectId `-1`

@@ -1,5 +1,5 @@
 import { keys } from "@npc-cli/util/legacy/generic";
-import { BaseGraph } from "./base-graph.js";
+import { BaseGraph } from "./base-graph.ts";
 import "@npc-cli/ui__world/geomorph.d.ts";
 
 /**
