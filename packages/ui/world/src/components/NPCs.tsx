@@ -21,6 +21,7 @@ import {
   mergeWithGroups,
   parseGroundPoint,
 } from "../service/geometry";
+import { helper } from "../service/helper";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
 import { TexArray } from "../service/tex-array";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
@@ -97,6 +98,22 @@ export default function NPCs() {
           return input.meta.gmId;
         }
         return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
+      },
+      findRoomContaining(input, includeDoors = false) {
+        if (helper.isGmRoomId(input.meta) === true) {
+          // 🔔 existing input.meta overrides includeDoors `false`
+          return { ...input.meta };
+        }
+        const gmId = state.findGmIdContaining(input);
+        if (typeof gmId === "number") {
+          const point = parseGroundPoint(input);
+          const gm = w.gms[gmId];
+          const localPoint = gm.inverseMatrix.transformPoint({ x: point.x, y: point.y });
+          const roomId = w.gmsData.findRoomIdContaining(gm, localPoint, includeDoors);
+          return roomId === null ? null : { gmId, roomId, grKey: helper.getGmRoomKey(gmId, roomId) };
+        } else {
+          return null;
+        }
       },
       getClosestPoly(targetPos) {
         return findNearestPoly(
@@ -329,6 +346,7 @@ export type State = {
   createNpcMaterial(pickId: number): THREE.MeshStandardNodeMaterial;
   devHotReload(): void;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
+  findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getClosestPoly(targetPos: JshCli.PointAnyFormat): FindNearestPolyResult;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;

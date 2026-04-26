@@ -118,7 +118,7 @@ export default class DerivedGmsData {
   /**
    * Lookup pixel in geomorph room hit canvas.
    */
-  findRoomIdContaining(gm: Geomorph.Layout, localPoint: Geom.VectJson, includeDoors = true) {
+  findRoomIdContaining(gm: Geomorph.Layout, localPoint: Geom.VectJson, includeDoors = true): null | number {
     const ct = this.byKey[gm.key].roomHitCt;
     const scale = worldToSguScale * gmHitUtil.extraScale;
     const { data: rgba } = ct.getImageData(
@@ -145,10 +145,9 @@ export default class DerivedGmsData {
       if (includeDoors) {
         // choose 1st roomId if exists
         return gm.doors[decoded.doorId].roomIds.find((x) => typeof x === "number") ?? null;
-      } else {
-        return null;
       }
     }
+    return null;
   }
 }
 
