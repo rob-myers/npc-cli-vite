@@ -24,6 +24,7 @@ export function WorldMenu() {
     (): State => ({
       debugHitOpen: false,
       gmGraphsOpen: false,
+      skinDebugOpen: false,
       dragged: false,
       menuOpen: false,
       minY: 40,
@@ -299,6 +300,14 @@ export function WorldMenu() {
                 >
                   Gm Graphs
                 </Menu.Item>
+
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => state.set({ skinDebugOpen: true })}
+                >
+                  Skins
+                </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
@@ -307,6 +316,9 @@ export function WorldMenu() {
 
       <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
       <GeomorphGraphsModal open={state.gmGraphsOpen} onOpenChange={(open) => state.set({ gmGraphsOpen: open })} />
+      {w.npc && (
+        <SkinDebugModal open={state.skinDebugOpen} onOpenChange={(open) => state.set({ skinDebugOpen: open })} />
+      )}
     </>
   );
 }
@@ -341,6 +353,7 @@ function brightnessToRatio(b: number) {
 export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
+  skinDebugOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -867,4 +880,69 @@ function pickBest(
     }
   }
   return candidates[bestIdx];
+}
+
+function SkinDebugModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const w = useContext(WorldContext);
+  const manifest = w.npc.skinManifest;
+  const entries = useMemo(() => (manifest ? Object.values(manifest.byKey) : []), [manifest]);
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Popup
+          className={cn(
+            uiClassName,
+            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
+            "max-w-4xl w-[90vw] max-h-[80vh] flex flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Skins ({entries.length})</Dialog.Title>
+            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
+              <XIcon className="size-5 text-slate-400" />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 flex flex-wrap justify-center gap-4">
+            {entries.map((entry, i) => (
+              <div key={entry.key} className="flex flex-col items-center gap-1">
+                <canvas
+                  width={64}
+                  height={64}
+                  className="w-48 h-48 border border-slate-700"
+                  style={{ imageRendering: "pixelated" }}
+                  ref={(el) => {
+                    if (!el) return;
+                    const ct = el.getContext("2d");
+                    if (!ct) return;
+                    const data = w.texSkin.tex.image.data as Uint8Array;
+                    const layerSize = 64 * 64 * 4;
+                    const slice = new Uint8ClampedArray(data.slice(i * layerSize, (i + 1) * layerSize).buffer);
+                    const imageData = new ImageData(slice, 64, 64);
+                    ct.putImageData(imageData, 0, 0);
+                  }}
+                />
+                <a
+                  href={entry.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-slate-400 font-mono hover:text-blue-400 underline"
+                >
+                  {entry.key}
+                </a>
+                <div className="flex flex-wrap justify-center gap-2 mt-1">
+                  {entry.tags.map((tag) => (
+                    <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {entries.length === 0 && <span className="text-sm text-slate-500">No skins loaded</span>}
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
 }

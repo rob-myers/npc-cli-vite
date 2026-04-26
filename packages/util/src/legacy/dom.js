@@ -65,3 +65,16 @@ export async function speak(text, voice) {
     window.speechSynthesis.speak(utterance);
   });
 }
+
+/**
+ * @param {string} src
+ * @returns {Promise<HTMLImageElement>}
+ */
+export function loadImage(src) {
+  const img = new Image();
+  img.src = src;
+  return new Promise((resolve, reject) => {
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+  });
+}

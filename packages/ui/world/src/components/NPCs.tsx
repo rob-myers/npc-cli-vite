@@ -1,6 +1,7 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+import { loadImage } from "@npc-cli/util/legacy/dom";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { ANY_QUERY_FILTER, createFindNearestPolyResult, type FindNearestPolyResult, findNearestPoly } from "navcat";
@@ -11,6 +12,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { AssetsSkinManifestSchema } from "../assets.schema";
 import { npcScale } from "../const";
 import {
   addEmptyBillboardOffset,
@@ -36,6 +38,7 @@ export default function NPCs() {
       clips: { idle: emptyAnimationClip, walk: emptyAnimationClip, run: emptyAnimationClip },
       crowd: crowdApi.create(0.5),
       gltf: null,
+      skinManifest: null,
       texture: null,
 
       byPickId: {} as Record<number, Npc>,
@@ -315,6 +318,24 @@ export default function NPCs() {
     state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
   }
 
+  state.skinManifest =
+    useQuery({
+      queryKey: [...w.worldQueryPrefix, "skin-manifest"],
+      queryFn: async () => {
+        const res = await fetch("/skin/manifest.json");
+        const manifest = AssetsSkinManifestSchema.parse(await res.json());
+        const entries = Object.values(manifest.byKey);
+        const images = await Promise.all(entries.map((entry) => loadImage(`/skin/${entry.key}.png`)));
+        entries.forEach((_entry, i) => {
+          w.texSkin.ct.clearRect(0, 0, 64, 64);
+          w.texSkin.ct.drawImage(images[i], 0, 0, 64, 64);
+          w.texSkin.updateIndex(i);
+        });
+        return manifest;
+      },
+      staleTime: Infinity,
+    }).data ?? null;
+
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
   return (
@@ -331,6 +352,7 @@ export type State = {
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   nextPickId: number;
+  skinManifest: import("zod").infer<typeof AssetsSkinManifestSchema> | null;
   texture: THREE.Texture | null;
   npc: Record<string, Npc>;
 
