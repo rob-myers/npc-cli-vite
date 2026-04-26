@@ -23,8 +23,7 @@ export function WorldMenu() {
   const state = useStateRef(
     (): State => ({
       debugHitOpen: false,
-      gmGraphOpen: false,
-      gmRoomGraphOpen: false,
+      gmGraphsOpen: false,
       dragged: false,
       menuOpen: false,
       minY: 40,
@@ -296,17 +295,9 @@ export function WorldMenu() {
                 <Menu.Item
                   className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                   closeOnClick={false}
-                  onClick={() => state.set({ gmGraphOpen: true })}
+                  onClick={() => state.set({ gmGraphsOpen: true })}
                 >
-                  Gm Graph
-                </Menu.Item>
-
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => state.set({ gmRoomGraphOpen: true })}
-                >
-                  Gm Room Graph
+                  Geomorph Graphs
                 </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
@@ -315,8 +306,7 @@ export function WorldMenu() {
       </motion.div>
 
       <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
-      <GmGraphModal open={state.gmGraphOpen} onOpenChange={(open) => state.set({ gmGraphOpen: open })} />
-      <GmRoomGraphModal open={state.gmRoomGraphOpen} onOpenChange={(open) => state.set({ gmRoomGraphOpen: open })} />
+      <GeomorphGraphsModal open={state.gmGraphsOpen} onOpenChange={(open) => state.set({ gmGraphsOpen: open })} />
     </>
   );
 }
@@ -350,8 +340,7 @@ function brightnessToRatio(b: number) {
 
 export type State = {
   debugHitOpen: boolean;
-  gmGraphOpen: boolean;
-  gmRoomGraphOpen: boolean;
+  gmGraphsOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -369,6 +358,7 @@ export type State = {
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
+const gmGraphsFilterKey = "world-gm-graphs-filter";
 
 function useSvgZoom(bounds: { minX: number; minY: number; width: number; height: number }) {
   const [zoom, setZoom] = useState(1);
@@ -417,7 +407,7 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if ((e.target as Element).closest?.(".edge-label")) return;
+      if ((e.target as Element).closest?.("text")) return;
       e.currentTarget.setPointerCapture(e.pointerId);
       dragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
     },
@@ -493,15 +483,17 @@ function RoomHitModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   );
 }
 
-function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function GeomorphGraphsModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const w = useContext(WorldContext);
+  const [activeGraph, setActiveGraph] = useState<"gm" | "room">(() =>
+    (tryLocalStorageGetParsed<string>(gmGraphsFilterKey) as "gm" | "room") || "room",
+  );
+  const showGm = activeGraph === "gm";
+  const showRoom = activeGraph === "room";
 
   const { minX, minY, width, height } = useMemo(() => {
     if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
-    let x1 = Infinity,
-      y1 = Infinity,
-      x2 = -Infinity,
-      y2 = -Infinity;
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
     for (const gm of w.gms) {
       const r = gm.gridRect;
       x1 = Math.min(x1, r.x);
@@ -518,13 +510,12 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const strokeWidth = Math.max(width, height) * 0.003;
   const svgZoom = useSvgZoom({ minX, minY, width, height });
 
-  const labelPlacements = useMemo(() => {
+  const gmLabels = useMemo(() => {
+    if (!showGm) return [];
     const nodes = w.gmGraph.nodesArray;
     if (!nodes.length) return [];
-
     const gap = nodeRadius * 1.5;
     const placed: { x: number; y: number; w: number; h: number }[] = [];
-
     return nodes.map((node) => {
       const cx = node.astar.centroid.x;
       const cy = node.astar.centroid.y;
@@ -534,38 +525,34 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       const color = node.type === "gm" ? "#4ade80" : node.sealed ? "#ef4444" : "#fb923c";
       const tw = label.length * fontSize * 0.6 + fontSize * 1.2;
       const th = fontSize * 1.8;
-
-      // 8 candidate positions around the node
-      const candidates = [
-        { x: cx + gap,          y: cy - th / 2 },         // E
-        { x: cx - tw - gap,     y: cy - th / 2 },         // W
-        { x: cx - tw / 2,       y: cy - gap - th },       // N
-        { x: cx - tw / 2,       y: cy + gap },            // S
-        { x: cx + gap,          y: cy - gap - th },       // NE
-        { x: cx - tw - gap,     y: cy - gap - th },       // NW
-        { x: cx + gap,          y: cy + gap },            // SE
-        { x: cx - tw - gap,     y: cy + gap },            // SW
-      ];
-
-      let bestIdx = 0;
-      let bestOverlap = Infinity;
-      for (let c = 0; c < candidates.length; c++) {
-        const cand = candidates[c];
-        let overlap = 0;
-        for (const p of placed) {
-          const ox = Math.max(0, Math.min(cand.x + tw, p.x + p.w) - Math.max(cand.x, p.x));
-          const oy = Math.max(0, Math.min(cand.y + th, p.y + p.h) - Math.max(cand.y, p.y));
-          overlap += ox * oy;
-        }
-        if (overlap === 0) { bestIdx = c; break; }
-        if (overlap < bestOverlap) { bestOverlap = overlap; bestIdx = c; }
-      }
-
-      const pos = candidates[bestIdx];
+      const candidates = octantCandidates(cx, cy, tw, th, gap);
+      const pos = pickBest(candidates, tw, th, placed);
       placed.push({ x: pos.x, y: pos.y, w: tw, h: th });
       return { cx, cy, label, color, lx: pos.x, ly: pos.y, tw, th };
     });
-  }, [w.gmGraph.nodesArray, nodeRadius, fontSize]);
+  }, [w.gmGraph.nodesArray, nodeRadius, fontSize, showGm]);
+
+  const roomLabels = useMemo(() => {
+    if (!showRoom) return [];
+    const nodes = w.gmRoomGraph.nodesArray;
+    if (!nodes.length) return [];
+    const gap = nodeRadius * 1.5;
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+    return nodes.map((node) => {
+      const cx = node.astar.centroid.x;
+      const cy = node.astar.centroid.y;
+      const label = node.id;
+      const tw = label.length * fontSize * 0.6 + fontSize * 1.2;
+      const th = fontSize * 1.8;
+      const candidates = octantCandidates(cx, cy, tw, th, gap);
+      const pos = pickBest(candidates, tw, th, placed);
+      placed.push({ x: pos.x, y: pos.y, w: tw, h: th });
+      return { cx, cy, label, lx: pos.x, ly: pos.y, tw, th };
+    });
+  }, [w.gmRoomGraph.nodesArray, nodeRadius, fontSize, showRoom]);
+
+  const roomColor = "#60a5fa";
+  const toggleClass = "px-2 py-0.5 text-xs rounded cursor-pointer";
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -576,14 +563,37 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
             uiClassName,
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-4xl w-[90vw] h-[85vh] flex flex-col",
+            "max-w-4xl w-[90vw] h-[85vh] flex flex-col touch-none",
           )}
+          ref={(el) => {
+            if (!el) return;
+            const preventTouch = (e: TouchEvent) => { if (e.touches.length >= 2) e.preventDefault(); };
+            el.addEventListener("touchstart", preventTouch, { passive: false });
+            el.addEventListener("touchmove", preventTouch, { passive: false });
+            el.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+          }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-            <Dialog.Title className="text-sm font-semibold text-slate-200">Gm Graph</Dialog.Title>
-            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
-              <XIcon className="size-5 text-slate-400" />
-            </Dialog.Close>
+            <Dialog.Title className="text-sm font-semibold text-slate-200">Geomorph Graphs</Dialog.Title>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className={cn(toggleClass, showGm ? "bg-green-900/50 text-green-400" : "text-slate-500")}
+                onClick={() => { setActiveGraph("gm"); tryLocalStorageSet(gmGraphsFilterKey, '"gm"'); }}
+              >
+                Gm
+              </button>
+              <button
+                type="button"
+                className={cn(toggleClass, showRoom ? "bg-blue-900/50 text-blue-400" : "text-slate-500")}
+                onClick={() => { setActiveGraph("room"); tryLocalStorageSet(gmGraphsFilterKey, '"room"'); }}
+              >
+                Room
+              </button>
+              <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer ml-2">
+                <XIcon className="size-5 text-slate-400" />
+              </Dialog.Close>
+            </div>
           </div>
           <div className="flex-1 min-h-0 overflow-hidden p-2">
             <svg
@@ -592,9 +602,9 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
               onPointerDown={svgZoom.onPointerDown}
               onPointerMove={svgZoom.onPointerMove}
               onPointerUp={svgZoom.onPointerUp}
-
-              className="size-full"
+              className="size-full touch-none"
             >
+              <style>{`text { cursor: text; user-select: text; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
               {w.gms.map((gm, gmId) => (
                 <image
                   key={gmId}
@@ -606,7 +616,9 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                   opacity={0.3}
                 />
               ))}
-              {w.gmGraph.edgesArray.map((edge) => (
+
+              {/* Gm Graph edges */}
+              {showGm && w.gmGraph.edgesArray.map((edge) => (
                 <line
                   key={edge.id}
                   x1={edge.src.astar.centroid.x}
@@ -618,150 +630,14 @@ function GmGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                   opacity={0.5}
                 />
               ))}
-              {labelPlacements.map(({ cx, cy, color }, i) => (
-                <circle key={i} cx={cx} cy={cy} r={nodeRadius} fill={color} opacity={0.85} />
-              ))}
-              {labelPlacements.map(({ label, color, lx, ly, tw, th }) => (
-                <g key={label}>
-                  <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={color} strokeWidth={strokeWidth * 0.5} />
-                  <text
-                    x={lx + tw / 2}
-                    y={ly + th / 2}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill={color}
-                    fontSize={fontSize}
-                  >
-                    {label}
-                  </text>
-                </g>
-              ))}
-            </svg>
-          </div>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
 
-function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const w = useContext(WorldContext);
-
-  const { minX, minY, width, height } = useMemo(() => {
-    if (!w.gms.length) return { minX: 0, minY: 0, width: 100, height: 100 };
-    let x1 = Infinity,
-      y1 = Infinity,
-      x2 = -Infinity,
-      y2 = -Infinity;
-    for (const gm of w.gms) {
-      const r = gm.gridRect;
-      x1 = Math.min(x1, r.x);
-      y1 = Math.min(y1, r.y);
-      x2 = Math.max(x2, r.x + r.width);
-      y2 = Math.max(y2, r.y + r.height);
-    }
-    const pad = Math.max(x2 - x1, y2 - y1) * 0.15;
-    return { minX: x1 - pad, minY: y1 - pad, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad };
-  }, [w.gms]);
-
-  const nodeRadius = Math.max(width, height) * 0.005;
-  const fontSize = Math.max(width, height) * 0.012;
-  const strokeWidth = Math.max(width, height) * 0.002;
-  const color = "#60a5fa";
-  const svgZoom = useSvgZoom({ minX, minY, width, height });
-
-  const labelPlacements = useMemo(() => {
-    const nodes = w.gmRoomGraph.nodesArray;
-    if (!nodes.length) return [];
-
-    const gap = nodeRadius * 1.5;
-    const placed: { x: number; y: number; w: number; h: number }[] = [];
-
-    return nodes.map((node) => {
-      const cx = node.astar.centroid.x;
-      const cy = node.astar.centroid.y;
-      const label = node.id;
-      const tw = label.length * fontSize * 0.6 + fontSize * 1.2;
-      const th = fontSize * 1.8;
-
-      const candidates = [
-        { x: cx + gap,          y: cy - th / 2 },
-        { x: cx - tw - gap,     y: cy - th / 2 },
-        { x: cx - tw / 2,       y: cy - gap - th },
-        { x: cx - tw / 2,       y: cy + gap },
-        { x: cx + gap,          y: cy - gap - th },
-        { x: cx - tw - gap,     y: cy - gap - th },
-        { x: cx + gap,          y: cy + gap },
-        { x: cx - tw - gap,     y: cy + gap },
-      ];
-
-      let bestIdx = 0;
-      let bestOverlap = Infinity;
-      for (let c = 0; c < candidates.length; c++) {
-        const cand = candidates[c];
-        let overlap = 0;
-        for (const p of placed) {
-          const ox = Math.max(0, Math.min(cand.x + tw, p.x + p.w) - Math.max(cand.x, p.x));
-          const oy = Math.max(0, Math.min(cand.y + th, p.y + p.h) - Math.max(cand.y, p.y));
-          overlap += ox * oy;
-        }
-        if (overlap === 0) { bestIdx = c; break; }
-        if (overlap < bestOverlap) { bestOverlap = overlap; bestIdx = c; }
-      }
-
-      const pos = candidates[bestIdx];
-      placed.push({ x: pos.x, y: pos.y, w: tw, h: th });
-      return { cx, cy, label, lx: pos.x, ly: pos.y, tw, th };
-    });
-  }, [w.gmRoomGraph.nodesArray, nodeRadius, fontSize]);
-
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
-        <Dialog.Popup
-          className={cn(
-            uiClassName,
-            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-4xl w-[90vw] h-[85vh] flex flex-col",
-          )}
-        >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-            <Dialog.Title className="text-sm font-semibold text-slate-200">Gm Room Graph</Dialog.Title>
-            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
-              <XIcon className="size-5 text-slate-400" />
-            </Dialog.Close>
-          </div>
-          <div className="flex-1 min-h-0 overflow-hidden p-2">
-            <svg
-              viewBox={svgZoom.viewBox}
-              onWheel={svgZoom.onWheel}
-              onPointerDown={svgZoom.onPointerDown}
-              onPointerMove={svgZoom.onPointerMove}
-              onPointerUp={svgZoom.onPointerUp}
-
-              className="size-full"
-            >
-              <style>{`.edge-label { cursor: text; user-select: text; } .edge-label:hover { font-size: ${fontSize}px; fill: white; }`}</style>
-              {w.gms.map((gm, gmId) => (
-                <image
-                  key={gmId}
-                  href={`/starship-symbol/${gm.key}.png`}
-                  x={gm.gridRect.x}
-                  y={gm.gridRect.y}
-                  width={gm.gridRect.width}
-                  height={gm.gridRect.height}
-                  opacity={0.3}
-                />
-              ))}
-              {w.gmRoomGraph.edgesArray.map((edge) => {
+              {/* Room Graph edges + door labels */}
+              {showRoom && w.gmRoomGraph.edgesArray.map((edge) => {
                 const x1 = edge.src.astar.centroid.x, y1 = edge.src.astar.centroid.y;
                 const x2 = edge.dst.astar.centroid.x, y2 = edge.dst.astar.centroid.y;
                 const edgeColor = edge.doors.length > 0 ? "white" : "cyan";
                 const doorLabel = edge.doors.map((d) => d.gdKey).join(",");
                 const edgeFontSize = fontSize * 0.7;
-                // place label at 1/3 along edge (closer to src), offset perpendicular
                 const t = 0.33;
                 const lx = x1 + (x2 - x1) * t;
                 const ly = y1 + (y2 - y1) * t;
@@ -771,7 +647,7 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                 const perpOffset = edgeFontSize * 0.8;
                 return (
                   <g key={edge.id}>
-                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={edgeColor} strokeWidth={strokeWidth} opacity={0.5} />
+                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={edgeColor} strokeWidth={strokeWidth * 0.7} opacity={0.4} />
                     {doorLabel && (
                       <text
                         className="edge-label"
@@ -791,20 +667,30 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                   </g>
                 );
               })}
-              {labelPlacements.map(({ cx, cy }, i) => (
+
+              {/* Gm Graph nodes */}
+              {gmLabels.map(({ cx, cy, color }, i) => (
                 <circle key={i} cx={cx} cy={cy} r={nodeRadius} fill={color} opacity={0.85} />
               ))}
-              {labelPlacements.map(({ label, lx, ly, tw, th }) => (
+              {/* Room Graph nodes */}
+              {roomLabels.map(({ cx, cy }, i) => (
+                <circle key={i} cx={cx} cy={cy} r={nodeRadius} fill={roomColor} opacity={0.85} />
+              ))}
+
+              {/* Gm Graph labels */}
+              {gmLabels.map(({ label, color, lx, ly, tw, th }) => (
                 <g key={label}>
                   <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={color} strokeWidth={strokeWidth * 0.5} />
-                  <text
-                    x={lx + tw / 2}
-                    y={ly + th / 2}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill={color}
-                    fontSize={fontSize}
-                  >
+                  <text x={lx + tw / 2} y={ly + th / 2} textAnchor="middle" dominantBaseline="central" fill={color} fontSize={fontSize}>
+                    {label}
+                  </text>
+                </g>
+              ))}
+              {/* Room Graph labels */}
+              {roomLabels.map(({ label, lx, ly, tw, th }) => (
+                <g key={label}>
+                  <rect x={lx} y={ly} width={tw} height={th} rx={fontSize * 0.25} fill="rgba(0,0,0,0.75)" stroke={roomColor} strokeWidth={strokeWidth * 0.5} />
+                  <text x={lx + tw / 2} y={ly + th / 2} textAnchor="middle" dominantBaseline="central" fill={roomColor} fontSize={fontSize}>
                     {label}
                   </text>
                 </g>
@@ -815,4 +701,39 @@ function GmRoomGraphModal({ open, onOpenChange }: { open: boolean; onOpenChange:
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function octantCandidates(cx: number, cy: number, tw: number, th: number, gap: number) {
+  return [
+    { x: cx + gap,          y: cy - th / 2 },
+    { x: cx - tw - gap,     y: cy - th / 2 },
+    { x: cx - tw / 2,       y: cy - gap - th },
+    { x: cx - tw / 2,       y: cy + gap },
+    { x: cx + gap,          y: cy - gap - th },
+    { x: cx - tw - gap,     y: cy - gap - th },
+    { x: cx + gap,          y: cy + gap },
+    { x: cx - tw - gap,     y: cy + gap },
+  ];
+}
+
+function pickBest(
+  candidates: { x: number; y: number }[],
+  tw: number,
+  th: number,
+  placed: { x: number; y: number; w: number; h: number }[],
+) {
+  let bestIdx = 0;
+  let bestOverlap = Infinity;
+  for (let c = 0; c < candidates.length; c++) {
+    const cand = candidates[c];
+    let overlap = 0;
+    for (const p of placed) {
+      const ox = Math.max(0, Math.min(cand.x + tw, p.x + p.w) - Math.max(cand.x, p.x));
+      const oy = Math.max(0, Math.min(cand.y + th, p.y + p.h) - Math.max(cand.y, p.y));
+      overlap += ox * oy;
+    }
+    if (overlap === 0) { bestIdx = c; break; }
+    if (overlap < bestOverlap) { bestOverlap = overlap; bestIdx = c; }
+  }
+  return candidates[bestIdx];
 }
