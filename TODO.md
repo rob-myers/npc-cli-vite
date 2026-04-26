@@ -29,6 +29,13 @@
 
 - BUG ensure onchange layout that portals are disposed
 
+- Layout supports 2 row with 2:1 ratio
+  - mobile does not see 3 col or 2 col options
+
+- npcs support multiple skins
+- spawn can specify skin
+- skin remapping
+
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
