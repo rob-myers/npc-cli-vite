@@ -19,6 +19,7 @@ import {
   defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
+  MAX_NPCS,
   mapEditSymbolSavedEvent,
 } from "../const";
 import type { WorldUiMeta } from "../schema";
@@ -82,6 +83,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: 1,
         height: 1,
       }),
+      texLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
 
       gms: [],
       seenGmKeys: [],
@@ -295,6 +297,7 @@ export type State = {
   texFloor: TexArray;
   texCeil: TexArray;
   texObs: TexArray;
+  texLabel: TexArray;
 
   gms: Geomorph.LayoutInstance[];
   /**

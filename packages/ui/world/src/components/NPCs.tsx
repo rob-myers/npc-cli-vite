@@ -11,7 +11,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_NPCS, npcScale } from "../const";
+import { npcScale } from "../const";
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
@@ -23,7 +23,6 @@ import {
 } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE, withPickOutputId } from "../service/pick";
-import { TexArray } from "../service/tex-array";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
@@ -40,7 +39,6 @@ export default function NPCs() {
       clips: { idle: null, walk: null, run: null },
       crowd: crowdApi.create(0.5),
       gltf: null,
-      labelTexArray: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       nextPickId: 0,
       shadowMaterial: createShadowMaterial(),
       texture: null,
@@ -70,7 +68,7 @@ export default function NPCs() {
             labelLayerIndex: oldNpc.labelLayerIndex,
             position: oldNpc.position,
             material: state.createNpcMaterial(oldNpc.pickId),
-            labelMaterial: createLabelMaterial(state.labelTexArray, oldNpc.labelLayerIndex),
+            labelMaterial: createLabelMaterial(w.texLabel, oldNpc.labelLayerIndex),
             skinnedMesh: oldNpc.skinnedMesh,
             graph: oldNpc.graph,
             geometry: oldNpc.geometry,
@@ -87,7 +85,7 @@ export default function NPCs() {
             npc.pinTo(state.getClosestPoly(npc.position));
           }
 
-          drawLabelLayer(state.labelTexArray, npc.labelLayerIndex, npc.key);
+          drawLabelLayer(w.texLabel, npc.labelLayerIndex, npc.key);
           state.npc[key] = npc;
           state.byPickId[npc.pickId] = npc;
         }
@@ -256,7 +254,7 @@ export default function NPCs() {
 
         const pickId = state.nextPickId;
         const labelLayerIndex = pickId;
-        drawLabelLayer(state.labelTexArray, labelLayerIndex, npcKey);
+        drawLabelLayer(w.texLabel, labelLayerIndex, npcKey);
 
         const npc = new Npc(w, {
           key: npcKey,
@@ -264,7 +262,7 @@ export default function NPCs() {
           labelLayerIndex,
           position: groundPointToVector3(groundPoint),
           material: state.createNpcMaterial(pickId),
-          labelMaterial: createLabelMaterial(state.labelTexArray, labelLayerIndex),
+          labelMaterial: createLabelMaterial(w.texLabel, labelLayerIndex),
           skinnedMesh: clonedSkinnedMesh,
           graph,
           geometry,
@@ -337,7 +335,6 @@ export type State = {
   clips: { idle: THREE.AnimationClip | null; walk: THREE.AnimationClip | null; run: THREE.AnimationClip | null };
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
-  labelTexArray: TexArray;
   nextPickId: number;
   shadowMaterial: THREE.MeshBasicNodeMaterial;
   texture: THREE.Texture | null;
