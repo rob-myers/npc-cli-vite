@@ -1,4 +1,8 @@
 declare namespace Graph {
+  //#region GmGraph
+
+  type GmGraph = import("./service/gm-graph").GmGraph;
+
   interface BaseGmGraphNode extends AStarNode {
     /** Index into nodesArray for easy computation of astar.neighbours */
     index: number;
@@ -54,8 +58,6 @@ declare namespace Graph {
 
   type GmGraphEdgeOpts = BaseEdgeOpts;
 
-  type GmGraph = import("./service/gm-graph").GmGraph;
-
   /** Given a hull door, the respective ids in adjacent geomorph */
   interface GmAdjRoomCtxt {
     adjGmId: number;
@@ -99,6 +101,8 @@ declare namespace Graph {
       windowIds: number[];
     };
   };
+
+  //#endregion
 
   //#region RoomGraph
 
