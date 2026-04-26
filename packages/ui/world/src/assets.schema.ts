@@ -16,7 +16,7 @@ import {
   TriangulationSchema,
 } from "@npc-cli/util/geom";
 import { Matrix4 } from "three/src/math/Matrix4.js";
-import z from "zod";
+import z, { url } from "zod";
 import { DecorPointSchema, DecorSchema } from "./decor.schema.ts";
 import { Connector } from "./service/Connector.ts";
 
@@ -212,3 +212,17 @@ export const SheetsSchema = z.object({
   maxSymbolSheetDim: z.object({ width: z.number(), height: z.number() }),
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
+
+export const AssetsSkinSchema = z.object({
+  key: z.string(),
+  filename: z.string(),
+  tags: z.array(z.string()),
+  url: url(),
+});
+
+/**
+ * For public/skin/manifest.json
+ */
+export const AssetsSkinManifestSchema = z.object({
+  byKey: z.record(z.string(), AssetsSkinSchema),
+});
