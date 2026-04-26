@@ -214,12 +214,14 @@ export const SheetsSchema = z.object({
 export type SheetsType = z.infer<typeof SheetsSchema>;
 
 export const AssetsSkinSchema = z.object({
-  id: z.string(),
   key: z.string(),
+  id: z.string(),
   filename: z.string(),
   tags: z.array(z.string()),
   url: url(),
 });
+
+export type AssetsSkinType = z.infer<typeof AssetsSkinSchema>;
 
 /**
  * For public/skin/manifest.json
@@ -227,3 +229,5 @@ export const AssetsSkinSchema = z.object({
 export const AssetsSkinManifestSchema = z.object({
   byKey: z.record(z.string(), AssetsSkinSchema),
 });
+
+export type AssetsSkinManifestType = z.infer<typeof AssetsSkinManifestSchema>;

@@ -10,7 +10,9 @@ const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 export class Npc {
   key!: string;
   pickId!: number;
-  skinIndex = 0;
+  get skinIndex() {
+    return this.skinIndexUniform.value;
+  }
   skinIndexUniform!: ReturnType<typeof uniform<number>>;
 
   labelLayerIndex!: number;
@@ -41,8 +43,9 @@ export class Npc {
     Object.assign(this, init);
   }
 
-  changeSkin(index: number) {
-    this.skinIndex = index;
+  changeSkin(keyOrIndex: string | number) {
+    const index = typeof keyOrIndex === "number" ? keyOrIndex : this.w.npc.getSkinIndex(keyOrIndex);
+    if (index === -1) throw Error(`Skin "${keyOrIndex}" not found`);
     this.skinIndexUniform.value = index;
   }
 

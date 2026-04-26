@@ -6,13 +6,13 @@ import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { ANY_QUERY_FILTER, createFindNearestPolyResult, type FindNearestPolyResult, findNearestPoly } from "navcat";
 import { type crowd, crowd as crowdApi } from "navcat/blocks";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { AssetsSkinManifestSchema } from "../assets.schema";
+import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type AssetsSkinType } from "../assets.schema";
 import { npcScale } from "../const";
 import {
   addEmptyBillboardOffset,
@@ -38,7 +38,10 @@ export default function NPCs() {
       clips: { idle: emptyAnimationClip, walk: emptyAnimationClip, run: emptyAnimationClip },
       crowd: crowdApi.create(0.5),
       gltf: null,
-      skinManifest: null,
+      skin: {
+        manifest: { byKey: {} },
+        entries: [],
+      },
 
       byPickId: {} as Record<number, Npc>,
       nextPickId: 0,
@@ -120,6 +123,9 @@ export default function NPCs() {
           [closePolygonDistance, 0.05, closePolygonDistance],
           ANY_QUERY_FILTER, // permits doorways
         );
+      },
+      getSkinIndex(skinKey) {
+        return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
       move({ npcKey, to }) {
         const npc = state.npc[npcKey];
@@ -224,7 +230,7 @@ export default function NPCs() {
         npc.spawns++;
         w.view.forceUpdate();
       },
-      async spawn({ npcKey, at }) {
+      async spawn({ npcKey, at, as }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`npcKey must match: ${npcKeyPattern}`);
         }
@@ -233,7 +239,9 @@ export default function NPCs() {
         }
 
         if (npcKey in state.npc) {
-          state.respawn(state.npc[npcKey], at);
+          const npc = state.npc[npcKey];
+          state.respawn(npc, at);
+          if (as) npc.changeSkin(as);
           return;
         }
 
@@ -255,7 +263,8 @@ export default function NPCs() {
         const labelLayerIndex = pickId;
         drawLabelLayer(w.texLabel, labelLayerIndex, npcKey);
 
-        const skinIndexUniform = uniform(0);
+        const skinIndexUniform = uniform(state.getSkinIndex(as ?? "medic-0"));
+
         const npc = new Npc(w, {
           key: npcKey,
           pickId,
@@ -292,38 +301,39 @@ export default function NPCs() {
 
   w.npc = state;
 
-  state.gltf =
+  const queryData =
     useQuery({
       queryKey: [...w.worldQueryPrefix, "template-gltf"],
-      queryFn: async () => await new GLTFLoader().loadAsync(url.templateTest0Gltf),
-      staleTime: Infinity,
-    }).data ?? null;
-
-  // 🚧 better way
-  if (state.gltf) {
-    const anims = state.gltf.animations;
-    state.clips.idle = anims.find((c) => c.name === "idle") ?? emptyAnimationClip;
-    state.clips.walk = anims.find((c) => c.name === "walk") ?? emptyAnimationClip;
-    state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
-  }
-
-  state.skinManifest =
-    useQuery({
-      queryKey: [...w.worldQueryPrefix, "skin-manifest"],
       queryFn: async () => {
-        const res = await fetch("/skin/manifest.json");
-        const manifest = AssetsSkinManifestSchema.parse(await res.json());
-        const entries = Object.values(manifest.byKey);
-        const images = await Promise.all(entries.map((entry) => loadImage(`/skin/${entry.filename}`)));
-        entries.forEach((_entry, i) => {
-          w.texSkin.ct.clearRect(0, 0, 64, 64);
-          w.texSkin.ct.drawImage(images[i], 0, 0, 64, 64);
-          w.texSkin.updateIndex(i);
-        });
-        return manifest;
+        const [gltf, skin] = await Promise.all([
+          new GLTFLoader().loadAsync(url.templateTest0Gltf),
+          (async () => {
+            const res = await fetch("/skin/manifest.json");
+            const manifest = AssetsSkinManifestSchema.parse(await res.json());
+            const entries = Object.values(manifest.byKey);
+            const images = await Promise.all(entries.map((entry) => loadImage(`/skin/${entry.filename}`)));
+            entries.forEach((_entry, i) => {
+              w.texSkin.ct.clearRect(0, 0, 64, 64);
+              w.texSkin.ct.drawImage(images[i], 0, 0, 64, 64);
+              w.texSkin.updateIndex(i);
+            });
+            return { manifest, entries: Object.values(manifest.byKey) };
+          })(),
+        ]);
+        return { gltf, skin };
       },
       staleTime: Infinity,
     }).data ?? null;
+
+  useMemo(() => {
+    if (!queryData) return;
+    state.gltf = queryData.gltf;
+    const anims = queryData.gltf.animations;
+    state.clips.idle = anims.find((c) => c.name === "idle") ?? emptyAnimationClip;
+    state.clips.walk = anims.find((c) => c.name === "walk") ?? emptyAnimationClip;
+    state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
+    state.skin = queryData.skin;
+  }, [queryData]);
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
@@ -341,7 +351,10 @@ export type State = {
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   nextPickId: number;
-  skinManifest: import("zod").infer<typeof AssetsSkinManifestSchema> | null;
+  skin: {
+    manifest: AssetsSkinManifestType;
+    entries: AssetsSkinType[];
+  };
 
   npc: Record<string, Npc>;
 
@@ -353,6 +366,7 @@ export type State = {
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getClosestPoly(targetPos: JshCli.PointAnyFormat): FindNearestPolyResult;
+  getSkinIndex(skinKey: string): number;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
   remove(...npcKeys: string[]): void;
