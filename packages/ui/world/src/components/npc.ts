@@ -8,23 +8,24 @@ import * as THREE from "three/webgpu";
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
 export class Npc {
-  key!: string;
-  pickId!: number;
+  key: string;
+  pickId: number;
   get skinIndex() {
     return this.skinIndexUniform.value;
   }
-  skinIndexUniform!: ReturnType<typeof uniform<number>>;
+  skinIndexUniform: ReturnType<typeof uniform<number>>;
 
-  labelLayerIndex!: number;
+  labelLayerIndex: number;
   group: THREE.Group | null = null;
-  material!: THREE.MeshStandardNodeMaterial;
-  labelMaterial!: THREE.MeshBasicNodeMaterial;
+  material: THREE.MeshStandardNodeMaterial;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
+  labelMaterial: THREE.MeshBasicNodeMaterial;
   mixer: THREE.AnimationMixer = emptyAnimationMixer;
-  skinnedMesh!: THREE.SkinnedMesh;
-  graph!: ReturnType<typeof buildGraph>;
-  geometry!: THREE.BufferGeometry;
+  skinnedMesh: THREE.SkinnedMesh;
+  graph: ReturnType<typeof buildGraph>;
+  geometry: THREE.BufferGeometry;
 
-  position!: THREE.Vector3;
+  position: THREE.Vector3;
 
   agentId: string | null = null;
   epoch = 0;
@@ -41,6 +42,18 @@ export class Npc {
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
     Object.assign(this, init);
+
+    this.key = init.key;
+    this.pickId = init.pickId;
+    this.skinIndexUniform = init.skinIndexUniform;
+    this.labelLayerIndex = init.labelLayerIndex;
+    this.position = init.position;
+    this.material = init.material;
+    this.labelMaterial = init.labelMaterial;
+    this.shadowMaterial = init.shadowMaterial;
+    this.skinnedMesh = init.skinnedMesh;
+    this.graph = init.graph;
+    this.geometry = init.geometry;
   }
 
   changeSkin(keyOrIndex: string | number) {
@@ -141,10 +154,11 @@ export class Npc {
 export type NpcInit = {
   key: string;
   pickId: number;
-  skinIndexUniform: ReturnType<typeof uniform<number>>;
+  skinIndexUniform: THREE.UniformNode<number>;
   labelLayerIndex: number;
   position: THREE.Vector3;
   material: THREE.MeshStandardNodeMaterial;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
   skinnedMesh: THREE.SkinnedMesh;
   graph: ReturnType<typeof buildGraph>;

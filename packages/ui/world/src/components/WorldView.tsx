@@ -7,10 +7,12 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { motion } from "motion/react";
 import { useContext, useEffect } from "react";
+import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
+import { float, output, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
-import { decodePick, type ObjectPickKey, objectPick } from "../service/pick";
+import { decodePick, type ObjectPickKey } from "../service/pick";
 import { CameraControls } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
@@ -40,6 +42,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
+      objectPick: uniform(0),
 
       async createRenderer(props: DefaultGLProps) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -191,10 +194,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.getDrawingBufferSize(size);
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
-        objectPick.value = 1;
+        state.objectPick.value = 1;
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
-        objectPick.value = 0;
+        state.objectPick.value = 0;
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
@@ -231,6 +234,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.set({ frameloop: "always" });
           return "always";
         }
+      },
+      withPickOutput(typeId: number) {
+        const idx = float(instanceIndex);
+        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
+        return state.objectPick.equal(1).select(pickVec, output);
+      },
+      withPickOutputId(typeId: number, idUniform: ReturnType<typeof uniform<number>>) {
+        const idx = float(idUniform);
+        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
+        return state.objectPick.equal(1).select(pickVec, output);
       },
     }),
     { reset: { ctrlOpts: true } },
@@ -313,6 +326,7 @@ export type State = {
   ctrlOpts: MapControlsProps;
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
+  objectPick: THREE.UniformNode<number>;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(): void;
@@ -326,4 +340,11 @@ export type State = {
   ): Meta<{ type: ObjectPickKey; instanceId: number; gmKey?: string }> | null;
   getRaycastIntersection: (e: PointerEvent, picked: JshCli.DecodedObjectPick) => null | THREE.Intersection;
   syncRenderMode(): RootState["frameloop"];
+  /**
+   * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
+   * otherwise passes through the standard lit `output`.
+   */
+  withPickOutput(typeId: number): THREE.Node;
+  /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
+  withPickOutputId(typeId: number, idUniform: THREE.UniformNode<number>): THREE.Node;
 };

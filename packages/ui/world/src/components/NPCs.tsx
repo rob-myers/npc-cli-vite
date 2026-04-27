@@ -24,8 +24,8 @@ import {
   parseGroundPoint,
 } from "../service/geometry";
 import { helper } from "../service/helper";
-import { PICK_TYPE, withPickOutputId } from "../service/pick";
-import { createLabelMaterial, drawLabelLayer, shadowMaterial } from "../service/texture";
+import { PICK_TYPE } from "../service/pick";
+import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -54,14 +54,16 @@ export default function NPCs() {
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
-        mat.outputNode = withPickOutputId(PICK_TYPE.npc, pickIdNode);
+        mat.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
         return mat;
       },
       devHotReload() {
         for (const [key, oldNpc] of Object.entries(state.npc)) {
           oldNpc.material.dispose();
           oldNpc.labelMaterial.dispose();
+          oldNpc.shadowMaterial.dispose();
 
+          // 🚧 reuse code from spawn
           const skinIndexUniform = uniform(oldNpc.skinIndex);
           const npc = new Npc(w, {
             key: oldNpc.key,
@@ -70,6 +72,7 @@ export default function NPCs() {
             labelLayerIndex: oldNpc.labelLayerIndex,
             position: oldNpc.position,
             material: state.createNpcMaterial(oldNpc.pickId, skinIndexUniform),
+            shadowMaterial: createShadowMaterial(w.view.objectPick),
             labelMaterial: createLabelMaterial(w.texLabel, oldNpc.labelLayerIndex),
             skinnedMesh: oldNpc.skinnedMesh,
             graph: oldNpc.graph,
@@ -263,6 +266,7 @@ export default function NPCs() {
         const labelLayerIndex = pickId;
         drawLabelLayer(w.texLabel, labelLayerIndex, npcKey);
 
+        const objectPickUniform = uniform(0);
         const skinIndexUniform = uniform(state.getSkinIndex(as ?? "medic-0"));
 
         const npc = new Npc(w, {
@@ -272,6 +276,7 @@ export default function NPCs() {
           labelLayerIndex,
           position: groundPointToVector3(groundPoint),
           material: state.createNpcMaterial(pickId, skinIndexUniform),
+          shadowMaterial: createShadowMaterial(objectPickUniform),
           labelMaterial: createLabelMaterial(w.texLabel, labelLayerIndex),
           skinnedMesh: clonedSkinnedMesh,
           graph,
@@ -338,10 +343,7 @@ export default function NPCs() {
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
   return (
-    state.gltf &&
-    Object.values(state.npc).map((npc) => (
-      <MemoNpcInstance key={npc.key} npc={npc} shadowMaterial={shadowMaterial} epoch={npc.epoch} />
-    ))
+    state.gltf && Object.values(state.npc).map((npc) => <MemoNpcInstance key={npc.key} npc={npc} epoch={npc.epoch} />)
   );
 }
 

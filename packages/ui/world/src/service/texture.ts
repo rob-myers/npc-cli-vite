@@ -14,7 +14,6 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
-import { objectPick } from "./pick";
 import type { TexArray } from "./tex-array";
 
 const texW = 256;
@@ -529,7 +528,7 @@ export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
   return mat;
 }
 
-function createShadowMaterial() {
+export function createShadowMaterial(objectPick: THREE.UniformNode<number>) {
   const center = uv().sub(0.5);
   const dist = center.dot(center).mul(4);
   const alpha = float(1).sub(dist).clamp(0, 1);
@@ -541,5 +540,3 @@ function createShadowMaterial() {
   // mat.outputNode = objectPick.equal(1).select(vec4(0, 255, 0, 1), output);
   return mat;
 }
-
-export const shadowMaterial = createShadowMaterial();
