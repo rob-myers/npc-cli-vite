@@ -31,9 +31,10 @@
   - ✅ per world object-pick
 
 - ✅ Layout supports 2 row with 2:1 ratio
-- mobile does not see 3 col or 2 col options
 
-- 🚧 npcs support multiple skins
+- ✅ mobile does not see 3 col or 2 col options
+
+- ✅ npcs support multiple skins
   - ✅ media/src/skin and link app/public/skin with 3 skins
   - ✅ world loads skins into TexArray
   - ✅ WorldMenu has debug to see skins, tags and links
@@ -42,6 +43,7 @@
     - ✅ `npc.ts` should have a method `changeSkin` which changes the uniform
     - ✅ `npc.changeSkin` should support ids and keys
 - ✅ spawn can specify skin
+
 - skin remapping
 
 - doors should block npcs
