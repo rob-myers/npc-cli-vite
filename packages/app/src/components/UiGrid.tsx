@@ -74,8 +74,17 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
         if (overlapping.length > 0) {
           const candidates = preLayout.map((pre) => {
             if (pre.i === draggedId) return dragged;
-            if (overlapping.some((o) => o.i === pre.i)) return { ...pre, x: draggedPre.x, y: draggedPre.y };
-            return pre;
+            if (!overlapping.some((o) => o.i === pre.i)) return pre;
+
+            const xOverlap = pre.x < draggedPre.x + draggedPre.w && pre.x + pre.w > draggedPre.x;
+            const yOverlap = pre.y < draggedPre.y + draggedPre.h && pre.y + pre.h > draggedPre.y;
+
+            if (xOverlap && !yOverlap) {
+              // Vertically stacked: move to opposite side of dragged
+              const wasAbove = pre.y + pre.h <= draggedPre.y;
+              return { ...pre, y: wasAbove ? dragged.y + dragged.h : dragged.y - pre.h };
+            }
+            return { ...pre, x: draggedPre.x, y: draggedPre.y };
           });
 
           const isDisjoint = candidates.every((a, i) => candidates.every((b, j) => i >= j || !collides(a, b)));
