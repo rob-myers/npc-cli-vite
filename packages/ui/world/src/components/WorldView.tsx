@@ -161,7 +161,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
         w.texFloor.update();
         w.update(); // e.g. show stats
-        document.addEventListener("keydown", state.onKeyDown);
       },
       onResize: debounce(() => {
         w.menu?.onResize();
@@ -241,13 +240,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   useEffect(() => {
     if (!w.rootEl) return;
+
+    // only trigger when visible
     const ro = new ResizeObserver(([entry]) => {
-      // only trigger when visible
       entry.contentRect.width && state.onResize();
     });
     ro.observe(w.rootEl);
-    return () => ro.disconnect();
-  }, [w.rootEl]); // debounced resize
+
+    w.rootEl.addEventListener("keydown", state.onKeyDown);
+
+    return () => {
+      ro.disconnect();
+      w.rootEl.removeEventListener("keydown", state.onKeyDown);
+    };
+  }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
 
   return (
     <motion.div

@@ -26,8 +26,8 @@
 - ✅ BUG gmGraph: not showing some localEdges inside 101
   - ✅ some hull doors in 101 have navRectId `-1`
 
-- BUG ensure separate world instances
-  - play/pause via Enter/Escape
+- 🚧 BUG ensure separate world instances
+  - ✅ play/pause via Enter/Escape
   - object-pick
 
 - BUG ensure onchange layout that portals are disposed
@@ -39,11 +39,11 @@
   - ✅ media/src/skin and link app/public/skin with 3 skins
   - ✅ world loads skins into TexArray
   - ✅ WorldMenu has debug to see skins, tags and links
-  - 🚧 `w.npc.texture` should be replaced by the texture atlas `w.texSkin`
+  - ✅ `w.npc.texture` should be replaced by the texture atlas `w.texSkin`
     - ✅ each npc material should support uniform to specify which skin
     - ✅ `npc.ts` should have a method `changeSkin` which changes the uniform
-    - 🚧 `npc.changeSkin` should support ids and keys
-- spawn can specify skin
+    - ✅ `npc.changeSkin` should support ids and keys
+- ✅ spawn can specify skin
 - skin remapping
 
 - doors should block npcs
