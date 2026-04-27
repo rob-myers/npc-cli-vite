@@ -44,6 +44,11 @@
     - ✅ `npc.changeSkin` should support ids and keys
 - ✅ spawn can specify skin
 
+- ✅ can ignore walls while object-pick
+  - ✅ support case objectPick.value = 0.5
+  - ✅ can set `w.view.objectPickScale` as `0.5`
+  - ✅ configure via `config pickWalls` or `config pickWalls 0`
+
 - skin remapping
 
 - doors should block npcs

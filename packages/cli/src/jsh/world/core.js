@@ -16,11 +16,24 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
+ * - `config pickWalls` picks walls
+ * - `config pickWalls 0` won't
  * @param {JshCli.RunArg} ctxt
  */
-export function clear({ w }) {
-  w.npc.remove(...Object.keys(w.npc.npc));
-  w.view.forceUpdate();
+export async function config({ w, args, api }) {
+  const [command, ...rest] = args;
+
+  switch (command) {
+    case "clearNpcs":
+      w.npc.remove(...Object.keys(w.npc.npc));
+      w.view.forceUpdate();
+      break;
+    case "pickWalls": {
+      const [truthy] = rest.map(api.parseJsArg);
+      w.view.objectPickScale = truthy === undefined || !!truthy ? 1 : 0.5;
+      break;
+    }
+  }
 }
 
 /**
@@ -144,7 +157,7 @@ export async function* pick(ct) {
     while (numClicks > 0) {
       blocking === true && w.view.clickIds.push(clickId);
 
-      const e = await /** @type {Promise<JshCli.PickEvent>} */ (
+      const output = await /** @type {Promise<JshCli.PickEvent>} */ (
         new Promise((resolve, reject) => {
           eventsSub = w.events.subscribe({
             next(e) {
@@ -164,9 +177,6 @@ export async function* pick(ct) {
           eventsSub.add(() => reject(api.getKillError()));
         })
       );
-
-      // 🚧 provide position maybe earlier
-      const output = e;
 
       if (filter === undefined || filter?.(output)) {
         numClicks--;

@@ -43,8 +43,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
+      objectPickScale: 1,
 
-      async createRenderer(props: DefaultGLProps) {
+      async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
         // - "The depth stencil attachment [TextureView of Texture "depthBuffer"] size (width: 300, height: 150) does not match the size of the other attachments' base plane (width: 1190, height: 1296). "
         const canvas = props.canvas as HTMLCanvasElement;
@@ -168,7 +169,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onResize: debounce(() => {
         w.menu?.onResize();
       }, 100),
-      onKeyDown(e: KeyboardEvent) {
+      onKeyDown(e) {
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
         if (e.key === "Escape") {
@@ -177,11 +178,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         }
       },
-      async onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+      async onPointerDown(e) {
         state.pickObject(e);
         e.currentTarget.focus();
       },
-      pickObject(e) {
+      async pickObject(e) {
         const { gl, scene, camera } = w.r3f;
         const renderer = gl as unknown as THREE.WebGPURenderer;
 
@@ -194,36 +195,36 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.getDrawingBufferSize(size);
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
-        state.objectPick.value = 1;
+        state.objectPick.value = 1 * state.objectPickScale;
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
         state.objectPick.value = 0;
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
-        renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1).then((rgba) => {
-          const picked = state.getPickedFromPixel(rgba);
-          if (picked === null) return;
-          const intersection = state.getRaycastIntersection(e.nativeEvent, picked);
-          console.log("picked", picked, intersection);
-          if (intersection === null) return;
+        const rgba = await renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1);
+        const picked = state.getPickedFromPixel(rgba);
+        if (picked === null) return;
 
-          const { distance, point } = intersection;
-          const clickId = state.clickIds.pop();
+        const intersection = state.getRaycastIntersection(e.nativeEvent, picked);
+        // console.log("picked", picked, intersection);
+        if (intersection === null) return;
 
-          w.events.next({
-            key: "picked",
-            ...(clickId && { clickId }),
-            meta: picked,
-            gmRoomId: typeof picked.gmId === "number" ? w.npc.findRoomContaining(point, true) : null,
+        const { distance, point } = intersection;
+        const clickId = state.clickIds.pop();
 
-            distance,
-            point,
-            faceIndex: intersection.faceIndex,
-            normal: intersection.normal,
+        w.events.next({
+          key: "picked",
+          ...(clickId && { clickId }),
+          meta: picked,
+          gmRoomId: typeof picked.gmId === "number" ? w.npc.findRoomContaining(point, true) : null,
 
-            ...point, // can provide as point
-          });
+          distance,
+          point,
+          faceIndex: intersection.faceIndex,
+          normal: intersection.normal,
+
+          ...point, // can provide as point
         });
       },
       syncRenderMode() {
@@ -235,15 +236,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return "always";
         }
       },
-      withPickOutput(typeId: number) {
+      withPickOutput(typeId) {
         const idx = float(instanceIndex);
         const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-        return state.objectPick.equal(1).select(pickVec, output);
+        return state.objectPick.notEqual(0).select(pickVec, output);
       },
-      withPickOutputId(typeId: number, idUniform: ReturnType<typeof uniform<number>>) {
+      withPickOutputId(typeId, idUniform) {
         const idx = float(idUniform);
         const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-        return state.objectPick.equal(1).select(pickVec, output);
+        return state.objectPick.notEqual(0).select(pickVec, output);
       },
     }),
     { reset: { ctrlOpts: true } },
@@ -327,6 +328,8 @@ export type State = {
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<number>;
+  /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
+  objectPickScale: 0 | 0.5 | 1;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(): void;

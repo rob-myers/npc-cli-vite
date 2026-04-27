@@ -93,7 +93,11 @@ export default function Walls() {
       transparent: true,
       depthWrite: false,
     });
-    material.opacityNode = w.view.objectPick.equal(1).select(float(1), opacityUniform);
+
+    // 🔔 objectPick.value 0.5 ignores walls for easier picking
+    material.opacityNode = w.view.objectPick
+      .notEqual(0)
+      .select(w.view.objectPick.notEqual(1).select(float(0), float(1)), opacityUniform);
     material.outputNode = w.view.withPickOutput(PICK_TYPE.wall);
 
     return { material, opacityUniform, uuid: crypto.randomUUID() };
