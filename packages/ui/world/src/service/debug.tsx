@@ -198,6 +198,9 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
               onPointerDown={svgZoom.onPointerDown}
               onPointerMove={svgZoom.onPointerMove}
               onPointerUp={svgZoom.onPointerUp}
+              onTouchStart={svgZoom.onTouchStart}
+              onTouchMove={svgZoom.onTouchMove}
+              onTouchEnd={svgZoom.onTouchEnd}
               className="size-full touch-none"
             >
               <style>{`text { user-select: none; cursor: default; } text:hover { user-select: text; cursor: text; } .edge-label:hover { font-size: ${fontSize * 0.6}px; fill: white; }`}</style>
@@ -469,6 +472,14 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
+  const pinchRef = useRef<{
+    dist: number;
+    midX: number;
+    midY: number;
+    startZoom: number;
+    startPanX: number;
+    startPanY: number;
+  } | null>(null);
 
   const viewBox = useMemo(() => {
     const w = bounds.width / zoom;
@@ -520,7 +531,7 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!dragRef.current) return;
+      if (!dragRef.current || pinchRef.current) return;
       const svg = e.currentTarget;
       const rect = svg.getBoundingClientRect();
       const scaleX = bounds.width / zoom / rect.width;
@@ -537,12 +548,58 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
     dragRef.current = null;
   }, []);
 
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      if (e.touches.length === 2) {
+        dragRef.current = null;
+        const [t0, t1] = [e.touches[0], e.touches[1]];
+        pinchRef.current = {
+          dist: Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY),
+          midX: (t0.clientX + t1.clientX) / 2,
+          midY: (t0.clientY + t1.clientY) / 2,
+          startZoom: zoom,
+          startPanX: pan.x,
+          startPanY: pan.y,
+        };
+      }
+    },
+    [zoom, pan],
+  );
+
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      if (e.touches.length !== 2 || !pinchRef.current) return;
+      const [t0, t1] = [e.touches[0], e.touches[1]];
+      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      const midX = (t0.clientX + t1.clientX) / 2;
+      const midY = (t0.clientY + t1.clientY) / 2;
+
+      const scale = dist / pinchRef.current.dist;
+      const newZoom = Math.min(20, Math.max(0.5, pinchRef.current.startZoom * scale));
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const scaleX = bounds.width / newZoom / rect.width;
+      const scaleY = bounds.height / newZoom / rect.height;
+
+      setPan({
+        x: pinchRef.current.startPanX - (midX - pinchRef.current.midX) * scaleX,
+        y: pinchRef.current.startPanY - (midY - pinchRef.current.midY) * scaleY,
+      });
+      setZoom(newZoom);
+    },
+    [bounds],
+  );
+
+  const onTouchEnd = useCallback(() => {
+    pinchRef.current = null;
+  }, []);
+
   const reset = useCallback(() => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, []);
 
-  return { viewBox, onWheel, onPointerDown, onPointerMove, onPointerUp, reset, zoom };
+  return { viewBox, onWheel, onPointerDown, onPointerMove, onPointerUp, onTouchStart, onTouchMove, onTouchEnd, reset, zoom };
 }
 
 function octantCandidates(cx: number, cy: number, tw: number, th: number, gap: number) {
