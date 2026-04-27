@@ -140,7 +140,7 @@ export default function Layout() {
         ]);
       });
     },
-    splitIntoTwoTabs(direction: "horizontal" | "vertical", ratio: [number, number] = [1, 1]) {
+    splitIntoTwoTabs(direction: "horizontal" | "vertical", ratio = splitRatios[0] as [number, number]) {
       const totalCols = layoutApi.getCols();
       const totalRows = layoutApi.getViewportRows();
       const [r1, r2] = ratio;
@@ -293,10 +293,10 @@ export default function Layout() {
 
 const iconSize = 18;
 
-const splitRatios: [number, number][] = [
+const splitRatios = [
+  [1, 2],
   [1, 1],
   [2, 1],
-  [1, 2],
   // [3, 1],
   // [1, 3],
-];
+] as const;
