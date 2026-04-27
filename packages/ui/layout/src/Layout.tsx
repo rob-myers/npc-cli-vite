@@ -1,6 +1,7 @@
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { BasicPopover, CloseOnClickPopover, cn, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
   ArrowCounterClockwiseIcon,
   CaretDownIcon,
@@ -245,36 +246,40 @@ export default function Layout() {
             </div>
           </CloseOnClickPopover>
         </div>
-        <div className="flex h-12 flex-1 min-w-28">
-          <button
-            type="button"
-            className={cn(buttonClassName, "rounded-r-none! min-w-0!")}
-            onPointerDown={() => state.splitIntoTwoTabs("horizontal")}
-          >
-            <SquareSplitHorizontalIcon size={iconSize} /> 2 col
-          </button>
-          <CloseOnClickPopover
-            triggerClassName={cn(buttonClassName, "rounded-l-none! px-2 border-l-0 flex-none! min-w-0!")}
-            trigger={<CaretDownIcon size={12} />}
-            side="bottom"
-          >
-            <div className="flex flex-col gap-1">
-              {splitRatios.map(([r1, r2]) => (
-                <button
-                  key={`h-${r1}:${r2}`}
-                  type="button"
-                  className="cursor-pointer px-2 py-1 hover:bg-white/10 rounded"
-                  onPointerDown={() => state.splitIntoTwoTabs("horizontal", [r1, r2])}
-                >
-                  {r1}:{r2}
-                </button>
-              ))}
+        {!isTouchDevice() && (
+          <>
+            <div className="flex h-12 flex-1 min-w-28">
+              <button
+                type="button"
+                className={cn(buttonClassName, "rounded-r-none! min-w-0!")}
+                onPointerDown={() => state.splitIntoTwoTabs("horizontal")}
+              >
+                <SquareSplitHorizontalIcon size={iconSize} /> 2 col
+              </button>
+              <CloseOnClickPopover
+                triggerClassName={cn(buttonClassName, "rounded-l-none! px-2 border-l-0 flex-none! min-w-0!")}
+                trigger={<CaretDownIcon size={12} />}
+                side="bottom"
+              >
+                <div className="flex flex-col gap-1">
+                  {splitRatios.map(([r1, r2]) => (
+                    <button
+                      key={`h-${r1}:${r2}`}
+                      type="button"
+                      className="cursor-pointer px-2 py-1 hover:bg-white/10 rounded"
+                      onPointerDown={() => state.splitIntoTwoTabs("horizontal", [r1, r2])}
+                    >
+                      {r1}:{r2}
+                    </button>
+                  ))}
+                </div>
+              </CloseOnClickPopover>
             </div>
-          </CloseOnClickPopover>
-        </div>
-        <button type="button" className={buttonClassName} onPointerDown={state.splitIntoThreeTabs}>
-          <SquareSplitHorizontalIcon size={iconSize} /> 3 col
-        </button>
+            <button type="button" className={buttonClassName} onPointerDown={state.splitIntoThreeTabs}>
+              <SquareSplitHorizontalIcon size={iconSize} /> 3 col
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
