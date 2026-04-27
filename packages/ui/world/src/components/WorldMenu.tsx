@@ -10,7 +10,6 @@ import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
-import { objectPick } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export function WorldMenu() {
@@ -278,7 +277,7 @@ export function WorldMenu() {
                   className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                   closeOnClick={false}
                   onClick={() => {
-                    objectPick.value = objectPick.value === 1 ? 0 : 1;
+                    w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
                     w.view.forceUpdate();
                   }}
                 >

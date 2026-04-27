@@ -26,9 +26,9 @@
 - ✅ BUG gmGraph: not showing some localEdges inside 101
   - ✅ some hull doors in 101 have navRectId `-1`
 
-- 🚧 BUG ensure separate world instances
+- ✅ BUG ensure separate world instances
   - ✅ play/pause via Enter/Escape
-  - object-pick
+  - ✅ per world object-pick
 
 - BUG ensure onchange layout that portals are disposed
 

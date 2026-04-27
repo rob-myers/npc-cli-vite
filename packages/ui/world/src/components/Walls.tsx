@@ -6,7 +6,7 @@ import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createXyQuad } from "../service/geometry";
-import { objectPick, PICK_TYPE, withPickOutput } from "../service/pick";
+import { PICK_TYPE } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -93,8 +93,8 @@ export default function Walls() {
       transparent: true,
       depthWrite: false,
     });
-    material.opacityNode = objectPick.equal(1).select(float(1), opacityUniform);
-    material.outputNode = withPickOutput(PICK_TYPE.wall);
+    material.opacityNode = w.view.objectPick.equal(1).select(float(1), opacityUniform);
+    material.outputNode = w.view.withPickOutput(PICK_TYPE.wall);
 
     return { material, opacityUniform, uuid: crypto.randomUUID() };
   }, [wallCount]);

@@ -1,9 +1,4 @@
-import { float, instanceIndex, output, uniform, vec4 } from "three/tsl";
 import { gmFloorExtraScale, worldToSguScale } from "../const";
-
-// 🚧 what about multiple worlds?
-/** Shared uniform — 0 = normal render, 1 = pick render */
-export const objectPick = uniform(0);
 
 /** Object type IDs — spaced out for visual debug */
 export const PICK_TYPE = { floor: 25, ceiling: 50, door: 75, wall: 100, obstacle: 125, npc: 150 } as const;
@@ -15,23 +10,6 @@ const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v])
   PickType,
   keyof typeof PICK_TYPE
 >;
-
-/**
- * TSL node for `outputNode`: when objectPick==1, outputs raw unlit pick color;
- * otherwise passes through the standard lit `output`.
- */
-export function withPickOutput(typeId: number) {
-  const idx = float(instanceIndex);
-  const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-  return objectPick.equal(1).select(pickVec, output);
-}
-
-/** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
-export function withPickOutputId(typeId: number, idUniform: ReturnType<typeof uniform<number>>) {
-  const idx = float(idUniform);
-  const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-  return objectPick.equal(1).select(pickVec, output);
-}
 
 /** Decode RGBA pixel → { type, instanceId } or null */
 export function decodePick(r: number, g: number, b: number) {

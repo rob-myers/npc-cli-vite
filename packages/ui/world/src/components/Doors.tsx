@@ -3,7 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, instanceIndex, int, normalLocal, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { PICK_TYPE, withPickOutput } from "../service/pick";
+import { PICK_TYPE } from "../service/pick";
 import { createPanelAtlas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -182,7 +182,7 @@ export default function Doors() {
 
     frontOrBack.colorNode = texNode.depth(instanceIndex.mod(int(count)));
     for (const mat of [edge, top, frontOrBack]) {
-      mat.outputNode = withPickOutput(PICK_TYPE.door);
+      mat.outputNode = w.view.withPickOutput(PICK_TYPE.door);
     }
 
     return [edge, edge, top, edge, frontOrBack, frontOrBack];

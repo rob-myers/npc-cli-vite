@@ -12,7 +12,7 @@ import * as THREE from "three/webgpu";
 import { MAX_GEOMORPH_INSTANCES } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
-import { PICK_TYPE, withPickOutput } from "../service/pick";
+import { PICK_TYPE } from "../service/pick";
 import { drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -130,7 +130,11 @@ export default function Floor() {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    return { texNode: texNode.depth(instanceIndex), pickNode: withPickOutput(PICK_TYPE.floor), uid: generateUUID() };
+    return {
+      texNode: texNode.depth(instanceIndex),
+      pickNode: w.view.withPickOutput(PICK_TYPE.floor),
+      uid: generateUUID(),
+    };
   }, [w.texFloor.hash]);
 
   useEffect(() => {
