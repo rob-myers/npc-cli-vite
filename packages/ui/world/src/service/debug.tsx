@@ -578,8 +578,8 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
       const newZoom = Math.min(20, Math.max(0.5, pinchRef.current.startZoom * scale));
 
       const rect = e.currentTarget.getBoundingClientRect();
-      const scaleX = bounds.width / newZoom / rect.width;
-      const scaleY = bounds.height / newZoom / rect.height;
+      const scaleX = bounds.width / pinchRef.current.startZoom / rect.width;
+      const scaleY = bounds.height / pinchRef.current.startZoom / rect.height;
 
       setPan({
         x: pinchRef.current.startPanX - (midX - pinchRef.current.midX) * scaleX,
