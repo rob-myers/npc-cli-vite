@@ -22,18 +22,13 @@ export function BasicPopover(
 ) {
   return (
     <Popover.Root handle={props.handle}>
-      <Popover.Trigger
-        className={cn(preventReactGridDragClassName, "cursor-pointer", props.triggerClassName)}
-      >
+      <Popover.Trigger className={cn(preventReactGridDragClassName, "cursor-pointer", props.triggerClassName)}>
         {props.trigger}
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner side={props.side} sideOffset={props.sideOffset}>
           <Popover.Popup className="outline-0">
-            <PopoverArrow
-              className={props.arrowClassName ?? "fill-gray-200"}
-              arrowBorderFill="#00000033"
-            />
+            <PopoverArrow className={props.arrowClassName ?? "fill-gray-200"} arrowBorderFill="#00000033" />
             <Popover.Description
               render={(descriptionProps) => (
                 <div
