@@ -89,8 +89,15 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
           }
         }
 
-        // No swap — fall back to vertical compaction
-        return verticalCompactor.compact(layout, cols);
+        // No swap — dragged at mouse, others at pre-drag positions
+        return verticalCompactor.compact(
+          layout.map((item) => {
+            if (item.i === draggedId) return cloneLayoutItem(item);
+            const pre = preLayout.find((p) => p.i === item.i);
+            return cloneLayoutItem(pre ? { ...item, x: pre.x, y: pre.y } : item);
+          }),
+          cols,
+        );
       },
     }),
     [],
