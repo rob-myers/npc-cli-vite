@@ -82,10 +82,11 @@ export class Npc {
   startWalking() {
     const { walk, idle } = this.w.npc.clips;
     if (!walk) return;
-    this.moving = true;
     this.lookAt = null;
     this.stuckAccum = 0;
     this.lastPos = { x: this.position.x, y: this.position.z };
+    if (this.moving) return;
+    this.moving = true;
     const idleAction = idle ? this.mixer.clipAction(idle) : null;
     const walkAction = this.mixer.clipAction(walk);
     idleAction?.fadeOut(0.3);
