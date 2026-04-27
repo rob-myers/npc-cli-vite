@@ -228,9 +228,12 @@ export default function Layout() {
             <SquareSplitVerticalIcon size={iconSize} /> 2 row
           </button>
           <CloseOnClickPopover
+            className="bg-background text-on-background border-on-background/50"
             triggerClassName={cn(buttonClassName, "rounded-l-none! px-2 border-l-0 flex-none! min-w-0!")}
             trigger={<CaretDownIcon size={12} />}
+            arrowClassName="fill-white/30 stroke-on-background/25"
             side="bottom"
+            sideOffset={6}
           >
             <div className="flex flex-col gap-1">
               {splitRatios.map(([r1, r2]) => (
@@ -257,9 +260,12 @@ export default function Layout() {
                 <SquareSplitHorizontalIcon size={iconSize} /> 2 col
               </button>
               <CloseOnClickPopover
+                className="bg-background text-on-background border-on-background/50"
                 triggerClassName={cn(buttonClassName, "rounded-l-none! px-2 border-l-0 flex-none! min-w-0!")}
                 trigger={<CaretDownIcon size={12} />}
+                arrowClassName="fill-white/30 stroke-on-background/25"
                 side="bottom"
+                sideOffset={6}
               >
                 <div className="flex flex-col gap-1">
                   {splitRatios.map(([r1, r2]) => (
