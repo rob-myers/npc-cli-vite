@@ -41,24 +41,6 @@ export default function Doors() {
 
         return { gmId, doorId, seg, hull, roomIds, ...meta, slideDirection };
       },
-
-      setOpen(instanceId: number, ratio: number) {
-        const { inst, openDoorsRatio, slideData } = state;
-        if (!inst || instanceId < 0 || instanceId >= openDoorsRatio.length) return;
-        openDoorsRatio[instanceId] = ratio;
-
-        inst.getMatrixAt(instanceId, tmpMat4);
-        applyOpenRatio(slideData, instanceId, ratio, tmpMat4);
-        inst.setMatrixAt(instanceId, tmpMat4);
-        inst.instanceMatrix.needsUpdate = true;
-
-        const isCollapse = slideData[instanceId * SD_STRIDE + SD_COLLAPSE];
-        if (isCollapse) {
-          state.collapseScales[instanceId] = 1 - ratio;
-          (state.box.getAttribute("collapseScale") as THREE.BufferAttribute).needsUpdate = true;
-        }
-      },
-
       positionInstances() {
         const { inst } = state;
         if (!inst) return;
@@ -147,6 +129,22 @@ export default function Doors() {
 
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
+      },
+      setOpen(instanceId: number, ratio: number) {
+        const { inst, openDoorsRatio, slideData } = state;
+        if (!inst || instanceId < 0 || instanceId >= openDoorsRatio.length) return;
+        openDoorsRatio[instanceId] = ratio;
+
+        inst.getMatrixAt(instanceId, tmpMat4);
+        applyOpenRatio(slideData, instanceId, ratio, tmpMat4);
+        inst.setMatrixAt(instanceId, tmpMat4);
+        inst.instanceMatrix.needsUpdate = true;
+
+        const isCollapse = slideData[instanceId * SD_STRIDE + SD_COLLAPSE];
+        if (isCollapse) {
+          state.collapseScales[instanceId] = 1 - ratio;
+          (state.box.getAttribute("collapseScale") as THREE.BufferAttribute).needsUpdate = true;
+        }
       },
     }),
   );
