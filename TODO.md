@@ -49,6 +49,8 @@
   - ✅ can set `w.view.objectPickScale` as `0.5`
   - ✅ configure via `config pickWalls` or `config pickWalls 0`
 
+- 🚧 BUG fix debug geomorph graphs panzoom mobile
+
 - skin remapping
 
 - doors should block npcs
