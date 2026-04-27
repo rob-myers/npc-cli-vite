@@ -30,10 +30,8 @@
   - ✅ play/pause via Enter/Escape
   - ✅ per world object-pick
 
-- BUG ensure onchange layout that portals are disposed
-
-- Layout supports 2 row with 2:1 ratio
-  - mobile does not see 3 col or 2 col options
+- ✅ Layout supports 2 row with 2:1 ratio
+- mobile does not see 3 col or 2 col options
 
 - 🚧 npcs support multiple skins
   - ✅ media/src/skin and link app/public/skin with 3 skins
@@ -49,6 +47,7 @@
 - doors should block npcs
   - navigation query should account for open doors
 
+- ensure onchange layout that portals are disposed
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once

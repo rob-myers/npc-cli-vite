@@ -1,8 +1,9 @@
 import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
+import { BasicPopover, CloseOnClickPopover, cn, useStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
+  CaretDownIcon,
   SquareIcon,
   SquareSplitHorizontalIcon,
   SquareSplitVerticalIcon,
@@ -138,30 +139,30 @@ export default function Layout() {
         ]);
       });
     },
-    splitIntoTwoTabs(direction: "horizontal" | "vertical") {
+    splitIntoTwoTabs(direction: "horizontal" | "vertical", ratio: [number, number] = [1, 1]) {
       const totalCols = layoutApi.getCols();
       const totalRows = layoutApi.getViewportRows();
+      const [r1, r2] = ratio;
+      const rTotal = r1 + r2;
 
       const existing = state.getExistingTabsIds(2);
       if (existing) {
         const sorted = existing
           .map((id) => ({ id, rect: layoutApi.getUiGridRect(id) }))
           .sort((a, b) =>
-            direction === "horizontal"
-              ? (a.rect?.x ?? 0) - (b.rect?.x ?? 0)
-              : (a.rect?.y ?? 0) - (b.rect?.y ?? 0),
+            direction === "horizontal" ? (a.rect?.x ?? 0) - (b.rect?.x ?? 0) : (a.rect?.y ?? 0) - (b.rect?.y ?? 0),
           );
         if (direction === "horizontal") {
-          const halfCols = Math.floor(totalCols / 2);
+          const firstW = Math.floor((totalCols * r1) / rTotal);
           layoutApi.resizeLayoutItems([
-            { i: sorted[0].id, x: 0, y: 0, w: halfCols, h: totalRows },
-            { i: sorted[1].id, x: halfCols, y: 0, w: totalCols - halfCols, h: totalRows },
+            { i: sorted[0].id, x: 0, y: 0, w: firstW, h: totalRows },
+            { i: sorted[1].id, x: firstW, y: 0, w: totalCols - firstW, h: totalRows },
           ]);
         } else {
-          const halfRows = Math.floor(totalRows / 2);
+          const firstH = Math.floor((totalRows * r1) / rTotal);
           layoutApi.resizeLayoutItems([
-            { i: sorted[0].id, x: 0, y: 0, w: totalCols, h: halfRows },
-            { i: sorted[1].id, x: 0, y: halfRows, w: totalCols, h: totalRows - halfRows },
+            { i: sorted[0].id, x: 0, y: 0, w: totalCols, h: firstH },
+            { i: sorted[1].id, x: 0, y: firstH, w: totalCols, h: totalRows - firstH },
           ]);
         }
         return;
@@ -175,16 +176,16 @@ export default function Layout() {
       const tabsBId = leafIds.length > mid ? state.createTabs(leafIds.slice(mid)) : null;
 
       if (direction === "horizontal") {
-        const halfCols = Math.floor(totalCols / 2);
+        const firstW = Math.floor((totalCols * r1) / rTotal);
         layoutApi.appendLayoutItems([
-          { i: tabsAId, x: 0, y: 0, w: tabsBId ? halfCols : totalCols, h: totalRows },
-          ...(tabsBId ? [{ i: tabsBId, x: halfCols, y: 0, w: totalCols - halfCols, h: totalRows }] : []),
+          { i: tabsAId, x: 0, y: 0, w: tabsBId ? firstW : totalCols, h: totalRows },
+          ...(tabsBId ? [{ i: tabsBId, x: firstW, y: 0, w: totalCols - firstW, h: totalRows }] : []),
         ]);
       } else {
-        const halfRows = Math.floor(totalRows / 2);
+        const firstH = Math.floor((totalRows * r1) / rTotal);
         layoutApi.appendLayoutItems([
-          { i: tabsAId, x: 0, y: 0, w: totalCols, h: halfRows },
-          ...(tabsBId ? [{ i: tabsBId, x: 0, y: halfRows, w: totalCols, h: totalRows - halfRows }] : []),
+          { i: tabsAId, x: 0, y: 0, w: totalCols, h: firstH },
+          ...(tabsBId ? [{ i: tabsBId, x: 0, y: firstH, w: totalCols, h: totalRows - firstH }] : []),
         ]);
       }
     },
@@ -194,12 +195,12 @@ export default function Layout() {
     uiClassName,
     "overflow-auto border rounded cursor-pointer gap-2 px-4 py-2",
     "flex justify-center items-center bg-button-background",
-    "text-sm",
+    "text-sm flex-1 min-w-28 h-12",
   );
 
   return (
     <div className="flex justify-center items-center h-full overflow-auto gap-4">
-      <div className="p-4 flex flex-wrap items-center gap-2 *:px-2 *:flex-1 *:min-w-28 *:h-12">
+      <div className="p-4 flex flex-wrap items-center gap-2">
         <BasicPopover
           triggerClassName={buttonClassName}
           trigger={
@@ -217,12 +218,60 @@ export default function Layout() {
         <button type="button" className={buttonClassName} onPointerDown={state.collectIntoTabs}>
           <SquareIcon size={iconSize} /> union
         </button>
-        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("vertical")}>
-          <SquareSplitVerticalIcon size={iconSize} /> 2 row
-        </button>
-        <button type="button" className={buttonClassName} onPointerDown={() => state.splitIntoTwoTabs("horizontal")}>
-          <SquareSplitHorizontalIcon size={iconSize} /> 2 col
-        </button>
+        <div className="flex h-12 flex-1 min-w-34">
+          <button
+            type="button"
+            className={cn(buttonClassName, "rounded-r-none! min-w-0!")}
+            onPointerDown={() => state.splitIntoTwoTabs("vertical")}
+          >
+            <SquareSplitVerticalIcon size={iconSize} /> 2 row
+          </button>
+          <CloseOnClickPopover
+            triggerClassName={cn(buttonClassName, "rounded-l-none! px-2 border-l-0 flex-none! min-w-0!")}
+            trigger={<CaretDownIcon size={12} />}
+            side="bottom"
+          >
+            <div className="flex flex-col gap-1">
+              {splitRatios.map(([r1, r2]) => (
+                <button
+                  key={`v-${r1}:${r2}`}
+                  type="button"
+                  className="cursor-pointer px-2 py-1 hover:bg-white/10 rounded"
+                  onPointerDown={() => state.splitIntoTwoTabs("vertical", [r1, r2])}
+                >
+                  {r1}:{r2}
+                </button>
+              ))}
+            </div>
+          </CloseOnClickPopover>
+        </div>
+        <div className="flex h-12 flex-1 min-w-28">
+          <button
+            type="button"
+            className={cn(buttonClassName, "rounded-r-none! min-w-0!")}
+            onPointerDown={() => state.splitIntoTwoTabs("horizontal")}
+          >
+            <SquareSplitHorizontalIcon size={iconSize} /> 2 col
+          </button>
+          <CloseOnClickPopover
+            triggerClassName={cn(buttonClassName, "rounded-l-none! px-2 border-l-0 flex-none! min-w-0!")}
+            trigger={<CaretDownIcon size={12} />}
+            side="bottom"
+          >
+            <div className="flex flex-col gap-1">
+              {splitRatios.map(([r1, r2]) => (
+                <button
+                  key={`h-${r1}:${r2}`}
+                  type="button"
+                  className="cursor-pointer px-2 py-1 hover:bg-white/10 rounded"
+                  onPointerDown={() => state.splitIntoTwoTabs("horizontal", [r1, r2])}
+                >
+                  {r1}:{r2}
+                </button>
+              ))}
+            </div>
+          </CloseOnClickPopover>
+        </div>
         <button type="button" className={buttonClassName} onPointerDown={state.splitIntoThreeTabs}>
           <SquareSplitHorizontalIcon size={iconSize} /> 3 col
         </button>
@@ -232,3 +281,11 @@ export default function Layout() {
 }
 
 const iconSize = 18;
+
+const splitRatios: [number, number][] = [
+  [1, 1],
+  [2, 1],
+  [1, 2],
+  // [3, 1],
+  // [1, 3],
+];
