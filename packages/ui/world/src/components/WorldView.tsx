@@ -264,7 +264,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
     return () => {
       ro.disconnect();
-      w.rootEl.removeEventListener("keydown", state.onKeyDown);
+      w.rootEl?.removeEventListener("keydown", state.onKeyDown);
     };
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
 
