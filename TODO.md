@@ -69,8 +69,10 @@
   - ✅ clean up shared code: spawn, respawn, dev-hot-reload
 
 - 🚧 queryFilter issues
-  - wrong: head towards other side of wall when door closed
+  - 🚧 wrong: head towards other side of wall when door closed
     - could search in our own `gm-room-graph` (efficient)
+    - 🚧 gm-room-graph supports `findPath`
+      - closed doors represented via infinite edge weights
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter
