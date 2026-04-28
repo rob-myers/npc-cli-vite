@@ -6,11 +6,9 @@ import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import {
   ANY_QUERY_FILTER,
-  createDefaultQueryFilter,
   createFindNearestPolyResult,
   type FindNearestPolyResult,
   findNearestPoly,
-  getNodeByRef,
   type QueryFilter,
   type Vec3,
 } from "navcat";
@@ -35,7 +33,6 @@ import {
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
-import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -54,20 +51,6 @@ export default function NPCs() {
       },
 
       byPickId: {} as Record<number, Npc>,
-      doorsQueryFilter: {
-        ...createDefaultQueryFilter(),
-        passFilter(nodeRef, navMesh) {
-          const node = getNodeByRef(navMesh, nodeRef);
-
-          // 🚧 faster via w.npc.doorAreaOpen
-          if (isDoorAreaId(node.area) === true) {
-            const decoded = decodeDoorAreaId(node.area);
-            return w.door.isOpen(decoded.gmId, decoded.doorId);
-          }
-
-          return true;
-        },
-      },
       nextPickId: 0,
       npc: {},
 
@@ -105,11 +88,8 @@ export default function NPCs() {
             ...mats,
           });
 
-          // if (oldNpc.agentId !== null) {
-          //   crowdApi.removeAgent(state.crowd, oldNpc.agentId);
-          //   oldNpc.agentId = null;
-          // }
           npc.agentId = oldNpc.agentId;
+          // npc.queryFilter = oldNpc.queryFilter;
           state.placeNpcAt(npc, npc.position);
 
           drawLabelLayer(w.texLabel, npc.labelLayerIndex, npc.key);
@@ -167,10 +147,11 @@ export default function NPCs() {
 
         if (result.success) {
           const agent = state.crowd.agents[npc.agentId];
-          // whilst walking doors should block npcs
-          agent.queryFilter = state.doorsQueryFilter;
+          // whilst walking, doors should block npcs
+          agent.queryFilter = npc.queryFilter;
           crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(groundPoint));
           npc.startWalking();
+          npc.lastTarget = groundPoint;
           agent.separationWeight = walkSeparationWeight;
         } else {
           throw Error("move failed");
@@ -314,7 +295,6 @@ export default function NPCs() {
         await new Promise<void>((resolve) => (npc.resolve = resolve));
       },
     }),
-    { reset: { doorsQueryFilter: false } },
   );
 
   w.npc = state;
@@ -362,7 +342,6 @@ export default function NPCs() {
 
 export type State = {
   byPickId: Record<number, Npc>;
-  doorsQueryFilter: QueryFilter;
   clips: { idle: THREE.AnimationClip; walk: THREE.AnimationClip; run: THREE.AnimationClip };
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;

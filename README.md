@@ -3,6 +3,16 @@
 Install pnpm
 > https://pnpm.io/installation
 
+# Example commands
+
+```sh
+spawn npc:rob at:$( pick 1 )
+while true; do
+  move --force npc:rob to:$( pick meta.floor 1 )
+done
+```
+
+
 # Architecture Overview
 
 - 🚧 WIP
