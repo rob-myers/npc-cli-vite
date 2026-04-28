@@ -573,6 +573,14 @@ export class TtyXterm {
               line: `${ansi.Yellow}<${other.tagName.toLowerCase()}>${ansi.Reset}`,
             },
           ]);
+        } else if (other[Symbol.toStringTag] === "Module") {
+          // e.g. call '({ lib }) => lib.core'
+          this.queueCommands([
+            {
+              key: "line",
+              line: `${ansi.Yellow}Module { ${Object.keys(other).join(", ")} }${ansi.Reset}`,
+            },
+          ]);
         } else {
           const stringifiedTail = (jsStringify(other) || safeJsonCompact(other)).slice(-this.maxStringifyLength);
           const highlighted =

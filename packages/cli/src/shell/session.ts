@@ -194,9 +194,7 @@ export const sessionApi = {
       const processes =
         p.pgid === pid || opts.GROUP === true
           ? // Apply command to whole process group in reverse
-            sessionApi
-              .getProcesses(sessionKey, p.pgid)
-              .reverse()
+            sessionApi.getProcesses(sessionKey, p.pgid).reverse()
           : [p]; // Apply command to exactly one process
 
       sessionApi.killProcesses(processes, opts);
@@ -260,14 +258,11 @@ export const sessionApi = {
 
     sessionApi
       .getSession(opts.sessionKey)
-      .ttyLink[opts.lineText]?.find(
-        (x) => x.linkStartIndex === opts.linkStartIndex && x.linkText === opts.linkText,
-      )
+      .ttyLink[opts.lineText]?.find((x) => x.linkStartIndex === opts.linkStartIndex && x.linkText === opts.linkText)
       ?.callback(opts.lineNumber);
   },
   persistHome(sessionKey: string) {
-    const { PWD, OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } =
-      sessionApi.getSession(sessionKey).var;
+    const { PWD, OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } = sessionApi.getSession(sessionKey).var;
 
     tryLocalStorageSet(`var@session-${sessionKey}`, jsStringify(persistedVarLookup, false, true));
   },
@@ -365,11 +360,7 @@ export const sessionApi = {
      * e.g. `( cd && echo 'pwn3d!'>PWD && pwd )`
      */
     const localCtxt =
-      parts[0] in process.localVar
-        ? process.localVar
-        : parts[0] in process.inheritVar
-          ? process.inheritVar
-          : null;
+      parts[0] in process.localVar ? process.localVar : parts[0] in process.inheritVar ? process.inheritVar : null;
     if (localCtxt) {
       root = localCtxt;
       normalParts = parts;
@@ -429,10 +420,8 @@ export type Session = {
     CACHE_SHORTCUTS?: { [key: string]: string };
   };
 
-  // 🚧
-  // modules: import("../terminal/TtyWithFunctions").TtyJsModules;
-  /** e.g. `import util` */
-  modules: any;
+  /** e.g. JS function `modules.core.spawn` */
+  modules: typeof import("../jsh/modules");
 
   nextPid: number;
   lastExit: {
