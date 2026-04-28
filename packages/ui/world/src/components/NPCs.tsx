@@ -4,7 +4,16 @@ import { useStateRef } from "@npc-cli/util";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { ANY_QUERY_FILTER, createFindNearestPolyResult, type FindNearestPolyResult, findNearestPoly } from "navcat";
+import {
+  ANY_QUERY_FILTER,
+  createDefaultQueryFilter,
+  createFindNearestPolyResult,
+  type FindNearestPolyResult,
+  findNearestPoly,
+  getNodeByRef,
+  type QueryFilter,
+  type Vec3,
+} from "navcat";
 import { type crowd, crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect, useMemo } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
@@ -26,6 +35,7 @@ import {
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
+import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -44,6 +54,20 @@ export default function NPCs() {
       },
 
       byPickId: {} as Record<number, Npc>,
+      doorsQueryFilter: {
+        ...createDefaultQueryFilter(),
+        passFilter(nodeRef, navMesh) {
+          const node = getNodeByRef(navMesh, nodeRef);
+
+          // 🚧 faster via w.npc.doorAreaOpen
+          if (isDoorAreaId(node.area) === true) {
+            const decoded = decodeDoorAreaId(node.area);
+            return w.door.isOpen(decoded.gmId, decoded.doorId);
+          }
+
+          return true;
+        },
+      },
       nextPickId: 0,
       npc: {},
 
@@ -88,6 +112,9 @@ export default function NPCs() {
               getAgentParams(),
             );
             npc.pinTo(state.getClosestPoly(npc.position));
+
+            const agent = state.crowd.agents[npc.agentId];
+            agent.queryFilter = state.doorsQueryFilter;
           }
 
           drawLabelLayer(w.texLabel, npc.labelLayerIndex, npc.key);
@@ -118,13 +145,13 @@ export default function NPCs() {
           return null;
         }
       },
-      getClosestPoly(targetPos) {
+      getClosestPoly(targetPos, queryFilter = ANY_QUERY_FILTER) {
         return findNearestPoly(
           createFindNearestPolyResult(),
           w.nav.navMesh,
           groudPointToTuple(parseGroundPoint(targetPos)),
-          [closePolygonDistance, 0.05, closePolygonDistance],
-          ANY_QUERY_FILTER, // permits doorways
+          polygonQueryHalfExtents,
+          queryFilter,
         );
       },
       getSkinIndex(skinKey) {
@@ -226,6 +253,8 @@ export default function NPCs() {
           const agent = state.crowd.agents[npc.agentId];
           agent.position[0] = groundPoint.x;
           agent.position[2] = groundPoint.y;
+
+          agent.queryFilter = state.doorsQueryFilter;
         } else {
           npc.position.copy(groundPointToVector3(groundPoint));
         }
@@ -241,6 +270,7 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
+        // 🚧 share code between initial spawn and respawn
         if (npcKey in state.npc) {
           const npc = state.npc[npcKey];
           state.respawn(npc, at);
@@ -250,7 +280,7 @@ export default function NPCs() {
 
         const groundPoint = parseGroundPoint(at);
 
-        const clone = SkeletonUtils.clone(state.gltf!.scene);
+        const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
         const graph = buildGraph(clone);
         const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
         const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
@@ -287,6 +317,9 @@ export default function NPCs() {
         if (result.success === true) {
           npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
           npc.pinTo(result);
+
+          const agent = state.crowd.agents[npc.agentId];
+          agent.queryFilter = state.doorsQueryFilter;
         }
 
         state.npc[npcKey] = npc;
@@ -295,13 +328,13 @@ export default function NPCs() {
 
         state.update();
 
-        if (npc.spawns++ === 0) {
-          await new Promise<void>((resolve) => {
-            npc.resolve = resolve;
-          });
-        }
+        // on 1st spawn await mount
+        await new Promise<void>((resolve) => {
+          npc.resolve = resolve;
+        });
       },
     }),
+    { reset: { doorsQueryFilter: false } },
   );
 
   w.npc = state;
@@ -349,6 +382,7 @@ export default function NPCs() {
 
 export type State = {
   byPickId: Record<number, Npc>;
+  doorsQueryFilter: QueryFilter;
   clips: { idle: THREE.AnimationClip; walk: THREE.AnimationClip; run: THREE.AnimationClip };
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
@@ -367,7 +401,7 @@ export type State = {
   devHotReload(): void;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
-  getClosestPoly(targetPos: JshCli.PointAnyFormat): FindNearestPolyResult;
+  getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   getSkinIndex(skinKey: string): number;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
@@ -398,6 +432,7 @@ const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const idleSeparationWeight = 0.5;
 const walkSeparationWeight = 0.25;
 const closePolygonDistance = 0.05;
+const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
 
 const emptyAnimationClip = new THREE.AnimationClip();
 emptyAnimationClip.name = "empty-animation-clip";

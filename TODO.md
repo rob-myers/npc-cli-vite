@@ -61,7 +61,12 @@
   - e.g. `w door.setOpen 0 21 true`
 
 - 🚧 doors should block npcs
-  - 🚧 navigation query can account for open doors
+  - ✅ can log/detect door areas in queryFilter
+    - currently `node.area > 0`
+  - ✅ can decode `(gmId, doorId)` from `node.area`
+    - 🔔 import from worker file (possible hmr issues)
+  - ✅ navigation query accounts for open doors
+  - clean up shared code: spawn, respawn, dev-hot-reload
 
 - skin remapping
 
@@ -85,6 +90,7 @@
   - need repro e.g. move stateroom inside 301
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
+- BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 

@@ -41,9 +41,9 @@ import {
   type TiledNavMeshOptions,
   type TiledNavMeshResult,
 } from "navcat/blocks";
-import { buildDoorwayGrid, encodeDoorAreaId, type EnrichedDoorway } from "./nav-util";
+import { buildDoorwayGrid, type EnrichedDoorway, encodeDoorAreaId } from "./nav-util";
 
-const buildNavMeshTile = ({
+const buildCustomNavMeshTile = ({
   doorways,
   // ...
   ctx,
@@ -173,6 +173,10 @@ const buildNavMeshTile = ({
 
   const compactHeightfield = buildCompactHeightfield(ctx, walkableHeightVoxels, walkableClimbVoxels, heightfield);
 
+  // ***********************
+  // 🔔 custom area markings
+  // ***********************
+
   const boundsRect = new Rect(
     tileBounds[0],
     tileBounds[2],
@@ -253,7 +257,7 @@ const buildNavMeshTile = ({
   };
 };
 
-export function generateTiledNavMesh(
+export function generateCustomTiledNavMesh(
   input: TiledNavMeshInput,
   options: TiledNavMeshOptions,
   doorways: WW.GmDoorwayForNav[],
@@ -337,28 +341,29 @@ export function generateTiledNavMesh(
         meshBounds[2] + (tileY + 1) * tileSizeWorld,
       ];
 
-      const { triAreaIds, polyMesh, polyMeshDetail, heightfield, compactHeightfield, contourSet } = buildNavMeshTile({
-        doorways: doorwayGrid[`${tileX},${tileY}`] ?? [],
-        ctx,
-        positions,
-        inputChunkyTriMesh,
-        tileBounds,
-        cellSize,
-        cellHeight,
-        borderSize,
-        walkableSlopeAngleDegrees,
-        walkableClimbVoxels,
-        walkableHeightVoxels,
-        walkableRadiusVoxels,
-        tileSizeVoxels,
-        minRegionArea,
-        mergeRegionArea,
-        maxSimplificationError,
-        maxEdgeLength,
-        maxVerticesPerPoly,
-        detailSampleDistance,
-        detailSampleMaxError,
-      });
+      const { triAreaIds, polyMesh, polyMeshDetail, heightfield, compactHeightfield, contourSet } =
+        buildCustomNavMeshTile({
+          doorways: doorwayGrid[`${tileX},${tileY}`] ?? [],
+          ctx,
+          positions,
+          inputChunkyTriMesh,
+          tileBounds,
+          cellSize,
+          cellHeight,
+          borderSize,
+          walkableSlopeAngleDegrees,
+          walkableClimbVoxels,
+          walkableHeightVoxels,
+          walkableRadiusVoxels,
+          tileSizeVoxels,
+          minRegionArea,
+          mergeRegionArea,
+          maxSimplificationError,
+          maxEdgeLength,
+          maxVerticesPerPoly,
+          detailSampleDistance,
+          detailSampleMaxError,
+        });
 
       if (polyMesh.vertices.length === 0) continue;
 
