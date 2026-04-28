@@ -60,17 +60,22 @@
 - ✅ can programmatically open doors
   - e.g. `w door.setOpen 0 21 true`
 
-- 🚧 doors should block npcs
+- ✅ doors should block npcs
   - ✅ can log/detect door areas in queryFilter
     - currently `node.area > 0`
   - ✅ can decode `(gmId, doorId)` from `node.area`
     - 🔔 import from worker file (possible hmr issues)
   - ✅ navigation query accounts for open doors
-  - clean up shared code: spawn, respawn, dev-hot-reload
+  - ✅ clean up shared code: spawn, respawn, dev-hot-reload
 
 - skin remapping
 
 - world.worker creates physics world based on decor
+  - static sensors only using rapier
+
+- queryFilter issues
+  - stale: open door after path requested beyond door
+  - wrong: head towards other side of wall when door closed
 
 - ensure onchange layout that portals are disposed
 - world context menu?
