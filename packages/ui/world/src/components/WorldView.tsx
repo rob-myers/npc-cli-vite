@@ -12,7 +12,7 @@ import { float, output, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
-import { decodePick, type ObjectPickKey } from "../service/pick";
+import { decodePick } from "../service/pick";
 import { CameraControls } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
@@ -150,7 +150,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           //   mesh = getTempInstanceMesh(w.door.lockSigInst, decoded.instanceId);
           //   break;
           default:
-            throw testNever(picked.type);
+            throw testNever(picked);
         }
 
         const [intersection] = state.raycaster.intersectObject(mesh);
@@ -217,7 +217,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           key: "picked",
           ...(clickId && { clickId }),
           meta: picked,
-          gmRoomId: typeof picked.gmId === "number" ? w.npc.findRoomContaining(point, true) : null,
+          // npc currently lacks gmId
+          gmRoomId: "gmId" in picked ? w.npc.findRoomContaining(point, true) : null,
 
           distance,
           point,
@@ -338,10 +339,8 @@ export type State = {
   onKeyDown(e: KeyboardEvent): void;
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
-  getPickedFromPixel(
-    rgba: THREE.TypedArray | [number, number, number, number],
-  ): Meta<{ type: ObjectPickKey; instanceId: number; gmKey?: string }> | null;
-  getRaycastIntersection: (e: PointerEvent, picked: JshCli.DecodedObjectPick) => null | THREE.Intersection;
+  getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
+  getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
@@ -351,3 +350,14 @@ export type State = {
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<number>): THREE.Node;
 };
+
+export type Picked = {
+  instanceId: number;
+} & (
+  | { type: "floor"; floor: true; gmId: number; gmKey: string }
+  | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
+  | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
+  | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
+  | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
+  | { type: "npc"; npcKey: string }
+);

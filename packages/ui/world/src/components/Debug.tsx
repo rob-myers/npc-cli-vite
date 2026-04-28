@@ -16,9 +16,6 @@ export function Debug() {
       demoNavPathShown: true,
       originShown: false,
       openDoorsOnClick: true,
-      animateDoor(instanceId: number, target: number) {
-        w.door.animTargets.set(instanceId, target);
-      },
 
       computeDemoPath() {
         const [gm] = w.gms;
@@ -33,7 +30,6 @@ export function Debug() {
         );
         state.demoNavPath = result.success ? result.path.map((p) => p.position) : [];
       },
-
       updateInstances() {
         const inst = instRef.current;
         if (!inst) return;
@@ -70,9 +66,8 @@ export function Debug() {
     const sub = w.events.subscribe({
       next(event) {
         if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "door") {
-          const { instanceId } = event.meta;
-          const current = w.door.openRatioArray[instanceId] ?? 0;
-          state.animateDoor(instanceId, current > 0 ? 0 : debugDoorOpenTarget);
+          const { gmId, doorId } = event.meta;
+          w.door.setOpen(gmId, doorId); // toggle
         }
       },
     });
@@ -103,4 +98,3 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const tmpMat4 = new THREE.Matrix4();
-const debugDoorOpenTarget = 0.9;
