@@ -49,12 +49,20 @@
   - ✅ can set `w.view.objectPickScale` as `0.5`
   - ✅ configure via `config pickWalls` or `config pickWalls 0`
 
-- 🚧 BUG fix debug geomorph graphs panzoom mobile
+- ✅ BUG fix debug geomorph graphs panzoom mobile
+
+- ✅ efficient doors
+  - ✅ door ratio set via numeric uniform aligned to instances
+  - ✅ transform uniform is constant
+  - ✅ all doors collapse and respect `meta.slideDirection`
+  - ✅ doors has onTick
+
+- 🚧 doors should block npcs
+  - navigation query should account for open doors
 
 - skin remapping
 
-- doors should block npcs
-  - navigation query should account for open doors
+- world.worker creates physics world based on decor
 
 - ensure onchange layout that portals are disposed
 - world context menu?
@@ -62,20 +70,20 @@
   - we'll wrap useBeforeunload and ensure callback only called once
 - 🚧 check glsl fallback e.g. incognito or force
   - Walls and Doors don't draw i.e. too many
-- object-pick sometimes out of sync since upgrade three.js `0.183.2`
+- ✅ object-pick sometimes out of sync since upgrade three.js `0.183.2`
 - fix precision in `assets.json`
 - start generating documentation in README.md
 - support deleting symbols/maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
-- BUG MapEdit asking to save draft changes onchange when there are no changes
 - symbols can have optional door supported by instantiateFlatSymbol
   - e.g. office--001--2x2
 - symbol can have optional wall supported by instantiateFlatSymbol
-- BUG `drawGm` (Floor): "SWEEP" probably poly union issue
   - need repro e.g. move stateroom inside 301
-- minecraft skin templates
+- ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
+- BUG MapEdit asking to save draft changes onchange when there are no changes
+- BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 
 ## Long running
 

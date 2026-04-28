@@ -1,5 +1,10 @@
 declare namespace JshCli {
-  type Event = { key: "disabled" } | { key: "enabled" } | { key: "nav-updated" } | PickEvent;
+  type Event =
+    | { key: "disabled" }
+    | { key: "enabled" }
+    | { key: "nav-updated" }
+    | PickEvent
+    | ({ key: "door-changed"; open: boolean } & ReturnType<import("./components/Doors").State["decodeInstanceId"]>);
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;
