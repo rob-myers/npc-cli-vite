@@ -68,14 +68,18 @@
   - ✅ navigation query accounts for open doors
   - ✅ clean up shared code: spawn, respawn, dev-hot-reload
 
+- 🚧 queryFilter issues
+  - wrong: head towards other side of wall when door closed
+    - could search in our own `gm-room-graph` (efficient)
+  - ❌ stale: open door after path requested beyond door
+    - could store npc's blocking door area and listen for door open
+    - ✅ npc has own queryFilter
+    - no issue, we were changing target on click door
+
 - skin remapping
 
 - world.worker creates physics world based on decor
   - static sensors only using rapier
-
-- queryFilter issues
-  - stale: open door after path requested beyond door
-  - wrong: head towards other side of wall when door closed
 
 - ensure onchange layout that portals are disposed
 - world context menu?

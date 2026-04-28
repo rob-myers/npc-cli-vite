@@ -1,9 +1,10 @@
 import type { UseStateRef } from "@npc-cli/util";
 import type { buildGraph } from "@react-three/fiber";
-import type { FindNearestPolyResult } from "navcat";
+import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, type QueryFilter } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
@@ -29,13 +30,17 @@ export class Npc {
 
   agentId: string | null = null;
   epoch = 0;
+
   lookAt: JshCli.GroundPoint | null = null;
-  moving = false;
-  stuckAccum = 0;
+  lastBlockingArea = -1;
   lastPinTime = 0;
   lastPos = { x: 0, y: 0 };
-  spawns = 0;
+  lastTarget = { x: 0, y: 0 };
+  moving = false;
+  queryFilter: QueryFilter;
   resolve?: () => void;
+  spawns = 0;
+  stuckAccum = 0;
 
   w: UseStateRef<import("./World").State>;
 
@@ -54,6 +59,25 @@ export class Npc {
     this.skinnedMesh = init.skinnedMesh;
     this.graph = init.graph;
     this.geometry = init.geometry;
+
+    // use case for lastBlockingArea?
+    this.queryFilter = {
+      ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => {
+        const node = getNodeByRef(navMesh, nodeRef);
+
+        if (isDoorAreaId(node.area) === true) {
+          const decoded = decodeDoorAreaId(node.area);
+          const open = w.door.isOpen(decoded.gmId, decoded.doorId);
+          if (!open) {
+            this.lastBlockingArea = node.area;
+          }
+          return open;
+        }
+
+        return true;
+      },
+    };
   }
 
   changeSkin(keyOrIndex: string | number) {
@@ -81,8 +105,8 @@ export class Npc {
 
   startWalking() {
     const { walk, idle } = this.w.npc.clips;
-    if (!walk) return;
     this.lookAt = null;
+    this.lastBlockingArea = -1;
     this.stuckAccum = 0;
     this.lastPos = { x: this.position.x, y: this.position.z };
     if (this.moving) return;

@@ -53,7 +53,7 @@ w npc.spawn "{ npcKey: 'foo-bar-baz', point: $( pick 1 | map point ) }"
 # keep walking without throwing
 spawn npc:rob at:$( pick 1 )
 while true; do
-  move --force npc:rob to:$( pick 1 )
+  move --force npc:rob to:$( pick meta.floor 1 )
 done
 ```
   - ✅ basic stuck detection
