@@ -87,32 +87,6 @@ export default function NPCs() {
           labelMaterial: createLabelMaterial(w.texLabel, pickId),
         };
       },
-      placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat) {
-        const groundPoint = parseGroundPoint(at);
-        const result = state.getClosestPoly(groundPoint);
-        if (result.success) {
-          if (npc.agentId === null) {
-            npc.agentId = crowdApi.addAgent(
-              state.crowd,
-              w.nav.navMesh,
-              groudPointToTuple(groundPoint),
-              getAgentParams(),
-            );
-          }
-          const agent = state.crowd.agents[npc.agentId];
-          // can teleport past closed doors
-          agent.queryFilter = ANY_QUERY_FILTER;
-          npc.pinTo(result);
-          agent.position[0] = groundPoint.x;
-          agent.position[2] = groundPoint.y;
-        } else {
-          if (npc.agentId !== null) {
-            crowdApi.removeAgent(state.crowd, npc.agentId);
-            npc.agentId = null;
-          }
-          npc.position.copy(groundPointToVector3(groundPoint));
-        }
-      },
       devHotReload() {
         for (const [key, oldNpc] of Object.entries(state.npc)) {
           oldNpc.material.dispose();
@@ -237,6 +211,32 @@ export default function NPCs() {
               y: npc.position.z + vz,
             });
           }
+        }
+      },
+      placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat) {
+        const groundPoint = parseGroundPoint(at);
+        const result = state.getClosestPoly(groundPoint);
+        if (result.success) {
+          if (npc.agentId === null) {
+            npc.agentId = crowdApi.addAgent(
+              state.crowd,
+              w.nav.navMesh,
+              groudPointToTuple(groundPoint),
+              getAgentParams(),
+            );
+          }
+          const agent = state.crowd.agents[npc.agentId];
+          // can teleport past closed doors
+          agent.queryFilter = ANY_QUERY_FILTER;
+          npc.pinTo(result);
+          agent.position[0] = groundPoint.x;
+          agent.position[2] = groundPoint.y;
+        } else {
+          if (npc.agentId !== null) {
+            crowdApi.removeAgent(state.crowd, npc.agentId);
+            npc.agentId = null;
+          }
+          npc.position.copy(groundPointToVector3(groundPoint));
         }
       },
       remove(...npcKeys) {
