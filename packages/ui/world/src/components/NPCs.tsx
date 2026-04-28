@@ -188,6 +188,11 @@ export default function NPCs() {
           npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
 
           if (npc.moving === false) {
+            // idle looks at close neighbour
+            if (agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist) {
+              const neighbor = state.crowd.agents[agent.neis[0].agentId];
+              npc.lookAt = { x: neighbor.position[0], y: neighbor.position[2] };
+            }
             npc.updateLookAt(delta);
             continue;
           }
@@ -411,6 +416,7 @@ function getAgentParams(): crowd.AgentParams {
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const idleSeparationWeight = 0.5;
 const walkSeparationWeight = 0.25;
+const neighborLookAtDist = 0.25;
 const closePolygonDistance = 0.05;
 const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
 
