@@ -71,7 +71,8 @@ export default function NPCs() {
       nextPickId: 0,
       npc: {},
 
-      createNpcMaterial(pickId, skinIndexUniform) {
+      createMaterials(pickId: number, skinIndex: number) {
+        const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
         const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
@@ -79,7 +80,38 @@ export default function NPCs() {
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
         mat.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
-        return mat;
+        return {
+          skinIndexUniform,
+          material: mat,
+          shadowMaterial: createShadowMaterial(w.view.objectPick),
+          labelMaterial: createLabelMaterial(w.texLabel, pickId),
+        };
+      },
+      placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat) {
+        const groundPoint = parseGroundPoint(at);
+        const result = state.getClosestPoly(groundPoint);
+        if (result.success) {
+          if (npc.agentId === null) {
+            npc.agentId = crowdApi.addAgent(
+              state.crowd,
+              w.nav.navMesh,
+              groudPointToTuple(groundPoint),
+              getAgentParams(),
+            );
+          }
+          const agent = state.crowd.agents[npc.agentId];
+          // can teleport past closed doors
+          agent.queryFilter = ANY_QUERY_FILTER;
+          npc.pinTo(result);
+          agent.position[0] = groundPoint.x;
+          agent.position[2] = groundPoint.y;
+        } else {
+          if (npc.agentId !== null) {
+            crowdApi.removeAgent(state.crowd, npc.agentId);
+            npc.agentId = null;
+          }
+          npc.position.copy(groundPointToVector3(groundPoint));
+        }
       },
       devHotReload() {
         for (const [key, oldNpc] of Object.entries(state.npc)) {
@@ -87,35 +119,24 @@ export default function NPCs() {
           oldNpc.labelMaterial.dispose();
           oldNpc.shadowMaterial.dispose();
 
-          // 🚧 reuse code from spawn
-          const skinIndexUniform = uniform(oldNpc.skinIndex);
+          const mats = state.createMaterials(oldNpc.pickId, oldNpc.skinIndex);
           const npc = new Npc(w, {
             key: oldNpc.key,
             pickId: oldNpc.pickId,
-            skinIndexUniform,
             labelLayerIndex: oldNpc.labelLayerIndex,
             position: oldNpc.position,
-            material: state.createNpcMaterial(oldNpc.pickId, skinIndexUniform),
-            shadowMaterial: createShadowMaterial(w.view.objectPick),
-            labelMaterial: createLabelMaterial(w.texLabel, oldNpc.labelLayerIndex),
             skinnedMesh: oldNpc.skinnedMesh,
             graph: oldNpc.graph,
             geometry: oldNpc.geometry,
+            ...mats,
           });
 
-          if (oldNpc.agentId !== null) {
-            crowdApi.removeAgent(state.crowd, oldNpc.agentId);
-            npc.agentId = crowdApi.addAgent(
-              state.crowd,
-              w.nav.navMesh,
-              groudPointToTuple(parseGroundPoint(npc.position)),
-              getAgentParams(),
-            );
-            npc.pinTo(state.getClosestPoly(npc.position));
-
-            const agent = state.crowd.agents[npc.agentId];
-            agent.queryFilter = state.doorsQueryFilter;
-          }
+          // if (oldNpc.agentId !== null) {
+          //   crowdApi.removeAgent(state.crowd, oldNpc.agentId);
+          //   oldNpc.agentId = null;
+          // }
+          npc.agentId = oldNpc.agentId;
+          state.placeNpcAt(npc, npc.position);
 
           drawLabelLayer(w.texLabel, npc.labelLayerIndex, npc.key);
           state.npc[key] = npc;
@@ -171,9 +192,11 @@ export default function NPCs() {
         const result = state.getClosestPoly(groundPoint);
 
         if (result.success) {
+          const agent = state.crowd.agents[npc.agentId];
+          // whilst walking doors should block npcs
+          agent.queryFilter = state.doorsQueryFilter;
           crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(groundPoint));
           npc.startWalking();
-          const agent = state.crowd.agents[npc.agentId];
           agent.separationWeight = walkSeparationWeight;
         } else {
           throw Error("move failed");
@@ -205,7 +228,6 @@ export default function NPCs() {
 
           const stuck = npc.updateStuck(delta);
 
-          // 🚧 npc.setIdle()
           if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
             npc.startIdle();
             agent.separationWeight = idleSeparationWeight;
@@ -234,34 +256,6 @@ export default function NPCs() {
         }
         state.update();
       },
-      respawn(npc, at) {
-        const groundPoint = parseGroundPoint(at);
-        const result = state.getClosestPoly(groundPoint);
-
-        // npc has agent iff near navmesh
-        if (result.success && npc.agentId === null) {
-          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
-        } else if (result.success === false && npc.agentId !== null) {
-          crowdApi.removeAgent(state.crowd, npc.agentId);
-          npc.agentId = null;
-        }
-
-        npc.pinTo(result); // needs agentId
-
-        // teleport
-        if (npc.agentId !== null) {
-          const agent = state.crowd.agents[npc.agentId];
-          agent.position[0] = groundPoint.x;
-          agent.position[2] = groundPoint.y;
-
-          agent.queryFilter = state.doorsQueryFilter;
-        } else {
-          npc.position.copy(groundPointToVector3(groundPoint));
-        }
-
-        npc.spawns++;
-        w.view.forceUpdate();
-      },
       async spawn({ npcKey, at, as }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`npcKey must match: ${npcKeyPattern}`);
@@ -270,15 +264,14 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
-        // 🚧 share code between initial spawn and respawn
         if (npcKey in state.npc) {
           const npc = state.npc[npcKey];
-          state.respawn(npc, at);
+          npc.spawns++;
+          state.placeNpcAt(npc, at);
           if (as) npc.changeSkin(as);
+          w.view.forceUpdate();
           return;
         }
-
-        const groundPoint = parseGroundPoint(at);
 
         const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
         const graph = buildGraph(clone);
@@ -286,52 +279,34 @@ export default function NPCs() {
         const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
 
         const shadowQuad = createSkinnedXzQuad(1, 1);
-        // 0.5 / 0.125 = 4:1, matching 256 x 64
         const labelQuad = createSkinnedLabelQuad(0.5, 0.125, 1.25 / npcScale, headBoneIndex >= 0 ? headBoneIndex : 0);
         addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
         addEmptyBillboardOffset(shadowQuad);
         const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
 
         const pickId = state.nextPickId;
-        const labelLayerIndex = pickId;
-        drawLabelLayer(w.texLabel, labelLayerIndex, npcKey);
+        drawLabelLayer(w.texLabel, pickId, npcKey);
 
-        const objectPickUniform = uniform(0);
-        const skinIndexUniform = uniform(state.getSkinIndex(as ?? "medic-0"));
-
+        const mats = state.createMaterials(pickId, state.getSkinIndex(as ?? "medic-0"));
         const npc = new Npc(w, {
           key: npcKey,
           pickId,
-          skinIndexUniform,
-          labelLayerIndex,
-          position: groundPointToVector3(groundPoint),
-          material: state.createNpcMaterial(pickId, skinIndexUniform),
-          shadowMaterial: createShadowMaterial(objectPickUniform),
-          labelMaterial: createLabelMaterial(w.texLabel, labelLayerIndex),
+          labelLayerIndex: pickId,
+          position: groundPointToVector3(parseGroundPoint(at)),
           skinnedMesh: clonedSkinnedMesh,
           graph,
           geometry,
+          ...mats,
         });
 
-        const result = state.getClosestPoly(at);
-        if (result.success === true) {
-          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
-          npc.pinTo(result);
-
-          const agent = state.crowd.agents[npc.agentId];
-          agent.queryFilter = state.doorsQueryFilter;
-        }
+        state.placeNpcAt(npc, at);
 
         state.npc[npcKey] = npc;
         state.byPickId[npc.pickId] = npc;
         state.nextPickId++;
 
         state.update();
-
-        // on 1st spawn await mount
-        await new Promise<void>((resolve) => {
-          npc.resolve = resolve;
-        });
+        await new Promise<void>((resolve) => (npc.resolve = resolve));
       },
     }),
     { reset: { doorsQueryFilter: false } },
@@ -394,10 +369,16 @@ export type State = {
 
   npc: Record<string, Npc>;
 
-  createNpcMaterial(
+  createMaterials(
     pickId: number,
-    skinIndexUniform: ReturnType<typeof uniform<number>>,
-  ): THREE.MeshStandardNodeMaterial;
+    skinIndex: number,
+  ): {
+    skinIndexUniform: ReturnType<typeof uniform<number>>;
+    material: THREE.MeshStandardNodeMaterial;
+    shadowMaterial: THREE.MeshBasicNodeMaterial;
+    labelMaterial: THREE.MeshBasicNodeMaterial;
+  };
+  placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat): void;
   devHotReload(): void;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
@@ -406,7 +387,6 @@ export type State = {
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
   onTick(delta: number): void;
   remove(...npcKeys: string[]): void;
-  respawn(npc: Npc, at: JshCli.PointAnyFormat): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
 
