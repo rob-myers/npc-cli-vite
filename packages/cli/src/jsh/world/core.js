@@ -213,6 +213,7 @@ export async function spawn({ api, args, w }, opts = api.jsArg(args, { npc: "npc
  * w npc.spawn '{ npcKey: "foo", at: [6, 0, 7.5] }'
  * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 | map point ) }"
  * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 ) }"
+ * w door.setOpen 0 21 true
  * ```
  *
  * - can always `ctrl-c`, even without cleaning up ongoing computations

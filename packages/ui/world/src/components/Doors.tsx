@@ -9,7 +9,7 @@ import { WorldContext } from "./world-context";
 
 export default function Doors() {
   const w = useContext(WorldContext);
-  const doorCount = w.gmsData.count.door;
+  const instanceCount = w.gms.length << 8;
 
   const state = useStateRef(
     (): State => ({
@@ -18,12 +18,12 @@ export default function Doors() {
       openRatioArray: new Float32Array(0),
       animTargets: new Map(),
 
+      encodeGmDoorId(gmId: number, doorId: number) {
+        return (gmId << 8) | doorId;
+      },
       decodeInstanceId(instanceId: number) {
-        let doorId = instanceId;
-        const gmId = w.gms.findIndex(({ key }) => {
-          const count = w.gmsData.byKey[key].doorSegs.length;
-          return doorId < count || ((doorId -= count), false);
-        });
+        const gmId = instanceId >> 8;
+        const doorId = instanceId & 0xff;
         const gm = w.gms[gmId];
         const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
         const { meta, roomIds } = gm.doors[doorId];
@@ -38,15 +38,21 @@ export default function Doors() {
         const { inst } = state;
         if (!inst) return;
 
-        const n = w.gmsData.count.door;
+        const n = w.gms.length << 8;
         if (state.openRatioArray.length !== n) {
           state.openRatioArray = new Float32Array(n);
         }
 
         const slideSignArray = new Float32Array(n).fill(1);
 
-        let instanceId = 0;
-        for (const gm of w.gms) {
+        // zero-scale all instances so unused slots are invisible
+        zeroMat4.makeScale(0, 0, 0);
+        for (let i = 0; i < n; i++) {
+          inst.setMatrixAt(i, zeroMat4);
+        }
+
+        for (let gmId = 0; gmId < w.gms.length; gmId++) {
+          const gm = w.gms[gmId];
           const { key: gmKey, transform, determinant } = gm;
           tmpMat.setMatrixValue(transform);
           const doorSegs = w.gmsData.byKey[gmKey].doorSegs;
@@ -77,6 +83,8 @@ export default function Doors() {
             const mz = (tmpV1.y + tmpV2.y) / 2;
             const depth = hull ? hullPanelDepth : panelDepth;
 
+            const instanceId = state.encodeGmDoorId(gmId, localId);
+
             const sd = gm.doors[localId]?.meta?.slideDirection;
             if (Array.isArray(sd)) {
               tmpV1.set(sd[0], sd[1]);
@@ -92,7 +100,7 @@ export default function Doors() {
               0,         0,            0,            1,
             );
 
-            inst.setMatrixAt(instanceId++, tmpMat4);
+            inst.setMatrixAt(instanceId, tmpMat4);
           }
         }
 
@@ -102,12 +110,9 @@ export default function Doors() {
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
       },
-      setOpen(instanceId: number, ratio: number) {
-        if (instanceId < 0 || instanceId >= state.openRatioArray.length) return;
-        state.openRatioArray[instanceId] = ratio;
-        const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
-        if (attr) attr.needsUpdate = true;
-        w.events.next({ key: "door-changed", open: ratio > 0, ...state.decodeInstanceId(instanceId) });
+      setOpen(gmId: number, doorId: number, open: boolean) {
+        const instanceId = state.encodeGmDoorId(gmId, doorId);
+        state.animTargets.set(instanceId, open ? 0.9 : 0);
       },
       onTick(delta: number) {
         if (state.animTargets.size === 0) return;
@@ -168,11 +173,11 @@ export default function Doors() {
     return [edge, edge, top, edge, front, back];
   }, []);
 
-  return doorCount ? (
+  return instanceCount ? (
     <instancedMesh
       name="doors"
       ref={state.ref("inst")}
-      args={[state.box, undefined, doorCount]}
+      args={[state.box, undefined, instanceCount]}
       material={materials}
       renderOrder={4}
     />
@@ -184,13 +189,14 @@ export type State = {
   inst: null | THREE.InstancedMesh;
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
+  encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => {
     gmId: number;
     doorId: number;
     seg: [Geom.Vect, Geom.Vect];
     hull: boolean;
   };
-  setOpen: (instanceId: number, ratio: number) => void;
+  setOpen: (gmId: number, doorId: number, open: boolean) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
 };
@@ -210,3 +216,4 @@ const tmpMat = new Mat();
 const tmpV1 = new Vect();
 const tmpV2 = new Vect();
 const tmpMat4 = new THREE.Matrix4();
+const zeroMat4 = new THREE.Matrix4();
