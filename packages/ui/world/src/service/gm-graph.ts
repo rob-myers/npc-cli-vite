@@ -2,9 +2,9 @@ import { BaseGraph, createBaseAstar } from "@npc-cli/graph";
 import type { StarShipGeomorphKey, StarshipGeomorphNumber } from "@npc-cli/media/starship-symbol";
 import { directionChars, geomService, Mat, Rect } from "@npc-cli/util/geom";
 import { error } from "@npc-cli/util/legacy/generic";
+import { AStar } from "../pathfinding/AStar";
 import { createGmIdGrid, queryGmIdGrid } from "./grid";
 import { helper } from "./helper";
-import { AStar } from "./pathfinding/AStar";
 
 export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts> {
   gms: Geomorph.LayoutInstance[];
