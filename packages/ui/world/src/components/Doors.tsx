@@ -34,6 +34,9 @@ export default function Doors() {
 
         return { gmId, doorId, seg, hull, roomIds, ...meta, slideDirection };
       },
+      isOpen(gmId, doorId) {
+        return state.openRatioArray[state.encodeGmDoorId(gmId, doorId)] > doorOpenTest;
+      },
       positionInstances() {
         const { inst } = state;
         if (!inst) return;
@@ -110,9 +113,19 @@ export default function Doors() {
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
       },
-      setOpen(gmId: number, doorId: number, open: boolean) {
+      setOpen(gmId, doorId, open) {
+        const isOpen = state.isOpen(gmId, doorId);
+        if (typeof open === "boolean" && open === isOpen) {
+          return;
+        }
+        const shouldOpen = open === undefined ? !isOpen : open;
         const instanceId = state.encodeGmDoorId(gmId, doorId);
-        state.animTargets.set(instanceId, open ? 0.9 : 0);
+        state.animTargets.set(instanceId, shouldOpen ? doorOpenTarget : 0);
+        w.events.next({
+          key: shouldOpen ? "door-opening" : "door-closing",
+          open: isOpen,
+          ...state.decodeInstanceId(instanceId),
+        });
       },
       onTick(delta: number) {
         if (state.animTargets.size === 0) return;
@@ -121,9 +134,11 @@ export default function Doors() {
           const cur = state.openRatioArray[instanceId];
           const next = cur + Math.sign(target - cur) * delta * doorSpeed;
           if ((target - cur) * (target - next) <= 0) {
+            // finished animation
             state.openRatioArray[instanceId] = target;
             state.animTargets.delete(instanceId);
-            w.events.next({ key: "door-changed", open: target > 0, ...state.decodeInstanceId(instanceId) });
+            const open = target > doorOpenTest;
+            w.events.next({ key: open ? "door-open" : "door-closed", open, ...state.decodeInstanceId(instanceId) });
           } else {
             state.openRatioArray[instanceId] = next;
           }
@@ -196,7 +211,9 @@ export type State = {
     seg: [Geom.Vect, Geom.Vect];
     hull: boolean;
   };
-  setOpen: (gmId: number, doorId: number, open: boolean) => void;
+  isOpen: (gmId: number, doorId: number) => boolean;
+  /** Toggles when `open` is `undefined`. */
+  setOpen: (gmId: number, doorId: number, open?: boolean) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
 };
@@ -210,6 +227,8 @@ function createDoorBox() {
 
 const doorHeight = 2 - 0.001;
 const doorSpeed = 2;
+const doorOpenTarget = 0.9;
+const doorOpenTest = 0.8;
 const panelDepth = 0.08;
 const hullPanelDepth = 0.2;
 const tmpMat = new Mat();

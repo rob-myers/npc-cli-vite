@@ -4,7 +4,9 @@ declare namespace JshCli {
     | { key: "enabled" }
     | { key: "nav-updated" }
     | PickEvent
-    | ({ key: "door-changed"; open: boolean } & ReturnType<import("./components/Doors").State["decodeInstanceId"]>);
+    | ({ key: "door-open" | "door-closed" | "door-opening" | "door-closing"; open: boolean } & ReturnType<
+        import("./components/Doors").State["decodeInstanceId"]
+      >);
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;
@@ -14,21 +16,10 @@ declare namespace JshCli {
     key: "picked";
     clickId?: string;
 
-    // 🚧 refine...
-    meta: {
-      type: ObjectPickKey;
-      instanceId: number;
-      gmKey?: string;
-      collapse?: boolean;
-    };
+    meta: import("./components/WorldView").Picked;
 
     gmRoomId: Geomorph.GmRoomId | null;
   } & (GroundPoint & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">);
-
-  type DecodedObjectPick = Meta<{
-    type: ObjectPickKey;
-    instanceId: number;
-  }>;
 
   interface SpawnOpts {
     // 🚧 angle, skinKey, runSpeed, walkSpeed
