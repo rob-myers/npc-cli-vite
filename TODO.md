@@ -57,8 +57,11 @@
   - ✅ all doors collapse and respect `meta.slideDirection`
   - ✅ doors has onTick
 
+- ✅ can programmatically open doors
+  - e.g. `w door.setOpen 0 21 true`
+
 - 🚧 doors should block npcs
-  - navigation query should account for open doors
+  - 🚧 navigation query can account for open doors
 
 - skin remapping
 
