@@ -121,7 +121,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
-        state.npc?.onTick(state.timer.getDelta());
+        const delta = state.timer.getDelta();
+        state.door.onTick(delta);
+        state.npc.onTick(delta);
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -185,12 +187,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   }, []); // cache world
 
   useEffect(() => {
+    if (!state.npc) return;
     state.timer.reset();
     state.view?.syncRenderMode();
-    if (!state.disabled) state.onTick();
+    if (state.disabled === false) state.onTick();
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
     return () => state.stopTick();
-  }, [state.disabled]);
+  }, [state.disabled, state.npc]);
 
   state.sheets =
     useQuery({
