@@ -168,8 +168,10 @@ export type DoorwayGrid = { [key in `${number},${number}`]: EnrichedDoorway[] };
 
 /** Area IDs below this are reserved (0 = unwalkable, 1 = default walkable flag, etc.) */
 export const DOORS_AREA_START = 10;
-const MAX_DOORS_PER_GEOMORPH = 64;
+/** Large but in sync with `<Doors>` instancedId encoding */
+const MAX_DOORS_PER_GEOMORPH = 256;
 
+/** `<Doors>` instancedId encoding + `DOORS_AREA_START` */
 export function encodeDoorAreaId(gmId: number, doorId: number): number {
   return DOORS_AREA_START + gmId * MAX_DOORS_PER_GEOMORPH + doorId;
 }
@@ -177,6 +179,10 @@ export function encodeDoorAreaId(gmId: number, doorId: number): number {
 export function decodeDoorAreaId(areaId: number): { gmId: number; doorId: number } {
   const id = areaId - DOORS_AREA_START;
   return { gmId: Math.floor(id / MAX_DOORS_PER_GEOMORPH), doorId: id % MAX_DOORS_PER_GEOMORPH };
+}
+
+export function isDoorAreaId(areaId: number): boolean {
+  return areaId >= DOORS_AREA_START;
 }
 
 export function buildDoorwayGrid(

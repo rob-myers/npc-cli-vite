@@ -37,6 +37,7 @@ import Doors from "./Doors";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
 import Obstacles from "./Obstacles";
+import useWorldEvents from "./use-world-events";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
 import { WorldView } from "./WorldView";
@@ -106,6 +107,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       menu: null as any,
       npc: null as any,
       worker: null as any,
+      e: null as any,
 
       rootEl: null as any,
 
@@ -193,7 +195,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     if (state.disabled === false) state.onTick();
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
     return () => state.stopTick();
-  }, [state.disabled, state.npc]);
+  }, [state.disabled, state.npc]); // pause/resume
 
   state.sheets =
     useQuery({
@@ -201,7 +203,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       async queryFn() {
         return await fetchParsed(`/sheets.json${getDevCacheBustQueryParam()}`, SheetsSchema);
       },
-    }).data ?? state.sheets;
+    }).data ?? state.sheets; // spritesheets: obstacles...
+
+  useWorldEvents(state);
 
   const _worldQuery = useQuery({
     // Distinct query per World instance even if same map
@@ -236,7 +240,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       return null;
     },
     enabled: state.threeReady, // 🔔 fixes horrible issue on refresh
-  }); // never runs anywhere else, so it may mutate state
+  }); // query unique to component instance
 
   useEffect(() => {
     if (import.meta.env.DEV && import.meta.hot) {
@@ -322,6 +326,7 @@ export type State = {
   wall: UseStateRef<import("./Walls").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   npc: UseStateRef<import("./NPCs").State>;
+  e: UseStateRef<import("./use-world-events").State>;
 
   worker: UseStateRef<import("./WorldWorker").State>;
   nav: WW.TiledNavMeshResponse;
