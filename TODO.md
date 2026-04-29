@@ -71,8 +71,11 @@
 - 🚧 queryFilter issues
   - 🚧 wrong: head towards other side of wall when door closed
     - could search in our own `gm-room-graph` (efficient)
-    - 🚧 gm-room-graph supports `findPath`
+    - ✅ gm-room-graph supports `findPath`
       - closed doors represented via infinite edge weights
+    - ✅ `w.e.doorOpen` tracks open/closed doors
+    - ✅ extend gm-room-graph to include door nodes (so we can weight them when closed)
+    - 🚧 `w.e.findPath` should wrap `w.gmRoomGraph.findPath` providing infinite node weights to closed doors
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter

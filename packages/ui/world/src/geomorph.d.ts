@@ -49,6 +49,9 @@ declare namespace Geomorph {
   /** `g${gmId}d${doorId}` */
   type GmDoorKey = `g${number}d${number}`;
 
+  /** `g${gmId}w${windowId}` */
+  type GmWindowKey = `g${number}w${number}`;
+
   //#region decor
 
   type Decor = import("@npc-cli/ui__map-edit/map-node-api").Decor;

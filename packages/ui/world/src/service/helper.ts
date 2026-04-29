@@ -17,6 +17,10 @@ export const helper = {
     return `g${gmId}d${doorId}`;
   },
 
+  getGmWindowKey(gmId: number, windowId: number): Geomorph.GmWindowKey {
+    return `g${gmId}w${windowId}`;
+  },
+
   getGmRoomKey(gmId: number, roomId: number): Geomorph.GmRoomKey {
     return `g${gmId}r${roomId}`;
   },

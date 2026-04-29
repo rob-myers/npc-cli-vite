@@ -235,7 +235,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.hash = hashJson(state.assets);
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
-      state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph, state.gmsData);
+      state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph);
 
       return null;
     },

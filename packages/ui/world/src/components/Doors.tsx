@@ -3,6 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, instanceIndex, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { createPanelAtlas } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -21,18 +22,14 @@ export default function Doors() {
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
       },
-      decodeInstanceId(instanceId: number) {
+      decodeInstanceId(instanceId) {
         const gmId = instanceId >> 8;
         const doorId = instanceId & 0xff;
+        const gdKey = helper.getGmDoorKey(gmId, doorId);
         const gm = w.gms[gmId];
         const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
         const { meta, roomIds } = gm.doors[doorId];
-
-        const slideDirection = Array.isArray(meta.slideDirection)
-          ? new Vect(...meta.slideDirection)
-          : seg[1].clone().sub(seg[0]).normalize();
-
-        return { gmId, doorId, seg, hull, roomIds, ...meta, slideDirection };
+        return { gmId, doorId, gdKey, seg, hull, roomIds, ...meta };
       },
       isOpen(gmId, doorId) {
         return state.openRatioArray[state.encodeGmDoorId(gmId, doorId)] > doorOpenTest;
@@ -205,9 +202,7 @@ export type State = {
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
-  decodeInstanceId: (instanceId: number) => {
-    gmId: number;
-    doorId: number;
+  decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
     hull: boolean;
   };
