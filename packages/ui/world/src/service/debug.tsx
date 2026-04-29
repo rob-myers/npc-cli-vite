@@ -106,7 +106,9 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
 
   const roomLabels = useMemo(() => {
     if (!showRoom) return [];
-    const nodes = w.gmRoomGraph.nodesArray;
+    const nodes = w.gmRoomGraph.nodesArray.filter(
+      (n): n is Graph.GmRoomGraphNodeRoom => n.type === "room",
+    );
     if (!nodes.length) return [];
     const gap = nodeRadius * 1.5;
     const placed: { x: number; y: number; w: number; h: number }[] = [];
@@ -235,62 +237,33 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
                   />
                 ))}
 
-              {/* Room Graph edge lines routed through door centers */}
+              {/* Room Graph door edges (entry-to-entry, extended) */}
               {showRoom &&
-                w.gmRoomGraph.edgesArray.map((edge) => {
-                  const sx = edge.src.astar.centroid.x,
-                    sy = edge.src.astar.centroid.y;
-                  const dx = edge.dst.astar.centroid.x,
-                    dy = edge.dst.astar.centroid.y;
-
-                  if (edge.doors.length === 0) {
+                w.gmRoomGraph.nodesArray
+                  .filter((n): n is Graph.GmRoomGraphNodeDoor => n.type === "door")
+                  .map((node) => {
+                    const gm = w.gms[node.gmId];
+                    const door = gm.doors[node.doorId];
+                    if (!door) return null;
+                    const e0 = gm.matrix.transformPoint(door.entries[0].clone());
+                    const e1 = gm.matrix.transformPoint(door.entries[1].clone());
+                    const dx = e1.x - e0.x, dy = e1.y - e0.y;
+                    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const ext = 0.5;
+                    const ux = dx / len * ext, uy = dy / len * ext;
                     return (
                       <line
-                        key={edge.id}
-                        x1={sx}
-                        y1={sy}
-                        x2={dx}
-                        y2={dy}
-                        stroke="cyan"
+                        key={node.id}
+                        x1={e0.x - ux}
+                        y1={e0.y - uy}
+                        x2={e1.x + ux}
+                        y2={e1.y + uy}
+                        stroke="#fb923c"
                         strokeWidth={strokeWidth * 0.7}
-                        opacity={0.4}
+                        opacity={0.7}
                       />
                     );
-                  }
-
-                  return (
-                    <g key={edge.id}>
-                      {edge.doors.map(({ gdKey, gmId, doorId }) => {
-                        const gm = w.gms[gmId];
-                        const door = gm.doors[doorId];
-                        if (!door) return null;
-                        const mid = gm.matrix.transformPoint(door.center.clone());
-                        return (
-                          <g key={gdKey}>
-                            <line
-                              x1={sx}
-                              y1={sy}
-                              x2={mid.x}
-                              y2={mid.y}
-                              stroke="white"
-                              strokeWidth={strokeWidth * 0.7}
-                              opacity={0.4}
-                            />
-                            <line
-                              x1={mid.x}
-                              y1={mid.y}
-                              x2={dx}
-                              y2={dy}
-                              stroke="white"
-                              strokeWidth={strokeWidth * 0.7}
-                              opacity={0.4}
-                            />
-                          </g>
-                        );
-                      })}
-                    </g>
-                  );
-                })}
+                  })}
 
               {/* Room Graph nodes (polygons) — rendered first so they don't cover gm nodes */}
               {roomLabels.map(({ label, roomPath }) => (
@@ -358,41 +331,34 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
                   </text>
                 </g>
               ))}
-              {/* Door edge labels — topmost layer */}
+              {/* Door/window node labels — topmost layer */}
               {showRoom &&
-                w.gmRoomGraph.edgesArray.flatMap((edge) => {
-                  const edgeFontSize = fontSize * 0.4;
-                  return edge.doors.map(({ gdKey, gmId, doorId }) => {
-                    const gm = w.gms[gmId];
-                    const door = gm.doors[doorId];
-                    if (!door) return null;
-                    const mid = gm.matrix.transformPoint(door.center.clone());
-                    const seg0 = gm.matrix.transformPoint(door.seg[0].clone());
-                    const seg1 = gm.matrix.transformPoint(door.seg[1].clone());
-                    const segDx = seg1.x - seg0.x,
-                      segDy = seg1.y - seg0.y;
-                    const segLen = Math.sqrt(segDx * segDx + segDy * segDy) || 1;
-                    const perpX = -segDy / segLen,
-                      perpY = segDx / segLen;
+                w.gmRoomGraph.nodesArray
+                  .filter((n): n is Graph.GmRoomGraphNodeDoor | Graph.GmRoomGraphNodeWindow =>
+                    n.type === "door" || n.type === "window",
+                  )
+                  .map((node) => {
+                    const edgeFontSize = fontSize * 0.4;
+                    const color = node.type === "door" ? "#fb923c" : "#a78bfa";
                     return (
-                      <text
-                        key={`${edge.id}-${gdKey}`}
-                        className="edge-label"
-                        x={mid.x + perpX * edgeFontSize}
-                        y={mid.y + perpY * edgeFontSize}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill="#94a3b8"
-                        fontSize={edgeFontSize}
-                        paintOrder="stroke"
-                        stroke="rgba(0,0,0,0.8)"
-                        strokeWidth={edgeFontSize * 0.3}
-                      >
-                        {gdKey}
-                      </text>
+                      <g key={node.id}>
+                        <text
+                          className="edge-label"
+                          x={node.astar.centroid.x}
+                          y={node.astar.centroid.y - nodeRadius}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill={color}
+                          fontSize={edgeFontSize}
+                          paintOrder="stroke"
+                          stroke="rgba(0,0,0,0.8)"
+                          strokeWidth={edgeFontSize * 0.3}
+                        >
+                          {node.id}
+                        </text>
+                      </g>
                     );
-                  });
-                })}
+                  })}
             </svg>
           </div>
         </Dialog.Popup>

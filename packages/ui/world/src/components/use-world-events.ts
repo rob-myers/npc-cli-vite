@@ -4,13 +4,14 @@ import { useEffect } from "react";
 export default function useWorldEvents(w: UseStateRef<import("./World").State>) {
   const state = useStateRef(
     (): State => ({
+      doorOpen: {},
       onEvent(e) {
         switch (e.key) {
           case "door-open":
-            // 🚧 sync with `w.npc.doorAreaOpen`
+            state.doorOpen[e.gdKey] = true;
             break;
           case "door-closed":
-            // 🚧 sync with `w.npc.doorAreaOpen`
+            state.doorOpen[e.gdKey] = false;
             break;
         }
       },
@@ -29,5 +30,6 @@ export default function useWorldEvents(w: UseStateRef<import("./World").State>) 
 }
 
 export type State = {
+  doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   onEvent(e: JshCli.Event): void;
 };
