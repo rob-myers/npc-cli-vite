@@ -176,17 +176,27 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
         const tabId = source.data.id as string;
         const gridPos = layoutApi.screenToGrid(clientX, clientY);
+        const newTabsId = `ui-${crypto.randomUUID()}`;
 
         state.onDeleteTab({ id: tabId } as UiInstanceMeta, { preservePortal: true });
+        uiStoreApi.addUis({
+          metas: [{
+            id: newTabsId,
+            title: "Tabs",
+            uiKey: "Tabs",
+            items: [tabId],
+            currentTabId: tabId,
+          }],
+        });
         uiStore.setState((draft) => {
           const item = draft.byId[tabId];
           if (item) {
-            item.meta.parentId = undefined;
+            item.meta.parentId = newTabsId;
             item.everSeen = true;
           }
         });
-        layoutApi.appendLayoutItems([{ i: tabId, x: gridPos?.x ?? 0, y: gridPos?.y ?? 0, w: 2, h: 4 }]);
-        requestAnimationFrame(() => layoutApi.fitItem(tabId));
+        layoutApi.appendLayoutItems([{ i: newTabsId, x: gridPos?.x ?? 0, y: gridPos?.y ?? 0, w: 2, h: 4 }]);
+        requestAnimationFrame(() => layoutApi.fitItem(newTabsId));
       },
     });
   }, [meta.id]);
