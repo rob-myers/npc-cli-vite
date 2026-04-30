@@ -99,25 +99,29 @@ export function play({ w }) {
  * pick 1
  * pick meta.floor
  * pick meta.ceiling
- * pick meta.wall
+ * pick meta.wall # maybe `config pickWalls true` first
  * pick | map meta.type
  * pick '({ meta }, ct) => meta.type === "floor" && ct.home.foo == 42'
- * pick | map point
+ * pick as:meta.type
+ * pick as:point
  * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 ) }"
  * ```
  *
- * 🚧 clean and clarify below
+ * - 🚧 support right click
+ * - 🚧 support long press
+ *
  * @param {JshCli.RunArg} ct
  */
 export async function* pick(ct) {
   const { args, api, w } = ct;
+
   let { opts, operands } = ct.api.getOpts(args, {
     boolean: [
       "left", // left clicks only
       "right", // right clicks only
       "long", // long press only
       "any", // left or right permitted
-      "block", // e.g. `click --block`
+      "block", // e.g. `pick --block`
     ],
   });
 
@@ -137,7 +141,14 @@ export async function* pick(ct) {
   // support `pick meta.floor`
   // support `pick '({ meta }, ct) => meta.type === "floor"'`
   const filterDef = isStringInt(operands[0]) ? operands[1] : operands[0];
-  const filter = filterDef !== undefined ? api.generateSelector(api.parseFnOrStr(filterDef), [ct]) : undefined;
+  const filter =
+    filterDef !== undefined && !filterDef.startsWith("as:")
+      ? api.generateSelector(api.parseFnOrStr(filterDef), [ct])
+      : undefined;
+
+  // support jsArg as:foo.bar.baz (apply selector)
+  const jsOpts = /** @type {{ as?: string }} */ (api.jsArg(args));
+  const selector = jsOpts.as ? api.generateSelector(api.parseFnOrStr(jsOpts.as)) : undefined;
 
   /** @type {import('@npc-cli/util').BasicSubscription} */
   let eventsSub;
@@ -177,7 +188,7 @@ export async function* pick(ct) {
 
       if (filter === undefined || filter?.(output)) {
         numClicks--;
-        yield output;
+        yield selector ? selector(output) : output;
       }
     }
   } finally {
