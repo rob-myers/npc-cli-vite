@@ -88,9 +88,14 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
 
     const srcNode = this.nodesArray[srcGmNodeId];
     const dstNode = this.nodesArray[dstGmNodeId];
-    const gmPath = AStar.search(this, srcNode, dstNode, (nodes) => {
-      nodes[srcNode.index].astar.centroid.copy(src);
-      nodes[dstNode.index].astar.centroid.copy(dst);
+    const { pathOrPrefix: gmPath } = AStar.search({
+      graph: this,
+      start: srcNode,
+      end: dstNode,
+      setNodeWeights: (nodes) => {
+        nodes[srcNode.index].astar.centroid.copy(src);
+        nodes[dstNode.index].astar.centroid.copy(dst);
+      },
     });
 
     let pre: Graph.GmGraphNodeDoor;
