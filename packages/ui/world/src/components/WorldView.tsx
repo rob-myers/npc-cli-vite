@@ -43,7 +43,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
-      objectPickScale: 1,
+      objectPickScale: 0.5, // do not walls by default
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
