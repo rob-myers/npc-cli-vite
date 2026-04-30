@@ -134,6 +134,7 @@ export default function Ceiling() {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
+
     return {
       texNode: texNode.depth(uvTexIds),
       pickNode: w.view.withPickOutput(PICK_TYPE.ceiling),
@@ -168,6 +169,7 @@ export default function Ceiling() {
         colorNode={shaderMeta.texNode}
         outputNode={shaderMeta.pickNode}
         depthWrite={false}
+        opacity={0.85}
       />
     </instancedMesh>
   );
