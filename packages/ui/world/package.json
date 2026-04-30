@@ -16,6 +16,7 @@
   "scripts": {},
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@dimforge/rapier3d-compat": "catalog:",
     "@npc-cli/graph": "workspace:^",
     "@npc-cli/media": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",

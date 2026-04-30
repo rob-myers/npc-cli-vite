@@ -32,6 +32,16 @@ export default function WorldWorker() {
             break;
           }
 
+          case "world-setup-response": {
+            // 🚧
+            break;
+          }
+
+          case "physics-debug-data-response": {
+            // 🚧
+            break;
+          }
+
           default:
             throw new ExhaustiveError(msg);
         }
