@@ -27,6 +27,14 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       } satisfies WW.MsgFromWorker);
       break;
     }
+    case "setup-physics": {
+      // 🚧
+      break;
+    }
+    case "get-physics-debug-data": {
+      // 🚧
+      break;
+    }
 
     default:
       throw new ExhaustiveError(msg);

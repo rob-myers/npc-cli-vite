@@ -69,7 +69,9 @@
   - ✅ clean up shared code: spawn, respawn, dev-hot-reload
 
 - 🚧 queryFilter issues
-  - 🚧 wrong: should not head towards other side of wall when door closed
+  - wrong: should not head towards other side of wall when door closed
+    
+  - ✅ `w e.findPath` using src/dst grKeys and possessed keys
     - could search in our own `gm-room-graph` (efficient)
     - ✅ gm-room-graph supports `findPath`
       - closed doors represented via infinite edge weights
@@ -82,10 +84,11 @@
       - prefix based on node.h
     - ✅ can specify npc keys as `w.e.findPath(src, dst, keys)`
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
-  
-  - if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
-  - move a-star to worker
 
+  - 🚧 if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
+    - 🚧 can track npc current room
+
+  - ❌ move a-star to worker
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter
@@ -93,6 +96,16 @@
 
 - ✅ support syntax `pick 1 meta.floor as:gmRoomId`
   - shortens `pick 1 meta.floor | map gmRoomId`
+
+- 🚧 doors have static sensors triggered by npcs
+  - ✅ migrate worker request/response types
+  - ✅ worker has rapier physics
+  - 🚧 provide projection of assets for physics world creation
+    - we prefer not to share ui/world code since hmr problems occur
+
+- track npc current room
+  - on spawn
+  - detect npc `enter-room`
 
 - skin remapping
 
