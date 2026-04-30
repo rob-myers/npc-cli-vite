@@ -80,6 +80,7 @@
     - 🚧 update node.astar via events and do not clean on search
     - can specify npc keys as `w.e.findPath(src, dst, keys)`
     - if `move` AND target room adjacent, stop if findPath `null`
+  - move a-star to worker
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter
