@@ -69,17 +69,19 @@ export class AStar {
       for (let i = 0, il = neighbours.length; i < il; i++) {
         const neighbour = neighbours[i];
 
-        if (neighbour.astar.closed) {
+        if (neighbour.astar.closed === true) {
           continue;
         }
 
-        const gScore = currentNode.astar.g! + neighbour.astar.cost;
+        const gScore = (currentNode.astar.g as number) + neighbour.astar.cost;
         const beenVisited = neighbour.astar.visited;
 
-        if (!beenVisited || gScore < neighbour.astar.g!) {
+        if (!beenVisited || gScore < (neighbour.astar.g as number)) {
           neighbour.astar.visited = true;
           neighbour.astar.parent = currentNode;
-          if (!neighbour.astar.centroid || !end.astar.centroid) throw new Error("Unexpected state");
+          // if (!neighbour.astar.centroid || !end.astar.centroid) {
+          //   throw new Error("Unexpected state");
+          // }
           neighbour.astar.h = neighbour.astar.h || AStar.heuristic(neighbour.astar.centroid, end.astar.centroid);
           neighbour.astar.g = gScore;
           neighbour.astar.f = neighbour.astar.g + neighbour.astar.h;
