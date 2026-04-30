@@ -83,14 +83,16 @@
     - ✅ can specify npc keys as `w.e.findPath(src, dst, keys)`
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
   
-  - if `move` AND target room adjacent, stop if findPath `null`
-    - don't need a star for this
+  - if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
   - move a-star to worker
 
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter
     - no issue, we were changing target on click door
+
+- ✅ support syntax `pick 1 meta.floor as:gmRoomId`
+  - shortens `pick 1 meta.floor | map gmRoomId`
 
 - skin remapping
 
