@@ -69,13 +69,17 @@
   - ✅ clean up shared code: spawn, respawn, dev-hot-reload
 
 - 🚧 queryFilter issues
-  - 🚧 wrong: head towards other side of wall when door closed
+  - 🚧 wrong: should not head towards other side of wall when door closed
     - could search in our own `gm-room-graph` (efficient)
     - ✅ gm-room-graph supports `findPath`
       - closed doors represented via infinite edge weights
     - ✅ `w.e.doorOpen` tracks open/closed doors
     - ✅ extend gm-room-graph to include door nodes (so we can weight them when closed)
-    - 🚧 `w.e.findPath` should wrap `w.gmRoomGraph.findPath` providing infinite node weights to closed doors
+    - ✅ `w.e.findPath(src, dst)` wraps `w.gmRoomGraph.findPath`
+      - `w e.findPath g0r2 g0r1`
+    - 🚧 update node.astar via events and do not clean on search
+    - can specify npc keys as `w.e.findPath(src, dst, keys)`
+    - if `move` AND target room adjacent, stop if findPath `null`
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter
