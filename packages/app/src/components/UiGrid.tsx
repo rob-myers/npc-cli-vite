@@ -84,6 +84,11 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               const wasAbove = pre.y + pre.h <= draggedPre.y;
               return { ...pre, y: wasAbove ? dragged.y + dragged.h : dragged.y - pre.h };
             }
+            if (yOverlap && !xOverlap) {
+              // Side-by-side: move to opposite side of dragged
+              const wasLeft = pre.x + pre.w <= draggedPre.x;
+              return { ...pre, x: wasLeft ? dragged.x + dragged.w : dragged.x - pre.w };
+            }
             return { ...pre, x: draggedPre.x, y: draggedPre.y };
           });
 
