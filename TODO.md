@@ -77,10 +77,16 @@
     - ✅ extend gm-room-graph to include door nodes (so we can weight them when closed)
     - ✅ `w.e.findPath(src, dst)` wraps `w.gmRoomGraph.findPath`
       - `w e.findPath g0r2 g0r1`
-    - 🚧 update node.astar via events and do not clean on search
-    - can specify npc keys as `w.e.findPath(src, dst, keys)`
-    - if `move` AND target room adjacent, stop if findPath `null`
+    - ❌ update `node.astar` via events and do not clean on search
+    - ✅ AStar.search provides longest prefix on fail
+      - prefix based on node.h
+    - ✅ can specify npc keys as `w.e.findPath(src, dst, keys)`
+      - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
+  
+  - if `move` AND target room adjacent, stop if findPath `null`
+    - don't need a star for this
   - move a-star to worker
+
   - ❌ stale: open door after path requested beyond door
     - could store npc's blocking door area and listen for door open
     - ✅ npc has own queryFilter
@@ -90,6 +96,9 @@
 
 - world.worker creates physics world based on decor
   - static sensors only using rapier
+
+- on drag ui tab onto grid (desktop only) add a parent Tabs
+- support scale ui option (vertical or horizontal)
 
 - ensure onchange layout that portals are disposed
 - world context menu?
@@ -109,6 +118,9 @@
   - need repro e.g. move stateroom inside 301
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
+
+- 🚧 BUG on hmr recompute gmRoomGraph? saw stale AStar
+  - worldQuery not re-running onchange class AStar
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue

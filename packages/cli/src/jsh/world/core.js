@@ -118,9 +118,6 @@ export async function* pick(ct) {
       "long", // long press only
       "any", // left or right permitted
       "block", // e.g. `click --block`
-      "clear", // clear all colours
-      "keep", // keep clicks of current color
-      // --red, --blue, --green (default black)
     ],
   });
 

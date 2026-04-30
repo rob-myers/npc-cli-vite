@@ -1,15 +1,18 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { useEffect } from "react";
+import type { AStarSearchResult } from "../pathfinding/AStar";
+import type { State as WorldState } from "./World";
 
-export default function useWorldEvents(w: UseStateRef<import("./World").State>) {
+export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       doorOpen: {},
-      findPath(src: Geomorph.GmRoomKey, dst: Geomorph.GmRoomKey) {
+
+      findPath(src, dst, keys = {}) {
         return w.gmRoomGraph.findPath(src, dst, (nodes) => {
           for (const node of nodes) {
             if (node.type === "door" && !state.doorOpen[node.id]) {
-              node.astar.closed = true;
+              node.astar.closed = keys[node.id] !== true;
             }
           }
         });
@@ -40,6 +43,10 @@ export default function useWorldEvents(w: UseStateRef<import("./World").State>) 
 
 export type State = {
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
-  findPath(src: Geomorph.GmRoomKey, dst: Geomorph.GmRoomKey): Graph.GmRoomGraphNode[] | null;
+  findPath(
+    src: Geomorph.GmRoomKey,
+    dst: Geomorph.GmRoomKey,
+    keys?: { [key: Geomorph.GmDoorKey]: boolean },
+  ): AStarSearchResult<Graph.GmRoomGraphNode>;
   onEvent(e: JshCli.Event): void;
 };
