@@ -133,6 +133,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
   React.useEffect(() => {
     if (state.xterm) {
       state.xterm.xterm.options.theme = xtermThemes[themeName];
+      state.xterm.xterm.options.fontWeight = themeName === "dark" ? "normal" : "600";
     }
   }, [themeName, state.xterm]);
 
@@ -192,7 +193,9 @@ const xtermThemes: Record<ThemeName, ITheme> = {
     foreground: "#1a1a1a",
     cursor: "#333333",
     selectionBackground: "#b0c4de",
+    brightYellow: "gray",
 
-    white: "gray",
+    white: "#000",
+    brightGreen: "blue",
   },
 };

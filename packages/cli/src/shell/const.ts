@@ -16,7 +16,7 @@ export const ansi = {
   Hex323232Bg: "\x1b[48;2;32;32;32m",
   Purple: "\x1b[35m",
   Red: "\x1b[1;38;2;255;100;100m",
-  Yellow: "\x1b[38;2;255;255;100m",
+  Yellow: "\x1b[22;93m",
   YellowBright: "\x1b[93m",
   White: "\x1b[37m",
   WhiteBright: "\x1b[97m",

@@ -420,7 +420,7 @@ export class TtyXterm {
       unregisterWriters();
     });
     // user indication after xterm has loaded but session hasn't
-    this.xterm.writeln(`${ansi.Italic}${ansi.GreenDark}Loading...${ansi.Reset}`);
+    this.xterm.writeln(`${ansi.Italic}${ansi.Bold}${ansi.GreenDark}Loading...${ansi.Reset}`);
   }
 
   /**
