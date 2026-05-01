@@ -216,7 +216,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         w.events.next({
           key: "picked",
-          ...(clickId && { clickId }),
+          ...(clickId && { clickId: clickId.id }),
           meta: picked,
           // npc currently lacks gmId
           gmRoomId: "gmId" in picked ? w.npc.findRoomContaining(point, true) : null,
@@ -324,7 +324,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
 export type State = {
   canvas: HTMLCanvasElement;
-  clickIds: string[];
+  clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
   pickRT: THREE.RenderTarget;
