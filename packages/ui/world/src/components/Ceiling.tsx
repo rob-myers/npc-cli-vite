@@ -138,6 +138,7 @@ export default function Ceiling() {
     return {
       texNode: texNode.depth(uvTexIds),
       pickNode: w.view.withPickOutput(PICK_TYPE.ceiling),
+      opacityNode: w.view.objectPick.notEqual(0).select(1, 0.85),
       uid: generateUUID(),
     };
   }, [w.texCeil.hash]);
@@ -168,8 +169,8 @@ export default function Ceiling() {
         transparent
         colorNode={shaderMeta.texNode}
         outputNode={shaderMeta.pickNode}
+        opacityNode={shaderMeta.opacityNode}
         depthWrite={false}
-        opacity={0.85}
       />
     </instancedMesh>
   );
