@@ -97,16 +97,21 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
             persistedItemToRect: {},
             // 🚧 set
             persistedLayout: getDefaultLayout(),
+            persistedPanes: getDefaultPanes(),
           }),
           { name: "ui.store", anonymousActionType: "ui.store" },
         ),
         {
           name: "ui.storage",
           storage: createJSONStorage(() => localStorage),
-          partialize: ({ persistedItemToRect, persistedLayout }) => ({
+          partialize: ({ persistedItemToRect, persistedLayout, persistedPanes }) => ({
             persistedItemToRect,
             persistedLayout,
+            persistedPanes,
           }),
+          onRehydrateStorage: () => (state) => {
+            if (state) state.ready = true;
+          },
         },
       ),
     ),
@@ -134,6 +139,7 @@ export type UiStoreState = {
   };
   /** Init only */
   persistedLayout: UiGridLayout;
+  persistedPanes: PersistedPaneNode;
 };
 
 export type UiStoreByIdEntry = {
@@ -149,6 +155,14 @@ export type UiGridLayout = {
   layouts: Record<"lg", Layout>;
   toUi: { [layoutKey: string]: UiInstanceMeta };
 };
+
+export type PersistedPaneNode =
+  | { type: "leaf"; id: number }
+  | { type: "split"; id: number; vertical: boolean; children: PersistedPaneNode[]; sizes?: number[] };
+
+function getDefaultPanes(): PersistedPaneNode {
+  return { type: "leaf", id: 0 };
+}
 
 function getDefaultLayout(): UiGridLayout {
   const metas = getDefaultUiMetas();

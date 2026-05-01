@@ -20,6 +20,7 @@
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
+    "allotment": "catalog:",
     "immer": "catalog:",
     "javascript-stringify": "catalog:",
     "motion": "catalog:",

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TestWasmIndexRouteImport } from './routes/test-wasm/index'
+import { Route as AllotmentIndexRouteImport } from './routes/allotment/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const TestWasmIndexRoute = TestWasmIndexRouteImport.update({
   path: '/test-wasm/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AllotmentIndexRoute = AllotmentIndexRouteImport.update({
+  id: '/allotment/',
+  path: '/allotment/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/allotment': typeof AllotmentIndexRoute
   '/test-wasm': typeof TestWasmIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/allotment': typeof AllotmentIndexRoute
   '/test-wasm': typeof TestWasmIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/allotment/': typeof AllotmentIndexRoute
   '/test-wasm/': typeof TestWasmIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/test-wasm'
+  fullPaths: '/' | '/allotment' | '/test-wasm'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/test-wasm'
-  id: '__root__' | '/' | '/test-wasm/'
+  to: '/' | '/allotment' | '/test-wasm'
+  id: '__root__' | '/' | '/allotment/' | '/test-wasm/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AllotmentIndexRoute: typeof AllotmentIndexRoute
   TestWasmIndexRoute: typeof TestWasmIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestWasmIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/allotment/': {
+      id: '/allotment/'
+      path: '/allotment'
+      fullPath: '/allotment'
+      preLoaderRoute: typeof AllotmentIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AllotmentIndexRoute: AllotmentIndexRoute,
   TestWasmIndexRoute: TestWasmIndexRoute,
 }
 export const routeTree = rootRouteImport
