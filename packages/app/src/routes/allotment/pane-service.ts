@@ -11,14 +11,13 @@ export function initNextId(node: PaneNode) {
   if (node.type === "split") node.children.forEach(initNextId);
 }
 
-function createLeaf(): PaneNode {
-  const id = nextId++;
+function createTabsUi(): string {
   const uiId = `ui-${crypto.randomUUID()}`;
   const title = uiStoreApi.getDefaultTitle("Tabs");
   uiStoreApi.addUis({
     metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: false }],
   });
-  return { type: "leaf", id, uiId };
+  return uiId;
 }
 
 function setRoot(fn: (prev: PaneNode) => PaneNode) {
@@ -28,11 +27,13 @@ function setRoot(fn: (prev: PaneNode) => PaneNode) {
 }
 
 export function splitPane(targetId: number, vertical: boolean) {
+  const uiId = createTabsUi();
+  const leafId = nextId++;
   setRoot((prev) => transformNode(prev, targetId, (node) => ({
     type: "split",
     id: nextId++,
     vertical,
-    children: [node, createLeaf()],
+    children: [node, { type: "leaf", id: leafId, uiId }],
   })));
 }
 
@@ -42,9 +43,11 @@ export function closePane(targetId: number) {
   if (leaf?.type === "leaf" && leaf.uiId) {
     uiStoreApi.removeItem(leaf.uiId);
   }
+  const fallbackUiId = createTabsUi();
+  const fallbackId = nextId++;
   setRoot((prev) => {
     const result = removeNode(prev, targetId);
-    return result ?? createLeaf();
+    return result ?? { type: "leaf", id: fallbackId, uiId: fallbackUiId };
   });
 }
 
