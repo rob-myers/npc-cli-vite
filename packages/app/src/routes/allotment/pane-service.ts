@@ -2,7 +2,7 @@ import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 
 export type PaneNode =
   | { type: "leaf"; id: number }
-  | { type: "split"; id: number; vertical: boolean; children: PaneNode[]; sizes?: number[] };
+  | { type: "split"; id: number; vertical: boolean; children: PaneNode[]; sizes?: number[]; hiddenIds?: number[] };
 
 let nextId = 1;
 
@@ -41,6 +41,26 @@ export function setSizes(splitId: number, sizes: number[]) {
   setRoot((prev) => transformNode(prev, splitId, (node) =>
     node.type === "split" ? { ...node, sizes } : node,
   ));
+}
+
+export function setPaneHidden(splitId: number, childIndex: number, visible: boolean) {
+  setRoot((prev) => transformNode(prev, splitId, (node) => {
+    if (node.type !== "split") return node;
+    const childId = node.children[childIndex]?.id;
+    if (childId === undefined) return node;
+    const hiddenIds = new Set(node.hiddenIds);
+    if (visible) hiddenIds.delete(childId);
+    else hiddenIds.add(childId);
+    return { ...node, hiddenIds: hiddenIds.size > 0 ? [...hiddenIds] : undefined };
+  }));
+}
+
+export function showPane(splitId: number, childId: number) {
+  setRoot((prev) => transformNode(prev, splitId, (node) => {
+    if (node.type !== "split") return node;
+    const hiddenIds = node.hiddenIds?.filter((id) => id !== childId);
+    return { ...node, hiddenIds: hiddenIds?.length ? hiddenIds : undefined };
+  }));
 }
 
 export function transformNode(node: PaneNode, targetId: number, fn: (node: PaneNode) => PaneNode): PaneNode {
