@@ -25,10 +25,14 @@ export function UiGridMenu({ parent }: { parent: UseStateRef<import("./UiGrid").
     onDragEnd() {
       localStorage.setItem(storageKey, String(state.y.get()));
     },
-    onMenuOpenChange(_open: boolean, _eventDetails: Menu.Root.ChangeEventDetails) {
+    onMenuOpenChange(open: boolean) {
       if (state.dragged) {
         state.dragged = false;
         return;
+      }
+      if (!open) {
+        state.menuOpen = false;
+        state.update();
       }
     },
     onResizeClick() {
