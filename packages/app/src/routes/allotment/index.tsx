@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
+import { createFileRoute } from "@tanstack/react-router";
 import "allotment/dist/style.css";
 import { motion } from "motion/react";
 import { useStore } from "zustand";
@@ -17,9 +17,6 @@ function AllotmentDemo() {
 
   return (
     <div className="flex flex-col h-screen bg-slate-950">
-      <div className="p-2 text-slate-500 text-xs">
-        Split any pane horizontally or vertically. Close panes with ✕.
-      </div>
       <motion.div
         className="flex-1"
         initial={{ opacity: 0 }}

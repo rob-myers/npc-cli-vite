@@ -158,7 +158,7 @@ export type UiGridLayout = {
 
 export type PersistedPaneNode =
   | { type: "leaf"; id: number }
-  | { type: "split"; id: number; vertical: boolean; children: PersistedPaneNode[]; sizes?: number[] };
+  | { type: "split"; id: number; vertical: boolean; children: PersistedPaneNode[]; sizes?: number[]; hiddenIds?: number[] };
 
 function getDefaultPanes(): PersistedPaneNode {
   return { type: "leaf", id: 0 };
