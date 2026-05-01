@@ -68,6 +68,8 @@
   - ✅ navigation query accounts for open doors
   - ✅ clean up shared code: spawn, respawn, dev-hot-reload
 
+- ✅ `pick {n}` respects execution order; can override with `pick {n} --block`
+
 - 🚧 queryFilter issues
   - wrong: should not head towards other side of wall when door closed
     
@@ -86,7 +88,7 @@
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
 
   - 🚧 if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
-    - 🚧 can track npc current room
+    - 🚧 can track npc current room (can be `null` on bad spawn)
 
   - ❌ move a-star to worker
   - ❌ stale: open door after path requested beyond door
@@ -96,7 +98,6 @@
 
 - ✅ support syntax `pick 1 meta.floor as:gmRoomId`
   - shortens `pick 1 meta.floor | map gmRoomId`
-
 - 🚧 doors have static sensors triggered by npcs
   - ✅ migrate worker request/response types
   - ✅ worker has rapier physics
@@ -134,7 +135,6 @@
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
-- 🚧 BUG on hmr recompute gmRoomGraph? saw stale AStar
   - worldQuery not re-running onchange class AStar
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes

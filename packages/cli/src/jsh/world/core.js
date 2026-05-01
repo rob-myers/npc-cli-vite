@@ -1,4 +1,4 @@
-import { isStringInt, removeFirst } from "@npc-cli/util/legacy/generic";
+import { isStringInt } from "@npc-cli/util/legacy/generic";
 
 /**
  * @param {JshCli.RunArg} ctxt
@@ -141,8 +141,15 @@ export async function* pick(ct) {
     operands = [operands[1], operands[0]]; // support reverse order `click meta.nav 2`
   }
 
+  const explicitNumClicks = isStringInt(operands[0]) ? parseInt(operands[0], 10) : undefined;
+  const maxExplicitPicks = 1024;
+
   /** Number of clicks remaining */
-  let numClicks = isStringInt(operands[0]) ? parseInt(operands[0]) : Number.MAX_SAFE_INTEGER;
+  let numClicks = explicitNumClicks ?? Number.MAX_SAFE_INTEGER;
+  if (explicitNumClicks !== undefined && explicitNumClicks > maxExplicitPicks) {
+    numClicks = maxExplicitPicks;
+    api.writeError(`${api.ansi.Yellow}warn: max explicit picks is ${maxExplicitPicks}`);
+  }
 
   const blocking = opts.block === true;
   const clickId = isStringInt(operands[0]) || blocking ? api.getUid() : undefined;
@@ -165,23 +172,22 @@ export async function* pick(ct) {
   // suspend/resume handled by `api.isRunning()` below
   const handlers = api.handleStatus({
     cleanups() {
-      clickId !== undefined && removeFirst(w.view.clickIds, clickId);
+      w.view.clickIds = w.view.clickIds.filter(({ id }) => id !== clickId);
       eventsSub?.unsubscribe();
     },
   });
 
   try {
-    if (clickId !== undefined && blocking === false && numClicks < 100) {
+    if (clickId !== undefined && blocking === false && numClicks <= maxExplicitPicks) {
       // e.g. `pick 5` but not `pick 5 --block`
-      w.view.clickIds.push(...Array(numClicks).fill(clickId));
+      w.view.clickIds.push(...Array.from({ length: numClicks }, () => ({ id: clickId, blocking: false })));
     }
 
     while (numClicks > 0) {
       if (clickId !== undefined && blocking === true) {
         // e.g. `pick --block` `pick 5 --block` but not `pick 5`
-        w.view.clickIds.unshift(clickId);
+        w.view.clickIds.unshift({ id: clickId, blocking });
       }
-
       const output = await /** @type {Promise<JshCli.PickEvent>} */ (
         new Promise((resolve, reject) => {
           eventsSub = w.events.subscribe({
@@ -207,6 +213,13 @@ export async function* pick(ct) {
       if (filter === undefined || filter?.(output)) {
         numClicks--;
         yield selector ? selector(output) : output;
+      } else if (clickId !== undefined && blocking === false) {
+        w.view.clickIds = w.view.clickIds
+          .filter(({ blocking }) => blocking)
+          .concat(
+            { id: clickId, blocking: false },
+            w.view.clickIds.filter(({ blocking }) => !blocking),
+          );
       }
     }
   } finally {
