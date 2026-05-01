@@ -1,7 +1,7 @@
-import { uiStore } from "@npc-cli/ui-sdk/ui.store";
+import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 
 export type PaneNode =
-  | { type: "leaf"; id: number }
+  | { type: "leaf"; id: number; uiId?: string }
   | { type: "split"; id: number; vertical: boolean; children: PaneNode[]; sizes?: number[]; hiddenIds?: number[] };
 
 let nextId = 1;
@@ -12,7 +12,13 @@ export function initNextId(node: PaneNode) {
 }
 
 function createLeaf(): PaneNode {
-  return { type: "leaf", id: nextId++ };
+  const id = nextId++;
+  const uiId = `ui-${crypto.randomUUID()}`;
+  const title = uiStoreApi.getDefaultTitle("Tabs");
+  uiStoreApi.addUis({
+    metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: false }],
+  });
+  return { type: "leaf", id, uiId };
 }
 
 function setRoot(fn: (prev: PaneNode) => PaneNode) {
@@ -31,10 +37,41 @@ export function splitPane(targetId: number, vertical: boolean) {
 }
 
 export function closePane(targetId: number) {
+  const { persistedPanes } = uiStore.getState();
+  const leaf = findNode(persistedPanes, targetId);
+  if (leaf?.type === "leaf" && leaf.uiId) {
+    uiStoreApi.removeItem(leaf.uiId);
+  }
   setRoot((prev) => {
     const result = removeNode(prev, targetId);
     return result ?? createLeaf();
   });
+}
+
+export function ensureLeafUis(node: PaneNode) {
+  if (node.type === "leaf") {
+    if (!node.uiId || !uiStoreApi.getUi(node.uiId)) {
+      const uiId = `ui-${crypto.randomUUID()}`;
+      const title = uiStoreApi.getDefaultTitle("Tabs");
+      uiStoreApi.addUis({
+        metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: false }],
+      });
+      setRoot((prev) => transformNode(prev, node.id, (n) => ({ ...n, uiId })));
+    }
+  } else {
+    node.children.forEach(ensureLeafUis);
+  }
+}
+
+function findNode(node: PaneNode, targetId: number): PaneNode | null {
+  if (node.id === targetId) return node;
+  if (node.type === "split") {
+    for (const child of node.children) {
+      const found = findNode(child, targetId);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
 export function setSizes(splitId: number, sizes: number[]) {

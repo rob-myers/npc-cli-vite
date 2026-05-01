@@ -1,8 +1,9 @@
 import { Allotment } from "allotment";
+import { uiStore } from "@npc-cli/ui-sdk/ui.store";
+import * as portals from "react-reverse-portal";
+import { useStore } from "zustand";
 import type { PaneNode } from "./pane-service";
 import { closePane, setPaneHidden, setSizes, showPane, splitPane } from "./pane-service";
-
-const colors = ["bg-slate-800", "bg-slate-700", "bg-slate-900", "bg-slate-600", "bg-zinc-800", "bg-zinc-700"];
 
 const btnClass = "px-1.5 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded cursor-pointer";
 
@@ -13,36 +14,7 @@ function getLabel(node: PaneNode): string {
 
 export function PaneTree({ node }: { node: PaneNode }) {
   if (node.type === "leaf") {
-    return (
-      <div className={`size-full flex flex-col ${colors[node.id % colors.length]}`}>
-        <div className="flex gap-1 p-1">
-          <button
-            type="button"
-            className="px-1.5 py-0.5 text-xs bg-slate-600 hover:bg-slate-500 text-slate-300 rounded cursor-pointer"
-            onClick={() => splitPane(node.id, false)}
-          >
-            Split H
-          </button>
-          <button
-            type="button"
-            className="px-1.5 py-0.5 text-xs bg-slate-600 hover:bg-slate-500 text-slate-300 rounded cursor-pointer"
-            onClick={() => splitPane(node.id, true)}
-          >
-            Split V
-          </button>
-          <button
-            type="button"
-            className="px-1.5 py-0.5 text-xs bg-slate-600 hover:bg-red-700 text-slate-300 rounded cursor-pointer"
-            onClick={() => closePane(node.id)}
-          >
-            ✕
-          </button>
-        </div>
-        <div className="flex-1 flex items-center justify-center text-slate-400">
-          Pane {node.id}
-        </div>
-      </div>
-    );
+    return <PaneLeaf node={node} />;
   }
 
   const hiddenSet = new Set(node.hiddenIds);
@@ -87,6 +59,33 @@ export function PaneTree({ node }: { node: PaneNode }) {
           </Allotment.Pane>
         ))}
       </Allotment>
+    </div>
+  );
+}
+
+function PaneLeaf({ node }: { node: Extract<PaneNode, { type: "leaf" }> }) {
+  const portal = useStore(uiStore, (s) => (node.uiId ? s.byId[node.uiId]?.portal : undefined));
+
+  return (
+    <div className="size-full flex flex-col">
+      <div className="flex gap-1 p-1 bg-slate-950/80">
+        <button type="button" className={btnClass} onClick={() => splitPane(node.id, false)}>
+          Split H
+        </button>
+        <button type="button" className={btnClass} onClick={() => splitPane(node.id, true)}>
+          Split V
+        </button>
+        <button
+          type="button"
+          className="px-1.5 py-0.5 text-xs bg-slate-600 hover:bg-red-700 text-slate-300 rounded cursor-pointer"
+          onClick={() => closePane(node.id)}
+        >
+          ✕
+        </button>
+      </div>
+      <div className="flex-1 relative bg-white">
+        {portal && <portals.OutPortal node={portal.portalNode} />}
+      </div>
     </div>
   );
 }
