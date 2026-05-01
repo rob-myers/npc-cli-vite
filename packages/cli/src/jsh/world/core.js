@@ -104,9 +104,18 @@ export function play({ w }) {
  * pick '({ meta }, ct) => meta.type === "floor" && ct.home.foo == 42'
  * pick as:meta.type
  * pick as:point
- * w npc.spawn "{ npcKey: 'foo-bar-baz', at: $( pick 1 ) }"
+ * w npc.spawn "{ npcKey: 'rob', at: $( pick 1 ) }"
+ * spawn npc:rob at:$( pick 1 )
  * ```
  *
+ * Priority:
+ * - given `pick m` and `pick n` execution order wins
+ * - given two `pick`s execution order wins
+ * - `pick m` always executes before `pick`
+ * - on execute `pick m --block` it takes priority
+ * - on execute `pick --block` it takes priority
+ *
+ * TODO
  * - 🚧 support right click
  * - 🚧 support long press
  *
@@ -134,9 +143,9 @@ export async function* pick(ct) {
 
   /** Number of clicks remaining */
   let numClicks = isStringInt(operands[0]) ? parseInt(operands[0]) : Number.MAX_SAFE_INTEGER;
-  // const totalClicks = numClicks;
-  const clickId = isStringInt(operands[0]) || opts.block === true ? api.getUid() : undefined;
-  const blocking = clickId !== undefined;
+
+  const blocking = opts.block === true;
+  const clickId = isStringInt(operands[0]) || blocking ? api.getUid() : undefined;
 
   // support `pick meta.floor`
   // support `pick '({ meta }, ct) => meta.type === "floor"'`
@@ -156,14 +165,22 @@ export async function* pick(ct) {
   // suspend/resume handled by `api.isRunning()` below
   const handlers = api.handleStatus({
     cleanups() {
-      blocking === true && removeFirst(w.view.clickIds, clickId);
+      clickId !== undefined && removeFirst(w.view.clickIds, clickId);
       eventsSub?.unsubscribe();
     },
   });
 
   try {
+    if (clickId !== undefined && blocking === false && numClicks < 100) {
+      // e.g. `pick 5` but not `pick 5 --block`
+      w.view.clickIds.push(...Array(numClicks).fill(clickId));
+    }
+
     while (numClicks > 0) {
-      blocking === true && w.view.clickIds.push(clickId);
+      if (clickId !== undefined && blocking === true) {
+        // e.g. `pick --block` `pick 5 --block` but not `pick 5`
+        w.view.clickIds.unshift(clickId);
+      }
 
       const output = await /** @type {Promise<JshCli.PickEvent>} */ (
         new Promise((resolve, reject) => {
@@ -174,10 +191,11 @@ export async function* pick(ct) {
               } else if (api.isRunning() === false) {
                 return;
               } else if (e.clickId !== undefined && clickId === undefined) {
-                return; // `click {n}` overrides `click`
+                return; // `pick {n}` overrides `pick`
               } else if (e.clickId !== undefined && clickId !== e.clickId) {
-                return; // later `click {n}` overrides earlier `click {n}`
+                return; // ignore other picks (possibly started after this one)
               }
+
               resolve(e); // Must resolve before tear-down induced by unsubscribe
               eventsSub.unsubscribe();
             },

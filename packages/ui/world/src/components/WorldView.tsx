@@ -211,7 +211,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (intersection === null) return;
 
         const { distance, point } = intersection;
-        const clickId = state.clickIds.pop();
+        // always take 1st -- see `pick` for execution order
+        const clickId = state.clickIds.shift();
 
         w.events.next({
           key: "picked",
