@@ -67,8 +67,8 @@ function PaneLeaf({ node }: { node: Extract<PaneNode, { type: "leaf" }> }) {
   const portal = useStore(uiStore, (s) => (node.uiId ? s.byId[node.uiId]?.portal : undefined));
 
   return (
-    <div className="size-full flex flex-col">
-      <div className="flex gap-1 p-1 bg-slate-950/80">
+    <div className="size-full min-w-0 min-h-0 flex flex-col">
+      <div className="flex gap-1 p-1 bg-background/80">
         <button type="button" className={btnClass} onClick={() => splitPane(node.id, false)}>
           Split H
         </button>
@@ -83,7 +83,7 @@ function PaneLeaf({ node }: { node: Extract<PaneNode, { type: "leaf" }> }) {
           ✕
         </button>
       </div>
-      <div className="flex-1 relative bg-white">
+      <div className="flex-1 min-h-0 relative overflow-hidden bg-white text-black">
         {portal && <portals.OutPortal node={portal.portalNode} />}
       </div>
     </div>
