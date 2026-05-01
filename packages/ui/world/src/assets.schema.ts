@@ -164,6 +164,7 @@ export const AssetsSchema = z.object({
   }),
 });
 export type AssetsType = z.infer<typeof AssetsSchema>;
+export type AssetsEncodedType = z.input<typeof AssetsSchema>;
 
 export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   gmId: z.number(),

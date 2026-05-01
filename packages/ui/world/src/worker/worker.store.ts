@@ -18,13 +18,22 @@ export const workerStore: UseBoundStore<WithImmer<StoreApi<WorkerStoreState>>> =
         bodyKeyToCollider: new Map(),
         bodyKeyToUid: {},
         bodyUidToKey: {},
+
+        fps: 60,
+        agentHeight: 1.5,
+        agentRadius: 0.2,
       }),
       { name: "worker.store", anonymousActionType: "worker.store" },
     ),
   ),
 );
 
-export type WorkerStoreState = { gmGeoms: WW.GmGeomForNav[] } & PhysicsState & PhysicsBijection;
+export type WorkerStoreState = { gmGeoms: WW.GmGeomForNav[] } & PhysicsState &
+  PhysicsBijection & {
+    fps: number;
+    agentHeight: number;
+    agentRadius: number;
+  };
 
 interface PhysicsState {
   world: RAPIER.World;

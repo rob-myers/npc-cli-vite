@@ -1,4 +1,7 @@
 import RAPIER, { ColliderDesc } from "@dimforge/rapier3d-compat";
+import z from "zod";
+import { AssetsSchema } from "../assets.schema";
+import { createLayoutInstance } from "../service/geomorph";
 import { workerStore } from "./worker.store";
 
 const wallHeight: typeof import("../const")["wallHeight"] = 2;
@@ -54,7 +57,7 @@ export function createRigidBody({
   }
   rigidBody.setTranslation(position, false);
 
-  return /** @type {RAPIER.RigidBody & { userData: WW.PhysicsUserData }} */ (rigidBody);
+  return rigidBody as RAPIER.RigidBody & { userData: WW.PhysicsUserData };
 }
 
 /**
@@ -70,4 +73,39 @@ function getQuaternionFromAxisAngle(axis: { x: number; y: number; z: number }, a
     z: axis.z * s,
     w: Math.cos(halfAngle),
   };
+}
+
+export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
+  const state = workerStore.getState();
+
+  if (!state.world) {
+    await RAPIER.init();
+    state.world = new RAPIER.World({ x: 0, y: 0, z: 0 });
+    state.world.timestep = 1 / state.fps; // in seconds
+    state.eventQueue = new RAPIER.EventQueue(true);
+  } else {
+    state.world.forEachRigidBody((rigidBody) => state.world.removeRigidBody(rigidBody));
+    state.world.forEachCollider((collider) => state.world.removeCollider(collider, false));
+    state.bodyKeyToBody.clear();
+    state.bodyKeyToCollider.clear();
+    state.bodyHandleToKey.clear();
+    // state.world.bodies.free();
+    // state.world.colliders.free();
+  }
+
+  const assets = z.decode(AssetsSchema, msg.assets);
+  const mapDef = assets.map[msg.mapKey]!;
+  state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
+    createLayoutInstance(assets.layout[gmKey]!, gmId, transform),
+  );
+
+  // 🚧
+  // createDoorSensors();
+
+  // createGmColliders();
+
+  // restoreNpcs(msg.npcs);
+
+  // // fire initial collisions
+  // stepWorld();
 }

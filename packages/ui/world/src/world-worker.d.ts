@@ -22,7 +22,7 @@ declare namespace WW {
         type: "setup-physics";
         mapKey: string;
         npcs: NpcDef[];
-        // 🚧 provide projection of assets rather than fetching from worker
+        assets: import("./assets.schema").AssetsEncodedType;
       };
 
   type GetPhysicsDebugData = Extract<PhysicsMsgToWorker, { type: "get-physics-debug-data" }>;

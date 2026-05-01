@@ -1,6 +1,8 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
+import z from "zod";
+import { AssetsSchema } from "../assets.schema";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -101,6 +103,16 @@ export default function WorldWorker() {
     } satisfies WW.MsgToWorker);
 
     w.set({ navPending: true });
+
+    state.worker.postMessage({
+      type: "setup-physics",
+      mapKey: w.mapKey, // On HMR must provide existing npcs:
+      npcs: Object.values(w.npc?.npc ?? {}).map((npc) => ({
+        npcKey: npc.key,
+        position: npc.position,
+      })),
+      assets: z.encode(AssetsSchema, w.assets),
+    } satisfies WW.MsgToWorker);
   }, [w.gms, state.reloads]); // request navmesh
 
   return null;
