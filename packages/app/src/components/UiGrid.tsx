@@ -540,7 +540,7 @@ export function UiGrid({ extendContextValue, persistedLayout }: Props) {
               })}
             </GridLayout>
 
-            <UiGridMenu state={state} />
+            <UiGridMenu parent={state} />
           </div>
         </ContextMenu.Trigger>
 
@@ -662,7 +662,7 @@ export type UiGridLayout = {
   toUi: { [layoutKey: string]: UiInstanceMeta };
 };
 
-type State = {
+export type State = {
   dragging: boolean;
   contextMenuOpen: boolean;
   /** ContextMenu items may provide a "bootstrap ui" inside a Popover */

@@ -1,110 +1,112 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
-import { ArrowsInIcon, GearIcon, MoonIcon, PenIcon, SunIcon, XIcon } from "@phosphor-icons/react";
+import { type UseStateRef, useStateRef } from "@npc-cli/util";
+import { ArrowsInIcon, GearIcon, MoonIcon, ResizeIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const storageKey = "ui-grid-edit-toggle-y";
 
-export function UiGridMenu({
-  state,
-}: {
-  state: { resizeMode: boolean; set: (partial: { resizeMode?: boolean }) => void };
-}) {
-  const storedY = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      return raw ? Number(raw) : 0;
-    } catch {
-      return 0;
-    }
-  }, []);
-
-  const y = useMotionValue(Math.max(minY, storedY));
-  const dragged = useRef(false);
+export function UiGridMenu({ parent }: { parent: UseStateRef<import("./UiGrid").State> }) {
+  const y = useMotionValue(Math.max(minY, getStoredY()));
   const vpOffset = useVisualViewportOffset();
   const theme = useThemeName();
 
+  const state = useStateRef(() => ({
+    y,
+    dragged: false,
+    menuOpen: false,
+    vpOffset,
+    theme,
+
+    onDragStart() {
+      state.dragged = true;
+    },
+    onDragEnd() {
+      localStorage.setItem(storageKey, String(state.y.get()));
+    },
+    onMenuOpenChange(_open: boolean, _eventDetails: Menu.Root.ChangeEventDetails) {
+      if (state.dragged) {
+        state.dragged = false;
+        return;
+      }
+    },
+    onResizeClick() {
+      if (state.dragged) {
+        state.dragged = false;
+        return;
+      }
+      parent.set({ resizeMode: !parent.resizeMode });
+    },
+  }));
+
+  state.vpOffset = vpOffset;
+  state.theme = theme;
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && state.resizeMode) {
-        state.set({ resizeMode: false });
+      if (e.key === "Escape" && parent.resizeMode) {
+        parent.set({ resizeMode: false });
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [state]);
+  }, [parent]);
 
   return (
     <motion.div
       className="fixed text-white bg-gray-800 p-2 z-9999 touch-none flex flex-col gap-1"
       style={{
-        y,
-        left: vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - 36,
-        top: vpOffset.y,
+        y: state.y,
+        left: state.vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - 36,
+        top: state.vpOffset.y,
       }}
       drag="y"
       dragMomentum={false}
       dragConstraints={{ top: minY, bottom: window.innerHeight - minY }}
-      onDragStart={() => {
-        dragged.current = true;
-      }}
-      onDragEnd={() => {
-        localStorage.setItem(storageKey, String(y.get()));
-      }}
+      onDragStart={state.onDragStart}
+      onDragEnd={state.onDragEnd}
     >
-      {state.resizeMode ? (
-        <button type="button" className="cursor-pointer" onClick={() => state.set({ resizeMode: false })}>
-          <XIcon className="size-5" weight="bold" />
-        </button>
-      ) : (
-        <Menu.Root
-          onOpenChange={(open) => {
-            if (open && dragged.current) {
-              dragged.current = false;
+      <Menu.Root open={state.menuOpen} onOpenChange={state.onMenuOpenChange}>
+        <Menu.Trigger
+          className="cursor-pointer"
+          render={<span />}
+          onPointerUp={() => {
+            if (!state.dragged) {
+              state.menuOpen = !state.menuOpen;
+              state.update();
             }
+            state.dragged = false;
           }}
         >
-          <Menu.Trigger
-            className="cursor-pointer"
-            onPointerUp={() => {
-              if (dragged.current) {
-                dragged.current = false;
-              }
-            }}
-          >
-            <GearIcon className="size-5" weight="bold" />
-          </Menu.Trigger>
+          <GearIcon className="size-5" weight="bold" />
+        </Menu.Trigger>
 
-          <Menu.Portal>
-            <Menu.Positioner className="z-9999" sideOffset={4} side="bottom" align="center" collisionPadding={0}>
-              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-                <Menu.Item
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => state.set({ resizeMode: !state.resizeMode })}
-                >
-                  <PenIcon className="size-4" />
-                  Resize
-                </Menu.Item>
+        <Menu.Portal>
+          <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={12} side="left" collisionPadding={0}>
+            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
+              <Menu.Item
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                closeOnClick={false}
+                onClick={() => themeApi.setOther()}
+              >
+                {state.theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+                {state.theme === "dark" ? "Light" : "Dark"}
+              </Menu.Item>
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
 
-                <div className="my-1 border-t border-slate-700" />
+      <button
+        type="button"
+        className={`cursor-pointer rounded p-0.5 ${parent.resizeMode ? "bg-blue-600" : "bg-slate-700"}`}
+        onClick={state.onResizeClick}
+      >
+        <ResizeIcon className="size-4" weight={parent.resizeMode ? "bold" : "regular"} />
+      </button>
 
-                <Menu.Item
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => themeApi.setOther()}
-                >
-                  {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-                  {theme === "dark" ? "Light" : "Dark"}
-                </Menu.Item>
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
-      )}
-
-      {vpOffset.zoomed && (
+      {state.vpOffset.zoomed && (
         <button type="button" className="cursor-pointer" onClick={resetZoom}>
           <ArrowsInIcon className="size-5" />
         </button>
@@ -143,3 +145,12 @@ function useVisualViewportOffset() {
 }
 
 const minY = 120;
+
+function getStoredY() {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    return raw ? Number(raw) : 0;
+  } catch {
+    return 0;
+  }
+}
