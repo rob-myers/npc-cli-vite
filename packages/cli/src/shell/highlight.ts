@@ -2,12 +2,13 @@
  * Based on https://www.npmjs.com/package/cli-high
  */
 
-import { tokenize } from 'sugar-high'
+import { tokenize } from "sugar-high";
 import { ansi } from "./const";
 
 export function highlight(code: string) {
   const tokens = tokenize(code);
-  return ansi.Hex323232Bg + tokens.map(getCharsFromToken).join('');
+  // return ansi.Hex323232Bg + tokens.map(getCharsFromToken).join('');
+  return tokens.map(getCharsFromToken).join("");
 }
 
 function getCharsFromToken([type, value]: [number, string]) {
@@ -37,6 +38,6 @@ function getCharsFromToken([type, value]: [number, string]) {
     //   return ansi.DarkGrey + value
     default:
       // return value
-      return ansi.Yellow + value
+      return ansi.Yellow + value;
   }
 }
