@@ -1,11 +1,83 @@
 import RAPIER, { ColliderDesc } from "@dimforge/rapier3d-compat";
+import { hashText } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { AssetsSchema } from "../assets.schema";
 import { createLayoutInstance } from "../service/geomorph";
-import { workerStore } from "./worker.store";
+import { helper } from "../service/helper";
+import { type PhysicsBijection, workerStore } from "./worker.store";
 
 const wallHeight: typeof import("../const")["wallHeight"] = 2;
+const geomorphGridMeters: typeof import("../const")["geomorphGridMeters"] = 1.5;
+const sguToWorldScale = (1 / 60) * geomorphGridMeters;
+const wallOutset = 10 * sguToWorldScale;
 const unitYAxis = { x: 0, y: 1, z: 0 } as const;
+
+/**
+ * Convert physics `bodyKey` into a number i.e. `bodyUid`,
+ * for "more efficient" messaging between worker and main thread.
+ *
+ * We also record the correspondence in two dictionaries.
+ * @param {WW.PhysicsBodyKey} bodyKey
+ * @param {PhysicsBijection} lookups
+ * @returns {number}
+ */
+export function addBodyKeyUidRelation(bodyKey: WW.PhysicsBodyKey, lookups: PhysicsBijection) {
+  const bodyUid = hashText(bodyKey);
+  lookups.bodyKeyToUid[bodyKey] = bodyUid;
+  lookups.bodyUidToKey[bodyUid] = bodyKey;
+  return bodyUid;
+}
+
+/**
+ * "nearby" door sensors: one per door.
+ */
+function createDoorSensors() {
+  const state = workerStore.getState();
+
+  return state.gms.map((gm, gmId) =>
+    gm.doors.flatMap((door, doorId) => {
+      const center = gm.matrix.transformPoint(door.center.clone());
+      const angle = gm.matrix.transformAngle(door.angle);
+      const gdKey = helper.getGmDoorKey(gmId, doorId);
+      const nearbyKey = `nearby ${gdKey}` as const;
+
+      const nearbyDef = {
+        width: door.baseRect.width,
+        height: door.baseRect.height + 6 * wallOutset,
+        // height: door.baseRect.height + 2 * wallOutset,
+        angle,
+      };
+      // const insideDef = {
+      //   width: (door.baseRect.width - 2 * wallOutset),
+      //   height: door.baseRect.height,
+      //   angle,
+      // };
+
+      return [
+        createRigidBody({
+          type: RAPIER.RigidBodyType.Fixed,
+          geomDef: {
+            type: "rect",
+            width: nearbyDef.width,
+            height: nearbyDef.height,
+          },
+          position: { x: center.x, y: wallHeight / 2, z: center.y },
+          angle,
+          userData: {
+            bodyKey: nearbyKey,
+            bodyUid: addBodyKeyUidRelation(nearbyKey, state),
+            type: "cuboid",
+            width: nearbyDef.width,
+            depth: nearbyDef.height,
+            angle,
+          },
+        }),
+
+        // 🔔 maybe need "inside door sensor" too
+      ];
+    }),
+  );
+}
 
 export function createRigidBody({
   type,
@@ -75,6 +147,36 @@ function getQuaternionFromAxisAngle(axis: { x: number; y: number; z: number }, a
   };
 }
 
+/**
+ * Format:
+ * - `['npc', npcKey]`
+ * - `['circle', decorKey]`
+ * - `['rect', decorKey]`
+ * - `['nearby', gmDoorKey]`
+ */
+export function parsePhysicsBodyKey(bodyKey: WW.PhysicsBodyKey): WW.PhysicsParsedBodyKey {
+  return bodyKey.split(" ") as WW.PhysicsParsedBodyKey;
+}
+
+export function sendPhysicsDebugData() {
+  const state = workerStore.getState();
+  const { vertices } = state.world.debugRender();
+
+  const physicsDebugData = state.world.bodies.getAll().map((x) => ({
+    parsedKey: parsePhysicsBodyKey((x.userData as WW.PhysicsUserData).bodyKey),
+    userData: x.userData as WW.PhysicsUserData,
+    position: { ...x.translation() },
+    enabled: x.isEnabled(),
+  }));
+
+  // debug({physicsDebugData});
+  self.postMessage({
+    type: "physics-debug-data-response",
+    items: physicsDebugData,
+    lines: Array.from(vertices),
+  } satisfies WW.MsgFromWorker);
+}
+
 export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
   const state = workerStore.getState();
 
@@ -99,9 +201,9 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
     createLayoutInstance(assets.layout[gmKey]!, gmId, transform),
   );
 
-  // 🚧
-  // createDoorSensors();
+  createDoorSensors();
 
+  // 🚧
   // createGmColliders();
 
   // restoreNpcs(msg.npcs);

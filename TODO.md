@@ -101,8 +101,14 @@
 - 🚧 doors have static sensors triggered by npcs
   - ✅ migrate worker request/response types
   - ✅ worker has rapier physics
-  - 🚧 provide projection of assets for physics world creation
+  - ✅ provide assets for physics world creation
     - we prefer not to share ui/world code since hmr problems occur
+  - ✅ create physics world with door sensors and test via `w worker.getPhysicsDebugData`
+    - check devtool log
+  - 🚧 Debug can show physics bodies
+  - npcs have rigid kinematic bodies
+  - npcs send position to worker (batched)
+  - worker sends collision events
 
 - track npc current room
   - on spawn

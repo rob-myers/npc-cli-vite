@@ -35,7 +35,7 @@ export type WorkerStoreState = { gmGeoms: WW.GmGeomForNav[] } & PhysicsState &
     agentRadius: number;
   };
 
-interface PhysicsState {
+type PhysicsState = {
   world: RAPIER.World;
   gms: Geomorph.LayoutInstance[];
   eventQueue: RAPIER.EventQueue;
@@ -43,9 +43,9 @@ interface PhysicsState {
   bodyKeyToCollider: Map<WW.PhysicsBodyKey, RAPIER.Collider>;
   bodyKeyToBody: Map<WW.PhysicsBodyKey, RAPIER.RigidBody>;
   // gmRayCast: { [gmKey in StarShipGeomorphKey]: System };
-}
+};
 
-interface PhysicsBijection {
+export type PhysicsBijection = {
   bodyKeyToUid: { [bodyKey: WW.PhysicsBodyKey]: number };
   bodyUidToKey: { [bodyUid: number]: WW.PhysicsBodyKey };
-}
+};

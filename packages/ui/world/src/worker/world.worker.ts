@@ -2,7 +2,7 @@ import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { debug } from "@npc-cli/util/legacy/generic";
 import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
 import { navForFloorDraw } from "./nav-util";
-import { setupOrRebuildWorld } from "./physics";
+import { sendPhysicsDebugData, setupOrRebuildWorld } from "./physics";
 import { workerStore } from "./worker.store";
 
 self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
@@ -34,7 +34,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       break;
     }
     case "get-physics-debug-data": {
-      // 🚧
+      sendPhysicsDebugData();
       break;
     }
 
