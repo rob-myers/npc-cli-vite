@@ -45,7 +45,7 @@ export type AddUiItemOpts = {
 };
 
 export type OverrideContextMenuOpts = {
-  refObject: React.RefObject<HTMLElement | null>;
+  refObject: React.RefObject<HTMLElement | null> | { getBoundingClientRect(): DOMRect };
   addItem(opts: { uiMeta: UiInstanceMeta }): void;
 };
 
