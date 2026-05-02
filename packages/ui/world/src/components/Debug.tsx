@@ -3,6 +3,7 @@ import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
+import { MemoizedStaticColliders } from "./DebugStaticColliders";
 import { WorldContext } from "./world-context";
 
 export function Debug() {
@@ -11,11 +12,15 @@ export function Debug() {
   const quad = useMemo(() => createXzQuad(), []);
 
   const state = useStateRef(
-    () => ({
+    (): State => ({
       demoNavPath: [] as Vec3[],
       demoNavPathShown: true,
       originShown: false,
       openDoorsOnClick: true,
+
+      physicsLines: new THREE.BufferGeometry(),
+      staticColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
+      staticCollidersShown: false,
 
       computeDemoPath() {
         const [gm] = w.gms;
@@ -29,6 +34,28 @@ export function Debug() {
           ANY_QUERY_FILTER,
         );
         state.demoNavPath = result.success ? result.path.map((p) => p.position) : [];
+      },
+      onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>) {
+        if (e.data.type === "physics-debug-data-response") {
+          // console.log('🔔 RECEIVED', e.data);
+          state.staticColliders = e.data.items;
+          state.physicsLines.dispose();
+          state.physicsLines = new THREE.BufferGeometry();
+          state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
+          w.worker.worker.removeEventListener("message", state.onPhysicsDebugData);
+          state.update();
+        }
+      },
+      showStaticColliders(shouldShow = !state.staticCollidersShown) {
+        state.set({
+          staticCollidersShown: shouldShow,
+          staticColliders: [],
+          physicsLines: new THREE.BufferGeometry(),
+        });
+        if (shouldShow) {
+          w.worker.worker.addEventListener("message", state.onPhysicsDebugData);
+          w.worker.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
+        }
       },
       updateInstances() {
         const inst = instRef.current;
@@ -56,6 +83,8 @@ export function Debug() {
       reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true },
     },
   );
+
+  w.debug = state;
 
   useEffect(() => {
     state.computeDemoPath();
@@ -91,6 +120,15 @@ export function Debug() {
       >
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
+
+      {state.staticColliders.length > 0 && (
+        <group name="static-colliders" visible={state.staticColliders.length > 0}>
+          <lineSegments geometry={state.physicsLines}>
+            <lineBasicMaterial color="green" />
+          </lineSegments>
+          <MemoizedStaticColliders staticColliders={state.staticColliders} />
+        </group>
+      )}
     </>
   );
 }
@@ -98,3 +136,19 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const tmpMat4 = new THREE.Matrix4();
+
+export type State = {
+  demoNavPath: Vec3[];
+  demoNavPathShown: boolean;
+  originShown: boolean;
+  openDoorsOnClick: boolean;
+  physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
+  staticColliders: (WW.PhysicDebugItem & {
+    parsedKey: WW.PhysicsParsedBodyKey;
+  })[];
+  staticCollidersShown: boolean;
+  computeDemoPath(): void;
+  onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
+  showStaticColliders(shouldShow?: boolean): void;
+  updateInstances(): void;
+};

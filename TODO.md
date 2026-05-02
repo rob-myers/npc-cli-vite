@@ -105,8 +105,9 @@
     - we prefer not to share ui/world code since hmr problems occur
   - ✅ create physics world with door sensors and test via `w worker.getPhysicsDebugData`
     - check devtool log
-  - 🚧 Debug can show physics bodies
-  - npcs have rigid kinematic bodies
+  - ✅ Debug can show physics bodies
+    - `w debug.showStaticColliders true`
+  - 🚧 npcs have rigid kinematic bodies
   - npcs send position to worker (batched)
   - worker sends collision events
 
