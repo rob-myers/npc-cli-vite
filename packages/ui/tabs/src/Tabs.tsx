@@ -81,6 +81,36 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           (draft.byId[meta.id].meta as TabsUiMeta).currentTabId = tab.id;
         });
       },
+      onContextMenu(e: React.MouseEvent<HTMLElement>) {
+        e.preventDefault();
+        e.stopPropagation();
+        pause(30);
+
+        const rect = DOMRect.fromRect({ x: e.clientX, y: e.clientY, width: 0, height: 0 });
+        layoutApi.overrideContextMenu({
+          refObject: { getBoundingClientRect: () => rect },
+          addItem({ uiMeta: subUiMeta }) {
+            const result = uiRegistry[subUiMeta.uiKey].schema.safeParse(subUiMeta);
+
+            if (!result.success) {
+              return console.error("Failed to parse tab meta", result.error);
+            }
+            if (result.data.uiKey === "Tabs") {
+              return console.error("Nested Tabs unsupported");
+            }
+
+            result.data.parentId = meta.id;
+            result.data.disabled = uiStoreApi.getUi(meta.id)?.meta?.disabled;
+            uiStoreApi.addUis({ metas: [result.data] });
+
+            uiStore.setState((draft) => {
+              const tabsMeta = draft.byId[meta.id].meta as TabsUiMeta;
+              tabsMeta.items.push(result.data.id);
+              tabsMeta.currentTabId = result.data.id;
+            });
+          },
+        });
+      },
       onDeleteTab(tab: UiInstanceMeta, { preservePortal }: { preservePortal: boolean }) {
         uiStore.setState((draft) => {
           const rootMeta = draft.byId[meta.id].meta as TabsUiMeta;
@@ -180,13 +210,15 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
         state.onDeleteTab({ id: tabId } as UiInstanceMeta, { preservePortal: true });
         uiStoreApi.addUis({
-          metas: [{
-            id: newTabsId,
-            title: "Tabs",
-            uiKey: "Tabs",
-            items: [tabId],
-            currentTabId: tabId,
-          }],
+          metas: [
+            {
+              id: newTabsId,
+              title: "Tabs",
+              uiKey: "Tabs",
+              items: [tabId],
+              currentTabId: tabId,
+            },
+          ],
         });
         uiStore.setState((draft) => {
           const item = draft.byId[tabId];
@@ -212,7 +244,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   return (
     <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
-      <div className="flex justify-between min-h-12 w-full border-b border-outline">
+      <div className="flex justify-between min-h-12 w-full border-b border-outline" onContextMenu={state.onContextMenu}>
         <div
           ref={tabBarRef}
           className={cn(
@@ -245,7 +277,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         <UiInstanceMenu meta={meta} className="self-end" />
       </div>
 
-      <div className="pt-4 px-0 flex-1 size-full overflow-auto">
+      <div
+        className="pt-4 px-0 flex-1 size-full overflow-auto"
+        onContextMenu={tabs.length === 0 ? state.onContextMenu : undefined}
+      >
         {tabs.map((tab) => (
           <div
             key={tab.id}
