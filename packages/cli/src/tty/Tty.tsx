@@ -43,11 +43,9 @@ export function Tty(props: Props) {
       reSource: {} as Record<string, true>,
 
       fitDebounced: debounce(() => {
-        if (baseRef.current) {
-          // 🔔 fix scrollbar sync issue
-          baseRef.current.xterm.forceResize();
-          baseRef.current.fitAddon.fit();
-        }
+        // 🔔 fix scrollbar sync issue
+        baseRef.current?.xterm.forceResize();
+        baseRef.current?.fitAddon.fit();
       }, 30),
       handleExternalMsg({ msg }: ExternalMessage) {
         switch (msg.key) {
@@ -319,7 +317,6 @@ export interface Props extends BaseTabProps {
   onKey?(e: KeyboardEvent): void;
 }
 
-// 🚧 eliminate
 export interface BaseTabProps {
   tabKey: string;
   /**
@@ -344,7 +341,6 @@ export interface BaseTabProps {
   updateTabMeta(meta: TabStoreTabMeta): void;
 }
 
-// 🚧 eliminate
 interface TabStoreTabMeta {
   key: string;
   disabled?: boolean;
