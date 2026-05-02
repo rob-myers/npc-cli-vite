@@ -47,6 +47,7 @@ export function PaneTree({ node }: { node: PaneNode }) {
       {edgeBar(startHidden, "start")}
       {edgeBar(endHidden, "end")}
       <Allotment
+        key={node.id}
         vertical={isVertical}
         defaultSizes={node.sizes}
         snap
