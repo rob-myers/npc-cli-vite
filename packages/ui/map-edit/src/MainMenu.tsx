@@ -1,6 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
-import { cn, type UseStateRef } from "@npc-cli/util";
+import type { UseStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
   CaretRightIcon,
@@ -26,7 +25,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
         </div>
       )}
       <Menu.Root>
-        <Menu.Trigger className={cn(uiClassName, "cursor-pointer")}>
+        <Menu.Trigger className="cursor-pointer">
           <ListIcon className="size-5.5 bg-background text-on-background border border-on-background/50 p-0.5" />
         </Menu.Trigger>
 

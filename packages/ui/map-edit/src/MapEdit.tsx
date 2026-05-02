@@ -11,7 +11,6 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const";
 import type { ThemeName } from "@npc-cli/ui-sdk";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, Mat, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
@@ -1495,17 +1494,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       {isMobile &&
         (state.isAsideCollapsed ? (
           <button
-            className={cn(
-              uiClassName,
-              "md:hidden left-4 z-50 p-2 bg-slate-800 text-white border border-slate-700 rounded-md shadow-lg",
-            )}
+            className="md:hidden left-4 z-50 p-2 bg-slate-800 text-white border border-slate-700 rounded-md shadow-lg"
             onClick={() => state.set({ isAsideCollapsed: !state.isAsideCollapsed })}
           >
             {state.isAsideCollapsed ? <CaretRightIcon className="size-5" /> : <CaretLeftIcon className="size-5" />}
           </button>
         ) : (
           <div
-            className={cn(uiClassName, "md:hidden absolute inset-0 bg-black/50 z-30 transition-opacity")}
+            className="md:hidden absolute inset-0 bg-black/50 z-30 transition-opacity"
             onClick={() => state.set({ isAsideCollapsed: true })}
           />
         ))}
@@ -1524,7 +1520,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       <aside
         className={cn(
-          uiClassName, // avoid losing key focus
           "relative h-full border-r border-slate-800 flex flex-col",
           ...(isMobile
             ? [
@@ -1746,12 +1741,7 @@ export type State = {
 
 function SelectedImageNodeUI({ node, state }: { node: ImageMapNode; state: UseStateRef<State> }) {
   return (
-    <div
-      className={cn(
-        uiClassName,
-        "overflow-auto flex items-center justify-start gap-1 px-2 py-1 border-t border-slate-700/50 text-xs",
-      )}
-    >
+    <div className="overflow-auto flex items-center justify-start gap-1 px-2 py-1 border-t border-slate-700/50 text-xs">
       <label className="flex h-6">
         <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none text-white bg-black">
           dx
@@ -1803,7 +1793,6 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
   return (
     <div
       className={cn(
-        uiClassName,
         "z-2 w-1 absolute left-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
         "bg-blue-500/50",
         "max-md:hidden", // Hide on mobile
@@ -1812,7 +1801,6 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
     >
       <button
         className={cn(
-          uiClassName,
           "px-1 h-5 top-[calc(100%-20px)] cursor-pointer bg-slate-700 text-slate-300",
           "hover:text-slate-300 transition-colors",
         )}

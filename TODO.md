@@ -124,8 +124,7 @@
 - ✅ get demo /allotment page working
 - ✅ /allotment -> /
 - ✅ remove react-grid-layout
-- 🚧 remove uiClassName
-
+- ✅ remove uiClassName
 
 - ensure onchange layout that portals are disposed
 - world context menu?

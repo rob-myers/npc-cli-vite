@@ -1,8 +1,6 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
-import { cn } from "@npc-cli/util";
 import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { Component } from "react";
-import { uiClassName } from "./const";
 
 export class UiErrorBoundary extends Component<
   React.PropsWithChildren<BaseProps>,
@@ -26,7 +24,7 @@ export class UiErrorBoundary extends Component<
         <h2 className="p-4 border-b text-white border-on-background/25 bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-white)_20%,transparent)]">
           Error in <span className="font-mono">{this.props.meta?.uiKey}</span>
         </h2>
-        <div className={cn(uiClassName, "overflow-auto")}>
+        <div className="overflow-auto">
           <pre className="px-4 py-2 whitespace-pre-wrap font-sans text-sm text-red-400 leading-relaxed tracking-wide">
             {this.state.error.message}
           </pre>
@@ -36,10 +34,7 @@ export class UiErrorBoundary extends Component<
         </div>
         <button
           type="button"
-          className={cn(
-            uiClassName,
-            "cursor-pointer p-2 m-4 self-start font-sans text-sm text-white bg-black border rounded",
-          )}
+          className="cursor-pointer p-2 m-4 self-start font-sans text-sm text-white bg-black border rounded"
           onClick={() => this.setState({ error: NoErrorSymbol })}
         >
           Refresh

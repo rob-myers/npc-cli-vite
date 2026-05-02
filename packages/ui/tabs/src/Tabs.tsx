@@ -1,8 +1,5 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import {
-  draggable,
-  dropTargetForElements,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -366,7 +363,6 @@ function TabHeaderItem({
     <div
       ref={state.ref("tabEl")}
       className={cn(
-        // uiClassName,
         "cursor-pointer shrink-0 px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
         !isCurrentTab && "opacity-50 hover:opacity-80",
         state.isDragging && "opacity-30",

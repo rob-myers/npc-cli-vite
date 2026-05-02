@@ -1,4 +1,3 @@
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useMemo } from "react";
@@ -37,7 +36,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width={root.svgWidth}
       height={root.svgHeight}
-      className={cn(uiClassName, "size-full drop-shadow-2xl border border-white/20 overflow-visible")}
+      className="size-full drop-shadow-2xl border border-white/20 overflow-visible"
       onPointerDown={root.onSvgPointerDown}
       onPointerMove={root.onSvgPointerMove}
       onPointerUp={root.onSvgPointerUp}

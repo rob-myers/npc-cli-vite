@@ -1,5 +1,4 @@
 import { Menu } from "@base-ui/react/menu";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -72,7 +71,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className={cn(uiClassName, "absolute top-0 left-0.25 z-9999 touch-none select-none")}
+        className="absolute top-0 left-0.25 z-9999 touch-none select-none"
         style={{ y }}
         drag="y"
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
