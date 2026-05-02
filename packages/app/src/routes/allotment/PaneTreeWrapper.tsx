@@ -70,13 +70,11 @@ export function PaneTreeWrapper({
     <>
       <GlobalMenu />
       <ContextMenu.Root open={state.contextMenuOpen} onOpenChange={state.onChangeContextMenu}>
-        <ContextMenu.Trigger className="size-full">
-          {children}
-        </ContextMenu.Trigger>
+        <ContextMenu.Trigger className="size-full">{children}</ContextMenu.Trigger>
 
         <ContextMenu.Portal>
           <ContextMenu.Positioner
-            className="z-99999"
+            // className="z-99999"
             anchor={state.overrideContextMenuOpts?.refObject ?? undefined}
           >
             <ContextMenu.Popup
@@ -138,4 +136,3 @@ export function PaneTreeWrapper({
     </>
   );
 }
-
