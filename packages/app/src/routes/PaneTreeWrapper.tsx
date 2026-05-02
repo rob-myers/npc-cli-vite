@@ -73,10 +73,7 @@ export function PaneTreeWrapper({
         <ContextMenu.Trigger className="size-full">{children}</ContextMenu.Trigger>
 
         <ContextMenu.Portal>
-          <ContextMenu.Positioner
-            // className="z-99999"
-            anchor={state.overrideContextMenuOpts?.refObject ?? undefined}
-          >
+          <ContextMenu.Positioner className="z-10" anchor={state.overrideContextMenuOpts?.refObject ?? undefined}>
             <ContextMenu.Popup
               className="flex flex-col rounded-md bg-black/80 text-white outline-black"
               data-context-menu-div
@@ -109,7 +106,7 @@ export function PaneTreeWrapper({
 
       <Popover.Root handle={state.contextMenuPopoverHandle}>
         <Popover.Portal>
-          <Popover.Positioner side="right" sideOffset={8}>
+          <Popover.Positioner side="right" sideOffset={8} className="z-20">
             <Popover.Popup className="outline-0">
               {state.contextMenuPopoverUi && (
                 <state.contextMenuPopoverUi.ui
