@@ -1,5 +1,5 @@
-import { Allotment } from "allotment";
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
+import { Allotment } from "allotment";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { PaneNode } from "./pane-service";
@@ -83,7 +83,7 @@ function PaneLeaf({ node }: { node: Extract<PaneNode, { type: "leaf" }> }) {
           ✕
         </button>
       </div>
-      <div className="flex-1 min-h-0 relative overflow-hidden bg-white text-black">
+      <div className="flex-1 min-h-0 relative overflow-hidden bg-background text-on-background">
         {portal && <portals.OutPortal node={portal.portalNode} />}
       </div>
     </div>

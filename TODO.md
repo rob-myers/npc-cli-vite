@@ -119,8 +119,11 @@
 - world.worker creates physics world based on decor
   - static sensors only using rapier
 
-- on drag ui tab onto grid (desktop only) add a parent Tabs
-- support scale ui option (vertical or horizontal)
+- ❌ support scale ui option (vertical or horizontal)
+- ❌ on drag ui tab onto grid (desktop only) add a parent Tabs
+- 🚧 get demo /allotment page working
+- /allotment -> /
+
 
 - ensure onchange layout that portals are disposed
 - world context menu?
