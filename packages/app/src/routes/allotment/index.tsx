@@ -52,16 +52,14 @@ function AllotmentDemo() {
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>
       <PaneTreeWrapper overrideContextMenuRef={overrideContextMenuRef}>
-        <div className="flex flex-col h-screen bg-background">
-          <motion.div
-            className="flex-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: ready ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {ready && <PaneTree node={root} />}
-          </motion.div>
-        </div>
+        <motion.div
+          className="h-screen"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: ready ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {ready && <PaneTree node={root} />}
+        </motion.div>
       </PaneTreeWrapper>
       <UiPortalContainer />
     </UiContext.Provider>
