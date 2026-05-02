@@ -296,8 +296,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       >
         <Stats
           showPanel={0}
-          className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-500! left-[unset]! right-0")}
-          parent={{ current: w.rootEl as HTMLDivElement }}
+          className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
+          parent={{ current: w.rootEl }}
         />
 
         <PerspectiveCamera fov={40} position={[0, 18, 0]} makeDefault zoom={1} />

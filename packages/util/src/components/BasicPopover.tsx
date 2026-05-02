@@ -11,9 +11,7 @@ import { PopoverArrow } from "./PopoverArrow";
 export function BasicPopover(props: BasicPopoverProps) {
   return (
     <Popover.Root handle={props.handle} open={props.open} onOpenChange={props.onOpenChange}>
-      <Popover.Trigger className={cn("cursor-pointer", props.triggerClassName)}>
-        {props.trigger}
-      </Popover.Trigger>
+      <Popover.Trigger className={cn("cursor-pointer", props.triggerClassName)}>{props.trigger}</Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner side={props.side} sideOffset={props.sideOffset}>
           <Popover.Popup className="outline-0" onPointerDown={props.onClick}>
