@@ -1,7 +1,6 @@
 export * from "./components/BasicPopover";
 export * from "./components/PopoverArrow";
 export * from "./components/Spinner";
-export * from "./const";
 export * from "./ExhaustiveError";
 export * from "./geom";
 export * from "./hooks/use-composed-refs";

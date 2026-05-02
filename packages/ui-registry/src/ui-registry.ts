@@ -1,7 +1,6 @@
 import Blog from "@npc-cli/ui__blog";
 import Demo from "@npc-cli/ui__demo";
 import Jsh from "@npc-cli/ui__jsh";
-import Layout from "@npc-cli/ui__layout";
 import MapEdit from "@npc-cli/ui__map-edit";
 import Tabs from "@npc-cli/ui__tabs";
 import Template from "@npc-cli/ui__template";
@@ -16,7 +15,6 @@ import type { UiPackageDef } from "@npc-cli/ui-sdk";
 export type UiRegistry = {
   Blog: typeof Blog;
   Demo: typeof Demo;
-  Layout: typeof Layout;
   Jsh: typeof Jsh;
   MapEdit: typeof MapEdit;
   Tabs: typeof Tabs;
@@ -28,7 +26,6 @@ export const uiRegistryFactory = (): UiRegistry =>
   ({
     Blog,
     Demo,
-    Layout,
     Jsh,
     MapEdit,
     Tabs,

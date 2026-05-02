@@ -1,6 +1,5 @@
 import { Popover } from "@base-ui/react/popover";
 import { type PropsWithChildren, useState } from "react";
-import { preventReactGridDragClassName } from "../const";
 import { cn } from "../service/tailwind-cn";
 import { PopoverArrow } from "./PopoverArrow";
 
@@ -12,7 +11,7 @@ import { PopoverArrow } from "./PopoverArrow";
 export function BasicPopover(props: BasicPopoverProps) {
   return (
     <Popover.Root handle={props.handle} open={props.open} onOpenChange={props.onOpenChange}>
-      <Popover.Trigger className={cn(preventReactGridDragClassName, "cursor-pointer", props.triggerClassName)}>
+      <Popover.Trigger className={cn("cursor-pointer", props.triggerClassName)}>
         {props.trigger}
       </Popover.Trigger>
       <Popover.Portal>

@@ -1,8 +1,7 @@
 import { themeApi, themeStore } from "@npc-cli/theme";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { PreloadGrid } from "../components/PreloadGrid";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -17,11 +16,8 @@ themeStore.subscribe(() => {
 });
 
 function RootComponent() {
-  const { resolvedLocation } = useRouterState();
-
   return (
     <div className="bg-background h-svh">
-      {resolvedLocation?.pathname === "/" && <PreloadGrid />}
       <Outlet />
       <TanStackRouterDevtools position="bottom-right" />
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />

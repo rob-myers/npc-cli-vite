@@ -2,23 +2,14 @@ import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import {
   draggable,
   dropTargetForElements,
-  monitorForElements,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import { preventUnhandled } from "@atlaskit/pragmatic-drag-and-drop/prevent-unhandled";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
-import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
-import {
-  ArrowUpRightIcon,
-  DotsThreeOutlineVerticalIcon,
-  PlayCircleIcon,
-  PlusCircleIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
@@ -51,7 +42,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
               return console.error("Nested Tabs unsupported");
             }
 
-            // portals with parentId not displayed in UiGrid
             result.data.parentId = meta.id;
             // inherit disabled to keep in sync
             result.data.disabled = uiStoreApi.getUi(meta.id)?.meta?.disabled;
@@ -64,16 +54,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             });
           },
         });
-      },
-      onBreakOutTab(tab: UiInstanceMeta) {
-        state.onDeleteTab(tab, { preservePortal: true });
-
-        uiStore.setState((draft) => {
-          const item = draft.byId[tab.id];
-          if (item) item.meta.parentId = undefined;
-        });
-        layoutApi.appendLayoutItems([{ i: tab.id, x: 0, y: 0, w: 2, h: 4, ...layoutApi.getUiGridRect(meta.id) }]);
-        requestAnimationFrame(() => layoutApi.fitItem(tab.id));
       },
       onClickTab(tab: UiInstanceMeta) {
         uiStore.setState((draft) => {
@@ -184,54 +164,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     });
   }, [meta.id]);
 
-  // Dragging a tab outside all Tabs containers breaks it out onto the grid
-  useEffect(() => {
-    return monitorForElements({
-      canMonitor: ({ source }) => source.data.type === "tab" && source.data.tabsMetaId === meta.id,
-      onDragStart() {
-        preventUnhandled.start();
-      },
-      onDrop({ source, location }) {
-        preventUnhandled.stop();
-        // If dropped on any drop target (another Tabs bar or tab item), let those handlers handle it
-        if (location.current.dropTargets.length > 0) return;
-
-        if (isTouchDevice()) return; // cannot drag tab outside on mobile
-
-        // Only break out if dropped directly on the grid, not over another UI
-        const { clientX, clientY } = location.current.input;
-        const elUnder = document.elementFromPoint(clientX, clientY);
-        if (elUnder?.closest(".react-grid-item")) return;
-
-        const tabId = source.data.id as string;
-        const gridPos = layoutApi.screenToGrid(clientX, clientY);
-        const newTabsId = `ui-${crypto.randomUUID()}`;
-
-        state.onDeleteTab({ id: tabId } as UiInstanceMeta, { preservePortal: true });
-        uiStoreApi.addUis({
-          metas: [
-            {
-              id: newTabsId,
-              title: "Tabs",
-              uiKey: "Tabs",
-              items: [tabId],
-              currentTabId: tabId,
-            },
-          ],
-        });
-        uiStore.setState((draft) => {
-          const item = draft.byId[tabId];
-          if (item) {
-            item.meta.parentId = newTabsId;
-            item.everSeen = true;
-          }
-        });
-        layoutApi.appendLayoutItems([{ i: newTabsId, x: gridPos?.x ?? 0, y: gridPos?.y ?? 0, w: 2, h: 4 }]);
-        requestAnimationFrame(() => layoutApi.fitItem(newTabsId));
-      },
-    });
-  }, [meta.id]);
-
   useEffect(() => {
     uiStore.setState((draft) => {
       const item = draft.byId?.[meta.currentTabId ?? ""];
@@ -257,7 +189,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
               tab={tab}
               isCurrentTab={meta.currentTabId === tab.id}
               onClickTab={() => state.onClickTab(tab)}
-              onBreakOutTab={() => state.onBreakOutTab(tab)}
               onDeleteTab={() => state.onDeleteTab(tab, { preservePortal: false })}
               tabsMetaId={meta.id}
               uiStore={uiStore}
@@ -295,7 +226,6 @@ interface TabHeaderItemProps {
   tab: UiInstanceMeta;
   isCurrentTab: boolean;
   onClickTab: () => void;
-  onBreakOutTab: () => void;
   onDeleteTab: () => void;
   tabsMetaId: string;
   uiStore: typeof import("@npc-cli/ui-sdk/ui.store").uiStore;
@@ -306,7 +236,6 @@ function TabHeaderItem({
   tab,
   isCurrentTab,
   onClickTab,
-  onBreakOutTab,
   onDeleteTab,
   tabsMetaId,
   uiStore,
@@ -459,13 +388,6 @@ function TabHeaderItem({
               side="bottom"
             >
               <div className="flex">
-                <button type="button" className="px-0.5 py-1">
-                  <ArrowUpRightIcon
-                    weight="thin"
-                    className="cursor-pointer size-5 bg-black/40 text-white"
-                    onPointerDown={onBreakOutTab}
-                  />
-                </button>
                 <button type="button" className="px-0.5 py-1">
                   <TrashIcon
                     weight="thin"

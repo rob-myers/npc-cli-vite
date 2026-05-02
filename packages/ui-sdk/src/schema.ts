@@ -7,7 +7,6 @@ import type { UiPackageDef } from ".";
 const mirrored: Record<UiRegistryKey, true> = {
   Blog: true,
   Demo: true,
-  Layout: true,
   Jsh: true,
   MapEdit: true,
   Tabs: true,
