@@ -16,7 +16,7 @@ function createTabsUi(): string {
   const uiId = `ui-${crypto.randomUUID()}`;
   const title = uiStoreApi.getDefaultTitle("Tabs");
   uiStoreApi.addUis({
-    metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: false }],
+    metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: true }],
   });
   return uiId;
 }
@@ -35,12 +35,14 @@ export function splitRoot(vertical: boolean) {
 export function splitPane(targetId: number, vertical: boolean) {
   const uiId = createTabsUi();
   const leafId = nextId++;
-  setRoot((prev) => transformNode(prev, targetId, (node) => ({
-    type: "split",
-    id: nextId++,
-    vertical,
-    children: [node, { type: "leaf", id: leafId, uiId }],
-  })));
+  setRoot((prev) =>
+    transformNode(prev, targetId, (node) => ({
+      type: "split",
+      id: nextId++,
+      vertical,
+      children: [node, { type: "leaf", id: leafId, uiId }],
+    })),
+  );
   persistPanesToUi();
 }
 
@@ -67,7 +69,7 @@ export function ensureLeafUis(node: PaneNode) {
       const uiId = `ui-${crypto.randomUUID()}`;
       const title = uiStoreApi.getDefaultTitle("Tabs");
       uiStoreApi.addUis({
-        metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: false }],
+        metas: [{ id: uiId, title, uiKey: "Tabs", items: [], disabled: true }],
       });
       setRoot((prev) => transformNode(prev, node.id, (n) => ({ ...n, uiId })));
     }
@@ -93,29 +95,31 @@ function findNode(node: PaneNode, targetId: number): PaneNode | null {
 }
 
 export function setSizes(splitId: number, sizes: number[]) {
-  setRoot((prev) => transformNode(prev, splitId, (node) =>
-    node.type === "split" ? { ...node, sizes } : node,
-  ));
+  setRoot((prev) => transformNode(prev, splitId, (node) => (node.type === "split" ? { ...node, sizes } : node)));
 }
 
 export function setPaneHidden(splitId: number, childIndex: number, visible: boolean) {
-  setRoot((prev) => transformNode(prev, splitId, (node) => {
-    if (node.type !== "split") return node;
-    const childId = node.children[childIndex]?.id;
-    if (childId === undefined) return node;
-    const hiddenIds = new Set(node.hiddenIds);
-    if (visible) hiddenIds.delete(childId);
-    else hiddenIds.add(childId);
-    return { ...node, hiddenIds: hiddenIds.size > 0 ? [...hiddenIds] : undefined };
-  }));
+  setRoot((prev) =>
+    transformNode(prev, splitId, (node) => {
+      if (node.type !== "split") return node;
+      const childId = node.children[childIndex]?.id;
+      if (childId === undefined) return node;
+      const hiddenIds = new Set(node.hiddenIds);
+      if (visible) hiddenIds.delete(childId);
+      else hiddenIds.add(childId);
+      return { ...node, hiddenIds: hiddenIds.size > 0 ? [...hiddenIds] : undefined };
+    }),
+  );
 }
 
 export function showPane(splitId: number, childId: number) {
-  setRoot((prev) => transformNode(prev, splitId, (node) => {
-    if (node.type !== "split") return node;
-    const hiddenIds = node.hiddenIds?.filter((id) => id !== childId);
-    return { ...node, hiddenIds: hiddenIds?.length ? hiddenIds : undefined };
-  }));
+  setRoot((prev) =>
+    transformNode(prev, splitId, (node) => {
+      if (node.type !== "split") return node;
+      const hiddenIds = node.hiddenIds?.filter((id) => id !== childId);
+      return { ...node, hiddenIds: hiddenIds?.length ? hiddenIds : undefined };
+    }),
+  );
 }
 
 export function transformNode(node: PaneNode, targetId: number, fn: (node: PaneNode) => PaneNode): PaneNode {
@@ -129,9 +133,7 @@ export function transformNode(node: PaneNode, targetId: number, fn: (node: PaneN
 export function removeNode(node: PaneNode, targetId: number): PaneNode | null {
   if (node.id === targetId) return null;
   if (node.type === "split") {
-    const remaining = node.children
-      .map((c) => removeNode(c, targetId))
-      .filter((c): c is PaneNode => c !== null);
+    const remaining = node.children.map((c) => removeNode(c, targetId)).filter((c): c is PaneNode => c !== null);
     if (remaining.length === 0) return null;
     if (remaining.length === 1) {
       const promoted = remaining[0];
