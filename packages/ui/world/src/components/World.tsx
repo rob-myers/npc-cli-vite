@@ -107,6 +107,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npc: null as any,
       worker: null as any,
       e: null as any,
+      debug: null as any,
 
       rootEl: null as any,
 
@@ -326,6 +327,7 @@ export type State = {
   menu: UseStateRef<import("./WorldMenu").State>;
   npc: UseStateRef<import("./NPCs").State>;
   e: UseStateRef<import("./use-world-events").State>;
+  debug: UseStateRef<import("./Debug").State>;
 
   worker: UseStateRef<import("./WorldWorker").State>;
   nav: WW.TiledNavMeshResponse;

@@ -93,3 +93,5 @@ export const MAX_NPCS = 256;
 export const decorGridSize = geomorphGridMeters * 2;
 
 export const gmIdGridDim = 600 * sguToWorldScale;
+
+export const colliderHeight = 1.8;

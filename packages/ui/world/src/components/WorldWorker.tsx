@@ -13,9 +13,6 @@ export default function WorldWorker() {
       worker: null as unknown as Worker,
       reloads: 0,
 
-      getPhysicsDebugData() {
-        state.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
-      },
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
         debug(`🤖 main thread received "${msg?.type}" from worker`);
@@ -123,7 +120,6 @@ export default function WorldWorker() {
 export type State = {
   reloads: number;
   worker: Worker;
-  getPhysicsDebugData(): void;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
   ping(): void;
 };
