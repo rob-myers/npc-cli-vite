@@ -1,5 +1,4 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
@@ -257,7 +256,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <div ref={state.ref("rootEl")} className={cn(uiClassName, "relative size-full")}>
+      <div ref={state.ref("rootEl")} className="relative size-full">
         {state.rootEl && (
           <WorldView
             className={cn(
