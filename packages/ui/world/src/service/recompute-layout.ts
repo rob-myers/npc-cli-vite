@@ -35,7 +35,9 @@ export function recomputeHullSymbolUsingDrafts(
 ): boolean {
   const geomorphKeys: StarShipGeomorphKey[] = [];
   for (const draft of mapEditDrafts) {
-    if (draft.type !== "symbol") continue;
+    if (draft.type !== "symbol" || !isHullSymbolImageKey(draft.key)) {
+      continue;
+    }
     const symbol = createSymbolFromSavedFile(draft);
     assets.symbol[symbol.key] = symbol;
     geomorphKeys.push(symbol.key as StarShipGeomorphKey);
