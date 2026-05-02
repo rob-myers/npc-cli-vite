@@ -200,7 +200,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       </div>
 
       <div
-        className="pt-4 px-0 flex-1 size-full overflow-auto"
+        className="pt-0 px-0 flex-1 size-full overflow-auto"
         onContextMenu={tabs.length === 0 ? state.onContextMenu : undefined}
       >
         {tabs.map((tab) => (
