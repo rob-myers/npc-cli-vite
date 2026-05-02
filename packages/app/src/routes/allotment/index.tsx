@@ -6,11 +6,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import "allotment/dist/style.css";
 import { motion } from "motion/react";
 import { useRef } from "react";
+import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
 import { UiPortalContainer } from "../../components/UiPortalContainer";
 import { PaneTree } from "./PaneTree";
 import { PaneTreeWrapper } from "./PaneTreeWrapper";
-import { ensureLeafUis, initNextId } from "./pane-service";
+import { ensureLeafUis, initNextId, persistPanesToUi } from "./pane-service";
 
 export const Route = createFileRoute("/allotment/")({
   component: AllotmentDemo,
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/allotment/")({
 function AllotmentDemo() {
   const theme = useThemeName();
   const ready = useStore(uiStore, (s) => s.ready);
-  const root = useStore(uiStore, (s) => s.persistedPanes);
+  const root = useStore(uiStore, (s) => s.persistedPanes.root);
 
   initNextId(root);
 
@@ -41,8 +42,12 @@ function AllotmentDemo() {
   const initialized = useRef(false);
   if (ready && !initialized.current) {
     initialized.current = true;
+    const { toUi } = uiStore.getState().persistedPanes;
+    uiStoreApi.addUis({ metas: Object.values(toUi) });
     ensureLeafUis(root);
   }
+
+  useBeforeunload(() => persistPanesToUi());
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>

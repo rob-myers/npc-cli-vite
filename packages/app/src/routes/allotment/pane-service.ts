@@ -1,3 +1,4 @@
+import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 
 export type PaneNode =
@@ -22,7 +23,7 @@ function createTabsUi(): string {
 
 function setRoot(fn: (prev: PaneNode) => PaneNode) {
   uiStore.setState((draft) => {
-    draft.persistedPanes = fn(draft.persistedPanes);
+    draft.persistedPanes.root = fn(draft.persistedPanes.root);
   });
 }
 
@@ -39,7 +40,7 @@ export function splitPane(targetId: number, vertical: boolean) {
 
 export function closePane(targetId: number) {
   const { persistedPanes } = uiStore.getState();
-  const leaf = findNode(persistedPanes, targetId);
+  const leaf = findNode(persistedPanes.root, targetId);
   if (leaf?.type === "leaf" && leaf.uiId) {
     uiStoreApi.removeItem(leaf.uiId);
   }
@@ -126,4 +127,26 @@ export function removeNode(node: PaneNode, targetId: number): PaneNode | null {
     return { ...node, children: remaining };
   }
   return node;
+}
+
+export function persistPanesToUi() {
+  uiStore.setState((draft) => {
+    const toUi: Record<string, UiInstanceMeta> = {};
+    function collect(node: PaneNode) {
+      if (node.type === "leaf" && node.uiId) {
+        const entry = draft.byId[node.uiId];
+        if (entry) {
+          toUi[node.uiId] = entry.meta;
+          for (const subId of entry.meta.items ?? []) {
+            const sub = draft.byId[subId];
+            if (sub) toUi[subId] = sub.meta;
+          }
+        }
+      } else if (node.type === "split") {
+        node.children.forEach(collect);
+      }
+    }
+    collect(draft.persistedPanes.root);
+    draft.persistedPanes.toUi = toUi;
+  });
 }
