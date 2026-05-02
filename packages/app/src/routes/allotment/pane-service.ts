@@ -41,13 +41,16 @@ export function splitPane(targetId: number, vertical: boolean) {
     vertical,
     children: [node, { type: "leaf", id: leafId, uiId }],
   })));
+  persistPanesToUi();
 }
 
 export function closePane(targetId: number) {
   const { persistedPanes } = uiStore.getState();
-  const leaf = findNode(persistedPanes.root, targetId);
-  if (leaf?.type === "leaf" && leaf.uiId) {
-    uiStoreApi.removeItem(leaf.uiId);
+  const target = findNode(persistedPanes.root, targetId);
+  if (target) {
+    for (const uiId of collectLeafUiIds(target)) {
+      uiStoreApi.removeItem(uiId);
+    }
   }
   const fallbackUiId = createTabsUi();
   const fallbackId = nextId++;
@@ -55,6 +58,7 @@ export function closePane(targetId: number) {
     const result = removeNode(prev, targetId);
     return result ?? { type: "leaf", id: fallbackId, uiId: fallbackUiId };
   });
+  persistPanesToUi();
 }
 
 export function ensureLeafUis(node: PaneNode) {
@@ -70,6 +74,11 @@ export function ensureLeafUis(node: PaneNode) {
   } else {
     node.children.forEach(ensureLeafUis);
   }
+}
+
+function collectLeafUiIds(node: PaneNode): string[] {
+  if (node.type === "leaf") return node.uiId ? [node.uiId] : [];
+  return node.children.flatMap(collectLeafUiIds);
 }
 
 function findNode(node: PaneNode, targetId: number): PaneNode | null {
