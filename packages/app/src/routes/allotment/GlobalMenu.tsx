@@ -1,9 +1,10 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
 import { useStateRef } from "@npc-cli/util";
-import { ArrowsInIcon, GearIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
+import { ArrowsInIcon, GearIcon, MoonIcon, SquareHalfBottomIcon, SquareHalfIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useState } from "react";
+import { splitRoot } from "./pane-service";
 
 const storageKey = "allotment-menu-y";
 const minY = 120;
@@ -81,6 +82,20 @@ export function GlobalMenu() {
                 {menu.theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
                 {menu.theme === "dark" ? "Light" : "Dark"}
               </Menu.Item>
+              <div className="flex justify-between">
+                <Menu.Item
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  onClick={() => splitRoot(false)}
+                >
+                  <SquareHalfIcon className="size-4" />
+                </Menu.Item>
+                <Menu.Item
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  onClick={() => splitRoot(true)}
+                >
+                  <SquareHalfBottomIcon className="size-4" />
+                </Menu.Item>
+              </div>
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
