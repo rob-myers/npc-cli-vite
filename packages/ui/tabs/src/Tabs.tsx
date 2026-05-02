@@ -7,7 +7,6 @@ import {
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import { preventUnhandled } from "@atlaskit/pragmatic-drag-and-drop/prevent-unhandled";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
@@ -265,12 +264,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
               uiStoreApi={uiStoreApi}
             />
           ))}
-          <button
-            ref={newTabButtonRef}
-            type="button"
-            className={cn(uiClassName, "cursor-pointer p-2")}
-            onClick={state.onAddNewTab}
-          >
+          <button ref={newTabButtonRef} type="button" className="cursor-pointer p-2" onClick={state.onAddNewTab}>
             <PlusCircleIcon className="size-6" weight="duotone" />
           </button>
         </div>
@@ -443,7 +437,7 @@ function TabHeaderItem({
     <div
       ref={state.ref("tabEl")}
       className={cn(
-        uiClassName,
+        // uiClassName,
         "cursor-pointer shrink-0 px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
         !isCurrentTab && "opacity-50 hover:opacity-80",
         state.isDragging && "opacity-30",

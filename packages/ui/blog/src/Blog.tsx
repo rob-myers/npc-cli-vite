@@ -1,4 +1,3 @@
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn } from "@npc-cli/util";
 import { useContext } from "react";
@@ -8,7 +7,7 @@ export default function Blog() {
   const { theme } = useContext(UiContext);
   return (
     <div className={cn(theme === "dark" && "prose-invert", "prose h-full max-w-[unset] leading-[1.4]")}>
-      <div className={cn(uiClassName, "overflow-auto p-4 size-full")}>
+      <div className="overflow-auto p-4 size-full">
         <TestMdx />
       </div>
     </div>
