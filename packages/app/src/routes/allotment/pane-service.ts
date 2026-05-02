@@ -118,7 +118,11 @@ export function removeNode(node: PaneNode, targetId: number): PaneNode | null {
       .map((c) => removeNode(c, targetId))
       .filter((c): c is PaneNode => c !== null);
     if (remaining.length === 0) return null;
-    if (remaining.length === 1) return remaining[0];
+    if (remaining.length === 1) {
+      const promoted = remaining[0];
+      if (promoted.type === "split") return { ...promoted, sizes: undefined };
+      return promoted;
+    }
     return { ...node, children: remaining };
   }
   return node;
