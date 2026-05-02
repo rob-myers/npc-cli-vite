@@ -16,6 +16,7 @@ export function DebugStaticColliders({
     if (userData.type === "cylinder") {
       return (
         <mesh
+          key={i}
           geometry={cylinderGeometry}
           position={[position.x, colliderHeight / 2, position.z]}
           scale={[userData.radius, colliderHeight, userData.radius]}
@@ -29,6 +30,7 @@ export function DebugStaticColliders({
     if (userData.type === "cuboid") {
       return (
         <mesh
+          key={i}
           geometry={boxGeometry} // fix z-fighting
           position={[position.x, colliderHeight / 2 + i * 0.0001, position.z]}
           scale={[userData.width, colliderHeight, userData.depth]}

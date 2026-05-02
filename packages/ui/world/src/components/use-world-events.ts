@@ -18,6 +18,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         });
       },
       onEvent(e) {
+        if ("npcKey" in e) {
+          return state.onNpcEvent(e);
+        }
         switch (e.key) {
           case "door-open":
             state.doorOpen[e.gdKey] = true;
@@ -25,6 +28,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-closed":
             state.doorOpen[e.gdKey] = false;
             break;
+        }
+      },
+      onNpcEvent(e) {
+        const npc = w.npc.npc[e.npcKey];
+        switch (e.key) {
+          case "spawned": {
+            const { x, y, z } = npc.position;
+            w.worker.worker.postMessage({
+              type: "add-physics-npcs",
+              npcs: [{ npcKey: e.npcKey, position: { x, y, z } }],
+            } satisfies WW.MsgToWorker);
+            break;
+          }
         }
       },
     }),
@@ -49,4 +65,5 @@ export type State = {
     keys?: { [key: Geomorph.GmDoorKey]: boolean },
   ): AStarSearchResult<Graph.GmRoomGraphNode>;
   onEvent(e: JshCli.Event): void;
+  onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
 };

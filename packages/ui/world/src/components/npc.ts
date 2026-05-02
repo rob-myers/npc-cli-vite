@@ -4,6 +4,7 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -11,6 +12,8 @@ const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 export class Npc {
   key: string;
   pickId: number;
+  /** Physics body */
+  bodyUid: number;
   get skinIndex() {
     return this.skinIndexUniform.value;
   }
@@ -78,6 +81,8 @@ export class Npc {
         return true;
       },
     };
+
+    this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
   }
 
   changeSkin(keyOrIndex: string | number) {
