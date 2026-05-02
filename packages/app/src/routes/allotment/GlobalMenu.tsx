@@ -32,10 +32,7 @@ export function GlobalMenu() {
         menu.dragged = false;
         return;
       }
-      if (!open) {
-        menu.menuOpen = false;
-        menu.update();
-      }
+      menu.set({ menuOpen: open });
     },
   }));
 
@@ -57,17 +54,7 @@ export function GlobalMenu() {
       onDragEnd={menu.onDragEnd}
     >
       <Menu.Root open={menu.menuOpen} onOpenChange={menu.onMenuOpenChange}>
-        <Menu.Trigger
-          className="cursor-pointer"
-          render={<span />}
-          onPointerUp={() => {
-            if (!menu.dragged) {
-              menu.menuOpen = !menu.menuOpen;
-              menu.update();
-            }
-            menu.dragged = false;
-          }}
-        >
+        <Menu.Trigger className="cursor-pointer" render={<span />}>
           <GearIcon className="size-5" weight="bold" />
         </Menu.Trigger>
 
