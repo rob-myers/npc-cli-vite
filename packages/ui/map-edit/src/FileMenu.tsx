@@ -2,7 +2,6 @@ import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
 import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { defaultMapKey } from "@npc-cli/ui__world/const";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { FloppyDiskIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
@@ -22,10 +21,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
     <div className="flex items-center gap-0.5 min-w-0">
       <Menu.Root>
         <Menu.Trigger
-          className={cn(
-            uiClassName,
-            "text-on-background px-1 py-0.5 text-xs rounded hover:bg-slate-600 cursor-pointer",
-          )}
+          className="text-on-background px-1 py-0.5 text-xs rounded hover:bg-slate-600 cursor-pointer"
           title="Change folder"
         >
           {type === "map" ? <MapTrifoldIcon className="size-4" /> : <StampIcon className="size-4" />}
@@ -98,7 +94,6 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
     >
       <Select.Trigger
         className={cn(
-          uiClassName,
           "flex flex-1 gap-1 items-center text-sm truncate cursor-pointer hover:text-on-background min-w-0",
           "text-on-background/80 rounded-xs",
           state.isDirty && "italic",
@@ -159,7 +154,6 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
     >
       <Select.Trigger
         className={cn(
-          uiClassName,
           "flex flex-1 gap-1 items-center text-sm text-on-background/80 truncate cursor-pointer hover:text-on-background min-w-0",
           state.isDirty && "italic",
         )}

@@ -5,7 +5,6 @@ import {
   type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import {
   FolderIcon,
@@ -92,7 +91,6 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
       <div
         ref={state.ref("rowEl")}
         className={cn(
-          uiClassName,
           "relative grid grid-cols-[minmax(auto,1.5rem)_auto_auto] items-center cursor-pointer hover:brightness-125",
           "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",

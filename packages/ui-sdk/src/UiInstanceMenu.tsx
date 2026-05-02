@@ -1,12 +1,7 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn } from "@npc-cli/util";
-import {
-  DotsThreeOutlineVerticalIcon,
-  PlayCircleIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
-import { uiClassName } from "./const";
 import { UiContext } from "./UiContext";
 
 export function UiInstanceMenu({ className, meta }: { className?: string; meta: UiInstanceMeta }) {
@@ -23,7 +18,7 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
         <button
           type="button"
           data-item-id={meta.id}
-          className={cn(uiClassName, "cursor-pointer")}
+          className="cursor-pointer"
           onClick={() => {
             uiStoreApi.setUiMeta(meta.id, (draft) => (draft.disabled = !draft.disabled));
           }}
@@ -49,7 +44,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
     <BasicPopover
       side="bottom"
       sideOffset={4}
-      triggerClassName={cn(uiClassName, "cursor-pointer")}
+      triggerClassName="cursor-pointer"
       className="flex flex-col gap-0 p-0 bg-slate-800 text-slate-200"
       arrowClassName="fill-slate-800"
       trigger={

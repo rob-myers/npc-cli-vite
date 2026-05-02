@@ -1,5 +1,4 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
@@ -68,10 +67,9 @@ export function PathPickerModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            uiClassName,
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
             "max-w-3xl w-[90vw] max-h-[80vh] flex flex-col",

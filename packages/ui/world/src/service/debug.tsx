@@ -1,5 +1,4 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
@@ -15,10 +14,9 @@ export function RoomHitModal({ open, onOpenChange }: DebugModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            uiClassName,
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
             "max-w-3xl w-[90vw] max-h-[80vh] flex flex-col",
@@ -106,9 +104,7 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
 
   const roomLabels = useMemo(() => {
     if (!showRoom) return [];
-    const nodes = w.gmRoomGraph.nodesArray.filter(
-      (n): n is Graph.GmRoomGraphNodeRoom => n.type === "room",
-    );
+    const nodes = w.gmRoomGraph.nodesArray.filter((n): n is Graph.GmRoomGraphNodeRoom => n.type === "room");
     if (!nodes.length) return [];
     const gap = nodeRadius * 1.5;
     const placed: { x: number; y: number; w: number; h: number }[] = [];
@@ -147,10 +143,9 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            uiClassName,
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
             "max-w-4xl w-[90vw] h-[85vh] flex flex-col touch-none",
@@ -247,10 +242,12 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
                     if (!door) return null;
                     const e0 = gm.matrix.transformPoint(door.entries[0].clone());
                     const e1 = gm.matrix.transformPoint(door.entries[1].clone());
-                    const dx = e1.x - e0.x, dy = e1.y - e0.y;
+                    const dx = e1.x - e0.x,
+                      dy = e1.y - e0.y;
                     const len = Math.sqrt(dx * dx + dy * dy) || 1;
                     const ext = 0.5;
-                    const ux = dx / len * ext, uy = dy / len * ext;
+                    const ux = (dx / len) * ext,
+                      uy = (dy / len) * ext;
                     return (
                       <line
                         key={node.id}
@@ -334,8 +331,9 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
               {/* Door/window node labels — topmost layer */}
               {showRoom &&
                 w.gmRoomGraph.nodesArray
-                  .filter((n): n is Graph.GmRoomGraphNodeDoor | Graph.GmRoomGraphNodeWindow =>
-                    n.type === "door" || n.type === "window",
+                  .filter(
+                    (n): n is Graph.GmRoomGraphNodeDoor | Graph.GmRoomGraphNodeWindow =>
+                      n.type === "door" || n.type === "window",
                   )
                   .map((node) => {
                     const edgeFontSize = fontSize * 0.4;
@@ -375,10 +373,9 @@ export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className={cn(uiClassName, "fixed inset-0 z-50 bg-black/60")} />
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            uiClassName,
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
             "max-w-4xl w-[90vw] max-h-[80vh] flex flex-col",
@@ -565,7 +562,18 @@ function useSvgZoom(bounds: { minX: number; minY: number; width: number; height:
     setPan({ x: 0, y: 0 });
   }, []);
 
-  return { viewBox, onWheel, onPointerDown, onPointerMove, onPointerUp, onTouchStart, onTouchMove, onTouchEnd, reset, zoom };
+  return {
+    viewBox,
+    onWheel,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    reset,
+    zoom,
+  };
 }
 
 function octantCandidates(cx: number, cy: number, tw: number, th: number, gap: number) {
