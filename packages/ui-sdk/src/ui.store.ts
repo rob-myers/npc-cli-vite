@@ -95,7 +95,6 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
             byId: {},
             ready: false,
             persistedItemToRect: {},
-            // 🚧 set
             persistedLayout: getDefaultLayout(),
             persistedPanes: getDefaultPanes(),
           }),
@@ -110,7 +109,14 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
             persistedPanes,
           }),
           onRehydrateStorage: () => (state) => {
-            if (state) state.ready = true;
+            if (state) {
+              const pp = state.persistedPanes as any;
+              if (!pp?.root || !pp?.toUi) {
+                console.warn("persistedPanes invalid, reverting to default:", pp);
+                state.persistedPanes = getDefaultPanes();
+              }
+              state.ready = true;
+            }
           },
         },
       ),
@@ -139,7 +145,7 @@ export type UiStoreState = {
   };
   /** Init only */
   persistedLayout: UiGridLayout;
-  persistedPanes: PersistedPaneNode;
+  persistedPanes: PersistedPanesLayout;
 };
 
 export type UiStoreByIdEntry = {
@@ -156,6 +162,11 @@ export type UiGridLayout = {
   toUi: { [layoutKey: string]: UiInstanceMeta };
 };
 
+export type PersistedPanesLayout = {
+  root: PersistedPaneNode;
+  toUi: { [uiId: string]: UiInstanceMeta };
+};
+
 export type PersistedPaneNode =
   | { type: "leaf"; id: number; uiId?: string }
   | {
@@ -167,8 +178,25 @@ export type PersistedPaneNode =
       hiddenIds?: number[];
     };
 
-function getDefaultPanes(): PersistedPaneNode {
-  return { type: "leaf", id: 0 };
+export function getDefaultPanes(): PersistedPanesLayout {
+  const uid = () => `ui-${crypto.randomUUID()}`;
+  const tabs0Id = uid();
+  const tabs1Id = uid();
+  return {
+    root: {
+      type: "split",
+      id: 0,
+      vertical: false,
+      children: [
+        { type: "leaf", id: 1, uiId: tabs0Id },
+        { type: "leaf", id: 2, uiId: tabs1Id },
+      ],
+    },
+    toUi: {
+      [tabs0Id]: { id: tabs0Id, title: "tabs-0", uiKey: "Tabs", items: [] },
+      [tabs1Id]: { id: tabs1Id, title: "tabs-1", uiKey: "Tabs", items: [] },
+    },
+  };
 }
 
 function getDefaultLayout(): UiGridLayout {
