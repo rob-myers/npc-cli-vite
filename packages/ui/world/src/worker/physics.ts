@@ -1,32 +1,16 @@
 import RAPIER, { ColliderDesc } from "@dimforge/rapier3d-compat";
-import { hashText } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { AssetsSchema } from "../assets.schema";
 import { createLayoutInstance } from "../service/geomorph";
 import { helper } from "../service/helper";
-import { type PhysicsBijection, workerStore } from "./worker.store";
+import { addBodyKeyUidRelation, parsePhysicsBodyKey } from "../service/physics-bijection";
+import { type WorkerStoreState, workerStore } from "./worker.store";
 
-const wallHeight: typeof import("../const")["wallHeight"] = 2;
+export const wallHeight: typeof import("../const")["wallHeight"] = 2;
 const geomorphGridMeters: typeof import("../const")["geomorphGridMeters"] = 1.5;
 const sguToWorldScale = (1 / 60) * geomorphGridMeters;
 const wallOutset = 10 * sguToWorldScale;
 const unitYAxis = { x: 0, y: 1, z: 0 } as const;
-
-/**
- * Convert physics `bodyKey` into a number i.e. `bodyUid`,
- * for "more efficient" messaging between worker and main thread.
- *
- * We also record the correspondence in two dictionaries.
- * @param {WW.PhysicsBodyKey} bodyKey
- * @param {PhysicsBijection} lookups
- * @returns {number}
- */
-export function addBodyKeyUidRelation(bodyKey: WW.PhysicsBodyKey, lookups: PhysicsBijection) {
-  const bodyUid = hashText(bodyKey);
-  lookups.bodyKeyToUid[bodyKey] = bodyUid;
-  lookups.bodyUidToKey[bodyUid] = bodyKey;
-  return bodyUid;
-}
 
 /**
  * "nearby" door sensors: one per door.
@@ -148,17 +132,6 @@ function getQuaternionFromAxisAngle(axis: { x: number; y: number; z: number }, a
   };
 }
 
-/**
- * Format:
- * - `['npc', npcKey]`
- * - `['circle', decorKey]`
- * - `['rect', decorKey]`
- * - `['nearby', gmDoorKey]`
- */
-export function parsePhysicsBodyKey(bodyKey: WW.PhysicsBodyKey): WW.PhysicsParsedBodyKey {
-  return bodyKey.split(" ") as WW.PhysicsParsedBodyKey;
-}
-
 export function sendPhysicsDebugData() {
   const state = workerStore.getState();
   const { vertices } = state.world.debugRender();
@@ -211,4 +184,33 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
 
   // // fire initial collisions
   // stepWorld();
+}
+
+export function stepWorld(state: WorkerStoreState) {
+  state.world.step(state.eventQueue);
+
+  const collisionStart = [] as WW.NpcCollisionResponse["collisionStart"];
+  const collisionEnd = [] as WW.NpcCollisionResponse["collisionEnd"];
+  let collided = false;
+
+  state.eventQueue.drainCollisionEvents((handle1, handle2, started) => {
+    collided = true;
+    const bodyKey1 = state.bodyHandleToKey.get(handle1) as WW.PhysicsBodyKey;
+    const bodyKey2 = state.bodyHandleToKey.get(handle2) as WW.PhysicsBodyKey;
+
+    // 🔔 currently only have npcs and door inside/nearby sensors
+    (started === true ? collisionStart : collisionEnd).push(
+      bodyKey1.startsWith("npc")
+        ? { npcKey: bodyKey1.slice("npc ".length), otherKey: bodyKey2 }
+        : { npcKey: bodyKey2.slice("npc ".length), otherKey: bodyKey1 },
+    );
+  });
+
+  if ((collided as boolean) === true) {
+    self.postMessage({
+      type: "npc-collisions",
+      collisionStart,
+      collisionEnd,
+    } satisfies WW.MsgFromWorker);
+  }
 }

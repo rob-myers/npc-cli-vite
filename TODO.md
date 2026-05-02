@@ -107,9 +107,10 @@
     - check devtool log
   - ✅ Debug can show physics bodies
     - `w debug.showStaticColliders true`
-  - 🚧 npcs have rigid kinematic bodies
-  - npcs send position to worker (batched)
-  - worker sends collision events
+  - ✅ npcs have rigid kinematic bodies
+  - ✅ npcs send position to worker (batched)
+  - ✅ worker sends npc collision events
+  - 🚧 clean up
 
 - track npc current room
   - on spawn

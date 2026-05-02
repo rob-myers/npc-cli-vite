@@ -1,8 +1,10 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { debug } from "@npc-cli/util/legacy/generic";
+import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import z from "zod";
 import { AssetsSchema } from "../assets.schema";
+import { helper } from "../service/helper";
+import { parsePhysicsBodyKey } from "../service/physics-bijection";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -10,17 +12,45 @@ export default function WorldWorker() {
 
   const state = useStateRef(
     (): State => ({
-      worker: null as unknown as Worker,
+      physicsRebuilds: 0,
       reloads: 0,
+      worker: null as unknown as Worker,
 
+      handlePhysicsCollision(npcKey, otherKey, isEnter) {
+        const [type, subKey] = parsePhysicsBodyKey(otherKey);
+        if (type === "npc") {
+          return warn(`${"handlePhysicsCollision"}: unexpected otherKey: "${otherKey}"`);
+        }
+        w.events.next({
+          key: isEnter === true ? "enter-collider" : "exit-collider",
+          npcKey,
+          ...(type === "nearby" ? { type, ...helper.getGmDoorId(subKey) } : { type, decorKey: subKey }),
+        });
+      },
       handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
         debug(`🤖 main thread received "${msg?.type}" from worker`);
 
         switch (msg.type) {
+          case "npc-collisions": {
+            msg.collisionEnd.forEach(({ npcKey, otherKey }) => {
+              if (otherKey === undefined) {
+                warn(`${npcKey}: ${"handlePhysicsWorkerMessage"} collider removed whilst colliding`);
+                return;
+              }
+              state.handlePhysicsCollision(npcKey, otherKey, false);
+            });
+            msg.collisionStart.forEach(({ npcKey, otherKey }) => {
+              state.handlePhysicsCollision(npcKey, otherKey, true);
+            });
+            break;
+          }
+          case "physics-debug-data-response": {
+            debug("physics debug data:", msg);
+            break;
+          }
           case "pong":
             break;
-
           case "tiled-navmesh-response": {
             w.nav = { ...msg };
             w.navPending = false;
@@ -28,22 +58,14 @@ export default function WorldWorker() {
             w.update();
             break;
           }
-
           case "worker-hot-module-reload": {
             state.set({ reloads: state.reloads + 1 });
             break;
           }
-
           case "world-setup-response": {
-            // 🚧
+            state.physicsRebuilds++;
             break;
           }
-
-          case "physics-debug-data-response": {
-            debug("physics debug data:", msg);
-            break;
-          }
-
           default:
             throw new ExhaustiveError(msg);
         }
@@ -118,8 +140,10 @@ export default function WorldWorker() {
 }
 
 export type State = {
+  physicsRebuilds: number;
   reloads: number;
   worker: Worker;
+  handlePhysicsCollision(npcKey: string, otherKey: WW.PhysicsBodyKey, isEnter?: boolean): void;
   handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
   ping(): void;
 };

@@ -33,6 +33,7 @@ import {
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
+import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -53,6 +54,7 @@ export default function NPCs() {
       byPickId: {} as Record<number, Npc>,
       nextPickId: 0,
       npc: {},
+      physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
 
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
@@ -159,6 +161,7 @@ export default function NPCs() {
       },
       onTick(delta) {
         crowdApi.update(state.crowd, w.nav.navMesh, delta);
+        const { positions } = state.physics;
 
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
@@ -197,7 +200,15 @@ export default function NPCs() {
               y: npc.position.z + vz,
             });
           }
+
+          const { x, y, z } = npc.position;
+          positions.push(npc.bodyUid, x, y, z);
         }
+
+        // Float32Array caused issues: decode failed
+        const positions64 = new Float64Array(positions);
+        w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
+        positions.length = 0;
       },
       placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat) {
         const groundPoint = parseGroundPoint(at);
@@ -293,6 +304,8 @@ export default function NPCs() {
 
         state.update();
         await new Promise<void>((resolve) => (npc.resolve = resolve));
+
+        w.events.next({ key: "spawned", npcKey });
       },
     }),
   );
@@ -341,17 +354,18 @@ export default function NPCs() {
 }
 
 export type State = {
-  byPickId: Record<number, Npc>;
   clips: { idle: THREE.AnimationClip; walk: THREE.AnimationClip; run: THREE.AnimationClip };
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
-  nextPickId: number;
   skin: {
     manifest: AssetsSkinManifestType;
     entries: AssetsSkinType[];
   };
 
+  byPickId: Record<number, Npc>;
+  nextPickId: number;
   npc: Record<string, Npc>;
+  physics: { positions: number[] } & PhysicsBijection;
 
   createMaterials(
     pickId: number,

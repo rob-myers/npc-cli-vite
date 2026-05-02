@@ -1,16 +1,20 @@
 declare namespace JshCli {
   type Event =
     | { key: "disabled" }
-    | { key: "enabled" }
-    | { key: "nav-updated" }
-    | PickEvent
     | ({ key: "door-open" | "door-closed" | "door-opening" | "door-closing"; open: boolean } & ReturnType<
         import("./components/Doors").State["decodeInstanceId"]
-      >);
+      >)
+    | { key: "enabled" }
+    | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
+    | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
+    | { key: "nav-updated" }
+    | PickEvent
+    | { key: "spawned"; npcKey: string };
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;
   type PointAnyFormat = import("./service/geometry").PointAnyFormat;
+  type BaseColliderEvent = { type: "circle" | "rect"; decorKey: string } | ({ type: "nearby" } & Geomorph.GmDoorId);
 
   type PickEvent = {
     key: "picked";

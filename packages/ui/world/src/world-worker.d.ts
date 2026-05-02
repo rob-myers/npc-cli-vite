@@ -9,15 +9,38 @@ declare namespace WW {
     | PhysicsMsgToWorker;
 
   type PhysicsMsgToWorker =
-    // | AddNPCs
-    // | AddColliders
+    | {
+        type: "add-physics-npcs";
+        npcs: NpcDef[];
+      }
+    | {
+        type: "add-physics-colliders";
+        /** Colliders always on ground hence 2D position suffices */
+        colliders: (Geom.VectJson &
+          PhysicsBodyGeom & {
+            /** For gm decor this is a `decorKey`. */
+            colliderKey: string;
+            /** Only applicable when `type` is `"rect"` */
+            angle?: number;
+            userData?: Record<string, any>;
+          })[];
+      }
     | {
         type: "get-physics-debug-data";
       }
-    // | GetRaycast
-    // | RemoveBodies
-    // | RemoveColliders
-    // | SendNpcPositions
+    | {
+        type: "remove-physics-bodies";
+        bodyKeys: WW.PhysicsBodyKey[];
+      }
+    | {
+        type: "remove-physics-colliders";
+        colliders: { type: "circle" | "rect"; colliderKey: string }[];
+      }
+    | {
+        // 🔔 Float32Array caused issues i.e. decode failed
+        type: "send-npc-positions";
+        positions: Float64Array;
+      }
     | {
         type: "setup-physics";
         mapKey: string;
@@ -25,7 +48,12 @@ declare namespace WW {
         assets: import("./assets.schema").AssetsEncodedType;
       };
 
+  type AddPhysicsColliders = Extract<PhysicsMsgToWorker, { type: "add-physics-colliders" }>;
+  type AddPhysicsNPCs = Extract<PhysicsMsgToWorker, { type: "add-physics-npcs" }>;
   type GetPhysicsDebugData = Extract<PhysicsMsgToWorker, { type: "get-physics-debug-data" }>;
+  type RemovePhysicsBodies = Extract<PhysicsMsgToWorker, { type: "remove-physics-bodies" }>;
+  type RemovePhysicsColliders = Extract<PhysicsMsgToWorker, { type: "remove-physics-colliders" }>;
+  type SendNpcPhysicsPositions = Extract<PhysicsMsgToWorker, { type: "send-npc-positions" }>;
   type SetupPhysicsWorld = Extract<PhysicsMsgToWorker, { type: "setup-physics" }>;
 
   type PhysicsBodyGeom =
@@ -61,7 +89,11 @@ declare namespace WW {
     | {
         type: "world-setup-response";
       }
-    // | NpcCollisionResponse
+    | {
+        type: "npc-collisions";
+        collisionStart: { npcKey: string; otherKey: PhysicsBodyKey }[];
+        collisionEnd: { npcKey: string; otherKey: PhysicsBodyKey }[];
+      }
     | {
         type: "physics-debug-data-response";
         items: PhysicDebugItem[];
@@ -70,6 +102,7 @@ declare namespace WW {
       };
   // | RaycastResultResponse
 
+  type NpcCollisionResponse = Extract<MsgFromWorker, { type: "npc-collisions" }>;
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromWorker, { type: "tiled-navmesh-response" }>;
