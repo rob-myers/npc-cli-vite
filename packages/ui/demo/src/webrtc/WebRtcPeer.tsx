@@ -1,4 +1,3 @@
-import { uiClassName } from "@npc-cli/ui-sdk/const";
 import { cn } from "@npc-cli/util";
 import { useRef, useState } from "react";
 import type { PeerState } from "./use-webrtc";
@@ -12,7 +11,7 @@ export function WebRtcPeer() {
   const connectedCount = rtc.peers.filter((p) => p.status === "connected").length;
 
   return (
-    <div className={cn(uiClassName, "flex flex-col gap-3 p-4 max-w-lg w-full text-xs")}>
+    <div className="flex flex-col gap-3 p-4 max-w-lg w-full text-xs">
       <div className="flex items-center justify-between">
         <span className="font-bold text-sm">WebRTC Peers</span>
         <span className="text-slate-400 text-[10px]">
