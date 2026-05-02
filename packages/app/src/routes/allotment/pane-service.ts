@@ -27,6 +27,11 @@ function setRoot(fn: (prev: PaneNode) => PaneNode) {
   });
 }
 
+export function splitRoot(vertical: boolean) {
+  const { persistedPanes } = uiStore.getState();
+  splitPane(persistedPanes.root.id, vertical);
+}
+
 export function splitPane(targetId: number, vertical: boolean) {
   const uiId = createTabsUi();
   const leafId = nextId++;
