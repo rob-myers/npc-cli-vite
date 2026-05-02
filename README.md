@@ -19,11 +19,6 @@ done
 
 ## `packages/app`
 
-### react-grid-layout
-
-https://github.com/react-grid-layout/react-grid-layout?tab=readme-ov-file#installation
-
-
 ### @mdx-js/rollup
 
 https://www.npmjs.com/package/@mdx-js/rollup

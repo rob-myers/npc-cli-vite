@@ -1,16 +1,17 @@
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
-import { getFallbackLayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import { deepClone } from "@npc-cli/util/legacy/generic";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-
-import { UiGrid } from "../components/UiGrid";
+import "allotment/dist/style.css";
+import { motion } from "motion/react";
+import { useRef } from "react";
+import { useBeforeunload } from "react-beforeunload";
+import { useStore } from "zustand";
 import { UiPortalContainer } from "../components/UiPortalContainer";
-
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
+import { PaneTree } from "./PaneTree";
+import { PaneTreeWrapper } from "./PaneTreeWrapper";
+import { ensureLeafUis, initNextId, persistPanesToUi } from "./pane-service";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -18,30 +19,48 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const theme = useThemeName();
+  const ready = useStore(uiStore, (s) => s.ready);
+  const root = useStore(uiStore, (s) => s.persistedPanes.root);
 
-  const [persistedLayout] = useState(() => {
-    // clone avoids immer freeze
-    const persistedLayout = deepClone(uiStore.getState().persistedLayout);
-    uiStoreApi.addUis({ metas: Object.values(persistedLayout.toUi) });
-    return persistedLayout; // has ui layout info
-  });
+  initNextId(root);
 
-  const [contextValue, setContextValue] = useState(() => ({
-    layoutApi: getFallbackLayoutApi(),
+  const overrideContextMenuRef = useRef<LayoutApi["overrideContextMenu"] | null>(null);
+
+  const contextValue = useRef({
+    layoutApi: {
+      ...getFallbackLayoutApi(),
+      overrideContextMenu(...args: Parameters<LayoutApi["overrideContextMenu"]>) {
+        overrideContextMenuRef.current?.(...args);
+      },
+    },
     theme,
     uiRegistry,
     uiStore,
     uiStoreApi,
-  }));
-  // uiRegistry & uiStore maintain value under HMR but uiStoreApi doesn't
-  useMemo(() => setContextValue((prev) => ({ ...prev, uiStoreApi })), [uiStoreApi]);
+  }).current;
+
+  const initialized = useRef(false);
+  if (ready && !initialized.current) {
+    initialized.current = true;
+    const { toUi } = uiStore.getState().persistedPanes;
+    uiStoreApi.addUis({ metas: Object.values(toUi) });
+    ensureLeafUis(root);
+  }
+
+  useBeforeunload(() => persistPanesToUi());
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>
-      <UiGrid
-        extendContextValue={(layoutApi) => setContextValue((prev) => ({ ...prev, layoutApi }))}
-        persistedLayout={persistedLayout}
-      />
+      <PaneTreeWrapper overrideContextMenuRef={overrideContextMenuRef}>
+        <motion.div
+          className="h-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: ready ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {ready && <PaneTree node={root} />}
+        </motion.div>
+      </PaneTreeWrapper>
       <UiPortalContainer />
     </UiContext.Provider>
   );

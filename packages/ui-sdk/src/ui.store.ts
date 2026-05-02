@@ -1,6 +1,5 @@
-import { getDefaultUiMetas, type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
+import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft, type Draft } from "immer";
-import type { Layout } from "react-grid-layout";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -76,7 +75,6 @@ export const uiStoreApi = {
   },
   resetLayout() {
     uiStoreApi.clearUis();
-    uiStoreApi.addUis({ metas: getDefaultUiMetas() });
   },
   setUiMeta(id: string, uiMetaDraft: (state: Draft<UiInstanceMeta>) => void) {
     uiStore.setState((draft) => void uiMetaDraft(draft.byId[id].meta));
@@ -94,8 +92,6 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
           (_set, _get): UiStoreState => ({
             byId: {},
             ready: false,
-            persistedItemToRect: {},
-            persistedLayout: getDefaultLayout(),
             persistedPanes: getDefaultPanes(),
           }),
           { name: "ui.store", anonymousActionType: "ui.store" },
@@ -103,9 +99,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
         {
           name: "ui.storage",
           storage: createJSONStorage(() => localStorage),
-          partialize: ({ persistedItemToRect, persistedLayout, persistedPanes }) => ({
-            persistedItemToRect,
-            persistedLayout,
+          partialize: ({ persistedPanes }) => ({
             persistedPanes,
           }),
           onRehydrateStorage: () => (state) => {
@@ -139,12 +133,6 @@ if (import.meta.hot) {
 export type UiStoreState = {
   byId: { [id: string]: UiStoreByIdEntry };
   ready: boolean;
-  /** Init only */
-  persistedItemToRect: {
-    [itemId: string]: { x: number; y: number; width: number; height: number };
-  };
-  /** Init only */
-  persistedLayout: UiGridLayout;
   persistedPanes: PersistedPanesLayout;
 };
 
@@ -152,14 +140,6 @@ export type UiStoreByIdEntry = {
   meta: UiInstanceMeta;
   portal: HtmlPortalWrapper;
   everSeen: boolean;
-};
-
-export type UiGridLayout = {
-  breakpoints: Record<"lg" | "sm", number>;
-  cols: Record<"lg" | "sm", number>;
-  /** Only one layout but cols still responsive */
-  layouts: Record<"lg", Layout>;
-  toUi: { [layoutKey: string]: UiInstanceMeta };
 };
 
 export type PersistedPanesLayout = {
@@ -196,16 +176,5 @@ export function getDefaultPanes(): PersistedPanesLayout {
       [tabs0Id]: { id: tabs0Id, title: "tabs-0", uiKey: "Tabs", items: [] },
       [tabs1Id]: { id: tabs1Id, title: "tabs-1", uiKey: "Tabs", items: [] },
     },
-  };
-}
-
-function getDefaultLayout(): UiGridLayout {
-  const metas = getDefaultUiMetas();
-  const tabsMeta = metas.find((m) => m.uiKey === "Tabs") as UiInstanceMeta;
-  return {
-    layouts: { lg: [{ i: tabsMeta.id, x: 0, y: 0, w: 12, h: 20 }] },
-    breakpoints: { lg: 1200, sm: 768 },
-    cols: { lg: 12, sm: 6 },
-    toUi: Object.fromEntries(metas.map((m) => [m.id, m])),
   };
 }

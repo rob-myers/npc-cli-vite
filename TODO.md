@@ -122,9 +122,9 @@
 - ❌ support scale ui option (vertical or horizontal)
 - ❌ on drag ui tab onto grid (desktop only) add a parent Tabs
 - ✅ get demo /allotment page working
-- 🚧 /allotment -> /
-- remove react-grid-layout
-- remove uiClassName
+- ✅ /allotment -> /
+- ✅ remove react-grid-layout
+- 🚧 remove uiClassName
 
 
 - ensure onchange layout that portals are disposed

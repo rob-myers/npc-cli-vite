@@ -32,9 +32,6 @@
       "path": "./packages/ui/blog"
     },
     {
-      "path": "./packages/ui/layout"
-    },
-    {
       "path": "./packages/ui/jsh"
     },
     {

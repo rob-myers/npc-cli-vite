@@ -1,5 +1,4 @@
 import Jsh from "@npc-cli/ui__jsh";
-import Layout from "@npc-cli/ui__layout";
 import World from "@npc-cli/ui__world";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 
@@ -9,7 +8,6 @@ export function getDefaultUiMetas(): UiInstanceMeta[] {
   const ttyKey = "tty-0";
   const worldKey = "world-0";
 
-  const layoutMeta = Layout.schema.decode({ id: uid(), title: "layout-0", uiKey: "Layout" });
   const jshMeta = Jsh.schema.decode({
     id: uid(),
     title: ttyKey,
@@ -28,13 +26,12 @@ export function getDefaultUiMetas(): UiInstanceMeta[] {
     id: uid(),
     title: "tabs-0",
     uiKey: "Tabs",
-    items: [layoutMeta.id, worldMeta.id, jshMeta.id],
-    currentTabId: layoutMeta.id,
+    items: [worldMeta.id, jshMeta.id],
+    currentTabId: worldMeta.id,
   };
 
-  layoutMeta.parentId = tabsMeta.id;
   jshMeta.parentId = tabsMeta.id;
   worldMeta.parentId = tabsMeta.id;
 
-  return [tabsMeta, layoutMeta, jshMeta, worldMeta];
+  return [tabsMeta, jshMeta, worldMeta];
 }
