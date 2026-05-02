@@ -578,7 +578,7 @@ export class TtyXterm {
           this.queueCommands([
             {
               key: "line",
-              line: `${ansi.Yellow}Module { ${Object.keys(other).join(", ")} }${ansi.Reset}`,
+              line: `${ansi.Yellow}Module ${ansi.BlueBold}{${ansi.Yellow} ${Object.keys(other).join(", ")} ${ansi.BlueBold}}${ansi.Reset}`,
             },
           ]);
         } else {
