@@ -41,7 +41,7 @@ export function GlobalMenu() {
 
   return (
     <motion.div
-      className="fixed text-white bg-gray-800 p-2 z-9999 touch-none flex flex-col gap-1"
+      className="fixed text-white bg-gray-800 z-9999 touch-none flex flex-col gap-1"
       style={{
         y: menu.y,
         left: menu.vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - 36,
@@ -54,7 +54,7 @@ export function GlobalMenu() {
       onDragEnd={menu.onDragEnd}
     >
       <Menu.Root open={menu.menuOpen} onOpenChange={menu.onMenuOpenChange}>
-        <Menu.Trigger className="cursor-pointer" render={<span />}>
+        <Menu.Trigger className="cursor-pointer p-2" render={<span />}>
           <GearIcon className="size-5" weight="bold" />
         </Menu.Trigger>
 
