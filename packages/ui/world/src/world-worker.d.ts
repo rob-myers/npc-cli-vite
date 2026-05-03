@@ -160,5 +160,6 @@ declare namespace WW {
     | `circle ${string}` // custom cylindrical collider
     | `npc ${string}` // npc {npcKey}
     | `nearby ${Geomorph.GmDoorKey}` // door neighbourhood
+    | `inside ${Geomorph.GmDoorKey}` // inside door sensor
     | `rect ${string}`; // custom cuboid collider (possibly angled)
 }

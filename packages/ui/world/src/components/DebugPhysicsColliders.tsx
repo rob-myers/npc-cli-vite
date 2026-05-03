@@ -37,12 +37,17 @@ export function DebugPhysicsColliders({
         <mesh
           key={i}
           geometry={boxGeometry} // fix z-fighting
-          position={[position.x, colliderHeight / 2 + zFightDelta, position.z]}
+          position={[position.x, colliderHeight / 2 + zFightDelta * i, position.z]}
           scale={[userData.width + zFightDelta, colliderHeight, userData.depth + zFightDelta]} // fix z-fighting
           rotation={[0, userData.angle, 0]}
           renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
-          <meshBasicMaterial color={toColliderMeta[parsedKey[0]]?.color ?? "blue"} transparent opacity={0.25} />
+          <meshBasicMaterial
+            color={toColliderMeta[parsedKey[0]]?.color ?? "blue"}
+            wireframe={true}
+            transparent
+            opacity={1}
+          />
         </mesh>
       );
     }
@@ -53,7 +58,7 @@ export function DebugPhysicsColliders({
 
 const toColliderMeta = {
   inside: { color: "yellow", renderOrder: 1 },
-  nearby: { color: "green", renderOrder: 0 },
+  nearby: { color: "white", renderOrder: 2 },
 } as Record<string, { color: string; renderOrder: number }>;
 
 const zFightDelta = 0.0001;
