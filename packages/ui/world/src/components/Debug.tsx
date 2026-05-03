@@ -1,4 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
+import { pause } from "@npc-cli/util/legacy/generic";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -44,6 +45,7 @@ export function Debug() {
           state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
           w.worker.worker.removeEventListener("message", state.onPhysicsDebugData);
         }
+        w.view.forceUpdate();
       },
       showStaticColliders(shouldShow = !state.staticCollidersShown) {
         state.set({
@@ -54,8 +56,9 @@ export function Debug() {
         if (shouldShow) {
           w.worker.worker.addEventListener("message", state.onPhysicsDebugData);
           w.worker.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
+        } else {
+          pause().then(w.view.forceUpdate);
         }
-        w.view.forceUpdate();
       },
       updateInstances() {
         const inst = instRef.current;
