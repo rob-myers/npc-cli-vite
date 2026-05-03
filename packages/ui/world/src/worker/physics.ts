@@ -13,7 +13,8 @@ const wallOutset = 10 * sguToWorldScale;
 const unitYAxis = { x: 0, y: 1, z: 0 } as const;
 
 /**
- * "nearby" door sensors: one per door.
+ * - "nearby" door sensors: one per door.
+ * - "inside" door sensors: one per door.
  */
 function createDoorSensors() {
   const state = workerStore.getState();
@@ -23,43 +24,43 @@ function createDoorSensors() {
       const center = gm.matrix.transformPoint(door.center.clone());
       const angle = gm.matrix.transformAngle(door.angle);
       const gdKey = helper.getGmDoorKey(gmId, doorId);
-      const nearbyKey = `nearby ${gdKey}` as const;
 
       const nearbyDef = {
+        key: `nearby ${gdKey}` as const,
         width: door.baseRect.width,
-        // height: door.baseRect.height + 6 * wallOutset,
+        height: door.baseRect.height + 6 * wallOutset,
         // height: door.baseRect.height + 2 * wallOutset,
-        height: door.baseRect.height + 0 * wallOutset,
+        // height: door.baseRect.height + 0 * wallOutset,
         angle,
       };
-      // const insideDef = {
-      //   width: (door.baseRect.width - 2 * wallOutset),
-      //   height: door.baseRect.height,
-      //   angle,
-      // };
 
-      return [
+      const insideDef = {
+        key: `inside ${gdKey}` as const,
+        width: door.baseRect.width - 2 * wallOutset,
+        height: door.baseRect.height,
+        angle,
+      };
+
+      return [nearbyDef, insideDef].map((def) =>
         createRigidBody({
           type: RAPIER.RigidBodyType.Fixed,
           geomDef: {
             type: "rect",
-            width: nearbyDef.width,
-            height: nearbyDef.height,
+            width: def.width,
+            height: def.height,
           },
           position: { x: center.x, y: wallHeight / 2, z: center.y },
           angle,
           userData: {
-            bodyKey: nearbyKey,
-            bodyUid: addBodyKeyUidRelation(nearbyKey, state),
+            bodyKey: def.key,
+            bodyUid: addBodyKeyUidRelation(def.key, state),
             type: "cuboid",
-            width: nearbyDef.width,
-            depth: nearbyDef.height,
+            width: def.width,
+            depth: def.height,
             angle,
           },
         }),
-
-        // 🔔 maybe need "inside door sensor" too
-      ];
+      );
     }),
   );
 }
