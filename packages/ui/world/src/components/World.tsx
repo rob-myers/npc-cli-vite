@@ -103,7 +103,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       sheets: null as any,
       view: null as any,
       wall: null as any,
-      menu: null as any,
+      menu: { suppressGrayscale: false } as State["menu"],
       npc: null as any,
       worker: null as any,
       e: null as any,
