@@ -255,6 +255,7 @@ export default function NPCs() {
           state.nextPickId = 0;
         }
         state.update();
+        w.events.next({ key: "removed-npcs", npcKeys });
       },
       async spawn({ npcKey, at, as }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
@@ -264,51 +265,57 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
-        if (npcKey in state.npc) {
-          const npc = state.npc[npcKey];
-          npc.spawns++;
-          state.placeNpcAt(npc, at);
-          if (as) npc.changeSkin(as);
-          w.view.forceUpdate();
-          return;
+        const gmRoomId = state.findRoomContaining(at, true);
+        if (gmRoomId === null) {
+          throw Error(`must be in some room`);
         }
 
-        const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
-        const graph = buildGraph(clone);
-        const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
-        const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
+        if (npcKey in state.npc) {
+          const npc = state.npc[npcKey];
+          state.placeNpcAt(npc, at);
+          npc.spawns++;
+          if (as) npc.changeSkin(as);
 
-        const shadowQuad = createSkinnedXzQuad(1, 1);
-        const labelQuad = createSkinnedLabelQuad(0.5, 0.125, 1.25 / npcScale, headBoneIndex >= 0 ? headBoneIndex : 0);
-        addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
-        addEmptyBillboardOffset(shadowQuad);
-        const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
+          w.view.forceUpdate();
+        } else {
+          const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
+          const graph = buildGraph(clone);
+          const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
+          const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
 
-        const pickId = state.nextPickId;
-        drawLabelLayer(w.texLabel, pickId, npcKey);
+          const shadowQuad = createSkinnedXzQuad(1, 1);
+          const labelQuad = createSkinnedLabelQuad(0.5, 0.125, 1.25 / npcScale, headBoneIndex >= 0 ? headBoneIndex : 0);
+          addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
+          addEmptyBillboardOffset(shadowQuad);
+          const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
 
-        const mats = state.createMaterials(pickId, state.getSkinIndex(as ?? "medic-0"));
-        const npc = new Npc(w, {
-          key: npcKey,
-          pickId,
-          labelLayerIndex: pickId,
-          position: groundPointToVector3(parseGroundPoint(at)),
-          skinnedMesh: clonedSkinnedMesh,
-          graph,
-          geometry,
-          ...mats,
-        });
+          const pickId = state.nextPickId;
+          drawLabelLayer(w.texLabel, pickId, npcKey);
 
-        state.placeNpcAt(npc, at);
+          const mats = state.createMaterials(pickId, state.getSkinIndex(as ?? "medic-0"));
+          const npc = new Npc(w, {
+            key: npcKey,
+            pickId,
+            labelLayerIndex: pickId,
+            position: groundPointToVector3(parseGroundPoint(at)),
+            skinnedMesh: clonedSkinnedMesh,
+            graph,
+            geometry,
+            ...mats,
+          });
 
-        state.npc[npcKey] = npc;
-        state.byPickId[npc.pickId] = npc;
-        state.nextPickId++;
+          state.placeNpcAt(npc, at);
 
-        state.update();
-        await new Promise<void>((resolve) => (npc.resolve = resolve));
+          state.npc[npcKey] = npc;
+          npc.spawns = 1;
+          state.byPickId[npc.pickId] = npc;
+          state.nextPickId++;
 
-        w.events.next({ key: "spawned", npcKey });
+          state.update();
+          await new Promise<void>((resolve) => (npc.resolve = resolve));
+        }
+
+        w.events.next({ key: "spawned", npcKey, gmRoomId });
       },
     }),
   );

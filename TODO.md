@@ -116,10 +116,15 @@
   - ✅ object-pick should not show debug colliders
 
 - 🚧 track npc current room
-  - on spawn
-  - detect npc `enter-room`
+  - ✅ on spawn
+  - ✅ must be inside a room on spawn
+  - ✅ remove on remove
+  - 🚧 detect npc `enter-room`
+
 
 - doors have switches
+
+- pick should be pointerup
 
 - skin remapping
 
