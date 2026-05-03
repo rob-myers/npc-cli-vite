@@ -34,10 +34,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-closed":
             state.doorOpen[e.gdKey] = false;
             break;
-          case "requested-physics": {
-            state.recomputeNpcRoomRelationships();
-            break;
-          }
           case "removed-npcs": {
             w.worker.worker.postMessage({
               type: "remove-bodies",
@@ -65,6 +61,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               // }
             }
 
+            break;
+          }
+          case "requested-physics": {
+            state.recomputeNpcRoomRelationships();
             break;
           }
         }
