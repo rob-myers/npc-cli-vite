@@ -134,6 +134,8 @@ export default function WorldWorker() {
       })),
       assets: z.encode(AssetsSchema, w.assets),
     } satisfies WW.MsgToWorker);
+
+    w.events.next({ key: "requested-physics" });
   }, [w.gms, state.reloads]); // request navmesh
 
   return null;

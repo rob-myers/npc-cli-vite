@@ -9,7 +9,9 @@ declare namespace JshCli {
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
     | { key: "nav-updated" }
     | PickEvent
-    | { key: "spawned"; npcKey: string };
+    | { key: "removed-npcs"; npcKeys: string[] }
+    | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | { key: "requested-physics" };
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;
