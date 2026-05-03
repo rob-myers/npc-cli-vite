@@ -18,12 +18,7 @@ import { clearLocalStorage, getRecursiveNodes, mapNodeTypes } from "./map-node-a
 
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
   return (
-    <div className="flex items-center gap-2">
-      {state.isReadOnly() && (
-        <div className="flex text-center items-center bg-red-500/20 text-red-500 px-2 py-0.5 rounded border border-red-500/50 text-xs font-medium cursor-default pointer-events-none">
-          Read Only
-        </div>
-      )}
+    <div className="flex items-start gap-2">
       <Menu.Root>
         <Menu.Trigger className="cursor-pointer">
           <ListIcon className="size-5.5 bg-background text-on-background border border-on-background/50 p-0.5" />
