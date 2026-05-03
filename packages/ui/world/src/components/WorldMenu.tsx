@@ -72,7 +72,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="absolute top-0 left-0.25 z-9999 touch-none select-none"
+        className="absolute top-0 left-0.25 z-10 touch-none select-none"
         style={{ y }}
         drag="y"
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
