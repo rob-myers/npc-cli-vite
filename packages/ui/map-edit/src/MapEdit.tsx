@@ -1795,30 +1795,10 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
       className={cn(
         "z-2 w-1 absolute left-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
         "bg-blue-500/50",
-        "max-md:hidden", // Hide on mobile
+        "max-md:hidden",
       )}
       onPointerDown={state.onResizeInspectorPointerDown}
-    >
-      <button
-        className={cn(
-          "px-1 h-5 top-[calc(100%-20px)] cursor-pointer bg-slate-700 text-slate-300",
-          "hover:text-slate-300 transition-colors",
-        )}
-        onClick={() => {
-          if (Math.abs(state.firstPointerPos.x - state.lastPointerPos.x) > 2) return;
-          state.set({
-            asideWidth: state.asideWidth <= minAsideWidth ? maxAsideWidth : minAsideWidth,
-            lastAsideWidth: state.asideWidth,
-          });
-        }}
-      >
-        {state.asideWidth <= minAsideWidth ? (
-          <CaretLeftIcon className="size-4" />
-        ) : (
-          <CaretRightIcon className="size-4" />
-        )}
-      </button>
-    </div>
+    />
   );
 }
 
