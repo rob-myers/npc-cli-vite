@@ -112,7 +112,7 @@
   - ✅ worker sends npc collision events
   - ✅ spawn into sensor should enter
   - ✅ physics should survive worker hmr i.e. npcs
-  - 🚧 object-pick should not show debug colliders
+  - ✅ object-pick should not show debug colliders
   - 🚧 clean up
 
 - track npc current room

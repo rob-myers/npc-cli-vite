@@ -5,13 +5,12 @@ import { boxGeometry, cylinderGeometry } from "../service/geometry";
 
 export const MemoizedDebugPhysicsColliders = memo(DebugPhysicsColliders);
 
-/**
- * 🔔 debug only (inefficient)
- */
 export function DebugPhysicsColliders({
   staticColliders,
+  w,
 }: {
   staticColliders: (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[];
+  w: import("./World").State;
 }) {
   const { tex, uid } = useMemo(() => createEdgeTexture(), []);
 
@@ -40,13 +39,13 @@ export function DebugPhysicsColliders({
           rotation={[0, userData.angle, 0]}
           renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
-          <meshBasicMaterial
+          <meshStandardNodeMaterial
             key={uid}
             map={tex}
             color={toColliderMeta[parsedKey[0]]?.color ?? "blue"}
             transparent
             alphaTest={0.1}
-            opacity={0.2}
+            opacityNode={w.view.objectPick.greaterThan(0).select(0, 0.5)}
           />
         </mesh>
       );
