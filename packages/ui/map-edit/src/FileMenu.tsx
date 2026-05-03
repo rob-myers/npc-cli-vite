@@ -83,11 +83,11 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
       <Select.Trigger
         className={cn(
           "flex flex-1 gap-1 items-center text-sm cursor-pointer hover:text-on-background min-w-0",
-          "text-on-background/80 rounded-xs text-wrap break-all text-right px-1 justify-end bg-on-background/10",
+          "text-on-background/80 rounded-xs px-2 py-0.5 bg-on-background/10",
           state.isDirty && "italic",
         )}
       >
-        <Select.Value placeholder="Select symbol..." />
+        <Select.Value className="truncate" title={state.currentFile.key} placeholder="Select symbol..." />
       </Select.Trigger>
 
       <Select.Portal>
@@ -144,11 +144,11 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
       <Select.Trigger
         className={cn(
           "flex flex-1 gap-1 items-center text-sm text-on-background/80 cursor-pointer hover:text-on-background min-w-0",
-          "text-wrap break-all text-right px-1",
+          "px-2 py-0.5",
           state.isDirty && "italic",
         )}
       >
-        <Select.Value placeholder="Select map..." />
+        <Select.Value className="truncate" title={state.currentFile.key} placeholder="Select map..." />
       </Select.Trigger>
 
       <Select.Portal>
