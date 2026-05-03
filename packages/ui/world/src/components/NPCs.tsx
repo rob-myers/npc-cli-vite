@@ -336,7 +336,7 @@ export default function NPCs() {
         ]);
         return { gltf, skin };
       },
-      staleTime: Infinity,
+      // staleTime: Infinity,
     }).data ?? null;
 
   useMemo(() => {
