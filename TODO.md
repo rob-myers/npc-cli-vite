@@ -98,7 +98,8 @@
 
 - ✅ support syntax `pick 1 meta.floor as:gmRoomId`
   - shortens `pick 1 meta.floor | map gmRoomId`
-- 🚧 doors have static sensors triggered by npcs
+
+- ✅ doors have static sensors triggered by npcs
   - ✅ migrate worker request/response types
   - ✅ worker has rapier physics
   - ✅ provide assets for physics world creation
@@ -113,11 +114,12 @@
   - ✅ spawn into sensor should enter
   - ✅ physics should survive worker hmr i.e. npcs
   - ✅ object-pick should not show debug colliders
-  - 🚧 clean up
 
-- track npc current room
+- 🚧 track npc current room
   - on spawn
   - detect npc `enter-room`
+
+- doors have switches
 
 - skin remapping
 
