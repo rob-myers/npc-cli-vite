@@ -156,7 +156,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
       >
         <div className="touch-none *:pointer-events-auto">
           <div
-            className="h-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-background text-on-background border border-black/50"
+            className="size-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-background text-on-background border border-black/50"
             onClick={(e) => {
               e.stopPropagation();
               if (!state.dragged) state.toggleTouchMenu();
