@@ -121,8 +121,11 @@
   - ✅ remove on remove
   - ✅ detect npc `enter-room`
 
-
-- doors have switches
+- 🚧 doors have switches
+  - e.g. stateroom--012
+  - 🚧 assets.json layout 301 should have decor
+    - add decor to a sub-symbol of 301
+  - 🚧 create `<Decor>` instancedMesh with cuboid geometry
 
 - pick should be pointerup
 

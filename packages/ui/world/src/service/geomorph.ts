@@ -312,8 +312,8 @@ export function createLayout(
  * - Should be instantiated inside `<Decor/>`
  */
 export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
-  // 🔔 key, gmId, roomId provided on instantiation
-  const meta = poly.meta as Meta<Geomorph.GmRoomId>;
+  // 🔔 key, meta.{gmId,grKey,roomId} will provided on instantiation
+  const meta = Object.assign(poly.meta, { gmId: -1, grKey: "g-1r-1", roomId: -1 } satisfies Geomorph.GmRoomId);
   meta.y = toPrecision(Number(meta.y) || 0);
   const base = { key: "", meta };
 
@@ -326,11 +326,11 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     return {
       type: "rect",
       ...base,
-      bounds2d: poly.rect.json,
-      points: poly.outline.map((x) => x.json),
-      center: poly.center.precision(3).json,
+      bounds2d: poly.rect.precision(3),
+      points: poly.outline.map((x) => x.clone().precision(3)),
+      center: poly.center.precision(3),
       angle,
-    } as Geomorph.DecorRect;
+    };
   } else if (meta.quad === true || meta.decal === true) {
     const type = meta.quad === true ? "quad" : "decal"; // decal supported?
     const polyRect = poly.rect.precision(precision);
@@ -346,12 +346,12 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       type: type as "quad" | "decal",
       key: base.key,
       meta: quadMeta,
-      bounds2d: polyRect.json,
+      bounds2d: polyRect.clone(),
       transform,
-      center: poly.center.precision(3).json,
+      center: poly.center.precision(3),
       // 🔔 determinant `det` will be provided on instantiation
       det: 1,
-    } as Geomorph.DecorQuad | Geomorph.DecorDecal;
+    };
   } else if (meta.cuboid === true) {
     // decor cuboids follow "decor quad approach"
     const polyRect = poly.rect.precision(precision);
@@ -363,18 +363,18 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     const height3d = typeof meta.h === "number" ? meta.h : 0.5; // 🚧 remove hard-coding
     const center = geomService.toPrecisionV3({ x: center2d.x, y: y3d + height3d / 2, z: center2d.y });
 
-    return { type: "cuboid", ...base, bounds2d: polyRect.json, transform, center } as Geomorph.DecorCuboid;
+    return { type: "cuboid", ...base, bounds2d: polyRect, transform, center };
   } else if (meta.circle === true) {
     const polyRect = poly.rect.precision(precision);
     const baseRect = geomService.polyToAngledRect(poly).baseRect.precision(precision);
     const center = poly.center.precision(precision);
     const radius = Math.max(baseRect.width, baseRect.height) / 2;
-    return { type: "circle", ...base, bounds2d: polyRect.json, radius, center } as Geomorph.DecorCircle;
+    return { type: "circle", ...base, bounds2d: polyRect, radius, center };
   } else {
     // 🔔 fallback to decor point
     const center = poly.center.precision(precision);
     const radius = decorIconRadius + decorIconRadiusOutset;
-    const bounds2d = new Rect(center.x - radius, center.y - radius, 2 * radius, 2 * radius).precision(precision).json;
+    const bounds2d = new Rect(center.x - radius, center.y - radius, 2 * radius, 2 * radius).precision(precision);
     /**
      * meta.direction:
      * - comes from <use transform> of decor symbol
@@ -388,7 +388,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     if ("img" in meta && !isDecorImgKey(meta.img)) {
       meta.img = "icon--warn";
     }
-    return { type: "point", ...base, bounds2d, x: center.x, y: center.y, orient } as Geomorph.DecorPoint;
+    return { type: "point", ...base, bounds2d, x: center.x, y: center.y, orient };
   }
 }
 

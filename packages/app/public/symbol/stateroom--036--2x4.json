@@ -125,6 +125,32 @@
       "cssTransform": "matrix(1, 0, 0, 1, 67.5, 235)"
     },
     {
+      "id": "6d2aff04-de69-416f-993f-82aaf81856fe",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 67.5, "f": 240},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, -1, 0, 67.5, 240)"
+    },
+    {
+      "id": "6a1c4886-2fb9-4778-bf10-218ef113feee",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": -1, "c": -1, "d": 0, "e": 67.5, "f": 240},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, -1, -1, 0, 67.5, 240)"
+    },
+    {
       "id": "c6ba555b-b88b-4c90-a80f-6513a017c7ba",
       "name": "door slideDirection=[-1,0]",
       "locked": false,
@@ -133,6 +159,32 @@
       "type": "rect",
       "baseRect": {"width": 45, "height": 10},
       "cssTransform": "matrix(1, 0, 0, 1, 67.5, 55)"
+    },
+    {
+      "id": "7f59ed19-3ab1-40ae-8c65-d44e28ddb135",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 67.5, "f": 60},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, -1, 0, 67.5, 60)"
+    },
+    {
+      "id": "91aea1a4-4f72-41b5-988f-2f64eef0bd72",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": -1, "c": -1, "d": 0, "e": 67.5, "f": 60},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, -1, -1, 0, 67.5, 60)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},

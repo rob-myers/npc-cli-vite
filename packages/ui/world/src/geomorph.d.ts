@@ -54,8 +54,8 @@ declare namespace Geomorph {
 
   //#region decor
 
-  type Decor = import("@npc-cli/ui__map-edit/map-node-api").Decor;
-  type DecorDef = import("@npc-cli/ui__map-edit/map-node-api").DecorDef;
+  type Decor = import("./decor.schema").Decor;
+  type DecorDef = import("./decor.schema").DecorDef;
 
   type DecorPoint = Extract<Decor, { type: "point" }>;
   type DecorCuboid = Extract<Decor, { type: "cuboid" }>;
@@ -83,8 +83,7 @@ declare namespace Geomorph {
 
   //#endregion
 
-  type ObstacleKey = import("@npc-cli/ui__world/assets.schema").ObstacleKey;
-
+  // type ObstacleKey = import("@npc-cli/ui__world/assets.schema").ObstacleKey;
   // type ObstacleSheetRectCtxt = import("@npc-cli/ui__world/assets.schema").ObstacleSheetRectCtxt;
 
   type GmIdGrid = { [gridKey in `${number},${number}`]: number };
