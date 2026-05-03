@@ -1,10 +1,9 @@
-import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
 import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { defaultMapKey } from "@npc-cli/ui__world/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
-import { FloppyDiskIcon, MapTrifoldIcon, PlusIcon, StampIcon } from "@phosphor-icons/react";
+import { FloppyDiskIcon, PlusIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { SymbolKeySchema } from "./editor.schema";
 import type { State } from "./MapEdit";
@@ -16,53 +15,42 @@ const newMapKey = "__new_map__";
 
 export function FileMenu({ state }: { state: UseStateRef<State> }) {
   const { type } = state.currentFile;
+  return type === "symbol" ? <SymbolFileSelect state={state} /> : <MapFileSelect state={state} />;
+}
+
+function FolderSwitcher({ state }: { state: UseStateRef<State> }) {
+  const { type } = state.currentFile;
 
   return (
-    <div className="flex items-center gap-0.5 min-w-0">
-      <Menu.Root>
-        <Menu.Trigger
-          className="text-on-background px-1 py-0.5 text-xs rounded hover:bg-slate-600 cursor-pointer"
-          title="Change folder"
+    <div className="flex gap-1 px-2 py-1 border-b border-slate-700">
+      {ALLOWED_MAP_EDIT_FOLDERS.map((folderType) => (
+        <button
+          key={folderType}
+          type="button"
+          className={cn(
+            "px-2 py-0.5 text-xs rounded cursor-pointer",
+            folderType === type ? "bg-slate-600 text-blue-400" : "text-slate-400 hover:bg-slate-700",
+          )}
+          onPointerDown={(e) => {
+            if (folderType === type) return;
+            e.preventDefault();
+
+            const existing = state.savedFileSpecifiers.find((f) => f.type === folderType);
+
+            if (existing) {
+              state.load(existing);
+            } else {
+              state.openFresh(
+                folderType === "map"
+                  ? { type: "map", filename: `${defaultMapKey}.json`, key: defaultMapKey }
+                  : { type: "symbol", filename: `${defaultSymbolKey}.json`, key: defaultSymbolKey },
+              );
+            }
+          }}
         >
-          {type === "map" ? <MapTrifoldIcon className="size-4" /> : <StampIcon className="size-4" />}
-        </Menu.Trigger>
-
-        <Menu.Portal>
-          <Menu.Positioner className="z-50" align="start" sideOffset={4}>
-            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-              {ALLOWED_MAP_EDIT_FOLDERS.map((folderType) => (
-                <Menu.Item
-                  key={folderType}
-                  className={cn(
-                    "px-2 py-1 text-xs cursor-pointer",
-                    folderType === type ? "text-blue-400 bg-slate-700" : "text-slate-300 hover:bg-slate-700",
-                  )}
-                  closeOnClick
-                  onClick={() => {
-                    if (folderType === type) return;
-
-                    const existing = state.savedFileSpecifiers.find((f) => f.type === folderType);
-
-                    if (existing) {
-                      state.load(existing);
-                    } else {
-                      state.openFresh(
-                        folderType === "map"
-                          ? { type: "map", filename: `${defaultMapKey}.json`, key: defaultMapKey }
-                          : { type: "symbol", filename: `${defaultSymbolKey}.json`, key: defaultSymbolKey },
-                      );
-                    }
-                  }}
-                >
-                  {folderType}
-                </Menu.Item>
-              ))}
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
-
-      {type === "symbol" ? <SymbolFileSelect state={state} /> : <MapFileSelect state={state} />}
+          {folderType}
+        </button>
+      ))}
     </div>
   );
 }
@@ -94,17 +82,18 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
     >
       <Select.Trigger
         className={cn(
-          "flex flex-1 gap-1 items-center text-sm truncate cursor-pointer hover:text-on-background min-w-0",
-          "text-on-background/80 rounded-xs",
+          "flex flex-1 gap-1 items-center text-sm cursor-pointer hover:text-on-background min-w-0",
+          "text-on-background/80 rounded-xs text-wrap break-all text-right px-1 justify-end",
           state.isDirty && "italic",
         )}
       >
-        <Select.Value className="truncate" placeholder="Select symbol..." />
+        <Select.Value placeholder="Select symbol..." />
       </Select.Trigger>
 
       <Select.Portal>
         <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 max-h-60 overflow-auto">
+            <FolderSwitcher state={state} />
             <Select.List>
               {allSymbolKeys.map((key) => {
                 return (
@@ -154,7 +143,8 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
     >
       <Select.Trigger
         className={cn(
-          "flex flex-1 gap-1 items-center text-sm text-on-background/80 truncate cursor-pointer hover:text-on-background min-w-0",
+          "flex flex-1 gap-1 items-center text-sm text-on-background/80 cursor-pointer hover:text-on-background min-w-0",
+          "text-wrap break-all text-right px-1",
           state.isDirty && "italic",
         )}
       >
@@ -164,6 +154,7 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
       <Select.Portal>
         <Select.Positioner className="z-50" sideOffset={4}>
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 max-h-60 overflow-auto">
+            <FolderSwitcher state={state} />
             <Select.List>
               {mapFiles.map((file) => (
                 <Select.Item
