@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
+import * as THREE from "three/webgpu";
 import { colliderHeight } from "../const";
 import { boxGeometry, cylinderGeometry } from "../service/geometry";
 
@@ -12,6 +13,8 @@ export function DebugPhysicsColliders({
 }: {
   staticColliders: (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[];
 }) {
+  const { tex, uid } = useMemo(() => createEdgeTexture(), []);
+
   return staticColliders.map(({ parsedKey, position, userData }, i) => {
     if (userData.type === "cylinder") {
       return (
@@ -22,12 +25,7 @@ export function DebugPhysicsColliders({
           scale={[userData.radius, colliderHeight, userData.radius]}
           renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
-          <meshBasicMaterial
-            color={toColliderMeta[parsedKey[0]]?.color ?? "blue"}
-            transparent
-            // wireframe
-            opacity={0.25}
-          />
+          <meshBasicMaterial color={toColliderMeta[parsedKey[0]]?.color ?? "blue"} transparent opacity={0.25} />
         </mesh>
       );
     }
@@ -36,17 +34,19 @@ export function DebugPhysicsColliders({
       return (
         <mesh
           key={i}
-          geometry={boxGeometry} // fix z-fighting
+          geometry={boxGeometry}
           position={[position.x, colliderHeight / 2 + zFightDelta * i, position.z]}
-          scale={[userData.width + zFightDelta, colliderHeight, userData.depth + zFightDelta]} // fix z-fighting
+          scale={[userData.width + zFightDelta, colliderHeight, userData.depth + zFightDelta]}
           rotation={[0, userData.angle, 0]}
           renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
           <meshBasicMaterial
+            key={uid}
+            map={tex}
             color={toColliderMeta[parsedKey[0]]?.color ?? "blue"}
-            wireframe={true}
             transparent
-            opacity={1}
+            alphaTest={0.1}
+            opacity={0.2}
           />
         </mesh>
       );
@@ -62,3 +62,33 @@ const toColliderMeta = {
 } as Record<string, { color: string; renderOrder: number }>;
 
 const zFightDelta = 0.0001;
+
+function createEdgeTexture() {
+  const size = 128;
+  const border = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.clearRect(0, 0, size, size);
+  // diagonal hatching
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.lineWidth = 1;
+  const spacing = 24;
+  for (let offset = -size; offset < size * 2; offset += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(offset, 0);
+    ctx.lineTo(offset + size, size);
+    ctx.stroke();
+  }
+
+  // solid border edges
+  ctx.fillStyle = "rgba(255, 255, 255, 1)";
+  ctx.fillRect(0, 0, size, border);
+  ctx.fillRect(0, size - border, size, border);
+  ctx.fillRect(0, 0, border, size);
+  ctx.fillRect(size - border, 0, border, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return { tex, uid: crypto.randomUUID() };
+}
