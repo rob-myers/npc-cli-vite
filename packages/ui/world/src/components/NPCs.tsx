@@ -228,6 +228,9 @@ export default function NPCs() {
           npc.pinTo(result);
           agent.position[0] = groundPoint.x;
           agent.position[2] = groundPoint.y;
+
+          // might have spawned into a sensor
+          state.physics.positions.push(npc.bodyUid, ...agent.position);
         } else {
           if (npc.agentId !== null) {
             crowdApi.removeAgent(state.crowd, npc.agentId);

@@ -9,7 +9,9 @@ import { workerStore } from "./worker.store";
 
 self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
   const msg = e.data;
-  debug("🤖 worker received", JSON.stringify(msg?.type));
+  if (msg?.type !== "send-npc-positions") {
+    debug("🤖 worker received", JSON.stringify(msg?.type));
+  }
   const state = workerStore.getState();
 
   switch (msg.type) {
