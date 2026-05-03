@@ -23,6 +23,7 @@ export function WorldMenu() {
       debugHitOpen: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
+      suppressGrayscale: false,
       dragged: false,
       menuOpen: false,
       minY: 40,
@@ -132,6 +133,20 @@ export function WorldMenu() {
                     onClick={(e) => e.stopPropagation()}
                     className="w-20 accent-white"
                   />
+                  <button
+                    type="button"
+                    className={cn(
+                      "text-[10px] px-1 rounded cursor-pointer",
+                      !state.suppressGrayscale ? "bg-green-700 text-white" : "bg-slate-700 text-slate-400",
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      state.set({ suppressGrayscale: !state.suppressGrayscale });
+                      w.update();
+                    }}
+                  >
+                    gray pause
+                  </button>
                 </div>
 
                 <div className="my-1 border-t border-slate-700" />
@@ -352,6 +367,7 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
+  suppressGrayscale: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
