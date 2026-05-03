@@ -264,7 +264,7 @@ export async function* w(ct) {
   const { api, args, w } = ct;
 
   // support piped inputs via hyphen args -
-  // e.g. `pick 1 | w npc.findRoomContaining -`
+  // e.g. `pick 1 | w e.findRoomContaining -`
   const stdinInputChar = "-";
   const readStdin = args.slice(1).some((arg) => arg === stdinInputChar);
 

@@ -6,6 +6,7 @@ declare namespace JshCli {
       >)
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
+    | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
     | { key: "nav-updated" }
     | PickEvent
@@ -16,7 +17,9 @@ declare namespace JshCli {
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;
   type PointAnyFormat = import("./service/geometry").PointAnyFormat;
-  type BaseColliderEvent = { type: "circle" | "rect"; decorKey: string } | ({ type: "nearby" } & Geomorph.GmDoorId);
+  type BaseColliderEvent =
+    | { type: "circle" | "rect"; decorKey: string }
+    | ({ type: "nearby" | "inside" } & Geomorph.GmDoorId);
 
   type PickEvent = {
     key: "picked";

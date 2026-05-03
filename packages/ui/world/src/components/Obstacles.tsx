@@ -112,7 +112,7 @@ export default function Obstacles(_props: Props) {
         const gmId = w.gms.findIndex((gm) => id < gm.obstacles.length || ((id -= gm.obstacles.length), false));
         const gm = w.gms[gmId];
         const obstacle = gm.obstacles[id];
-        return { gmId, ...obstacle.meta, height: obstacle.height };
+        return { gmId, meta: obstacle.meta, height: obstacle.height };
       },
 
       transformAndColorObstacles() {
@@ -277,7 +277,7 @@ export type State = {
   addUvs(): void;
   draw(): Promise<void>;
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
-  decodeInstanceId(instanceId: number): Meta<{ gmId: number }>;
+  decodeInstanceId(instanceId: number): { gmId: number; height: number; meta: Meta };
   transformAndColorObstacles(): void;
   positionSkirts(): void;
   sendDataToGpu(): void;

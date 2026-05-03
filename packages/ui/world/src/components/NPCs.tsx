@@ -30,7 +30,6 @@ import {
   mergeWithGroups,
   parseGroundPoint,
 } from "../service/geometry";
-import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
 import type { PhysicsBijection } from "../worker/worker.store";
@@ -99,28 +98,6 @@ export default function NPCs() {
           state.byPickId[npc.pickId] = npc;
         }
         state.update();
-      },
-      findGmIdContaining(input) {
-        if (typeof input.meta?.gmId === "number") {
-          return input.meta.gmId;
-        }
-        return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
-      },
-      findRoomContaining(input, includeDoors = false) {
-        if (helper.isGmRoomId(input.meta) === true) {
-          // 🔔 existing input.meta overrides includeDoors `false`
-          return { ...input.meta };
-        }
-        const gmId = state.findGmIdContaining(input);
-        if (typeof gmId === "number") {
-          const point = parseGroundPoint(input);
-          const gm = w.gms[gmId];
-          const localPoint = gm.inverseMatrix.transformPoint({ x: point.x, y: point.y });
-          const roomId = w.gmsData.findRoomIdContaining(gm, localPoint, includeDoors);
-          return roomId === null ? null : { gmId, roomId, grKey: helper.getGmRoomKey(gmId, roomId) };
-        } else {
-          return null;
-        }
       },
       getClosestPoly(targetPos, queryFilter = ANY_QUERY_FILTER) {
         return findNearestPoly(
@@ -265,7 +242,8 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
-        const gmRoomId = state.findRoomContaining(at, true);
+        // 🔔 would prefer not to reference `w.e`
+        const gmRoomId = w.e.findRoomContaining(at, true);
         if (gmRoomId === null) {
           throw Error(`must be in some room`);
         }
@@ -388,8 +366,6 @@ export type State = {
   };
   placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat): void;
   devHotReload(): void;
-  findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
-  findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   getSkinIndex(skinKey: string): number;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
