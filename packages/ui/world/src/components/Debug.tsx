@@ -35,7 +35,7 @@ export function Debug() {
         );
         state.demoNavPath = result.success ? result.path.map((p) => p.position) : [];
       },
-      onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>) {
+      onPhysicsDebugData(e) {
         if (e.data.type === "physics-debug-data-response") {
           // console.log('🔔 RECEIVED', e.data);
           state.staticColliders = e.data.items;
@@ -43,7 +43,6 @@ export function Debug() {
           state.physicsLines = new THREE.BufferGeometry();
           state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
           w.worker.worker.removeEventListener("message", state.onPhysicsDebugData);
-          w.view.forceUpdate();
         }
       },
       showStaticColliders(shouldShow = !state.staticCollidersShown) {
@@ -56,6 +55,7 @@ export function Debug() {
           w.worker.worker.addEventListener("message", state.onPhysicsDebugData);
           w.worker.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
         }
+        w.view.forceUpdate();
       },
       updateInstances() {
         const inst = instRef.current;
