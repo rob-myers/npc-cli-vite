@@ -126,7 +126,7 @@ export function Debug() {
           {/* <lineSegments geometry={state.physicsLines}>
             <lineBasicMaterial color="green" />
           </lineSegments> */}
-          <MemoizedDebugPhysicsColliders staticColliders={state.staticColliders} />
+          <MemoizedDebugPhysicsColliders staticColliders={state.staticColliders} w={w} />
         </group>
       )}
     </>
