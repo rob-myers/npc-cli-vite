@@ -83,7 +83,7 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
       <Select.Trigger
         className={cn(
           "flex flex-1 gap-1 items-center text-sm cursor-pointer hover:text-on-background min-w-0",
-          "text-on-background/80 rounded-xs text-wrap break-all text-right px-1 justify-end",
+          "text-on-background/80 rounded-xs text-wrap break-all text-right px-1 justify-end bg-on-background/10",
           state.isDirty && "italic",
         )}
       >
