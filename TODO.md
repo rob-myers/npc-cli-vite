@@ -110,6 +110,9 @@
   - ✅ npcs have rigid kinematic bodies
   - ✅ npcs send position to worker (batched)
   - ✅ worker sends npc collision events
+  - ✅ spawn into sensor should enter
+  - ✅ physics should survive worker hmr i.e. npcs
+  - 🚧 object-pick should not show debug colliders
   - 🚧 clean up
 
 - track npc current room
@@ -127,6 +130,8 @@
 - ✅ /allotment -> /
 - ✅ remove react-grid-layout
 - ✅ remove uiClassName
+- absorb split vert/horiz controls in Tabs
+- change "collapsed panel" ui
 
 - ensure onchange layout that portals are disposed
 - world context menu?
@@ -147,7 +152,6 @@
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
-  - worldQuery not re-running onchange class AStar
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue

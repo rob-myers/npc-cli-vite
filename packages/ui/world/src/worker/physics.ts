@@ -1,9 +1,9 @@
-import RAPIER, { ColliderDesc } from "@dimforge/rapier3d-compat";
+import RAPIER, { ColliderDesc, RigidBodyType } from "@dimforge/rapier3d-compat";
 import z from "zod";
 import { AssetsSchema } from "../assets.schema";
 import { createLayoutInstance } from "../service/geomorph";
 import { helper } from "../service/helper";
-import { addBodyKeyUidRelation, parsePhysicsBodyKey } from "../service/physics-bijection";
+import { addBodyKeyUidRelation, npcToBodyKey, parsePhysicsBodyKey } from "../service/physics-bijection";
 import { type WorkerStoreState, workerStore } from "./worker.store";
 
 export const wallHeight: typeof import("../const")["wallHeight"] = 2;
@@ -133,6 +133,30 @@ function getQuaternionFromAxisAngle(axis: { x: number; y: number; z: number }, a
   };
 }
 
+/**
+ * On worker HMR we need to restore npcs
+ */
+function restoreNpcs(npcs: WW.NpcDef[]) {
+  const state = workerStore.getState();
+  for (const { npcKey, position } of npcs) {
+    const bodyKey = npcToBodyKey(npcKey);
+    createRigidBody({
+      type: RigidBodyType.KinematicPositionBased,
+      geomDef: {
+        type: "circle",
+        radius: state.agentRadius,
+      },
+      position,
+      userData: {
+        bodyKey,
+        bodyUid: addBodyKeyUidRelation(bodyKey, state),
+        type: "npc",
+        radius: state.agentRadius,
+      },
+    });
+  }
+}
+
 export function sendPhysicsDebugData() {
   const state = workerStore.getState();
   const { vertices } = state.world.debugRender();
@@ -178,10 +202,10 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
 
   createDoorSensors();
 
+  restoreNpcs(msg.npcs);
+
   // 🚧
   // createGmColliders();
-
-  // restoreNpcs(msg.npcs);
 
   // // fire initial collisions
   // stepWorld();
