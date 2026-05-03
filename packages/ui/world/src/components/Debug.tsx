@@ -43,7 +43,7 @@ export function Debug() {
           state.physicsLines = new THREE.BufferGeometry();
           state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
           w.worker.worker.removeEventListener("message", state.onPhysicsDebugData);
-          state.update();
+          w.view.forceUpdate();
         }
       },
       showStaticColliders(shouldShow = !state.staticCollidersShown) {
@@ -123,9 +123,9 @@ export function Debug() {
 
       {state.staticColliders.length > 0 && (
         <group name="static-colliders" visible={state.staticColliders.length > 0}>
-          <lineSegments geometry={state.physicsLines}>
+          {/* <lineSegments geometry={state.physicsLines}>
             <lineBasicMaterial color="green" />
-          </lineSegments>
+          </lineSegments> */}
           <MemoizedDebugPhysicsColliders staticColliders={state.staticColliders} />
         </group>
       )}
