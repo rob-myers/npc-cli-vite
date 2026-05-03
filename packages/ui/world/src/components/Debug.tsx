@@ -3,7 +3,7 @@ import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
-import { MemoizedStaticColliders } from "./DebugStaticColliders";
+import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
 export function Debug() {
@@ -126,7 +126,7 @@ export function Debug() {
           <lineSegments geometry={state.physicsLines}>
             <lineBasicMaterial color="green" />
           </lineSegments>
-          <MemoizedStaticColliders staticColliders={state.staticColliders} />
+          <MemoizedDebugPhysicsColliders staticColliders={state.staticColliders} />
         </group>
       )}
     </>
