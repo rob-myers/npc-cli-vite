@@ -2,6 +2,8 @@ import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
 import type { AStarSearchResult } from "../pathfinding/AStar";
+import { parseGroundPoint } from "../service/geometry";
+import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -22,6 +24,28 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
           }
         });
+      },
+      findGmIdContaining(input) {
+        if (typeof input.meta?.gmId === "number") {
+          return input.meta.gmId;
+        }
+        return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
+      },
+      findRoomContaining(input, includeDoors = false) {
+        if (helper.isGmRoomId(input.meta) === true) {
+          // 🔔 existing input.meta overrides includeDoors `false`
+          return { ...input.meta };
+        }
+        const gmId = state.findGmIdContaining(input);
+        if (typeof gmId === "number") {
+          const point = parseGroundPoint(input);
+          const gm = w.gms[gmId];
+          const localPoint = gm.inverseMatrix.transformPoint({ x: point.x, y: point.y });
+          const roomId = w.gmsData.findRoomIdContaining(gm, localPoint, includeDoors);
+          return roomId === null ? null : { gmId, roomId, grKey: helper.getGmRoomKey(gmId, roomId) };
+        } else {
+          return null;
+        }
       },
       onEvent(e) {
         if ("npcKey" in e) {
@@ -72,6 +96,33 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onNpcEvent(e) {
         const npc = w.npc.npc[e.npcKey];
         switch (e.key) {
+          case "enter-collider": {
+            break;
+          }
+          case "enter-room": {
+            const gmRoomId = state.npcToRoom.get(npc.key);
+            if (gmRoomId) {
+              state.roomToNpcs[gmRoomId.gmId][gmRoomId.roomId].delete(npc.key);
+            } else {
+              state.externalNpcs.delete(npc.key);
+            }
+            state.npcToRoom.set(npc.key, e.gmRoomId);
+            (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
+            break;
+          }
+          case "exit-collider": {
+            if (e.type === "inside") {
+              const gmRoomId = state.npcToRoom.get(npc.key);
+              const nextGmRoomId = state.findRoomContaining(npc.position);
+              if (gmRoomId === undefined || nextGmRoomId === null) {
+                return;
+              }
+              if (nextGmRoomId.grKey !== gmRoomId.grKey) {
+                w.events.next({ key: "enter-room", npcKey: npc.key, gmRoomId: nextGmRoomId });
+              }
+            }
+            break;
+          }
           case "spawned": {
             if (npc.spawns === 1) {
               const { x, y, z } = npc.position;
@@ -119,7 +170,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       tryPutNpcIntoRoom(npc) {
-        const grId = w.npc.findRoomContaining(npc.position, true);
+        const grId = state.findRoomContaining(npc.position, true);
         if (grId !== null) {
           state.npcToRoom.set(npc.key, grId);
           state.externalNpcs.delete(npc.key);
@@ -162,6 +213,8 @@ export type State = {
     dst: Geomorph.GmRoomKey,
     keys?: { [key: Geomorph.GmDoorKey]: boolean },
   ): AStarSearchResult<Graph.GmRoomGraphNode>;
+  findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
+  findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   onEvent(e: JshCli.Event): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;

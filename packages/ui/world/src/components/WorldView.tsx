@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -79,33 +79,42 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
         const pick = decodePick(r, g, b);
 
-        switch (pick?.type) {
-          case "floor":
+        if (pick === null) {
+          return null;
+        }
+
+        switch (pick.type) {
+          case "floor": {
+            const gmId = pick.instanceId;
+            const gm = w.gms[gmId];
+            if (!gm) return null;
+            return { ...pick, gmId, gmKey: gm.key, floor: true };
+          }
           case "ceiling": {
             const gmId = pick.instanceId;
             const gm = w.gms[gmId];
             if (!gm) return null;
-            return { ...pick, gmId, gmKey: gm.key, ...(pick.type === "floor" ? { floor: true } : { ceiling: true }) };
+            return { ...pick, gmId, gmKey: gm.key, ceiling: true };
           }
           case "wall": {
-            const { gmId, meta } = w.wall.decodeInstanceId(pick.instanceId);
-            return { ...pick, gmId, ...meta };
+            const decoded = w.wall.decodeInstanceId(pick.instanceId);
+            return { ...pick, wall: true, ...decoded };
           }
           case "obstacle": {
             const decoded = w.obs.decodeInstanceId(pick.instanceId);
-            return { ...pick, ...decoded };
+            return { ...pick, obstacle: true, ...decoded };
           }
           case "door": {
             const decoded = w.door.decodeInstanceId(pick.instanceId);
-            return { ...pick, ...decoded };
+            return { ...pick, door: true, ...decoded };
           }
           case "npc": {
             const npc = w.npc.byPickId[pick.instanceId];
-            if (npc) return { ...pick, npcKey: npc.key };
+            if (npc) return { ...pick, npcKey: npc.key, ...w.e.npcToRoom.get(npc.key) };
             return null;
           }
           default:
-            return null;
+            throw new ExhaustiveError(pick);
         }
       },
       getRaycastIntersection(e, picked) {
@@ -218,8 +227,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           key: "picked",
           ...(clickId && { clickId: clickId.id }),
           meta: picked,
-          // npc currently lacks gmId
-          gmRoomId: "gmId" in picked ? w.npc.findRoomContaining(point, true) : null,
+          // npc might lack gmId
+          gmRoomId: "gmId" in picked ? w.e.findRoomContaining(point, true) : null,
 
           distance,
           point,
@@ -360,5 +369,6 @@ export type Picked = {
   | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
   | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
   | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
-  | { type: "npc"; npcKey: string }
+  // we require spawn inside room but map might change
+  | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
 );

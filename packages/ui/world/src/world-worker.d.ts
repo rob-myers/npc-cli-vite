@@ -136,7 +136,10 @@ declare namespace WW {
     enabled: boolean;
   };
 
-  type PhysicsParsedBodyKey = ["npc" | "circle" | "rect", string] | ["nearby", Geomorph.GmDoorKey]; // sensor for door
+  type PhysicsParsedBodyKey =
+    | ["npc" | "circle" | "rect", string]
+    | ["nearby", Geomorph.GmDoorKey]
+    | ["inside", Geomorph.GmDoorKey]; // sensor for door
 
   /**
    * Height is always fixed.

@@ -1,3 +1,4 @@
+import { ExhaustiveError } from "@npc-cli/util";
 import { gmFloorExtraScale, worldToSguScale } from "../const";
 
 /** Object type IDs — spaced out for visual debug */
@@ -11,12 +12,30 @@ const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v])
   keyof typeof PICK_TYPE
 >;
 
-/** Decode RGBA pixel → { type, instanceId } or null */
+/**
+ * Decode RGBA pixel → { type, instanceId } or null
+ * 🚧 distribute type instead
+ */
 export function decodePick(r: number, g: number, b: number) {
   const type = pickTypeToName[r as PickType];
   if (!type) return null;
   const instanceId = (g << 8) | b;
-  return { type, instanceId };
+  switch (type) {
+    case "ceiling":
+      return { type, instanceId };
+    case "floor":
+      return { type, instanceId };
+    case "door":
+      return { type, instanceId };
+    case "wall":
+      return { type, instanceId };
+    case "obstacle":
+      return { type, instanceId };
+    case "npc":
+      return { type, instanceId };
+    default:
+      throw new ExhaustiveError(type);
+  }
 }
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;

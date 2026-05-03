@@ -18,16 +18,20 @@ export default function WorldWorker() {
 
       handlePhysicsCollision(npcKey, otherKey, isEnter) {
         const [type, subKey] = parsePhysicsBodyKey(otherKey);
-        if (type === "npc") {
-          return warn(`${"handlePhysicsCollision"}: unexpected otherKey: "${otherKey}"`);
+
+        if (type !== "npc") {
+          w.events.next({
+            key: isEnter === true ? "enter-collider" : "exit-collider",
+            npcKey,
+            ...(type === "nearby" || type === "inside"
+              ? { type, ...helper.getGmDoorId(subKey) }
+              : { type, decorKey: subKey }),
+          });
+        } else {
+          warn(`${"handlePhysicsCollision"}: unexpected otherKey: "${otherKey}"`);
         }
-        w.events.next({
-          key: isEnter === true ? "enter-collider" : "exit-collider",
-          npcKey,
-          ...(type === "nearby" ? { type, ...helper.getGmDoorId(subKey) } : { type, decorKey: subKey }),
-        });
       },
-      handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
+      onWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
         debug(`🤖 main thread received "${msg?.type}" from worker`);
 
@@ -89,9 +93,9 @@ export default function WorldWorker() {
     const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
     state.worker = worker;
     w.worker = state;
-    worker.addEventListener("message", state.handleWorkerMessage);
+    worker.addEventListener("message", state.onWorkerMessage);
     return () => {
-      worker.removeEventListener("message", state.handleWorkerMessage);
+      worker.removeEventListener("message", state.onWorkerMessage);
       worker.terminate();
     };
   }, [w.threeReady, state.reloads]); // setup worker
@@ -146,6 +150,6 @@ export type State = {
   reloads: number;
   worker: Worker;
   handlePhysicsCollision(npcKey: string, otherKey: WW.PhysicsBodyKey, isEnter?: boolean): void;
-  handleWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
+  onWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
   ping(): void;
 };

@@ -27,6 +27,7 @@ export function npcToBodyKey(npcKey: string) {
  * - `['circle', decorKey]`
  * - `['rect', decorKey]`
  * - `['nearby', gmDoorKey]`
+ * - `['inside', gmDoorKey]`
  */
 export function parsePhysicsBodyKey(bodyKey: WW.PhysicsBodyKey): WW.PhysicsParsedBodyKey {
   return bodyKey.split(" ") as WW.PhysicsParsedBodyKey;
