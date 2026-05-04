@@ -61,7 +61,7 @@ export default function NPCs() {
         const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const viewDir = cameraPosition.sub(positionWorld).normalize();
-        const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
+        const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.4);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a);
         mat.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
         return {
