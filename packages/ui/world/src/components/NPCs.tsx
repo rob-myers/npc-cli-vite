@@ -302,7 +302,7 @@ export default function NPCs() {
 
   const queryData =
     useQuery({
-      queryKey: [...w.worldQueryPrefix, "template-gltf"],
+      queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
       queryFn: async () => {
         const [gltf, skin] = await Promise.all([
           new GLTFLoader().loadAsync(url.templateTest0Gltf),

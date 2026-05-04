@@ -4,6 +4,7 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { npcScale } from "../const";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
@@ -158,7 +159,7 @@ export class Npc {
     const { walk } = this.w.npc.clips;
     if (!walk || !this.moving) return;
     const walkAction = this.mixer.clipAction(walk);
-    walkAction.timeScale = Math.max(0.6, speed);
+    walkAction.timeScale = Math.max(1.25 * (0.55 / npcScale), speed);
   }
 
   groupRef = (group: THREE.Group | null): void => {
