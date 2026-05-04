@@ -63,11 +63,9 @@ export default function Decor(_props: Props) {
         let id = 0;
 
         for (const gm of w.gms) {
-          const {
-            decor,
-            transform: { a, b, c, d, e, f },
-          } = gm;
-          for (const item of decor) {
+          const { a, b, c, d, e, f } = gm.transform;
+
+          for (const item of gm.decor) {
             if (item.type !== "quad") continue;
             const { transform: quadTransform, meta } = item;
 
@@ -84,10 +82,8 @@ export default function Decor(_props: Props) {
             if (item.meta.tilt === true) {
               const [a, b, c, d] = item.transform;
               const det = a * d - b * c;
-              const vecLen = Math.hypot(a, b); // remove scale to get local x unit vector
-              const rotMat = getRotAxisMatrix(a / vecLen, 0, b / vecLen, (det > 0 ? 1 : -1) * 90);
-              // 🚧 rotate about top-axis instead
-              setRotMatrixAboutPoint(rotMat, item.center.x, item.meta.y, item.center.y);
+              const rotMat = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
+              setRotMatrixAboutPoint(rotMat, item.topCenter.x, item.meta.y, item.topCenter.y);
               mat4.premultiply(rotMat); // premultiply means post-rotate
             }
 

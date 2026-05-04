@@ -341,15 +341,21 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       quadMeta.img = "icon--warn";
     }
 
+    const center = poly.center.precision(3);
+    const { baseRect } = geomService.polyToAngledRect(poly);
+    const topCenter = center
+      .clone()
+      .translate(-(transform[2] * baseRect.height) / 2, -(transform[3] * baseRect.height) / 2)
+      .precision(3);
+
     return {
       type: "quad",
       key: base.key,
       meta: quadMeta,
       bounds2d: polyRect.clone(),
       transform,
-      center: poly.center.precision(3),
-      // 🔔 determinant `det` will be provided on instantiation
-      det: 1,
+      center,
+      topCenter,
     };
   } else if (meta.cuboid === true) {
     // decor cuboids follow "decor quad approach"
