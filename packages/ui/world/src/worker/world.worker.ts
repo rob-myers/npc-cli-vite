@@ -133,6 +133,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     }
     case "setup-physics": {
       await setupOrRebuildWorld(msg);
+      console.log(msg);
       self.postMessage({ type: "world-setup-response" } satisfies WW.MsgFromWorker);
       break;
     }
