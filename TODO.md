@@ -125,7 +125,8 @@
   - e.g. stateroom--012
   - ✅ assets.json layout 301 should have decor
     - add decor to a sub-symbol of 301: stateroom--036
-  - 🚧 create `<Decor>` instancedMesh with cuboid geometry
+  - ✅ create `<Decor>` instancedMesh with cuboid geometry
+    - ✅ ensure decor `meta.transform` and `transform` in world coords
 
 - pick should be pointerup
 

@@ -302,3 +302,10 @@ export function computeIntersectionNormal(mesh: THREE.Mesh, intersection: THREE.
 export const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
 
 export const boxGeometry = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1).toNonIndexed();
+
+/** Unit box from (0,0,0) to (1,1,1) with 6 material groups. */
+export function createUnitBox() {
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  geo.translate(0.5, 0.5, 0.5);
+  return geo;
+}

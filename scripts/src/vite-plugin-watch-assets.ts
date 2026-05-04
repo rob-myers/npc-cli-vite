@@ -106,10 +106,3 @@ export function watchAssetsPlugin(): Plugin {
 type WorldConst = typeof import("@npc-cli/ui__world/const");
 const assetsJsonChangingEvent: WorldConst["assetsJsonChangingEvent"] = "assets-json-changing";
 const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-json-changed";
-
-async function _getAssetsJsonOrNull() {
-  return (
-    jsonParser.safeParse(await fs.promises.readFile(path.join(PUBLIC_DIR, "assets.json"), "utf-8").catch(() => null))
-      ?.data ?? null
-  );
-}

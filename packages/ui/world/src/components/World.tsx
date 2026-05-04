@@ -35,6 +35,7 @@ import { Debug } from "./Debug";
 import Doors from "./Doors";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
+import Decor from "./Decor";
 import Obstacles from "./Obstacles";
 import useWorldEvents from "./use-world-events";
 import Walls from "./Walls";
@@ -83,6 +84,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: 1,
         height: 1,
       }),
+      texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64 }),
       texLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 64, height: 64, numTextures: MAX_NPCS }),
 
@@ -96,6 +98,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       assets: null as any,
       ceil: null as any,
+      decor: null as any,
       door: null as any,
       floor: null as any,
       r3f: null as any,
@@ -271,6 +274,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <Walls key="walls" />
             <Doors key="doors" />
             <Obstacles key="obstacles" />
+            <Decor key="decor" />
             <NPCs key="npcs" />
             <Debug key="debug" />
           </WorldView>
@@ -305,6 +309,7 @@ export type State = {
   texFloor: TexArray;
   texCeil: TexArray;
   texObs: TexArray;
+  texDecor: TexArray;
   texLabel: TexArray;
   texSkin: TexArray;
 
@@ -319,6 +324,7 @@ export type State = {
   gmRoomGraph: GmRoomGraph;
 
   ceil: UseStateRef<import("./Ceiling").State>;
+  decor: UseStateRef<import("./Decor").State>;
   door: UseStateRef<import("./Doors").State>;
   floor: UseStateRef<import("./Floor").State>;
   obs: UseStateRef<import("./Obstacles").State>;

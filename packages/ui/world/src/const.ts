@@ -85,6 +85,8 @@ export const MAX_GEOMORPH_INSTANCES = 64;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 
+export const MAX_DECOR_QUAD_INSTANCES = 512;
+
 export const npcScale = 0.6;
 
 export const MAX_NPCS = 256;
