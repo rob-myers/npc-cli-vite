@@ -91,7 +91,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
       <div
         ref={state.ref("rowEl")}
         className={cn(
-          "relative grid grid-cols-[minmax(auto,1.5rem)_auto_auto] items-center cursor-pointer hover:brightness-125",
+          "relative grid grid-cols-[minmax(auto,1.5rem)_auto_1.5em] items-center cursor-pointer hover:brightness-125",
           "bg-background border-b border-b-on-background/10",
           isSelected && "brightness-125 border-blue-400/25",
           state.closestEdge === "top" && "border-t-2 border-t-blue-400",
@@ -132,7 +132,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
 
         <button
           className={cn(
-            "flex items-center justify-end px-1 pr-2 text-on-background/50 hover:text-on-background",
+            "flex items-center justify-center text-on-background/50 hover:text-on-background",
             node.locked && "text-on-background/80",
           )}
           title={node.locked ? "Unlock" : "Lock"}
