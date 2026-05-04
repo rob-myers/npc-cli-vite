@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * creates
+ * creates/mutates
  * - public/sheets.json
+ * creates
  * - public/sheet/symbol.{sheetId}.png
  * - public/sheet/symbol.prod.{sheetId}.png when --prod
  *
@@ -23,7 +24,7 @@
  * recompute the spritesheet in development.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import {
@@ -33,13 +34,15 @@ import {
 } from "@npc-cli/media/starship-symbol";
 import {
   AssetsSchema,
+  emptySheets,
   SheetsSchema,
   type StarShipSymbolSheetDatum,
   type StarShipSymbolSheetEntry,
 } from "@npc-cli/ui__world/assets.schema";
 import { worldToSguScale } from "@npc-cli/ui__world/const";
 import { Rect } from "@npc-cli/util/geom/rect";
-import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
+import { jsonParser } from "@npc-cli/util/json-parser";
+import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
@@ -86,8 +89,13 @@ const {
 
 //#region sheets.json
 
+// other sheet-generation scripts may write to sheets.json too
 const sheetsJsonPath = path.resolve("packages/app/public", "sheets.json");
+const prevSheetsRaw = await fs.promises.readFile(sheetsJsonPath, "utf-8").catch(warn);
+const prevSheets = jsonParser.pipe(SheetsSchema).safeParse(prevSheetsRaw).data ?? emptySheets;
+
 const sheet = SheetsSchema.encode({
+  ...prevSheets,
   symbol: Object.fromEntries(
     bins.flatMap((bin, sheetId) =>
       bin.rects.map<[StarshipSymbolImageKey, StarShipSymbolSheetEntry]>(({ x, y, width, height, data }) => [
@@ -108,7 +116,7 @@ writeFileSync(sheetsJsonPath, nextSheetRaw);
 
 //#endregion
 
-//#region sheets.{sheetId}.png
+//#region sheets/symbols.{sheetId}.png
 
 const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");

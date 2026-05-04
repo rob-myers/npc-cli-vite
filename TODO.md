@@ -123,11 +123,18 @@
 
 - 🚧 doors have switches
   - e.g. stateroom--012
-  - 🚧 assets.json layout 301 should have decor
-    - add decor to a sub-symbol of 301
+  - ✅ assets.json layout 301 should have decor
+    - add decor to a sub-symbol of 301: stateroom--036
   - 🚧 create `<Decor>` instancedMesh with cuboid geometry
 
 - pick should be pointerup
+
+- script `gen-decor-sheets`
+  - writes to sheets.json
+  - generates sheet/decor.{i}.png
+- script `gen-skin-sheets`
+  - writes to sheets.json
+  - generates sheet/skin.{i}.png
 
 - skin remapping
 
