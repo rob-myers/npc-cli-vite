@@ -39,7 +39,8 @@ export type ConnectorJson = z.infer<typeof ConnectorJsonSchema>;
  */
 export const ConnectorSchema = z.custom<Connector>(
   (val) =>
-    import.meta.env.PROD
+    // either in script or in browser on production
+    !import.meta.env || import.meta.env.PROD
       ? z.instanceof(Connector)
       : val && typeof val === "object" && val.constructor.name === "Connector",
   "Input is not a Connector instance",
