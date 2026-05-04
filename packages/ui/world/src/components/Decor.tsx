@@ -86,7 +86,8 @@ export default function Decor(_props: Props) {
               const [a, b] = item.transform;
               const vecLen = Math.hypot(a, b); // remove scale to get local x unit vector
               const rotMat = getRotAxisMatrix(a / vecLen, 0, b / vecLen, 90);
-              setRotMatrixAboutPoint(rotMat, item.center.x, item.meta.y, item.center.y);
+              const frontZ = mat4.elements[2] * 0.5 + mat4.elements[14];
+              setRotMatrixAboutPoint(rotMat, item.center.x, item.meta.y, frontZ);
               mat4.premultiply(rotMat); // premultiply means post-rotate
             }
 
