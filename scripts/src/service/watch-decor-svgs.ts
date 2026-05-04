@@ -88,16 +88,19 @@ function parseSvgDimensions(svgContent: string, filename: string): { width: numb
     onopentag(name, attrs) {
       if (name === "svg" && meta.depth === 0) {
         const viewBox = attrs.viewBox || attrs.viewbox || "";
-        const matched = viewBox.match(viewBoxRegex);
-        if (matched) {
-          meta.width = parseInt(matched[1], 10) || 0;
-          meta.height = parseInt(matched[2], 10) || 0;
-        } else {
-          warn(
-            `[watch-decor] SVG ${filename} expected viewBox format: "0 0 {w} {h}". Falling back to svg.{width,height}.`,
-          );
-          meta.width = parseInt(attrs.width, 10) || 0;
-          meta.height = parseInt(attrs.height, 10) || 0;
+
+        // svg {width,height} take precedence over viewBox
+        meta.width = parseInt(attrs.width, 10) || 0;
+        meta.height = parseInt(attrs.height, 10) || 0;
+
+        if (meta.width === 0 || meta.height === 0) {
+          const matched = viewBox.match(viewBoxRegex);
+          if (matched) {
+            meta.width = parseInt(matched[1], 10) || 0;
+            meta.height = parseInt(matched[2], 10) || 0;
+          } else {
+            warn(`[watch-decor] SVG ${filename} lacks valid width, height, viewBox.`);
+          }
         }
       }
       meta.depth++;
