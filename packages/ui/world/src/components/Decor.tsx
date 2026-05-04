@@ -57,10 +57,9 @@ export default function Decor(_props: Props) {
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
       },
       transformDecorQuads() {
-        if (!state.inst || !state.manifest) return;
         const { inst, manifest } = state;
+        if (!inst || !manifest) return;
         inst.instanceMatrix.array.fill(0);
-
         let id = 0;
 
         for (const gm of w.gms) {
@@ -83,20 +82,19 @@ export default function Decor(_props: Props) {
             const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 });
 
             if (item.meta.tilt === true) {
-              const [a, b] = item.transform;
+              const [a, b, c, d] = item.transform;
+              const det = a * d - b * c;
               const vecLen = Math.hypot(a, b); // remove scale to get local x unit vector
-              const rotMat = getRotAxisMatrix(a / vecLen, 0, b / vecLen, 90);
-              const frontZ = mat4.elements[2] * 0.5 + mat4.elements[14];
-              setRotMatrixAboutPoint(rotMat, item.center.x, item.meta.y, frontZ);
+              const rotMat = getRotAxisMatrix(a / vecLen, 0, b / vecLen, (det > 0 ? 1 : -1) * 90);
+              // 🚧 rotate about top-axis instead
+              setRotMatrixAboutPoint(rotMat, item.center.x, item.meta.y, item.center.y);
               mat4.premultiply(rotMat); // premultiply means post-rotate
             }
 
             inst.setMatrixAt(id, mat4);
             inst.setColorAt(id, tmpColor.set("#ffffff"));
-
             const texId = state.imgKeys.indexOf(meta.img);
             state.uvTextureIds[id] = Math.max(0, texId);
-
             id++;
           }
         }
