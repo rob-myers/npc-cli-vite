@@ -333,8 +333,9 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     };
   } else if (meta.quad === true) {
     const polyRect = poly.rect.precision(precision);
+    // 🚧 clarify meaning of this transform
     const { transform } = poly.meta;
-    delete poly.meta.transform; // ?
+    delete poly.meta.transform; // already provided one-level-up
 
     const quadMeta = base.meta as Geomorph.DecorQuad["meta"];
     if (!isDecorImgKey(quadMeta.img)) {
@@ -346,7 +347,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       key: base.key,
       meta: quadMeta,
       bounds2d: polyRect.clone(),
-      transform,
+      transform: transform.slice(),
       center: poly.center.precision(3),
       // 🔔 determinant `det` will be provided on instantiation
       det: 1,
@@ -521,7 +522,7 @@ export function decomposeLayoutNav(
   return { navDecomp, navRects };
 }
 
-function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
+function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): Poly | null {
   const poly = Poly.fromRect({ x: 0, y: 0, ...node.baseRect });
   const mat = tmpMat1.setMatrixValue(node.transform).translate(node.offset.x, node.offset.y).precision(precision);
   poly.applyMatrix(mat);
@@ -534,6 +535,9 @@ function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
     // - physical coords provided by `poly` e.g. for collision detection
     // - during symbol flattening `transformDecorMeta` expects tuple
     poly.meta.transform = mat.toArray();
+    // 🚧 convert `meta.transform` to world coords, matching later `poly` scale
+    poly.meta.transform[4] *= sguToWorldScale;
+    poly.meta.transform[5] *= sguToWorldScale;
   } else {
     // fallback to decor point
     meta.point = true;
@@ -542,6 +546,7 @@ function extractDecorPoly(node: DecorImageMapNode, meta: Meta): Poly | null {
 
   // extensions
   if (typeof meta.switch === "number") {
+    // 🚧 unreachable?
     meta.y = doorSwitchHeight;
     meta.tilt = true; // 90° so in XY plane
   }
@@ -678,7 +683,7 @@ function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
     }
     case "image": {
       if (isDecorImageMapNode(node)) {
-        return extractDecorPoly(node, meta); // meta already attached
+        return extractDecorPolyFromMapEditNode(node, meta); // meta already attached
       }
       break;
     }
@@ -701,7 +706,7 @@ export function transformDecorMeta(meta: Meta, mat: Mat, y?: number): Meta {
     h: nextH,
     ...(Array.isArray(meta.transform) && {
       transform: tmpMat2
-        .setMatrixValue(tmpMat1)
+        .setMatrixValue(mat)
         // 🔔 meta.transform should be tuple representation of decor image node's transform
         .preMultiply(meta.transform as Geom.SixTuple)
         .toArray(),
