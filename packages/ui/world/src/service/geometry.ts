@@ -193,6 +193,42 @@ export function addEmptyBillboardOffset(geo: THREE.BufferGeometry) {
   return geo;
 }
 
+const rotMatLookup: Record<string, THREE.Matrix4> = {};
+const tmpVectThree1 = new THREE.Vector3();
+
+/**
+ * Get a matrix which rotates around unit vector.
+ * 🔔 May be mutated for "rotation around a point",
+ * @see getRotAxisMatrix
+ * @param ux unit vector x
+ * @param uy unit vector y
+ * @param uz unit vector z
+ * @param degrees 
+ */
+export function getRotAxisMatrix(ux: number, uy: number, uz: number, degrees: number) {
+  const key = `${ux} ${uy} ${uz} ${degrees}`;
+  return rotMatLookup[key] ??= new THREE.Matrix4().makeRotationAxis(
+    tmpVectThree1.set(ux, uy, uz),
+    degrees * (Math.PI / 180),
+  );
+}
+
+/**
+ * Mutate matrix `mat` so that:
+ * > `mat := translate(cx, cy, cz) . mat . translate(-cx, -cy, -cz)`
+ * @param mat 
+ * @param cx
+ * @param cy
+ * @param cz
+ */
+export function setRotMatrixAboutPoint(mat: THREE.Matrix4, cx: number, cy: number, cz: number): THREE.Matrix4 {
+  const me = mat.elements;
+  mat.elements[12] = (me[0] * -cx + me[4] * -cy + me[8 ] * -cz) + cx;
+  mat.elements[13] = (me[1] * -cx + me[5] * -cy + me[9 ] * -cz) + cy;
+  mat.elements[14] = (me[2] * -cx + me[6] * -cy + me[10] * -cz) + cz;
+  return mat;
+}
+
 /**
  * Merge a base geometry with extra geometries, assigning each a material group index.
  * Returns the merged geometry with groups set up for a material array.

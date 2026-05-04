@@ -129,7 +129,9 @@
     - ✅ ensure decor `meta.transform` and `transform` in world coords
     - ✅ ensure quads correctly transformed
   - ✅ switches auto have meta `{ y: 1, tilt: true }`
-  - 🚧 switches change image to switch image
+  - ✅ switches change image to switch image
+  - ✅ tilt takes effect
+  - 🚧 clean
 
 - pick should be pointerup
 
