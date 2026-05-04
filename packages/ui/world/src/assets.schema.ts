@@ -34,14 +34,14 @@ export const ConnectorJsonSchema = z.object({
 export type ConnectorJson = z.infer<typeof ConnectorJsonSchema>;
 
 /**
- * Had issue with original during HMR.
- * ```ts
- * export const ConnectorSchema = z.instanceof(Connector);
- * ```
- * Reference: https://share.google/aimode/n1pJpv9LuzdeOYfGJ
+ * - In DEV we fix schema mismatch issues during HMR.
+ * - In PROD we don't need it and can't rely on `constructor.name`.
  */
 export const ConnectorSchema = z.custom<Connector>(
-  (val) => val && typeof val === "object" && val.constructor.name === "Connector",
+  (val) =>
+    import.meta.env.PROD
+      ? z.instanceof(Connector)
+      : val && typeof val === "object" && val.constructor.name === "Connector",
   "Input is not a Connector instance",
 );
 
