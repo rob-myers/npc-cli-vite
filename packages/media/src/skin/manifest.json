@@ -1,5 +1,12 @@
 {
   "byKey": {
+    "general-0": {
+      "key": "general-0",
+      "id": "fe99881948399dca",
+      "filename": "fe99881948399dca.png",
+      "tags": ["general"],
+      "url": "https://namemc.com/skin/fe99881948399dca"
+    },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
@@ -14,12 +21,12 @@
       "tags": ["robot"],
       "url": "https://namemc.com/skin/e91cc700154075b2"
     },
-    "general-0": {
-      "key": "general-0",
-      "id": "fe99881948399dca",
-      "filename": "fe99881948399dca.png",
-      "tags": ["general"],
-      "url": "https://namemc.com/skin/fe99881948399dca"
+    "solider-0": {
+      "key": "solider-0",
+      "id": "351d1a96305a63b9",
+      "filename": "351d1a96305a63b9.png",
+      "tags": ["soldier"],
+      "url": "https://namemc.com/skin/351d1a96305a63b9"
     }
   }
 }
