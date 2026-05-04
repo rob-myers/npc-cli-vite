@@ -33,7 +33,17 @@ export const ConnectorJsonSchema = z.object({
 });
 export type ConnectorJson = z.infer<typeof ConnectorJsonSchema>;
 
-export const ConnectorSchema = z.instanceof(Connector);
+/**
+ * Had issue with original during HMR.
+ * ```ts
+ * export const ConnectorSchema = z.instanceof(Connector);
+ * ```
+ * Reference: https://share.google/aimode/n1pJpv9LuzdeOYfGJ
+ */
+export const ConnectorSchema = z.custom<Connector>(
+  (val) => val && typeof val === "object" && val.constructor.name === "Connector",
+  "Input is not a Connector instance",
+);
 
 export const connectorCodec = z.codec(ConnectorJsonSchema, ConnectorSchema, {
   decode: (json) => Connector.from(json),
