@@ -127,7 +127,7 @@
     {
       "id": "6d2aff04-de69-416f-993f-82aaf81856fe",
       "name": "decor quad key=switch",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 67.5, "f": 240},
       "type": "image",
@@ -140,7 +140,7 @@
     {
       "id": "6a1c4886-2fb9-4778-bf10-218ef113feee",
       "name": "decor quad key=switch",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0, "b": -1, "c": -1, "d": 0, "e": 67.5, "f": 240},
       "type": "image",
@@ -162,8 +162,8 @@
     },
     {
       "id": "7f59ed19-3ab1-40ae-8c65-d44e28ddb135",
-      "name": "decor quad key=switch",
-      "locked": false,
+      "name": "decor quad key=switch y=0.5",
+      "locked": true,
       "visible": true,
       "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 67.5, "f": 60},
       "type": "image",
@@ -176,7 +176,7 @@
     {
       "id": "91aea1a4-4f72-41b5-988f-2f64eef0bd72",
       "name": "decor quad key=switch",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0, "b": -1, "c": -1, "d": 0, "e": 67.5, "f": 60},
       "type": "image",

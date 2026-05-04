@@ -319,7 +319,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
 
   if (meta.rect === true) {
     if (poly.outline.length !== 4) {
-      warn(`createLayoutDecorFromPoly: decor rect expected 4 points (saw ${poly.outline.length})`, poly.meta);
+      warn(`${"createLayoutDecorFromPoly"}: decor rect expected 4 points (saw ${poly.outline.length})`, poly.meta);
     }
     const { baseRect, angle } = geomService.polyToAngledRect(poly);
     baseRect.precision(precision);
@@ -331,8 +331,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       center: poly.center.precision(3),
       angle,
     };
-  } else if (meta.quad === true || meta.decal === true) {
-    const type = meta.quad === true ? "quad" : "decal"; // decal supported?
+  } else if (meta.quad === true) {
     const polyRect = poly.rect.precision(precision);
     const { transform } = poly.meta;
     delete poly.meta.transform; // ?
@@ -343,7 +342,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     }
 
     return {
-      type: type as "quad" | "decal",
+      type: "quad",
       key: base.key,
       meta: quadMeta,
       bounds2d: polyRect.clone(),
@@ -693,7 +692,7 @@ function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
  */
 export function transformDecorMeta(meta: Meta, mat: Mat, y?: number): Meta {
   /** if `y=0` place decor "on the ground" otherwise aggregate `y` */
-  const nextY = meta.y === 0 ? 0.01 : (parseInt(String(y), 10) || 0) + (parseInt(String(meta.y), 10) || 0.01);
+  const nextY = meta.y === 0 ? 0.01 : (parseFloat(String(y)) || 0) + (parseFloat(String(meta.y)) || 0.01);
   const nextH = meta.h;
 
   return {
