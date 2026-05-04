@@ -20,7 +20,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type AssetsSkinType } from "../assets.schema";
-import { npcScale } from "../const";
+import { npcLabelHeight } from "../const";
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
@@ -62,7 +62,7 @@ export default function NPCs() {
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(0.8);
-        mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a).add(0);
+        mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a);
         mat.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
         return {
           skinIndexUniform,
@@ -262,7 +262,7 @@ export default function NPCs() {
           const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
 
           const shadowQuad = createSkinnedXzQuad(1, 1);
-          const labelQuad = createSkinnedLabelQuad(0.5, 0.125, 1.25 / npcScale, headBoneIndex >= 0 ? headBoneIndex : 0);
+          const labelQuad = createSkinnedLabelQuad(0.5, 0.125, npcLabelHeight, headBoneIndex >= 0 ? headBoneIndex : 0);
           addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
           addEmptyBillboardOffset(shadowQuad);
           const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
