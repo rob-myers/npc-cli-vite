@@ -121,7 +121,7 @@
   - ✅ remove on remove
   - ✅ detect npc `enter-room`
 
-- 🚧 doors have switches
+- ✅ doors have switches
   - e.g. stateroom--012
   - ✅ assets.json layout 301 should have decor
     - add decor to a sub-symbol of 301: stateroom--036
@@ -131,12 +131,19 @@
   - ✅ switches auto have meta `{ y: 1, tilt: true }`
   - ✅ switches change image to switch image
   - ✅ tilt takes effect
-  - 🚧 clean
 
-- BUG MapEdit shift-snap mismatch for distinct determinant sign
+- 🚧 add switches to all extant doors
 
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR
+
+- BUG MapEdit shift-snap mismatch for distinct determinant sign
+
+- 🚧 BUG after edit `const.ts` world worker physics broken
+  - multiple `request-tiled-navmesh` received by worker
+  - multiple `setup-physics` received by worker
+
+- move debug colliders switch into WorldMenu
 
 - pick should be pointerup
 

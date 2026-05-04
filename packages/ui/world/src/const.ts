@@ -79,7 +79,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   walls: { color: "#000000", opacity: 0.5 },
 };
 
-export const wallHeight = 2;
+export const wallHeight = 1;
 
 export const MAX_GEOMORPH_INSTANCES = 64;
 
