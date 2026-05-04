@@ -12,7 +12,7 @@ import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import * as THREE from "three/webgpu";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
-import { createUnitBox, embedXZMat4 } from "../service/geometry";
+import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 export default function Decor(_props: Props) {
@@ -28,39 +28,6 @@ export default function Decor(_props: Props) {
       images: {} as Record<string, HTMLImageElement>,
       imgKeys: [] as string[],
       manifest: null as DecorManifest | null,
-
-      transformDecorQuads() {
-        if (!state.inst || !state.manifest) return;
-        const { inst, manifest } = state;
-        inst.instanceMatrix.array.fill(0);
-
-        let id = 0;
-
-        w.gms.forEach(({ decor, transform: { a, b, c, d, e, f } }) => {
-          for (const item of decor) {
-            if (item.type !== "quad") continue;
-            const { transform: quadTransform, meta } = item;
-
-            const entry = manifest.byKey[meta.img];
-            const imgW = (entry?.width ?? 1) * sguToWorldScale;
-            const imgH = (entry?.height ?? 1) * sguToWorldScale;
-
-            tmpMat.feedFromArray([imgW, 0, 0, imgH, 0, 0]);
-            tmpMat.postMultiply(quadTransform);
-            tmpMat.postMultiply([a, b, c, d, e, f]);
-            inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 }));
-            inst.setColorAt(id, tmpColor.set("#ffffff"));
-
-            const texId = state.imgKeys.indexOf(meta.img);
-            state.uvTextureIds[id] = Math.max(0, texId);
-
-            id++;
-          }
-        });
-
-        inst.count = id;
-        inst.computeBoundingSphere();
-      },
 
       async draw() {
         if (state.imgKeys.length === 0) return;
@@ -84,11 +51,57 @@ export default function Decor(_props: Props) {
           w.texDecor.updateIndex(i);
         }
       },
-
       sendDataToGpu() {
         state.box.getAttribute("uvTextureIds").needsUpdate = true;
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
+      },
+      transformDecorQuads() {
+        if (!state.inst || !state.manifest) return;
+        const { inst, manifest } = state;
+        inst.instanceMatrix.array.fill(0);
+
+        let id = 0;
+
+        for (const gm of w.gms) {
+          const {
+            decor,
+            transform: { a, b, c, d, e, f },
+          } = gm;
+          for (const item of decor) {
+            if (item.type !== "quad") continue;
+            const { transform: quadTransform, meta } = item;
+
+            const entry = manifest.byKey[meta.img];
+            const imgW = (entry?.width ?? 1) * sguToWorldScale;
+            const imgH = (entry?.height ?? 1) * sguToWorldScale;
+
+            tmpMat.feedFromArray([imgW, 0, 0, imgH, 0, 0]);
+            tmpMat.postMultiply(quadTransform);
+            tmpMat.postMultiply([a, b, c, d, e, f]);
+
+            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 });
+
+            if (item.meta.tilt === true) {
+              const [a, b] = item.transform;
+              const vecLen = Math.hypot(a, b); // remove scale to get local x unit vector
+              const rotMat = getRotAxisMatrix(a / vecLen, 0, b / vecLen, 90);
+              setRotMatrixAboutPoint(rotMat, item.center.x, item.meta.y, item.center.y);
+              mat4.premultiply(rotMat); // premultiply means post-rotate
+            }
+
+            inst.setMatrixAt(id, mat4);
+            inst.setColorAt(id, tmpColor.set("#ffffff"));
+
+            const texId = state.imgKeys.indexOf(meta.img);
+            state.uvTextureIds[id] = Math.max(0, texId);
+
+            id++;
+          }
+        }
+
+        inst.count = id;
+        inst.computeBoundingSphere();
       },
     }),
   );
@@ -154,8 +167,8 @@ export default function Decor(_props: Props) {
     });
     texMat.colorNode = shaderMeta.texNode;
     // +x, -x, +y, -y, +z, -z
-    return [plainMaterial, plainMaterial, texMat, plainMaterial, plainMaterial, plainMaterial];
-  }, [plainMaterial, shaderMeta.uid]);
+    return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
+  }, [plainBlackMaterial, shaderMeta.uid]);
 
   if (decorQuadCount === 0) return null;
 
@@ -196,4 +209,4 @@ const decorTexSize = 64;
 const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
-const plainMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
+const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, color: "#000" });
