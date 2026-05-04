@@ -333,8 +333,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     };
   } else if (meta.quad === true) {
     const polyRect = poly.rect.precision(precision);
-    // 🚧 clarify meaning of this transform
-    const { transform } = poly.meta;
+    const transform = poly.meta.transform.slice();
     delete poly.meta.transform; // already provided one-level-up
 
     const quadMeta = base.meta as Geomorph.DecorQuad["meta"];
@@ -347,7 +346,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       key: base.key,
       meta: quadMeta,
       bounds2d: polyRect.clone(),
-      transform: transform.slice(),
+      transform,
       center: poly.center.precision(3),
       // 🔔 determinant `det` will be provided on instantiation
       det: 1,
@@ -448,7 +447,7 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
       continue;
     }
 
-    const poly = mapNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
+    const poly = convertMapEditNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
     if (poly === null) continue;
 
     for (const [tag, polysKey] of Object.values(tagPolysKeyPairs)) {
@@ -530,25 +529,23 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
   poly.meta = meta;
   poly.meta.img = node.srcKey; // e.g. arrow-square-right-duotone
 
+  if (meta.img === "switch") {
+    meta.y = doorSwitchHeight;
+    meta.tilt = true; // 90° around "top"
+  }
+
   if (meta.cuboid === true || meta.quad === true) {
     // - preserve transform for shader later, so can transform quad from the spritesheet
     // - physical coords provided by `poly` e.g. for collision detection
     // - during symbol flattening `transformDecorMeta` expects tuple
+    // - convert to world coords, matching later `poly` scale
     poly.meta.transform = mat.toArray();
-    // 🚧 convert `meta.transform` to world coords, matching later `poly` scale
     poly.meta.transform[4] *= sguToWorldScale;
     poly.meta.transform[5] *= sguToWorldScale;
   } else {
     // fallback to decor point
     meta.point = true;
     meta.direction = tmpVect1.set(mat.a, mat.b).normalize().json;
-  }
-
-  // extensions
-  if (typeof meta.switch === "number") {
-    // 🚧 unreachable?
-    meta.y = doorSwitchHeight;
-    meta.tilt = true; // 90° so in XY plane
   }
 
   return poly;
@@ -667,7 +664,7 @@ export function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
   return 301 <= input && input < 500;
 }
 
-function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
+function convertMapEditNodeToPoly(node: MapNode, meta: Meta): Poly | null {
   switch (node.type) {
     case "rect": {
       const { a, b, c, d, e, f } = node.transform;
@@ -683,7 +680,7 @@ function mapNodeToPoly(node: MapNode, meta: Meta): Poly | null {
     }
     case "image": {
       if (isDecorImageMapNode(node)) {
-        return extractDecorPolyFromMapEditNode(node, meta); // meta already attached
+        return extractDecorPolyFromMapEditNode(node, meta);
       }
       break;
     }

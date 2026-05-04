@@ -108,6 +108,7 @@ export default function Decor(_props: Props) {
     };
   }, [w.texDecor.hash]);
 
+  // 🚧 refetch onchange assets
   const manifest = useQuery({
     queryKey: [...w.worldQueryPrefix, "decor-manifest"],
     async queryFn() {

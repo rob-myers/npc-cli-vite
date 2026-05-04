@@ -6,6 +6,12 @@
       "width": 60,
       "height": 60
     },
+    "axes-2d": {
+      "key": "axes-2d",
+      "filename": "axes-2d.svg",
+      "width": 6,
+      "height": 6
+    },
     "icon--warn": {
       "key": "icon--warn",
       "filename": "icon--warn.svg",
@@ -33,8 +39,8 @@
     "switch": {
       "key": "switch",
       "filename": "switch.svg",
-      "width": 6,
-      "height": 6
+      "width": 60,
+      "height": 60
     }
   }
 }

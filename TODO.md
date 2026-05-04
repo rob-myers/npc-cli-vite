@@ -127,6 +127,9 @@
     - add decor to a sub-symbol of 301: stateroom--036
   - ✅ create `<Decor>` instancedMesh with cuboid geometry
     - ✅ ensure decor `meta.transform` and `transform` in world coords
+    - ✅ ensure quads correctly transformed
+  - ✅ switches auto have meta `{ y: 1, tilt: true }`
+  - 🚧 switches change image to switch image
 
 - pick should be pointerup
 
