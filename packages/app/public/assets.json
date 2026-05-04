@@ -1614,6 +1614,7 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
             "transform": [0, 1, -1, 0, 67.5, 60]
           }
@@ -2906,6 +2907,7 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
             "transform": [0, 1, -1, 0, 67.5, 60]
           }
@@ -3212,8 +3214,8 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
-            "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -3276,8 +3278,8 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
-            "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -3340,8 +3342,8 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
-            "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -5198,8 +5200,8 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
-            "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -5270,8 +5272,8 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
-            "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -5342,8 +5344,8 @@
             "decor": true,
             "quad": true,
             "key": "switch",
+            "y": 0.5,
             "img": "switch",
-            "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
