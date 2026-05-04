@@ -88,7 +88,8 @@
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
 
   - 🚧 if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
-    - 🚧 can track npc current room (can be `null` on bad spawn)
+    - ✅ can track npc current room (can be `null` on bad spawn)
+    - 🚧 ...
 
   - ❌ move a-star to worker
   - ❌ stale: open door after path requested beyond door
@@ -135,9 +136,11 @@
 - 🚧 decor follow up
   - 🚧 add switches to all extant doors
   - ✅ can pick decor
-  - decor has gmRoomId
-  - decor switches have gmDoorId
-  - decor added to "grid" (may support more that just decor)
+
+- decor added to "grid"
+  - may support more that just decor
+  - also ensures decor gmRoomId
+  - also ensures decor switch gmDoorId
 
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR
