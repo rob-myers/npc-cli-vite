@@ -108,6 +108,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             const decoded = w.door.decodeInstanceId(pick.instanceId);
             return { ...pick, door: true, ...decoded };
           }
+          case "decor": {
+            const decoded = w.decor.decodeInstanceId(pick.instanceId);
+            if (!decoded) return null;
+            return { ...pick, decor: true, ...decoded };
+          }
           case "npc": {
             const npc = w.npc.byPickId[pick.instanceId];
             if (npc) return { ...pick, npcKey: npc.key, ...w.e.npcToRoom.get(npc.key) };
@@ -143,21 +148,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "door":
             mesh = getTempInstanceMesh(w.door.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          // case "quad":
-          //   mesh = getTempInstanceMesh(w.decor.quadInst, decoded.instanceId);
-          //   break;
           case "obstacle":
             mesh = getTempInstanceMesh(w.obs.inst as THREE.InstancedMesh, picked.instanceId);
             break;
           case "ceiling":
             mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          // case "cuboid":
-          //   mesh = getTempInstanceMesh(w.decor.cuboidInst, decoded.instanceId);
-          //   break;
-          // case "lock-light":
-          //   mesh = getTempInstanceMesh(w.door.lockSigInst, decoded.instanceId);
-          //   break;
+          case "decor":
+            mesh = getTempInstanceMesh(w.decor.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
           default:
             throw testNever(picked);
         }
@@ -369,6 +368,7 @@ export type Picked = {
   | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
   | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
   | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
+  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeInstanceId"]>)
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
 );
