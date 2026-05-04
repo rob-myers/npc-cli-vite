@@ -83,6 +83,10 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       case "image":
       case "symbol": {
         if (isHullSymbol) break; // avoid large hull thumbnails
+        if (node.type === "image" && node.srcKey === null) {
+          break;
+        }
+
         const image = await loadImage(getImageOrSymbolNodeImageUrl(node));
 
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
