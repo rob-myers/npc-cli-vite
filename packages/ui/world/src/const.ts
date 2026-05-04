@@ -16,7 +16,7 @@ export const worldToSguScale = 1 / sguToWorldScale;
 
 export const decorIconRadius = 5 * sguToWorldScale;
 export const decorIconRadiusOutset = 2 * sguToWorldScale;
-export const doorSwitchHeight = 1;
+export const doorSwitchHeight = 1.2;
 
 export const obstacleOutset = 8 * sguToWorldScale;
 /**
