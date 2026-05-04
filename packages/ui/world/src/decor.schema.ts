@@ -71,7 +71,7 @@ export const DecorQuadSchema = BaseDecorSchema.extend({
   type: z.literal("quad"),
   transform: SixTupleSchema,
   center: pointCodec,
-  det: z.number(),
+  topCenter: pointCodec,
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
 });
 export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
@@ -80,14 +80,6 @@ export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape
   color: z.string().optional(),
   transform: SixTupleSchema.optional(),
   y3d: z.number().optional(),
-});
-
-export const DecorDecalSchema = BaseDecorSchema.extend({
-  type: z.literal("decal"),
-  transform: SixTupleSchema,
-  center: pointCodec,
-  det: z.number(),
-  meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
 });
 
 export const DecorRectSchema = BaseDecorSchema.extend({
@@ -106,7 +98,6 @@ export const DecorSchema = z.discriminatedUnion("type", [
   DecorCuboidSchema,
   DecorPointSchema,
   DecorQuadSchema,
-  DecorDecalSchema,
   DecorRectSchema,
 ]);
 export type Decor = z.infer<typeof DecorSchema>;
