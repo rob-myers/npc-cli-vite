@@ -133,6 +133,11 @@
   - ✅ tilt takes effect
   - 🚧 clean
 
+- BUG MapEdit shift-snap mismatch for distinct determinant sign
+
+- ✅ BUG edit const `doorSwitchHeight` broke World
+  - switched to `constructor.name` test to fix HMR
+
 - pick should be pointerup
 
 - script `gen-decor-sheets`
