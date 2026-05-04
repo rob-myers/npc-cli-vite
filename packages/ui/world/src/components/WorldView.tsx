@@ -33,7 +33,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // maxPolarAngle: Math.PI * 1/2,
         maxPolarAngle: (Math.PI * 1) / 2.5,
         // minDistance: 1.5, // target could be ground or npc head
-        minDistance: 5, // target could be ground or npc head
+        minDistance: 2.5, // target could be ground or npc head
         maxDistance: 60,
         panSpeed: 2,
         rotateSpeed: 0.5,
