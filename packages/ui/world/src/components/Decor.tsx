@@ -1,3 +1,4 @@
+import { type DecorManifest, DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { useStateRef } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { Mat } from "@npc-cli/util/geom";
@@ -9,9 +10,7 @@ import { generateUUID } from "three/src/math/MathUtils.js";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";
 import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
-import { color, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import z from "zod";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
 import { createUnitBox, embedXZMat4 } from "../service/geometry";
 import { WorldContext } from "./world-context";
@@ -50,7 +49,7 @@ export default function Decor(_props: Props) {
             tmpMat.postMultiply(quadTransform);
             tmpMat.postMultiply([a, b, c, d, e, f]);
             inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 }));
-            inst.setColorAt(id, tmpColor.set("#cc0000"));
+            inst.setColorAt(id, tmpColor.set("#ffffff"));
 
             const texId = state.imgKeys.indexOf(meta.img);
             state.uvTextureIds[id] = Math.max(0, texId);
@@ -108,7 +107,7 @@ export default function Decor(_props: Props) {
     };
   }, [w.texDecor.hash]);
 
-  // 🚧 refetch onchange assets
+  // 🚧 refetch onchange decor manifest
   const manifest = useQuery({
     queryKey: [...w.worldQueryPrefix, "decor-manifest"],
     async queryFn() {
@@ -149,20 +148,14 @@ export default function Decor(_props: Props) {
     });
   }, [w.mapKey, w.hash, decorQuadCount, state.imgKeys.length]);
 
-  const redMaterial = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
-    mat.colorNode = vec4(color("#cc0000"), 1);
-    return mat;
-  }, []);
-
   const materials = useMemo(() => {
     const texMat = new THREE.MeshStandardNodeMaterial({
       side: THREE.DoubleSide,
     });
     texMat.colorNode = shaderMeta.texNode;
     // +x, -x, +y, -y, +z, -z
-    return [redMaterial, redMaterial, texMat, redMaterial, redMaterial, redMaterial];
-  }, [redMaterial, shaderMeta.uid]);
+    return [plainMaterial, plainMaterial, texMat, plainMaterial, plainMaterial, plainMaterial];
+  }, [plainMaterial, shaderMeta.uid]);
 
   if (decorQuadCount === 0) return null;
 
@@ -203,17 +196,4 @@ const decorTexSize = 64;
 const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
-
-type DecorManifest = z.infer<typeof DecorManifestSchema>;
-
-const DecorManifestSchema = z.object({
-  byKey: z.record(
-    z.string(),
-    z.object({
-      key: z.string(),
-      filename: z.string(),
-      width: z.number(),
-      height: z.number(),
-    }),
-  ),
-});
+const plainMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
