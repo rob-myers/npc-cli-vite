@@ -132,9 +132,12 @@
   - ✅ switches change image to switch image
   - ✅ tilt takes effect
 
-- 🚧 add switches to all extant doors
-- decor has gmRoomId
-- can pick decor
+- 🚧 decor follow up
+  - 🚧 add switches to all extant doors
+  - ✅ can pick decor
+  - decor has gmRoomId
+  - decor switches have gmDoorId
+  - decor added to "grid" (may support more that just decor)
 
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR

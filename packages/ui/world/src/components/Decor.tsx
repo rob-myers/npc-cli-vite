@@ -13,6 +13,7 @@ import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import * as THREE from "three/webgpu";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
+import { PICK_TYPE } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Decor(_props: Props) {
@@ -50,6 +51,17 @@ export default function Decor(_props: Props) {
           ct.restore();
           w.texDecor.updateIndex(i);
         }
+      },
+      decodeInstanceId(instanceId: number) {
+        let id = instanceId;
+        for (const gm of w.gms) {
+          const quads = gm.decor.filter((d) => d.type === "quad");
+          if (id < quads.length) {
+            return { gmId: gm.gmId, meta: quads[id].meta };
+          }
+          id -= quads.length;
+        }
+        return null;
       },
       sendDataToGpu() {
         state.box.getAttribute("uvTextureIds").needsUpdate = true;
@@ -111,6 +123,7 @@ export default function Decor(_props: Props) {
     texNode.depthNode = uvTexIds;
     return {
       texNode,
+      pickNode: w.view.withPickOutput(PICK_TYPE.decor),
       uid: generateUUID(),
     };
   }, [w.texDecor.hash]);
@@ -161,25 +174,26 @@ export default function Decor(_props: Props) {
       side: THREE.DoubleSide,
     });
     texMat.colorNode = shaderMeta.texNode;
+    texMat.outputNode = shaderMeta.pickNode;
     // +x, -x, +y, -y, +z, -z
     return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
   }, [plainBlackMaterial, shaderMeta.uid]);
 
-  if (decorQuadCount === 0) return null;
-
   return (
-    <instancedMesh
-      name="decor"
-      ref={state.ref("inst")}
-      args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
-      frustumCulled={false}
-      renderOrder={-2}
-      material={materials}
-    >
-      <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
-        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
-      </bufferGeometry>
-    </instancedMesh>
+    decorQuadCount > 0 && (
+      <instancedMesh
+        name="decor"
+        ref={state.ref("inst")}
+        args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
+        frustumCulled={false}
+        renderOrder={-2}
+        material={materials}
+      >
+        <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
+          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+        </bufferGeometry>
+      </instancedMesh>
+    )
   );
 }
 
@@ -194,6 +208,7 @@ export type State = {
   images: Record<string, HTMLImageElement>;
   imgKeys: string[];
   manifest: DecorManifest | null;
+  decodeInstanceId(instanceId: number): { gmId: number; meta: Meta } | null;
   transformDecorQuads(): void;
   draw(): Promise<void>;
   sendDataToGpu(): void;

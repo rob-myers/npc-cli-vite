@@ -2,7 +2,7 @@ import { ExhaustiveError } from "@npc-cli/util";
 import { gmFloorExtraScale, worldToSguScale } from "../const";
 
 /** Object type IDs — spaced out for visual debug */
-export const PICK_TYPE = { floor: 25, ceiling: 50, door: 75, wall: 100, obstacle: 125, npc: 150 } as const;
+export const PICK_TYPE = { floor: 25, ceiling: 50, door: 75, wall: 100, obstacle: 125, npc: 150, decor: 175 } as const;
 
 export type ObjectPickKey = keyof typeof PICK_TYPE;
 
@@ -32,6 +32,8 @@ export function decodePick(r: number, g: number, b: number) {
     case "obstacle":
       return { type, instanceId };
     case "npc":
+      return { type, instanceId };
+    case "decor":
       return { type, instanceId };
     default:
       throw new ExhaustiveError(type);
