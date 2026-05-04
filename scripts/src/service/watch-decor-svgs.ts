@@ -80,6 +80,7 @@ async function rebuildDecor() {
   info(`[watch-decor] rebuilt manifest.json`);
 }
 
+/** width, height overrides viewBox */
 function parseSvgDimensions(svgContent: string, filename: string): { width: number; height: number } | null {
   const meta = { width: 0, height: 0, depth: 0 };
   const viewBoxRegex = /^0 0 (\d+) (\d+)$/;
