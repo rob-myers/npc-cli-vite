@@ -133,6 +133,8 @@
   - ✅ tilt takes effect
 
 - 🚧 add switches to all extant doors
+- decor has gmRoomId
+- can pick decor
 
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR

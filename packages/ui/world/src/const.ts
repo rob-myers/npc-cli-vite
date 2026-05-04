@@ -89,6 +89,8 @@ export const MAX_DECOR_QUAD_INSTANCES = 512;
 
 export const npcScale = 0.65;
 
+export const npcLabelHeight = 1.4 / npcScale;
+
 export const MAX_NPCS = 256;
 
 /** In meters, or equivalently 2 grid squares */
