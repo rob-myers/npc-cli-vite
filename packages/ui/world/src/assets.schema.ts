@@ -214,6 +214,12 @@ export const SheetsSchema = z.object({
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
 
+export const emptySheets: SheetsType = {
+  symbol: {},
+  maxSymbolSheetDim: { width: 1, height: 1 },
+  symbolSheetDims: [],
+};
+
 export const AssetsSkinSchema = z.object({
   key: z.string(),
   id: z.string(),
