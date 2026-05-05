@@ -1,6 +1,6 @@
 import { type DecorManifest, DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { useStateRef } from "@npc-cli/util";
-import { fetchParsed } from "@npc-cli/util/fetch-parsed";
+import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
@@ -10,6 +10,7 @@ import { texture } from "three/src/nodes/accessors/TextureNode.js";
 import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
 import * as THREE from "three/webgpu";
+import type { DecorSheetEntry } from "../assets.schema";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
@@ -25,31 +26,57 @@ export default function Decor(_props: Props) {
 
       box: createUnitBox(),
 
+      uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
+      uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
-      images: {} as Record<string, HTMLImageElement>,
-      imgKeys: [] as string[],
+      images: [] as HTMLImageElement[],
       manifest: null as DecorManifest | null,
 
+      addUvs() {
+        if (!w.sheets?.decor) return;
+
+        state.uvOffsets.fill(0);
+        state.uvDimensions.fill(0);
+        state.uvTextureIds.fill(0);
+
+        let idx = 0;
+
+        for (const gm of w.gms) {
+          for (const item of gm.decor) {
+            if (item.type !== "quad") continue;
+            const entry = w.sheets.decor[item.meta.img] as DecorSheetEntry | undefined;
+            if (!entry) {
+              warn(`decor "${item.meta.img}" not found in sheets.json`);
+              idx++;
+              continue;
+            }
+            const { sheetId, rect } = entry;
+            const dims = w.sheets.decorSheetDims?.[sheetId];
+            if (!dims) continue;
+
+            state.uvOffsets.set([rect.x / dims.width, rect.y / dims.height], idx * 2);
+            state.uvDimensions.set([rect.width / dims.width, rect.height / dims.height], idx * 2);
+            state.uvTextureIds[idx] = sheetId;
+            idx++;
+          }
+        }
+      },
+
       async draw() {
-        if (state.imgKeys.length === 0) return;
+        if (!w.sheets?.decorSheetDims || state.images.length === 0) return;
         const { ct } = w.texDecor;
+        const { maxDecorSheetDim, decorSheetDims } = w.sheets;
+        if (!maxDecorSheetDim || !decorSheetDims) return;
 
         w.texDecor.resize({
-          numTextures: state.imgKeys.length,
-          width: decorTexSize,
-          height: decorTexSize,
+          numTextures: decorSheetDims.length,
+          width: maxDecorSheetDim.width,
+          height: maxDecorSheetDim.height,
         });
-
-        for (let i = 0; i < state.imgKeys.length; i++) {
-          const img = state.images[state.imgKeys[i]];
-          if (!img) continue;
+        for (let sheetId = 0; sheetId < state.images.length; sheetId++) {
           ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-          ct.save();
-          ct.translate(0, decorTexSize);
-          ct.scale(1, -1);
-          ct.drawImage(img, 0, 0, decorTexSize, decorTexSize);
-          ct.restore();
-          w.texDecor.updateIndex(i);
+          ct.drawImage(state.images[sheetId], 0, 0);
+          w.texDecor.updateIndex(sheetId);
         }
       },
       decodeInstanceId(instanceId: number) {
@@ -64,7 +91,12 @@ export default function Decor(_props: Props) {
         return null;
       },
       sendDataToGpu() {
-        state.box.getAttribute("uvTextureIds").needsUpdate = true;
+        const geo = state.inst?.geometry;
+        if (geo) {
+          geo.getAttribute("uvOffsets").needsUpdate = true;
+          geo.getAttribute("uvDimensions").needsUpdate = true;
+          geo.getAttribute("uvTextureIds").needsUpdate = true;
+        }
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
       },
@@ -96,13 +128,11 @@ export default function Decor(_props: Props) {
               const det = a * d - b * c;
               const rotMat = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
               setRotMatrixAboutPoint(rotMat, item.topCenter.x, item.meta.y, item.topCenter.y);
-              mat4.premultiply(rotMat); // premultiply means post-rotate
+              mat4.premultiply(rotMat);
             }
 
             inst.setMatrixAt(id, mat4);
             inst.setColorAt(id, tmpColor.set("#ffffff"));
-            const texId = state.imgKeys.indexOf(meta.img);
-            state.uvTextureIds[id] = Math.max(0, texId);
             id++;
           }
         }
@@ -122,33 +152,30 @@ export default function Decor(_props: Props) {
       return fetchParsed("/decor/manifest.json", DecorManifestSchema);
     },
   }).data;
-  const imagesQuery = useQuery({
-    queryKey: [...w.worldQueryPrefix, "decor-images", manifest ? "loaded" : "pending"],
-    async queryFn() {
-      if (!manifest) return {};
-      const images: Record<string, HTMLImageElement> = {};
-      for (const entry of Object.values(manifest.byKey)) {
-        try {
-          images[entry.key] = await loadImage(`/decor/${entry.filename}`);
-        } catch {
-          warn(`failed to load decor image: ${entry.filename}`);
-        }
-      }
-      return images;
-    },
-    enabled: !!manifest,
-  });
   state.manifest = manifest ?? state.manifest;
-  state.images = imagesQuery.data ?? state.images;
-  state.imgKeys = Object.keys(state.images);
+
+  state.images =
+    useQuery({
+      queryKey: [...w.worldQueryPrefix, "decor-sheet-images"],
+      async queryFn() {
+        const numSheets = w.sheets.decorSheetDims?.length ?? 0;
+        const images: HTMLImageElement[] = [];
+        for (let sheetId = 0; sheetId < numSheets; sheetId++) {
+          images.push(await loadImage(`/sheet/decor.${sheetId}.png${getDevCacheBustQueryParam()}`));
+        }
+        return images;
+      },
+      enabled: !!w.sheets?.decorSheetDims,
+    }).data ?? state.images;
+
   const decorQuadCount = w.gms.reduce((sum, gm) => sum + gm.decor.filter((d) => d.type === "quad").length, 0);
 
   const { mutateAsync: updateDecor } = useMutation({
     mutationKey: [...w.worldQueryPrefix, "update-decor"],
     async mutationFn() {
+      state.addUvs();
       await state.draw();
       await pause(100);
-      // 🚧 add decor to grid computing gmRoomId, gmDoorId
       await state.transformDecorQuads();
       await pause(100);
       state.sendDataToGpu();
@@ -157,18 +184,21 @@ export default function Decor(_props: Props) {
   });
 
   React.useEffect(() => {
-    if (decorQuadCount === 0 || state.imgKeys.length === 0) return;
+    if (decorQuadCount === 0 || state.images.length === 0 || !state.manifest) return;
     (async () => {
-      if (!w.hash || w.pending.nav) return; // wait for nav
+      if (!w.hash || w.pending.nav) return;
       w.setNextPending({ decor: true });
       await updateDecor();
       w.setNextPending({ decor: false });
     })();
-  }, [w.mapKey, w.hash, state.imgKeys.length, w.pending.nav]);
+  }, [w.mapKey, w.hash, state.images.length, w.pending.nav]);
 
   const materials = useMemo(() => {
+    const uvDims = attribute("uvDimensions", "vec2");
+    const uvOffs = attribute("uvOffsets", "vec2");
     const uvTexIds = attribute("uvTextureIds", "float");
-    const texNode = texture(w.texDecor.tex, uv());
+    const transformedUv = uv().mul(uvDims).add(uvOffs);
+    const texNode = texture(w.texDecor.tex, transformedUv);
     texNode.depthNode = uvTexIds;
 
     const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
@@ -189,6 +219,8 @@ export default function Decor(_props: Props) {
       visible={state.everUpdated}
     >
       <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
+        <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
+        <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
         <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
       </bufferGeometry>
     </instancedMesh>
@@ -203,10 +235,12 @@ export type State = {
   inst: THREE.InstancedMesh;
   everUpdated: boolean;
   box: THREE.BufferGeometry;
+  uvOffsets: Float32Array;
+  uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
-  images: Record<string, HTMLImageElement>;
-  imgKeys: string[];
+  images: HTMLImageElement[];
   manifest: DecorManifest | null;
+  addUvs(): void;
   decodeInstanceId(instanceId: number): { gmId: number; meta: Meta } | null;
   transformDecorQuads(): Promise<void>;
   draw(): Promise<void>;
@@ -214,7 +248,6 @@ export type State = {
 };
 
 const cuboidHeight = 0.05;
-const decorTexSize = 64;
 const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();

@@ -139,8 +139,10 @@
     - technically can also be triggered via HMR
   - ✅ can pick decor
   - ✅ Decor reloads on hmr 
-  - script computes spritesheet and extends sheets.json
-    - use obstacles sheets approach
+  - ✅ script `gen-decor-sheets`
+    - ✅ writes to sheets.json
+    - ✅ generates sheet/decor.{i}.png
+    - ✅ hook up to Decor
 
 - 🚧 add switches to all extant doors
 
@@ -162,10 +164,6 @@
 
 - pick should be pointerup
 
-- 🚧 script `gen-decor-sheets`
-  - ✅ writes to sheets.json
-  - ✅ generates sheet/decor.{i}.png
-  - 🚧 hook up to Decor
 - script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png
