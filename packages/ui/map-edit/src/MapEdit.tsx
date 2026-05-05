@@ -699,20 +699,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         state.update();
       },
-      translateSelected(dx, dy, snapToGrid) {
+      translateSelected(dx, dy) {
         if (state.isReadOnly()) return;
-        const increment = Math.abs(dx || dy);
         for (const id of state.selectedIds) {
           const [node] = findNodeById(state.nodes, id);
           if (isNodeTransformable(node)) {
-            if (snapToGrid && increment > 0) {
-              // 🔔 transform must not include `node.offset` (cssTransform does though)
-              node.transform.e = snap(node.transform.e + dx, increment);
-              node.transform.f = snap(node.transform.f + dy, increment);
-            } else {
-              node.transform.e += dx;
-              node.transform.f += dy;
-            }
+            node.transform.e += dx;
+            node.transform.f += dy;
             node.cssTransform = computeNodeCssTransform(node);
           }
         }
@@ -1406,7 +1399,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.translateSelected(
             e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0,
             e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0,
-            e.shiftKey,
           );
         }
         return;
@@ -1727,7 +1719,7 @@ export type State = {
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
   applyBoundsOffset: () => void;
-  translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
+  translateSelected: (dx: number, dy: number) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
   load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean }) => Promise<void>;
