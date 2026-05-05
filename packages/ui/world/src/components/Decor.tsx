@@ -172,7 +172,7 @@ export default function Decor(_props: Props) {
     texNode.depthNode = uvTexIds;
 
     const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
-    texMat.colorNode = texNode;
+    texMat.colorNode = texNode.mul(0.6);
     texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
     // +x, -x, +y, -y, +z, -z
     return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
