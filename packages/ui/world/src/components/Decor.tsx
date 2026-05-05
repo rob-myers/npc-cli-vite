@@ -6,7 +6,6 @@ import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
-import { generateUUID } from "three/src/math/MathUtils.js";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";
 import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
@@ -160,35 +159,24 @@ export default function Decor(_props: Props) {
   React.useEffect(() => {
     if (decorQuadCount === 0 || state.imgKeys.length === 0) return;
     (async () => {
-      if (w.pending.decor) {
-        await updateDecor();
-        w.setNextPending({ decor: false });
-      }
+      if (w.pending.nav) return; // wait for nav
+      w.setNextPending({ decor: true });
+      await updateDecor();
+      w.setNextPending({ decor: false });
     })();
-  }, [w.mapKey, w.hash, state.imgKeys.length, w.pending]);
-
-  const shaderMeta = useMemo(() => {
-    const texArray = w.texDecor;
-    const uvTexIds = attribute("uvTextureIds", "float");
-    const transformedUv = uv();
-    const texNode = texture(texArray.tex, transformedUv);
-    texNode.depthNode = uvTexIds;
-    return {
-      texNode,
-      pickNode: w.view.withPickOutput(PICK_TYPE.decor),
-      uid: generateUUID(),
-    };
-  }, [w.texDecor.hash]);
+  }, [w.mapKey, w.hash, state.imgKeys.length, w.pending.nav]);
 
   const materials = useMemo(() => {
-    const texMat = new THREE.MeshStandardNodeMaterial({
-      side: THREE.DoubleSide,
-    });
-    texMat.colorNode = shaderMeta.texNode;
-    texMat.outputNode = shaderMeta.pickNode;
+    const uvTexIds = attribute("uvTextureIds", "float");
+    const texNode = texture(w.texDecor.tex, uv());
+    texNode.depthNode = uvTexIds;
+
+    const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
+    texMat.colorNode = texNode;
+    texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
     // +x, -x, +y, -y, +z, -z
     return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
-  }, [plainBlackMaterial, shaderMeta.uid]);
+  }, [w.texDecor.hash]);
 
   return (
     <instancedMesh

@@ -134,11 +134,14 @@
   - ✅ tilt takes effect
 
 - 🚧 decor follow up
-  - 🚧 add switches to all extant doors
   - ✅ `w.pending` indicates assets/nav/decor pending
   - ✅ decor loads sequentially after nav
     - technically can also be triggered via HMR
   - ✅ can pick decor
+  - 🚧 add switches to all extant doors
+  - on hmr override `w.pending.decor` guard?
+  - script computes spritesheet and extends sheets.json
+  - use obstacles sheets approach
 
 - decor added to "grid"
   - may support more that just decor
