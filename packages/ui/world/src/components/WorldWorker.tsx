@@ -59,7 +59,7 @@ export default function WorldWorker() {
           case "tiled-navmesh-response": {
             w.nav = { ...msg };
             w.events.next({ key: "nav-updated" });
-            w.setNextPending({ nav: false, decor: true });
+            w.setNextPending({ nav: false });
             break;
           }
           case "worker-hot-module-reload": {
