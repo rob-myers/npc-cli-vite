@@ -208,6 +208,17 @@ export const StarShipSymbolSheetEntrySchema = z.object({
 });
 export type StarShipSymbolSheetEntry = z.infer<typeof StarShipSymbolSheetEntrySchema>;
 
+export const DecorSheetEntrySchema = z.object({
+  key: z.string(),
+  rect: rectCodec,
+  sheetId: z.number(),
+  originalWidth: z.number(),
+  originalHeight: z.number(),
+});
+export type DecorSheetEntry = z.infer<typeof DecorSheetEntrySchema>;
+
+const SheetDimSchema = z.object({ width: z.number(), height: z.number() });
+
 /**
  * For public/sheets.json
  */
@@ -219,9 +230,13 @@ export const SheetsSchema = z.object({
    */
   symbol: z.partialRecord(StarShipSymbolImageKeySchema, StarShipSymbolSheetEntrySchema),
   /** Aligned to sheets; its length is the number of the sheets. */
-  symbolSheetDims: z.array(z.object({ width: z.number(), height: z.number() })),
+  symbolSheetDims: z.array(SheetDimSchema),
   /** Maximum over all sheets, for texture array */
-  maxSymbolSheetDim: z.object({ width: z.number(), height: z.number() }),
+  maxSymbolSheetDim: SheetDimSchema,
+
+  decor: z.record(z.string(), DecorSheetEntrySchema).optional(),
+  decorSheetDims: z.array(SheetDimSchema).optional(),
+  maxDecorSheetDim: SheetDimSchema.optional(),
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
 

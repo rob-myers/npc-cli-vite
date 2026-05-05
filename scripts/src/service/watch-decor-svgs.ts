@@ -46,7 +46,7 @@ function isDecorSvg(filePath: string) {
   return filePath.startsWith(DECOR_PUBLIC_DIR) && filePath.endsWith(".svg");
 }
 
-async function rebuildDecor() {
+export async function rebuildDecor() {
   const svgFiles = fs.globSync(path.join(DECOR_PUBLIC_DIR, "*.svg"));
   const byKey: DecorManifest["byKey"] = {};
 

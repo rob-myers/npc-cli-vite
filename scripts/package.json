@@ -11,6 +11,7 @@
     "starship-pngs-to-public": "./src/bins/starship-pngs-to-public.ts",
     "gen-assets-json": "./src/bins/gen-assets-json.ts",
     "gen-pkg": "./src/bins/gen-pkg.ts",
+    "gen-decor-sheets": "./src/bins/gen-decor-sheets.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
     "gen-ui": "./src/bins/gen-ui.ts",
     "test-gltf-transform": "./src/bins/test-gltf-transform.ts",

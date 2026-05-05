@@ -138,10 +138,11 @@
   - ✅ decor loads sequentially after nav
     - technically can also be triggered via HMR
   - ✅ can pick decor
-  - 🚧 add switches to all extant doors
-  - on hmr override `w.pending.decor` guard?
+  - ✅ Decor reloads on hmr 
   - script computes spritesheet and extends sheets.json
-  - use obstacles sheets approach
+    - use obstacles sheets approach
+
+- 🚧 add switches to all extant doors
 
 - decor added to "grid"
   - may support more that just decor
@@ -161,9 +162,10 @@
 
 - pick should be pointerup
 
-- script `gen-decor-sheets`
-  - writes to sheets.json
-  - generates sheet/decor.{i}.png
+- 🚧 script `gen-decor-sheets`
+  - ✅ writes to sheets.json
+  - ✅ generates sheet/decor.{i}.png
+  - 🚧 hook up to Decor
 - script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png

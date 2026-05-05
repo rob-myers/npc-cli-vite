@@ -22,5 +22,58 @@
     }
   },
   "symbolSheetDims": [{"width": 3059, "height": 2794}],
-  "maxSymbolSheetDim": {"width": 3059, "height": 2794}
+  "maxSymbolSheetDim": {"width": 3059, "height": 2794},
+  "decor": {
+    "arrow-square-right-duotone": {
+      "key": "arrow-square-right-duotone",
+      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 60,
+      "originalHeight": 60
+    },
+    "axes-2d": {
+      "key": "axes-2d",
+      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
+    "icon--warn": {
+      "key": "icon--warn",
+      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 60,
+      "originalHeight": 60
+    },
+    "label": {
+      "key": "label",
+      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 40,
+      "originalHeight": 15
+    },
+    "number-circle-one-duotone": {
+      "key": "number-circle-one-duotone",
+      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 60,
+      "originalHeight": 60
+    },
+    "number-circle-zero-duotone": {
+      "key": "number-circle-zero-duotone",
+      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 60,
+      "originalHeight": 60
+    },
+    "switch": {
+      "key": "switch",
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    }
+  },
+  "decorSheetDims": [{"width": 776, "height": 776}],
+  "maxDecorSheetDim": {"width": 776, "height": 776}
 }
