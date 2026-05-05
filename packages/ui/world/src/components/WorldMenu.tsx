@@ -69,6 +69,8 @@ export function WorldMenu() {
 
   const y = useMotionValue(state.getClampedY(state.y));
 
+  const pendingKeys = Object.keys(w.pending);
+
   return (
     <>
       <motion.div
@@ -103,7 +105,12 @@ export function WorldMenu() {
           >
             <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
               <GlobeStandIcon className="size-5" weight="bold" />
-              {w.navPending && <Spinner className="size-4" />}
+              {pendingKeys.length > 0 && (
+                <>
+                  <div className="font-normal text-xs">{pendingKeys}</div>
+                  <Spinner className="size-4" />
+                </>
+              )}
             </div>
           </Menu.Trigger>
 

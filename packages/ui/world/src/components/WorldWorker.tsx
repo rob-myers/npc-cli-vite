@@ -55,11 +55,11 @@ export default function WorldWorker() {
           }
           case "pong":
             break;
+
           case "tiled-navmesh-response": {
             w.nav = { ...msg };
-            w.navPending = false;
             w.events.next({ key: "nav-updated" });
-            w.update();
+            w.setNextPending({ nav: false, decor: true });
             break;
           }
           case "worker-hot-module-reload": {
@@ -101,7 +101,9 @@ export default function WorldWorker() {
   }, [w.threeReady, state.reloads]); // setup worker
 
   useEffect(() => {
-    if (w.hash === 0) return; // wait for initial world load
+    if (w.hash === 0) return;
+
+    w.setNextPending({ nav: true });
 
     state.worker.postMessage({
       type: "request-tiled-navmesh",
@@ -127,8 +129,6 @@ export default function WorldWorker() {
       ),
     } satisfies WW.MsgToWorker);
 
-    w.set({ navPending: true });
-
     state.worker.postMessage({
       type: "setup-physics",
       mapKey: w.mapKey, // On HMR must provide existing npcs:
@@ -140,7 +140,7 @@ export default function WorldWorker() {
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
-  }, [w.gms, state.reloads]); // request navmesh
+  }, [w.gms, state.reloads]); // request navmesh, physics
 
   return null;
 }

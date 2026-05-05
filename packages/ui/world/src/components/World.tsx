@@ -2,7 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { debug, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -94,7 +94,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmGraph: new GmGraph([]),
       gmRoomGraph: new GmRoomGraph(),
       nav: emptyTiledNavmeshResponse,
-      navPending: true,
+      pending: {},
 
       assets: null as any,
       ceil: null as any,
@@ -135,13 +135,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           draft.disabled = disabled ?? !state.disabled;
         });
       },
+      setNextPending(partial) {
+        const next = { ...state.pending };
+        for (const [key, value] of entries(partial)) value ? (next[key] = true) : delete next[key];
+        state.set({ pending: next });
+      },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
         if (!import.meta.env.DEV || !hot) return;
 
         // biome-ignore format: succinct
         const listeners: [target: "hot" | "window", event: string, handler: (...args: any[]) => void][] = [
-          ["hot", assetsJsonChangingEvent, () => state.set({ navPending: true })],
+          ["hot", assetsJsonChangingEvent, () => {
+            state.setNextPending({ assets: true });
+          }],
           ["hot", assetsJsonChangedEvent, () => {
             debug("[World] assets.json changed: refetching");
             queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
@@ -168,8 +175,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setupProdHullAssetsSync() {
         const cb = () => {
-          debug("[World] symbol saved, refetching");
-          state.set({ navPending: true });
+          debug("[World] hull symbol edited: recomputing");
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         window.addEventListener(mapEditSymbolSavedEvent, cb);
@@ -214,6 +220,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     // Distinct query per World instance even if same map
     queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id],
     async queryFn() {
+      state.setNextPending({ assets: true });
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
       if (import.meta.env.PROD) {
@@ -240,6 +247,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
       state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph);
 
+      state.setNextPending({ assets: false });
       return null;
     },
     enabled: state.threeReady, // 🔔 fixes horrible issue on refresh
@@ -337,10 +345,16 @@ export type State = {
 
   worker: UseStateRef<import("./WorldWorker").State>;
   nav: WW.TiledNavMeshResponse;
-  navPending: boolean;
+
+  /**
+   * Ideally `assets` -> `nav` -> `decor` -> `null`.
+   * However, nav/decor could be triggered by HMR.
+   */
+  pending: Partial<Record<"assets" | "nav" | "decor", true>>;
   rootEl: HTMLDivElement;
 
   setDisabled(nextDisabled?: boolean): void;
+  setNextPending(next: Partial<Record<"assets" | "nav" | "decor", boolean>>): void;
   setupDevAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;

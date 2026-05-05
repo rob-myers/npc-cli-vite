@@ -4,7 +4,7 @@ import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { Mat } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";
@@ -21,7 +21,8 @@ export default function Decor(_props: Props) {
 
   const state = useStateRef(
     (): State => ({
-      ...({} as Pick<State, "inst">),
+      inst: null as any,
+      everUpdated: false,
 
       box: createUnitBox(),
 
@@ -68,7 +69,7 @@ export default function Decor(_props: Props) {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
       },
-      transformDecorQuads() {
+      async transformDecorQuads() {
         const { inst, manifest } = state;
         if (!inst || !manifest) return;
         inst.instanceMatrix.array.fill(0);
@@ -115,27 +116,13 @@ export default function Decor(_props: Props) {
 
   w.decor = state;
 
-  const shaderMeta = useMemo(() => {
-    const texArray = w.texDecor;
-    const uvTexIds = attribute("uvTextureIds", "float");
-    const transformedUv = uv();
-    const texNode = texture(texArray.tex, transformedUv);
-    texNode.depthNode = uvTexIds;
-    return {
-      texNode,
-      pickNode: w.view.withPickOutput(PICK_TYPE.decor),
-      uid: generateUUID(),
-    };
-  }, [w.texDecor.hash]);
-
-  // 🚧 refetch onchange decor manifest
+  // 🚧 fetch manifest, sheets and draw in single query
   const manifest = useQuery({
     queryKey: [...w.worldQueryPrefix, "decor-manifest"],
     async queryFn() {
       return fetchParsed("/decor/manifest.json", DecorManifestSchema);
     },
   }).data;
-
   const imagesQuery = useQuery({
     queryKey: [...w.worldQueryPrefix, "decor-images", manifest ? "loaded" : "pending"],
     async queryFn() {
@@ -155,19 +142,43 @@ export default function Decor(_props: Props) {
   state.manifest = manifest ?? state.manifest;
   state.images = imagesQuery.data ?? state.images;
   state.imgKeys = Object.keys(state.images);
-
   const decorQuadCount = w.gms.reduce((sum, gm) => sum + gm.decor.filter((d) => d.type === "quad").length, 0);
+
+  const { mutateAsync: updateDecor } = useMutation({
+    mutationKey: [...w.worldQueryPrefix, "update-decor"],
+    async mutationFn() {
+      await state.draw();
+      await pause(100);
+      // 🚧 add decor to grid computing gmRoomId, gmDoorId
+      await state.transformDecorQuads();
+      await pause(100);
+      state.sendDataToGpu();
+      state.everUpdated = true;
+    },
+  });
 
   React.useEffect(() => {
     if (decorQuadCount === 0 || state.imgKeys.length === 0) return;
+    (async () => {
+      if (w.pending.decor) {
+        await updateDecor();
+        w.setNextPending({ decor: false });
+      }
+    })();
+  }, [w.mapKey, w.hash, state.imgKeys.length, w.pending]);
 
-    state.transformDecorQuads();
-    state.draw().then(async () => {
-      await pause(60);
-      state.sendDataToGpu();
-      w.update();
-    });
-  }, [w.mapKey, w.hash, decorQuadCount, state.imgKeys.length]);
+  const shaderMeta = useMemo(() => {
+    const texArray = w.texDecor;
+    const uvTexIds = attribute("uvTextureIds", "float");
+    const transformedUv = uv();
+    const texNode = texture(texArray.tex, transformedUv);
+    texNode.depthNode = uvTexIds;
+    return {
+      texNode,
+      pickNode: w.view.withPickOutput(PICK_TYPE.decor),
+      uid: generateUUID(),
+    };
+  }, [w.texDecor.hash]);
 
   const materials = useMemo(() => {
     const texMat = new THREE.MeshStandardNodeMaterial({
@@ -180,20 +191,19 @@ export default function Decor(_props: Props) {
   }, [plainBlackMaterial, shaderMeta.uid]);
 
   return (
-    decorQuadCount > 0 && (
-      <instancedMesh
-        name="decor"
-        ref={state.ref("inst")}
-        args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
-        frustumCulled={false}
-        renderOrder={-2}
-        material={materials}
-      >
-        <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
-          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
-        </bufferGeometry>
-      </instancedMesh>
-    )
+    <instancedMesh
+      name="decor"
+      ref={state.ref("inst")}
+      args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
+      frustumCulled={false}
+      renderOrder={-2}
+      material={materials}
+      visible={state.everUpdated}
+    >
+      <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
+        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+      </bufferGeometry>
+    </instancedMesh>
   );
 }
 
@@ -203,13 +213,14 @@ type Props = {
 
 export type State = {
   inst: THREE.InstancedMesh;
+  everUpdated: boolean;
   box: THREE.BufferGeometry;
   uvTextureIds: Uint32Array;
   images: Record<string, HTMLImageElement>;
   imgKeys: string[];
   manifest: DecorManifest | null;
   decodeInstanceId(instanceId: number): { gmId: number; meta: Meta } | null;
-  transformDecorQuads(): void;
+  transformDecorQuads(): Promise<void>;
   draw(): Promise<void>;
   sendDataToGpu(): void;
 };
