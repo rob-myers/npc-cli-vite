@@ -19,8 +19,10 @@ function RootComponent() {
   return (
     <div className="bg-background h-svh">
       <Outlet />
-      <TanStackRouterDevtools position="bottom-right" />
+
+      {/* ordering fixes weird mount animation bug of WorldMenu */}
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      <TanStackRouterDevtools position="bottom-right" />
     </div>
   );
 }

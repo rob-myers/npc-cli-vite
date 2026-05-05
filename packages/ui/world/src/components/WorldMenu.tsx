@@ -3,9 +3,9 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
-import { motion, useMotionValue } from "motion/react";
+import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
-import { useContext } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
@@ -70,6 +70,7 @@ export function WorldMenu() {
   const y = useMotionValue(state.getClampedY(state.y));
 
   const pendingKeys = Object.keys(w.pending);
+  const toastKeys = useToastKeys(pendingKeys, 2000);
 
   return (
     <>
@@ -105,12 +106,7 @@ export function WorldMenu() {
           >
             <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
               <GlobeStandIcon className="size-5" weight="bold" />
-              {pendingKeys.length > 0 && (
-                <>
-                  <div className="font-normal text-xs">{pendingKeys}</div>
-                  <Spinner className="size-4" />
-                </>
-              )}
+              {pendingKeys.length > 0 && <Spinner className="size-4" />}
             </div>
           </Menu.Trigger>
 
@@ -332,6 +328,21 @@ export function WorldMenu() {
             </Menu.Positioner>
           </Menu.Portal>
         </Menu.Root>
+
+        <AnimatePresence>
+          {toastKeys.map((key) => (
+            <motion.div
+              key={key}
+              className="bg-gray-800/90 text-slate-300 text-xs px-2 py-1"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {key}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </motion.div>
 
       <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
@@ -392,3 +403,32 @@ export type State = {
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
+
+function useToastKeys(keys: string[], delayMs: number): string[] {
+  const [visible, setVisible] = useState<string[]>([]);
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    for (const key of keys) {
+      if (!visible.includes(key)) {
+        setVisible((prev) => (prev.includes(key) ? prev : [...prev, key]));
+      }
+      clearTimeout(timers.current[key]);
+      delete timers.current[key];
+    }
+    for (const key of visible) {
+      if (!keys.includes(key) && !timers.current[key]) {
+        timers.current[key] = setTimeout(() => {
+          setVisible((prev) => prev.filter((k) => k !== key));
+          delete timers.current[key];
+        }, delayMs);
+      }
+    }
+  }, [keys.join(",")]);
+
+  useEffect(() => {
+    return () => Object.values(timers.current).forEach(clearTimeout);
+  }, []);
+
+  return visible;
+}
