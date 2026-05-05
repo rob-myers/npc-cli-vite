@@ -8141,6 +8141,15 @@
   },
   "theme": {
     "default-theme": {
+      "background": "bg-white",
+      "ceiling": {
+        "hull": {"fill": "#000", "stroke": "#666"},
+        "nonHull": {"fill": "#ddd", "stroke": "#000"}
+      },
+      "floor": {"navStroke": "#000c"},
+      "walls": {"color": "#000000", "opacity": 0.25}
+    },
+    "light-theme": {
       "background": "bg-gray-800",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
