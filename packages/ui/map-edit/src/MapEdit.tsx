@@ -699,19 +699,39 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         state.update();
       },
-      translateSelected(dx, dy) {
+      translateSelected(dx, dy, snapToGrid) {
         if (state.isReadOnly()) return;
+
+        let actualDx = dx;
+        let actualDy = dy;
+
+        if (snapToGrid) {
+          const selectedNodes = [...state.selectedIds].flatMap((id) => {
+            const [node] = findNodeById(state.nodes, id);
+            return isNodeTransformable(node) ? [node] : [];
+          });
+          if (selectedNodes.length > 0) {
+            const increment = Math.abs(dx || dy);
+            const aabb = getNodeBounds(...selectedNodes);
+            actualDx = snap(aabb.x + dx, increment) - aabb.x;
+            actualDy = snap(aabb.y + dy, increment) - aabb.y;
+          }
+        }
+
         for (const id of state.selectedIds) {
           const [node] = findNodeById(state.nodes, id);
           if (isNodeTransformable(node)) {
-            node.transform.e += dx;
-            node.transform.f += dy;
+            node.transform.e += actualDx;
+            node.transform.f += actualDy;
             node.cssTransform = computeNodeCssTransform(node);
           }
         }
         state.set({
           nodes: state.nodes,
-          selectionBoundsOffset: { x: state.selectionBoundsOffset.x + dx, y: state.selectionBoundsOffset.y + dy },
+          selectionBoundsOffset: {
+            x: state.selectionBoundsOffset.x + actualDx,
+            y: state.selectionBoundsOffset.y + actualDy,
+          },
         });
       },
 
@@ -1399,6 +1419,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.translateSelected(
             e.key === "ArrowLeft" ? -increment : e.key === "ArrowRight" ? increment : 0,
             e.key === "ArrowUp" ? -increment : e.key === "ArrowDown" ? increment : 0,
+            e.shiftKey,
           );
         }
         return;
@@ -1719,7 +1740,7 @@ export type State = {
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
   applyBoundsOffset: () => void;
-  translateSelected: (dx: number, dy: number) => void;
+  translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
   load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean }) => Promise<void>;
@@ -1808,7 +1829,7 @@ export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 const inc = {
   small: 0.5,
   // 🚧 needed when snapping but maybe too small when moving into place
-  default: 2.5,
+  default: 2,
   large: 10,
 };
 
