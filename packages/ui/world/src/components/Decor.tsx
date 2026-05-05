@@ -159,7 +159,7 @@ export default function Decor(_props: Props) {
   React.useEffect(() => {
     if (decorQuadCount === 0 || state.imgKeys.length === 0) return;
     (async () => {
-      if (w.pending.nav) return; // wait for nav
+      if (!w.hash || w.pending.nav) return; // wait for nav
       w.setNextPending({ decor: true });
       await updateDecor();
       w.setNextPending({ decor: false });
