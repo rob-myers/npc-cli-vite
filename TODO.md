@@ -133,7 +133,7 @@
   - ✅ switches change image to switch image
   - ✅ tilt takes effect
 
-- 🚧 decor follow up
+- ✅ decor follow up
   - ✅ `w.pending` indicates assets/nav/decor pending
   - ✅ decor loads sequentially after nav
     - technically can also be triggered via HMR
