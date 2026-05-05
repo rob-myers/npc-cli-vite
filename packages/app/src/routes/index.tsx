@@ -9,9 +9,9 @@ import { useRef } from "react";
 import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
 import { UiPortalContainer } from "../components/UiPortalContainer";
-import { PaneTree } from "./PaneTree";
-import { PaneTreeWrapper } from "./PaneTreeWrapper";
-import { ensureLeafUis, initNextId, persistPanesToUi } from "./pane-service";
+import { PaneTree } from "../components/PaneTree";
+import { PaneTreeWrapper } from "../components/PaneTreeWrapper";
+import { ensureLeafUis, initNextId, persistPanesToUi } from "../components/pane-service";
 
 export const Route = createFileRoute("/")({
   component: Index,
