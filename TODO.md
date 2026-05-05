@@ -135,6 +135,9 @@
 
 - 🚧 decor follow up
   - 🚧 add switches to all extant doors
+  - ✅ `w.pending` indicates assets/nav/decor pending
+  - ✅ decor loads sequentially after nav
+    - technically can also be triggered via HMR
   - ✅ can pick decor
 
 - decor added to "grid"
@@ -176,7 +179,7 @@
 - absorb split vert/horiz controls in Tabs
 - change "collapsed panel" ui
 
-- ensure onchange layout that portals are disposed
+- ✅ ensure onchange layout that portals are disposed
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
