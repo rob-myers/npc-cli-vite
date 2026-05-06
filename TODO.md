@@ -88,8 +88,13 @@
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
 
   - 🚧 if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
-    - ✅ can track npc current room (can be `null` on bad spawn)
-    - 🚧 ...
+    - ✅ can track npc current room
+    - 🚧 on `move`
+      - ✅ compute dst room
+        - `w npc.npc.rob.last.dstGrId`
+      - 🚧 need inaccessible doors defined first (locked not just closed)
+      - if dst room adjacent and unreachable fire event
+      - default strategy for event is goto nearest door
 
   - ❌ move a-star to worker
   - ❌ stale: open door after path requested beyond door
@@ -143,6 +148,12 @@
     - ✅ writes to sheets.json
     - ✅ generates sheet/decor.{i}.png
     - ✅ hook up to Decor
+
+- 🚧 BUG physics inside worker (HMR)
+  - probably caused by const being shared between main thread and worker
+  - forcing HMR via save of `WorldWorker.tsx` works
+  - `Cannot read properties of undefined (reading 'createRigidBody')`
+  - `RuntimeError: unreachable`
 
 - 🚧 add switches to all extant doors
 
