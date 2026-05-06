@@ -4,7 +4,8 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { npcScale } from "../const";
+import { npcScale, walkSeparationWeight } from "../const";
+import { groudPointToTuple } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
@@ -112,18 +113,29 @@ export class Npc {
     }
   }
 
-  startWalking() {
-    const { walk, idle } = this.w.npc.clips;
+  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult) {
+    if (!this.agentId) return;
+
+    const { crowd, clips } = this.w.npc;
+    const agent = crowd.agents[this.agentId];
+    // whilst walking, doors should block npcs
+    agent.queryFilter = this.queryFilter;
+    crowdApi.requestMoveTarget(crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
+    this.lastTarget = groundPoint;
+    agent.separationWeight = walkSeparationWeight;
+
+    const { walk, idle } = clips;
     this.lookAt = null;
     this.lastBlockingArea = -1;
     this.stuckAccum = 0;
     this.lastPos = { x: this.position.x, y: this.position.z };
-    if (this.moving) return;
-    this.moving = true;
-    const idleAction = idle ? this.mixer.clipAction(idle) : null;
-    const walkAction = this.mixer.clipAction(walk);
-    idleAction?.fadeOut(0.3);
-    walkAction.reset().fadeIn(0.3).play();
+    if (!this.moving) {
+      this.moving = true;
+      const idleAction = idle ? this.mixer.clipAction(idle) : null;
+      const walkAction = this.mixer.clipAction(walk);
+      idleAction?.fadeOut(0.3);
+      walkAction.reset().fadeIn(0.3).play();
+    }
   }
 
   startIdle() {
