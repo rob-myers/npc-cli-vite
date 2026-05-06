@@ -10,7 +10,6 @@ import { WorldContext } from "./world-context";
 
 export default function Doors() {
   const w = useContext(WorldContext);
-  const instanceCount = w.gms.length << 8;
 
   const state = useStateRef(
     (): State => ({
@@ -73,6 +72,14 @@ export default function Doors() {
       },
       isOpen(gmId, doorId) {
         return state.openRatioArray[state.encodeGmDoorId(gmId, doorId)] > doorOpenTest;
+      },
+      onDoorChanged(instanceId, target) {
+        state.openRatioArray[instanceId] = target;
+        state.animTargets.delete(instanceId);
+        const open = target > doorOpenTest;
+        const { gdKey } = state.decodeInstanceId(instanceId);
+        state.byKey[gdKey].open = open;
+        w.events.next({ key: open ? "door-open" : "door-closed", open, ...state.decodeInstanceId(instanceId) });
       },
       positionInstances() {
         const { inst } = state;
@@ -171,11 +178,7 @@ export default function Doors() {
           const cur = state.openRatioArray[instanceId];
           const next = cur + Math.sign(target - cur) * delta * doorSpeed;
           if ((target - cur) * (target - next) <= 0) {
-            // finished animation
-            state.openRatioArray[instanceId] = target;
-            state.animTargets.delete(instanceId);
-            const open = target > doorOpenTest;
-            w.events.next({ key: open ? "door-open" : "door-closed", open, ...state.decodeInstanceId(instanceId) });
+            state.onDoorChanged(instanceId, target);
           } else {
             state.openRatioArray[instanceId] = next;
           }
@@ -184,7 +187,7 @@ export default function Doors() {
         if (changed) {
           const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
           if (attr) attr.needsUpdate = true;
-          if (w.disabled) w.view.forceUpdate();
+          // if (w.disabled) w.view.forceUpdate();
         }
       },
     }),
@@ -195,7 +198,7 @@ export default function Doors() {
   useEffect(() => {
     state.buildByKey();
     state.positionInstances();
-  }, [w.mapKey, w.hash, w.gms.length]);
+  }, [w.mapKey, w.hash]);
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
@@ -226,6 +229,8 @@ export default function Doors() {
     return [edge, edge, top, edge, front, back];
   }, []);
 
+  const instanceCount = w.gms.length << 8;
+
   return instanceCount ? (
     <instancedMesh
       name="doors"
@@ -252,6 +257,7 @@ export type State = {
   isOpen: (gmId: number, doorId: number) => boolean;
   /** Toggles when `open` is `undefined`. */
   setOpen: (gmId: number, doorId: number, open?: boolean) => void;
+  onDoorChanged: (instanceId: number, target: number) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
 };

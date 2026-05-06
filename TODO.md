@@ -161,7 +161,8 @@
 
 - 🚧 door switches show green/red when unlocked/locked
   - ✅ doors have entry in `w.door.byKey`
-  - 🚧 track open/closed/locked/unlocked
+  - ✅ track open/closed
+  - 🚧 track locked/unlocked
   - indicate locked/unlocked on respective switch(s)
 
 - decor added to "grid"
