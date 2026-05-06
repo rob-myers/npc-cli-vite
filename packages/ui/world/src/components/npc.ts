@@ -37,10 +37,16 @@ export class Npc {
   queryFilter: QueryFilter;
 
   lookAt: JshCli.GroundPoint | null = null;
-  lastBlockingArea = -1;
-  lastPinTime = 0;
-  lastPos = { x: 0, y: 0 };
-  lastTarget = { x: 0, y: 0 };
+
+  last = {
+    blockingArea: -1,
+    /** Seconds elapsed */
+    pinTime: 0,
+    pos: { x: 0, y: 0 },
+    dst: { x: 0, y: 0 },
+    dstGrId: null as Geomorph.GmRoomId | null,
+  };
+
   moving = false;
   resolve?: () => void;
   spawns = 0;
@@ -78,7 +84,7 @@ export class Npc {
           const decoded = decodeDoorAreaId(node.area);
           const open = w.door.isOpen(decoded.gmId, decoded.doorId);
           if (!open) {
-            this.lastBlockingArea = node.area;
+            this.last.blockingArea = node.area;
           }
           return open;
         }
@@ -100,7 +106,7 @@ export class Npc {
     if (this.agentId === null || result.success === false) {
       return false;
     }
-    this.lastPinTime = this.w.timer.getElapsedTime();
+    this.last.pinTime = this.w.timer.getElapsedTime();
     return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
   }
 
@@ -120,21 +126,22 @@ export class Npc {
     const agent = crowd.agents[this.agentId];
     // whilst walking, doors should block npcs
     agent.queryFilter = this.queryFilter;
-    crowdApi.requestMoveTarget(crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
-    this.lastTarget = groundPoint;
     agent.separationWeight = walkSeparationWeight;
+    crowdApi.requestMoveTarget(crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
+
+    this.last.dst = groundPoint;
+    this.last.dstGrId = this.w.e.findRoomContaining(groundPoint); // async?
 
     const { walk, idle } = clips;
     this.lookAt = null;
-    this.lastBlockingArea = -1;
+    this.last.blockingArea = -1;
     this.stuckAccum = 0;
-    this.lastPos = { x: this.position.x, y: this.position.z };
+    this.last.pos = { x: this.position.x, y: this.position.z };
+
     if (!this.moving) {
       this.moving = true;
-      const idleAction = this.mixer.clipAction(idle);
-      const walkAction = this.mixer.clipAction(walk);
-      idleAction.fadeOut(0.3);
-      walkAction.reset().fadeIn(0.3).play();
+      this.mixer.clipAction(idle).fadeOut(0.3);
+      this.mixer.clipAction(walk).reset().fadeIn(0.3).play();
     }
   }
 
@@ -161,15 +168,15 @@ export class Npc {
 
   updateStuck(delta: number): boolean {
     // delay stuck a bit
-    if (this.w.timer.getElapsedTime() - this.lastPinTime < 2.5) {
+    if (this.w.timer.getElapsedTime() - this.last.pinTime < 2.5) {
       return false;
     }
 
-    const dx = this.position.x - this.lastPos.x;
-    const dz = this.position.z - this.lastPos.y;
+    const dx = this.position.x - this.last.pos.x;
+    const dz = this.position.z - this.last.pos.y;
     const dist = Math.hypot(dx, dz);
     this.stuckAccum += dist < 0.0065 ? delta : 0;
-    this.lastPos = { x: this.position.x, y: this.position.z };
+    this.last.pos = { x: this.position.x, y: this.position.z };
     return this.stuckAccum > 0.4;
   }
 
