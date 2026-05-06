@@ -4,8 +4,8 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { npcScale, walkSeparationWeight } from "../const";
-import { groudPointToTuple } from "../service/geometry";
+import { idleSeparationWeight, npcScale, walkSeparationWeight } from "../const";
+import { groudPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
@@ -131,21 +131,32 @@ export class Npc {
     this.lastPos = { x: this.position.x, y: this.position.z };
     if (!this.moving) {
       this.moving = true;
-      const idleAction = idle ? this.mixer.clipAction(idle) : null;
+      const idleAction = this.mixer.clipAction(idle);
       const walkAction = this.mixer.clipAction(walk);
-      idleAction?.fadeOut(0.3);
+      idleAction.fadeOut(0.3);
       walkAction.reset().fadeIn(0.3).play();
     }
   }
 
   startIdle() {
-    const { walk, idle } = this.w.npc.clips;
-    if (!idle) return;
+    const { crowd, clips } = this.w.npc;
+
+    if (this.agentId) {
+      const agent = crowd.agents[this.agentId];
+
+      agent.separationWeight = idleSeparationWeight;
+      this.pinTo(this.w.npc.getClosestPoly(this.position));
+
+      const [vx, , vz] = agent.velocity;
+      this.lookAt = parseGroundPoint({
+        x: this.position.x + vx,
+        y: this.position.z + vz,
+      });
+    }
+
     this.moving = false;
-    const walkAction = walk ? this.mixer.clipAction(walk) : null;
-    const idleAction = this.mixer.clipAction(idle);
-    walkAction?.fadeOut(0.3);
-    idleAction.reset().fadeIn(0.3).play();
+    this.mixer.clipAction(clips.walk).fadeOut(0.3);
+    this.mixer.clipAction(clips.idle).reset().fadeIn(0.3).play();
   }
 
   updateStuck(delta: number): boolean {
