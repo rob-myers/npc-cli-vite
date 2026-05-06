@@ -99,3 +99,5 @@ export const decorGridSize = geomorphGridMeters * 2;
 export const gmIdGridDim = 600 * sguToWorldScale;
 
 export const colliderHeight = 1.8;
+
+export const walkSeparationWeight = 0.25;

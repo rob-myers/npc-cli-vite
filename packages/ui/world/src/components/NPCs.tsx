@@ -142,13 +142,7 @@ export default function NPCs() {
         const result = state.getClosestPoly(groundPoint);
 
         if (result.success) {
-          const agent = state.crowd.agents[npc.agentId];
-          // whilst walking, doors should block npcs
-          agent.queryFilter = npc.queryFilter;
-          crowdApi.requestMoveTarget(state.crowd, npc.agentId, result.nodeRef, groudPointToTuple(groundPoint));
-          npc.startWalking();
-          npc.lastTarget = groundPoint;
-          agent.separationWeight = walkSeparationWeight;
+          npc.startMoving(groundPoint, result);
         } else {
           throw Error("move failed");
         }
@@ -410,7 +404,6 @@ function getAgentParams(): crowd.AgentParams {
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const idleSeparationWeight = 0.5;
-const walkSeparationWeight = 0.25;
 const neighborLookAtDist = 0.25;
 const closePolygonDistance = 0.05;
 const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
