@@ -90,13 +90,14 @@ declare namespace Geomorph {
 
   type HullDoorMeta = Meta<{ edge: Geom.DirectionString }>;
 
-  // 🚧
   interface DoorState extends Geomorph.GmDoorId {
-    /** gmDoorKey format i.e. `g{gmId}d{doorId}` */
-    gdKey: GmDoorKey;
-    door: Geomorph.Connector;
+    /** gmId << 8 + doorId */
     instanceId: number;
 
+    /** Determined purely via (gmKey, doorId) */
+    connector: Geomorph.Connector;
+    /** instancedMesh */
+    instanceId: number;
     /** Is the door automatic? */
     auto: boolean;
     /** Is this an axis-aligned rectangle? */
@@ -105,37 +106,16 @@ declare namespace Geomorph {
     open: boolean;
     /** Is the door locked? */
     locked: boolean;
-
     /** Is the door sealed? */
     sealed: boolean;
     /** Is this a hull door? */
     hull: boolean;
 
-    /** Between `0.1` (open) and `1` (closed) */
-    ratio: number;
     /** Src of transformed door segment */
     src: Geom.VectJson;
     /** Dst of transformed door segment */
     dst: Geom.VectJson;
-    /** Center of transformed door */
-    center: Geom.Vect;
-    /** Direction of transformed door segment */
-    dir: Geom.VectJson;
+    /** Transformed connector.normal */
     normal: Geom.VectJson;
-    /** Length of `door.seg` */
-    segLength: number;
-    /** 1st entrance pointed to by `normal` */
-    entrances: [Geom.Seg, Geom.Seg];
-    /**
-     * Added to exits (a point on a segment door.entrances[i]) to compute "far exit".
-     * Used to avoid NPCs blocking the door.
-     */
-    farDeltas: [Geom.VectJson, Geom.VectJson];
-    /** As wide as door, slightly less deep than doorway. */
-    collidePoly: Geom.Poly;
-    /** Bounds of `doorway`. */
-    collideRect: Geom.Rect;
-
-    closeTimeoutId?: number;
   }
 }

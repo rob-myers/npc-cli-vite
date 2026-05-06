@@ -154,8 +154,15 @@
   - forcing HMR via save of `WorldWorker.tsx` works
   - `Cannot read properties of undefined (reading 'createRigidBody')`
   - `RuntimeError: unreachable`
+  - multiple `request-tiled-navmesh` received by worker
+  - multiple `setup-physics` received by worker
 
 - 🚧 add switches to all extant doors
+
+- 🚧 door switches show green/red when unlocked/locked
+  - ✅ doors have entry in `w.door.byKey`
+  - 🚧 track open/closed/locked/unlocked
+  - indicate locked/unlocked on respective switch(s)
 
 - decor added to "grid"
   - may support more that just decor
@@ -167,11 +174,7 @@
 
 - BUG MapEdit shift-snap mismatch for distinct determinant sign
 
-- 🚧 BUG after edit `const.ts` world worker physics broken
-  - multiple `request-tiled-navmesh` received by worker
-  - multiple `setup-physics` received by worker
-
-- move debug colliders switch into WorldMenu
+- ✅ move debug colliders switch into WorldMenu
 
 - pick should be pointerup
 
@@ -180,8 +183,9 @@
   - generates sheet/skin.{i}.png
 
 - skin remapping
+  - currently only have skinIndex
 
-- world.worker creates physics world based on decor
+- ✅ world.worker creates physics world based on decor
   - static sensors only using rapier
 
 - ❌ support scale ui option (vertical or horizontal)
