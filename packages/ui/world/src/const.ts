@@ -101,3 +101,5 @@ export const gmIdGridDim = 600 * sguToWorldScale;
 export const colliderHeight = 1.8;
 
 export const walkSeparationWeight = 0.25;
+
+export const idleSeparationWeight = 0.5;

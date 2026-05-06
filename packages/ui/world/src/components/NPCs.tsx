@@ -20,7 +20,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type AssetsSkinType } from "../assets.schema";
-import { npcLabelHeight } from "../const";
+import { idleSeparationWeight, npcLabelHeight } from "../const";
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
@@ -181,12 +181,6 @@ export default function NPCs() {
 
           if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
             npc.startIdle();
-            agent.separationWeight = idleSeparationWeight;
-            npc.pinTo(state.getClosestPoly(npc.position));
-            npc.lookAt = parseGroundPoint({
-              x: npc.position.x + vx,
-              y: npc.position.z + vz,
-            });
           }
 
           const { x, y, z } = npc.position;
@@ -403,7 +397,6 @@ function getAgentParams(): crowd.AgentParams {
 }
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
-const idleSeparationWeight = 0.5;
 const neighborLookAtDist = 0.25;
 const closePolygonDistance = 0.05;
 const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
