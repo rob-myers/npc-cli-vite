@@ -345,9 +345,7 @@ export default function NPCs() {
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
-  return (
-    state.gltf && Object.values(state.npc).map((npc) => <MemoNpcInstance key={npc.key} npc={npc} epoch={npc.epoch} />)
-  );
+  return state.gltf && Object.values(state.npc).map((npc) => <MemoNpcInstance key={npc.key} npc={npc} />);
 }
 
 export type State = {

@@ -3,7 +3,7 @@ import * as THREE from "three/webgpu";
 import { npcScale } from "../const";
 import type { Npc } from "./npc";
 
-function NpcInstance({ npc }: Props) {
+function NpcInstance({ npc }: { npc: Npc }) {
   const nodes = npc.graph.nodes;
   const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
 
@@ -24,8 +24,3 @@ function NpcInstance({ npc }: Props) {
 }
 
 export const MemoNpcInstance = memo(NpcInstance);
-
-type Props = {
-  npc: Npc;
-  epoch: number;
-};
