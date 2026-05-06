@@ -71,31 +71,48 @@ export default function NPCs() {
           labelMaterial: createLabelMaterial(w.texLabel, pickId),
         };
       },
+      createNpc(opts: {
+        key: string;
+        pickId: number;
+        position: THREE.Vector3;
+        skinnedMesh: THREE.SkinnedMesh;
+        graph: ReturnType<typeof buildGraph>;
+        geometry: THREE.BufferGeometry;
+        skinIndex: number;
+      }) {
+        const mats = state.createMaterials(opts.pickId, opts.skinIndex);
+        const npc = new Npc(w, {
+          key: opts.key,
+          pickId: opts.pickId,
+          labelLayerIndex: opts.pickId,
+          position: opts.position,
+          skinnedMesh: opts.skinnedMesh,
+          graph: opts.graph,
+          geometry: opts.geometry,
+          ...mats,
+        });
+        drawLabelLayer(w.texLabel, opts.pickId, opts.key);
+        state.npc[opts.key] = npc;
+        state.byPickId[npc.pickId] = npc;
+        return npc;
+      },
       devHotReload() {
-        for (const [key, oldNpc] of Object.entries(state.npc)) {
+        for (const oldNpc of Object.values(state.npc)) {
           oldNpc.material.dispose();
           oldNpc.labelMaterial.dispose();
           oldNpc.shadowMaterial.dispose();
 
-          const mats = state.createMaterials(oldNpc.pickId, oldNpc.skinIndex);
-          const npc = new Npc(w, {
+          const npc = state.createNpc({
             key: oldNpc.key,
             pickId: oldNpc.pickId,
-            labelLayerIndex: oldNpc.labelLayerIndex,
             position: oldNpc.position,
             skinnedMesh: oldNpc.skinnedMesh,
             graph: oldNpc.graph,
             geometry: oldNpc.geometry,
-            ...mats,
+            skinIndex: oldNpc.skinIndex,
           });
-
           npc.agentId = oldNpc.agentId;
-          // npc.queryFilter = oldNpc.queryFilter;
           state.placeNpcAt(npc, npc.position);
-
-          drawLabelLayer(w.texLabel, npc.labelLayerIndex, npc.key);
-          state.npc[key] = npc;
-          state.byPickId[npc.pickId] = npc;
         }
         state.update();
       },
@@ -267,26 +284,18 @@ export default function NPCs() {
           addEmptyBillboardOffset(shadowQuad);
           const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
 
-          const pickId = state.nextPickId;
-          drawLabelLayer(w.texLabel, pickId, npcKey);
-
-          const mats = state.createMaterials(pickId, state.getSkinIndex(as ?? "medic-0"));
-          const npc = new Npc(w, {
+          const npc = state.createNpc({
             key: npcKey,
-            pickId,
-            labelLayerIndex: pickId,
+            pickId: state.nextPickId,
             position: groundPointToVector3(parseGroundPoint(at)),
             skinnedMesh: clonedSkinnedMesh,
             graph,
             geometry,
-            ...mats,
+            skinIndex: state.getSkinIndex(as ?? "medic-0"),
           });
 
           state.placeNpcAt(npc, at);
-
-          state.npc[npcKey] = npc;
           npc.spawns = 1;
-          state.byPickId[npc.pickId] = npc;
           state.nextPickId++;
 
           state.update();
@@ -364,6 +373,15 @@ export type State = {
     shadowMaterial: THREE.MeshBasicNodeMaterial;
     labelMaterial: THREE.MeshBasicNodeMaterial;
   };
+  createNpc(opts: {
+    key: string;
+    pickId: number;
+    position: THREE.Vector3;
+    skinnedMesh: THREE.SkinnedMesh;
+    graph: ReturnType<typeof buildGraph>;
+    geometry: THREE.BufferGeometry;
+    skinIndex: number;
+  }): Npc;
   placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat): void;
   devHotReload(): void;
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;

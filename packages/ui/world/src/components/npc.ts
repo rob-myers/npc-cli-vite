@@ -12,15 +12,15 @@ const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
 export class Npc {
   key: string;
+  /** Expect ≤ 200 npcs but technically ≤ 65535 */
   pickId: number;
   /** Physics body */
   bodyUid: number;
-  get skinIndex() {
-    return this.skinIndexUniform.value;
-  }
+  /** Skin selection */
   skinIndexUniform: ReturnType<typeof uniform<number>>;
-
+  /** Labels are store in an ArrayTexture */
   labelLayerIndex: number;
+
   group: THREE.Group | null = null;
   material: THREE.MeshStandardNodeMaterial;
   shadowMaterial: THREE.MeshBasicNodeMaterial;
@@ -47,6 +47,10 @@ export class Npc {
   stuckAccum = 0;
 
   w: UseStateRef<import("./World").State>;
+
+  get skinIndex() {
+    return this.skinIndexUniform.value;
+  }
 
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
