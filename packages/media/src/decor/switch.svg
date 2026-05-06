@@ -6,6 +6,6 @@
     <circle cx="30" cy="14" r="3" fill="#4a4" stroke="#2d2d30" stroke-width="1"/>
     <path d="M30 22 L38 30 L34 30 L34 34 L26 34 L26 30 L22 30 Z" fill="#ccc" stroke="#888" stroke-width="0.5"/>
     <line x1="16" y1="38" x2="44" y2="38" stroke="#555" stroke-width="0.75"/>
-    <path d="M30 52 L22 44 L26 44 L26 40 L34 40 L34 44 L38 44 Z" fill="#999" stroke="#666" stroke-width="0.5"/>
+    <path d="M 30 52.0001 L 22 44.0001 L 26 44.0001 L 26 40.0001 L 34 40.0001 L 34 44.0001 L 38 44.0001 L 30 52.0001 Z" fill="#999" stroke="#666" stroke-width="0.5"/>
   </g>
 </svg>
