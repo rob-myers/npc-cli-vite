@@ -30,10 +30,10 @@ export class Npc {
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
 
+  /** Synced with crowd agent */
   position: THREE.Vector3;
-
   agentId: string | null = null;
-  epoch = 0;
+  queryFilter: QueryFilter;
 
   lookAt: JshCli.GroundPoint | null = null;
   lastBlockingArea = -1;
@@ -41,7 +41,6 @@ export class Npc {
   lastPos = { x: 0, y: 0 };
   lastTarget = { x: 0, y: 0 };
   moving = false;
-  queryFilter: QueryFilter;
   resolve?: () => void;
   spawns = 0;
   stuckAccum = 0;
