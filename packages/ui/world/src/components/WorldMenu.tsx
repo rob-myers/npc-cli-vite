@@ -324,6 +324,20 @@ export function WorldMenu() {
                 >
                   Skins
                 </Menu.Item>
+
+                <Menu.Item
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
+                    w.debug?.physicsCollidersShown && "text-green-400",
+                  )}
+                  closeOnClick={false}
+                  onClick={() => {
+                    w.debug?.showPhysicsColliders();
+                    w.update();
+                  }}
+                >
+                  Colliders
+                </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>

@@ -24,7 +24,7 @@ export function DebugPhysicsColliders({
           scale={[userData.radius, colliderHeight, userData.radius]}
           renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
-          <meshBasicMaterial color={toColliderMeta[parsedKey[0]]?.color ?? "blue"} transparent opacity={0.25} />
+          <meshBasicMaterial color={toColliderMeta[parsedKey[0]]?.color ?? "blue"} transparent />
         </mesh>
       );
     }
@@ -45,7 +45,7 @@ export function DebugPhysicsColliders({
             color={toColliderMeta[parsedKey[0]]?.color ?? "blue"}
             transparent
             alphaTest={0.1}
-            opacityNode={w.view.objectPick.greaterThan(0).select(0, 0.5)}
+            opacityNode={w.view.objectPick.greaterThan(0).select(0, collidersOpacity)}
           />
         </mesh>
       );
@@ -73,7 +73,7 @@ function createEdgeTexture() {
   // diagonal hatching
   ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
   ctx.lineWidth = 1;
-  const spacing = 24;
+  const spacing = 12;
   for (let offset = -size; offset < size * 2; offset += spacing) {
     ctx.beginPath();
     ctx.moveTo(offset, 0);
@@ -91,3 +91,5 @@ function createEdgeTexture() {
   tex.needsUpdate = true;
   return { tex, uid: crypto.randomUUID() };
 }
+
+const collidersOpacity = 0.25;
