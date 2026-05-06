@@ -15,10 +15,50 @@ export default function Doors() {
   const state = useStateRef(
     (): State => ({
       box: createDoorBox(),
+      byKey: {},
       inst: null,
       openRatioArray: new Float32Array(0),
       animTargets: new Map(),
 
+      buildByKey() {
+        const prevByKey = state.byKey;
+        state.byKey = {};
+
+        for (const [gmId, gm] of w.gms.entries()) {
+          for (const [doorId, connector] of gm.doors.entries()) {
+            const [u, v] = connector.seg;
+            tmpMat.setMatrixValue(gm.transform);
+            const ut = tmpMat.transformPoint(tmpV1.copy(u));
+            const vt = tmpMat.transformPoint(tmpV2.copy(v));
+
+            const gdKey = `g${gmId}d${doorId}` as const;
+
+            const hull = gm.isHullDoor(doorId);
+
+            const prev = prevByKey[gdKey];
+
+            state.byKey[gdKey] = {
+              gdKey,
+              gmId,
+              doorId,
+              instanceId: state.encodeGmDoorId(gmId, doorId),
+              connector,
+
+              // auto: prev?.auto ?? (door.meta.auto === true),
+              auto: true,
+              axisAligned: connector.normal.x === 0 || connector.normal.y === 0,
+              locked: prev?.locked ?? connector.meta.locked === true,
+              open: prev?.open ?? false,
+              sealed: hull === true ? w.gmGraph.getDoorNodeById(gmId, doorId).sealed : connector.meta.sealed === true,
+              hull,
+
+              src: ut.json,
+              dst: vt.json,
+              normal: tmpMat.transformSansTranslate(connector.normal.clone()),
+            };
+          }
+        }
+      },
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
       },
@@ -153,6 +193,7 @@ export default function Doors() {
   w.door = state;
 
   useEffect(() => {
+    state.buildByKey();
     state.positionInstances();
   }, [w.mapKey, w.hash, w.gms.length]);
 
@@ -198,9 +239,11 @@ export default function Doors() {
 
 export type State = {
   box: THREE.BoxGeometry;
+  byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
   inst: null | THREE.InstancedMesh;
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
+  buildByKey: () => void;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];

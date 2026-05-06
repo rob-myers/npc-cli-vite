@@ -167,7 +167,7 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
 
   getOtherGmRoomId(door: Geomorph.DoorState, roomId: number): Geomorph.GmRoomId | null {
     if (door.hull === false) {
-      const otherRoomId = door.door.roomIds.find((x) => x !== roomId) ?? null;
+      const otherRoomId = door.connector.roomIds.find((x) => x !== roomId) ?? null;
       return otherRoomId === null ? null : helper.getGmRoomId(door.gmId, otherRoomId);
     } else {
       const adj = this.getAdjacentRoomCtxt(door.gmId, door.doorId);
@@ -193,7 +193,7 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
   isOnOtherSide(door: Geomorph.DoorState, roomId: number, point: Geom.VectJson): boolean {
     const dp = (point.x - door.src.x) * door.normal.x + (point.y - door.src.y) * door.normal.y;
     if (door.hull === false) {
-      const index = door.door.roomIds.indexOf(roomId);
+      const index = door.connector.roomIds.indexOf(roomId);
       return dp * (index === 0 ? 1 : -1) < 0;
     } else {
       return dp > 0;
