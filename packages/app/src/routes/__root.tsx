@@ -1,7 +1,7 @@
 import { themeApi, themeStore } from "@npc-cli/theme";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+// import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -22,7 +22,7 @@ function RootComponent() {
 
       {/* ordering fixes weird mount animation bug of WorldMenu */}
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
-      <TanStackRouterDevtools position="bottom-right" />
+      {/* <TanStackRouterDevtools position="bottom-right" /> */}
     </div>
   );
 }
