@@ -20,8 +20,8 @@ export function Debug() {
       openDoorsOnClick: true,
 
       physicsLines: new THREE.BufferGeometry(),
-      staticColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
-      staticCollidersShown: false,
+      physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
+      physicsCollidersShown: false,
 
       computeDemoPath() {
         const [gm] = w.gms;
@@ -39,18 +39,19 @@ export function Debug() {
       onPhysicsDebugData(e) {
         if (e.data.type === "physics-debug-data-response") {
           // console.log('🔔 RECEIVED', e.data);
-          state.staticColliders = e.data.items;
+          state.physicsColliders = e.data.items;
           state.physicsLines.dispose();
           state.physicsLines = new THREE.BufferGeometry();
           state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
           w.worker.worker.removeEventListener("message", state.onPhysicsDebugData);
         }
+        state.update();
         w.view.forceUpdate();
       },
-      showStaticColliders(shouldShow = !state.staticCollidersShown) {
+      showPhysicsColliders(shouldShow = !state.physicsCollidersShown) {
         state.set({
-          staticCollidersShown: shouldShow,
-          staticColliders: [],
+          physicsCollidersShown: shouldShow,
+          physicsColliders: [],
           physicsLines: new THREE.BufferGeometry(),
         });
         if (shouldShow) {
@@ -124,12 +125,12 @@ export function Debug() {
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
 
-      {state.staticColliders.length > 0 && (
-        <group name="static-colliders" visible={state.staticColliders.length > 0}>
+      {state.physicsColliders.length > 0 && (
+        <group name="static-colliders" visible={state.physicsColliders.length > 0}>
           {/* <lineSegments geometry={state.physicsLines}>
             <lineBasicMaterial color="green" />
           </lineSegments> */}
-          <MemoizedDebugPhysicsColliders staticColliders={state.staticColliders} w={w} />
+          <MemoizedDebugPhysicsColliders staticColliders={state.physicsColliders} w={w} />
         </group>
       )}
     </>
@@ -146,12 +147,12 @@ export type State = {
   originShown: boolean;
   openDoorsOnClick: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
-  staticColliders: (WW.PhysicDebugItem & {
+  physicsColliders: (WW.PhysicDebugItem & {
     parsedKey: WW.PhysicsParsedBodyKey;
   })[];
-  staticCollidersShown: boolean;
+  physicsCollidersShown: boolean;
   computeDemoPath(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
-  showStaticColliders(shouldShow?: boolean): void;
+  showPhysicsColliders(shouldShow?: boolean): void;
   updateInstances(): void;
 };
