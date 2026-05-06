@@ -8,6 +8,7 @@ import React, { useMemo } from "react";
 import { texture } from "three/src/nodes/accessors/TextureNode.js";
 import { uv } from "three/src/nodes/accessors/UV.js";
 import { attribute } from "three/src/nodes/core/AttributeNode.js";
+import { vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
@@ -180,13 +181,15 @@ export default function Decor(_props: Props) {
       await updateDecor();
       w.setNextPending({ decor: false });
     })();
-  }, [w.mapKey, w.hash, state.images.length, w.pending.nav]);
+  }, [w.mapKey, w.hash, state.images, w.pending.nav]);
 
   const materials = useMemo(() => {
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
     const uvTexIds = attribute("uvTextureIds", "float");
-    const transformedUv = uv().mul(uvDims).add(uvOffs);
+    // why do we need to flip here?
+    const flippedUv = vec2(uv().x, uv().y.oneMinus());
+    const transformedUv = flippedUv.mul(uvDims).add(uvOffs);
     const texNode = texture(w.texDecor.tex, transformedUv);
     texNode.depthNode = uvTexIds;
 

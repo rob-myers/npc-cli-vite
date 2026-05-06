@@ -1,4 +1,5 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
+import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
@@ -152,6 +153,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           ["hot", assetsJsonChangedEvent, () => {
             debug("[World] assets.json changed: refetching");
             queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
+          }],
+          ["hot", devMessageFromServer.decorSheetsRebuilt, () => {
+            debug("[World] decor sheets rebuilt: refetching");
+            queryClientApi.queryClient.invalidateQueries({  queryKey: [...state.worldQueryPrefix, "decor-sheet-images"] });
           }],
           ["window", "hmr:DerivedGmsData", (e: Event) => {
             debug("[World] HMR: DerivedGmsData updated: recomputing");

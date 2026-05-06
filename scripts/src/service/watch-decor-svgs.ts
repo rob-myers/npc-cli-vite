@@ -1,6 +1,8 @@
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { type DecorManifest, DecorManifestEntrySchema, DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
+import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import { Canvas, loadImage } from "skia-canvas";
@@ -23,7 +25,12 @@ export function watchDecorSvgs(server: ViteDevServer) {
   const rebuild = () => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      rebuildDecor();
+      try {
+        execSync("pnpm exec gen-decor-sheets", { cwd: PROJECT_ROOT, stdio: "inherit" });
+        server.hot.send({ type: "custom", event: devMessageFromServer.decorSheetsRebuilt });
+      } catch (e) {
+        warn("[watch-decor] gen-decor-sheets failed:", e);
+      }
     }, 200);
   };
 
