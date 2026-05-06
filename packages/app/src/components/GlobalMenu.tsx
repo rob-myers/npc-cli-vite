@@ -54,7 +54,7 @@ export function GlobalMenu() {
       onDragEnd={menu.onDragEnd}
     >
       <Menu.Root open={menu.menuOpen} onOpenChange={menu.onMenuOpenChange}>
-        <Menu.Trigger className="cursor-pointer p-2" render={<span />}>
+        <Menu.Trigger className="cursor-pointer p-2" render={<span />} nativeButton={false}>
           <GearIcon className="size-5" weight="bold" />
         </Menu.Trigger>
 
