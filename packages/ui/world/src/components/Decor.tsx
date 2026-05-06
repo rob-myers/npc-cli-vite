@@ -1,6 +1,5 @@
-import { type DecorManifest, DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { useStateRef } from "@npc-cli/util";
-import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
@@ -30,7 +29,6 @@ export default function Decor(_props: Props) {
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
       images: [] as HTMLImageElement[],
-      manifest: null as DecorManifest | null,
 
       addUvs() {
         if (!w.sheets?.decor) return;
@@ -101,9 +99,8 @@ export default function Decor(_props: Props) {
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
       },
       async transformDecorQuads() {
-        const { inst, manifest } = state;
-        if (!inst || !manifest) return;
-        inst.instanceMatrix.array.fill(0);
+        if (!state.inst || !w.sheets.decor) return;
+        state.inst.instanceMatrix.array.fill(0);
         let id = 0;
 
         for (const gm of w.gms) {
@@ -113,9 +110,10 @@ export default function Decor(_props: Props) {
             if (item.type !== "quad") continue;
             const { transform: quadTransform, meta } = item;
 
-            const entry = manifest.byKey[meta.img];
-            const imgW = (entry?.width ?? 1) * sguToWorldScale;
-            const imgH = (entry?.height ?? 1) * sguToWorldScale;
+            const entry = w.sheets.decor?.[item.meta.img];
+            // const entry = manifest.byKey[meta.img];
+            const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
+            const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
 
             tmpMat.feedFromArray([imgW, 0, 0, imgH, 0, 0]);
             tmpMat.postMultiply(quadTransform);
@@ -131,28 +129,19 @@ export default function Decor(_props: Props) {
               mat4.premultiply(rotMat);
             }
 
-            inst.setMatrixAt(id, mat4);
-            inst.setColorAt(id, tmpColor.set("#ffffff"));
+            state.inst.setMatrixAt(id, mat4);
+            state.inst.setColorAt(id, tmpColor.set("#ffffff"));
             id++;
           }
         }
 
-        inst.count = id;
-        inst.computeBoundingSphere();
+        state.inst.count = id;
+        state.inst.computeBoundingSphere();
       },
     }),
   );
 
   w.decor = state;
-
-  // 🚧 fetch manifest, sheets and draw in single query
-  const manifest = useQuery({
-    queryKey: [...w.worldQueryPrefix, "decor-manifest"],
-    async queryFn() {
-      return fetchParsed("/decor/manifest.json", DecorManifestSchema);
-    },
-  }).data;
-  state.manifest = manifest ?? state.manifest;
 
   state.images =
     useQuery({
@@ -184,7 +173,7 @@ export default function Decor(_props: Props) {
   });
 
   React.useEffect(() => {
-    if (decorQuadCount === 0 || state.images.length === 0 || !state.manifest) return;
+    if (decorQuadCount === 0 || state.images.length === 0) return;
     (async () => {
       if (!w.hash || w.pending.nav) return;
       w.setNextPending({ decor: true });
@@ -239,7 +228,6 @@ export type State = {
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
   images: HTMLImageElement[];
-  manifest: DecorManifest | null;
   addUvs(): void;
   decodeInstanceId(instanceId: number): { gmId: number; meta: Meta } | null;
   transformDecorQuads(): Promise<void>;
