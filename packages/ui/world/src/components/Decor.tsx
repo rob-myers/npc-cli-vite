@@ -158,7 +158,7 @@ export default function Decor(_props: Props) {
   const decorQuadCount = w.gms.reduce((sum, gm) => sum + gm.decor.filter((d) => d.type === "quad").length, 0);
 
   const { mutateAsync: updateDecor } = useMutation({
-    mutationKey: [...w.worldQueryPrefix, "update-decor"],
+    mutationKey: ["update-decor"],
     async mutationFn() {
       state.addUvs();
       await state.draw();
@@ -170,7 +170,7 @@ export default function Decor(_props: Props) {
     },
   });
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (decorQuadCount === 0 || state.images.length === 0) return;
 
     (async () => {
@@ -196,7 +196,7 @@ export default function Decor(_props: Props) {
     texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
     // +x, -x, +y, -y, +z, -z
     return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
-  }, [state.images]);
+  }, [state.images, w.texDecor.hash]);
 
   return (
     <instancedMesh
