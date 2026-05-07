@@ -4,7 +4,7 @@ import { Mat } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { attribute, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
@@ -13,7 +13,7 @@ import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } 
 import { PICK_TYPE } from "../service/pick";
 import { WorldContext } from "./world-context";
 
-export default function Decor(_props: Props) {
+export default function Decor() {
   const w = React.useContext(WorldContext);
 
   const state = useStateRef(
@@ -111,7 +111,6 @@ export default function Decor(_props: Props) {
             const { transform: quadTransform, meta } = item;
 
             const entry = w.sheets.decor?.[item.meta.img];
-            // const entry = manifest.byKey[meta.img];
             const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
             const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
 
@@ -170,7 +169,7 @@ export default function Decor(_props: Props) {
     },
   });
 
-  React.useLayoutEffect(() => {
+  useEffect(() => {
     if (decorQuadCount === 0 || state.images.length === 0) return;
 
     (async () => {
@@ -185,7 +184,7 @@ export default function Decor(_props: Props) {
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
     const uvTexIds = attribute("uvTextureIds", "uint");
-    // why do we need to flip here?
+    // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
     const flippedUv = vec2(uv().x, uv().y.oneMinus());
     const transformedUv = flippedUv.mul(uvDims).add(uvOffs);
     const texNode = texture(w.texDecor.tex, transformedUv);
@@ -216,10 +215,6 @@ export default function Decor(_props: Props) {
     </instancedMesh>
   );
 }
-
-type Props = {
-  disabled?: boolean;
-};
 
 export type State = {
   inst: THREE.InstancedMesh;
