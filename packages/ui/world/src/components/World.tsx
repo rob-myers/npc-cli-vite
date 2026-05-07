@@ -157,7 +157,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }],
           ["hot", devMessageFromServer.decorSheetsRebuilt, () => {
             debug("[World] decor sheets rebuilt: refetching");
-            queryClientApi.queryClient.invalidateQueries({  queryKey: [...state.worldQueryPrefix, "decor-sheet-images"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-sheet-images"] });
           }],
           ["window", "hmr:DerivedGmsData", (e: Event) => {
             debug("[World] HMR: DerivedGmsData updated: recomputing");

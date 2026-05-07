@@ -23,13 +23,13 @@ export default function Decor(_props: Props) {
     (): State => ({
       inst: null as any,
       everUpdated: false,
+      images: [] as HTMLImageElement[],
 
       box: createUnitBox(),
 
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
-      images: [] as HTMLImageElement[],
 
       addUvs() {
         if (!w.sheets?.decor) return;
@@ -60,7 +60,6 @@ export default function Decor(_props: Props) {
           }
         }
       },
-
       async draw() {
         if (!w.sheets?.decorSheetDims || state.images.length === 0) return;
         const { ct } = w.texDecor;
@@ -146,14 +145,12 @@ export default function Decor(_props: Props) {
 
   state.images =
     useQuery({
-      queryKey: [...w.worldQueryPrefix, "decor-sheet-images"],
+      queryKey: ["decor-sheet-images"],
       async queryFn() {
         const numSheets = w.sheets.decorSheetDims?.length ?? 0;
-        const images: HTMLImageElement[] = [];
-        for (let sheetId = 0; sheetId < numSheets; sheetId++) {
-          images.push(await loadImage(`/sheet/decor.${sheetId}.png${getDevCacheBustQueryParam()}`));
-        }
-        return images;
+        return await Promise.all(
+          Array.from({ length: numSheets }, (_, i) => loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`)),
+        );
       },
       enabled: !!w.sheets?.decorSheetDims,
     }).data ?? state.images;
@@ -175,13 +172,14 @@ export default function Decor(_props: Props) {
 
   React.useEffect(() => {
     if (decorQuadCount === 0 || state.images.length === 0) return;
+
     (async () => {
       if (!w.hash || w.pending.nav) return;
       w.setNextPending({ decor: true });
       await updateDecor();
       w.setNextPending({ decor: false });
     })();
-  }, [w.mapKey, w.hash, state.images, w.pending.nav]);
+  }, [w.mapKey, w.gmsHash, state.images, w.pending.nav]);
 
   const materials = useMemo(() => {
     const uvDims = attribute("uvDimensions", "vec2");
