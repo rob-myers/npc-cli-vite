@@ -166,7 +166,9 @@
     - ✅ physics: avoid createLayoutInstance
     - ✅ world.worker
   
-  - try putting worker reloads back
+  - ✅ try putting worker reloads back
+    - saving worker file triggers 1 reload
+    - saving non-worker file triggers 1 reload
 
 - 🚧 add switches to all extant doors
 
