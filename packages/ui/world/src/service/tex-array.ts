@@ -10,6 +10,7 @@ interface TexArrayOpts {
   /** key for cached canvas context */
   ctKey: string;
   type?: typeof THREE.UnsignedByteType | typeof THREE.FloatType;
+  force?: boolean;
 }
 
 export interface TextureItem {
@@ -57,6 +58,22 @@ export class TexArray {
     this.tex.dispose();
   }
 
+  recreate() {
+    this.ct.canvas.width = this.opts.width;
+    this.ct.canvas.height = this.opts.height;
+
+    this.tex.dispose();
+    const data =
+      this.opts.type === THREE.FloatType
+        ? new Float32Array(this.opts.numTextures * 4 * this.opts.width * this.opts.height)
+        : new Uint8Array(this.opts.numTextures * 4 * this.opts.width * this.opts.height);
+    this.tex = new THREE.DataArrayTexture(data, this.opts.width, this.opts.height, this.opts.numTextures);
+    this.tex.format = THREE.RGBAFormat;
+    this.tex.type = this.opts.type ?? THREE.UnsignedByteType;
+    this.tex.colorSpace = THREE.NoColorSpace;
+    this.hash = hashJson(this.opts);
+  }
+
   /**
    * - Resize if needed i.e. if "dimension" or "number of textures" has changed.
    * - This recreates `THREE.DataArrayTexture`.
@@ -66,35 +83,22 @@ export class TexArray {
       this.ct.canvas.width !== 0 &&
       opts.width === this.opts.width &&
       opts.height === this.opts.height &&
-      opts.numTextures === this.opts.numTextures
+      opts.numTextures === this.opts.numTextures &&
+      !opts.force
     ) {
       return; // resize not needed
     }
 
-    // 🚧
-    warn("resizing texture array", this.opts.ctKey, {
-      width: opts.width,
-      height: opts.height,
-      numTextures: opts.numTextures,
-    });
+    !opts.force &&
+      warn("resizing texture array", this.opts.ctKey, {
+        width: opts.width,
+        height: opts.height,
+        numTextures: opts.numTextures,
+      });
 
     Object.assign(this.opts, opts);
 
-    this.ct.canvas.width = opts.width;
-    this.ct.canvas.height = opts.height;
-
-    this.tex.dispose();
-
-    const data =
-      opts.type === THREE.FloatType
-        ? new Float32Array(opts.numTextures * 4 * opts.width * opts.height)
-        : new Uint8Array(opts.numTextures * 4 * opts.width * opts.height);
-    this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
-    this.tex.format = THREE.RGBAFormat;
-    this.tex.type = opts.type ?? THREE.UnsignedByteType;
-    this.tex.colorSpace = THREE.NoColorSpace;
-
-    this.hash = hashJson(opts);
+    this.recreate();
   }
 
   update() {

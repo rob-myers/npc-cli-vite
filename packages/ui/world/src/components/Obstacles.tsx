@@ -7,12 +7,18 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { texture } from "three/src/nodes/accessors/TextureNode.js";
-import { uv } from "three/src/nodes/accessors/UV.js";
-import { attribute } from "three/src/nodes/core/AttributeNode.js";
-import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
-import { int } from "three/src/nodes/tsl/TSLCore.js";
-import { cameraPosition, color, normalWorld, positionWorld, vec4 } from "three/tsl";
+import {
+  attribute,
+  cameraPosition,
+  color,
+  instanceIndex,
+  int,
+  normalWorld,
+  positionWorld,
+  texture,
+  uv,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
@@ -181,7 +187,7 @@ export default function Obstacles(_props: Props) {
     const texArray = w.texObs;
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
-    const uvTexIds = attribute("uvTextureIds", "float");
+    const uvTexIds = attribute("uvTextureIds", "uint");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
