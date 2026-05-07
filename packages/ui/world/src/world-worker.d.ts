@@ -45,7 +45,7 @@ declare namespace WW {
         type: "setup-physics";
         mapKey: string;
         npcs: NpcDef[];
-        assets: import("./assets.schema").AssetsEncodedType;
+        doors: PhysicsDoorDef[];
       };
 
   type AddPhysicsColliders = Extract<PhysicsMsgToWorker, { type: "add-physics-colliders" }>;
@@ -127,6 +127,14 @@ declare namespace WW {
     gmId: number;
     doorId: number;
     polygon: Geom.GeoJsonPolygon;
+  };
+
+  type PhysicsDoorDef = {
+    gdKey: `g${number}d${number}`;
+    center: { x: number; y: number };
+    angle: number;
+    baseWidth: number;
+    baseHeight: number;
   };
 
   type PhysicDebugItem = {

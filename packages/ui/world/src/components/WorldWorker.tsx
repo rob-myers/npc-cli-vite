@@ -1,10 +1,9 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
-import z from "zod";
-import { AssetsSchema } from "../assets.schema";
 import { helper } from "../service/helper";
 import { parsePhysicsBodyKey } from "../service/physics-bijection";
+import { getNavmeshPayload, getPhysicsDoorData } from "../service/worker-data";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -63,7 +62,8 @@ export default function WorldWorker() {
             break;
           }
           case "worker-hot-module-reload": {
-            state.set({ reloads: state.reloads + 1 });
+            // 🚧
+            // state.set({ reloads: state.reloads + 1 });
             break;
           }
           case "world-setup-response": {
@@ -103,44 +103,29 @@ export default function WorldWorker() {
   useEffect(() => {
     if (w.hash === 0) return;
 
+    console.log("🔔🔔 REBOOTING WORKER 🔔🔔", { ...w.pending });
+
     w.setNextPending({ nav: true });
 
     state.worker.postMessage({
       type: "request-tiled-navmesh",
       mapKey: w.mapKey,
-      // - tailored data avoids worker dependency on "main thread modules"
-      // - in PROD we send assets mutations too
-      gmGeoms: w.gms.map<WW.GmGeomForNav>(
-        ({ key, doors, bounds, determinant, gridRect, matrix, inverseMatrix, mat4, navDecomp }, gmId) => ({
-          key,
-          doorways: doors.map((connector, doorId) => ({
-            gmId,
-            doorId,
-            // 🔔 geomorph instance polygons are untransformed
-            polygon: connector.poly.clone().applyMatrix(matrix).geoJson,
-          })),
-          triangulation: navDecomp, // implicit Vect -> {x, y}
-          worldBounds: bounds.clone().applyMatrix(matrix),
-          determinant,
-          gridRect: gridRect.json,
-          inverseMat3: inverseMatrix.json,
-          mat4Array: mat4.toArray(),
-        }),
-      ),
+      gmGeoms: getNavmeshPayload(w.gms),
     } satisfies WW.MsgToWorker);
 
     state.worker.postMessage({
       type: "setup-physics",
-      mapKey: w.mapKey, // On HMR must provide existing npcs:
+      mapKey: w.mapKey,
       npcs: Object.values(w.npc?.npc ?? {}).map((npc) => ({
         npcKey: npc.key,
         position: npc.position,
       })),
-      assets: z.encode(AssetsSchema, w.assets),
+      doors: getPhysicsDoorData(w.gms),
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
-  }, [w.gms, state.reloads]); // request navmesh, physics
+    // }, [w.gms, state.reloads]); // request navmesh, physics
+  }, [w.gms]); // request navmesh, physics
 
   return null;
 }
