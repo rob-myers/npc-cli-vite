@@ -102,10 +102,14 @@ export default function WorldWorker() {
   useEffect(() => {
     if (w.hash === 0) return;
 
-    console.log("🔔🔔 REBOOTING WORKER 🔔🔔", { ...w.pending });
-
+    // console.log("🔔🔔 BOOTING WORKER 🔔🔔");
     w.setNextPending({ nav: true });
 
+    /**
+     * - Webworker modules should be disjoint from other ui/world modules,
+     *   otherwise multiple HMRs reloads breaks things
+     * - So, we send specially crafted payloads to worker
+     */
     state.worker.postMessage({
       type: "request-tiled-navmesh",
       mapKey: w.mapKey,
@@ -123,7 +127,7 @@ export default function WorldWorker() {
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
-  }, [w.gms, state.reloads]); // request navmesh, physics
+  }, [w.gmsHash, state.reloads]); // request navmesh, physics
 
   return null;
 }
