@@ -65,6 +65,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       timer: new Timer(),
 
       hash: 0,
+      gmsHash: 0,
 
       // hmr recreates but not named canvas
       texFloor: new TexArray({
@@ -248,6 +249,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.gmsData.computeRoot(state.gms);
 
       state.hash = hashJson(state.assets);
+      state.gmsHash = hashJson(state.gms);
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
       state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph);
@@ -319,6 +321,8 @@ export type State = {
   sheets: SheetsType;
   /** Hash of `w.assets` */
   hash: number;
+  /** Hash of `w.gms` */
+  gmsHash: number;
   texFloor: TexArray;
   texCeil: TexArray;
   texObs: TexArray;
