@@ -7,8 +7,7 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { motion } from "motion/react";
 import { useContext, useEffect } from "react";
-import { instanceIndex } from "three/src/nodes/core/IndexNode.js";
-import { float, output, uniform, vec4 } from "three/tsl";
+import { float, instanceIndex, output, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
