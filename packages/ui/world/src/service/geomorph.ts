@@ -333,13 +333,9 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     };
   } else if (meta.quad === true) {
     const polyRect = poly.rect.precision(precision);
-    const transform = poly.meta.transform.slice();
-    delete poly.meta.transform; // already provided one-level-up
-
-    const quadMeta = base.meta as Geomorph.DecorQuad["meta"];
-    if (!isDecorImgKey(quadMeta.img)) {
-      quadMeta.img = "icon--warn";
-    }
+    const { transform } = poly.meta;
+    const quadMeta = { ...base.meta } as Geomorph.DecorQuad["meta"];
+    delete quadMeta.transform; // already provided one-level-up
 
     const center = poly.center.precision(3);
     const { baseRect } = geomService.polyToAngledRect(poly);
@@ -389,10 +385,6 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     delete meta.direction;
     const orient = toPrecision((180 / Math.PI) * Math.atan2(direction.y, direction.x));
 
-    // permit invisible point i.e. no image
-    if ("img" in meta && !isDecorImgKey(meta.img)) {
-      meta.img = "icon--warn";
-    }
     return { type: "point", ...base, bounds2d, x: center.x, y: center.y, orient };
   }
 }
@@ -650,17 +642,6 @@ export function instantiateFlatSymbol(
 
 function isDecorCuboid(d: Geomorph.Decor): d is Geomorph.DecorCuboid {
   return d.type === "cuboid";
-}
-
-/** 🚧 somehow check public/decor/manifest.json */
-function isDecorImgKey(_input: string) {
-  // biome-ignore lint/correctness/noConstantCondition: unimplemented
-  if (false) {
-    warn(`${"createLayoutDecorFromPoly"}: decor meta.img must exist (using "icon--warn")`);
-    return false;
-  } else {
-    return true;
-  }
 }
 
 export function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
