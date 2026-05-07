@@ -5,10 +5,7 @@ import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
-import { texture } from "three/src/nodes/accessors/TextureNode.js";
-import { uv } from "three/src/nodes/accessors/UV.js";
-import { attribute } from "three/src/nodes/core/AttributeNode.js";
-import { vec2 } from "three/tsl";
+import { attribute, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
@@ -62,22 +59,25 @@ export default function Decor(_props: Props) {
       },
       async draw() {
         if (!w.sheets?.decorSheetDims || state.images.length === 0) return;
-        const { ct } = w.texDecor;
         const { maxDecorSheetDim, decorSheetDims } = w.sheets;
         if (!maxDecorSheetDim || !decorSheetDims) return;
+        const { ct } = w.texDecor;
 
         w.texDecor.resize({
           numTextures: decorSheetDims.length,
           width: maxDecorSheetDim.width,
           height: maxDecorSheetDim.height,
+          // 🔔 recreate to handle HMR const: unclear why since obstacles works...
+          force: true,
         });
+
         for (let sheetId = 0; sheetId < state.images.length; sheetId++) {
           ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
           ct.drawImage(state.images[sheetId], 0, 0);
           w.texDecor.updateIndex(sheetId);
         }
       },
-      decodeInstanceId(instanceId: number) {
+      decodeInstanceId(instanceId) {
         let id = instanceId;
         for (const gm of w.gms) {
           const quads = gm.decor.filter((d) => d.type === "quad");
@@ -184,7 +184,7 @@ export default function Decor(_props: Props) {
   const materials = useMemo(() => {
     const uvDims = attribute("uvDimensions", "vec2");
     const uvOffs = attribute("uvOffsets", "vec2");
-    const uvTexIds = attribute("uvTextureIds", "float");
+    const uvTexIds = attribute("uvTextureIds", "uint");
     // why do we need to flip here?
     const flippedUv = vec2(uv().x, uv().y.oneMinus());
     const transformedUv = flippedUv.mul(uvDims).add(uvOffs);
@@ -196,7 +196,7 @@ export default function Decor(_props: Props) {
     texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
     // +x, -x, +y, -y, +z, -z
     return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
-  }, [w.texDecor.hash]);
+  }, [state.images]);
 
   return (
     <instancedMesh
