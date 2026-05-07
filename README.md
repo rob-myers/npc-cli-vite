@@ -98,6 +98,10 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
+#### ⚠️ Worker modules should be disjoint from other ui/world modules
+
+Otherwise vite HMR can happen multiple times breaking worker re-intialization.
+
 #### ⚠️ TTY needs both WORLD_KEY and CACHE_SHORTCUTS to connect to world
 
 ```sh

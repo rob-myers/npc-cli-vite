@@ -150,12 +150,23 @@
     - ✅ hook up to Decor
 
 - 🚧 BUG physics inside worker (HMR)
-  - probably caused by const being shared between main thread and worker
-  - forcing HMR via save of `WorldWorker.tsx` works
-  - `Cannot read properties of undefined (reading 'createRigidBody')`
-  - `RuntimeError: unreachable`
-  - multiple `request-tiled-navmesh` received by worker
-  - multiple `setup-physics` received by worker
+  - ✅ caused by saving const: shared between main thread and worker
+    - `TypeError: Cannot read properties of undefined (reading 'createRigidBody')`
+    - main thread receives "worker-hot-module-reload" from worker
+    - observed two `request-tiled-navmesh` received by worker
+    - presumably `w.gms` changes too, maybe check query status?
+  - forcing HMR via save of `WorldWorker.tsx` fixes it
+  
+  - ✅ keep worker disjoint
+    - ✅ custom-tiled-mesh
+    - ✅ nav-util
+    - ✅ generate-tiled-navmesh
+    - ✅ worker.store
+    - ✅ physics: avoid AssetsSchem
+    - ✅ physics: avoid createLayoutInstance
+    - ✅ world.worker
+  
+  - try putting worker reloads back
 
 - 🚧 add switches to all extant doors
 
@@ -173,7 +184,7 @@
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR
 
-- BUG MapEdit shift-snap mismatch for distinct determinant sign
+- ✅ BUG MapEdit shift-snap mismatch for distinct determinant sign
 
 - ✅ move debug colliders switch into WorldMenu
 

@@ -11,7 +11,6 @@ export const workerStore: UseBoundStore<WithImmer<StoreApi<WorkerStoreState>>> =
         gmGeoms: [],
 
         world: undefined as any,
-        gms: /** @type {Geomorph.LayoutInstance[]} */ ([]),
         eventQueue: undefined as any,
         bodyHandleToKey: new Map(),
         bodyKeyToBody: new Map(),
@@ -37,7 +36,6 @@ export type WorkerStoreState = { gmGeoms: WW.GmGeomForNav[] } & PhysicsState &
 
 type PhysicsState = {
   world: RAPIER.World;
-  gms: Geomorph.LayoutInstance[];
   eventQueue: RAPIER.EventQueue;
   bodyHandleToKey: Map<number, WW.PhysicsBodyKey>;
   bodyKeyToCollider: Map<WW.PhysicsBodyKey, RAPIER.Collider>;

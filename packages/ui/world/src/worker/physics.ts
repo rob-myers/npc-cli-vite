@@ -1,8 +1,4 @@
 import RAPIER, { ColliderDesc, RigidBodyType } from "@dimforge/rapier3d-compat";
-import z from "zod";
-import { AssetsSchema } from "../assets.schema";
-import { createLayoutInstance } from "../service/geomorph";
-import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey, parsePhysicsBodyKey } from "../service/physics-bijection";
 import { type WorkerStoreState, workerStore } from "./worker.store";
 
@@ -16,53 +12,47 @@ const unitYAxis = { x: 0, y: 1, z: 0 } as const;
  * - "nearby" door sensors: one per door.
  * - "inside" door sensors: one per door.
  */
-function createDoorSensors() {
+function createDoorSensors(doors: WW.PhysicsDoorDef[]) {
   const state = workerStore.getState();
 
-  return state.gms.map((gm, gmId) =>
-    gm.doors.flatMap((door, doorId) => {
-      const center = gm.matrix.transformPoint(door.center.clone());
-      const angle = gm.matrix.transformAngle(door.angle);
-      const gdKey = helper.getGmDoorKey(gmId, doorId);
+  return doors.flatMap((door) => {
+    const { gdKey, center, angle, baseWidth, baseHeight } = door;
 
-      const nearbyDef = {
-        key: `nearby ${gdKey}` as const,
-        width: door.baseRect.width,
-        height: door.baseRect.height + 6 * wallOutset,
-        // height: door.baseRect.height + 2 * wallOutset,
-        // height: door.baseRect.height + 0 * wallOutset,
+    const nearbyDef = {
+      key: `nearby ${gdKey}` as const,
+      width: baseWidth,
+      height: baseHeight + 6 * wallOutset,
+      angle,
+    };
+
+    const insideDef = {
+      key: `inside ${gdKey}` as const,
+      width: baseWidth - 2 * wallOutset,
+      height: baseHeight,
+      angle,
+    };
+
+    return [nearbyDef, insideDef].map((def) =>
+      createRigidBody({
+        type: RAPIER.RigidBodyType.Fixed,
+        geomDef: {
+          type: "rect",
+          width: def.width,
+          height: def.height,
+        },
+        position: { x: center.x, y: wallHeight / 2, z: center.y },
         angle,
-      };
-
-      const insideDef = {
-        key: `inside ${gdKey}` as const,
-        width: door.baseRect.width - 2 * wallOutset,
-        height: door.baseRect.height,
-        angle,
-      };
-
-      return [nearbyDef, insideDef].map((def) =>
-        createRigidBody({
-          type: RAPIER.RigidBodyType.Fixed,
-          geomDef: {
-            type: "rect",
-            width: def.width,
-            height: def.height,
-          },
-          position: { x: center.x, y: wallHeight / 2, z: center.y },
+        userData: {
+          bodyKey: def.key,
+          bodyUid: addBodyKeyUidRelation(def.key, state),
+          type: "cuboid",
+          width: def.width,
+          depth: def.height,
           angle,
-          userData: {
-            bodyKey: def.key,
-            bodyUid: addBodyKeyUidRelation(def.key, state),
-            type: "cuboid",
-            width: def.width,
-            depth: def.height,
-            angle,
-          },
-        }),
-      );
-    }),
-  );
+        },
+      }),
+    );
+  });
 }
 
 export function createRigidBody({
@@ -194,13 +184,7 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
     // state.world.colliders.free();
   }
 
-  const assets = z.decode(AssetsSchema, msg.assets);
-  const mapDef = assets.map[msg.mapKey]!;
-  state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
-    createLayoutInstance(assets.layout[gmKey]!, gmId, transform),
-  );
-
-  createDoorSensors();
+  createDoorSensors(msg.doors);
 
   restoreNpcs(msg.npcs);
 
