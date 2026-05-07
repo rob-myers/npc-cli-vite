@@ -62,8 +62,7 @@ export default function WorldWorker() {
             break;
           }
           case "worker-hot-module-reload": {
-            // 🚧
-            // state.set({ reloads: state.reloads + 1 });
+            state.set({ reloads: state.reloads + 1 });
             break;
           }
           case "world-setup-response": {
@@ -124,8 +123,7 @@ export default function WorldWorker() {
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
-    // }, [w.gms, state.reloads]); // request navmesh, physics
-  }, [w.gms]); // request navmesh, physics
+  }, [w.gms, state.reloads]); // request navmesh, physics
 
   return null;
 }
