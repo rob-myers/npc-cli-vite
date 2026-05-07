@@ -44,11 +44,11 @@ function computeFlatDoorsAndDecor(
   symbol: Geomorph.Symbol,
   flats: Geomorph.FlatSymbol[],
 ): { flatDoors: Poly[]; flatDecor: Poly[] } {
-  // ensure `decor.meta.switch` points to correct doorId
+  // ensure `decor.meta.doorId` points to correct doorId
   let doorIdOffset = symbol.doors.length;
   const flatDoors = symbol.doors.concat(
     flats.flatMap((flat) => {
-      flat.decor.forEach((d) => typeof d.meta.switch === "number" && (d.meta.switch += doorIdOffset));
+      flat.decor.forEach((d) => typeof d.meta.doorId === "number" && (d.meta.doorId += doorIdOffset));
       doorIdOffset += flat.doors.length;
       return flat.doors;
     }),
@@ -75,19 +75,19 @@ function computeFlatDoorsAndDecor(
   return {
     flatDoors: flatDoors.filter((_, i) => !rmDoorIds.has(i)),
     flatDecor: flatDecor.filter((d) => {
-      if (typeof d.meta.switch === "number") {
-        if (rmDoorIds.has(d.meta.switch)) {
+      if (typeof d.meta.doorId === "number") {
+        if (rmDoorIds.has(d.meta.doorId)) {
           // remove resp. switch
-          if (!seenRmDoorId.has(d.meta.switch)) {
+          if (!seenRmDoorId.has(d.meta.doorId)) {
             switchIdOffset--;
-            seenRmDoorId.add(d.meta.switch);
+            seenRmDoorId.add(d.meta.doorId);
           }
           return false;
         }
-        if (keptDoorIds.has(d.meta.switch)) {
+        if (keptDoorIds.has(d.meta.doorId)) {
           d.meta.inner = true; // set kept switches inner
         }
-        d.meta.switch += switchIdOffset; // adjust for prior removals
+        d.meta.doorId += switchIdOffset; // adjust for prior removals
       }
       return true;
     }),
@@ -412,6 +412,7 @@ export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.
 
 /**
  * Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
+ * Previously known as `parseSymbol`.
  */
 export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
   const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
@@ -458,8 +459,9 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
 
     if (meta.switch === true) {
       // switches are aligned to doors
-      meta.switch = polysLookup.doors.length - 1;
+      meta.doorId = polysLookup.doors.length - 1;
     }
+
     if (meta.obstacle === true) {
       // Link to original symbol
       meta.symKey = savedFile.key;
@@ -528,6 +530,7 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
   poly.meta.img = node.srcKey; // e.g. arrow-square-right-duotone
 
   if (meta.img === "switch") {
+    meta.switch = true;
     meta.y = doorSwitchHeight;
     meta.tilt = true; // 90° around "top"
   }
