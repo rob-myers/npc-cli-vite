@@ -597,9 +597,9 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
 }
 
 /**
- * 🚧 support removable doors
- * 🚧 support removable walls
  * - aggregates obstacle transform as meta.transform
+ * - supports removable doors
+ * - supports addable walls
  */
 export function instantiateFlatSymbol(
   sym: Geomorph.FlatSymbol,
@@ -626,22 +626,22 @@ export function instantiateFlatSymbol(
   );
 
   const doorIdsToRemove = new Set(doorsToRemove.map((x) => x.doorId));
-  let switchIdOffset = 0;
-  const seenDoorIds = new Set<number>();
+  const doorIdRemap = new Map<number, number>();
+  let newDoorId = 0;
+  for (let i = 0; i < sym.doors.length; i++) {
+    if (!doorIdsToRemove.has(i)) doorIdRemap.set(i, newDoorId++);
+  }
 
-  const decor = sym.decor
-    // remove switches of removed doors, offsetting subsequent doorIds
-    .filter((d) => {
-      if (typeof d.meta.doorId === "number") {
-        if (doorIdsToRemove.has(d.meta.doorId)) {
-          !seenDoorIds.has(d.meta.doorId) && (switchIdOffset--, seenDoorIds.add(d.meta.doorId));
-          return false;
-        }
-        d.meta.doorId += switchIdOffset;
-      }
-      return true;
-    })
-    .map((poly) => poly.cleanClone(mat, transformDecorMeta(poly.meta, mat, meta.y)));
+  const decor = sym.decor.flatMap((d) => {
+    if (typeof d.meta.doorId === "number") {
+      if (doorIdsToRemove.has(d.meta.doorId)) return [];
+      return d.cleanClone(mat, {
+        ...transformDecorMeta(d.meta, mat, meta.y),
+        doorId: doorIdRemap.get(d.meta.doorId),
+      });
+    }
+    return d.cleanClone(mat, transformDecorMeta(d.meta, mat, meta.y));
+  });
 
   return {
     key: sym.key,
@@ -679,7 +679,7 @@ export function instantiateFlatSymbol(
       }),
     ),
     unsorted: sym.unsorted.map((poly) => poly.cleanClone(mat)),
-    walls: sym.walls.map((poly) => poly.cleanClone(tmpMat1)),
+    walls: sym.walls.concat(wallsToAdd).map((poly) => poly.cleanClone(tmpMat1)),
     windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1)),
 
     // not aggregated

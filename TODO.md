@@ -172,6 +172,8 @@
 
 - 🚧 add switches to all extant doors
 
+- ✅ BUG save other symbol then office--001 switch disappears
+
 - 🚧 door switches show green/red when unlocked/locked
   - ✅ doors have entry in `w.door.byKey`
   - ✅ track open/closed
