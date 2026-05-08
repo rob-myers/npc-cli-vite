@@ -88,7 +88,6 @@ export default function Obstacles(_props: Props) {
           }
         }
       },
-
       async draw() {
         if (!w.sheets || state.images.length === 0) return;
         const { ct } = w.texObs;
@@ -105,14 +104,12 @@ export default function Obstacles(_props: Props) {
           w.texObs.updateIndex(sheetId);
         }
       },
-
       createObstacleMatrix4(gmTransform, { origPoly: { rect }, transform: { a, b, c, d, e, f }, height }) {
         const [mat, mat4] = [tmpMat1, tmpMatFour1];
         mat.feedFromArray([rect.width, 0, 0, rect.height, rect.x, rect.y]);
         mat.postMultiply([a, b, c, d, e, f]).postMultiply(gmTransform);
         return embedXZMat4(mat, { mat4, yHeight: height });
       },
-
       decodeInstanceId(instanceId) {
         let id = instanceId;
         const gmId = w.gms.findIndex((gm) => id < gm.obstacles.length || ((id -= gm.obstacles.length), false));
@@ -120,25 +117,6 @@ export default function Obstacles(_props: Props) {
         const obstacle = gm.obstacles[id];
         return { gmId, meta: obstacle.meta, height: obstacle.height };
       },
-
-      transformAndColorObstacles() {
-        if (!state.inst) return;
-        const { inst: obsInst } = state;
-        let oId = 0;
-
-        obsInst.instanceMatrix.array.fill(0);
-
-        w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
-          obstacles.forEach((o) => {
-            obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "#999"));
-            obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
-            oId++;
-          });
-        });
-
-        obsInst.computeBoundingSphere();
-      },
-
       positionSkirts() {
         if (!state.skirtInst) return;
         let sId = 0;
@@ -168,7 +146,6 @@ export default function Obstacles(_props: Props) {
         // state.skirtInst.instanceMatrix.needsUpdate = true;
         state.skirtInst.computeBoundingSphere();
       },
-
       sendDataToGpu() {
         state.quad.getAttribute("uvOffsets").needsUpdate = true;
         state.quad.getAttribute("uvDimensions").needsUpdate = true;
@@ -177,6 +154,23 @@ export default function Obstacles(_props: Props) {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
+      },
+      transformAndColorObstacles() {
+        if (!state.inst) return;
+        const { inst: obsInst } = state;
+        let oId = 0;
+
+        obsInst.instanceMatrix.array.fill(0);
+
+        w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
+          obstacles.forEach((o) => {
+            obsInst.setColorAt(oId, tmpColor.set(o.meta.color ?? "#999"));
+            obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
+            oId++;
+          });
+        });
+
+        obsInst.computeBoundingSphere();
       },
     }),
   );
