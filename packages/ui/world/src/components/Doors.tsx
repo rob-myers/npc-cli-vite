@@ -132,7 +132,7 @@ export default function Doors() {
 
             const instanceId = state.encodeGmDoorId(gmId, localId);
 
-            const sd = gm.doors[localId]?.meta?.slideDirection;
+            const sd = gm.doors[localId]?.meta?.slide;
             if (Array.isArray(sd)) {
               tmpV1.set(sd[0], sd[1]);
               tmpMat.transformSansTranslate(tmpV1);

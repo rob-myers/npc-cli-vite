@@ -653,11 +653,11 @@ export function instantiateFlatSymbol(
     doors: sym.doors
       .filter((_, doorId) => !doorIdsToRemove.has(doorId))
       .map((poly) => {
-        const sd = poly.meta.slideDirection;
+        const sd = poly.meta.slide;
         if (!Array.isArray(sd)) return poly.cleanClone(mat);
-        // transform meta.slideDirection
+        // transform meta.slide
         const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
-        return poly.cleanClone(mat, { slideDirection: [v.x, v.y] });
+        return poly.cleanClone(mat, { slide: [v.x, v.y] });
       }),
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {
