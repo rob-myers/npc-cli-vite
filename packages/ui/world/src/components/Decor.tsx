@@ -48,7 +48,7 @@ export default function Decor() {
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_DECOR__) {
         import.meta.hot.data.__JUST_HMR_DECOR__ = false;
-        return; // ignore 1st stale invoke after HMR
+        return null; // ignore 1st stale invoke after HMR
       }
 
       if (!w.sheets) return null;
@@ -212,7 +212,10 @@ const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, color: "#000" });
 
-import.meta.hot?.on("vite:beforeUpdate", () => {
-  import.meta.hot!.data.__JUST_HMR_DECOR__ = true;
-  import.meta.hot!.data.__LAST_HMR_DECOR__ = Date.now();
+import.meta.hot?.on("vite:beforeUpdate", (foo) => {
+  const updatedThisFile = foo.updates.some((update) => update.path.endsWith("Decor.tsx"));
+  if (import.meta.hot && updatedThisFile) {
+    import.meta.hot.data.__JUST_HMR_DECOR__ = true;
+    import.meta.hot.data.__LAST_HMR_DECOR__ = Date.now();
+  }
 });
