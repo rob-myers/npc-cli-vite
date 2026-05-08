@@ -102,31 +102,35 @@ export default function Decor() {
       await pause(100);
 
       // 4. transform and position instances
-      if (!state.inst) return null;
       state.inst.instanceMatrix.array.fill(0);
       let id = 0;
+      let tiltMat4 = new THREE.Matrix4();
+
       for (const gm of w.gms) {
         const { a, b, c, d, e, f } = gm.transform;
         for (const item of gm.decor) {
           if (item.type !== "quad") continue;
-          const { transform: quadTransform, meta } = item;
-          const entry = decor[meta.img];
+          const entry = decor[item.meta.img];
           const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
           const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
 
-          tmpMat.feedFromArray([imgW, 0, 0, imgH, 0, 0]);
-          tmpMat.postMultiply(quadTransform);
-          tmpMat.postMultiply([a, b, c, d, e, f]);
+          tmpMat.setMatrixValue([a, b, c, d, e, f]);
 
-          const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 });
+          const shouldTilt = item.meta.tilt === true;
+          const tiltXZ = shouldTilt === true ? tmpMat.transformPoint({ ...item.topCenter }) : null;
 
-          if (item.meta.tilt === true) {
-            const [a, b, c, d] = item.transform;
+          tmpMat.preMultiply(item.transform);
+
+          if (tiltXZ !== null) {
+            const { a, b, c, d } = tmpMat;
             const det = a * d - b * c;
-            const rotMat = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
-            setRotMatrixAboutPoint(rotMat, item.topCenter.x, item.meta.y, item.topCenter.y);
-            mat4.premultiply(rotMat);
+            tiltMat4 = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
+            setRotMatrixAboutPoint(tiltMat4, tiltXZ.x, item.meta.y, tiltXZ.y);
           }
+
+          tmpMat.preMultiply([imgW, 0, 0, imgH, 0, 0]);
+          const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: item.meta.y ?? 0, mat4: tmpMat4 });
+          if (tiltXZ !== null) mat4.premultiply(tiltMat4);
 
           state.inst.setMatrixAt(id, mat4);
           state.inst.setColorAt(id, tmpColor.set("#ffffff"));

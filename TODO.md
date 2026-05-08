@@ -174,9 +174,13 @@
 
 - ✅ BUG save other symbol then office--001 switch disappears
 
+- ✅ BUG fix decor in 2nd gm instance
+  - needed to fix tilt matrix
+
 - 🚧 door switches show green/red when unlocked/locked
   - ✅ doors have entry in `w.door.byKey`
   - ✅ track open/closed
+  - 🚧 can tint switches individually
   - 🚧 track locked/unlocked
   - indicate locked/unlocked on respective switch(s)
 
