@@ -59,7 +59,7 @@ export function GlobalMenu() {
         </Menu.Trigger>
 
         <Menu.Portal>
-          <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={12} side="left" collisionPadding={0}>
+          <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={2} side="left" collisionPadding={0}>
             <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
               <Menu.Item
                 className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
