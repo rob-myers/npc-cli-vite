@@ -1,6 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
+import { defaultDoorCloseMs } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { parseGroundPoint } from "../service/geometry";
 import { helper } from "../service/helper";
@@ -12,10 +13,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       doorOpen: {},
+      doorToNpcs: {},
       externalNpcs: new Set(),
+      npcToDoors: {},
       npcToRoom: new Map(),
       roomToNpcs: [],
 
+      canCloseDoor(door) {
+        const closeNpcs = state.doorToNpcs[door.gdKey];
+        if (closeNpcs === undefined) {
+          return true;
+        } else if (closeNpcs.inside.size > 0) {
+          return false; // nope: npc(s) using doorway
+        } else if (closeNpcs.nearby.size === 0) {
+          return true;
+        } else if (door.auto === true && door.locked === false) {
+          return false; // nope: npc(s) trigger sensor
+        }
+        return true;
+      },
       findPath(src, dst, keys = {}) {
         return w.gmRoomGraph.findPath(src, dst, (nodes) => {
           for (const node of nodes) {
@@ -47,6 +63,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return null;
         }
       },
+      npcCanAccess() {
+        return true; // 🚧
+      },
       onEvent(e) {
         if ("npcKey" in e) {
           return state.onNpcEvent(e);
@@ -73,16 +92,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
                 state.externalNpcs.delete(npcKey);
               }
 
-              // state.removeFromSensors(...e.npcKeys);
-
-              // // npc might have been inside a doorway
-              // const gdKey = state.npcToDoors[npcKey]?.inside;
-              // if (typeof gdKey === 'string') {
-              //   state.npcToDoors[npcKey].inside = null;
-              //   state.doorToOffMesh[gdKey] = (state.doorToOffMesh[gdKey] ?? []).filter(
-              //     x => x.npcKey !== npcKey
-              //   );
-              // }
+              state.removeFromSensors(...e.npcKeys);
             }
 
             break;
@@ -91,12 +101,48 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.recomputeNpcRoomRelationships();
             break;
           }
+          case "try-close-door": {
+            state.tryCloseDoor(e.gdKey);
+            break;
+          }
+        }
+      },
+      onExitCollider(e, npc) {
+        if (e.type === "inside") {
+          // trigger enter-room on exit inside-collider and changed room
+          const gmRoomId = state.npcToRoom.get(npc.key);
+          const nextGmRoomId = state.findRoomContaining(npc.position);
+          if (gmRoomId === undefined || nextGmRoomId === null || nextGmRoomId.grKey === gmRoomId.grKey) {
+            return;
+          }
+          w.events.next({ key: "enter-room", npcKey: npc.key, gmRoomId: nextGmRoomId });
+        }
+
+        if (e.type === "nearby") {
+          // try close door under conditions
+          const door = w.door.byKey[e.gdKey];
+          if (door.open === true) {
+            return;
+          } else if (door.locked === true) {
+            state.tryCloseDoor(e.gdKey);
+          } else if (door.auto === true && state.doorToNpcs[e.gdKey]?.nearby.size === 0) {
+            // if auto and none nearby, try close
+            state.tryCloseDoor(e.gdKey);
+          }
         }
       },
       onNpcEvent(e) {
         const npc = w.npc.npc[e.npcKey];
         switch (e.key) {
           case "enter-collider": {
+            if (e.type === "nearby") {
+              (state.doorToNpcs[e.gdKey] ??= { inside: new Set(), nearby: new Set() }).nearby.add(npc.key);
+              (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).nearby.add(e.gdKey);
+            }
+            if (e.type === "inside") {
+              (state.doorToNpcs[e.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
+              (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).inside = e.gdKey;
+            }
             break;
           }
           case "enter-room": {
@@ -111,16 +157,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "exit-collider": {
-            if (e.type === "inside") {
-              const gmRoomId = state.npcToRoom.get(npc.key);
-              const nextGmRoomId = state.findRoomContaining(npc.position);
-              if (gmRoomId === undefined || nextGmRoomId === null) {
-                return;
-              }
-              if (nextGmRoomId.grKey !== gmRoomId.grKey) {
-                w.events.next({ key: "enter-room", npcKey: npc.key, gmRoomId: nextGmRoomId });
-              }
+            if (e.type === "nearby") {
+              state.doorToNpcs[e.gdKey].nearby?.delete(npc.key);
+              state.npcToDoors[e.npcKey].nearby?.delete(e.gdKey);
             }
+            if (e.type === "inside") {
+              state.doorToNpcs[e.gdKey].inside?.delete(npc.key);
+              state.npcToDoors[e.npcKey].inside = null;
+            }
+
+            state.onExitCollider(e, npc);
             break;
           }
           case "spawned": {
@@ -169,6 +215,41 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryPutNpcIntoRoom(npc);
         }
       },
+      removeFromSensors(..._npcKeys) {
+        // 🚧 needed on removed-npcs?
+      },
+      toggleDoor(gdKey, opts = {}) {
+        const door = w.door.byKey[gdKey];
+
+        // clear if already closed and no npc colliding with "inside" collider
+        // opts.clear = door.open === false || !(state.doorToOffMesh[gdKey]?.length > 0);
+        opts.clear = true; // 🚧 state.doorToNpcs.inside.length
+
+        opts.access ??=
+          opts.npcKey === undefined ||
+          (door.auto === true && door.locked === false) ||
+          state.npcCanAccess(opts.npcKey, gdKey);
+
+        return w.door.toggleDoor(door, opts);
+      },
+      tryCloseDoor(gdKey) {
+        const door = w.door.byKey[gdKey];
+        w.door.cancelClose(door);
+        door.closeTimeoutId = window.setTimeout(() => {
+          if (w.disabled === true) {
+            // do not close whilst paused; recheck in {ms}
+            state.tryCloseDoor(gdKey);
+          } else if (door.open === true) {
+            w.door.toggleDoor(door, {
+              clear: state.canCloseDoor(door) === true,
+            });
+            state.tryCloseDoor(gdKey); // recheck in {ms}
+          } else {
+            // closed
+            delete door.closeTimeoutId;
+          }
+        }, defaultDoorCloseMs);
+      },
       tryPutNpcIntoRoom(npc) {
         const grId = state.findRoomContaining(npc.position, true);
         if (grId !== null) {
@@ -198,7 +279,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
 export type State = {
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
+  doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };
   externalNpcs: Set<string>;
+  npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
   /**
    * Relates `npcKey` to current room.
    */
@@ -208,6 +291,7 @@ export type State = {
    */
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
+  canCloseDoor(door: Geomorph.DoorState): boolean;
   findPath(
     src: Geomorph.GmRoomKey,
     dst: Geomorph.GmRoomKey,
@@ -215,8 +299,13 @@ export type State = {
   ): AStarSearchResult<Graph.GmRoomGraphNode>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
+  npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   onEvent(e: JshCli.Event): void;
+  onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
+  removeFromSensors(...npcKeys: string[]): void;
+  toggleDoor(gdKey: Geomorph.GmDoorKey, opts?: { npcKey?: string } & Geomorph.ToggleDoorOpts): boolean;
+  tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };

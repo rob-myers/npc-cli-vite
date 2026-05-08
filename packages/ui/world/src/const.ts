@@ -103,3 +103,5 @@ export const colliderHeight = 1.8;
 export const walkSeparationWeight = 0.25;
 
 export const idleSeparationWeight = 0.5;
+
+export const defaultDoorCloseMs = 3000;

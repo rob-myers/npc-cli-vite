@@ -186,7 +186,7 @@
 - ✅ symbol can have optional wall supported by instantiateFlatSymbol
   - need repro e.g. move stateroom inside 301
 
-- meta.slideDirection -> meta.slide
+- ✅ meta.slideDirection -> meta.slide
 
 - decor added to "grid"
   - may support more that just decor

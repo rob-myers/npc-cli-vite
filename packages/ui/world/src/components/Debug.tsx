@@ -99,8 +99,7 @@ export function Debug() {
     const sub = w.events.subscribe({
       next(event) {
         if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "door") {
-          const { gmId, doorId } = event.meta;
-          w.door.setOpen(gmId, doorId); // toggle
+          w.e.toggleDoor(event.meta.gdKey); // toggle
         }
       },
     });

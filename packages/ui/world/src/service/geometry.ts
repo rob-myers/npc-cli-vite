@@ -105,6 +105,13 @@ export function embedXZMat4(
   );
 }
 
+export function createDoorBox() {
+  const g = new THREE.BoxGeometry(1, 1, 1);
+  g.setAttribute("openRatio", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
+  g.setAttribute("slideSign", new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));
+  return g;
+}
+
 /**
  * Create an XZ plane quad with skinning attributes.
  * All vertices are bound to `jointIndex` with weight 1.
