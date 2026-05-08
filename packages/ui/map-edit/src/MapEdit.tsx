@@ -1817,7 +1817,7 @@ function InspectorResizer({ state }: { state: UseStateRef<State> }) {
 
 const emptyNodes = [] as MapNode[];
 
-const minAsideWidth = 200;
+const minAsideWidth = 100;
 const maxAsideWidth = 300;
 const defaultAsideWidth = minAsideWidth;
 const zoomDelta = 0.04;
