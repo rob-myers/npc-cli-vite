@@ -69,10 +69,7 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
     [state.savedFileSpecifiers],
   );
   const onOpenChangeComplete = useCallback((open: boolean) => {
-    if (open)
-      popupRef.current
-        ?.querySelector<HTMLElement>("[data-selected]")
-        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (open) popupRef.current?.querySelector<HTMLElement>("[data-selected]")?.scrollIntoView({ block: "nearest" });
   }, []);
 
   return (
