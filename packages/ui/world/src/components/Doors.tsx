@@ -3,6 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, instanceIndex, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { createPanelAtlas } from "../service/texture";
@@ -54,9 +55,15 @@ export default function Doors() {
               src: ut.json,
               dst: vt.json,
               normal: tmpMat.transformSansTranslate(connector.normal.clone()),
+
+              closeTimeoutId: -1,
             };
           }
         }
+      },
+      cancelClose(door) {
+        window.clearTimeout(door.closeTimeoutId);
+        delete door.closeTimeoutId;
       },
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
@@ -157,7 +164,7 @@ export default function Doors() {
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
       },
-      setOpen(gmId, doorId, open) {
+      forceDoor(gmId, doorId, open) {
         const isOpen = state.isOpen(gmId, doorId);
         if (typeof open === "boolean" && open === isOpen) {
           return;
@@ -170,6 +177,50 @@ export default function Doors() {
           open: isOpen,
           ...state.decodeInstanceId(instanceId),
         });
+      },
+      toggleDoor(door, opts = {}) {
+        if (door.sealed === true) {
+          return false;
+        }
+
+        state.cancelClose(door); // Cancel any pending close
+
+        if (opts.access === false) {
+          return false; // No access
+        }
+
+        if (door.open === true) {
+          // was open
+          if (opts.open === true) {
+            door.auto === true &&
+              w.events.next({
+                key: "try-close-door",
+                gdKey: door.gdKey,
+              });
+            return true;
+          }
+          if (opts.clear !== true) {
+            return false; // cannot close or toggle
+          }
+        } else {
+          // was closed
+          if (opts.close === true) {
+            return true;
+          }
+        }
+
+        // Actually open/close door
+        const opening = !door.open;
+        state.forceDoor(door.gmId, door.doorId, opening);
+
+        if (door.auto === true && opening === true) {
+          w.events.next({
+            key: "try-close-door",
+            gdKey: door.gdKey,
+          });
+        }
+
+        return true;
       },
       onTick(delta: number) {
         if (state.animTargets.size === 0) return;
@@ -249,6 +300,7 @@ export type State = {
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
   buildByKey: () => void;
+  cancelClose: (door: Geomorph.DoorState) => void;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
@@ -256,18 +308,12 @@ export type State = {
   };
   isOpen: (gmId: number, doorId: number) => boolean;
   /** Toggles when `open` is `undefined`. */
-  setOpen: (gmId: number, doorId: number, open?: boolean) => void;
+  forceDoor: (gmId: number, doorId: number, open?: boolean) => void;
   onDoorChanged: (instanceId: number, target: number) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
+  toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
 };
-
-function createDoorBox() {
-  const g = new THREE.BoxGeometry(1, 1, 1);
-  g.setAttribute("openRatio", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
-  g.setAttribute("slideSign", new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));
-  return g;
-}
 
 const doorHeight = 2 - 0.001;
 const doorSpeed = 2;

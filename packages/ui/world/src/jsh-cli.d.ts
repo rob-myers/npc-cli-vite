@@ -12,11 +12,18 @@ declare namespace JshCli {
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
-    | { key: "requested-physics" };
+    | { key: "requested-physics" }
+    | {
+        /** Try close door after countdown and keep trying thereafter */
+        key: "try-close-door";
+        gdKey: Geomorph.GmDoorKey;
+        meta?: Meta;
+      };
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;
   type PointAnyFormat = import("./service/geometry").PointAnyFormat;
+
   type BaseColliderEvent =
     | { type: "circle" | "rect"; decorKey: string }
     | ({ type: "nearby" | "inside" } & Geomorph.GmDoorId);
@@ -29,6 +36,8 @@ declare namespace JshCli {
 
     gmRoomId: Geomorph.GmRoomId | null;
   } & (GroundPoint & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">);
+
+  type ExitColliderEvent = Extract<Event, { key: "exit-collider" }>;
 
   interface SpawnOpts {
     // 🚧 angle, skinKey, runSpeed, walkSpeed

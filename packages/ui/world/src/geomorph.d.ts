@@ -90,14 +90,12 @@ declare namespace Geomorph {
 
   type HullDoorMeta = Meta<{ edge: Geom.DirectionString }>;
 
-  interface DoorState extends Geomorph.GmDoorId {
-    /** gmId << 8 + doorId */
+  type DoorState = Geomorph.GmDoorId & {
+    /** `gmId << 8 + doorId` */
     instanceId: number;
 
     /** Determined purely via (gmKey, doorId) */
     connector: Geomorph.Connector;
-    /** instancedMesh */
-    instanceId: number;
     /** Is the door automatic? */
     auto: boolean;
     /** Is this an axis-aligned rectangle? */
@@ -117,5 +115,20 @@ declare namespace Geomorph {
     dst: Geom.VectJson;
     /** Transformed connector.normal */
     normal: Geom.VectJson;
-  }
+
+    closeTimeoutId?: number;
+  };
+
+  type ToggleDoorOpts = {
+    /**
+     * Does the instigator exist (not `undefined`) and have access (`true`)?
+     */
+    access?: boolean;
+    /** Is the doorway clear? */
+    clear?: boolean;
+    /** Should we close the door? */
+    close?: boolean;
+    /** Should we open door? */
+    open?: boolean;
+  };
 }
