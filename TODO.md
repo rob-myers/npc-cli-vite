@@ -170,7 +170,7 @@
     - saving worker file triggers 1 reload
     - saving non-worker file triggers 1 reload
 
-- 🚧 add switches to all extant doors
+- ✅ add switches to all extant 301 doors
 
 - ✅ BUG save other symbol then office--001 switch disappears
 
