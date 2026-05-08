@@ -1301,7 +1301,68 @@
       "width": 3,
       "height": 3,
       "bounds": {"x": -0.05, "y": -0.05, "width": 3.165, "height": 3.1},
-      "decor": [],
+      "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.95, 1.55], [2.8, 1.55], [2.8, 1.4], [2.95, 1.4]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, -1, 0, 2.95, 1.4000000000000001],
+            "doorId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[3.05, 1.4], [3.2, 1.4], [3.2, 1.55], [3.05, 1.55]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, 1, 0, 3.0500000000000003, 1.4000000000000001],
+            "doorId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[1.7, 3.05], [1.7, 3.2], [1.55, 3.2], [1.55, 3.05]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [-1, 0, 0, 1, 1.7000000000000002, 3.0500000000000003],
+            "doorId": 1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[1.55, 2.95], [1.55, 2.8], [1.7, 2.8], [1.7, 2.95]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [-1, 0, 0, -1, 1.7000000000000002, 2.95],
+            "doorId": 1
+          }
+        }
+      ],
       "doors": [
         {
           "type": "Polygon",
@@ -3172,7 +3233,68 @@
       "width": 3,
       "height": 3,
       "bounds": {"x": -0.05, "y": -0.05, "width": 3.165, "height": 3.1},
-      "decor": [],
+      "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.95, 1.55], [2.8, 1.55], [2.8, 1.4], [2.95, 1.4]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, -1, 0, 2.95, 1.4000000000000001],
+            "doorId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[3.05, 1.4], [3.2, 1.4], [3.2, 1.55], [3.05, 1.55]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, 1, 0, 3.0500000000000003, 1.4000000000000001],
+            "doorId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[1.7, 3.05], [1.7, 3.2], [1.55, 3.2], [1.55, 3.05]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [-1, 0, 0, 1, 1.7000000000000002, 3.0500000000000003],
+            "doorId": 1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[1.55, 2.95], [1.55, 2.8], [1.7, 2.8], [1.7, 2.95]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [-1, 0, 0, -1, 1.7000000000000002, 2.95],
+            "doorId": 1
+          }
+        }
+      ],
       "doors": [
         {
           "type": "Polygon",
@@ -3393,6 +3515,86 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [[26.95, 4.55], [26.8, 4.55], [26.8, 4.4], [26.95, 4.4]]
+          ],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, -1, 0, 26.95, 4.4],
+            "doorId": 8,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[27.05, 4.4], [27.2, 4.4], [27.2, 4.55], [27.05, 4.55]]
+          ],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, 1, 0, 27.05, 4.4],
+            "doorId": 8,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[25.7, 6.05], [25.7, 6.2], [25.55, 6.2], [25.55, 6.05]]
+          ],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [-1, 0, 0, 1, 25.7, 6.050000000000001],
+            "doorId": 9,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[25.55, 5.95], [25.55, 5.8], [25.7, 5.8], [25.7, 5.95]]
+          ],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [-1, 0, 0, -1, 25.7, 5.95],
+            "doorId": 9,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [[28.35, 5.975], [28.35, 5.825], [28.5, 5.825], [28.5, 5.975]]
           ],
           "meta": {
@@ -3475,6 +3677,78 @@
             "tilt": true,
             "transform": [1, 0, 0, -1, 28.375, 1.4625000000000001],
             "doorId": 11,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[3.05, 4.4], [3.2, 4.4], [3.2, 4.55], [3.05, 4.55]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, 1, 0, 3.05, 4.4],
+            "doorId": 15,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.95, 4.55], [2.8, 4.55], [2.8, 4.4], [2.95, 4.4]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [0, 1, -1, 0, 2.9499999999999997, 4.4],
+            "doorId": 15,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[4.45, 6.05], [4.45, 6.2], [4.3, 6.2], [4.3, 6.05]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [1, 0, 0, 1, 4.3, 6.050000000000001],
+            "doorId": 16,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[4.3, 5.95], [4.3, 5.8], [4.45, 5.8], [4.45, 5.95]]],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [1, 0, 0, -1, 4.3, 5.95],
+            "doorId": 16,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -5537,6 +5811,90 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
+            "doorId": 8,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 26.8, "y": 4.4, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [0, 1, -1, 0, 26.95, 4.4],
+          "center": {"x": 26.875, "y": 4.475},
+          "topCenter": {"x": 26.95, "y": 4.475}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 8,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 27.05, "y": 4.4, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [0, 1, 1, 0, 27.05, 4.4],
+          "center": {"x": 27.125, "y": 4.475},
+          "topCenter": {"x": 27.05, "y": 4.475}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 9,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 25.55, "y": 6.05, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [-1, 0, 0, 1, 25.7, 6.050000000000001],
+          "center": {"x": 25.625, "y": 6.125},
+          "topCenter": {"x": 25.625, "y": 6.05}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 9,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 25.55, "y": 5.8, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [-1, 0, 0, -1, 25.7, 5.95],
+          "center": {"x": 25.625, "y": 5.875},
+          "topCenter": {"x": 25.625, "y": 5.95}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
             "doorId": 10,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -5610,6 +5968,90 @@
           "transform": [1, 0, 0, -1, 28.375, 1.4625000000000001],
           "center": {"x": 28.45, "y": 1.388},
           "topCenter": {"x": 28.45, "y": 1.463}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 15,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 3.05, "y": 4.4, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [0, 1, 1, 0, 3.05, 4.4],
+          "center": {"x": 3.125, "y": 4.475},
+          "topCenter": {"x": 3.05, "y": 4.475}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 15,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 2.8, "y": 4.4, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [0, 1, -1, 0, 2.9499999999999997, 4.4],
+          "center": {"x": 2.875, "y": 4.475},
+          "topCenter": {"x": 2.95, "y": 4.475}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 16,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 4.3, "y": 6.05, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [1, 0, 0, 1, 4.3, 6.050000000000001],
+          "center": {"x": 4.375, "y": 6.125},
+          "topCenter": {"x": 4.375, "y": 6.05}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "doorId": 16,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds2d": {"x": 4.3, "y": 5.8, "width": 0.15, "height": 0.15},
+          "type": "quad",
+          "transform": [1, 0, 0, -1, 4.3, 5.95],
+          "center": {"x": 4.375, "y": 5.875},
+          "topCenter": {"x": 4.375, "y": 5.95}
         },
         {
           "key": "",

@@ -149,7 +149,7 @@
     - ✅ generates sheet/decor.{i}.png
     - ✅ hook up to Decor
 
-- 🚧 BUG physics inside worker (HMR)
+- ✅ BUG physics inside worker (HMR)
   - ✅ caused by saving const: shared between main thread and worker
     - `TypeError: Cannot read properties of undefined (reading 'createRigidBody')`
     - main thread receives "worker-hot-module-reload" from worker

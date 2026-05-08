@@ -97,6 +97,32 @@
           "cssTransform": "matrix(1, 0, 0, 1, 116.5, 67.5)"
         },
         {
+          "id": "2d39130d-3876-4f6c-b296-2e0f3e5ade5e",
+          "name": "decor quad key=switch",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 56},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 118, 56)"
+        },
+        {
+          "id": "543954fc-9bf1-4a65-a19a-75aa4146a7de",
+          "name": "decor quad key=switch",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 56},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 122, 56)"
+        },
+        {
           "id": "6d040bb3-2e2d-4803-b642-0da04ae397d5",
           "name": "door slideDirection=[-1,0]",
           "locked": false,
@@ -107,6 +133,32 @@
           "cssTransform": "matrix(1, 0, 0, 1, 70, 116)"
         }
       ]
+    },
+    {
+      "id": "86e86812-69d3-4722-8a48-b25171332267",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 68, "f": 122},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(-1, 0, 0, 1, 68, 122)"
+    },
+    {
+      "id": "05998d7e-37b2-41d3-bd38-ade9f87b3964",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 68, "f": 118},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(-1, 0, 0, -1, 68, 118)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},

@@ -215,6 +215,7 @@ const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.Doub
 import.meta.hot?.on("vite:beforeUpdate", (foo) => {
   const updatedThisFile = foo.updates.some((update) => update.path.endsWith("Decor.tsx"));
   if (import.meta.hot && updatedThisFile) {
+    // used to ignore stale queryFn and trigger fresh one
     import.meta.hot.data.__JUST_HMR_DECOR__ = true;
     import.meta.hot.data.__LAST_HMR_DECOR__ = Date.now();
   }
