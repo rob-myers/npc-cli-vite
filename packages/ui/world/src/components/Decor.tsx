@@ -32,7 +32,7 @@ export default function Decor() {
         for (const gm of w.gms) {
           const quads = gm.decor.filter((d) => d.type === "quad");
           if (id < quads.length) {
-            return { gmId: gm.gmId, meta: quads[id].meta };
+            return { ...quads[id].meta };
           }
           id -= quads.length;
         }
@@ -203,7 +203,7 @@ export type State = {
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
-  decodeInstanceId(instanceId: number): { gmId: number; meta: Meta } | null;
+  decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
 };
 
 const cuboidHeight = 0.05;

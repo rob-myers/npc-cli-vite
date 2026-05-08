@@ -188,7 +188,7 @@
     },
     {
       "id": "6d777e3d-55dc-467a-aafd-c6cc70f25613",
-      "name": "office--001--2x2",
+      "name": "office--001--2x2 doors=['s']",
       "locked": false,
       "visible": true,
       "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 120},

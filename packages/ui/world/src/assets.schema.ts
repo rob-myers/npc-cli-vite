@@ -65,6 +65,11 @@ export const AssetsFlatSymbolSchema = z.object({
   /** All walls including hull walls */
   walls: z.array(polyCodec),
   windows: z.array(polyCodec),
+
+  /** Doors tagged `optional` are removable */
+  removableDoors: z.array(z.object({ doorId: z.number(), wall: polyCodec })),
+  /** Walls tagged `optional` are addable */
+  addableWalls: z.array(polyCodec),
 });
 export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;
 export type SymbolPolysKey = keyof Omit<AssetsSymbol, "key" | "isHull" | "width" | "height" | "bounds" | "symbols">;

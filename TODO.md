@@ -178,6 +178,14 @@
   - 🚧 track locked/unlocked
   - indicate locked/unlocked on respective switch(s)
 
+- ✅ symbols can have optional door supported by instantiateFlatSymbol
+  - e.g. `office--001--2x2 doors=['s']`
+  - removed doors should have switches removed too
+- ✅ symbol can have optional wall supported by instantiateFlatSymbol
+  - need repro e.g. move stateroom inside 301
+
+- meta.slideDirection -> meta.dir
+
 - decor added to "grid"
   - may support more that just decor
   - also ensures decor gmRoomId
@@ -223,10 +231,6 @@
 - support deleting symbols/maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
-- symbols can have optional door supported by instantiateFlatSymbol
-  - e.g. office--001--2x2
-- symbol can have optional wall supported by instantiateFlatSymbol
-  - need repro e.g. move stateroom inside 301
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
@@ -240,12 +244,11 @@
 
 - 🚧 extend existing symbols with missing decor
   - ✅ stateroom-012 has decor key=switch
-  - 🚧 ...
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
 - 🚧 do not recompute all symbols when only edit a hull symbol (DEV)
-  - done in prod for hull-symbols
+  - ✅ done in prod for hull-symbols
   - ✅ use sub-stratification
   - could do client-side and ignore server update
   - createLayout optimization
@@ -256,11 +259,11 @@
     - when adjacent can fix via same height
   - technically can fix by creating an "extra symbol"
 
-- saw mobile fail to load initially but works after "resize"
+- ✅ saw mobile fail to load initially but works after "resize"
   - still happening
 
-- drafts fighting: with 2 instances open for same file
-- try deform limbs of blockbench model, saving as separate file
+- BUG MapEdit drafts fighting: with 2 instances open for same file
+- ❌ try deform limbs of blockbench model, saving as separate file
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
 
