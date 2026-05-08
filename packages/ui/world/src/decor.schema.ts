@@ -10,7 +10,7 @@ import {
 import z from "zod";
 
 const GmRoomIdSchema = z.object({
-  grKey: z.string(),
+  grKey: z.templateLiteral([z.literal("g"), z.number(), z.literal("r"), z.number()]),
   gmId: z.number(),
   roomId: z.number(),
 });

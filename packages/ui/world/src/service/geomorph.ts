@@ -419,7 +419,9 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
 
   const symbols = [] as Geomorph.Symbol["symbols"];
 
-  const polysLookup: Record<SymbolPolysKey, Geomorph.Symbol[SymbolPolysKey]> = {
+  type ParsePolysKey = Exclude<SymbolPolysKey, "removableDoors" | "addableWalls">;
+
+  const polysLookup: Record<ParsePolysKey, Geomorph.Symbol[ParsePolysKey]> = {
     decor: [] as Geomorph.Symbol["decor"],
     doors: [] as Geomorph.Symbol["doors"],
     hullWalls: [] as Geomorph.Symbol["hullWalls"],
@@ -470,16 +472,12 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
     }
   }
 
+  // sgu -> world scale, noting hullWalls repeated in walls
   const s = sguToWorldScale;
-  /** Avoid scaling `hullWalls` twice since also in `walls` */
   const scaled = new Set<Geom.Poly>();
-  for (const polys of Object.values(polysLookup)) {
-    for (const p of polys)
-      if (!scaled.has(p)) {
-        p.scale(s).precision(6);
-        scaled.add(p);
-      }
-  }
+  for (const polys of Object.values(polysLookup))
+    for (const p of polys) !scaled.has(p) && scaled.add(p.scale(s).precision(6));
+
   return {
     key: savedFile.key,
     isHull: isHullSymbolImageKey(savedFile.key),
@@ -488,6 +486,12 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
     bounds: savedFile.bounds.clone().scale(s).precision(6),
 
     ...polysLookup,
+
+    removableDoors: polysLookup.doors.flatMap((doorPoly, doorId) =>
+      doorPoly.meta.optional ? { doorId, wall: Poly.intersect([doorPoly], polysLookup.walls)[0] } : [],
+    ),
+    addableWalls: polysLookup.walls.filter((x) => x.meta.optional === true),
+
     symbols: symbols.map((sym) => ({
       ...sym,
       width: toPrecision(sym.width * s, 6),
@@ -557,7 +561,7 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
  * - Returns flattened symbol.
  */
 export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): Geomorph.FlatSymbol {
-  const { key, isHull, walls, obstacles, symbols, unsorted, windows } = symbol;
+  const { key, isHull, walls, obstacles, symbols, unsorted, windows, removableDoors, addableWalls } = symbol;
 
   const flats = symbols.flatMap(({ symbolKey, meta, transform }) => {
     const flat = flattened[symbolKey];
@@ -578,11 +582,11 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     width: symbol.width,
     height: symbol.height,
 
-    // 🚧 aggregated and cloned
-    // addableWalls: addableWalls.map(x => x.cleanClone()),
-    // removableDoors: removableDoors.map(x => ({ ...x, wall: x.wall.cleanClone() })),
-
     // not aggregated, only cloned
+    removableDoors: removableDoors.map((x) => ({ ...x, wall: x.wall.cleanClone() })),
+    addableWalls: addableWalls.map((x) => x.cleanClone()),
+
+    // aggregated and cloned
     doors: flatDoors,
     decor: flatDecor,
     obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
@@ -593,7 +597,8 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
 }
 
 /**
- * 🚧 support removable doors/walls
+ * 🚧 support removable doors
+ * 🚧 support removable walls
  * - aggregates obstacle transform as meta.transform
  */
 export function instantiateFlatSymbol(
@@ -603,7 +608,40 @@ export function instantiateFlatSymbol(
 ): Geomorph.FlatSymbol {
   const mat = tmpMat1.setMatrixValue(transform);
 
-  const decor = sym.decor.map((poly) => poly.cleanClone(mat, transformDecorMeta(poly.meta, mat, meta.y)));
+  /** e.g. `['s']` means only permit 'optional'-tagged doors with tag 's' */
+  const doorTags = meta.doors as string[] | undefined;
+  const doorsToRemove =
+    doorTags === undefined
+      ? []
+      : sym.removableDoors.filter(({ doorId }) => {
+          const { meta } = sym.doors[doorId];
+          return !doorTags.some((tag) => meta[tag] === true);
+        });
+
+  /** e.g. `['s']` means add any wall tagged with 'optional' and 's' */
+  const wallTags = meta.walls as string[] | undefined;
+  const wallsToAdd = ([] as Geom.Poly[]).concat(
+    doorsToRemove.map((x) => x.wall),
+    wallTags === undefined ? [] : sym.addableWalls.filter(({ meta }) => wallTags.some((x) => meta[x] === true)),
+  );
+
+  const doorIdsToRemove = new Set(doorsToRemove.map((x) => x.doorId));
+  let switchIdOffset = 0;
+  const seenDoorIds = new Set<number>();
+
+  const decor = sym.decor
+    // remove switches of removed doors, offsetting subsequent doorIds
+    .filter((d) => {
+      if (typeof d.meta.doorId === "number") {
+        if (doorIdsToRemove.has(d.meta.doorId)) {
+          !seenDoorIds.has(d.meta.doorId) && (switchIdOffset--, seenDoorIds.add(d.meta.doorId));
+          return false;
+        }
+        d.meta.doorId += switchIdOffset;
+      }
+      return true;
+    })
+    .map((poly) => poly.cleanClone(mat, transformDecorMeta(poly.meta, mat, meta.y)));
 
   return {
     key: sym.key,
@@ -612,12 +650,15 @@ export function instantiateFlatSymbol(
     height: sym.height,
     bounds: sym.bounds,
     decor,
-    doors: sym.doors.map((poly) => {
-      const sd = poly.meta.slideDirection;
-      if (!Array.isArray(sd)) return poly.cleanClone(mat);
-      const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
-      return poly.cleanClone(mat, { slideDirection: [v.x, v.y] });
-    }),
+    doors: sym.doors
+      .filter((_, doorId) => !doorIdsToRemove.has(doorId))
+      .map((poly) => {
+        const sd = poly.meta.slideDirection;
+        if (!Array.isArray(sd)) return poly.cleanClone(mat);
+        // transform meta.slideDirection
+        const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
+        return poly.cleanClone(mat, { slideDirection: [v.x, v.y] });
+      }),
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {
         // aggregate height from MapEdit symbols
@@ -640,6 +681,10 @@ export function instantiateFlatSymbol(
     unsorted: sym.unsorted.map((poly) => poly.cleanClone(mat)),
     walls: sym.walls.map((poly) => poly.cleanClone(tmpMat1)),
     windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1)),
+
+    // not aggregated
+    removableDoors: [],
+    addableWalls: [],
   };
 }
 
