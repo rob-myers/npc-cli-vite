@@ -349,6 +349,19 @@
       "cssTransform": "matrix(1, 0, 0, 1, -5, 300)"
     },
     {
+      "id": "a9cdc83a-4c05-48c5-a12c-95628982e397",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 4, "f": 350},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, 1, 0, 4, 350)"
+    },
+    {
       "id": "2267cba7-1ce5-418b-ac19-e0d71468229e",
       "name": "door hull edge=w slideDirection=[0,-1]",
       "locked": false,
@@ -357,6 +370,19 @@
       "type": "rect",
       "baseRect": {"width": 9, "height": 47.5},
       "cssTransform": "matrix(1, 0, 0, 1, -5, 252.5)"
+    },
+    {
+      "id": "f52e8e1c-8c48-497f-8e80-1b56032458f7",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 4, "f": 244},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, 1, 0, 4, 244)"
     },
     {
       "id": "a9566cad-d538-4a5d-9a42-abff16cf3870",
@@ -369,6 +395,19 @@
       "cssTransform": "matrix(1, 0, 0, 1, 1195, 252.5)"
     },
     {
+      "id": "d8510fcd-a0f9-45ff-aa61-89cb033b4a9b",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1196, "f": 244},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, -1, 0, 1196, 244)"
+    },
+    {
       "id": "1e5320ec-5545-4d87-bc38-f41b768a01db",
       "name": "door hull edge=e slideDirection=[0,1]",
       "locked": false,
@@ -377,6 +416,19 @@
       "type": "rect",
       "baseRect": {"width": 9, "height": 47.5},
       "cssTransform": "matrix(1, 0, 0, 1, 1195, 300)"
+    },
+    {
+      "id": "1e55e437-4834-48f6-9263-4ca1e675def2",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1196, "f": 350},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, -1, 0, 1196, 350)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
