@@ -234,9 +234,9 @@ export const SheetsSchema = z.object({
   /** Maximum over all sheets, for texture array */
   maxSymbolSheetDim: SheetDimSchema,
 
-  decor: z.record(z.string(), DecorSheetEntrySchema).optional(),
-  decorSheetDims: z.array(SheetDimSchema).optional(),
-  maxDecorSheetDim: SheetDimSchema.optional(),
+  decor: z.record(z.string(), DecorSheetEntrySchema),
+  decorSheetDims: z.array(SheetDimSchema),
+  maxDecorSheetDim: SheetDimSchema,
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
 
@@ -244,6 +244,9 @@ export const emptySheets: SheetsType = {
   symbol: {},
   maxSymbolSheetDim: { width: 1, height: 1 },
   symbolSheetDims: [],
+  decor: {},
+  decorSheetDims: [],
+  maxDecorSheetDim: { width: 1, height: 1 },
 };
 
 export const AssetsSkinSchema = z.object({
