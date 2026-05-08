@@ -3,8 +3,8 @@ import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
 import { attribute, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
@@ -19,64 +19,14 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       inst: null as any,
-      everUpdated: false,
-      images: [] as HTMLImageElement[],
 
       box: createUnitBox(),
+      materials: [],
 
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
 
-      addUvs() {
-        if (!w.sheets?.decor) return;
-
-        state.uvOffsets.fill(0);
-        state.uvDimensions.fill(0);
-        state.uvTextureIds.fill(0);
-
-        let idx = 0;
-
-        for (const gm of w.gms) {
-          for (const item of gm.decor) {
-            if (item.type !== "quad") continue;
-            const entry = w.sheets.decor[item.meta.img] as DecorSheetEntry | undefined;
-            if (!entry) {
-              warn(`decor "${item.meta.img}" not found in sheets.json`);
-              idx++;
-              continue;
-            }
-            const { sheetId, rect } = entry;
-            const dims = w.sheets.decorSheetDims?.[sheetId];
-            if (!dims) continue;
-
-            state.uvOffsets.set([rect.x / dims.width, rect.y / dims.height], idx * 2);
-            state.uvDimensions.set([rect.width / dims.width, rect.height / dims.height], idx * 2);
-            state.uvTextureIds[idx] = sheetId;
-            idx++;
-          }
-        }
-      },
-      async draw() {
-        if (!w.sheets?.decorSheetDims || state.images.length === 0) return;
-        const { maxDecorSheetDim, decorSheetDims } = w.sheets;
-        if (!maxDecorSheetDim || !decorSheetDims) return;
-        const { ct } = w.texDecor;
-
-        w.texDecor.resize({
-          numTextures: decorSheetDims.length,
-          width: maxDecorSheetDim.width,
-          height: maxDecorSheetDim.height,
-          // 🔔 recreate to handle HMR const: unclear why since obstacles works...
-          force: true,
-        });
-
-        for (let sheetId = 0; sheetId < state.images.length; sheetId++) {
-          ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-          ct.drawImage(state.images[sheetId], 0, 0);
-          w.texDecor.updateIndex(sheetId);
-        }
-      },
       decodeInstanceId(instanceId) {
         let id = instanceId;
         for (const gm of w.gms) {
@@ -88,112 +38,144 @@ export default function Decor() {
         }
         return null;
       },
-      sendDataToGpu() {
-        const geo = state.inst?.geometry;
-        if (geo) {
-          geo.getAttribute("uvOffsets").needsUpdate = true;
-          geo.getAttribute("uvDimensions").needsUpdate = true;
-          geo.getAttribute("uvTextureIds").needsUpdate = true;
-        }
-        if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
-        if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
-      },
-      async transformDecorQuads() {
-        if (!state.inst || !w.sheets.decor) return;
-        state.inst.instanceMatrix.array.fill(0);
-        let id = 0;
-
-        for (const gm of w.gms) {
-          const { a, b, c, d, e, f } = gm.transform;
-
-          for (const item of gm.decor) {
-            if (item.type !== "quad") continue;
-            const { transform: quadTransform, meta } = item;
-
-            const entry = w.sheets.decor?.[item.meta.img];
-            const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
-            const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
-
-            tmpMat.feedFromArray([imgW, 0, 0, imgH, 0, 0]);
-            tmpMat.postMultiply(quadTransform);
-            tmpMat.postMultiply([a, b, c, d, e, f]);
-
-            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 });
-
-            if (item.meta.tilt === true) {
-              const [a, b, c, d] = item.transform;
-              const det = a * d - b * c;
-              const rotMat = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
-              setRotMatrixAboutPoint(rotMat, item.topCenter.x, item.meta.y, item.topCenter.y);
-              mat4.premultiply(rotMat);
-            }
-
-            state.inst.setMatrixAt(id, mat4);
-            state.inst.setColorAt(id, tmpColor.set("#ffffff"));
-            id++;
-          }
-        }
-
-        state.inst.count = id;
-        state.inst.computeBoundingSphere();
-      },
     }),
   );
 
   w.decor = state;
 
-  state.images =
-    useQuery({
-      queryKey: ["decor-sheet-images"],
-      async queryFn() {
-        const numSheets = w.sheets.decorSheetDims?.length ?? 0;
-        return await Promise.all(
-          Array.from({ length: numSheets }, (_, i) => loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`)),
-        );
-      },
-      enabled: !!w.sheets?.decorSheetDims,
-    }).data ?? state.images;
+  const { data } = useQuery({
+    queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, import.meta.hot?.data.__LAST_HMR_DECOR__],
+    async queryFn() {
+      if (import.meta.hot?.data.__JUST_HMR_DECOR__) {
+        import.meta.hot.data.__JUST_HMR_DECOR__ = false;
+        return; // ignore 1st stale invoke after HMR
+      }
 
-  const { mutateAsync: updateDecor } = useMutation({
-    mutationKey: ["update-decor"],
-    async mutationFn() {
-      state.addUvs();
-      await state.draw();
+      if (!w.sheets) return null;
+      const { decor, decorSheetDims, maxDecorSheetDim } = w.sheets;
+      w.setNextPending({ decor: true });
+
+      // 1. load sheet images
+      const images = await Promise.all(
+        Array.from({ length: decorSheetDims.length }, (_, i) =>
+          loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`),
+        ),
+      );
+
+      // 2. draw sheets into texture array
+      const { ct } = w.texDecor;
+      w.texDecor.resize({
+        numTextures: decorSheetDims.length,
+        width: maxDecorSheetDim.width,
+        height: maxDecorSheetDim.height,
+        force: true, // else texture blank on save const.ts
+      });
+      for (let sheetId = 0; sheetId < images.length; sheetId++) {
+        ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+        ct.drawImage(images[sheetId], 0, 0);
+        w.texDecor.updateIndex(sheetId);
+      }
+
+      // 3. compute UVs
+      state.uvOffsets.fill(0);
+      state.uvDimensions.fill(0);
+      state.uvTextureIds.fill(0);
+      let uvIdx = 0;
+      for (const gm of w.gms) {
+        for (const item of gm.decor) {
+          if (item.type !== "quad") continue;
+          const entry = decor[item.meta.img] as DecorSheetEntry | undefined;
+          if (!entry) {
+            warn(`decor "${item.meta.img}" not found in sheets.json`);
+            uvIdx++;
+            continue;
+          }
+          const dims = decorSheetDims[entry.sheetId];
+          if (!dims) continue;
+          state.uvOffsets.set([entry.rect.x / dims.width, entry.rect.y / dims.height], uvIdx * 2);
+          state.uvDimensions.set([entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
+          state.uvTextureIds[uvIdx] = entry.sheetId;
+          uvIdx++;
+        }
+      }
+
       await pause(100);
-      await state.transformDecorQuads();
+
+      // 4. transform and position instances
+      if (!state.inst) return null;
+      state.inst.instanceMatrix.array.fill(0);
+      let id = 0;
+      for (const gm of w.gms) {
+        const { a, b, c, d, e, f } = gm.transform;
+        for (const item of gm.decor) {
+          if (item.type !== "quad") continue;
+          const { transform: quadTransform, meta } = item;
+          const entry = decor[meta.img];
+          const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
+          const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
+
+          tmpMat.feedFromArray([imgW, 0, 0, imgH, 0, 0]);
+          tmpMat.postMultiply(quadTransform);
+          tmpMat.postMultiply([a, b, c, d, e, f]);
+
+          const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: meta.y ?? 0, mat4: tmpMat4 });
+
+          if (item.meta.tilt === true) {
+            const [a, b, c, d] = item.transform;
+            const det = a * d - b * c;
+            const rotMat = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
+            setRotMatrixAboutPoint(rotMat, item.topCenter.x, item.meta.y, item.topCenter.y);
+            mat4.premultiply(rotMat);
+          }
+
+          state.inst.setMatrixAt(id, mat4);
+          state.inst.setColorAt(id, tmpColor.set("#ffffff"));
+          id++;
+        }
+      }
+      state.inst.count = id;
+      state.inst.computeBoundingSphere();
+
       await pause(100);
-      state.sendDataToGpu();
-      state.everUpdated = true;
+
+      // 5. send to GPU
+      const geo = state.inst.geometry;
+      geo.getAttribute("uvOffsets").needsUpdate = true;
+      geo.getAttribute("uvDimensions").needsUpdate = true;
+      geo.getAttribute("uvTextureIds").needsUpdate = true;
+      state.inst.instanceMatrix.needsUpdate = true;
+      if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
+
+      // 6. build materials
+      const uvDims = attribute("uvDimensions", "vec2");
+      const uvOffs = attribute("uvOffsets", "vec2");
+      const uvTexIds = attribute("uvTextureIds", "uint");
+      // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
+      const flippedUv = vec2(uv().x, uv().y.oneMinus());
+      const transformedUv = flippedUv.mul(uvDims).add(uvOffs);
+      const texNode = texture(w.texDecor.tex, transformedUv);
+      texNode.depthNode = uvTexIds;
+
+      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
+      texMat.colorNode = texNode.mul(0.6);
+      texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
+
+      w.setNextPending({ decor: false });
+
+      return [
+        plainBlackMaterial,
+        plainBlackMaterial,
+        texMat,
+        plainBlackMaterial,
+        plainBlackMaterial,
+        plainBlackMaterial,
+      ];
     },
+    enabled: !!w.hash && !!w.sheets && !w.pending.nav && w.gms.length > 0,
+    staleTime: 0,
   });
 
-  useEffect(() => {
-    if (state.images.length === 0) return;
-
-    (async () => {
-      if (!w.hash || w.pending.nav) return;
-      w.setNextPending({ decor: true });
-      await updateDecor();
-      w.setNextPending({ decor: false });
-    })();
-  }, [w.mapKey, w.gmsHash, state.images, w.pending.nav]);
-
-  const materials = useMemo(() => {
-    const uvDims = attribute("uvDimensions", "vec2");
-    const uvOffs = attribute("uvOffsets", "vec2");
-    const uvTexIds = attribute("uvTextureIds", "uint");
-    // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
-    const flippedUv = vec2(uv().x, uv().y.oneMinus());
-    const transformedUv = flippedUv.mul(uvDims).add(uvOffs);
-    const texNode = texture(w.texDecor.tex, transformedUv);
-    texNode.depthNode = uvTexIds;
-
-    const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
-    texMat.colorNode = texNode.mul(0.6);
-    texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
-    // +x, -x, +y, -y, +z, -z
-    return [plainBlackMaterial, plainBlackMaterial, texMat, plainBlackMaterial, plainBlackMaterial, plainBlackMaterial];
-  }, [state.images, w.texDecor.hash]);
+  state.materials = data ?? state.materials;
 
   return (
     <instancedMesh
@@ -202,8 +184,8 @@ export default function Decor() {
       args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
       frustumCulled={false}
       renderOrder={-2}
-      material={materials}
-      visible={state.everUpdated}
+      material={state.materials}
+      visible={state.materials.length > 0}
     >
       <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
@@ -216,17 +198,12 @@ export default function Decor() {
 
 export type State = {
   inst: THREE.InstancedMesh;
-  everUpdated: boolean;
   box: THREE.BufferGeometry;
+  materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
-  images: HTMLImageElement[];
-  addUvs(): void;
   decodeInstanceId(instanceId: number): { gmId: number; meta: Meta } | null;
-  transformDecorQuads(): Promise<void>;
-  draw(): Promise<void>;
-  sendDataToGpu(): void;
 };
 
 const cuboidHeight = 0.05;
@@ -234,3 +211,8 @@ const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, color: "#000" });
+
+import.meta.hot?.on("vite:beforeUpdate", () => {
+  import.meta.hot!.data.__JUST_HMR_DECOR__ = true;
+  import.meta.hot!.data.__LAST_HMR_DECOR__ = Date.now();
+});
