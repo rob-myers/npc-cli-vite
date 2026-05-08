@@ -154,8 +154,6 @@ export default function Decor() {
       enabled: !!w.sheets?.decorSheetDims,
     }).data ?? state.images;
 
-  const decorQuadCount = w.gms.reduce((sum, gm) => sum + gm.decor.filter((d) => d.type === "quad").length, 0);
-
   const { mutateAsync: updateDecor } = useMutation({
     mutationKey: ["update-decor"],
     async mutationFn() {
@@ -170,7 +168,7 @@ export default function Decor() {
   });
 
   useEffect(() => {
-    if (decorQuadCount === 0 || state.images.length === 0) return;
+    if (state.images.length === 0) return;
 
     (async () => {
       if (!w.hash || w.pending.nav) return;
