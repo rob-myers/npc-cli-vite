@@ -180,7 +180,8 @@
 - 🚧 door switches show green/red when unlocked/locked
   - ✅ doors have entry in `w.door.byKey`
   - ✅ track open/closed
-  - 🚧 can tint switches individually
+  - ✅ can tint switches individually via `meta.tint`
+  - 🚧 can tint switches via `w.decor.foo`
   - 🚧 track locked/unlocked
   - indicate locked/unlocked on respective switch(s)
 
@@ -222,8 +223,9 @@
 - ✅ /allotment -> /
 - ✅ remove react-grid-layout
 - ✅ remove uiClassName
-- absorb split vert/horiz controls in Tabs
-- change "collapsed panel" ui
+
+- 🚧 absorb split vert/horiz controls in Tabs
+- ✅ change "collapsed panel" ui
 
 - ✅ ensure onchange layout that portals are disposed
 - world context menu?
