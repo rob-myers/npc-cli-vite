@@ -87,12 +87,16 @@
     - ✅ can specify npc keys as `w.e.findPath(src, dst, keys)`
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
 
-  - 🚧 if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
+  - ✅ npc queryFilter uses `w.e.npcCanAccess`
+  - on `move` and dst room is adjacent and unreachable execute configurable npc function
+  - on `enter-room` and dst room is adjacent and unreachable execute configurable npc function
+
+  - ❌ if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
     - ✅ can track npc current room
-    - 🚧 on `move`
+    - ❌ on `move`
       - ✅ compute dst room
         - `w npc.npc.rob.last.dstGrId`
-      - 🚧 need inaccessible doors defined first (locked not just closed)
+      - ❌ need inaccessible doors defined first (locked not just closed)
       - if dst room adjacent and unreachable fire event
       - default strategy for event is goto nearest door
 
@@ -197,6 +201,8 @@
 
 - ✅ meta.slideDirection -> meta.slide
 
+- BUG saw auto door close with nearby npc
+
 - decor added to "grid"
   - may support more that just decor
   - also ensures decor gmRoomId
@@ -248,6 +254,8 @@
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
+- BUG on lock door and save Decor we lose switch tint
+  - maybe just stale while paused
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue

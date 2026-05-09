@@ -176,9 +176,11 @@ export function encodeDoorAreaId(gmId: number, doorId: number): number {
   return DOORS_AREA_START + gmId * MAX_DOORS_PER_GEOMORPH + doorId;
 }
 
-export function decodeDoorAreaId(areaId: number): { gmId: number; doorId: number } {
+export function decodeDoorAreaId(areaId: number): Geomorph.GmDoorId {
   const id = areaId - DOORS_AREA_START;
-  return { gmId: Math.floor(id / MAX_DOORS_PER_GEOMORPH), doorId: id % MAX_DOORS_PER_GEOMORPH };
+  const gmId = Math.floor(id / MAX_DOORS_PER_GEOMORPH);
+  const doorId = id % MAX_DOORS_PER_GEOMORPH;
+  return { gmId, doorId, gdKey: `g${gmId}d${doorId}` };
 }
 
 export function isDoorAreaId(areaId: number): boolean {
