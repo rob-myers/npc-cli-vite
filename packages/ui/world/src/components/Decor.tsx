@@ -123,6 +123,7 @@ export default function Decor() {
         for (let decorId = 0; decorId < gm.decor.length; decorId++) {
           const item = gm.decor[decorId];
           if (item.type !== "quad") continue;
+
           const entry = decor[item.meta.img];
           const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
           const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
@@ -146,7 +147,13 @@ export default function Decor() {
           if (tiltXZ !== null) mat4.premultiply(tiltMat4);
 
           state.inst.setMatrixAt(id, mat4);
-          state.inst.setColorAt(id, tmpColor.set(item.meta.tint ?? "#ffffff"));
+          if (typeof item.meta.doorId === "number") {
+            const gdKey: Geomorph.GmDoorKey = `g${gmId}d${item.meta.doorId}`;
+            const { locked } = w.door.byKey[gdKey];
+            state.inst.setColorAt(id, tmpColor.set(locked ? "#ff0000" : "#00ff00"));
+          } else {
+            state.inst.setColorAt(id, tmpColor.set(item.meta.tint ?? "#ffffff"));
+          }
           state.instanceIdToDecorId[id] = { gmId, decorId };
           id++;
         }
