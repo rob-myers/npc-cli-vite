@@ -32,10 +32,10 @@ export default function Doors() {
             const vt = tmpMat.transformPoint(tmpV2.copy(v));
 
             const gdKey = `g${gmId}d${doorId}` as const;
-
             const hull = gm.isHullDoor(doorId);
-
             const prev = prevByKey[gdKey];
+            const sealed =
+              hull === true ? w.gmGraph.getDoorNodeById(gmId, doorId).sealed : connector.meta.sealed === true;
 
             state.byKey[gdKey] = {
               gdKey,
@@ -47,9 +47,9 @@ export default function Doors() {
               // auto: prev?.auto ?? (door.meta.auto === true),
               auto: true,
               axisAligned: connector.normal.x === 0 || connector.normal.y === 0,
-              locked: prev?.locked ?? connector.meta.locked === true,
+              locked: sealed ?? prev?.locked ?? connector.meta.locked === true,
               open: prev?.open ?? false,
-              sealed: hull === true ? w.gmGraph.getDoorNodeById(gmId, doorId).sealed : connector.meta.sealed === true,
+              sealed,
               hull,
 
               src: ut.json,
