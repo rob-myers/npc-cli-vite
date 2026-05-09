@@ -102,6 +102,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       ceil: null as any,
       decor: null as any,
       door: null as any,
+      d: null as any,
       floor: null as any,
       r3f: null as any,
       obs: null as any,
@@ -344,6 +345,7 @@ export type State = {
   ceil: UseStateRef<import("./Ceiling").State>;
   decor: UseStateRef<import("./Decor").State>;
   door: UseStateRef<import("./Doors").State>;
+  d: UseStateRef<import("./Doors").State>["byKey"];
   floor: UseStateRef<import("./Floor").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   view: UseStateRef<import("./WorldView").State>;

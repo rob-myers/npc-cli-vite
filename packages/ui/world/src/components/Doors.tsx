@@ -273,6 +273,7 @@ export default function Doors() {
   );
 
   w.door = state;
+  w.d = w.door.byKey;
 
   useEffect(() => {
     state.buildByKey();
