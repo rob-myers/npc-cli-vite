@@ -133,7 +133,7 @@ export default function Decor() {
           if (tiltXZ !== null) mat4.premultiply(tiltMat4);
 
           state.inst.setMatrixAt(id, mat4);
-          state.inst.setColorAt(id, tmpColor.set("#ffffff"));
+          state.inst.setColorAt(id, tmpColor.set(item.meta.tint ?? "#ffffff"));
           id++;
         }
       }
