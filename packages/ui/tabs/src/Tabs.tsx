@@ -5,6 +5,7 @@ import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef } from "react";
@@ -172,7 +173,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   return (
     <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
-      <div className="flex justify-between min-h-12 w-full border-b border-outline" onContextMenu={state.onContextMenu}>
+      <div
+        className="flex justify-between min-h-12 w-full border-b border-outline"
+        onContextMenu={isTouchDevice() ? undefined : state.onContextMenu}
+      >
         <div
           ref={tabBarRef}
           className={cn(
