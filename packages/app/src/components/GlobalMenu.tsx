@@ -69,15 +69,15 @@ export function GlobalMenu() {
                 {menu.theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
                 {menu.theme === "dark" ? "Light" : "Dark"}
               </Menu.Item>
-              <div className="flex justify-between">
+              <div className="flex justify-evenly">
                 <Menu.Item
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  className="flex items-center gap-2 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                   onClick={() => splitRoot(false)}
                 >
                   <SquareHalfIcon className="size-4" />
                 </Menu.Item>
                 <Menu.Item
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  className="flex items-center gap-2 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                   onClick={() => splitRoot(true)}
                 >
                   <SquareHalfBottomIcon className="size-4" />
