@@ -70,7 +70,7 @@ export function PaneTreeWrapper({
     <>
       <GlobalMenu />
       <ContextMenu.Root open={state.contextMenuOpen} onOpenChange={state.onChangeContextMenu}>
-        <ContextMenu.Trigger className="size-full">{children}</ContextMenu.Trigger>
+        {children}
 
         <ContextMenu.Portal>
           <ContextMenu.Positioner className="z-10" anchor={state.overrideContextMenuOpts?.refObject ?? undefined}>
