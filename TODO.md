@@ -227,6 +227,8 @@
 - ✅ absorb split vert/horiz controls in Tabs
 - ✅ change "collapsed panel" ui
 
+- ✅ support flip adjacent panes
+
 - ✅ ensure onchange layout that portals are disposed
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`

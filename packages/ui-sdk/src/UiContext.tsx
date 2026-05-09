@@ -29,6 +29,8 @@ export type LayoutApi = {
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
   splitPane(uiId: string, vertical: boolean): void;
   closePane(uiId: string): void;
+  swapPane(uiId: string, direction: -1 | 1): void;
+  getPanePosition(uiId: string): { vertical: boolean; index: number; siblingCount: number } | null;
 };
 
 export type OverrideContextMenuOpts = {
@@ -43,5 +45,7 @@ export function getFallbackLayoutApi(): LayoutApi {
     },
     splitPane: () => {},
     closePane: () => {},
+    swapPane: () => {},
+    getPanePosition: () => null,
   };
 }
