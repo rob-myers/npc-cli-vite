@@ -180,10 +180,13 @@
 - 🚧 door switches show green/red when unlocked/locked
   - ✅ doors have entry in `w.door.byKey`
   - ✅ track open/closed
-  - ✅ can tint switches individually via `meta.tint`
-  - 🚧 can tint switches via `w.decor.foo`
+  - ✅ can tint switches individually via `tint=#ff0`
+  - ❌ can tint switches via `pick 1 as:meta.instanceId | w decor.tint - red`
+    - on hmr decor we'll lose the info unless we persist somehow
+    - instead, we'll drive the green/red tinting via locked door
   - 🚧 track locked/unlocked
-  - indicate locked/unlocked on respective switch(s)
+  - 🚧 locked/unlocked tints respective switches
+    - switch tint needs to survive decor hmr
 
 - ✅ symbols can have optional door supported by instantiateFlatSymbol
   - e.g. `office--001--2x2 doors=['s']`
