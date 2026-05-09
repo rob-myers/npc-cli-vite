@@ -110,6 +110,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       wall: null as any,
       menu: { suppressGrayscale: false } as State["menu"],
       npc: null as any,
+      n: null as any,
       worker: null as any,
       e: null as any,
       debug: null as any,
@@ -349,6 +350,7 @@ export type State = {
   wall: UseStateRef<import("./Walls").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   npc: UseStateRef<import("./NPCs").State>;
+  n: UseStateRef<import("./NPCs").State>["npc"];
   e: UseStateRef<import("./use-world-events").State>;
   debug: UseStateRef<import("./Debug").State>;
 

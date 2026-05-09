@@ -48,7 +48,10 @@ export class Npc {
   };
 
   moving = false;
-  resolve?: () => void;
+  /** Used for spawn and move */
+  resolve?: (key: string) => void;
+  /** Used for spawn and move */
+  reject?: (reason: Error) => void;
   spawns = 0;
   stuckAccum = 0;
 
@@ -148,6 +151,8 @@ export class Npc {
   startIdle() {
     const { crowd, clips } = this.w.npc;
 
+    this.resolve?.("idle");
+
     if (this.agentId) {
       const agent = crowd.agents[this.agentId];
 
@@ -205,7 +210,7 @@ export class Npc {
     this.position = this.skinnedMesh.position;
     this.mixer = new THREE.AnimationMixer(group);
 
-    this.resolve?.();
+    this.resolve?.("spawned");
 
     const { idle } = this.w.npc.clips;
     if (idle) {
@@ -213,6 +218,13 @@ export class Npc {
       this.mixer.update(0);
     }
   };
+
+  async waitUntilResolved() {
+    await new Promise<string>((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
 }
 
 export type NpcInit = {

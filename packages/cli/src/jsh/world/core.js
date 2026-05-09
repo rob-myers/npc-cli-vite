@@ -76,7 +76,14 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * @param {{ npcKey: string; to: JshCli.PointAnyFormat }} [opts]
  */
 export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
-  await w.npc.move(opts);
+  const { dispose } = api.handleStatus({
+    cleanups: (killed) => killed && w.n[opts.npcKey]?.reject?.(new Error("killed")),
+  });
+  try {
+    await w.npc.move(opts);
+  } finally {
+    dispose();
+  }
 }
 
 /**

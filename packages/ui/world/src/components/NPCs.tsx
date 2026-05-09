@@ -129,7 +129,7 @@ export default function NPCs() {
       getSkinIndex(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
-      move({ npcKey, to }) {
+      async move({ npcKey, to }) {
         const npc = state.npc[npcKey];
 
         if (typeof npcKey !== "string" || !npc) {
@@ -142,10 +142,22 @@ export default function NPCs() {
         const groundPoint = parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint);
 
-        if (result.success) {
-          npc.startMoving(groundPoint, result);
-        } else {
+        if (!result.success) {
           throw Error("move failed");
+        }
+
+        npc.reject?.(new Error("move again"));
+
+        npc.startMoving(groundPoint, result);
+        try {
+          await npc.waitUntilResolved();
+        } catch (e) {
+          if (e instanceof Error && e.message === "move again") {
+            return;
+          } else {
+            npc.startIdle();
+            throw e;
+          }
         }
       },
       onTick(delta) {
@@ -233,6 +245,7 @@ export default function NPCs() {
           npc.geometry.dispose();
           delete state.byPickId[npc.pickId];
           delete state.npc[npcKey];
+          npc.reject?.(new Error("removed npc"));
         }
         if (Object.keys(state.npc).length === 0) {
           state.nextPickId = 0;
@@ -288,7 +301,7 @@ export default function NPCs() {
           state.nextPickId++;
 
           state.update();
-          await new Promise<void>((resolve) => (npc.resolve = resolve));
+          await new Promise<string>((resolve) => (npc.resolve = resolve));
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
@@ -297,6 +310,7 @@ export default function NPCs() {
   );
 
   w.npc = state;
+  w.n = state.npc;
 
   const queryData =
     useQuery({
@@ -373,7 +387,7 @@ export type State = {
   devHotReload(): void;
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   getSkinIndex(skinKey: string): number;
-  move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): void;
+  move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): Promise<void>;
   onTick(delta: number): void;
   remove(...npcKeys: string[]): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
