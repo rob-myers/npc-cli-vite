@@ -1,4 +1,3 @@
-import { StarShipGeomorphKeySchema } from "@npc-cli/media/starship-symbol";
 import {
   MetaSchema,
   pointCodec,
@@ -20,7 +19,6 @@ const BaseDecorSchema = z.object({
   meta: MetaSchema.and(GmRoomIdSchema),
   bounds2d: rectCodec,
   updatedAt: z.number().optional(),
-  src: StarShipGeomorphKeySchema.optional(),
 });
 
 const BaseDecorDefSchema = z.object({
