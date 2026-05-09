@@ -176,7 +176,10 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   return (
     <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
-      <div className="flex justify-between min-h-12 w-full border-b border-outline" onContextMenu={state.onContextMenu}>
+      <div
+        className="flex justify-between min-h-12 w-full border-b border-on-background/30 border-outline"
+        onContextMenu={state.onContextMenu}
+      >
         <div
           ref={tabBarRef}
           className={cn(
@@ -197,7 +200,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             />
           ))}
           <button ref={newTabButtonRef} type="button" className="cursor-pointer p-2" onClick={state.onAddNewTab}>
-            <PlusCircleIcon className="size-6" weight="duotone" />
+            <PlusCircleIcon className="size-6 text-on-background/60" weight="duotone" />
           </button>
         </div>
         <UiInstanceMenu meta={meta} className="self-end" />
