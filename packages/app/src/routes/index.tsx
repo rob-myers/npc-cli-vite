@@ -11,7 +11,14 @@ import { useStore } from "zustand";
 import { UiPortalContainer } from "../components/UiPortalContainer";
 import { PaneTree } from "../components/PaneTree";
 import { PaneTreeWrapper } from "../components/PaneTreeWrapper";
-import { ensureLeafUis, initNextId, persistPanesToUi } from "../components/pane-service";
+import {
+  closePane,
+  ensureLeafUis,
+  findLeafByUiId,
+  initNextId,
+  persistPanesToUi,
+  splitPane,
+} from "../components/pane-service";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -31,6 +38,14 @@ function Index() {
       ...getFallbackLayoutApi(),
       overrideContextMenu(...args: Parameters<LayoutApi["overrideContextMenu"]>) {
         overrideContextMenuRef.current?.(...args);
+      },
+      splitPane(uiId: string, vertical: boolean) {
+        const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
+        if (leaf) splitPane(leaf.id, vertical);
+      },
+      closePane(uiId: string) {
+        const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
+        if (leaf) closePane(leaf.id);
       },
     },
     theme,

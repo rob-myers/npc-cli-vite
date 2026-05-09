@@ -5,7 +5,7 @@ import { Allotment } from "allotment";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { PaneNode } from "./pane-service";
-import { closePane, setPaneHidden, setSizes, showPane, splitPane } from "./pane-service";
+import { setPaneHidden, setSizes, showPane } from "./pane-service";
 
 const btnClass = "px-1.5 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded cursor-pointer";
 
@@ -73,25 +73,8 @@ function PaneLeaf({ node }: { node: Extract<PaneNode, { type: "leaf" }> }) {
   const portal = useStore(uiStore, (s) => (node.uiId ? s.byId[node.uiId]?.portal : undefined));
 
   return (
-    <div className="size-full min-w-0 min-h-0 flex flex-col">
-      <div className="flex gap-1 p-1 bg-background/80">
-        <button type="button" className={btnClass} onClick={() => splitPane(node.id, false)}>
-          Split H
-        </button>
-        <button type="button" className={btnClass} onClick={() => splitPane(node.id, true)}>
-          Split V
-        </button>
-        <button
-          type="button"
-          className="px-1.5 py-0.5 text-xs bg-slate-600 hover:bg-red-700 text-slate-300 rounded cursor-pointer"
-          onClick={() => closePane(node.id)}
-        >
-          ✕
-        </button>
-      </div>
-      <div className="flex-1 min-h-0 relative overflow-hidden bg-background text-on-background">
-        {portal && <portals.OutPortal node={portal.portalNode} />}
-      </div>
+    <div className="size-full min-w-0 min-h-0 relative overflow-hidden bg-background text-on-background">
+      {portal && <portals.OutPortal node={portal.portalNode} />}
     </div>
   );
 }
