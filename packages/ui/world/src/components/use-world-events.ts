@@ -3,7 +3,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
 import { defaultDoorCloseMs } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { parseGroundPoint } from "../service/geometry";
+import { groundPointToVector3, parseGroundPoint } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -232,6 +232,23 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return w.door.toggleDoor(door, opts);
       },
+      toggleLock(gdKey, opts = {}) {
+        const door = w.door.byKey[gdKey];
+
+        if (opts.point === undefined || opts.npcKey === undefined) {
+          // e.g. game master i.e. no npc
+          return w.door.toggleLock(door, opts);
+        }
+
+        const { position: npcPoint } = w.npc.npc[opts.npcKey];
+        if (npcPoint.distanceTo(groundPointToVector3(parseGroundPoint(opts.point))) > 1.5) {
+          return false; // e.g. button not close enough
+        }
+
+        opts.access ??= state.npcCanAccess(opts.npcKey, gdKey);
+
+        return w.door.toggleLock(door, opts);
+      },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
         w.door.cancelClose(door);
@@ -306,6 +323,10 @@ export type State = {
   recomputeNpcRoomRelationships(): void;
   removeFromSensors(...npcKeys: string[]): void;
   toggleDoor(gdKey: Geomorph.GmDoorKey, opts?: { npcKey?: string } & Geomorph.ToggleDoorOpts): boolean;
+  toggleLock(
+    gdKey: Geomorph.GmDoorKey,
+    opts: { npcKey?: string; point?: JshCli.PointAnyFormat } & Geomorph.ToggleLockOpts,
+  ): boolean;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };

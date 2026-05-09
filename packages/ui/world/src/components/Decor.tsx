@@ -19,6 +19,7 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       inst: null as any,
+      gdKeyToInstanceId: {},
       instanceIdToDecorId: [],
 
       box: createUnitBox(),
@@ -35,15 +36,17 @@ export default function Decor() {
         return item ? { ...item.meta } : null;
       },
 
-      // 🚧 remove
-      tint(instanceId, colorRep) {
-        const entry = state.instanceIdToDecorId[instanceId];
-        if (!state.inst.instanceColor || !entry) return;
+      tintInstances(colorRep, ...instanceIds) {
+        if (!state.inst.instanceColor) return;
 
-        state.inst.setColorAt(instanceId, tmpColor.set(colorRep));
+        for (const instanceId of instanceIds) {
+          const entry = state.instanceIdToDecorId[instanceId];
+          if (!entry) continue;
+          state.inst.setColorAt(instanceId, tmpColor.set(colorRep));
+          w.gms[entry.gmId].decor[entry.decorId].meta.tint = colorRep;
+        }
+
         state.inst.instanceColor.needsUpdate = true;
-        w.gms[entry.gmId].decor[entry.decorId].meta.tint = colorRep;
-
         if (w.disabled) w.view.forceUpdate();
       },
     }),
@@ -113,8 +116,9 @@ export default function Decor() {
       await pause(100);
 
       // 4. transform and position instances
+      state.gdKeyToInstanceId = {};
       state.inst.instanceMatrix.array.fill(0);
-      let id = 0;
+      let instanceId = 0;
       let tiltMat4 = new THREE.Matrix4();
 
       for (let gmId = 0; gmId < w.gms.length; gmId++) {
@@ -130,7 +134,7 @@ export default function Decor() {
 
           tmpMat.setMatrixValue([a, b, c, d, e, f]);
 
-          const shouldTilt = item.meta.tilt === true;
+          const shouldTilt = item.meta.tilt === true; // currently only switches
           const tiltXZ = shouldTilt === true ? tmpMat.transformPoint({ ...item.topCenter }) : null;
 
           tmpMat.preMultiply(item.transform);
@@ -146,19 +150,24 @@ export default function Decor() {
           const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: item.meta.y ?? 0, mat4: tmpMat4 });
           if (tiltXZ !== null) mat4.premultiply(tiltMat4);
 
-          state.inst.setMatrixAt(id, mat4);
+          state.inst.setMatrixAt(instanceId, mat4);
+
           if (typeof item.meta.doorId === "number") {
+            // tint via un/locked doors
             const gdKey: Geomorph.GmDoorKey = `g${gmId}d${item.meta.doorId}`;
             const { locked } = w.door.byKey[gdKey];
-            state.inst.setColorAt(id, tmpColor.set(locked ? "#ff0000" : "#00ff00"));
+            state.inst.setColorAt(instanceId, tmpColor.set(locked ? "#ff0000" : "#00ff00"));
+            // build gdKey -> instances
+            (state.gdKeyToInstanceId[gdKey] ??= []).push(instanceId);
           } else {
-            state.inst.setColorAt(id, tmpColor.set(item.meta.tint ?? "#ffffff"));
+            state.inst.setColorAt(instanceId, tmpColor.set(item.meta.tint ?? "#ffffff"));
           }
-          state.instanceIdToDecorId[id] = { gmId, decorId };
-          id++;
+
+          state.instanceIdToDecorId[instanceId] = { gmId, decorId };
+          instanceId++;
         }
       }
-      state.inst.count = id;
+      state.inst.count = instanceId;
       state.inst.computeBoundingSphere();
 
       await pause(100);
@@ -228,9 +237,10 @@ export type State = {
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
+  gdKeyToInstanceId: { [gdKey: string]: number[] };
   instanceIdToDecorId: { gmId: number; decorId: number }[];
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
-  tint(instanceId: number, colorRep: string): void;
+  tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };
 
 const cuboidHeight = 0.05;

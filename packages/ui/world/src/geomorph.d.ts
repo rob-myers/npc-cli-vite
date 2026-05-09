@@ -131,4 +131,15 @@ declare namespace Geomorph {
     /** Should we open door? */
     open?: boolean;
   };
+
+  type ToggleLockOpts = {
+    /**
+     * Does the instigator exist (not `undefined`) and have access (`true`)?
+     */
+    access?: boolean;
+    /** Should we lock the door? */
+    lock?: boolean;
+    /** Should we unlock the door? */
+    unlock?: boolean;
+  };
 }

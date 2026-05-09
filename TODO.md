@@ -177,16 +177,17 @@
 - ✅ BUG fix decor in 2nd gm instance
   - needed to fix tilt matrix
 
-- 🚧 door switches show green/red when unlocked/locked
+- ✅ door switches show green/red when unlocked/locked
   - ✅ doors have entry in `w.door.byKey`
   - ✅ track open/closed
   - ✅ can tint switches individually via `tint=#ff0`
-  - ❌ can tint switches via `pick 1 as:meta.instanceId | w decor.tint - red`
+  - ❌ can tint switches via `pick 1 as:meta.instanceId | w decor.tintInstances red -`
     - on hmr decor we'll lose the info unless we persist somehow
     - instead, we'll drive the green/red tinting via locked door
-  - 🚧 track locked/unlocked
-  - 🚧 locked/unlocked tints respective switches
+  - ✅ locked/unlocked tints respective switches
     - switch tint needs to survive decor hmr
+  - ✅ track locked/unlocked
+    - `w e.toggleLock g0d15`
 
 - ✅ symbols can have optional door supported by instantiateFlatSymbol
   - e.g. `office--001--2x2 doors=['s']`
