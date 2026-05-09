@@ -222,6 +222,34 @@ export default function Doors() {
 
         return true;
       },
+      toggleLock(door, opts = {}) {
+        if (door.sealed === true) {
+          return false;
+        }
+
+        if (opts.access === false) {
+          return false; // No access
+        }
+
+        if (door.locked === true) {
+          if (opts.lock === true) return true; // Already locked
+        } else {
+          if (opts.unlock === true) return true; // Already unlocked
+        }
+
+        // Actually lock/unlock door
+        door.locked = !door.locked;
+        // 🚧 move to use-world-events
+        w.decor.tintInstances(door.locked ? "#ff0000" : "#00ff00", ...w.decor.gdKeyToInstanceId[door.gdKey]);
+
+        w.events.next({
+          key: door.locked ? "door-locked" : "door-unlocked",
+          locked: door.locked,
+          ...state.decodeInstanceId(door.instanceId),
+        });
+
+        return true;
+      },
       onTick(delta: number) {
         if (state.animTargets.size === 0) return;
         let changed = false;
@@ -313,6 +341,7 @@ export type State = {
   onTick: (delta: number) => void;
   positionInstances: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
+  toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
 };
 
 const doorHeight = 2 - 0.001;

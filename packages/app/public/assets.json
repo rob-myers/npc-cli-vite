@@ -10278,7 +10278,7 @@
   },
   "theme": {
     "default-theme": {
-      "background": "bg-black",
+      "background": "bg-slate-500",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
         "nonHull": {"fill": "#444", "stroke": "#000"}

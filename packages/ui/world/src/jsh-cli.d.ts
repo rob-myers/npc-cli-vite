@@ -4,6 +4,9 @@ declare namespace JshCli {
     | ({ key: "door-open" | "door-closed" | "door-opening" | "door-closing"; open: boolean } & ReturnType<
         import("./components/Doors").State["decodeInstanceId"]
       >)
+    | ({ key: "door-locked" | "door-unlocked"; locked: boolean } & ReturnType<
+        import("./components/Doors").State["decodeInstanceId"]
+      >)
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
     | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
