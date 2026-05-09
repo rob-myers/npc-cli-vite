@@ -87,6 +87,25 @@ export function findLeafByUiId(node: PaneNode, uiId: string): Extract<PaneNode, 
   return null;
 }
 
+export type PanePosition = { vertical: boolean; index: number; siblingCount: number };
+
+export function findPanePosition(root: PaneNode, targetId: number): PanePosition | null {
+  return findPanePositionInner(root, targetId);
+}
+
+function findPanePositionInner(node: PaneNode, targetId: number): PanePosition | null {
+  if (node.type !== "split") return null;
+  const idx = node.children.findIndex((c) => c.id === targetId);
+  if (idx !== -1) {
+    return { vertical: node.vertical, index: idx, siblingCount: node.children.length };
+  }
+  for (const child of node.children) {
+    const found = findPanePositionInner(child, targetId);
+    if (found) return found;
+  }
+  return null;
+}
+
 function collectLeafUiIds(node: PaneNode): string[] {
   if (node.type === "leaf") return node.uiId ? [node.uiId] : [];
   return node.children.flatMap(collectLeafUiIds);
@@ -101,6 +120,31 @@ function findNode(node: PaneNode, targetId: number): PaneNode | null {
     }
   }
   return null;
+}
+
+export function swapPane(targetId: number, direction: -1 | 1) {
+  setRoot((prev) => swapChild(prev, targetId, direction));
+  persistPanesToUi();
+}
+
+function swapChild(node: PaneNode, targetId: number, direction: -1 | 1): PaneNode {
+  if (node.type !== "split") return node;
+
+  const idx = node.children.findIndex((c) => c.id === targetId);
+  if (idx !== -1) {
+    const swapIdx = idx + direction;
+    if (swapIdx < 0 || swapIdx >= node.children.length) return node;
+    const newChildren = [...node.children];
+    [newChildren[idx], newChildren[swapIdx]] = [newChildren[swapIdx], newChildren[idx]];
+    let newSizes = node.sizes;
+    if (newSizes) {
+      newSizes = [...newSizes];
+      [newSizes[idx], newSizes[swapIdx]] = [newSizes[swapIdx], newSizes[idx]];
+    }
+    return { ...node, children: newChildren, sizes: newSizes };
+  }
+
+  return { ...node, children: node.children.map((c) => swapChild(c, targetId, direction)) };
 }
 
 export function setSizes(splitId: number, sizes: number[]) {

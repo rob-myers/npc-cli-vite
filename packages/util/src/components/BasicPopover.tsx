@@ -15,6 +15,7 @@ export function BasicPopover(props: BasicPopoverProps) {
       <Popover.Portal>
         <Popover.Positioner
           className={props.positionerClassName}
+          align={props.align}
           side={props.side}
           sideOffset={props.sideOffset}
           collisionPadding={props.collisionPadding}
@@ -41,20 +42,23 @@ export function BasicPopover(props: BasicPopoverProps) {
   );
 }
 
-type BasicPopoverProps = PropsWithChildren<{
-  className?: string;
-  arrowClassName?: string;
-  triggerClassName?: string;
-  trigger?: React.ReactNode;
-  positionerClassName?: string;
-  side?: "top" | "right" | "bottom" | "left";
-  sideOffset?: number;
-  collisionPadding?: number;
-  handle?: Popover.Handle<unknown>;
-  open?: React.ComponentProps<typeof Popover.Root>["open"];
-  onOpenChange?: React.ComponentProps<typeof Popover.Root>["onOpenChange"];
-  onClick?: React.ComponentProps<typeof Popover.Popup>["onClick"];
-}>;
+type BasicPopoverProps = Pick<
+  React.ComponentProps<typeof Popover.Positioner>,
+  "align" | "collisionPadding" | "side" | "sideOffset"
+> &
+  PropsWithChildren<{
+    arrowClassName?: string;
+    positionerClassName?: string;
+    triggerClassName?: string;
+    className?: string;
+
+    handle?: Popover.Handle<unknown>;
+    open?: React.ComponentProps<typeof Popover.Root>["open"];
+    trigger?: React.ReactNode;
+
+    onOpenChange?: React.ComponentProps<typeof Popover.Root>["onOpenChange"];
+    onClick?: React.ComponentProps<typeof Popover.Popup>["onClick"];
+  }>;
 
 export function CloseOnClickPopover(props: BasicPopoverProps) {
   const [open, setOpen] = useState(false);

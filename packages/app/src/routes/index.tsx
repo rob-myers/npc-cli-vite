@@ -17,7 +17,9 @@ import {
   findLeafByUiId,
   initNextId,
   persistPanesToUi,
+  findPanePosition,
   splitPane,
+  swapPane,
 } from "../components/pane-service";
 
 export const Route = createFileRoute("/")({
@@ -46,6 +48,15 @@ function Index() {
       closePane(uiId: string) {
         const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
         if (leaf) closePane(leaf.id);
+      },
+      swapPane(uiId: string, direction: -1 | 1) {
+        const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
+        if (leaf) swapPane(leaf.id, direction);
+      },
+      getPanePosition(uiId: string) {
+        const root = uiStore.getState().persistedPanes.root;
+        const leaf = findLeafByUiId(root, uiId);
+        return leaf ? findPanePosition(root, leaf.id) : null;
       },
     },
     theme,
