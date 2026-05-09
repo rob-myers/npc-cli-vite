@@ -19,6 +19,7 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       inst: null as any,
+      instanceIdToDecorId: [],
 
       box: createUnitBox(),
       materials: [],
@@ -28,15 +29,22 @@ export default function Decor() {
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
 
       decodeInstanceId(instanceId) {
-        let id = instanceId;
-        for (const gm of w.gms) {
-          const quads = gm.decor.filter((d) => d.type === "quad");
-          if (id < quads.length) {
-            return { ...quads[id].meta };
-          }
-          id -= quads.length;
-        }
-        return null;
+        const entry = state.instanceIdToDecorId[instanceId];
+        if (!entry) return null;
+        const item = w.gms[entry.gmId]?.decor[entry.decorId];
+        return item ? { ...item.meta } : null;
+      },
+
+      // 🚧 remove
+      tint(instanceId, colorRep) {
+        const entry = state.instanceIdToDecorId[instanceId];
+        if (!state.inst.instanceColor || !entry) return;
+
+        state.inst.setColorAt(instanceId, tmpColor.set(colorRep));
+        state.inst.instanceColor.needsUpdate = true;
+        w.gms[entry.gmId].decor[entry.decorId].meta.tint = colorRep;
+
+        if (w.disabled) w.view.forceUpdate();
       },
     }),
   );
@@ -80,9 +88,12 @@ export default function Decor() {
       state.uvOffsets.fill(0);
       state.uvDimensions.fill(0);
       state.uvTextureIds.fill(0);
+      state.instanceIdToDecorId.length = 0;
       let uvIdx = 0;
-      for (const gm of w.gms) {
-        for (const item of gm.decor) {
+      for (let gmId = 0; gmId < w.gms.length; gmId++) {
+        const gm = w.gms[gmId];
+        for (let decorId = 0; decorId < gm.decor.length; decorId++) {
+          const item = gm.decor[decorId];
           if (item.type !== "quad") continue;
           const entry = decor[item.meta.img] as DecorSheetEntry | undefined;
           if (!entry) {
@@ -106,9 +117,11 @@ export default function Decor() {
       let id = 0;
       let tiltMat4 = new THREE.Matrix4();
 
-      for (const gm of w.gms) {
+      for (let gmId = 0; gmId < w.gms.length; gmId++) {
+        const gm = w.gms[gmId];
         const { a, b, c, d, e, f } = gm.transform;
-        for (const item of gm.decor) {
+        for (let decorId = 0; decorId < gm.decor.length; decorId++) {
+          const item = gm.decor[decorId];
           if (item.type !== "quad") continue;
           const entry = decor[item.meta.img];
           const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
@@ -134,6 +147,7 @@ export default function Decor() {
 
           state.inst.setMatrixAt(id, mat4);
           state.inst.setColorAt(id, tmpColor.set(item.meta.tint ?? "#ffffff"));
+          state.instanceIdToDecorId[id] = { gmId, decorId };
           id++;
         }
       }
@@ -207,7 +221,9 @@ export type State = {
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
+  instanceIdToDecorId: { gmId: number; decorId: number }[];
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  tint(instanceId: number, colorRep: string): void;
 };
 
 const cuboidHeight = 0.05;
