@@ -63,8 +63,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return null;
         }
       },
-      npcCanAccess() {
-        return true; // 🚧
+      npcCanAccess(_npcKey, gdKey) {
+        // 🚧 npc can have key
+        return w.d[gdKey].locked === false;
       },
       onEvent(e) {
         if ("npcKey" in e) {
@@ -107,6 +108,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
+      onEnterCollider(e, _npc) {
+        if (e.type === "nearby") {
+          const door = w.d[e.gdKey];
+          if (door.open === true) {
+            return; // door already open
+          }
+
+          if (door.auto === true && door.locked === false) {
+            // only auto-open doors which are auto and unlocked
+            state.toggleDoor(e.gdKey, { open: true, npcKey: e.npcKey });
+            return;
+          }
+        }
+      },
       onExitCollider(e, npc) {
         if (e.type === "inside") {
           // trigger enter-room on exit inside-collider and changed room
@@ -143,6 +158,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               (state.doorToNpcs[e.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
               (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).inside = e.gdKey;
             }
+
+            state.onEnterCollider(e, npc);
             break;
           }
           case "enter-room": {
@@ -318,6 +335,7 @@ export type State = {
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   onEvent(e: JshCli.Event): void;
+  onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;

@@ -40,6 +40,7 @@ declare namespace JshCli {
     gmRoomId: Geomorph.GmRoomId | null;
   } & (GroundPoint & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">);
 
+  type EnterColliderEvent = Extract<Event, { key: "enter-collider" }>;
   type ExitColliderEvent = Extract<Event, { key: "exit-collider" }>;
 
   interface SpawnOpts {

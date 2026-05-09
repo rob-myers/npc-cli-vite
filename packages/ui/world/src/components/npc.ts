@@ -85,11 +85,10 @@ export class Npc {
 
         if (isDoorAreaId(node.area) === true) {
           const decoded = decodeDoorAreaId(node.area);
-          const open = w.door.isOpen(decoded.gmId, decoded.doorId);
-          if (!open) {
+          if (!w.e.npcCanAccess(this.key, decoded.gdKey)) {
             this.last.blockingArea = node.area;
+            return false;
           }
-          return open;
         }
 
         return true;
