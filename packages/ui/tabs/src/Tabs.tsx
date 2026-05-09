@@ -61,6 +61,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       onContextMenu(e: React.MouseEvent<HTMLElement>) {
         e.preventDefault();
         e.stopPropagation();
+
+        if (isTouchDevice()) return;
+
         pause(30);
 
         const rect = DOMRect.fromRect({ x: e.clientX, y: e.clientY, width: 0, height: 0 });
@@ -173,10 +176,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   return (
     <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
-      <div
-        className="flex justify-between min-h-12 w-full border-b border-outline"
-        onContextMenu={isTouchDevice() ? undefined : state.onContextMenu}
-      >
+      <div className="flex justify-between min-h-12 w-full border-b border-outline" onContextMenu={state.onContextMenu}>
         <div
           ref={tabBarRef}
           className={cn(
