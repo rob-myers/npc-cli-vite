@@ -27,6 +27,8 @@ export type UiContextValue = {
 
 export type LayoutApi = {
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
+  splitPane(uiId: string, vertical: boolean): void;
+  closePane(uiId: string): void;
 };
 
 export type OverrideContextMenuOpts = {
@@ -39,5 +41,7 @@ export function getFallbackLayoutApi(): LayoutApi {
     overrideContextMenu: () => {
       console.warn("overrideContextMenu called before layoutApi was set");
     },
+    splitPane: () => {},
+    closePane: () => {},
   };
 }

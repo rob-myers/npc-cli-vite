@@ -1,6 +1,12 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { BasicPopover, cn } from "@npc-cli/util";
-import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
+import {
+  DotsThreeOutlineVerticalIcon,
+  PlayCircleIcon,
+  SquareHalfBottomIcon,
+  SquareHalfIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { useContext } from "react";
 import { UiContext } from "./UiContext";
 
@@ -37,13 +43,14 @@ export function UiInstanceMenu({ className, meta }: { className?: string; meta: 
 }
 
 function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
-  const { uiStore, uiStoreApi } = useContext(UiContext);
+  const { layoutApi, uiStore, uiStoreApi } = useContext(UiContext);
   const tabsInstances = uiStoreApi.getTabsInstances(meta.parentId);
 
   return (
     <BasicPopover
       side="bottom"
       sideOffset={4}
+      collisionPadding={0}
       triggerClassName="cursor-pointer"
       className="flex flex-col gap-0 p-0 bg-slate-800 text-slate-200"
       arrowClassName="fill-slate-800"
@@ -53,26 +60,8 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
         </DotsThreeOutlineVerticalIcon>
       }
     >
-      <div className="flex p-1 border-b border-slate-700 gap-1">
-        {meta.uiKey === "Tabs" && Array.isArray(meta.items) && meta.items.length > 1 ? (
-          <BasicPopover
-            triggerClassName="bg-slate-700 hover:bg-slate-600 rounded p-1"
-            trigger={<XIcon weight="bold" className="size-4" />}
-            side="right"
-            sideOffset={4}
-          >
-            <button
-              type="button"
-              className="cursor-pointer"
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                uiStoreApi.removeItem(meta.id);
-              }}
-            >
-              confirm
-            </button>
-          </BasicPopover>
-        ) : (
+      {meta.uiKey !== "Tabs" && (
+        <div className="flex p-1 border-b border-slate-700 gap-1">
           <button
             type="button"
             className="cursor-pointer bg-slate-700 hover:bg-slate-600 rounded p-1"
@@ -83,8 +72,33 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
           >
             <XIcon weight="bold" className="size-4" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
+      {meta.uiKey === "Tabs" && (
+        <div className="flex flex-col border-b border-slate-700 py-1">
+          <button
+            type="button"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-700"
+            onPointerDown={() => layoutApi.splitPane(meta.id, false)}
+          >
+            <SquareHalfIcon className="size-4" />
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-700"
+            onPointerDown={() => layoutApi.splitPane(meta.id, true)}
+          >
+            <SquareHalfBottomIcon className="size-4" />
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-700"
+            onPointerDown={() => layoutApi.closePane(meta.id)}
+          >
+            <XIcon className="size-4" />
+          </button>
+        </div>
+      )}
       {meta.uiKey !== "Tabs" &&
         tabsInstances.length > 0 &&
         tabsInstances.map((tabs) => (

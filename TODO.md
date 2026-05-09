@@ -224,7 +224,7 @@
 - ✅ remove react-grid-layout
 - ✅ remove uiClassName
 
-- 🚧 absorb split vert/horiz controls in Tabs
+- ✅ absorb split vert/horiz controls in Tabs
 - ✅ change "collapsed panel" ui
 
 - ✅ ensure onchange layout that portals are disposed

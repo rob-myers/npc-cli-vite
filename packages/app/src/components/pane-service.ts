@@ -78,6 +78,15 @@ export function ensureLeafUis(node: PaneNode) {
   }
 }
 
+export function findLeafByUiId(node: PaneNode, uiId: string): Extract<PaneNode, { type: "leaf" }> | null {
+  if (node.type === "leaf") return node.uiId === uiId ? node : null;
+  for (const child of node.children) {
+    const found = findLeafByUiId(child, uiId);
+    if (found) return found;
+  }
+  return null;
+}
+
 function collectLeafUiIds(node: PaneNode): string[] {
   if (node.type === "leaf") return node.uiId ? [node.uiId] : [];
   return node.children.flatMap(collectLeafUiIds);
