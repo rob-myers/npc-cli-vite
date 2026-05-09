@@ -109,7 +109,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onEnterCollider(e, _npc) {
-        if (e.type === "nearby") {
+        if (e.type === "nearby" || e.type === "inside") {
           const door = w.d[e.gdKey];
           if (door.open === true) {
             return; // door already open
@@ -239,8 +239,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const door = w.door.byKey[gdKey];
 
         // clear if already closed and no npc colliding with "inside" collider
-        // opts.clear = door.open === false || !(state.doorToOffMesh[gdKey]?.length > 0);
-        opts.clear = true; // 🚧 state.doorToNpcs.inside.length
+        opts.clear = door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
 
         opts.access ??=
           opts.npcKey === undefined ||
