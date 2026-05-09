@@ -10286,13 +10286,22 @@
   },
   "theme": {
     "default-theme": {
-      "background": "bg-gray-800",
+      "background": "bg-black",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
         "nonHull": {"fill": "#444", "stroke": "#000"}
       },
       "floor": {"navStroke": "#000c"},
       "walls": {"color": "#000000", "opacity": 0.5}
+    },
+    "light-theme": {
+      "background": "bg-white",
+      "ceiling": {
+        "hull": {"fill": "#000", "stroke": "#666"},
+        "nonHull": {"fill": "#eee", "stroke": "#000"}
+      },
+      "floor": {"navStroke": "#000c"},
+      "walls": {"color": "#000000", "opacity": 0.25}
     }
   },
   "hash": {"obstacles": 1480284142}
