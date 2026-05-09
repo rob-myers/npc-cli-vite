@@ -1,4 +1,6 @@
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
+import { cn } from "@npc-cli/util";
+import { BookOpenTextIcon } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
@@ -6,11 +8,6 @@ import type { PaneNode } from "./pane-service";
 import { closePane, setPaneHidden, setSizes, showPane, splitPane } from "./pane-service";
 
 const btnClass = "px-1.5 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded cursor-pointer";
-
-function getLabel(node: PaneNode): string {
-  if (node.type === "leaf") return `Pane ${node.id}`;
-  return node.children.map(getLabel).join(", ");
-}
 
 export function PaneTree({ node }: { node: PaneNode }) {
   if (node.type === "leaf") {
@@ -32,10 +29,18 @@ export function PaneTree({ node }: { node: PaneNode }) {
   const edgeBar = (children: PaneNode[], edge: "start" | "end") => {
     if (children.length === 0) return null;
     return (
-      <div className={`absolute z-10 flex gap-1 p-1 ${posClass[edge]} ${isVertical ? "flex-row" : "flex-col"}`}>
+      <div className={`absolute z-10 gap-1 *:p-1 ${posClass[edge]}`}>
         {children.map((child) => (
-          <button key={child.id} type="button" className={btnClass} onClick={() => showPane(node.id, child.id)}>
-            Show {getLabel(child)}
+          <button
+            key={child.id}
+            type="button"
+            className={cn(
+              btnClass,
+              "text-on-background/50 bg-background/50 hover:bg-background hover:text-on-background",
+            )}
+            onClick={() => showPane(node.id, child.id)}
+          >
+            <BookOpenTextIcon className="size-5" />
           </button>
         ))}
       </div>
