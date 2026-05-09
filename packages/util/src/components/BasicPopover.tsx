@@ -13,7 +13,12 @@ export function BasicPopover(props: BasicPopoverProps) {
     <Popover.Root handle={props.handle} open={props.open} onOpenChange={props.onOpenChange}>
       <Popover.Trigger className={cn("cursor-pointer", props.triggerClassName)}>{props.trigger}</Popover.Trigger>
       <Popover.Portal>
-        <Popover.Positioner side={props.side} sideOffset={props.sideOffset} collisionPadding={props.collisionPadding}>
+        <Popover.Positioner
+          className={props.positionerClassName}
+          side={props.side}
+          sideOffset={props.sideOffset}
+          collisionPadding={props.collisionPadding}
+        >
           <Popover.Popup className="outline-0" onPointerDown={props.onClick}>
             <PopoverArrow className={props.arrowClassName ?? "fill-gray-200"} arrowBorderFill="#00000033" />
             <Popover.Description
@@ -41,6 +46,7 @@ type BasicPopoverProps = PropsWithChildren<{
   arrowClassName?: string;
   triggerClassName?: string;
   trigger?: React.ReactNode;
+  positionerClassName?: string;
   side?: "top" | "right" | "bottom" | "left";
   sideOffset?: number;
   collisionPadding?: number;

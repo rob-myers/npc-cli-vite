@@ -51,6 +51,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
       side="bottom"
       sideOffset={4}
       collisionPadding={0}
+      positionerClassName="z-10"
       triggerClassName="cursor-pointer"
       className="flex flex-col gap-0 p-0 bg-slate-800 text-slate-200"
       arrowClassName="fill-slate-800"
