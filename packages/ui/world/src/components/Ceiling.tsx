@@ -43,7 +43,6 @@ export default function Ceiling() {
         uvDimensions.needsUpdate = true;
         uvTextureIds.needsUpdate = true;
       },
-
       async draw() {
         // texture per gmKey (unlike floor)
         for (const gmKey of w.seenGmKeys) {
@@ -52,7 +51,6 @@ export default function Ceiling() {
           await pause();
         }
       },
-
       drawGm(gmKey) {
         const { ct } = w.texCeil;
         const layout = w.assets.layout[gmKey];
@@ -85,16 +83,16 @@ export default function Ceiling() {
         }); // hull walls and doors
 
         // decals
-        polyDecals
-          .filter((x) => x.meta.ceil === true)
-          .forEach((x) => {
-            const strokeWidth = typeof x.meta.strokeWidth === "number" ? x.meta.strokeWidth * sguToWorldScale : 0.08;
-            drawPolygons(ct, x, {
-              fillStyle: x.meta.fill || "red",
-              strokeStyle: x.meta.stroke || null,
-              lineWidth: strokeWidth,
-            });
+        for (const decal of polyDecals) {
+          if (decal.meta.ceil !== true) continue;
+          const strokeWidth =
+            typeof decal.meta.strokeWidth === "number" ? decal.meta.strokeWidth * sguToWorldScale : 0.08;
+          drawPolygons(ct, decal, {
+            fillStyle: decal.meta.fill || "red",
+            strokeStyle: decal.meta.stroke || null,
+            lineWidth: strokeWidth,
           });
+        }
 
         // Stroke a square at each corner to avoid z-fighting
         ct.strokeStyle = wallsColor;
@@ -106,7 +104,6 @@ export default function Ceiling() {
         ct.strokeRect(hullRect.x, hullRect.bottom - cornerDim, cornerDim, cornerDim);
         ct.strokeRect(hullRect.right - cornerDim, hullRect.bottom - cornerDim, cornerDim, cornerDim);
       },
-
       transformInstances() {
         if (!state.inst) return;
         for (const [gmId, gm] of w.gms.entries()) {
