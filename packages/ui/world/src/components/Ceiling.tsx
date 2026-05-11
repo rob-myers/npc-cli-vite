@@ -67,8 +67,8 @@ export default function Ceiling() {
         const { ceiling: tc } = w.getTheme();
         drawPolygons(ct, tops.door, {
           fillStyle: tc.nonHull.fill,
-          strokeStyle: tc.nonHull.fill,
-          lineWidth: thickLineWidth,
+          strokeStyle: tc.nonHull.stroke,
+          lineWidth: thinLineWidth,
         });
         drawPolygons(ct, tops.nonHull, {
           fillStyle: tc.nonHull.fill,
