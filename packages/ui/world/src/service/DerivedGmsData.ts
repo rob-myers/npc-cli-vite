@@ -60,7 +60,7 @@ export default class DerivedGmsData {
       ({ outline, holes }) => outline.length + holes.reduce((sum, hole) => sum + hole.length, 0),
     );
 
-    // 🚧 remove lintels?
+    // 🚧 remove lintels
     // lintels (2 quads per door):
     gmData.wallPolySegCounts.push(2 * gm.doors.length);
     // windows (upper/lower, may not be quads):
@@ -74,11 +74,8 @@ export default class DerivedGmsData {
     );
     gmData.tops = {
       broad: gm.walls.filter((x) => x.meta.broad === true),
-      // hull: Poly.union(gm.walls.filter((x) => x.meta.hull).concat(gm.hullDoors.map((x) => x.computeThinPoly()))),
+      door: gm.doors.map((door) => door.computeThinPoly(0.01)),
       hull: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
-      // nonHull: Poly.union(nonHullWallsTouchCeil.concat(gm.doors.map((door) => door.computeThinPoly()))).flatMap((x) =>
-      //   geomService.createInset(x, 0.02),
-      // ),
       nonHull: Poly.union(nonHullWallsTouchCeil).flatMap((x) => geomService.createInset(x, 0.02)),
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
@@ -169,7 +166,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     wallPolyCount: 0,
     wallPolySegCounts: [],
     polyDecals: [],
-    tops: { broad: [], hull: [], nonHull: [], window: [] },
+    tops: { broad: [], door: [], hull: [], nonHull: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
     roomGraph: new RoomGraph(),
   };

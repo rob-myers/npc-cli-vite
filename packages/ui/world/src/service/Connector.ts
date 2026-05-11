@@ -180,8 +180,8 @@ export class Connector {
    * The thin polygon is the connector polygon with its depth restricted,
    * so it doesn't jut out from its surrounding walls.
    */
-  computeThinPoly(extraDepth = 0): Geom.Poly {
-    const height = (this.meta.hull ? hullDoorDepth : doorDepth) + extraDepth;
+  computeThinPoly(doorDepth: number): Geom.Poly {
+    const height = doorDepth;
     const hNormal = this.normal;
     const topLeft = this.seg[0].clone().addScaled(hNormal, -height / 2);
     const botLeft = topLeft.clone().addScaled(hNormal, height);

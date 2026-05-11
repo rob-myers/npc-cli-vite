@@ -63,8 +63,13 @@ export default function Ceiling() {
 
         const { tops, polyDecals } = w.gmsData.byKey[gmKey];
 
-        // wall/door tops
+        // door/wall tops
         const { ceiling: tc } = w.getTheme();
+        drawPolygons(ct, tops.door, {
+          fillStyle: tc.nonHull.fill,
+          strokeStyle: tc.nonHull.fill,
+          lineWidth: thickLineWidth,
+        });
         drawPolygons(ct, tops.nonHull, {
           fillStyle: tc.nonHull.fill,
           strokeStyle: tc.nonHull.stroke,
@@ -80,9 +85,8 @@ export default function Ceiling() {
           fillStyle: tc.hull.fill,
           strokeStyle: tc.hull.stroke,
           lineWidth: thickLineWidth,
-        }); // hull walls and doors
+        });
 
-        // decals
         for (const decal of polyDecals) {
           if (decal.meta.ceil !== true) continue;
           const strokeWidth =
