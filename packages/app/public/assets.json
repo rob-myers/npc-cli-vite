@@ -10879,7 +10879,7 @@
       "background": "bg-white",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
-        "nonHull": {"fill": "#eee", "stroke": "#000"}
+        "nonHull": {"fill": "#000", "stroke": "#3335"}
       },
       "floor": {"navStroke": "#000c"},
       "walls": {"color": "#000000", "opacity": 0.25}
