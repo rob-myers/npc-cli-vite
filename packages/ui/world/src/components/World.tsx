@@ -3,6 +3,7 @@ import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
@@ -63,6 +64,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       reqAnimId: -1,
       threeReady: false,
       timer: new Timer(),
+      touchDevice: isTouchDevice(),
 
       hash: 0,
       gmsHash: 0,
@@ -318,6 +320,7 @@ export type State = {
   reqAnimId: number;
   threeReady: boolean;
   timer: Timer;
+  touchDevice: boolean;
 
   assets: AssetsType;
   sheets: SheetsType;

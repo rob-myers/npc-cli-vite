@@ -17,6 +17,14 @@ function createMonochromeMask(image, ctxt, fillColor) {
 }
 
 /**
+ * @param {PointerEvent | MouseEvent | React.PointerEvent | React.MouseEvent} e
+ */
+export function getRelativePointer(e) {
+  const targetRect = /** @type {HTMLElement} */ (e.target).getBoundingClientRect();
+  return { x: e.clientX - targetRect.left, y: e.clientY - targetRect.top };
+}
+
+/**
  * Invert `canvas`, overwriting it, while also preserving alpha=0.
  * @param {HTMLCanvasElement} canvas
  * @param {CanvasRenderingContext2D} copyCtxt
