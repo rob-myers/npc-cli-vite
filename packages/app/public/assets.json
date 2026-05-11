@@ -426,7 +426,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#000000",
-            "stroke": "#999999",
+            "stroke": "#9993",
             "strokeWidth": 2
           }
         }
@@ -3273,7 +3273,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#000000",
-            "stroke": "#999999",
+            "stroke": "#9993",
             "strokeWidth": 2
           }
         }
@@ -6158,7 +6158,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#000000",
-            "stroke": "#999999",
+            "stroke": "#9993",
             "strokeWidth": 2
           }
         }
@@ -9856,7 +9856,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#000000",
-            "stroke": "#999999",
+            "stroke": "#9993",
             "strokeWidth": 2
           }
         }
