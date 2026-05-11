@@ -74,9 +74,10 @@ export default class DerivedGmsData {
     );
     gmData.tops = {
       broad: gm.walls.filter((x) => x.meta.broad === true),
-      door: gm.doors.map((door) => door.computeThinPoly(0.01)),
-      hull: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
-      nonHull: Poly.union(nonHullWallsTouchCeil).flatMap((x) => geomService.createInset(x, 0.02)),
+      nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.015))),
+      hullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? door.computeThinPoly(0.15) : [])),
+      hullWall: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
+      nonHullWall: Poly.union(nonHullWallsTouchCeil).flatMap((x) => geomService.createInset(x, 0.02)),
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
 
@@ -166,7 +167,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     wallPolyCount: 0,
     wallPolySegCounts: [],
     polyDecals: [],
-    tops: { broad: [], door: [], hull: [], nonHull: [], window: [] },
+    tops: { broad: [], hullDoor: [], hullWall: [], nonHullDoor: [], nonHullWall: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
     roomGraph: new RoomGraph(),
   };

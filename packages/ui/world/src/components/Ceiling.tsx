@@ -65,14 +65,24 @@ export default function Ceiling() {
 
         // door/wall tops
         const { ceiling: tc } = w.getTheme();
-        drawPolygons(ct, tops.door, {
+        drawPolygons(ct, tops.nonHullDoor, {
           fillStyle: tc.nonHull.fill,
           strokeStyle: tc.nonHull.stroke,
           lineWidth: thinLineWidth,
         });
-        drawPolygons(ct, tops.nonHull, {
+        drawPolygons(ct, tops.hullDoor, {
+          fillStyle: tc.hull.fill,
+          strokeStyle: tc.hull.stroke,
+          lineWidth: thickLineWidth,
+        });
+        drawPolygons(ct, tops.nonHullWall, {
           fillStyle: tc.nonHull.fill,
           strokeStyle: tc.nonHull.stroke,
+          lineWidth: thickLineWidth,
+        });
+        drawPolygons(ct, tops.hullWall, {
+          fillStyle: tc.hull.fill,
+          strokeStyle: tc.hull.stroke,
           lineWidth: thickLineWidth,
         });
         drawPolygons(ct, tops.window, {
@@ -81,11 +91,6 @@ export default function Ceiling() {
           lineWidth: thickLineWidth,
         });
         drawPolygons(ct, tops.broad, { fillStyle: tc.hull.fill, strokeStyle: grey90, lineWidth: thinLineWidth });
-        drawPolygons(ct, tops.hull, {
-          fillStyle: tc.hull.fill,
-          strokeStyle: tc.hull.stroke,
-          lineWidth: thickLineWidth,
-        });
 
         for (const decal of polyDecals) {
           if (decal.meta.ceil !== true) continue;
