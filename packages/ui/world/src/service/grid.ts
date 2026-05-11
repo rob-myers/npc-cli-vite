@@ -38,6 +38,12 @@ export function addToDecorGrid(item: Geomorph.Decor, grid: Geomorph.DecorGrid) {
     }
 }
 
+/**
+ * Given `parent` of `item` with `meta["apply-reach"] === true`,
+ * extend the grid coverage of `item` to `parent`'s
+ *
+ * Also update `reachRect` which allows a refined reachability test.
+ */
 function applyReach(item: Geomorph.DecorPoint | Geomorph.DecorQuad, parent: Geomorph.Decor, grid: Geomorph.DecorGrid) {
   const [omx, omy] = parent.meta.gridMin as [number, number];
   const [oMx, oMy] = parent.meta.gridMax as [number, number];
@@ -52,6 +58,11 @@ export function coordToDecorGrid(x: number, y: number): [x: number, y: number] {
   return [Math.floor(x / decorGridSize), Math.floor(y / decorGridSize)];
 }
 
+/**
+ * Find decor in `tile` where `meta["apply-reach"] === true`
+ * whose bounds contain the center of `item`.
+ * > e.g. a decor quad representing a table where `item` is on that table.
+ */
 function findApplyReachContaining(
   item: Geomorph.DecorPoint | Geomorph.DecorQuad,
   tile: Set<Geomorph.Decor>,
