@@ -205,17 +205,12 @@
   - not a bug i.e. semantically should keep executing `move` without blocking
   - `while true; do; move --force npc:rob to:$( pick meta.floor 1 ) & done`
 
-- `pick | move`
-  - `move` has stdin mode
-  - either "sequentially" or "immediately"
-  - `pick | move --serial`
-  - `pick | move --direct`
+- ✅ `pick | move`
+  - `pick | move`
+  - `pick | move along`
 
-- `pick` lifo by default (blocks earlier)
-  - e.g. "fixes" `while true; do; move --force npc:rob to:$( pick meta.floor 1 ) & done`
-    in that we can override immediate re-pick via `pick 1`
+- 🚧 `pick` lifo by default (blocks earlier)
   - can `pick --fifo 1` for other behaviour e.g. for two interleaving interactive while loops
-    overriding other `pick` without `--block`
 
 - BUG on collapse/expand should persist pane dimensions
 

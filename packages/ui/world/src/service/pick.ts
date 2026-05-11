@@ -14,7 +14,6 @@ const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v])
 
 /**
  * Decode RGBA pixel → { type, instanceId } or null
- * 🚧 distribute type instead
  */
 export function decodePick(r: number, g: number, b: number) {
   const type = pickTypeToName[r as PickType];

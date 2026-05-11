@@ -71,16 +71,29 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 /**
  * ```sh
  * move npc:rob to:$( pick 1 )
+ * # move immediately
+ * pick | move npc:rob
+ * # move along picked path
+ * pick | move npc:rob along
  * ```
- * @param {JshCli.RunArg} ctxt
- * @param {{ npcKey: string; to: JshCli.PointAnyFormat }} [opts]
+ * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
+ * @param {{ npcKey: string; to: JshCli.PointAnyFormat; along: boolean }} [opts]
  */
-export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const { dispose } = api.handleStatus({
     cleanups: (killed) => killed && w.n[opts.npcKey]?.reject?.(new Error("killed")),
   });
   try {
-    await w.npc.move(opts);
+    if (api.isTtyAt(0)) {
+      await w.npc.move(opts);
+    } else {
+      while ((datum = await api.read()) !== api.eof) {
+        const promise = w.npc.move({ npcKey: opts.npcKey, to: datum });
+        if (opts.along) {
+          await promise;
+        }
+      }
+    }
   } finally {
     dispose();
   }
