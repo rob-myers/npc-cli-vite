@@ -209,6 +209,8 @@
   - `pick | move`
   - `pick | move along`
 
+- ✅ pick should be pointerup
+- 🚧 do not pick on drag
 - 🚧 `pick` lifo by default (blocks earlier)
   - can `pick --fifo 1` for other behaviour e.g. for two interleaving interactive while loops
 
@@ -225,8 +227,6 @@
 - ✅ BUG MapEdit shift-snap mismatch for distinct determinant sign
 
 - ✅ move debug colliders switch into WorldMenu
-
-- pick should be pointerup
 
 - script `gen-skin-sheets`
   - writes to sheets.json
