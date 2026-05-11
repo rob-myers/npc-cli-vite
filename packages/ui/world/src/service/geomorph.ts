@@ -115,6 +115,9 @@ export function createLayoutInstance(
     mat4: embedXZMat4(transform),
     determinant: matrix.determinant,
 
+    decor: layout.decor.map((d) => instantiateDecor(d, matrix)),
+    labels: layout.labels.map((d) => instantiateDecor(d, matrix) as Geomorph.DecorPoint),
+
     // use refs because we'll add roomIds
     hullDoors: layout.doors.filter((d) => d.meta.hull === true),
 
@@ -127,6 +130,66 @@ export function createLayoutInstance(
       return doorId < this.hullDoors.length;
     },
   };
+}
+
+function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat): T {
+  const bounds2d = d.bounds2d.clone().applyMatrix(matrix).precision(precision);
+
+  switch (d.type) {
+    case "point": {
+      const p = matrix.transformPoint({ x: d.x, y: d.y });
+      return {
+        ...d,
+        bounds2d,
+        x: toPrecision(p.x),
+        y: toPrecision(p.y),
+        orient: toPrecision((180 / Math.PI) * matrix.transformAngle(d.orient * (Math.PI / 180))),
+      };
+    }
+    case "quad": {
+      const center = matrix.transformPoint({ ...d.center });
+      const topCenter = matrix.transformPoint({ ...d.topCenter });
+      return {
+        ...d,
+        bounds2d,
+        transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
+        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
+        topCenter: { x: toPrecision(topCenter.x), y: toPrecision(topCenter.y) },
+      };
+    }
+    case "cuboid": {
+      const p = matrix.transformPoint({ x: d.center.x, y: d.center.z });
+      return {
+        ...d,
+        bounds2d,
+        transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
+        center: geomService.toPrecisionV3({ x: p.x, y: d.center.y, z: p.y }),
+      };
+    }
+    case "rect": {
+      const center = matrix.transformPoint({ ...d.center });
+      return {
+        ...d,
+        bounds2d,
+        points: d.points.map((p) => {
+          const q = matrix.transformPoint({ ...p });
+          return { x: toPrecision(q.x), y: toPrecision(q.y) };
+        }),
+        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
+        angle: toPrecision((180 / Math.PI) * matrix.transformAngle(d.angle * (Math.PI / 180))),
+      };
+    }
+    case "circle": {
+      const center = matrix.transformPoint({ ...d.center });
+      return {
+        ...d,
+        bounds2d,
+        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
+      };
+    }
+    default:
+      return d;
+  }
 }
 
 function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol): Geomorph.Layout {

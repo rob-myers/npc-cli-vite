@@ -123,32 +123,26 @@ export default function Decor() {
 
       for (let gmId = 0; gmId < w.gms.length; gmId++) {
         const gm = w.gms[gmId];
-        const { a, b, c, d, e, f } = gm.transform;
         for (let decorId = 0; decorId < gm.decor.length; decorId++) {
           const item = gm.decor[decorId];
           if (item.type !== "quad") continue;
-
           const entry = decor[item.meta.img];
-          const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
-          const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
 
-          tmpMat.setMatrixValue([a, b, c, d, e, f]);
+          tmpMat.setMatrixValue(item.transform);
 
           const shouldTilt = item.meta.tilt === true; // currently only switches
-          const tiltXZ = shouldTilt === true ? tmpMat.transformPoint({ ...item.topCenter }) : null;
-
-          tmpMat.preMultiply(item.transform);
-
-          if (tiltXZ !== null) {
+          if (shouldTilt) {
             const { a, b, c, d } = tmpMat;
             const det = a * d - b * c;
             tiltMat4 = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
-            setRotMatrixAboutPoint(tiltMat4, tiltXZ.x, item.meta.y, tiltXZ.y);
+            setRotMatrixAboutPoint(tiltMat4, item.topCenter.x, item.meta.y, item.topCenter.y);
           }
 
+          const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
+          const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
           tmpMat.preMultiply([imgW, 0, 0, imgH, 0, 0]);
           const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: item.meta.y ?? 0, mat4: tmpMat4 });
-          if (tiltXZ !== null) mat4.premultiply(tiltMat4);
+          if (shouldTilt) mat4.premultiply(tiltMat4);
 
           state.inst.setMatrixAt(instanceId, mat4);
 

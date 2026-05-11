@@ -216,10 +216,10 @@
 
 - BUG on collapse/expand should persist pane dimensions
 
-- decor added to "grid"
-  - may support more that just decor
-  - also ensures decor gmRoomId
-  - also ensures decor switch gmDoorId
+- 🚧 decor added to "grid"
+  - ✅ decor instantiated when it comes from geomorph
+  - grid entry has gmRoomId
+  - grid entry has gmDoorId
 
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR
