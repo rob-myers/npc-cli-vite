@@ -451,8 +451,16 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
     const poly = convertMapEditNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
     if (poly === null) continue;
 
-    for (const [tag, polysKey] of Object.values(tagPolysKeyPairs)) {
-      meta[tag] === true && polysLookup[polysKey].push(poly);
+    if (meta.wall === true) {
+      polysLookup.walls.push(poly);
+    } else if (meta.door === true) {
+      polysLookup.doors.push(poly);
+    } else if (meta.obstacle === true) {
+      polysLookup.obstacles.push(poly);
+    } else if (meta.decor === true) {
+      polysLookup.decor.push(poly);
+    } else {
+      polysLookup.unsorted.push(poly);
     }
 
     if (meta.wall === true && meta.hull === true) {
@@ -476,7 +484,9 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
   const s = sguToWorldScale;
   const scaled = new Set<Geom.Poly>();
   for (const polys of Object.values(polysLookup))
-    for (const p of polys) !scaled.has(p) && scaled.add(p.scale(s).precision(6));
+    for (const p of polys) {
+      !scaled.has(p) && scaled.add(p.scale(s).precision(6));
+    }
 
   return {
     key: savedFile.key,
@@ -748,13 +758,6 @@ export function transformDecorMeta(meta: Meta, mat: Mat, y?: number): Meta {
     }),
   };
 }
-
-const tagPolysKeyPairs = Object.entries({
-  decor: "decor",
-  door: "doors",
-  obstacle: "obstacles",
-  wall: "walls",
-} satisfies Record<string, SymbolPolysKey>);
 
 const tmpMat1 = new Mat();
 const tmpMat2 = new Mat();
