@@ -1,5 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { Vect } from "@npc-cli/util/geom";
+import { getRelativePointer } from "@npc-cli/util/legacy/dom";
 import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -39,6 +41,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
         // zoomToCursor: true, // breaks follow zoom on HMR
       },
+      lastPointerDown: new Vect(),
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
@@ -185,7 +188,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         }
       },
+      async onPointerDown(e) {
+        state.lastPointerDown.copy(getRelativePointer(e));
+      },
       async onPointerUp(e) {
+        if (state.lastPointerDown.distanceTo(getRelativePointer(e)) > (w.touchDevice ? 20 : 5)) {
+          return; // ignore drag
+        }
         state.pickObject(e);
         e.currentTarget.focus();
       },
@@ -296,6 +305,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
         onCreated={state.onCreated}
+        onPointerDown={state.onPointerDown}
         onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
@@ -334,6 +344,7 @@ export type State = {
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
+  lastPointerDown: Geom.Vect;
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<number>;
@@ -346,6 +357,7 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onResize(): void;
+  onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
