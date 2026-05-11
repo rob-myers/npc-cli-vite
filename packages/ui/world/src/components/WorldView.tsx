@@ -185,7 +185,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         }
       },
-      async onPointerDown(e) {
+      async onPointerUp(e) {
         state.pickObject(e);
         e.currentTarget.focus();
       },
@@ -296,7 +296,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
         onCreated={state.onCreated}
-        onPointerDown={state.onPointerDown}
+        onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
         tabIndex={0}
@@ -346,7 +346,7 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onResize(): void;
-  onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
+  onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   syncRenderMode(): RootState["frameloop"];
