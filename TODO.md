@@ -201,7 +201,23 @@
 
 - ✅ meta.slideDirection -> meta.slide
 
-- BUG saw auto door close with nearby npc
+- ❌ BUG dispose `move --force npc:rob to:$( pick meta.floor 1 ) &`
+  - not a bug i.e. semantically should keep executing `move` without blocking
+  - `while true; do; move --force npc:rob to:$( pick meta.floor 1 ) & done`
+
+- `pick | move`
+  - `move` has stdin mode
+  - either "sequentially" or "immediately"
+  - `pick | move --serial`
+  - `pick | move --direct`
+
+- `pick` lifo by default (blocks earlier)
+  - e.g. "fixes" `while true; do; move --force npc:rob to:$( pick meta.floor 1 ) & done`
+    in that we can override immediate re-pick via `pick 1`
+  - can `pick --fifo 1` for other behaviour e.g. for two interleaving interactive while loops
+    overriding other `pick` without `--block`
+
+- BUG on collapse/expand should persist pane dimensions
 
 - decor added to "grid"
   - may support more that just decor
@@ -254,6 +270,9 @@
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
+- BUG need two ctrl-c for while loop walk?
+- BUG saw auto door close with nearby npc
+  - on move npc inside door trigger sensor?
 - BUG on lock door and save Decor we lose switch tint
   - maybe just stale while paused
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
