@@ -34,10 +34,13 @@ declare namespace JshCli {
   type PickEvent = {
     key: "picked";
     clickId?: string;
-
     meta: import("./components/WorldView").Picked;
-
     gmRoomId: Geomorph.GmRoomId | null;
+
+    /** Was previous pointerdown held down long? */
+    longDown: boolean;
+    /** Was right mouse button being pressed?  */
+    rightDown: boolean;
   } & (GroundPoint & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">);
 
   type EnterColliderEvent = Extract<Event, { key: "enter-collider" }>;

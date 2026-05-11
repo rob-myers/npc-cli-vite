@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { getRelativePointer } from "@npc-cli/util/legacy/dom";
+import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -41,7 +41,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
         // zoomToCursor: true, // breaks follow zoom on HMR
       },
-      lastPointerDown: new Vect(),
+      lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
@@ -188,15 +188,38 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         }
       },
-      async onPointerDown(e) {
-        state.lastPointerDown.copy(getRelativePointer(e));
+      startPress(e) {
+        const last = state.lastPointer;
+        clearTimeout(last.longPressTimer);
+        last.point.copy(getRelativePointer(e));
+        last.epochMs = Date.now();
+        last.longPress = false;
+        last.rightPress = isRMB(e.nativeEvent);
+        last.longPressTimer = window.setTimeout(() => {
+          last.longPress = true;
+          state.pickObject(e);
+        }, 500);
+      },
+      onPointerDown(e) {
+        state.startPress(e);
+      },
+      onPointerLeave(_e) {
+        clearTimeout(state.lastPointer.longPressTimer);
+        state.lastPointer.longPressTimer = 0;
+      },
+      onPointerMove(e) {
+        if (state.lastPointer.longPressTimer) state.startPress(e);
       },
       async onPointerUp(e) {
-        if (state.lastPointerDown.distanceTo(getRelativePointer(e)) > (w.touchDevice ? 20 : 5)) {
-          return; // ignore drag
-        }
-        state.pickObject(e);
+        const last = state.lastPointer;
+        clearTimeout(last.longPressTimer);
+        last.longPressTimer = 0;
         e.currentTarget.focus();
+        // ignore long press (already happened)
+        if (last.longPress) return;
+        // ignore drag
+        if (last.point.distanceTo(getRelativePointer(e)) > (w.touchDevice ? 20 : 5)) return;
+        state.pickObject(e);
       },
       async pickObject(e) {
         const { gl, scene, camera } = w.r3f;
@@ -241,6 +264,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           point,
           faceIndex: intersection.faceIndex,
           normal: intersection.normal,
+
+          longDown: state.lastPointer.longPress,
+          rightDown: state.lastPointer.rightPress,
 
           ...point, // can provide as point
         });
@@ -306,6 +332,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         gl={state.createRenderer}
         onCreated={state.onCreated}
         onPointerDown={state.onPointerDown}
+        onPointerLeave={state.onPointerLeave}
+        onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
@@ -344,7 +372,7 @@ export type State = {
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
-  lastPointerDown: Geom.Vect;
+  lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<number>;
@@ -357,7 +385,10 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onResize(): void;
+  startPress(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
+  onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
+  onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;

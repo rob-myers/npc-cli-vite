@@ -150,7 +150,7 @@ export async function* pick(ct) {
       "right", // right clicks only
       "long", // long press only
       "any", // left or right permitted
-      "block", // e.g. `pick --block`
+      "block", // e.g. `pick --block` 🚧 --fifo
     ],
   });
 
@@ -230,10 +230,19 @@ export async function* pick(ct) {
         })
       );
 
+      if (
+        (opts.left === true && output.rightDown === true) ||
+        (opts.right === true && output.rightDown === false) ||
+        opts.long !== output.longDown
+      ) {
+        continue;
+      }
+
       if (filter === undefined || filter?.(output)) {
         numClicks--;
         yield selector ? selector(output) : output;
       } else if (clickId !== undefined && blocking === false) {
+        // put incoming blocking before current
         w.view.clickIds = w.view.clickIds
           .filter(({ blocking }) => blocking)
           .concat(
