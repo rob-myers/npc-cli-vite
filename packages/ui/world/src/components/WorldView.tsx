@@ -188,7 +188,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         }
       },
-      startPress(e) {
+      onPointerDown(e) {
         const last = state.lastPointer;
         clearTimeout(last.longPressTimer);
         last.point.copy(getRelativePointer(e));
@@ -200,24 +200,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.pickObject(e);
         }, 500);
       },
-      onPointerDown(e) {
-        state.startPress(e);
-      },
       onPointerLeave(_e) {
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
-      },
-      onPointerMove(e) {
-        if (state.lastPointer.longPressTimer) state.startPress(e);
       },
       async onPointerUp(e) {
         const last = state.lastPointer;
         clearTimeout(last.longPressTimer);
         last.longPressTimer = 0;
         e.currentTarget.focus();
-        // ignore long press (already happened)
         if (last.longPress) return;
-        // ignore drag
         if (last.point.distanceTo(getRelativePointer(e)) > (w.touchDevice ? 20 : 5)) return;
         state.pickObject(e);
       },
@@ -333,7 +325,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onCreated={state.onCreated}
         onPointerDown={state.onPointerDown}
         onPointerLeave={state.onPointerLeave}
-        onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
@@ -385,10 +376,8 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onResize(): void;
-  startPress(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
-  onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
