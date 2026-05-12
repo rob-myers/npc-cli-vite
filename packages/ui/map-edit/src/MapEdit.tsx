@@ -1819,7 +1819,7 @@ const emptyNodes = [] as MapNode[];
 
 const minAsideWidth = 100;
 const maxAsideWidth = 300;
-const defaultAsideWidth = minAsideWidth;
+const defaultAsideWidth = 200;
 const zoomDelta = 0.04;
 const minZoomScale = 0.25;
 const maxZoomScale = 40;
