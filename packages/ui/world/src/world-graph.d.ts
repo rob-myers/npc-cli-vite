@@ -150,17 +150,15 @@ declare namespace Graph {
     gmId: number;
   }
 
-  interface GmRoomGraphNodeRoom extends BaseGmRoomGraphNode {
+  type GmRoomGraphNodeRoom = BaseGmRoomGraphNode & {
     type: "room";
     id: Geomorph.GmRoomKey;
-    roomId: number;
-  }
+  } & Geomorph.GmRoomId;
 
-  interface GmRoomGraphNodeDoor extends BaseGmRoomGraphNode {
+  type GmRoomGraphNodeDoor = BaseGmRoomGraphNode & {
     type: "door";
     id: Geomorph.GmDoorKey;
-    doorId: number;
-  }
+  } & Geomorph.GmDoorId;
 
   interface GmRoomGraphNodeWindow extends BaseGmRoomGraphNode {
     type: "window";

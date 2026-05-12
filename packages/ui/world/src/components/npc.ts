@@ -132,9 +132,8 @@ export class Npc {
     crowdApi.requestMoveTarget(crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
 
     this.last.dst = groundPoint;
-    this.last.dstGrId = this.w.e.findRoomContaining(groundPoint); // async?
+    this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
 
-    const { walk, idle } = clips;
     this.lookAt = null;
     this.last.blockingArea = -1;
     this.stuckAccum = 0;
@@ -142,8 +141,8 @@ export class Npc {
 
     if (!this.moving) {
       this.moving = true;
-      this.mixer.clipAction(idle).fadeOut(0.3);
-      this.mixer.clipAction(walk).reset().fadeIn(0.3).play();
+      this.mixer.clipAction(clips.idle).fadeOut(0.3);
+      this.mixer.clipAction(clips.walk).reset().fadeIn(0.3).play();
     }
   }
 

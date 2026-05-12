@@ -88,7 +88,11 @@
       - `w e.findPath g0r7 g0r1 '{ g0d15: true }' | json`
 
   - ✅ npc queryFilter uses `w.e.npcCanAccess`
-  - on `move` and dst room is adjacent and unreachable execute configurable npc function
+
+  - 🚧 on `move` and dst room is adjacent and unreachable execute configurable npc function
+    - ✅ console.log boolean `npcTargetUnreachable`
+    - execute customisable function
+
   - on `enter-room` and dst room is adjacent and unreachable execute configurable npc function
 
   - ❌ if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
@@ -211,10 +215,9 @@
 
 - ✅ pick should be pointerup
 - ✅ do not pick on drag
+
 - 🚧 `pick` lifo by default (blocks earlier)
   - can `pick --fifo 1` for other behaviour e.g. for two interleaving interactive while loops
-
-- BUG on collapse/expand should persist pane dimensions
 
 - ✅ decor added to "grid"
   - ✅ decor instantiated when it comes from geomorph
@@ -222,14 +225,16 @@
   - ✅ decor.meta is gmDoorId when has doorId
   - ✅ decor grid built
 
-- BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
-
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR
 
 - ✅ BUG MapEdit shift-snap mismatch for distinct determinant sign
 
 - ✅ move debug colliders switch into WorldMenu
+
+- BUG on collapse/expand should persist pane dimensions
+
+- BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
 
 - script `gen-skin-sheets`
   - writes to sheets.json

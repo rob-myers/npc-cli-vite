@@ -32,6 +32,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         return true;
       },
+      checkNpcTargetUnreachable(npc) {
+        const grId = state.npcToRoom.get(npc.key) ?? null;
+        const dstGrId = npc.last.dstGrId;
+
+        if (grId === null || dstGrId === null || grId.grKey === dstGrId.grKey) {
+          return false; // ill-formed or same room
+        }
+
+        const adjDoorNodes = w.gmRoomGraph.getAdjRoomsDoors(grId.grKey, dstGrId.grKey);
+        if (adjDoorNodes.length === 0) {
+          return false; // not close enough to be unreachable
+        }
+
+        return !adjDoorNodes.some((doorNode) => state.npcCanAccess(npc.key, doorNode.gdKey));
+      },
       findPath(src, dst, keys = {}) {
         return w.gmRoomGraph.findPath(src, dst, (nodes) => {
           for (const node of nodes) {
@@ -206,6 +221,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             break;
           }
+          case "started-moving": {
+            // 🚧 check if adjacent and unreachable
+            const npcTargetUnreachable = state.checkNpcTargetUnreachable(npc);
+            console.log({ npcTargetUnreachable });
+            break;
+          }
         }
       },
       async recomputeNpcRoomRelationships() {
@@ -325,6 +346,7 @@ export type State = {
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
   canCloseDoor(door: Geomorph.DoorState): boolean;
+  checkNpcTargetUnreachable(npc: Npc): boolean;
   findPath(
     src: Geomorph.GmRoomKey,
     dst: Geomorph.GmRoomKey,

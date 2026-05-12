@@ -15,6 +15,7 @@ declare namespace JshCli {
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | { key: "started-moving"; npcKey: string }
     | { key: "requested-physics" }
     | {
         /** Try close door after countdown and keep trying thereafter */
