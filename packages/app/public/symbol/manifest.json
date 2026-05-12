@@ -134,6 +134,24 @@
       "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
       "type": "symbol",
       "key": "g-101--multipurpose"
+    },
+    "bed--004--0.8x1.4": {
+      "filename": "bed--004--0.8x1.4.json",
+      "thumbnailFilename": "bed--004--0.8x1.4.thumbnail.png",
+      "width": 85,
+      "height": 48,
+      "bounds": {"x": 0, "y": 0, "width": 84.4, "height": 52.4},
+      "type": "symbol",
+      "key": "bed--004--0.8x1.4"
+    },
+    "bed--005--0.6x1.2": {
+      "filename": "bed--005--0.6x1.2.json",
+      "thumbnailFilename": "bed--005--0.6x1.2.thumbnail.png",
+      "width": 76,
+      "height": 40,
+      "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
+      "type": "symbol",
+      "key": "bed--005--0.6x1.2"
     }
   }
 }

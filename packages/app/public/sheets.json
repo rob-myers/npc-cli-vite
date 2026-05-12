@@ -15,9 +15,14 @@
       "rect": {"x": 2450, "y": 611, "width": 502, "height": 307},
       "sheetId": 0
     },
+    "bed--005--0.6x1.2": {
+      "key": "bed--005--0.6x1.2",
+      "rect": {"x": 2450, "y": 920, "width": 382, "height": 202},
+      "sheetId": 0
+    },
     "console--051--0.4x0.6": {
       "key": "console--051--0.4x0.6",
-      "rect": {"x": 2450, "y": 920, "width": 137, "height": 155},
+      "rect": {"x": 2834, "y": 920, "width": 137, "height": 155},
       "sheetId": 0
     }
   },
