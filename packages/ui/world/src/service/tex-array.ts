@@ -58,6 +58,16 @@ export class TexArray {
     this.tex.dispose();
   }
 
+  refresh() {
+    // currently unused
+    this.ct = getContext2d(this.opts.ctKey, {
+      willReadFrequently: true,
+      force: true,
+      width: this.opts.width,
+      height: this.opts.height,
+    });
+  }
+
   recreate() {
     this.ct.canvas.width = this.opts.width;
     this.ct.canvas.height = this.opts.height;
@@ -123,9 +133,9 @@ export class TexArray {
 /** Browser only i.e. `document.createElement` */
 export function getContext2d(
   key: string,
-  opts?: CanvasRenderingContext2DSettings & { width?: number; height?: number },
+  opts?: CanvasRenderingContext2DSettings & { force?: boolean; width?: number; height?: number },
 ) {
-  const canvas = (canvasLookup[key] ??= document.createElement("canvas"));
+  const canvas = opts?.force || !canvasLookup[key] ? document.createElement("canvas") : canvasLookup[key];
   if (opts?.width) canvas.width = opts.width;
   if (opts?.height) canvas.height = opts.height;
   return canvas.getContext("2d", opts) as CanvasRenderingContext2D;

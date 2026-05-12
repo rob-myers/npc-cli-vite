@@ -79,7 +79,7 @@ export default function Decor() {
         numTextures: decorSheetDims.length,
         width: maxDecorSheetDim.width,
         height: maxDecorSheetDim.height,
-        force: true, // else texture blank on save const.ts
+        // force: true, // else texture blank on save const.ts
       });
       for (let sheetId = 0; sheetId < images.length; sheetId++) {
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
