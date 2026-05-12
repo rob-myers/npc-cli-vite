@@ -23,7 +23,7 @@ export function WorldMenu() {
       debugHitOpen: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
-      suppressGrayscale: false,
+      suppressGrayscale: true,
       dragged: false,
       menuOpen: false,
       minY: 40,
