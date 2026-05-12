@@ -218,6 +218,7 @@ export default function Decor() {
     },
     enabled: !!w.hash && !!w.sheets && !w.pending.nav && w.gms.length > 0,
     staleTime: 0,
+    gcTime: 0,
   });
 
   state.materials = data ?? state.materials;
