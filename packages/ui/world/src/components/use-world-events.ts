@@ -42,7 +42,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         });
       },
       findGmIdContaining(input) {
-        if (typeof input.meta?.gmId === "number") {
+        if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
         }
         return w.gmGraph.findGmIdContaining(parseGroundPoint(input));

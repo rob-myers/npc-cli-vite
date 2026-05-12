@@ -35,10 +35,12 @@ export const helper = {
   },
 
   /**
-   * 🔔 Given `grKey` assume `gmId`, `roomId` too.
+   * 🔔 carefully chosen to be compatible
+   * - assets.json decor meta has { gmId: -1, roomId: -1, grKey: "g-1r-1" }
+   * - on createLayoutInstance gmId is provided
    */
   isGmRoomId(input: any): input is Geomorph.GmRoomId {
-    return !!input && typeof input.grKey === "string";
+    return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
 };
 
