@@ -14,6 +14,7 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
         id: helper.getGmRoomKey(gmId, roomId),
         gmId,
         roomId,
+        grKey: helper.getGmRoomKey(gmId, roomId),
         ...createBaseAstar({ centroid: gm.matrix.transformPoint(room.center) }),
         index: index++,
       })),
@@ -25,6 +26,7 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
         id: helper.getGmDoorKey(gmId, doorId),
         gmId,
         doorId,
+        gdKey: helper.getGmDoorKey(gmId, doorId),
         ...createBaseAstar({ centroid: gm.matrix.transformPoint(door.center.clone()) }),
         index: index++,
       })),
@@ -112,17 +114,17 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
     return result;
   }
 
-  sameOrAdjRooms(grKey1: Geomorph.GmRoomKey, grKey2: Geomorph.GmRoomKey) {
+  getAdjRoomsDoors(grKey1: Geomorph.GmRoomKey, grKey2: Geomorph.GmRoomKey) {
     if (grKey1 === grKey2) {
-      return true;
+      return [];
     }
     const src = this.getNode(grKey1);
     const dst = this.getNode(grKey2);
     if (src === null || dst === null) {
-      return false;
+      return [];
     }
     const srcSuccs = this.getSuccs(src);
     const dstSuccs = new Set(this.getSuccs(dst));
-    return srcSuccs.some((node) => dstSuccs.has(node));
+    return srcSuccs.filter((node): node is Graph.GmRoomGraphNodeDoor => dstSuccs.has(node));
   }
 }

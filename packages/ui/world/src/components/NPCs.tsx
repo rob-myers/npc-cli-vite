@@ -149,6 +149,8 @@ export default function NPCs() {
         npc.reject?.(new Error("move again"));
 
         npc.startMoving(groundPoint, result);
+        w.events.next({ key: "started-moving", npcKey });
+
         try {
           await npc.waitUntilResolved();
         } catch (e) {
