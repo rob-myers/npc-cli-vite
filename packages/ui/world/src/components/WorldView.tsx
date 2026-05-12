@@ -336,15 +336,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={40} position={[0, 18, 0]} makeDefault zoom={1} />
+        <PerspectiveCamera fov={40} makeDefault zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
           domElement={state.canvas}
           initialAngle={{
-            azimuthal: Math.PI / 4,
-            polar: Math.PI / 3.8,
+            azimuthal: (0 * Math.PI) / 4,
+            polar: Math.PI / 5,
           }}
+          initialPosition={{ x: 4, y: 18, z: 4 }}
           minPanDistance={0}
           // onChange={state.onChangeControls}
           // onEnd={state.onControlsEnd}

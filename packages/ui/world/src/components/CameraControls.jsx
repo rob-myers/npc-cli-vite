@@ -32,7 +32,9 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
     // set initial angle
     const azimuthal = props.initialAngle?.azimuthal ?? 0;
     const polar = props.initialAngle?.polar ?? 0;
-    const delta = new THREE.Vector3().setFromSphericalCoords(mc.getDistance(), polar, azimuthal);
+    // set initial position
+    mc.target.copy({ x: props.initialPosition?.x ?? 0, y: 0, z: props.initialPosition?.z ?? 0 });
+    const delta = new THREE.Vector3().setFromSphericalCoords(props.initialPosition?.y ?? 20, polar, azimuthal);
     mc.object.position.copy(mc.target).add(delta);
     mc.update();
 
@@ -97,6 +99,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
  * @property {() => void} [onEnd]
  * @property {() => void} [onStart]
  * @property {{ azimuthal: number; polar: number; }} [initialAngle]
+ * @property {{ x: number; y: number; z: number }} [initialPosition]
  * @property {number} [minAzimuthAngle]
  * @property {number} [maxAzimuthAngle]
  * @property {number} [minDistance]
