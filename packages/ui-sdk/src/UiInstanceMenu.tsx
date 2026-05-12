@@ -1,5 +1,5 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
-import { BasicPopover, cn } from "@npc-cli/util";
+import { CloseOnClickPopover, cn } from "@npc-cli/util";
 import {
   CaretDownIcon,
   CaretLeftIcon,
@@ -51,15 +51,15 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
   const tabsInstances = uiStoreApi.getTabsInstances(meta.parentId);
 
   return (
-    <BasicPopover
-      align="end"
+    <CloseOnClickPopover
+      align="center"
       side="bottom"
       sideOffset={4}
       collisionPadding={0}
-      positionerClassName="z-10"
+      positionerClassName="z-[10000]"
       triggerClassName="cursor-pointer"
-      className="flex flex-col gap-0 p-0 bg-slate-200 text-slate-800"
-      arrowClassName="fill-slate-200"
+      className="flex flex-col gap-0 p-0 bg-black text-white"
+      arrowClassName="hidden"
       trigger={
         <DotsThreeOutlineVerticalIcon data-icon-type="menu" weight="duotone" className="size-5">
           <title>{meta.title}</title>
@@ -67,27 +67,27 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
       }
     >
       {meta.uiKey === "Tabs" && (
-        <div className="flex flex-col border-b border-slate-700 py-1">
+        <div className="flex flex-col border-b border-white/20 py-1">
           <button
             type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-400/50"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
             onPointerDown={() => layoutApi.splitPane(meta.id, false)}
           >
-            <SquareHalfIcon className="size-4" />
+            <SquareHalfIcon className="size-5" />
           </button>
           <button
             type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-400/50"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
             onPointerDown={() => layoutApi.splitPane(meta.id, true)}
           >
-            <SquareHalfBottomIcon className="size-4" />
+            <SquareHalfBottomIcon className="size-5" />
           </button>
           <button
             type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-400/50"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
             onPointerDown={() => layoutApi.closePane(meta.id)}
           >
-            <XIcon className="size-4" />
+            <XIcon className="size-5" />
           </button>
         </div>
       )}
@@ -98,7 +98,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
           <button
             key={tabs.id}
             type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-slate-400/50"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
             onPointerDown={(e) => {
               e.stopPropagation();
               uiStore.setState((draft) => {
@@ -118,7 +118,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
             {tabs.title}
           </button>
         ))}
-    </BasicPopover>
+    </CloseOnClickPopover>
   );
 }
 
@@ -131,24 +131,28 @@ function SwapButtons({ metaId, layoutApi }: { metaId: string; layoutApi: import(
   const canPrev = pos.index > 0;
   const canNext = pos.index < pos.siblingCount - 1;
 
+  if (!canPrev && !canNext) return null;
+
   return (
-    <div className="flex border-b border-slate-700 py-1 px-2 gap-1">
-      <button
-        type="button"
-        disabled={!canPrev}
-        className={cn("text-sm py-0.5", canPrev ? "cursor-pointer hover:bg-slate-400/50" : "opacity-30")}
-        onPointerDown={() => canPrev && layoutApi.swapPane(metaId, -1)}
-      >
-        <PrevIcon className="size-4" />
-      </button>
-      <button
-        type="button"
-        disabled={!canNext}
-        className={cn("text-sm py-0.5", canNext ? "cursor-pointer hover:bg-slate-400/50" : "opacity-30")}
-        onPointerDown={() => canNext && layoutApi.swapPane(metaId, 1)}
-      >
-        <NextIcon className="size-4" />
-      </button>
+    <div className="flex border-b border-white/20 py-1 px-2 gap-1">
+      {canPrev && (
+        <button
+          type="button"
+          className="cursor-pointer text-sm py-0.5 hover:bg-white/20"
+          onPointerDown={() => layoutApi.swapPane(metaId, -1)}
+        >
+          <PrevIcon className="size-5" />
+        </button>
+      )}
+      {canNext && (
+        <button
+          type="button"
+          className="cursor-pointer text-sm py-0.5 hover:bg-white/20"
+          onPointerDown={() => layoutApi.swapPane(metaId, 1)}
+        >
+          <NextIcon className="size-5" />
+        </button>
+      )}
     </div>
   );
 }
