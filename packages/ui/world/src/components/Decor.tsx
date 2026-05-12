@@ -35,7 +35,6 @@ export default function Decor() {
         const item = w.gms[entry.gmId]?.decor[entry.decorId];
         return item ? { ...item.meta } : null;
       },
-
       tintInstances(colorRep, ...instanceIds) {
         if (!state.inst.instanceColor) return;
 
@@ -93,10 +92,8 @@ export default function Decor() {
       state.uvTextureIds.fill(0);
       state.instanceIdToDecorId.length = 0;
       let uvIdx = 0;
-      for (let gmId = 0; gmId < w.gms.length; gmId++) {
-        const gm = w.gms[gmId];
-        for (let decorId = 0; decorId < gm.decor.length; decorId++) {
-          const item = gm.decor[decorId];
+      for (const gm of w.gms) {
+        for (const item of gm.decor) {
           if (item.type !== "quad") continue;
           const entry = decor[item.meta.img] as DecorSheetEntry | undefined;
           if (!entry) {
@@ -163,6 +160,26 @@ export default function Decor() {
       }
       state.inst.count = instanceId;
       state.inst.computeBoundingSphere();
+
+      await pause(100);
+
+      // 5. enrich decor.meta and build decor grid
+      const pointWithMeta = { x: 0, y: 0, meta: {} as Meta };
+      for (let gmId = 0; gmId < w.gms.length; gmId++) {
+        const gm = w.gms[gmId];
+        for (const decor of gm.decor) {
+          // gmRoomId
+          pointWithMeta.x = "center" in decor ? decor.center.x : decor.bounds2d.x;
+          pointWithMeta.y = "center" in decor ? decor.center.y : decor.bounds2d.y;
+          pointWithMeta.meta = decor.meta;
+          const gmRoomId = w.e.findRoomContaining(pointWithMeta, true);
+          if (gmRoomId !== null) {
+            Object.assign(decor.meta, gmRoomId);
+          }
+
+          // 🚧 decor grid
+        }
+      }
 
       await pause(100);
 

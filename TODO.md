@@ -218,8 +218,9 @@
 
 - 🚧 decor added to "grid"
   - ✅ decor instantiated when it comes from geomorph
-  - grid entry has gmRoomId
-  - grid entry has gmDoorId
+  - ✅ decor.meta is gmRoomId
+  - ✅ decor.meta is gmDoorId when has doorId
+  - 🚧 decor grid built
 
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR

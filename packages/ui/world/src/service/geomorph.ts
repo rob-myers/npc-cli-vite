@@ -115,8 +115,8 @@ export function createLayoutInstance(
     mat4: embedXZMat4(transform),
     determinant: matrix.determinant,
 
-    decor: layout.decor.map((d) => instantiateDecor(d, matrix)),
-    labels: layout.labels.map((d) => instantiateDecor(d, matrix) as Geomorph.DecorPoint),
+    decor: layout.decor.map((d) => instantiateDecor(d, matrix, gmId)),
+    labels: layout.labels.map((d) => instantiateDecor(d, matrix, gmId)),
 
     // use refs because we'll add roomIds
     hullDoors: layout.doors.filter((d) => d.meta.hull === true),
@@ -132,14 +132,21 @@ export function createLayoutInstance(
   };
 }
 
-function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat): T {
+function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number): T {
   const bounds2d = d.bounds2d.clone().applyMatrix(matrix).precision(precision);
+  const meta = { ...d.meta, gmId } as T["meta"];
+
+  // gmDoorId
+  if (typeof meta.doorId === "number") {
+    meta.gdKey = `g${gmId}d${meta.doorId}`;
+  }
 
   switch (d.type) {
     case "point": {
       const p = matrix.transformPoint({ x: d.x, y: d.y });
       return {
         ...d,
+        meta,
         bounds2d,
         x: toPrecision(p.x),
         y: toPrecision(p.y),
@@ -151,6 +158,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat): T {
       const topCenter = matrix.transformPoint({ ...d.topCenter });
       return {
         ...d,
+        meta,
         bounds2d,
         transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
         center: { x: toPrecision(center.x), y: toPrecision(center.y) },
@@ -161,6 +169,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat): T {
       const p = matrix.transformPoint({ x: d.center.x, y: d.center.z });
       return {
         ...d,
+        meta,
         bounds2d,
         transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
         center: geomService.toPrecisionV3({ x: p.x, y: d.center.y, z: p.y }),
@@ -170,6 +179,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat): T {
       const center = matrix.transformPoint({ ...d.center });
       return {
         ...d,
+        meta,
         bounds2d,
         points: d.points.map((p) => {
           const q = matrix.transformPoint({ ...p });
@@ -183,12 +193,13 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat): T {
       const center = matrix.transformPoint({ ...d.center });
       return {
         ...d,
+        meta,
         bounds2d,
         center: { x: toPrecision(center.x), y: toPrecision(center.y) },
       };
     }
     default:
-      return d;
+      return { ...d, meta };
   }
 }
 
