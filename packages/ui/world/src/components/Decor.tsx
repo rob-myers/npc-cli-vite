@@ -10,6 +10,7 @@ import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
+import { addToDecorGrid } from "../service/grid";
 import { PICK_TYPE } from "../service/pick";
 import { WorldContext } from "./world-context";
 
@@ -21,6 +22,7 @@ export default function Decor() {
       inst: null as any,
       gdKeyToInstanceId: {},
       instanceIdToDecorId: [],
+      grid: {},
 
       box: createUnitBox(),
       materials: [],
@@ -29,6 +31,9 @@ export default function Decor() {
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
 
+      clearGrid() {
+        Object.values(state.grid).forEach((col) => col.clear());
+      },
       decodeInstanceId(instanceId) {
         const entry = state.instanceIdToDecorId[instanceId];
         if (!entry) return null;
@@ -165,6 +170,8 @@ export default function Decor() {
 
       // 5. enrich decor.meta and build decor grid
       const pointWithMeta = { x: 0, y: 0, meta: {} as Meta };
+      state.clearGrid();
+
       for (let gmId = 0; gmId < w.gms.length; gmId++) {
         const gm = w.gms[gmId];
         for (const decor of gm.decor) {
@@ -176,14 +183,14 @@ export default function Decor() {
           if (gmRoomId !== null) {
             Object.assign(decor.meta, gmRoomId);
           }
-
-          // 🚧 decor grid
+          // decor grid
+          addToDecorGrid(decor, state.grid);
         }
       }
 
       await pause(100);
 
-      // 5. send to GPU
+      // 6. send to GPU
       const geo = state.inst.geometry;
       geo.getAttribute("uvOffsets").needsUpdate = true;
       geo.getAttribute("uvDimensions").needsUpdate = true;
@@ -191,7 +198,7 @@ export default function Decor() {
       state.inst.instanceMatrix.needsUpdate = true;
       if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
 
-      // 6. build materials
+      // 7. build materials
       const uvDims = attribute("uvDimensions", "vec2");
       const uvOffs = attribute("uvOffsets", "vec2");
       const uvTexIds = attribute("uvTextureIds", "uint");
@@ -244,13 +251,17 @@ export default function Decor() {
 
 export type State = {
   inst: THREE.InstancedMesh;
+  gdKeyToInstanceId: { [gdKey: string]: number[] };
+  instanceIdToDecorId: { gmId: number; decorId: number }[];
+  grid: Geomorph.DecorGrid;
+
   box: THREE.BufferGeometry;
   materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
-  gdKeyToInstanceId: { [gdKey: string]: number[] };
-  instanceIdToDecorId: { gmId: number; decorId: number }[];
+
+  clearGrid(): void;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };

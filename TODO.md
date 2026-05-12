@@ -216,11 +216,11 @@
 
 - BUG on collapse/expand should persist pane dimensions
 
-- 🚧 decor added to "grid"
+- ✅ decor added to "grid"
   - ✅ decor instantiated when it comes from geomorph
   - ✅ decor.meta is gmRoomId
   - ✅ decor.meta is gmDoorId when has doorId
-  - 🚧 decor grid built
+  - ✅ decor grid built
 
 - BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
 
