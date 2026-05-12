@@ -1,0 +1,33 @@
+{
+  "filename": "bed--005--0.6x1.2.json",
+  "width": 76,
+  "height": 40,
+  "nodes": [
+    {
+      "id": "68bec737-7621-4ab3-8ade-b4653eaa5844",
+      "name": "bed--005--0.6x1.2",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "bed--005--0.6x1.2",
+      "baseRect": {"width": 76.4, "height": 40.400000000000006},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "d1416f8e-ac5a-481e-9548-ae304698588f",
+      "name": "obstacle bed",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "rect",
+      "baseRect": {"width": 76, "height": 40},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
+  "type": "symbol",
+  "key": "bed--005--0.6x1.2"
+}

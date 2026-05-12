@@ -222,6 +222,8 @@
   - ✅ decor.meta is gmDoorId when has doorId
   - 🚧 decor grid built
 
+- BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
+
 - ✅ BUG edit const `doorSwitchHeight` broke World
   - switched to `constructor.name` test to fix HMR
 

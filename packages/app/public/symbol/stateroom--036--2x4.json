@@ -65,6 +65,25 @@
       ]
     },
     {
+      "id": "59791dc1-ed20-4a16-817c-61cc5e02ca33",
+      "name": "bed--004--0.8x1.4 y=0.5",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0,
+        "b": 1,
+        "c": 1,
+        "d": 0,
+        "e": 8.00002545979816,
+        "f": 68.0000375
+      },
+      "type": "symbol",
+      "srcKey": "bed--004--0.8x1.4",
+      "baseRect": {"width": 85, "height": 48},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, 1, 1, 0, 8, 68)"
+    },
+    {
       "id": "032bfcbd-3314-4750-9e48-fa1ce9c19a45",
       "name": "wall",
       "locked": false,
