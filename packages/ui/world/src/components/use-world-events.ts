@@ -37,15 +37,29 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const dstGrId = npc.last.dstGrId;
 
         if (grId === null || dstGrId === null || grId.grKey === dstGrId.grKey) {
-          return false; // ill-formed or same room
+          return null; // not moving or same room
         }
 
         const adjDoorNodes = w.gmRoomGraph.getAdjRoomsDoors(grId.grKey, dstGrId.grKey);
         if (adjDoorNodes.length === 0) {
-          return false; // not close enough to be unreachable
+          return null; // not close enough to target room to be considered unreachable
         }
 
-        return !adjDoorNodes.some((doorNode) => state.npcCanAccess(npc.key, doorNode.gdKey));
+        const someDoorAccessible = adjDoorNodes.some((doorNode) => state.npcCanAccess(npc.key, doorNode.gdKey));
+        if (someDoorAccessible) {
+          return null;
+        }
+
+        // no door accessible so return the closest one
+        const { closestNode } = adjDoorNodes.reduce(
+          (agg, node) => {
+            const dist = node.astar.centroid.distanceToSquared(npc.position);
+            return dist < agg.dist ? { closestNode: node, dist } : agg;
+          },
+          { closestNode: adjDoorNodes[0], dist: Infinity },
+        );
+
+        return w.door.byKey[closestNode.gdKey];
       },
       findPath(src, dst, keys = {}) {
         return w.gmRoomGraph.findPath(src, dst, (nodes) => {
@@ -346,7 +360,14 @@ export type State = {
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
   canCloseDoor(door: Geomorph.DoorState): boolean;
-  checkNpcTargetUnreachable(npc: Npc): boolean;
+  /**
+   * - When an npc is moving its destination should be inside a room.
+   * - When the npc is in a room adjacent to the destination room,
+   *   and the room is inaccessible (e.g. locked doors) we want to avoid
+   *   the crowd system redirecting the npc to the "other side of the wall".
+   * - In such cases we provide a target door instead.
+   */
+  checkNpcTargetUnreachable(npc: Npc): null | Geomorph.DoorState;
   findPath(
     src: Geomorph.GmRoomKey,
     dst: Geomorph.GmRoomKey,

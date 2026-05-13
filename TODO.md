@@ -91,7 +91,12 @@
 
   - 🚧 on `move` and dst room is adjacent and unreachable execute configurable npc function
     - ✅ console.log boolean `npcTargetUnreachable`
-    - execute customisable function
+    ```sh
+    w e.toggleLock g0d15
+    w n.rob | w e.checkNpcTargetUnreachable -
+    ```
+    - ✅ provide closest door as crow flies if unreachable
+    - 🚧 execute customisable function
 
   - on `enter-room` and dst room is adjacent and unreachable execute configurable npc function
 
