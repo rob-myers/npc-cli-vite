@@ -32,6 +32,7 @@ export class Npc {
   geometry: THREE.BufferGeometry;
 
   agentId: string | null = null;
+  doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   last = {
     blockingArea: -1,
     /** Seconds elapsed */

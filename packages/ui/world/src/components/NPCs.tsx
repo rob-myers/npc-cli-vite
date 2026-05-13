@@ -112,6 +112,7 @@ export default function NPCs() {
             skinIndex: oldNpc.skinIndex,
           });
           npc.agentId = oldNpc.agentId;
+          npc.doorKeys = oldNpc.doorKeys;
           npc.last = oldNpc.last;
           state.placeNpcAt(npc, npc.position);
         }
