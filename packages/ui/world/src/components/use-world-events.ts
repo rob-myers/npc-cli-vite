@@ -1,9 +1,10 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
+import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import { defaultDoorCloseMs } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { groundPointToVector3, parseGroundPoint } from "../service/geometry";
+import { groudPointToTuple, groundPointToVector3, parseGroundPoint } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -236,9 +237,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "started-moving": {
-            // 🚧 check if adjacent and unreachable
-            const npcTargetUnreachable = state.checkNpcTargetUnreachable(npc);
-            console.log({ npcTargetUnreachable });
+            // check if adjacent and unreachable: avoid walk to other-side-of-wall of inaccessible room
+            const closestDoor = state.checkNpcTargetUnreachable(npc);
+            if (closestDoor !== null && npc.agentId !== null) {
+              console.log({ npcTargetUnreachable: closestDoor });
+              // change crowd target to closest door, as if crowd chose this destination
+              const result = w.npc.getClosestPoly(closestDoor.src); // center?
+              crowdApi.requestMoveTarget(w.npc.crowd, npc.agentId, result.nodeRef, groudPointToTuple(closestDoor.src));
+            }
             break;
           }
         }

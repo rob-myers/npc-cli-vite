@@ -89,16 +89,13 @@
 
   - ✅ npc queryFilter uses `w.e.npcCanAccess`
 
-  - 🚧 on `move` and dst room is adjacent and unreachable execute configurable npc function
+  - ✅ on `move` and dst room is adjacent and unreachable execute configurable npc function
     - ✅ console.log boolean `npcTargetUnreachable`
-    ```sh
-    w e.toggleLock g0d15
-    w n.rob | w e.checkNpcTargetUnreachable -
-    ```
     - ✅ provide closest door as crow flies if unreachable
-    - 🚧 execute customisable function
+    - ✅ redirect to closest door
 
-  - on `enter-room` and dst room is adjacent and unreachable execute configurable npc function
+  - 🚧 on `enter-room` and dst room is adjacent and unreachable execute configurable npc function
+    - as above
 
   - ❌ if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
     - ✅ can track npc current room
