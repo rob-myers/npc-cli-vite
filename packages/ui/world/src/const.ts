@@ -105,3 +105,5 @@ export const walkSeparationWeight = 0.25;
 export const idleSeparationWeight = 0.5;
 
 export const defaultDoorCloseMs = 3000;
+
+export const npcBrightness = 0.6;
