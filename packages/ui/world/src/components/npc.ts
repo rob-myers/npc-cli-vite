@@ -31,13 +31,7 @@ export class Npc {
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
 
-  /** Synced with crowd agent */
-  position: THREE.Vector3;
   agentId: string | null = null;
-  queryFilter: QueryFilter;
-
-  lookAt: JshCli.GroundPoint | null = null;
-
   last = {
     blockingArea: -1,
     /** Seconds elapsed */
@@ -46,14 +40,18 @@ export class Npc {
     dst: { x: 0, y: 0 },
     dstGrId: null as Geomorph.GmRoomId | null,
   };
-
+  lookAt: JshCli.GroundPoint | null = null;
+  /** Synced with crowd agent */
+  position: THREE.Vector3;
+  queryFilter: QueryFilter;
   moving = false;
+  spawns = 0;
+  stuckAccum = 0;
+
   /** Used for spawn and move */
   resolve?: (key: string) => void;
   /** Used for spawn and move */
   reject?: (reason: Error) => void;
-  spawns = 0;
-  stuckAccum = 0;
 
   w: UseStateRef<import("./World").State>;
 
