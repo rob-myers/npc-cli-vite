@@ -93,6 +93,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return null;
         }
       },
+      fixInaccessibleTarget(npc) {
+        // we want to avoid walking to other-side-of-wall of inaccessible room
+        const closestDoor = state.checkNpcTargetUnreachable(npc);
+        if (closestDoor === null || npc.agentId == null) {
+          return;
+        }
+        console.log({ npcTargetUnreachable: closestDoor });
+        // change crowd target to closest door, as if crowd chose this destination
+        const result = w.npc.getClosestPoly(closestDoor.src); // center?
+        crowdApi.requestMoveTarget(w.npc.crowd, npc.agentId, result.nodeRef, groudPointToTuple(closestDoor.src));
+      },
       npcCanAccess(_npcKey, gdKey) {
         // 🚧 npc can have key
         return w.d[gdKey].locked === false;
@@ -237,14 +248,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "started-moving": {
-            // check if adjacent and unreachable: avoid walk to other-side-of-wall of inaccessible room
-            const closestDoor = state.checkNpcTargetUnreachable(npc);
-            if (closestDoor !== null && npc.agentId !== null) {
-              console.log({ npcTargetUnreachable: closestDoor });
-              // change crowd target to closest door, as if crowd chose this destination
-              const result = w.npc.getClosestPoly(closestDoor.src); // center?
-              crowdApi.requestMoveTarget(w.npc.crowd, npc.agentId, result.nodeRef, groudPointToTuple(closestDoor.src));
-            }
+            state.fixInaccessibleTarget(npc);
             break;
           }
         }
@@ -381,6 +385,7 @@ export type State = {
   ): AStarSearchResult<Graph.GmRoomGraphNode>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
+  fixInaccessibleTarget(npc: Npc): void;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
