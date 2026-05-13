@@ -123,8 +123,10 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
     if (src === null || dst === null) {
       return [];
     }
-    const srcSuccs = this.getSuccs(src);
-    const dstSuccs = new Set(this.getSuccs(dst));
-    return srcSuccs.filter((node): node is Graph.GmRoomGraphNodeDoor => dstSuccs.has(node));
+
+    const dstSucc = this.succ.get(dst) ?? emptySuccMap;
+    return this.getSuccs(src).filter((node): node is Graph.GmRoomGraphNodeDoor => dstSucc.has(node) ?? false);
   }
 }
+
+const emptySuccMap = new Map<Graph.GmRoomGraphNode, Graph.Edge<Graph.GmRoomGraphNode, Graph.GmRoomGraphEdgeOpts>>();
