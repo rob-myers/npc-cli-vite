@@ -116,7 +116,7 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
   }
 
   getNode(id: NodeType["id"]) {
-    return this.idToNode.get(id) || null;
+    return this.idToNode.get(id) ?? null;
   }
 
   getParent(node: NodeType) {
@@ -125,8 +125,7 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
   }
 
   getPreds(node: NodeType) {
-    const pred = this.pred.get(node);
-    return (pred && Array.from(pred.keys())) || [];
+    return Array.from(this.pred.get(node)?.keys() ?? []);
   }
 
   getReachableNodes(node: NodeType | string): NodeType[] {
@@ -155,8 +154,7 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
   }
 
   getSuccs(node: NodeType) {
-    const succ = this.succ.get(node);
-    return (succ && Array.from(succ.keys())) || [];
+    return Array.from(this.succ.get(node)?.keys() ?? []);
   }
 
   hasNode(node: NodeType) {
