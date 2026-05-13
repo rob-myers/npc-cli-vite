@@ -228,8 +228,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   const _worldQuery = useQuery({
     // Distinct query per World instance even if same map
-    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id],
+    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, import.meta.hot?.data.__LAST_HMR_WORLD__],
     async queryFn() {
+      if (import.meta.hot?.data.__JUST_HMR_WORLD__) {
+        import.meta.hot.data.__JUST_HMR_WORLD__ = false;
+        return null; // ignore 1st stale invoke after HMR
+      }
+
       state.setNextPending({ assets: true });
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
@@ -393,3 +398,12 @@ declare module "@react-three/fiber" {
     };
   }
 }
+
+import.meta.hot?.on("vite:beforeUpdate", (foo) => {
+  const updatedThisFile = foo.updates.some((update) => update.path.endsWith("World.tsx"));
+  if (import.meta.hot && updatedThisFile) {
+    // used to ignore stale queryFn and trigger fresh one
+    import.meta.hot.data.__JUST_HMR_WORLD__ = true;
+    import.meta.hot.data.__LAST_HMR_WORLD__ = Date.now();
+  }
+});
