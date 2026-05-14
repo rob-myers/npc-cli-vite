@@ -123,7 +123,7 @@ export const Html3d = React.forwardRef<State, Props>(
         <div
           ref={state.ref("innerDiv")}
           children={children}
-          className={cn("origin-left", docked && "scale-100!", !visible && "invisible")}
+          className={cn("origin-top-left", docked && "scale-100!", !visible && "invisible")}
         />,
       );
 
