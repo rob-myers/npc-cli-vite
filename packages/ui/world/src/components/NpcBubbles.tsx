@@ -103,11 +103,12 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       tracked={b.tracked}
       visible
     >
+      {/* demo ui */}
       <div className="relative">
         <div
           className={cn(
             "text-[#ff9] p-4 rounded-2xl bg-black/30 leading-[1.2]",
-            selectMode ? "cursor-text" : "select-none",
+            selectMode ? "cursor-pointer" : "select-none",
           )}
           onWheel={b.forwardWheelEvents.bind(b)}
           {...(!selectMode && {
@@ -119,7 +120,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         </div>
         <button
           type="button"
-          className="absolute -top-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer hover:bg-black/80"
+          className="absolute -bottom-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer hover:bg-black/80"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => setSelectMode((v) => !v)}
         >
