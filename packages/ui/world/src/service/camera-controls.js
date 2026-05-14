@@ -776,7 +776,7 @@ export class CameraControls extends EventDispatcher {
    * @returns {void}
    */
   rotateUp(angle) {
-    this.sphericalDelta.phi += angle;
+    this.sphericalDelta.phi -= angle;
   }
 
   saveParams() {
