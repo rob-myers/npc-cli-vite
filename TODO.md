@@ -7,6 +7,9 @@
   - ✅ zoom issue
   - `w bubble.ensure rob`
   - ✅ clean e.g. --speech-bubble-width
+  - ✅ initial scale bug
+
+- doors have meaningful icons
 
 - script `gen-skin-sheets`
   - writes to sheets.json

@@ -85,6 +85,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     setTimeout(() => {
       b.update();
       b.resolveOnMount();
+      b.html3d?.onFrame();
     }, 30);
   }, []);
 

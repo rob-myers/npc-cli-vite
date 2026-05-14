@@ -40,6 +40,11 @@ pick | move npc:kate
 while true; do move npc:rob to:$( pick 1 --fifo ); done
 # tty-1
 while true; do move npc:kate to:$( pick 1 --fifo ); done
+
+w bubble.ensure rob
+w bubble.delete rob
+w bubble.ensure rob >/dev/null
+
 ```
 
 ```sh
