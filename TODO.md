@@ -216,7 +216,7 @@
 - ✅ pick should be pointerup
 - ✅ do not pick on drag
 
-- 🚧 `pick` lifo by default (blocks earlier)
+- ✅ `pick` lifo by default (blocks earlier)
   - can `pick --fifo 1` for other behaviour e.g. for two interleaving interactive while loops
 
 - ✅ decor added to "grid"
