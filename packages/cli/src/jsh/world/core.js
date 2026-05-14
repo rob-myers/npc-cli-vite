@@ -150,29 +150,30 @@ export async function* pick(ct) {
       "right", // right clicks only
       "long", // long press only
       "any", // left or right permitted
-      "block", // e.g. `pick --block` 🚧 --fifo
+      "fifo", // default lifo: new picks take priority over old ones
     ],
   });
 
-  if (opts["right"] === false && opts["any"] === false) {
+  if (opts.right === false && opts.any === false) {
     opts.left = true; // default to left clicks only
   }
   if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
-    operands = [operands[1], operands[0]]; // support reverse order `click meta.nav 2`
+    // support reverse order `pick meta.nav 2`
+    operands = [operands[1], operands[0]];
   }
 
-  const explicitNumClicks = isStringInt(operands[0]) ? parseInt(operands[0], 10) : undefined;
+  const explicitNumPicks = isStringInt(operands[0]) ? parseInt(operands[0], 10) : undefined;
   const maxExplicitPicks = 1024;
 
-  /** Number of clicks remaining */
-  let numClicks = explicitNumClicks ?? Number.MAX_SAFE_INTEGER;
-  if (explicitNumClicks !== undefined && explicitNumClicks > maxExplicitPicks) {
-    numClicks = maxExplicitPicks;
+  /** Number of picks remaining */
+  let numPicks = explicitNumPicks ?? Number.MAX_SAFE_INTEGER;
+  if (explicitNumPicks !== undefined && explicitNumPicks > maxExplicitPicks) {
+    numPicks = maxExplicitPicks;
     api.writeError(`${api.ansi.Yellow}warn: max explicit picks is ${maxExplicitPicks}`);
   }
 
-  const blocking = opts.block === true;
-  const clickId = isStringInt(operands[0]) || blocking ? api.getUid() : undefined;
+  const lifo = opts.fifo !== true;
+  const clickId = isStringInt(operands[0]) ? api.getUid() : undefined;
 
   // support `pick meta.floor`
   // support `pick '({ meta }, ct) => meta.type === "floor"'`
@@ -198,15 +199,15 @@ export async function* pick(ct) {
   });
 
   try {
-    if (clickId !== undefined && blocking === false && numClicks <= maxExplicitPicks) {
-      // e.g. `pick 5` but not `pick 5 --block`
-      w.view.clickIds.push(...Array.from({ length: numClicks }, () => ({ id: clickId, blocking: false })));
+    if (clickId !== undefined && lifo === false && numPicks <= maxExplicitPicks) {
+      // e.g. `pick 2` but not `pick 2 --fifo`
+      w.view.clickIds.push(...Array.from({ length: numPicks }, () => ({ id: clickId, blocking: false })));
     }
 
-    while (numClicks > 0) {
-      if (clickId !== undefined && blocking === true) {
-        // e.g. `pick --block` `pick 5 --block` but not `pick 5`
-        w.view.clickIds.unshift({ id: clickId, blocking });
+    while (numPicks > 0) {
+      if (clickId !== undefined && lifo === true) {
+        // `pick 5` but not `pick 5 --fifo`
+        w.view.clickIds.unshift({ id: clickId, blocking: true });
       }
       const output = await /** @type {Promise<JshCli.PickEvent>} */ (
         new Promise((resolve, reject) => {
@@ -239,10 +240,11 @@ export async function* pick(ct) {
       }
 
       if (filter === undefined || filter?.(output)) {
-        numClicks--;
+        numPicks--;
         yield selector ? selector(output) : output;
-      } else if (clickId !== undefined && blocking === false) {
-        // put incoming blocking before current
+      } else if (clickId !== undefined && lifo === false) {
+        // - need to ignore this pick
+        // - we'll put incoming blocking before current
         w.view.clickIds = w.view.clickIds
           .filter(({ blocking }) => blocking)
           .concat(

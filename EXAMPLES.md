@@ -29,6 +29,17 @@ pick 1 | move npc:rob
 # move rob sequentially to picked positions
 pick 1 | move npc:rob along
 
+# move two npcs interactively to same position
+# tty-0
+pick | move npc:rob
+# tty-1
+pick | move npc:kate
+
+# move two npcs interactively interleaved
+# tty-0
+while true; do move npc:rob to:$( pick 1 --fifo ); done
+# tty-1
+while true; do move npc:kate to:$( pick 1 --fifo ); done
 ```
 
 ```sh
@@ -36,5 +47,4 @@ pick 1 | move npc:rob along
 w e.toggleLock g0d15
 # toggle a picked door's lock
 w e.toggleLock $( pick 1 as:meta.gdKey )
-
 ```
