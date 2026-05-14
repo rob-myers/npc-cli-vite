@@ -113,7 +113,7 @@ export function WorldMenu() {
 
           <Menu.Portal>
             <Menu.Positioner className="z-50" sideOffset={4} align="start">
-              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[120px]">
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1">
                 <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
                   <BrightnessPie
                     ratio={brightnessToRatio(w.brightness)}
@@ -135,7 +135,7 @@ export function WorldMenu() {
                       tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-20 accent-white"
+                    className="w-16 accent-white"
                   />
                   <button
                     type="button"
@@ -200,7 +200,7 @@ export function WorldMenu() {
                         <textarea
                           key={w.themeKey}
                           ref={state.ref("themeEditorRef")}
-                          className="w-48 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                          className="w-40 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
                           defaultValue={JSON.stringify(w.getTheme(), null, 2)}
                           onKeyDown={(e) => e.stopPropagation()}
                           onClick={(e) => e.stopPropagation()}
@@ -242,60 +242,64 @@ export function WorldMenu() {
                   </>
                 )}
 
-                <MenuSelect
-                  label="actions"
-                  value={null}
-                  items={["Spawn NPC", "Clear NPCs"]}
-                  onValueChange={(action) => {
-                    if (action === "Spawn NPC") {
-                      const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
-                      if (!result.success) return;
-                      const [x, y, z] = result.position;
-                      const key = `npc-${Date.now().toString(36)}`;
-                      w.npc.spawn({ npcKey: key, at: [x, y, z] });
-                      w.update();
-                    } else if (action === "Clear NPCs") {
-                      w.npc.remove(...Object.keys(w.npc.npc));
-                      w.view.forceUpdate();
-                    }
-                  }}
-                />
-
-                <MenuMultiSelect
-                  label="debug"
-                  items={debugItems}
-                  isActive={(item) => {
-                    switch (item) {
-                      case "View Pick":
-                        return w.view?.objectPick.value === 1;
-                      case "Colliders":
-                        return w.debug?.physicsCollidersShown ?? false;
-                      default:
-                        return false;
-                    }
-                  }}
-                  onToggle={(item) => {
-                    switch (item) {
-                      case "View Pick":
-                        w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
-                        w.view.forceUpdate();
-                        break;
-                      case "Room Hit":
-                        state.set({ debugHitOpen: true });
-                        break;
-                      case "Gm Graphs":
-                        state.set({ gmGraphsOpen: true });
-                        break;
-                      case "Skins":
-                        state.set({ skinDebugOpen: true });
-                        break;
-                      case "Colliders":
-                        w.debug?.showPhysicsColliders();
+                <div className="flex">
+                  <MenuMultiSelect
+                    label="actions"
+                    items={actionItems}
+                    className="justify-center"
+                    isActive={() => false}
+                    onToggle={(action) => {
+                      if (action === "Spawn NPC") {
+                        const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
+                        if (!result.success) return;
+                        const [x, y, z] = result.position;
+                        const key = `npc-${Date.now().toString(36)}`;
+                        w.npc.spawn({ npcKey: key, at: [x, y, z] });
                         w.update();
-                        break;
-                    }
-                  }}
-                />
+                      } else if (action === "Clear NPCs") {
+                        w.npc.remove(...Object.keys(w.npc.npc));
+                        w.view.forceUpdate();
+                      }
+                    }}
+                  />
+
+                  <MenuMultiSelect
+                    label="debug"
+                    items={debugItems}
+                    className="justify-center"
+                    isActive={(item) => {
+                      switch (item) {
+                        case "View Pick":
+                          return w.view?.objectPick.value === 1;
+                        case "Colliders":
+                          return w.debug?.physicsCollidersShown ?? false;
+                        default:
+                          return false;
+                      }
+                    }}
+                    onToggle={(item) => {
+                      switch (item) {
+                        case "View Pick":
+                          w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
+                          w.view.forceUpdate();
+                          break;
+                        case "Room Hit":
+                          state.set({ debugHitOpen: true });
+                          break;
+                        case "Gm Graphs":
+                          state.set({ gmGraphsOpen: true });
+                          break;
+                        case "Skins":
+                          state.set({ skinDebugOpen: true });
+                          break;
+                        case "Colliders":
+                          w.debug?.showPhysicsColliders();
+                          w.update();
+                          break;
+                      }
+                    }}
+                  />
+                </div>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
@@ -376,6 +380,7 @@ export type State = {
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
+const actionItems = ["Spawn NPC", "Clear NPCs"] as const;
 const debugItems = ["View Pick", "Room Hit", "Gm Graphs", "Skins", "Colliders"] as const;
 
 const selectItemClass = cn(
@@ -384,11 +389,13 @@ const selectItemClass = cn(
 );
 
 function MenuSelect({
+  className,
   label,
   value,
   items,
   onValueChange,
 }: {
+  className?: string;
   label: string;
   value: string | null;
   items: string[];
@@ -396,11 +403,23 @@ function MenuSelect({
 }) {
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
-      <Select.Trigger className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full">
+      <Select.Trigger
+        className={cn(
+          "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full",
+          className,
+        )}
+      >
         <Select.Value placeholder={label} />
       </Select.Trigger>
       <Select.Portal>
-        <Select.Positioner className="z-50" sideOffset={4} side="right" align="start" collisionPadding={0} alignItemWithTrigger={false}>
+        <Select.Positioner
+          className="z-50"
+          sideOffset={4}
+          side="right"
+          align="start"
+          collisionPadding={0}
+          alignItemWithTrigger={false}
+        >
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
               {items.map((item) => (
@@ -419,10 +438,12 @@ function MenuSelect({
 function MenuMultiSelect({
   label,
   items,
+  className,
   isActive,
   onToggle,
 }: {
   label: string;
+  className?: string;
   items: readonly string[];
   isActive: (item: string) => boolean;
   onToggle: (item: string) => void;
@@ -430,12 +451,31 @@ function MenuMultiSelect({
   const [open, setOpen] = useState(false);
 
   return (
-    <Select.Root open={open} onOpenChange={setOpen} value={null}>
-      <Select.Trigger className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full">
+    <Select.Root
+      open={open}
+      onOpenChange={(nextOpen, { reason }) => {
+        if (!nextOpen && reason === "item-press") return;
+        setOpen(nextOpen);
+      }}
+      value={null}
+    >
+      <Select.Trigger
+        className={cn(
+          "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full",
+          className,
+        )}
+      >
         {label}
       </Select.Trigger>
       <Select.Portal>
-        <Select.Positioner className="z-50" sideOffset={4} side="right" align="start" collisionPadding={0} alignItemWithTrigger={false}>
+        <Select.Positioner
+          className="z-50"
+          sideOffset={4}
+          side="right"
+          align="start"
+          collisionPadding={0}
+          alignItemWithTrigger={false}
+        >
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1">
             <Select.List>
               {items.map((item) => (
