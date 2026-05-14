@@ -152,6 +152,19 @@ export function WorldMenu() {
                   </button>
                 </div>
 
+                {w.view && (
+                  <Menu.Item
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
+                      w.view.cameraMode === "cardinal" && "text-green-400",
+                    )}
+                    closeOnClick={false}
+                    onClick={() => w.view.setCameraMode(w.view.cameraMode === "free" ? "cardinal" : "free")}
+                  >
+                    Camera: {w.view.cameraMode}
+                  </Menu.Item>
+                )}
+
                 <div className="my-1 border-t border-slate-700" />
 
                 {mapKeys.map((key) => (

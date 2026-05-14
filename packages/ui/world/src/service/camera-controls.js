@@ -111,8 +111,12 @@ export class CameraControls extends EventDispatcher {
   //#endregion
 
   //#region Custom
-  params = { fixedPolar: false, fixedAzimuth: false };
+  params = { fixedPolar: false, fixedAzimuth: false, snapAzimuth: false };
   savedParams = { ...this.params };
+  snapAzimuthTarget = 0;
+  snapAzimuthAccum = 0;
+  snapAzimuthLastSign = 0;
+  snapAzimuthCooldown = 0;
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -727,6 +731,16 @@ export class CameraControls extends EventDispatcher {
    * @returns {void}
    */
   rotateLeft(angle) {
+    if (this.params.snapAzimuth) {
+      if (this.snapAzimuthCooldown > 0) return;
+      const sign = Math.sign(angle);
+      if (sign !== 0 && sign !== this.snapAzimuthLastSign) {
+        this.snapAzimuthAccum = 0;
+        this.snapAzimuthLastSign = sign;
+      }
+      this.snapAzimuthAccum += Math.abs(angle);
+      return;
+    }
     this.sphericalDelta.theta -= angle;
   }
 
@@ -742,7 +756,7 @@ export class CameraControls extends EventDispatcher {
     Object.assign(this.savedParams, this.params);
   }
 
-  /** @param {Partial<{ fixedAzimuth: boolean, fixedPolar: boolean }>} params */
+  /** @param {Partial<{ fixedAzimuth: boolean, fixedPolar: boolean, snapAzimuth: boolean }>} params */
   setParams(params) {
     Object.assign(this.params, params);
   }
@@ -810,6 +824,24 @@ export class CameraControls extends EventDispatcher {
           this.spherical.theta > (min + max) / 2
             ? Math.max(min, this.spherical.theta)
             : Math.min(max, this.spherical.theta);
+      }
+    }
+
+    if (this.params.snapAzimuth) {
+      if (this.snapAzimuthCooldown > 0) {
+        this.snapAzimuthCooldown--;
+        this.snapAzimuthAccum = 0;
+      } else if (this.snapAzimuthAccum > Math.PI / 4) {
+        this.snapAzimuthTarget -= this.snapAzimuthLastSign * halfPi;
+        this.snapAzimuthAccum = 0;
+        this.snapAzimuthCooldown = 60;
+      }
+      this.sphericalDelta.theta = 0;
+      const diff = this.snapAzimuthTarget - this.spherical.theta;
+      if (Math.abs(diff) > 0.005) {
+        this.spherical.theta += diff * 0.08;
+      } else {
+        this.spherical.theta = this.snapAzimuthTarget;
       }
     }
 
@@ -885,6 +917,7 @@ const changeEvent = /** @type {const} */ ({ type: "change" });
 
 const defaultDampingFactor = 0.05;
 
+const halfPi = Math.PI / 2;
 const twoPI = 2 * Math.PI;
 const tempVector3One = new THREE.Vector3();
 const tempVector3Two = new THREE.Vector3();
