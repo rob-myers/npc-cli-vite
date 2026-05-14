@@ -57,6 +57,14 @@ export class SpeechBubbleApi {
   }
 
   /**
+   * @param {React.PointerEvent} e
+   */
+  forwardPointerEvents(e) {
+    e.stopPropagation();
+    this.w.view.canvas.dispatchEvent(new PointerEvent(e.nativeEvent.type, e.nativeEvent));
+  }
+
+  /**
    * @param {React.WheelEvent} e
    */
   forwardWheelEvents(e) {
@@ -69,7 +77,7 @@ export class SpeechBubbleApi {
     if (html3d !== null) {
       this.html3d = html3d;
     } else {
-      // @ts-ignore
+      // @ts-expect-error
       delete this.html3d;
     }
   }
@@ -176,7 +184,7 @@ export class SpeechBubbleApi {
     if (uiRootEl !== null) {
       this.uiRootEl = uiRootEl;
     } else {
-      // @ts-ignore
+      // @ts-expect-error
       delete this.uiRootEl;
     }
   }
