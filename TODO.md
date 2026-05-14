@@ -1,16 +1,10 @@
 # TODO
 
-- BUG on collapse/expand should persist pane dimensions
-
-- BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
-
 - script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png
-
 - skin remapping
   - currently only have skinIndex
-
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
@@ -24,6 +18,10 @@
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
 
+## Bugs
+
+- BUG on collapse/expand should persist pane dimensions
+- BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
 - BUG need two ctrl-c for while loop walk?
 - BUG saw auto door close with nearby npc
   - maybe door was closing and didn't open quickly enough
@@ -31,6 +29,7 @@
   - maybe just stale while paused
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes
+- BUG MapEdit drafts fighting: with 2 instances open for same file
 - BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 
 ## Long running
@@ -42,31 +41,31 @@
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
 
-- 🚧 do not recompute all symbols when only edit a hull symbol (DEV)
+- ✅ do not recompute all symbols when only edit a hull symbol (DEV)
   - ✅ done in prod for hull-symbols
   - ✅ use sub-stratification
-  - could do client-side and ignore server update
-  - createLayout optimization
+  - ❌ could do client-side and ignore server update
+  - ❌ createLayout optimization
     - saw `48ms`
 
-- 🚧 ISSUE obstacle sprite-sheet when polygon aabb overlap
+- ✅ ISSUE obstacle sprite-sheet when polygon aabb overlap
   - e.g. bridge--042: curved window vs. adjacent desk
     - when adjacent can fix via same height
   - technically can fix by creating an "extra symbol"
 
-- BUG MapEdit drafts fighting: with 2 instances open for same file
 - ❌ try deform limbs of blockbench model, saving as separate file
+
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
 
-- 🚧 shell refinement
+- ✅ shell refinement
   - ✅ finish migrating semantics
   - ✅ provide `modules` so can `import util`
   - ✅ fix ctrl-C for `poll`
   - ❌ BUG `echo foo | map 'x\n=>x'`
     - technically string does not define a valid js function so is interpreted as a string
   - ✅ Tty has /etc/{util.sh,util.js.sh}
-  - 🚧 STOP bug: appears initially in e.g. 3rd tty
+  - ✅ STOP bug: appears initially in e.g. 3rd tty
     - seen profile fail to load too
   - ❌ improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
   - sometimes on hot reload need to ctrl-c
