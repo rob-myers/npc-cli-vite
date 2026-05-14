@@ -117,6 +117,8 @@ export class CameraControls extends EventDispatcher {
   snapAzimuthAccum = 0;
   snapAzimuthLastSign = 0;
   snapAzimuthAnimating = false;
+  /** @type {"none" | "horizontal" | "vertical"} */
+  rotateAxis = "none";
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -256,8 +258,18 @@ export class CameraControls extends EventDispatcher {
     const element = this.domElement;
 
     if (element) {
-      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight); // yes, height
-      this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+      const isFree = !this.params.fixedPolar && !this.params.snapAzimuth;
+      if (isFree && this.rotateAxis === "none") {
+        const ax = Math.abs(this.u.rotateDelta.x);
+        const ay = Math.abs(this.u.rotateDelta.y);
+        if (ax > 2 || ay > 2) {
+          this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+        }
+      }
+      const horiz = !isFree || this.rotateAxis !== "vertical";
+      const vert = isFree && this.rotateAxis !== "horizontal";
+      if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+      if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
     this.update();
@@ -334,8 +346,18 @@ export class CameraControls extends EventDispatcher {
     const element = this.domElement;
 
     if (element) {
-      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight); // yes, height
-      this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+      const isFree = !this.params.fixedPolar && !this.params.snapAzimuth;
+      if (isFree && this.rotateAxis === "none") {
+        const ax = Math.abs(this.u.rotateDelta.x);
+        const ay = Math.abs(this.u.rotateDelta.y);
+        if (ax > 2 || ay > 2) {
+          this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+        }
+      }
+      const horiz = !isFree || this.rotateAxis !== "vertical";
+      const vert = isFree && this.rotateAxis !== "horizontal";
+      if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+      if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
   }
@@ -571,6 +593,7 @@ export class CameraControls extends EventDispatcher {
       this.snapAzimuthAccum = 0;
       this.snapAzimuthLastSign = 0;
     }
+    this.rotateAxis = "none";
 
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
@@ -753,7 +776,7 @@ export class CameraControls extends EventDispatcher {
    * @returns {void}
    */
   rotateUp(angle) {
-    this.sphericalDelta.phi -= angle;
+    this.sphericalDelta.phi += angle;
   }
 
   saveParams() {
