@@ -232,15 +232,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           last.longPress = true;
           state.pickObject(e);
         }, 500);
+        if (state.cameraMode === "cardinal") {
+          state.canvas.style.cursor = "grabbing";
+        }
       },
       onPointerLeave(_e) {
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
+        state.canvas.style.cursor = "";
       },
       async onPointerUp(e) {
         const last = state.lastPointer;
         clearTimeout(last.longPressTimer);
         last.longPressTimer = 0;
+        state.canvas.style.cursor = "";
         e.currentTarget.focus();
         if (last.longPress) return;
         if (last.point.distanceTo(getRelativePointer(e)) > (w.touchDevice ? 20 : 5)) return;
