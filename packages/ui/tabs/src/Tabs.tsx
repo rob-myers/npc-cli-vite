@@ -177,7 +177,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   return (
     <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
       <div
-        className="flex justify-between min-h-12 w-full border-b border-on-background/30 border-outline"
+        className="flex justify-between min-h-10 w-full border-b border-on-background/30 border-outline"
         onContextMenu={state.onContextMenu}
       >
         <div
@@ -377,7 +377,7 @@ function TabHeaderItem({
       )}
       onClick={onClickTab}
     >
-      <div className={"flex items-center p-1 border border-on-background/20"}>
+      <div className={"flex items-center p-1 border text-xs border-on-background/20"}>
         <pre className="p-1">{tab.title}</pre>
 
         {isCurrentTab && (
