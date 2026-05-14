@@ -4,7 +4,7 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { idleSeparationWeight, npcScale, walkSeparationWeight } from "../const";
+import { idleSeparationWeight, npcDefaultBubbleHeight, npcScale, walkSeparationWeight } from "../const";
 import { groudPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -32,7 +32,7 @@ export class Npc {
   geometry: THREE.BufferGeometry;
 
   agentId: string | null = null;
-  bubbleOffset = new THREE.Vector3();
+  bubbleOffset = new THREE.Vector3(0, npcDefaultBubbleHeight, 0);
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   last = {
     blockingArea: -1,
