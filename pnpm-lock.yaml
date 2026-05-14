@@ -673,6 +673,9 @@ importers:
       '@atlaskit/pragmatic-drag-and-drop':
         specifier: 'catalog:'
         version: 1.7.7
+      '@base-ui/react':
+        specifier: 'catalog:'
+        version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
