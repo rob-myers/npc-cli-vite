@@ -38,7 +38,11 @@ export const Html3d = React.forwardRef<State, Props>(
         delta: [0, 0],
         domTarget: null,
         innerDiv: null!,
-        rootDiv: document.createElement("div"),
+        rootDiv: (() => {
+          const rootDiv = document.createElement("div");
+          rootDiv.style.visibility = "hidden";
+          return rootDiv;
+        })(),
         reactRoot: null!,
         zoom: 0,
 
@@ -56,6 +60,7 @@ export const Html3d = React.forwardRef<State, Props>(
             Math.abs(state.delta[1] - vec[1]) > eps
           ) {
             state.rootDiv.style.transform = `translate3d(${vec[0]}px,${vec[1]}px,0)`;
+            state.rootDiv.style.visibility = "";
 
             if (state.baseScale !== baseScale) {
               if (baseScale === undefined) {
