@@ -232,10 +232,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           last.longPress = true;
           state.pickObject(e);
         }, 500);
-        if (state.cameraMode === "cardinal") {
-          const mod = e.shiftKey || e.ctrlKey || e.metaKey;
-          state.canvas.style.cursor = mod ? "grabbing" : "move";
-        }
+        const mod = e.shiftKey || e.ctrlKey || e.metaKey;
+        state.canvas.style.cursor = mod ? "grabbing" : "move";
       },
       onPointerLeave(_e) {
         clearTimeout(state.lastPointer.longPressTimer);
