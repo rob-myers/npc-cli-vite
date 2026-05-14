@@ -76,6 +76,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       forceUpdate() {
         w.npc.onTick(Number.EPSILON);
         w.r3f?.invalidate();
+        w.update();
       },
       getPickedFromPixel([r, g, b, _a]) {
         // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });

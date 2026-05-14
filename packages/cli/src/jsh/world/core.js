@@ -16,19 +16,19 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
- * - `config pickWalls` picks walls
- * - `config pickWalls 0` won't
+ * - `cfg pick-walls` picks walls
+ * - `cfg pick-walls false` won't pick walls
  * @param {JshCli.RunArg} ctxt
  */
-export async function config({ w, args, api }) {
+export async function cfg({ w, args, api }) {
   const [command, ...rest] = args;
 
   switch (command) {
-    case "clearNpcs":
+    case "clear-npcs":
       w.npc.remove(...Object.keys(w.npc.npc));
       w.view.forceUpdate();
       break;
-    case "pickWalls": {
+    case "pick-walls": {
       const [truthy] = rest.map(api.parseJsArg);
       w.view.objectPickScale = truthy === undefined || !!truthy ? 1 : 0.5;
       break;
