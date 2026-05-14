@@ -4,11 +4,11 @@ import { useFrame } from "@react-three/fiber";
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
 import * as THREE from "three";
-import { html3DOpacityCssVar } from "../const";
 
 export type TrackedObject3D = { object: THREE.Object3D; offset: THREE.Vector3 };
 
 type Props = Omit<React.HTMLAttributes<HTMLDivElement>, "ref"> & {
+  className: string;
   docked?: boolean;
   baseScale?: number;
   offset?: THREE.Vector3Like;
@@ -100,6 +100,7 @@ export const Html3d = React.forwardRef<State, Props>(
     React.useImperativeHandle(ref, () => state, []);
 
     state.domTarget = (r3f.gl.domElement.parentNode?.parentNode as HTMLElement) ?? null;
+    state.rootDiv.className = className;
 
     React.useLayoutEffect(() => {
       const currentRoot = (state.reactRoot = ReactDOM.createRoot(state.rootDiv));
@@ -117,8 +118,7 @@ export const Html3d = React.forwardRef<State, Props>(
         <div
           ref={state.ref("innerDiv")}
           children={children}
-          {...(docked && { transform: "scale(1)" })}
-          className="origin-left"
+          className={cn("origin-left", docked && "scale-100!", !visible && "invisible")}
         />,
       );
 
@@ -127,16 +127,6 @@ export const Html3d = React.forwardRef<State, Props>(
         state.onFrame();
       });
     });
-
-    React.useLayoutEffect(() => {
-      if (docked ? state.innerDiv : state.rootDiv) {
-        state.rootDiv.className = cn({ docked }, className);
-        const { style } = state.rootDiv;
-        style.visibility = visible ? "visible" : "hidden";
-        style.transition = docked ? "" : "opacity ease-out 100ms";
-        style.opacity = docked ? "" : `var(${html3DOpacityCssVar})`;
-      }
-    }, [state.rootDiv, state.innerDiv, className, docked, visible]);
 
     useFrame(state.onFrame);
 

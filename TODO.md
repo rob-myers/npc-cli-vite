@@ -6,7 +6,7 @@
   - ✅ `w.bubble` and `w.b` 
   - ✅ zoom issue
   - `w bubble.ensure rob`
-  - 🚧 clean e.g. --speech-bubble-width
+  - ✅ clean e.g. --speech-bubble-width
 
 - script `gen-skin-sheets`
   - writes to sheets.json
