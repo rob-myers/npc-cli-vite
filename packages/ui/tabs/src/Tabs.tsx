@@ -387,9 +387,10 @@ function TabHeaderItem({
               trigger={
                 <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
               }
-              className="bg-black p-0 flex flex-col"
-              arrowClassName="fill-black"
+              className="bg-gray-700 py-0.5 px-1 flex flex-col"
+              arrowClassName="fill-gray-700"
               side="bottom"
+              sideOffset={8}
             >
               <div className="flex items-center gap-2 px-2 py-1">
                 {allTabs.length > 1 && (
@@ -414,7 +415,7 @@ function TabHeaderItem({
                       });
                     }}
                   >
-                    <Select.Trigger className="flex items-center gap-1 text-sm text-white cursor-pointer outline-none">
+                    <Select.Trigger className="flex items-center gap-1 text-sm text-white bg-gray-600 px-2 cursor-pointer outline-none">
                       <Select.Value placeholder="Move to..." />
                     </Select.Trigger>
                     <Select.Portal>
@@ -439,7 +440,11 @@ function TabHeaderItem({
                     </Select.Portal>
                   </Select.Root>
                 )}
-                <button type="button" className="cursor-pointer text-white/80 hover:text-white" onPointerDown={onDeleteTab}>
+                <button
+                  type="button"
+                  className="cursor-pointer text-white/80 hover:text-white"
+                  onPointerDown={onDeleteTab}
+                >
                   <TrashIcon className="size-4" />
                 </button>
               </div>
