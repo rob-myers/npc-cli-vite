@@ -92,26 +92,22 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
   findPath(
     src: Geomorph.GmRoomKey,
     dst: Geomorph.GmRoomKey,
-    setWeights?: (nodes: Graph.GmRoomGraphNode[]) => void,
+    opts?: {
+      setWeights?(nodes: Graph.GmRoomGraphNode[]): void;
+    },
   ): AStarSearchResult<Graph.GmRoomGraphNode> {
     const srcNode = this.getNode(src);
     const dstNode = this.getNode(dst);
     if (srcNode === null || dstNode === null) {
       throw Error(`srcNode and dstNode cannot be null: ${jsStringify({ srcNode, dstNode })}`);
     }
-    const result = AStar.search({
+    // currently failed results always terminate in a room node
+    return AStar.search({
       graph: this,
       start: srcNode,
       end: dstNode,
-      setNodeWeights: (nodes) => {
-        setWeights?.(nodes as Graph.GmRoomGraphNode[]);
-      },
+      setNodeWeights: opts?.setWeights,
     });
-    // forbid proper prefixes ending with door/window
-    if (result.success === false && result.pathOrPrefix[result.pathOrPrefix.length - 1].type !== "room") {
-      result.pathOrPrefix.pop();
-    }
-    return result;
   }
 
   getAdjRoomsDoors(grKey1: Geomorph.GmRoomKey, grKey2: Geomorph.GmRoomKey) {

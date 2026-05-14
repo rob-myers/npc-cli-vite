@@ -70,7 +70,7 @@
 
 - ✅ `pick {n}` respects execution order; can override with `pick {n} --block`
 
-- 🚧 queryFilter issues
+- ✅ queryFilter issues
   - wrong: should not head towards other side of wall when door closed
     
   - ✅ `w e.findPath` using src/dst grKeys and possessed keys
@@ -92,10 +92,8 @@
   - ✅ on `move` and dst room is adjacent and unreachable execute configurable npc function
     - ✅ console.log boolean `npcTargetUnreachable`
     - ✅ provide closest door as crow flies if unreachable
-    - ✅ redirect to closest door
-
-  - 🚧 on `enter-room` and dst room is adjacent and unreachable execute configurable npc function
-    - as above
+    - ✅ simply stop the npc
+    - ✅ redirect to closest door instead
 
   - ❌ if `move` and `w.e.findPath` unsuccessful and `pathOrPrefix` terminates adjacent to target room, goto a connecting door
     - ✅ can track npc current room
@@ -277,7 +275,7 @@
 
 - BUG need two ctrl-c for while loop walk?
 - BUG saw auto door close with nearby npc
-  - on move npc inside door trigger sensor?
+  - maybe door was closing and didn't open quickly enough
 - BUG on lock door and save Decor we lose switch tint
   - maybe just stale while paused
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
