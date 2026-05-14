@@ -194,7 +194,7 @@ export class Npc {
     const { walk } = this.w.npc.clips;
     if (!walk || !this.moving) return;
     const walkAction = this.mixer.clipAction(walk);
-    walkAction.timeScale = Math.max(1.25 * (0.55 / npcScale), speed);
+    walkAction.timeScale = Math.max(1.25 * (0.25 / npcScale), speed);
   }
 
   groupRef = (group: THREE.Group | null): void => {
