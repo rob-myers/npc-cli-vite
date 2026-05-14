@@ -863,7 +863,7 @@ export class CameraControls extends EventDispatcher {
           this.snapAzimuthAnimating = false;
           this.snapAzimuthAccum = 0;
         } else {
-          this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.4, 0.04);
+          this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08);
         }
       } else if (this.snapAzimuthAccum > Math.PI / 4) {
         this.snapAzimuthTarget += this.snapAzimuthLastSign * halfPi;
