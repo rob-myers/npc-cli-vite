@@ -107,3 +107,7 @@ export const idleSeparationWeight = 0.5;
 export const defaultDoorCloseMs = 3000;
 
 export const npcBrightness = 0.6;
+
+export const html3DOpacityCssVar = "--html-3d-opacity";
+
+export const npcSpeechBubbleOpacityCssVar = "--npc-speech-bubble-opacity";

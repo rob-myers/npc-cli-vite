@@ -32,6 +32,7 @@ export class Npc {
   geometry: THREE.BufferGeometry;
 
   agentId: string | null = null;
+  bubbleOffset = new THREE.Vector3();
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   last = {
     blockingArea: -1,

@@ -15,6 +15,7 @@ import type { CameraControls as BaseCameraControls } from "../service/camera-con
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { CameraControls } from "./CameraControls";
+import NpcSpeechBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
 
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
@@ -353,6 +354,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // onStart={state.onControlsStart}
           {...state.ctrlOpts}
         />
+
+        <NpcSpeechBubbles />
 
         {props.children}
       </Canvas>
