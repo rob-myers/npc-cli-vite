@@ -31,7 +31,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 8,
-        maxPolarAngle: isTouchDevice() ? Math.PI / 8 : Math.PI / 8,
+        maxPolarAngle: isTouchDevice() ? Math.PI / 8 : Math.PI / 2.5,
         minDistance: 2.5,
         maxDistance: 60,
         panSpeed: 2,
@@ -44,7 +44,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
 
-      cameraMode: isTouchDevice() ? "cardinal" : "azimuthal",
+      cameraMode: isTouchDevice() ? "cardinal" : "free",
       setCameraMode(mode) {
         state.cameraMode = mode;
         const fixedPolar = mode !== "free";
