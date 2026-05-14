@@ -233,7 +233,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.pickObject(e);
         }, 500);
         if (state.cameraMode === "cardinal") {
-          state.canvas.style.cursor = "grabbing";
+          const mod = e.shiftKey || e.ctrlKey || e.metaKey;
+          state.canvas.style.cursor = mod ? "grabbing" : "move";
         }
       },
       onPointerLeave(_e) {
