@@ -217,7 +217,7 @@ export default function Obstacles(_props: Props) {
   const skirtMaterial = useMemo(() => {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
-    const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.6);
+    const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     mat.colorNode = vec4(color("#222").mul(ndotv), 1);
     return mat;
   }, []);
@@ -229,7 +229,7 @@ export default function Obstacles(_props: Props) {
         ref={state.ref("inst")}
         args={[undefined, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
         frustumCulled={false}
-        position={[0, 0.001, 0]} // 🚧
+        position={[0, 0.001, 0]}
         renderOrder={-3}
       >
         <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
@@ -255,7 +255,7 @@ export default function Obstacles(_props: Props) {
           args={[state.skirtQuad, undefined, skirtCount]}
           frustumCulled={false}
           material={skirtMaterial}
-        ></instancedMesh>
+        />
       )}
     </>
   );
