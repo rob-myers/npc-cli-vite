@@ -4,7 +4,7 @@ import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
 import { WorldContext } from "./world-context";
 
-export default function NpcSpeechBubbles() {
+export default function NpcBubbles() {
   const w = React.useContext(WorldContext);
 
   const state = useStateRef(
@@ -80,7 +80,7 @@ interface SpeechBubbleProps {
   bubble: SpeechBubbleApi;
 }
 
-function NpcSpeechBubble({ bubble: b }: SpeechBubbleProps) {
+function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   React.useEffect(() => {
     setTimeout(() => {
       b.update();
@@ -97,15 +97,16 @@ function NpcSpeechBubble({ bubble: b }: SpeechBubbleProps) {
       position={b.position}
       r3f={b.w.r3f}
       tracked={b.tracked}
+      // docked
       visible
     >
-      <div className="text-[#ff9] leading-[1.2]">
-        Hello, world!
-      </div>
+      <div className="text-[#ff9] p-4 rounded-2xl bg-black/30 leading-[1.2]">Hello, world!</div>
+
+      {/* 🚧 mount ui */}
     </Html3d>
   );
 }
 
-const MemoizedSpeechBubble = React.memo<SpeechBubbleProps & { epochMs: number }>(NpcSpeechBubble);
+const MemoizedSpeechBubble = React.memo<SpeechBubbleProps & { epochMs: number }>(NpcBubble);
 
 const speechBubbleBaseScale = 4;
