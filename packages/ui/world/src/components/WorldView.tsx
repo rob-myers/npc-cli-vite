@@ -30,17 +30,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       ctrlOpts: {
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
-        // minPolarAngle: Math.PI * 0,
-        minPolarAngle: (Math.PI * 1) / 8,
-        // maxPolarAngle: Math.PI * 1/2,
-        maxPolarAngle: (Math.PI * 1) / 2.5,
-        // minDistance: 1.5, // target could be ground or npc head
-        minDistance: 2.5, // target could be ground or npc head
+        minPolarAngle: Math.PI / 8,
+        maxPolarAngle: isTouchDevice() ? Math.PI / 8 : Math.PI / 8,
+        minDistance: 2.5,
         maxDistance: 60,
         panSpeed: 2,
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
-        // zoomToCursor: true, // breaks follow zoom on HMR
       },
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
@@ -48,18 +44,27 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
 
-      cameraMode: isTouchDevice() ? "cardinal" : "free",
+      cameraMode: isTouchDevice() ? "cardinal" : "azimuthal",
       setCameraMode(mode) {
         state.cameraMode = mode;
-        const snap = mode === "cardinal";
-        state.controls.setParams({ snapAzimuth: snap });
-        if (snap) {
+        const fixedPolar = mode !== "free";
+        const snapAzimuth = mode === "cardinal";
+        state.controls.setParams({ fixedPolar, snapAzimuth });
+        if (fixedPolar) {
+          state.controls.setPolarAngle(Math.PI / 8);
+        }
+        if (snapAzimuth) {
           const halfPi = Math.PI / 2;
           const current = state.controls.getAzimuthalAngle();
           const nearest = Math.round(current / halfPi) * halfPi;
           state.controls.snapAzimuthTarget = nearest;
           state.controls.setAzimuthalAngle(nearest);
         }
+        state.ctrlOpts = {
+          ...state.ctrlOpts,
+          minPolarAngle: Math.PI / 8,
+          maxPolarAngle: mode === "free" ? Math.PI / 2.5 : Math.PI / 8,
+        };
         w.update();
       },
 
@@ -189,11 +194,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
-        if (state.cameraMode === "cardinal" && state.controls) {
-          state.controls.setParams({ snapAzimuth: true });
-          const halfPi = Math.PI / 2;
-          const current = state.controls.getAzimuthalAngle();
-          state.controls.snapAzimuthTarget = Math.round(current / halfPi) * halfPi;
+        if (state.cameraMode !== "free" && state.controls) {
+          state.controls.setParams({
+            fixedPolar: true,
+            snapAzimuth: state.cameraMode === "cardinal",
+          });
+          if (state.cameraMode === "cardinal") {
+            const halfPi = Math.PI / 2;
+            const current = state.controls.getAzimuthalAngle();
+            state.controls.snapAzimuthTarget = Math.round(current / halfPi) * halfPi;
+          }
         }
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
         w.texFloor.update();
@@ -365,7 +375,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ref={state.ref("controls")}
           domElement={state.canvas}
           initialAngle={{
-            azimuthal: (0 * Math.PI) / 4,
+            azimuthal: 0,
             polar: Math.PI / 5,
           }}
           initialPosition={{ x: 4, y: 18, z: 4 }}
@@ -407,8 +417,8 @@ export type State = {
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
-  cameraMode: "free" | "cardinal";
-  setCameraMode(mode: "free" | "cardinal"): void;
+  cameraMode: "free" | "azimuthal" | "cardinal";
+  setCameraMode(mode: "free" | "azimuthal" | "cardinal"): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;

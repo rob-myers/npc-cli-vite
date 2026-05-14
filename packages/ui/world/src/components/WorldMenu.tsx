@@ -154,14 +154,11 @@ export function WorldMenu() {
 
                 {w.view && (
                   <Menu.Item
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
-                      w.view.cameraMode === "cardinal" && "text-green-400",
-                    )}
+                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick={false}
-                    onClick={() => w.view.setCameraMode(w.view.cameraMode === "free" ? "cardinal" : "free")}
+                    onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
                   >
-                    Camera: {w.view.cameraMode}
+                    camera: {w.view.cameraMode}
                   </Menu.Item>
                 )}
 
@@ -430,6 +427,7 @@ export type State = {
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
+const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
 
 function useToastKeys(keys: string[], delayMs: number): string[] {
   const [visible, setVisible] = useState<string[]>([]);
