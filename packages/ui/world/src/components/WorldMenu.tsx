@@ -1,4 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
+import { Select } from "@base-ui/react/select";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -162,47 +163,19 @@ export function WorldMenu() {
                   </Menu.Item>
                 )}
 
-                <div className="my-1 border-t border-slate-700" />
+                <MenuSelect
+                  label={w.mapKey}
+                  value={w.mapKey}
+                  items={mapKeys}
+                  onValueChange={(key) => key && uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key))}
+                />
 
-                {mapKeys.map((key) => (
-                  <Menu.Item
-                    key={key}
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
-                      "hover:bg-slate-700",
-                      key === w.mapKey && "text-green-400",
-                    )}
-                    closeOnClick
-                    onClick={() => {
-                      uiStoreApi.setUiMeta(w.id, (draft) => {
-                        draft.mapKey = key;
-                      });
-                    }}
-                  >
-                    {key}
-                  </Menu.Item>
-                ))}
-
-                <div className="my-1 border-t border-slate-700" />
-
-                {themeKeys.map((key) => (
-                  <Menu.Item
-                    key={key}
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1 text-left text-xs text-slate-300 cursor-pointer",
-                      "hover:bg-slate-700",
-                      key === w.themeKey && "text-green-400",
-                    )}
-                    closeOnClick={false}
-                    onClick={() => {
-                      uiStoreApi.setUiMeta(w.id, (draft) => {
-                        draft.themeKey = key;
-                      });
-                    }}
-                  >
-                    {key}
-                  </Menu.Item>
-                ))}
+                <MenuSelect
+                  label={w.themeKey}
+                  value={w.themeKey}
+                  items={themeKeys}
+                  onValueChange={(key) => key && uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = key))}
+                />
 
                 {import.meta.env.DEV && (
                   <>
@@ -269,85 +242,60 @@ export function WorldMenu() {
                   </>
                 )}
 
-                <div className="my-1 border-t border-slate-700" />
-
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => {
-                    const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
-                    if (!result.success) return;
-                    const [x, y, z] = result.position;
-                    const key = `npc-${Date.now().toString(36)}`;
-                    w.npc.spawn({ npcKey: key, at: [x, y, z] });
-                    w.update();
+                <MenuSelect
+                  label="actions"
+                  value={null}
+                  items={["Spawn NPC", "Clear NPCs"]}
+                  onValueChange={(action) => {
+                    if (action === "Spawn NPC") {
+                      const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
+                      if (!result.success) return;
+                      const [x, y, z] = result.position;
+                      const key = `npc-${Date.now().toString(36)}`;
+                      w.npc.spawn({ npcKey: key, at: [x, y, z] });
+                      w.update();
+                    } else if (action === "Clear NPCs") {
+                      w.npc.remove(...Object.keys(w.npc.npc));
+                      w.view.forceUpdate();
+                    }
                   }}
-                >
-                  Spawn NPC
-                </Menu.Item>
+                />
 
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => {
-                    w.npc.remove(...Object.keys(w.npc.npc));
-                    w.view.forceUpdate();
+                <MenuMultiSelect
+                  label="debug"
+                  items={debugItems}
+                  isActive={(item) => {
+                    switch (item) {
+                      case "View Pick":
+                        return w.view?.objectPick.value === 1;
+                      case "Colliders":
+                        return w.debug?.physicsCollidersShown ?? false;
+                      default:
+                        return false;
+                    }
                   }}
-                >
-                  Clear NPCs
-                </Menu.Item>
-
-                <div className="my-1 border-t border-slate-700" />
-                <div className="px-2 py-0.5 text-[10px] text-slate-500 uppercase tracking-wider">Debug</div>
-
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => {
-                    w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
-                    w.view.forceUpdate();
+                  onToggle={(item) => {
+                    switch (item) {
+                      case "View Pick":
+                        w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
+                        w.view.forceUpdate();
+                        break;
+                      case "Room Hit":
+                        state.set({ debugHitOpen: true });
+                        break;
+                      case "Gm Graphs":
+                        state.set({ gmGraphsOpen: true });
+                        break;
+                      case "Skins":
+                        state.set({ skinDebugOpen: true });
+                        break;
+                      case "Colliders":
+                        w.debug?.showPhysicsColliders();
+                        w.update();
+                        break;
+                    }
                   }}
-                >
-                  View Pick
-                </Menu.Item>
-
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => state.set({ debugHitOpen: true })}
-                >
-                  Room Hit
-                </Menu.Item>
-
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => state.set({ gmGraphsOpen: true })}
-                >
-                  Gm Graphs
-                </Menu.Item>
-
-                <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
-                  closeOnClick={false}
-                  onClick={() => state.set({ skinDebugOpen: true })}
-                >
-                  Skins
-                </Menu.Item>
-
-                <Menu.Item
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
-                    w.debug?.physicsCollidersShown && "text-green-400",
-                  )}
-                  closeOnClick={false}
-                  onClick={() => {
-                    w.debug?.showPhysicsColliders();
-                    w.update();
-                  }}
-                >
-                  Colliders
-                </Menu.Item>
+                />
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
@@ -428,6 +376,88 @@ export type State = {
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
+const debugItems = ["View Pick", "Room Hit", "Gm Graphs", "Skins", "Colliders"] as const;
+
+const selectItemClass = cn(
+  "px-2 py-1 text-xs cursor-pointer text-slate-300",
+  "data-highlighted:bg-slate-700 data-selected:text-green-400",
+);
+
+function MenuSelect({
+  label,
+  value,
+  items,
+  onValueChange,
+}: {
+  label: string;
+  value: string | null;
+  items: string[];
+  onValueChange: (value: string | null) => void;
+}) {
+  return (
+    <Select.Root value={value} onValueChange={onValueChange}>
+      <Select.Trigger className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full">
+        <Select.Value placeholder={label} />
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Positioner className="z-50" sideOffset={4} side="right" align="start" collisionPadding={0} alignItemWithTrigger={false}>
+          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
+            <Select.List>
+              {items.map((item) => (
+                <Select.Item key={item} value={item} className={selectItemClass}>
+                  <Select.ItemText>{item}</Select.ItemText>
+                </Select.Item>
+              ))}
+            </Select.List>
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
+
+function MenuMultiSelect({
+  label,
+  items,
+  isActive,
+  onToggle,
+}: {
+  label: string;
+  items: readonly string[];
+  isActive: (item: string) => boolean;
+  onToggle: (item: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Select.Root open={open} onOpenChange={setOpen} value={null}>
+      <Select.Trigger className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full">
+        {label}
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Positioner className="z-50" sideOffset={4} side="right" align="start" collisionPadding={0} alignItemWithTrigger={false}>
+          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1">
+            <Select.List>
+              {items.map((item) => (
+                <Select.Item
+                  key={item}
+                  value={item}
+                  className={cn(selectItemClass, isActive(item) && "text-green-400!")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onToggle(item);
+                  }}
+                >
+                  <Select.ItemText>{item}</Select.ItemText>
+                </Select.Item>
+              ))}
+            </Select.List>
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
 
 function useToastKeys(keys: string[], delayMs: number): string[] {
   const [visible, setVisible] = useState<string[]>([]);
