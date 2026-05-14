@@ -1,4 +1,5 @@
-import { useStateRef } from "@npc-cli/util";
+import { cn, useStateRef } from "@npc-cli/util";
+import { CursorTextIcon, HandIcon } from "@phosphor-icons/react";
 import React from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -81,6 +82,8 @@ interface SpeechBubbleProps {
 }
 
 function NpcBubble({ bubble: b }: SpeechBubbleProps) {
+  const [selectMode, setSelectMode] = React.useState(false);
+
   React.useEffect(() => {
     setTimeout(() => {
       b.update();
@@ -92,18 +95,37 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   return (
     <Html3d
       ref={b.html3dRef.bind(b)}
-      className="absolute -top-4 left-0 pointer-events-none [&>div]:flex [&>div]:justify-center"
+      className="absolute top-0 left-0 [&>div]:flex [&>div]:justify-center"
       baseScale={speechBubbleBaseScale}
       offset={b.offset}
       position={b.position}
       r3f={b.w.r3f}
       tracked={b.tracked}
-      // docked
       visible
     >
-      <div className="text-[#ff9] p-4 rounded-2xl bg-black/30 leading-[1.2]">Hello, world!</div>
-
-      {/* 🚧 mount ui */}
+      <div className="relative">
+        <div
+          className={cn(
+            "text-[#ff9] p-4 rounded-2xl bg-black/30 leading-[1.2]",
+            !selectMode && "select-none",
+          )}
+          onWheel={b.forwardWheelEvents.bind(b)}
+          {...(!selectMode && {
+            onPointerDown: b.forwardPointerEvents.bind(b),
+            onPointerUp: b.forwardPointerEvents.bind(b),
+          })}
+        >
+          Hello, world!
+        </div>
+        <button
+          type="button"
+          className="absolute -top-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer hover:bg-black/80"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setSelectMode((v) => !v)}
+        >
+          {selectMode ? <HandIcon className="size-3" /> : <CursorTextIcon className="size-3" />}
+        </button>
+      </div>
     </Html3d>
   );
 }
