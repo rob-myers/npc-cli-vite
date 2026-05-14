@@ -3,7 +3,7 @@ import { BinaryHeap } from "./BinaryHeap";
 import { Utils } from "./Utils";
 
 export class AStar {
-  static init(graph: Graph.BaseGraph<Graph.AStarNode>, initNodeCosts: (nodes: Graph.AStarNode[]) => void) {
+  static init<T extends Graph.AStarNode>(graph: Graph.BaseGraph<T>, initNodeCosts?: (nodes: T[]) => void) {
     const nodes = graph.nodesArray;
     for (let x = 0; x < nodes.length; x++) {
       const node = nodes[x].astar;
@@ -14,7 +14,7 @@ export class AStar {
       node.closed = false;
       node.parent = null;
     }
-    initNodeCosts(nodes);
+    initNodeCosts?.(nodes);
   }
 
   static cleanUp(graph: Graph.AStarNode[]) {
@@ -39,16 +39,11 @@ export class AStar {
     start,
     end,
     setNodeWeights,
-  }: {
-    graph: Graph.BaseGraph<T>;
-    start: T;
-    end: T;
-    setNodeWeights(nodes: Graph.AStarNode[]): void;
-  }): AStarSearchResult<T> {
+  }: AStarSearchOpts<T>): AStarSearchResult<T> {
     AStar.init(graph, setNodeWeights);
+
     const nodes = graph.nodesArray;
     const minNode = { hScore: Infinity, node: start };
-
     const openHeap = AStar.heap<T>();
     openHeap.push(start);
 
@@ -56,7 +51,7 @@ export class AStar {
       const currentNode = openHeap.pop();
 
       if (currentNode === end) {
-        return { success: true, pathOrPrefix: AStar.unwindResult<T>(start, currentNode) };
+        return { success: true, path: AStar.unwindResult<T>(start, currentNode) };
       }
 
       currentNode.astar.closed = true;
@@ -65,7 +60,6 @@ export class AStar {
 
       for (let i = 0, il = neighbours.length; i < il; i++) {
         const neighbour = neighbours[i];
-
         if (neighbour.astar.closed === true) {
           continue;
         }
@@ -76,9 +70,6 @@ export class AStar {
         if (!beenVisited || gScore < (neighbour.astar.g as number)) {
           neighbour.astar.visited = true;
           neighbour.astar.parent = currentNode;
-          // if (!neighbour.astar.centroid || !end.astar.centroid) {
-          //   throw new Error("Unexpected state");
-          // }
           neighbour.astar.g = gScore;
           neighbour.astar.h ||= AStar.heuristic(neighbour.astar.centroid, end.astar.centroid);
           neighbour.astar.f = neighbour.astar.g + neighbour.astar.h;
@@ -96,11 +87,7 @@ export class AStar {
       }
     }
 
-    // 🔔 expect unnatural prefixes
-    return {
-      success: false,
-      pathOrPrefix: minNode.node === start ? [start] : AStar.unwindResult<T>(start, minNode.node),
-    };
+    return { success: false, path: [] };
   }
 
   static heuristic(pos1: Geom.VectJson, pos2: Geom.VectJson) {
@@ -128,13 +115,14 @@ export class AStar {
   }
 }
 
+export type AStarSearchOpts<T extends Graph.AStarNode> = {
+  graph: Graph.BaseGraph<T>;
+  start: T;
+  end: T;
+  setNodeWeights?(nodes: T[]): void;
+};
+
 export type AStarSearchResult<T extends Graph.AStarNode> = {
   success: boolean;
-  /**
-   * - On success this is the witnessing path including `start`, else a maximal prefix.
-   * - e.g. if all doors of `start` are inaccessible then:
-   *   > `success === false`, `pathOrPrefix === [start]`
-   * - In particular, this array is never empty.
-   */
-  pathOrPrefix: T[];
+  path: T[];
 };

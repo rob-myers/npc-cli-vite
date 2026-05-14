@@ -3,6 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, instanceIndex, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
@@ -345,7 +346,7 @@ export type State = {
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
 };
 
-const doorHeight = 2 - 0.001;
+const doorHeight = wallHeight - 0.001;
 const doorSpeed = 2;
 const doorOpenTarget = 0.9;
 const doorOpenTest = 0.8;
