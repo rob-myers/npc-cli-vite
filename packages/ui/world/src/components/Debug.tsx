@@ -15,7 +15,7 @@ export function Debug() {
   const state = useStateRef(
     (): State => ({
       demoNavPath: [] as Vec3[],
-      demoNavPathShown: true,
+      demoNavPathShown: false,
       originShown: false,
       openDoorsOnClick: true,
 
