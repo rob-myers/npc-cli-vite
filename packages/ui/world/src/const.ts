@@ -89,7 +89,7 @@ export const MAX_DECOR_QUAD_INSTANCES = 512;
 
 export const npcScale = 0.65;
 
-export const npcDefaultBubbleHeight = 1.5;
+export const npcDefaultBubbleHeight = 1.8;
 
 export const npcLabelHeight = 1.4 / npcScale;
 
