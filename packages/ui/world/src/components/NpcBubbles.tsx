@@ -107,7 +107,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         <div
           className={cn(
             "text-[#ff9] p-4 rounded-2xl bg-black/30 leading-[1.2]",
-            !selectMode && "select-none",
+            selectMode ? "cursor-text" : "select-none",
           )}
           onWheel={b.forwardWheelEvents.bind(b)}
           {...(!selectMode && {
