@@ -18,6 +18,8 @@ export const decorIconRadius = 5 * sguToWorldScale;
 export const decorIconRadiusOutset = 2 * sguToWorldScale;
 export const doorSwitchHeight = 1.2;
 
+export const wallOutsetSgu = 10;
+
 export const obstacleOutset = 8 * sguToWorldScale;
 /**
  * Walls with any of these tags will not be merged with adjacent walls
@@ -26,7 +28,7 @@ export const obstacleOutset = 8 * sguToWorldScale;
  * - `broad` (true) Not thin e.g. back of lifeboat
  */
 
-export const wallOutset = 10 * sguToWorldScale;
+export const wallOutset = wallOutsetSgu * sguToWorldScale;
 export const specialWallMetaKeys = ["y", "h", "broad", "hollow"] as const;
 
 /** Depth of doorway along line walking through door */
@@ -79,7 +81,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   walls: { color: "#000000", opacity: 0.5 },
 };
 
-export const wallHeight = 2;
+export const wallHeight = 1.7;
 
 export const MAX_GEOMORPH_INSTANCES = 64;
 

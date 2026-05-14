@@ -1,6 +1,6 @@
 # TODO
 
-- 🚧 migrate npc bubble
+- ✅ migrate npc bubble
   - ✅ Html3d
   - ✅ NpcBubbles
   - ✅ `w.bubble` and `w.b` 
@@ -10,6 +10,10 @@
   - ✅ initial scale bug
 
 - doors have meaningful icons
+
+- ✅ try lower walls
+- try thinner model
+- shaded skin overlay
 
 - script `gen-skin-sheets`
   - writes to sheets.json
