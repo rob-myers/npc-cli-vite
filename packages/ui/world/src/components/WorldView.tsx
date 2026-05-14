@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
+import { getRelativePointer, isRMB, isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -47,6 +47,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
+
+      cameraMode: isTouchDevice() ? "cardinal" : "free",
+      setCameraMode(mode) {
+        state.cameraMode = mode;
+        const snap = mode === "cardinal";
+        state.controls.setParams({ snapAzimuth: snap });
+        if (snap) {
+          const halfPi = Math.PI / 2;
+          const current = state.controls.getAzimuthalAngle();
+          const nearest = Math.round(current / halfPi) * halfPi;
+          state.controls.snapAzimuthTarget = nearest;
+          state.controls.setAzimuthalAngle(nearest);
+        }
+        w.update();
+      },
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -174,6 +189,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
+        if (state.cameraMode === "cardinal" && state.controls) {
+          state.controls.setParams({ snapAzimuth: true });
+          const halfPi = Math.PI / 2;
+          const current = state.controls.getAzimuthalAngle();
+          state.controls.snapAzimuthTarget = Math.round(current / halfPi) * halfPi;
+        }
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
         w.texFloor.update();
         w.update(); // e.g. show stats
@@ -386,6 +407,8 @@ export type State = {
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
+  cameraMode: "free" | "cardinal";
+  setCameraMode(mode: "free" | "cardinal"): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
