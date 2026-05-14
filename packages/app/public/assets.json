@@ -6903,7 +6903,6 @@
       {"id": "extra--004--desk--0.5x1"},
       {"id": "g-101--multipurpose"},
       {"id": "iris-valves--005--1x1"},
-      {"id": "bed--004--0.8x1.4"},
       {"id": "bed--005--0.6x1.2"}
     ],
     [
@@ -6912,9 +6911,9 @@
       {"id": "stateroom--012--2x2"},
       {"id": "stateroom--014--2x2"},
       {"id": "stateroom--019--2x3"},
-      {"id": "stateroom--036--2x4"}
+      {"id": "bed--004--0.8x1.4"}
     ],
-    [{"id": "office--001--2x2"}],
+    [{"id": "office--001--2x2"}, {"id": "stateroom--036--2x4"}],
     [{"id": "g-301--bridge"}]
   ],
   "layout": {
