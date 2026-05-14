@@ -92,6 +92,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       texLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 64, height: 64, numTextures: MAX_NPCS }),
 
+      assets: null as any,
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
@@ -100,23 +101,24 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: emptyTiledNavmeshResponse,
       pending: {},
 
-      assets: null as any,
+      b: null as any,
+      bubble: null as any,
       ceil: null as any,
+      debug: null as any,
       decor: null as any,
       door: null as any,
       d: null as any,
+      e: null as any,
       floor: null as any,
-      r3f: null as any,
-      obs: null as any,
-      sheets: null as any,
-      view: null as any,
-      wall: null as any,
       menu: { suppressGrayscale: false } as State["menu"],
       npc: null as any,
       n: null as any,
+      obs: null as any,
+      r3f: null as any,
+      sheets: null as any,
+      view: null as any,
+      wall: null as any,
       worker: null as any,
-      e: null as any,
-      debug: null as any,
 
       rootEl: null as any,
 
@@ -350,6 +352,8 @@ export type State = {
   gmGraph: GmGraph;
   gmRoomGraph: GmRoomGraph;
 
+  b: UseStateRef<import("./NpcBubbles").State>["byKey"];
+  bubble: UseStateRef<import("./NpcBubbles").State>;
   ceil: UseStateRef<import("./Ceiling").State>;
   decor: UseStateRef<import("./Decor").State>;
   door: UseStateRef<import("./Doors").State>;

@@ -1,5 +1,13 @@
 # TODO
 
+- 🚧 migrate npc bubble
+  - ✅ Html3d
+  - ✅ NpcBubbles
+  - ✅ `w.bubble` and `w.b` 
+  - ✅ zoom issue
+  - `w bubble.ensure rob`
+  - 🚧 clean e.g. --speech-bubble-width
+
 - script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png

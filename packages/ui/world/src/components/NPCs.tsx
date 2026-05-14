@@ -114,9 +114,18 @@ export default function NPCs() {
           npc.agentId = oldNpc.agentId;
           npc.doorKeys = oldNpc.doorKeys;
           npc.last = oldNpc.last;
+          npc.bubbleOffset = oldNpc.bubbleOffset;
           state.placeNpcAt(npc, npc.position);
         }
         state.update();
+      },
+      get(npcKey) {
+        const npc = state.npc[npcKey];
+        if (npc === undefined) {
+          throw Error(`npc "${npcKey}" does not exist`);
+        } else {
+          return npc;
+        }
       },
       getClosestPoly(targetPos, queryFilter = ANY_QUERY_FILTER) {
         return findNearestPoly(
@@ -389,6 +398,7 @@ export type State = {
   placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat): void;
   devHotReload(): void;
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
+  get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;
   move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): Promise<void>;
   onTick(delta: number): void;
