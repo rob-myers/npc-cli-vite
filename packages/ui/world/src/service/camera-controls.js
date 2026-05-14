@@ -116,7 +116,7 @@ export class CameraControls extends EventDispatcher {
   snapAzimuthTarget = 0;
   snapAzimuthAccum = 0;
   snapAzimuthLastSign = 0;
-  snapAzimuthCooldown = 0;
+  snapAzimuthAnimating = false;
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -567,6 +567,11 @@ export class CameraControls extends EventDispatcher {
       );
     }
 
+    if (this.params.snapAzimuth) {
+      this.snapAzimuthAccum = 0;
+      this.snapAzimuthLastSign = 0;
+    }
+
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
   };
@@ -732,7 +737,6 @@ export class CameraControls extends EventDispatcher {
    */
   rotateLeft(angle) {
     if (this.params.snapAzimuth) {
-      if (this.snapAzimuthCooldown > 0) return;
       const sign = Math.sign(angle);
       if (sign !== 0 && sign !== this.snapAzimuthLastSign) {
         this.snapAzimuthAccum = 0;
@@ -741,7 +745,7 @@ export class CameraControls extends EventDispatcher {
       this.snapAzimuthAccum += Math.abs(angle);
       return;
     }
-    this.sphericalDelta.theta -= angle;
+    this.sphericalDelta.theta += angle;
   }
 
   /**
@@ -828,19 +832,23 @@ export class CameraControls extends EventDispatcher {
     }
 
     if (this.params.snapAzimuth) {
-      if (this.snapAzimuthCooldown > 0) {
-        this.snapAzimuthCooldown--;
-        this.snapAzimuthAccum = 0;
+      if (this.snapAzimuthAnimating) {
+        const remaining = deltaAngle(this.spherical.theta, this.snapAzimuthTarget);
+        if (Math.abs(remaining) < 0.005) {
+          this.spherical.theta = this.snapAzimuthTarget;
+          this.sphericalDelta.theta = 0;
+          this.snapAzimuthAnimating = false;
+          this.snapAzimuthAccum = 0;
+        } else {
+          this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.4, 0.04);
+        }
       } else if (this.snapAzimuthAccum > Math.PI / 4) {
-        this.snapAzimuthTarget -= this.snapAzimuthLastSign * halfPi;
+        this.snapAzimuthTarget += this.snapAzimuthLastSign * halfPi;
         this.snapAzimuthAccum = 0;
-        this.snapAzimuthCooldown = 60;
-      }
-      this.sphericalDelta.theta = 0;
-      const diff = this.snapAzimuthTarget - this.spherical.theta;
-      if (Math.abs(diff) > 0.005) {
-        this.spherical.theta += diff * 0.08;
+        this.snapAzimuthAnimating = true;
+        this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuthTarget);
       } else {
+        this.sphericalDelta.theta = 0;
         this.spherical.theta = this.snapAzimuthTarget;
       }
     }
