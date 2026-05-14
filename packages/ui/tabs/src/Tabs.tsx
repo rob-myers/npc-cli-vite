@@ -1,6 +1,7 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
+import { Select } from "@base-ui/react/select";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
@@ -377,7 +378,7 @@ function TabHeaderItem({
       )}
       onClick={onClickTab}
     >
-      <div className={"flex items-center p-1 border text-xs border-on-background/20"}>
+      <div className={"flex items-center px-1 py-0.5 border text-sm border-on-background/20"}>
         <pre className="p-1">{tab.title}</pre>
 
         {isCurrentTab && (
@@ -390,55 +391,58 @@ function TabHeaderItem({
               arrowClassName="fill-black"
               side="bottom"
             >
-              <div className="flex">
-                <button type="button" className="px-0.5 py-1">
-                  <TrashIcon
-                    weight="thin"
-                    className="cursor-pointer size-5 bg-black/40 text-white"
-                    onPointerDown={onDeleteTab}
-                  />
+              <div className="flex items-center gap-2 px-2 py-1">
+                {allTabs.length > 1 && (
+                  <Select.Root
+                    value={allTabs.find((t) => t.id === tabsMetaId)?.title ?? ""}
+                    onValueChange={(title) => {
+                      const target = allTabs.find((t) => t.title === title);
+                      if (!target || target.id === tabsMetaId) return;
+                      uiStore.setState((draft) => {
+                        const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
+                        const targetMeta = draft.byId[target.id]?.meta as TabsUiMeta | undefined;
+                        const item = draft.byId[tab.id];
+                        if (!sourceMeta || !targetMeta || !item) return;
+                        sourceMeta.items = sourceMeta.items.filter((id) => id !== tab.id);
+                        if (sourceMeta.currentTabId === tab.id) {
+                          sourceMeta.currentTabId = sourceMeta.items[0];
+                        }
+                        item.meta.parentId = target.id;
+                        item.meta.disabled = targetMeta.disabled;
+                        targetMeta.items.push(tab.id);
+                        targetMeta.currentTabId = tab.id;
+                      });
+                    }}
+                  >
+                    <Select.Trigger className="flex items-center gap-1 text-sm text-white cursor-pointer outline-none">
+                      <Select.Value placeholder="Move to..." />
+                    </Select.Trigger>
+                    <Select.Portal>
+                      <Select.Positioner className="z-10000" sideOffset={4}>
+                        <Select.Popup className="bg-black border border-white/20 rounded shadow-lg py-1">
+                          <Select.List>
+                            {allTabs.map((t) => (
+                              <Select.Item
+                                key={t.id}
+                                value={t.title}
+                                className={cn(
+                                  "px-3 py-1 text-sm cursor-pointer text-white",
+                                  "data-highlighted:bg-white/20 data-selected:text-blue-400",
+                                )}
+                              >
+                                <Select.ItemText>{t.title}</Select.ItemText>
+                              </Select.Item>
+                            ))}
+                          </Select.List>
+                        </Select.Popup>
+                      </Select.Positioner>
+                    </Select.Portal>
+                  </Select.Root>
+                )}
+                <button type="button" className="cursor-pointer text-white/80 hover:text-white" onPointerDown={onDeleteTab}>
+                  <TrashIcon className="size-4" />
                 </button>
               </div>
-              {allTabs.length > 1 && (
-                <div className="border-t border-white/20 py-1">
-                  {allTabs.map((targetTabs) => {
-                    const isCurrent = targetTabs.id === tabsMetaId;
-                    return (
-                      <button
-                        key={targetTabs.id}
-                        type="button"
-                        disabled={isCurrent}
-                        className={cn(
-                          "block w-full text-left text-sm px-2 py-0.5 text-white",
-                          isCurrent ? "font-bold text-blue-400" : "cursor-pointer hover:bg-white/20",
-                        )}
-                        onPointerDown={(e) => {
-                          if (isCurrent) return;
-                          e.stopPropagation();
-                          uiStore.setState((draft) => {
-                            const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
-                            const targetMeta = draft.byId[targetTabs.id]?.meta as TabsUiMeta | undefined;
-                            const item = draft.byId[tab.id];
-                            if (!sourceMeta || !targetMeta || !item) return;
-                            // Remove from source
-                            sourceMeta.items = sourceMeta.items.filter((id) => id !== tab.id);
-                            if (sourceMeta.currentTabId === tab.id) {
-                              sourceMeta.currentTabId = sourceMeta.items[0];
-                            }
-                            // Add to target
-                            item.meta.parentId = targetTabs.id;
-                            item.meta.disabled = targetMeta.disabled;
-                            targetMeta.items.push(tab.id);
-                            targetMeta.currentTabId = tab.id;
-                          });
-                        }}
-                      >
-                        {targetTabs.title}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </BasicPopover>
 
             <button
