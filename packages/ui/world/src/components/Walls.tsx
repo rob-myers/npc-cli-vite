@@ -87,20 +87,13 @@ export default function Walls() {
   const wallCount = w.gmsData.count.wall;
 
   const mat = useMemo(() => {
-    const opacityUniform = uniform(0.5);
-    const material = new THREE.MeshStandardNodeMaterial({
-      side: THREE.DoubleSide,
-      transparent: true,
-      depthWrite: false,
-    });
-
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
-    material.opacityNode = w.view.objectPick
+    const opacityUniform = uniform(0.5);
+    const opacityNode = w.view.objectPick
       .notEqual(0)
       .select(w.view.objectPick.notEqual(1).select(float(0), float(1)), opacityUniform);
-    material.outputNode = w.view.withPickOutput(PICK_TYPE.wall);
-
-    return { material, opacityUniform, uuid: crypto.randomUUID() };
+    const outputNode = w.view.withPickOutput(PICK_TYPE.wall);
+    return { opacityUniform, opacityNode, outputNode, uuid: crypto.randomUUID() };
   }, [wallCount]);
 
   useEffect(() => {
@@ -111,14 +104,21 @@ export default function Walls() {
 
   return wallCount ? (
     <instancedMesh
-      // visible={false}
       key={mat.uuid}
       name="walls"
       ref={state.ref("inst")}
       args={[state.quad, undefined, wallCount]}
-      material={mat.material}
       renderOrder={4}
-    />
+    >
+      <meshStandardNodeMaterial
+        key={mat.uuid}
+        side={THREE.DoubleSide}
+        transparent
+        depthWrite={false}
+        opacityNode={mat.opacityNode}
+        outputNode={mat.outputNode}
+      />
+    </instancedMesh>
   ) : null;
 }
 
