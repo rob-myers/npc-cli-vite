@@ -11333,9 +11333,9 @@
       "background": "bg-black",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
-        "nonHull": {"fill": "#333", "stroke": "#000"}
+        "nonHull": {"fill": "#777", "stroke": "#000"}
       },
-      "floor": {"navStroke": "#000a"},
+      "floor": {"navStroke": "#0005"},
       "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {

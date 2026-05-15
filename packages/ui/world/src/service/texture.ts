@@ -444,11 +444,13 @@ const sciFiFloorPattern = (() => {
   const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
   // base dark metallic
-  ctx.fillStyle = "rgba(20, 22, 28, 1)";
+  // ctx.fillStyle = "rgba(20, 22, 28, 1)";
+  ctx.fillStyle = "rgba(100, 100, 100, 0.4)";
   ctx.fillRect(0, 0, s, s);
 
   // tile grid lines
-  ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
+  // ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
   ctx.lineWidth = 4;
   ctx.strokeRect(0, 0, size, size);
   ctx.strokeRect(size, 0, size, size);
