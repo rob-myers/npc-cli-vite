@@ -113,3 +113,7 @@ export const defaultDoorCloseMs = 3000;
 export const npcBrightness = 0.6;
 
 export const html3DOpacityCssVar = "--html-3d-opacity";
+
+export const lockedDoorTint = "#f44";
+
+export const unlockedDoorTint = "#4f4";
