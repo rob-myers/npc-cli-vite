@@ -372,7 +372,11 @@ const logos: LogoFn[] = [
 
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
-export function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
+export function drawRoomOutlines(
+  ct: CanvasRenderingContext2D,
+  layout: Geomorph.Layout,
+  floorTheme: { patternFill: string; tileStroke: string } = { patternFill: "#222", tileStroke: "#0001" },
+) {
   ct.save();
   ct.lineJoin = "round";
   ct.lineCap = "round";
@@ -380,11 +384,12 @@ export function drawRoomOutlines(ct: CanvasRenderingContext2D, layout: Geomorph.
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
   const insetAmount = 0.75;
+  const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
 
   for (const room of layout.rooms) {
     const noHoles = room.clone().removeHoles();
-    sciFiFloorPattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
-    ct.fillStyle = sciFiFloorPattern;
+    pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
+    ct.fillStyle = pattern;
     fillRoundedPolys(ct, geomService.createInset(noHoles, insetAmount), insetAmount);
   }
   ct.restore();
@@ -433,8 +438,16 @@ function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], corn
   }
 }
 
-const sciFiFloorPattern = (() => {
-  const tileWorld = geomorphGridMeters; // match grid
+let cachedFloorPattern: CanvasPattern | null = null;
+let cachedPatternFill = "";
+let cachedTileStroke = "";
+
+function getFloorPattern(patternFill: string, tileStroke: string): CanvasPattern {
+  if (cachedFloorPattern && cachedPatternFill === patternFill && cachedTileStroke === tileStroke) {
+    return cachedFloorPattern;
+  }
+
+  const tileWorld = geomorphGridMeters;
   const scale = worldToSguScale * gmFloorExtraScale;
   const size = Math.round(tileWorld * scale);
   const c = document.createElement("canvas");
@@ -443,23 +456,18 @@ const sciFiFloorPattern = (() => {
   const s = c.width;
   const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
-  // base dark metallic
-  // ctx.fillStyle = "rgba(20, 22, 28, 1)";
-  ctx.fillStyle = "rgba(100, 100, 100, 0.4)";
+  ctx.fillStyle = patternFill;
   ctx.fillRect(0, 0, s, s);
 
-  // tile grid lines
-  // ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+  ctx.strokeStyle = tileStroke;
   ctx.lineWidth = 4;
   ctx.strokeRect(0, 0, size, size);
   ctx.strokeRect(size, 0, size, size);
   ctx.strokeRect(0, size, size, size);
   ctx.strokeRect(size, size, size, size);
 
-  // inner tile bevels (inset lines)
   const m = 4;
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
+  ctx.strokeStyle = tileStroke;
   ctx.lineWidth = 1;
   for (const [ox, oy] of [
     [0, 0],
@@ -470,8 +478,7 @@ const sciFiFloorPattern = (() => {
     ctx.strokeRect(ox + m, oy + m, size - m * 2, size - m * 2);
   }
 
-  // rivet dots in corners of each tile
-  ctx.fillStyle = "rgba(0, 0, 0, 1)";
+  ctx.fillStyle = tileStroke;
   const d = 6;
   for (const [ox, oy] of [
     [0, 0],
@@ -491,8 +498,11 @@ const sciFiFloorPattern = (() => {
     }
   }
 
-  return ctx.createPattern(c, "repeat") as CanvasPattern;
-})();
+  cachedFloorPattern = ctx.createPattern(c, "repeat") as CanvasPattern;
+  cachedPatternFill = patternFill;
+  cachedTileStroke = tileStroke;
+  return cachedFloorPattern;
+}
 
 export function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) {
   const { ct } = texArray;
