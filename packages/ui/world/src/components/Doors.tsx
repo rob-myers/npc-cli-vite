@@ -3,7 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, instanceIndex, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { wallHeight } from "../const";
+import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
@@ -241,7 +241,10 @@ export default function Doors() {
         // Actually lock/unlock door
         door.locked = !door.locked;
         // 🚧 move to use-world-events
-        w.decor.tintInstances(door.locked ? "#ff0000" : "#00ff00", ...w.decor.gdKeyToInstanceId[door.gdKey]);
+        w.decor.tintInstances(
+          door.locked ? lockedDoorTint : unlockedDoorTint,
+          ...w.decor.gdKeyToInstanceId[door.gdKey],
+        );
 
         w.events.next({
           key: door.locked ? "door-locked" : "door-unlocked",

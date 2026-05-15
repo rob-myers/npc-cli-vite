@@ -8,7 +8,7 @@ import React from "react";
 import { attribute, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
-import { MAX_DECOR_QUAD_INSTANCES, sguToWorldScale } from "../const";
+import { lockedDoorTint, MAX_DECOR_QUAD_INSTANCES, sguToWorldScale, unlockedDoorTint } from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
 import { addToDecorGrid } from "../service/grid";
 import { PICK_TYPE } from "../service/pick";
@@ -152,7 +152,7 @@ export default function Decor() {
             // tint via un/locked doors
             const gdKey: Geomorph.GmDoorKey = `g${gmId}d${item.meta.doorId}`;
             const { locked } = w.door.byKey[gdKey];
-            state.inst.setColorAt(instanceId, tmpColor.set(locked ? "#ff0000" : "#00ff00"));
+            state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
             // build gdKey -> instances
             (state.gdKeyToInstanceId[gdKey] ??= []).push(instanceId);
           } else {
