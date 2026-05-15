@@ -793,7 +793,7 @@ export class CameraControls extends EventDispatcher {
       this.snapAzimuthAccum += Math.abs(angle);
       return;
     }
-    this.sphericalDelta.theta += angle;
+    this.sphericalDelta.theta -= angle;
   }
 
   /**
