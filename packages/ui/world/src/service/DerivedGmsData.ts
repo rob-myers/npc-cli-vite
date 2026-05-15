@@ -77,7 +77,8 @@ export default class DerivedGmsData {
       nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.015))),
       hullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? door.computeThinPoly(0.15) : [])),
       hullWall: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
-      nonHullWall: Poly.union(nonHullWallsTouchCeil).flatMap((x) => geomService.createInset(x, 0.02)),
+      // 🔔 must union after inset e.g. due to broad walls intersecting with others
+      nonHullWall: Poly.union(nonHullWallsTouchCeil.flatMap((x) => geomService.createInset(x, 0.02))),
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
 
