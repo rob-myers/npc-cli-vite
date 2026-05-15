@@ -2,7 +2,8 @@ import { Dialog } from "@base-ui/react/dialog";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import type { PathManifest } from "./editor.schema";
+import type { MapNode, PathManifest } from "./editor.schema";
+import { PathEditorModal } from "./PathEditorModal";
 
 export interface ParsedPath {
   d: string;
@@ -16,14 +17,19 @@ export function PathPickerModal({
   onOpenChange,
   onSelect,
   pathManifest,
+  selectedNode,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (paths: ParsedPath[]) => void;
   pathManifest: PathManifest | null;
+  selectedNode?: MapNode | null;
 }) {
   const state = useStateRef(() => ({
     loading: null as string | null,
+    editorOpen: false,
+    editorInitialD: undefined as string | undefined,
+    editorInitialTitle: undefined as string | undefined,
     cachedBustingQuery: `t=${Date.now()}`,
     updateCacheBustingQuery() {
       state.cachedBustingQuery = `t=${Date.now()}`;
@@ -31,9 +37,14 @@ export function PathPickerModal({
   }));
 
   useEffect(() => {
-    if (!open) state.loading = null;
+    if (!open) {
+      state.loading = null;
+      state.editorOpen = false;
+    }
     if (open && import.meta.env.DEV) state.updateCacheBustingQuery();
   }, [open]);
+
+  const canEditPath = selectedNode?.type === "path" && !!selectedNode.d;
 
   const entries = pathManifest ? Object.values(pathManifest.byKey) : [];
 
@@ -82,6 +93,35 @@ export function PathPickerModal({
             </Dialog.Close>
           </div>
 
+          {import.meta.env.DEV && (
+            <div className="flex gap-2 px-4 py-2 border-b border-slate-700">
+              <button
+                type="button"
+                className="px-3 py-1 text-xs rounded cursor-pointer bg-green-700 hover:bg-green-600 text-white"
+                onClick={() => state.set({ editorOpen: true, editorInitialD: undefined, editorInitialTitle: undefined })}
+              >
+                Create Path
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "px-3 py-1 text-xs rounded cursor-pointer bg-blue-700 hover:bg-blue-600 text-white",
+                  !canEditPath && "opacity-50 pointer-events-none",
+                )}
+                onClick={() => {
+                  if (!canEditPath) return;
+                  state.set({
+                    editorOpen: true,
+                    editorInitialD: selectedNode.d,
+                    editorInitialTitle: selectedNode.name,
+                  });
+                }}
+              >
+                Edit Path
+              </button>
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto p-4">
             {entries.length === 0 ? (
               <div className="text-xs text-slate-500 italic">No path SVGs available</div>
@@ -115,6 +155,17 @@ export function PathPickerModal({
           </div>
         </Dialog.Popup>
       </Dialog.Portal>
+
+      <PathEditorModal
+        open={state.editorOpen}
+        onOpenChange={(open) => state.set({ editorOpen: open })}
+        onApply={(path) => {
+          onSelect([path]);
+          onOpenChange(false);
+        }}
+        initialD={state.editorInitialD}
+        initialTitle={state.editorInitialTitle}
+      />
     </Dialog.Root>
   );
 }
