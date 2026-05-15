@@ -678,7 +678,25 @@
       "bounds": {"x": 0.04, "y": -0.0275, "width": 0.67, "height": 0.805},
       "decor": [],
       "doors": [],
-      "obstacles": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.7125, -0.0125],
+              [0.7125, 0.75],
+              [0.0375, 0.75],
+              [0.0375, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--033--0.4x0.6",
+            "obsId": 0
+          }
+        }
+      ],
       "unsorted": [],
       "walls": [],
       "windows": [],
@@ -1795,6 +1813,13 @@
           "height": 6,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 15},
           "meta": {"stateroom--036--2x4": true}
+        },
+        {
+          "symbolKey": "console--031--1x1.2",
+          "width": 1.5,
+          "height": 1.5,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 9, "f": 1.45},
+          "meta": {"console--031--1x1.2": true}
         }
       ]
     },
@@ -2580,6 +2605,50 @@
       "addableWalls": [],
       "hullWalls": [],
       "symbols": []
+    },
+    "console--031--1x1.2": {
+      "key": "console--031--1x1.2",
+      "isHull": false,
+      "width": 1.5,
+      "height": 1.5,
+      "bounds": {"x": 0, "y": 0, "width": 1.885, "height": 1.535},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [1.3125, -0.0125],
+              [1.3125, 1.5375],
+              [0.0125, 1.5375],
+              [0.0125, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "y": 0.8,
+            "symKey": "console--031--1x1.2",
+            "obsId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": [],
+      "hullWalls": [],
+      "symbols": [
+        {
+          "symbolKey": "console--051--0.4x0.6",
+          "width": 0.75,
+          "height": 0.75,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1.175, "f": 0.4},
+          "meta": {"console--051--0.4x0.6": true, "y": 0.6}
+        }
+      ]
     }
   },
   "map": {
@@ -2659,7 +2728,25 @@
       "bounds": {"x": 0.04, "y": -0.0275, "width": 0.67, "height": 0.805},
       "decor": [],
       "doors": [],
-      "obstacles": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.7125, -0.0125],
+              [0.7125, 0.75],
+              [0.0375, 0.75],
+              [0.0375, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--033--0.4x0.6",
+            "obsId": 0
+          }
+        }
+      ],
       "unsorted": [],
       "walls": [],
       "windows": [],
@@ -6291,6 +6378,39 @@
             "y": 1.5,
             "transform": [1, 0, 0, -1, 1.7000000000000002, 14.8]
           }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [8.9875, 1.4375],
+              [8.9875, 2.9875],
+              [7.6875, 2.9875],
+              [7.6875, 1.4375]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "y": 0.8,
+            "symKey": "console--031--1x1.2",
+            "obsId": 0,
+            "transform": [-1, 0, 0, 1, 9, 1.45]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[7.7875, 1.8375], [7.7875, 2.6], [7.1125, 2.6], [7.1125, 1.8375]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--051--0.4x0.6",
+            "obsId": 0,
+            "y": 0.6,
+            "transform": [-1, 0, 0, 1, 7.825, 1.85]
+          }
         }
       ],
       "unsorted": [
@@ -7068,6 +7188,54 @@
       "windows": [],
       "removableDoors": [],
       "addableWalls": []
+    },
+    "console--031--1x1.2": {
+      "key": "console--031--1x1.2",
+      "isHull": false,
+      "width": 1.5,
+      "height": 1.5,
+      "bounds": {"x": 0, "y": 0, "width": 1.885, "height": 1.535},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [1.3125, -0.0125],
+              [1.3125, 1.5375],
+              [0.0125, 1.5375],
+              [0.0125, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "y": 0.8,
+            "symKey": "console--031--1x1.2",
+            "obsId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[1.8875, 0.3875], [1.8875, 1.15], [1.2125, 1.15], [1.2125, 0.3875]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--051--0.4x0.6",
+            "obsId": 0,
+            "y": 0.6,
+            "transform": [1, 0, 0, 1, 1.175, 0.4]
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": []
     }
   },
   "stratifiedSymbolNodes": [
@@ -7079,7 +7247,8 @@
       {"id": "extra--004--desk--0.5x1"},
       {"id": "g-101--multipurpose"},
       {"id": "iris-valves--005--1x1"},
-      {"id": "bed--005--0.6x1.2"}
+      {"id": "bed--005--0.6x1.2"},
+      {"id": "console--031--1x1.2"}
     ],
     [
       {"id": "bridge--042--8x9"},
@@ -10054,6 +10223,70 @@
             "symKey": "bed--005--0.6x1.2",
             "obsId": 0
           }
+        },
+        {
+          "symbolKey": "console--031--1x1.2",
+          "obstacleId": 0,
+          "height": 0.8,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [1.3125, -0.0125],
+                [1.3125, 1.5375],
+                [0.0125, 1.5375],
+                [0.0125, -0.0125]
+              ]
+            ],
+            "meta": {
+              "obstacle": true,
+              "table": true,
+              "y": 0.8,
+              "symKey": "console--031--1x1.2",
+              "obsId": 0
+            }
+          },
+          "origSubRect": {"x": 0.01, "y": -0.01, "width": 1.3, "height": 1.55},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 9, "f": 1.45},
+          "center": {"x": 8.34, "y": 2.21},
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "y": 0.8,
+            "symKey": "console--031--1x1.2",
+            "obsId": 0
+          }
+        },
+        {
+          "symbolKey": "console--051--0.4x0.6",
+          "obstacleId": 0,
+          "height": 0.6,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [0.7125, -0.0125],
+                [0.7125, 0.75],
+                [0.0375, 0.75],
+                [0.0375, -0.0125]
+              ]
+            ],
+            "meta": {
+              "obstacle": true,
+              "chair": true,
+              "symKey": "console--051--0.4x0.6",
+              "obsId": 0
+            }
+          },
+          "origSubRect": {"x": 0, "y": 0, "width": 0.68, "height": 0.76},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 7.825, "f": 1.85},
+          "center": {"x": 7.45, "y": 2.22},
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "symKey": "console--051--0.4x0.6",
+            "obsId": 0
+          }
         }
       ],
       "rooms": [
@@ -11118,9 +11351,9 @@
           {"x": 3.3, "y": 0.7769},
           {"x": 4.2858, "y": 1.7644},
           {"x": 4.4503, "y": 1.8325},
-          {"x": 8.8, "y": 1.8325},
-          {"x": 8.8, "y": 2.75},
-          {"x": 7.3, "y": 2.75},
+          {"x": 6.9125, "y": 1.8325},
+          {"x": 6.9125, "y": 2.8},
+          {"x": 7.3, "y": 2.8},
           {"x": 7.3, "y": 6.2743},
           {"x": 8.5964, "y": 6.278},
           {"x": 8.5887, "y": 6.3016},
@@ -11571,10 +11804,10 @@
           [48, 49, 50],
           [45, 46, 47],
           [45, 43, 44],
-          [42, 43, 34],
-          [34, 35, 42],
-          [42, 35, 40],
-          [42, 40, 41],
+          [41, 43, 34],
+          [41, 42, 43],
+          [35, 41, 34],
+          [35, 40, 41],
           [35, 39, 40],
           [35, 36, 39],
           [36, 38, 39],
@@ -11621,5 +11854,5 @@
       "walls": {"color": "#000000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": 1216139776}
+  "hash": {"obstacles": 102114508}
 }
