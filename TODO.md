@@ -15,6 +15,8 @@
 - try thinner model
 - shaded skin overlay
 
+- ✅ BUG hmr: on save const Decor not updated until 2nd save?
+
 - script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png

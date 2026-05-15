@@ -23,6 +23,7 @@ export default function Decor() {
       gdKeyToInstanceId: {},
       instanceIdToDecorId: [],
       grid: {},
+      lastHmr: 0,
 
       box: createUnitBox(),
       materials: [],
@@ -59,10 +60,11 @@ export default function Decor() {
   w.decor = state;
 
   const { data } = useQuery({
-    queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, import.meta.hot?.data.__LAST_HMR_DECOR__],
+    queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, state.lastHmr],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_DECOR__) {
         import.meta.hot.data.__JUST_HMR_DECOR__ = false;
+        state.set({ lastHmr: Date.now() });
         return null; // ignore 1st stale invoke after HMR
       }
 
@@ -254,6 +256,7 @@ export type State = {
   gdKeyToInstanceId: { [gdKey: string]: number[] };
   instanceIdToDecorId: { gmId: number; decorId: number }[];
   grid: Geomorph.DecorGrid;
+  lastHmr: number;
 
   box: THREE.BufferGeometry;
   materials: THREE.MeshStandardNodeMaterial[];
@@ -272,11 +275,10 @@ const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, color: "#000" });
 
-import.meta.hot?.on("vite:beforeUpdate", (foo) => {
-  const updatedThisFile = foo.updates.some((update) => update.path.endsWith("Decor.tsx"));
+// used to ignore stale queryFn and trigger fresh one
+import.meta.hot?.on("vite:beforeUpdate", (payload) => {
+  const updatedThisFile = payload.updates.some((update) => update.path.endsWith("Decor.tsx"));
   if (import.meta.hot && updatedThisFile) {
-    // used to ignore stale queryFn and trigger fresh one
     import.meta.hot.data.__JUST_HMR_DECOR__ = true;
-    import.meta.hot.data.__LAST_HMR_DECOR__ = Date.now();
   }
 });
