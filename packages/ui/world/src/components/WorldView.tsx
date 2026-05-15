@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
+import { getRelativePointer, isRMB, isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -31,7 +31,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 8,
-        maxPolarAngle: Math.PI / 8,
+        maxPolarAngle: isTouchDevice() ? Math.PI / 8 : Math.PI / 2.5,
         minDistance: 2.5,
         maxDistance: 60,
         panSpeed: 2,
@@ -44,7 +44,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
 
-      cameraMode: "cardinal",
+      cameraMode: isTouchDevice() ? "cardinal" : "free",
       setCameraMode(mode) {
         state.cameraMode = mode;
         const fixedPolar = mode !== "free";
