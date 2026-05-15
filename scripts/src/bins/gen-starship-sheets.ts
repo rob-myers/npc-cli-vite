@@ -165,18 +165,27 @@ for (const [sheetId, bin] of bins.entries()) {
 
     // erase "mask remove" regions
     const masks = masksBySymbol[symKey];
-    if (masks?.length) {
-      const offsetX = rect.x - sym.bounds.x * scale;
-      const offsetY = rect.y - sym.bounds.y * scale;
+    const offsetX = rect.x - sym.bounds.x * scale;
+    const offsetY = rect.y - sym.bounds.y * scale;
+
+    if (masks?.remove.length) {
       ct.save();
       ct.globalCompositeOperation = "destination-out";
-      for (const maskPoly of masks) {
+      for (const maskPoly of masks.remove) {
         drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
           fillStyle: "black",
           strokeStyle: null,
         });
       }
       ct.restore();
+    }
+
+    // overwrite "mask white" regions
+    for (const maskPoly of masks?.white ?? []) {
+      drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
+        fillStyle: "white",
+        strokeStyle: null,
+      });
     }
   }
 

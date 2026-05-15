@@ -5,39 +5,44 @@
       "rect": {"x": 2, "y": 2, "width": 2446, "height": 2790},
       "sheetId": 0
     },
+    "misc-stellar-cartography--023--4x4": {
+      "key": "misc-stellar-cartography--023--4x4",
+      "rect": {"x": 2450, "y": 2, "width": 1220, "height": 1220},
+      "sheetId": 0
+    },
     "console--019--2x2": {
       "key": "console--019--2x2",
-      "rect": {"x": 2450, "y": 2, "width": 607, "height": 607},
+      "rect": {"x": 2450, "y": 1224, "width": 607, "height": 607},
       "sheetId": 0
     },
     "bed--003--1x1.6": {
       "key": "bed--003--1x1.6",
-      "rect": {"x": 2450, "y": 611, "width": 502, "height": 307},
+      "rect": {"x": 3059, "y": 1224, "width": 502, "height": 307},
       "sheetId": 0
     },
     "bed--005--0.6x1.2": {
       "key": "bed--005--0.6x1.2",
-      "rect": {"x": 2450, "y": 920, "width": 382, "height": 202},
+      "rect": {"x": 3059, "y": 1533, "width": 382, "height": 202},
       "sheetId": 0
     },
     "console--031--1x1.2": {
       "key": "console--031--1x1.2",
-      "rect": {"x": 2450, "y": 1124, "width": 377, "height": 307},
+      "rect": {"x": 3059, "y": 1737, "width": 377, "height": 307},
       "sheetId": 0
     },
     "console--033--0.4x0.6": {
       "key": "console--033--0.4x0.6",
-      "rect": {"x": 2834, "y": 920, "width": 134, "height": 161},
+      "rect": {"x": 3443, "y": 1533, "width": 134, "height": 161},
       "sheetId": 0
     },
     "console--051--0.4x0.6": {
       "key": "console--051--0.4x0.6",
-      "rect": {"x": 2834, "y": 1083, "width": 137, "height": 155},
+      "rect": {"x": 3443, "y": 1696, "width": 137, "height": 155},
       "sheetId": 0
     }
   },
-  "symbolSheetDims": [{"width": 3059, "height": 2794}],
-  "maxSymbolSheetDim": {"width": 3059, "height": 2794},
+  "symbolSheetDims": [{"width": 3672, "height": 2794}],
+  "maxSymbolSheetDim": {"width": 3672, "height": 2794},
   "decor": {
     "arrow-square-right-duotone": {
       "key": "arrow-square-right-duotone",

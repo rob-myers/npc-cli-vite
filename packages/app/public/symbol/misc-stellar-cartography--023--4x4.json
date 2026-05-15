@@ -1,0 +1,112 @@
+{
+  "filename": "misc-stellar-cartography--023--4x4.json",
+  "width": 240,
+  "height": 240,
+  "nodes": [
+    {
+      "id": "bbdd4010-1817-45d4-9d98-a74bbfdfb8d1",
+      "name": "misc-stellar-cartography--023--4x4 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0.5},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "misc-stellar-cartography--023--4x4",
+      "baseRect": {"width": 244, "height": 244},
+      "offset": {"x": -2, "y": -2},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -1.5)"
+    },
+    {
+      "id": "3438177f-d484-491b-9743-9753f4036870",
+      "name": "console--051--0.4x0.6 y=0.5",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0.9659258262890683,
+        "b": 0.25881904510252074,
+        "c": -0.25881904510252074,
+        "d": 0.9659258262890683,
+        "e": 72.89339828220179,
+        "f": 91.12882692912616
+      },
+      "type": "symbol",
+      "srcKey": "console--051--0.4x0.6",
+      "baseRect": {"width": 30, "height": 30},
+      "offset": {"x": 0.7612990604522881, "y": 1.166372042083684},
+      "cssTransform": "matrix(0.9659258262890683, 0.25881904510252074, -0.25881904510252074, 0.9659258262890683, 73.6547, 92.2952)"
+    },
+    {
+      "id": "ee454569-9a0f-4212-83c7-c0bb1174313e",
+      "name": "console--051--0.4x0.6 y=0.5",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": -0.25881904510252074,
+        "b": -0.9659258262890683,
+        "c": 0.9659258262890683,
+        "d": -0.25881904510252074,
+        "e": 119.5,
+        "f": 174.5
+      },
+      "type": "symbol",
+      "srcKey": "console--051--0.4x0.6",
+      "baseRect": {"width": 30, "height": 30},
+      "offset": {"x": -1.2479258845760297, "y": 0.6186660137789479},
+      "cssTransform": "matrix(-0.25881904510252074, -0.9659258262890683, 0.9659258262890683, -0.25881904510252074, 118.2521, 175.1187)"
+    },
+    {
+      "id": "5e79e831-6299-4968-adf9-d241deae4a39",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 238, "f": 60},
+      "type": "rect",
+      "baseRect": {"width": 4, "height": 182},
+      "cssTransform": "matrix(1, 0, 0, 1, 238, 60)"
+    },
+    {
+      "id": "9de51f37-957e-4566-a5da-5f707e398b26",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "rect",
+      "baseRect": {"width": 4, "height": 244},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "678b965e-0e63-4d56-935f-105009fc9fbe",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 238},
+      "type": "rect",
+      "baseRect": {"width": 244, "height": 4},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, 238)"
+    },
+    {
+      "id": "2e4a49ee-8aa2-4a33-8ae2-1a05cb196288",
+      "name": "wall",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "rect",
+      "baseRect": {"width": 182, "height": 4},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "50c90fc2-60ee-4fe1-b01a-76a134c72a95",
+      "name": "obstacle y=0.7",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M 111.362 61.81 L 84.844 72.75 L 66.342 95.471 L 61.049 122.068 L 67.158 146.017 L 86.62 168.386 L 111.383 178.371 L 139.762 175.624 L 164.755 158.693 L 175.458 140.066 L 178.065 112.345 L 177.039 104.043 L 229.922 52.711 L 239.908 63.002 L 240 240.042 L 0 240.022 L 0 0.02599 L 180.088 0 L 187.309 10.774 L 135.081 63.348 L 111.362 61.81 Z",
+      "baseRect": {"width": 240, "height": 240},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
+  "type": "symbol",
+  "key": "misc-stellar-cartography--023--4x4"
+}
