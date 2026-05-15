@@ -772,9 +772,14 @@ export class CameraControls extends EventDispatcher {
   handleDirectionalSnap(clientX, clientY) {
     const dx = clientX - this.pointerFirstDown.x;
     const dy = clientY - this.pointerFirstDown.y;
-    const threshold = this.pointers.length > 1 ? 3600 : 400;
-    if (dx * dx + dy * dy < threshold) return;
-    const delta = Math.abs(dy) > Math.abs(dx)
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const threshold = this.pointers.length > 1 ? 120 : 20;
+    if (dist < threshold) return;
+    const ax = Math.abs(dx);
+    const ay = Math.abs(dy);
+    // require dominant axis to be at least 2x the other
+    if (Math.min(ax, ay) * 2 > Math.max(ax, ay)) return;
+    const delta = ay > ax
       ? (dy > 0 ? Math.PI : 0)
       : (dx > 0 ? -halfPi : halfPi);
     this.snapAzimuthBy(delta);
