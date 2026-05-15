@@ -11335,7 +11335,7 @@
         "hull": {"fill": "#000", "stroke": "#666"},
         "nonHull": {"fill": "#333", "stroke": "#000"}
       },
-      "floor": {"navStroke": "#000c"},
+      "floor": {"navStroke": "#000a"},
       "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {
