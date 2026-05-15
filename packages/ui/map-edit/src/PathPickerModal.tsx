@@ -45,7 +45,7 @@ export function PathPickerModal({
     if (open && import.meta.env.DEV) state.updateCacheBustingQuery();
   }, [open]);
 
-  const canEditPath = selectedNode?.type === "path" && !!selectedNode.d;
+  const canOpenSelection = selectedNode?.type === "path" || selectedNode?.type === "rect";
 
   const entries = pathManifest ? Object.values(pathManifest.byKey) : [];
 
@@ -140,18 +140,22 @@ export function PathPickerModal({
                 type="button"
                 className={cn(
                   "px-3 py-1 text-xs rounded cursor-pointer bg-blue-700 hover:bg-blue-600 text-white",
-                  !canEditPath && "opacity-50 pointer-events-none",
+                  !canOpenSelection && "opacity-50 pointer-events-none",
                 )}
                 onClick={() => {
-                  if (!canEditPath) return;
+                  if (!canOpenSelection || !selectedNode) return;
+                  const { width, height } = selectedNode.baseRect;
+                  const d = selectedNode.type === "path"
+                    ? selectedNode.d
+                    : `M0,0 L${width},0 L${width},${height} L0,${height} Z`;
                   state.set({
                     editorOpen: true,
-                    editorInitialPaths: [{ d: selectedNode.d, title: selectedNode.name }],
+                    editorInitialPaths: [{ d, title: selectedNode.name }],
                     editorInitialFilename: undefined,
                   });
                 }}
               >
-                Edit Path
+                Open selection
               </button>
             </div>
           )}
