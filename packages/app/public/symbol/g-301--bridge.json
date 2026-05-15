@@ -429,6 +429,69 @@
       "baseRect": {"width": 6, "height": 6},
       "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(0, 1, -1, 0, 1196, 350)"
+    },
+    {
+      "id": "88158990-cc04-41e7-bf7a-7cb4f2b5149e",
+      "name": "machine",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "children": []
+    },
+    {
+      "id": "92d7e6d0-072b-493e-9507-827349bc6081",
+      "name": "poly ceil fill=#5551 stroke=#777777 strokeWidth=4",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 302, "f": 60},
+      "type": "path",
+      "d": "M 17 77 L 77 77 L 77 39.8625 L 106.696 71.4646 L 103.819 75.5534 L 92.5037 91.0056 L 78.9779 111.391 L 67.2884 134.52 L 58.871 153.556 L 54.3937 166.1 L 17 166.456 L 17 77 Z",
+      "baseRect": {"width": 130, "height": 180},
+      "cssTransform": "matrix(1, 0, 0, 1, 302, 60)"
+    },
+    {
+      "id": "e97ecc58-5370-484d-84ab-e9cd0cdb0c8b",
+      "name": "wall no-fill broad",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 902, "f": 62},
+      "type": "path",
+      "d": "M 0 60 L 60 60 L 60 0 L 131.33 69.02 L 120.2 82.5 L 109.2 97.5 L 96.2 117.1 L 85.2 138.8 L 77.2 156.8 L 69.2 181.2 L 0 181 L 0 60 Z",
+      "baseRect": {"width": 130, "height": 180},
+      "cssTransform": "matrix(-1, 0, 0, 1, 902, 62)"
+    },
+    {
+      "id": "7f531cb0-4392-4313-a778-a071319f6b62",
+      "name": "machine",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "children": [
+        {
+          "id": "f03e7bd6-5918-4270-92ad-aa8665322821",
+          "name": "poly ceil fill=#5551 stroke=#777777 strokeWidth=4",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 902, "f": 62},
+          "type": "path",
+          "d": "M 17 77 L 77 77 L 77 39.8625 L 106.696 71.4646 L 103.819 75.5534 L 92.5037 91.0056 L 78.9779 111.391 L 67.2884 134.52 L 58.871 153.556 L 54.3937 166.1 L 17 166.456 L 17 77 Z",
+          "baseRect": {"width": 130, "height": 180},
+          "cssTransform": "matrix(-1, 0, 0, 1, 902, 62)"
+        }
+      ]
+    },
+    {
+      "id": "1ecafe47-34e5-41d5-8018-68d7a5094d51",
+      "name": "wall no-fill broad",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 302, "f": 60},
+      "type": "path",
+      "d": "M 0 60 L 60 60 L 60 0 L 131.33 69.02 L 120.2 82.5 L 109.2 97.5 L 96.2 117.1 L 85.2 138.8 L 77.2 156.8 L 69.2 181.2 L 0 181 L 0 60 Z",
+      "baseRect": {"width": 130, "height": 180},
+      "cssTransform": "matrix(1, 0, 0, 1, 302, 60)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},

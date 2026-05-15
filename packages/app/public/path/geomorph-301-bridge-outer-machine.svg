@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 180">
+  <path d="M 0 60 L 60 60 L 60 0 L 131.33 69.02 L 120.2 82.5 L 109.2 97.5 L 96.2 117.1 L 85.2 138.8 L 77.2 156.8 L 69.2 181.2 L 0 181 L 0 60 Z" style="stroke: rgb(0, 0, 0); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill-opacity: 0.5; fill: rgb(255, 0, 0);">
+    <title>wall no-fill broad</title>
+  </path>
+  <path d="M 17 77 L 77 77 L 77 39.8625 L 106.696 71.4646 L 103.819 75.5534 L 92.5037 91.0056 L 78.9779 111.391 L 67.2884 134.52 L 58.871 153.556 L 54.3937 166.1 L 17 166.456 L 17 77 Z" style="stroke: rgb(0, 0, 0); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill-opacity: 0.5; fill: rgb(0, 0, 255);">
+    <title>poly ceil fill=#5551 stroke=#777777 strokeWidth=4</title>
+  </path>
+</svg>

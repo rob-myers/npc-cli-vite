@@ -21,6 +21,13 @@
       "width": 1200,
       "height": 600
     },
+    "geomorph-301-bridge-outer-machine": {
+      "key": "geomorph-301-bridge-outer-machine",
+      "filename": "geomorph-301-bridge-outer-machine.svg",
+      "pathCount": 2,
+      "width": 130,
+      "height": 180
+    },
     "triangle-0.5x0.5": {
       "key": "triangle-0.5x0.5",
       "filename": "triangle-0.5x0.5.svg",
