@@ -269,6 +269,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       return null;
     },
     enabled: state.threeReady, // 🔔 fixes horrible issue on refresh
+    gcTime: 0,
   }); // query unique to component instance
 
   useEffect(() => {
