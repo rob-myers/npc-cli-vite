@@ -152,6 +152,15 @@
       "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
       "type": "symbol",
       "key": "bed--005--0.6x1.2"
+    },
+    "console--031--1x1.2": {
+      "filename": "console--031--1x1.2.json",
+      "thumbnailFilename": "console--031--1x1.2.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": 0, "y": 0, "width": 75.4, "height": 61.4},
+      "type": "symbol",
+      "key": "console--031--1x1.2"
     }
   }
 }
