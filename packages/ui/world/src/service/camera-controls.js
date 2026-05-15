@@ -258,18 +258,22 @@ export class CameraControls extends EventDispatcher {
     const element = this.domElement;
 
     if (element) {
-      const isFree = !this.params.fixedPolar && !this.params.snapAzimuth;
-      if (isFree && this.rotateAxis === "none") {
-        const ax = Math.abs(this.u.rotateDelta.x);
-        const ay = Math.abs(this.u.rotateDelta.y);
-        if (ax > 2 || ay > 2) {
-          this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+      if (this.params.snapAzimuth) {
+        this.handleDirectionalSnap(event.clientX, event.clientY);
+      } else {
+        const isFree = !this.params.fixedPolar;
+        if (isFree && this.rotateAxis === "none") {
+          const ax = Math.abs(this.u.rotateDelta.x);
+          const ay = Math.abs(this.u.rotateDelta.y);
+          if (ax > 2 || ay > 2) {
+            this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+          }
         }
+        const horiz = !isFree || this.rotateAxis !== "vertical";
+        const vert = isFree && this.rotateAxis !== "horizontal";
+        if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+        if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
       }
-      const horiz = !isFree || this.rotateAxis !== "vertical";
-      const vert = isFree && this.rotateAxis !== "horizontal";
-      if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-      if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
     this.update();
@@ -346,18 +350,16 @@ export class CameraControls extends EventDispatcher {
     const element = this.domElement;
 
     if (element) {
-      const isFree = !this.params.fixedPolar && !this.params.snapAzimuth;
-      if (isFree && this.rotateAxis === "none") {
-        const ax = Math.abs(this.u.rotateDelta.x);
-        const ay = Math.abs(this.u.rotateDelta.y);
-        if (ax > 2 || ay > 2) {
-          this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+      if (this.params.snapAzimuth) {
+        const cx = this.pointers.length === 1 ? event.pageX : this.u.rotateEnd.x;
+        const cy = this.pointers.length === 1 ? event.pageY : this.u.rotateEnd.y;
+        this.handleDirectionalSnap(cx, cy);
+      } else {
+        this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+        if (!this.params.fixedPolar) {
+          this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
         }
       }
-      const horiz = !isFree || this.rotateAxis !== "vertical";
-      const vert = isFree && this.rotateAxis !== "horizontal";
-      if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-      if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
   }
@@ -754,6 +756,29 @@ export class CameraControls extends EventDispatcher {
     Object.assign(this.params, this.savedParams);
   }
 
+  /** @param {number} delta */
+  snapAzimuthBy(delta) {
+    if (this.snapAzimuthAnimating || Math.abs(delta) < 0.01) return;
+    this.snapAzimuthTarget = normalizeAngle(this.snapAzimuthTarget + delta);
+    this.snapAzimuthAccum = 0;
+    this.snapAzimuthAnimating = true;
+    this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuthTarget);
+  }
+
+  /**
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  handleDirectionalSnap(clientX, clientY) {
+    const dx = clientX - this.pointerFirstDown.x;
+    const dy = clientY - this.pointerFirstDown.y;
+    if (dx * dx + dy * dy < 400) return;
+    const delta = Math.abs(dy) > Math.abs(dx)
+      ? (dy > 0 ? Math.PI : 0)
+      : (dx > 0 ? -halfPi : halfPi);
+    this.snapAzimuthBy(delta);
+  }
+
   /**
    * @param {number} angle
    * @returns {void}
@@ -866,10 +891,7 @@ export class CameraControls extends EventDispatcher {
           this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08);
         }
       } else if (this.snapAzimuthAccum > Math.PI / 4) {
-        this.snapAzimuthTarget += this.snapAzimuthLastSign * halfPi;
-        this.snapAzimuthAccum = 0;
-        this.snapAzimuthAnimating = true;
-        this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuthTarget);
+        this.snapAzimuthBy(this.snapAzimuthLastSign * halfPi);
       } else {
         this.sphericalDelta.theta = 0;
         this.spherical.theta = this.snapAzimuthTarget;
@@ -950,5 +972,10 @@ const defaultDampingFactor = 0.05;
 
 const halfPi = Math.PI / 2;
 const twoPI = 2 * Math.PI;
+
+/** @param {number} a */
+function normalizeAngle(a) {
+  return a - Math.round(a / twoPI) * twoPI;
+}
 const tempVector3One = new THREE.Vector3();
 const tempVector3Two = new THREE.Vector3();
