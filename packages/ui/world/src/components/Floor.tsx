@@ -79,7 +79,7 @@ export default function Floor() {
         drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
 
         // room outlines
-        drawRoomOutlines(ct, layout);
+        drawRoomOutlines(ct, layout, w.getTheme().floor);
 
         // door shadow
         for (const door of layout.doors) {
