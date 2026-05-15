@@ -85,7 +85,7 @@ export default function Floor() {
         for (const door of layout.doors) {
           ct.lineWidth = 0.08;
           tmpPoly.outline = door.seg;
-          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#111" });
+          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000" });
         }
 
         // draw nav mesh (gmId specific)
