@@ -9,6 +9,7 @@ import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const PROCESS_SYMBOL_PATH = path.join(PROJECT_ROOT, "scripts/src/service/process-map-edit-save.ts");
+const PATH_SVG_API_PATH = path.join(PROJECT_ROOT, "scripts/src/service/path-svg-api.ts");
 const WATCH_PATH_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-path-svgs.ts");
 const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
 
@@ -39,6 +40,19 @@ export function mapEditApiPlugin(): Plugin {
         res.setHeader("Content-Type", "application/json");
 
         try {
+          // POST /api/map-edit/path/:filename
+          const pathMatch = req.url?.match(/^\/api\/map-edit\/path\/(.+)$/);
+          if (pathMatch && req.method === "POST") {
+            let body = "";
+            for await (const chunk of req) body += chunk;
+            const { savePathSvg } = (await server.ssrLoadModule(
+              PATH_SVG_API_PATH,
+            )) as typeof import("./service/path-svg-api");
+            const result = savePathSvg(decodeURIComponent(pathMatch[1]), JSON.parse(body));
+            res.end(JSON.stringify(result));
+            return;
+          }
+
           // GET, POST, DELETE
           // /api/map-edit/file/:folder/:filename
           if (await handleApiMapEditFile(req, res, server)) {

@@ -28,6 +28,13 @@
       "width": 130,
       "height": 180
     },
+    "mapedit-path-test": {
+      "key": "mapedit-path-test",
+      "filename": "mapedit-path-test.svg",
+      "pathCount": 1,
+      "width": 54,
+      "height": 63
+    },
     "triangle-0.5x0.5": {
       "key": "triangle-0.5x0.5",
       "filename": "triangle-0.5x0.5.svg",

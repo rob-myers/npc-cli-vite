@@ -1608,6 +1608,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }}
         onSelect={(paths) => state.addPaths(paths)}
         pathManifest={state.pathManifest}
+        selectedNode={state.getSelectedNode()}
       />
     </div>
   );
