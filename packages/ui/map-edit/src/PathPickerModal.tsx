@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
-import { XIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import type { MapNode, PathManifest } from "./editor.schema";
 import { PathEditorModal } from "./PathEditorModal";
@@ -27,9 +27,9 @@ export function PathPickerModal({
 }) {
   const state = useStateRef(() => ({
     loading: null as string | null,
-    editorOpen: false,
-    editorInitialD: undefined as string | undefined,
-    editorInitialTitle: undefined as string | undefined,
+    editorOpen: import.meta.hot?.data.__editorOpen ?? false,
+    editorInitialPaths: undefined as { d: string; title: string }[] | undefined,
+    editorInitialFilename: undefined as string | undefined,
     cachedBustingQuery: `t=${Date.now()}`,
     updateCacheBustingQuery() {
       state.cachedBustingQuery = `t=${Date.now()}`;
@@ -40,6 +40,7 @@ export function PathPickerModal({
     if (!open) {
       state.loading = null;
       state.editorOpen = false;
+      if (import.meta.hot) import.meta.hot.data.__editorOpen = false;
     }
     if (open && import.meta.env.DEV) state.updateCacheBustingQuery();
   }, [open]);
@@ -75,6 +76,37 @@ export function PathPickerModal({
     }
   }
 
+  async function handleEdit(key: string, _width: number, _height: number) {
+    state.set({ loading: key });
+    try {
+      const resp = await fetch(`/path/${key}.svg`);
+      const text = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "image/svg+xml");
+      const pathEls = doc.querySelectorAll("svg > path");
+
+      const paths: { d: string; title: string }[] = [];
+      for (const pathEl of pathEls) {
+        const d = pathEl.getAttribute("d");
+        if (!d) continue;
+        const titleEl = pathEl.querySelector("title");
+        paths.push({ d, title: titleEl?.textContent?.trim() || key });
+      }
+
+      // close then reopen to force reset with new data
+      state.set({ editorOpen: false });
+      requestAnimationFrame(() => {
+        state.set({
+          editorOpen: true,
+          editorInitialPaths: paths.length > 0 ? paths : undefined,
+          editorInitialFilename: key,
+        });
+      });
+    } finally {
+      state.set({ loading: null });
+    }
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -98,7 +130,9 @@ export function PathPickerModal({
               <button
                 type="button"
                 className="px-3 py-1 text-xs rounded cursor-pointer bg-green-700 hover:bg-green-600 text-white"
-                onClick={() => state.set({ editorOpen: true, editorInitialD: undefined, editorInitialTitle: undefined })}
+                onClick={() =>
+                  state.set({ editorOpen: true, editorInitialPaths: undefined, editorInitialFilename: undefined })
+                }
               >
                 Create Path
               </button>
@@ -112,8 +146,8 @@ export function PathPickerModal({
                   if (!canEditPath) return;
                   state.set({
                     editorOpen: true,
-                    editorInitialD: selectedNode.d,
-                    editorInitialTitle: selectedNode.name,
+                    editorInitialPaths: [{ d: selectedNode.d, title: selectedNode.name }],
+                    editorInitialFilename: undefined,
                   });
                 }}
               >
@@ -128,27 +162,44 @@ export function PathPickerModal({
             ) : (
               <div className="flex flex-wrap justify-center gap-3">
                 {entries.map((entry) => (
-                  <button
+                  <div
                     key={entry.key}
-                    type="button"
-                    className="flex flex-col justify-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 cursor-pointer"
-                    onClick={() => handleSelect(entry.key, entry.width, entry.height)}
-                    title={`${entry.key} (${entry.pathCount} path${entry.pathCount > 1 ? "s" : ""})`}
-                    disabled={state.loading !== null}
+                    className="relative p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500"
                   >
-                    <div className="h-full flex items-center justify-center min-h-16">
-                      {state.loading === entry.key ? (
-                        <Spinner />
-                      ) : (
-                        <img
-                          src={`/path/${entry.filename}?${state.cachedBustingQuery}`}
-                          alt={entry.key}
-                          className="max-h-24 object-contain"
-                        />
-                      )}
-                    </div>
-                    <span className="text-[12px] text-slate-400 truncate w-full text-center">{entry.key}</span>
-                  </button>
+                    <button
+                      type="button"
+                      className="cursor-pointer hover:opacity-80"
+                      onClick={() => handleSelect(entry.key, entry.width, entry.height)}
+                      title={`${entry.key} (${entry.pathCount} path${entry.pathCount > 1 ? "s" : ""})`}
+                      disabled={state.loading !== null}
+                    >
+                      <div className="flex items-center justify-center min-h-16">
+                        {state.loading === entry.key ? (
+                          <Spinner />
+                        ) : (
+                          <img
+                            src={`/path/${entry.filename}?${state.cachedBustingQuery}`}
+                            alt={entry.key}
+                            className="max-h-24 object-contain"
+                          />
+                        )}
+                      </div>
+                      <span className="text-[12px] text-slate-400 truncate w-full text-center block">{entry.key}</span>
+                    </button>
+                    {import.meta.env.DEV && (
+                      <button
+                        type="button"
+                        className="absolute top-1 right-1 p-1 rounded bg-slate-700/80 hover:bg-blue-600 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(entry.key, entry.width, entry.height);
+                        }}
+                        title="Edit in path editor"
+                      >
+                        <PencilSimpleIcon className="size-3.5 text-white" />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -158,13 +209,16 @@ export function PathPickerModal({
 
       <PathEditorModal
         open={state.editorOpen}
-        onOpenChange={(open) => state.set({ editorOpen: open })}
-        onApply={(path) => {
-          onSelect([path]);
+        onOpenChange={(editorOpen) => {
+          state.set({ editorOpen });
+          if (import.meta.hot) import.meta.hot.data.__editorOpen = editorOpen;
+        }}
+        onApply={(paths) => {
+          onSelect(paths);
           onOpenChange(false);
         }}
-        initialD={state.editorInitialD}
-        initialTitle={state.editorInitialTitle}
+        initialPaths={state.editorInitialPaths}
+        initialFilename={state.editorInitialFilename}
       />
     </Dialog.Root>
   );

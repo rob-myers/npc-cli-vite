@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { cn, useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom";
-import { XIcon } from "@phosphor-icons/react";
+import { MinusCircleIcon, PlusCircleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import type { ParsedPath } from "./PathPickerModal";
 
@@ -9,31 +9,39 @@ export function PathEditorModal({
   open,
   onOpenChange,
   onApply,
-  initialD,
-  initialTitle,
+  initialPaths,
+  initialFilename,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onApply: (path: ParsedPath) => void;
-  initialD?: string;
-  initialTitle?: string;
+  onApply: (paths: ParsedPath[]) => void;
+  initialPaths?: { d: string; title: string }[];
+  initialFilename?: string;
 }) {
   const state = useStateRef(
     (): State => ({
-      points: [],
-      closed: false,
+      paths: [],
+      activePathIdx: 0,
       selectedIdx: -1,
       dragging: false,
-      title: "",
       filename: "",
       saving: false,
       undoStack: [],
       redoStack: [],
 
+      // --- active path accessors ---
+
+      get active(): PathItem {
+        return state.paths[state.activePathIdx] ?? emptyPathItem;
+      },
+      get points(): Point[] { return state.active.points; },
+      get closed(): boolean { return state.active.closed; },
+      set closed(v: boolean) { state.active.closed = v; },
+
       // --- history ---
 
-      snapshot(): Snapshot {
-        return { points: state.points.map((p) => ({ ...p })), closed: state.closed };
+      snapshot(): MultiSnapshot {
+        return { paths: state.paths.map((p) => ({ ...p, points: p.points.map((pt) => ({ ...pt })) })) };
       },
       pushUndo() {
         state.undoStack.push(state.snapshot());
@@ -44,8 +52,7 @@ export function PathEditorModal({
         const prev = state.undoStack.pop();
         if (!prev) return;
         state.redoStack.push(state.snapshot());
-        state.points = prev.points;
-        state.closed = prev.closed;
+        state.paths = prev.paths;
         state.selectedIdx = -1;
         state.persist();
         state.update();
@@ -54,8 +61,7 @@ export function PathEditorModal({
         const next = state.redoStack.pop();
         if (!next) return;
         state.undoStack.push(state.snapshot());
-        state.points = next.points;
-        state.closed = next.closed;
+        state.paths = next.paths;
         state.selectedIdx = -1;
         state.persist();
         state.update();
@@ -63,18 +69,22 @@ export function PathEditorModal({
 
       // --- lifecycle ---
 
-      reset(d, title) {
-        if (d) {
-          const poly = geomService.svgPathToPolygon(d);
-          state.points = poly ? poly.outline.map((v) => ({ x: v.x, y: v.y })) : [];
-          state.closed = true;
+      reset(initPaths, filename) {
+        if (initPaths && initPaths.length > 0) {
+          state.paths = initPaths.map((ip) => {
+            const poly = geomService.svgPathToPolygon(ip.d);
+            return {
+              points: poly ? poly.outline.map((v) => ({ x: v.x, y: v.y })) : [],
+              closed: true,
+              title: ip.title,
+            };
+          });
         } else {
-          state.points = [];
-          state.closed = false;
+          state.paths = [{ points: [], closed: false, title: "" }];
         }
+        state.activePathIdx = 0;
         state.selectedIdx = -1;
-        state.title = title ?? "";
-        state.filename = "";
+        state.filename = filename ?? "";
         state.saving = false;
         state.undoStack.length = 0;
         state.redoStack.length = 0;
@@ -98,36 +108,53 @@ export function PathEditorModal({
         }
       },
 
+      // --- path management ---
+
+      switchPath(idx) {
+        state.selectedIdx = -1;
+        state.activePathIdx = idx;
+        state.update();
+      },
+      addPath() {
+        state.pushUndo();
+        state.paths.push({ points: [], closed: false, title: "" });
+        state.activePathIdx = state.paths.length - 1;
+        state.selectedIdx = -1;
+        state.update();
+      },
+      removePath(idx) {
+        if (state.paths.length <= 1) return;
+        state.pushUndo();
+        state.paths.splice(idx, 1);
+        if (state.activePathIdx >= state.paths.length) state.activePathIdx = state.paths.length - 1;
+        state.selectedIdx = -1;
+        state.update();
+      },
+
       // --- geometry helpers ---
 
-      getBounds() {
-        if (state.points.length === 0) return { x: 0, y: 0, width: 100, height: 100 };
-        let maxX = -Infinity,
-          maxY = -Infinity;
-        for (const p of state.points) {
-          maxX = Math.max(maxX, p.x);
-          maxY = Math.max(maxY, p.y);
-        }
-        return { x: 0, y: 0, width: maxX, height: maxY };
-      },
-      normalizeOrigin() {
-        if (state.points.length === 0) return;
-        let minX = Infinity,
-          minY = Infinity;
-        for (const p of state.points) {
-          minX = Math.min(minX, p.x);
-          minY = Math.min(minY, p.y);
-        }
-        if (minX !== 0 || minY !== 0) {
-          for (const p of state.points) {
-            p.x -= minX;
-            p.y -= minY;
+      getAllBounds() {
+        let maxX = 0, maxY = 0;
+        for (const p of state.paths) {
+          for (const pt of p.points) {
+            maxX = Math.max(maxX, pt.x);
+            maxY = Math.max(maxY, pt.y);
           }
         }
+        return { x: 0, y: 0, width: maxX || 100, height: maxY || 100 };
       },
-      toD() {
-        if (state.points.length === 0) return "";
-        return state.points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ") + " Z";
+      normalizeOrigin() {
+        const pts = state.points;
+        if (pts.length === 0) return;
+        let minX = Infinity, minY = Infinity;
+        for (const p of pts) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); }
+        if (minX !== 0 || minY !== 0) {
+          for (const p of pts) { p.x -= minX; p.y -= minY; }
+        }
+      },
+      pathToD(pathItem) {
+        if (pathItem.points.length === 0) return "";
+        return pathItem.points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ") + " Z";
       },
       clientToSvg(svg, clientX, clientY) {
         const ctm = svg.getScreenCTM();
@@ -165,7 +192,7 @@ export function PathEditorModal({
       clearPolygon() {
         if (state.points.length === 0 || !window.confirm("Clear all vertices?")) return;
         state.pushUndo();
-        state.points.length = 0;
+        state.active.points = [];
         state.closed = false;
         state.selectedIdx = -1;
         state.update();
@@ -192,8 +219,10 @@ export function PathEditorModal({
         state.pushUndo();
         const svg = e.currentTarget;
         let pt: Point;
-        if (state.points.length === 0) {
+        if (state.points.length === 0 && state.activePathIdx === 0) {
           pt = { x: 0, y: 0 };
+        } else if (state.points.length === 0) {
+          pt = state.clientToSvg(svg, e.clientX, e.clientY);
         } else {
           pt = state.clientToSvg(svg, e.clientX, e.clientY);
           if (e.shiftKey) {
@@ -214,7 +243,7 @@ export function PathEditorModal({
         e.stopPropagation();
         if (i === 0 && !state.closed && state.points.length >= 3) {
           state.pushUndo();
-          state.set({ closed: true });
+          state.set({ closed: true } as any);
         }
       },
       onVertexPointerDown(e, i) {
@@ -227,10 +256,13 @@ export function PathEditorModal({
         const onMove = (ev: PointerEvent) => {
           const pt = state.clientToSvg(svg, ev.clientX, ev.clientY);
           if (ev.shiftKey && state.points.length > 1) {
-            const prev = state.points[(i - 1 + state.points.length) % state.points.length];
-            const dx = Math.abs(pt.x - prev.x);
-            const dy = Math.abs(pt.y - prev.y);
-            state.points[i] = dx >= dy ? { x: pt.x, y: prev.y } : { x: prev.x, y: pt.y };
+            const useNext = ev.ctrlKey || ev.metaKey || i === 0;
+            const ref = useNext
+              ? state.points[(i + 1) % state.points.length]
+              : state.points[(i - 1 + state.points.length) % state.points.length];
+            const dx = Math.abs(pt.x - ref.x);
+            const dy = Math.abs(pt.y - ref.y);
+            state.points[i] = dx >= dy ? { x: pt.x, y: ref.y } : { x: ref.x, y: pt.y };
           } else {
             state.points[i] = pt;
           }
@@ -251,15 +283,7 @@ export function PathEditorModal({
 
       persist() {
         try {
-          localStorage.setItem(
-            storageKey,
-            JSON.stringify({
-              points: state.points,
-              closed: state.closed,
-              title: state.title,
-              filename: state.filename,
-            }),
-          );
+          localStorage.setItem(storageKey, JSON.stringify({ paths: state.paths, filename: state.filename }));
         } catch {}
       },
       restore(): boolean {
@@ -267,10 +291,9 @@ export function PathEditorModal({
           const raw = localStorage.getItem(storageKey);
           if (!raw) return false;
           const data = JSON.parse(raw);
-          if (!Array.isArray(data.points) || data.points.length === 0) return false;
-          state.points = data.points;
-          state.closed = data.closed ?? false;
-          state.title = data.title ?? "";
+          if (!Array.isArray(data.paths) || data.paths.length === 0) return false;
+          state.paths = data.paths;
+          state.activePathIdx = 0;
           state.filename = data.filename ?? "";
           state.selectedIdx = -1;
           state.update();
@@ -286,19 +309,20 @@ export function PathEditorModal({
       // --- save / apply ---
 
       async save() {
-        if (!state.filename || state.points.length < 3) return;
+        if (!state.filename) return;
+        const closedPaths = state.paths.filter((p) => p.closed && p.points.length >= 3);
+        if (closedPaths.length === 0) return;
         state.saving = true;
         state.update();
         try {
-          const b = state.getBounds();
+          const b = state.getAllBounds();
           const resp = await fetch(`/api/map-edit/path/${encodeURIComponent(state.filename)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              title: state.title || state.filename,
-              width: Math.ceil(b.x + b.width),
-              height: Math.ceil(b.y + b.height),
-              d: state.toD(),
+              width: Math.ceil(b.width),
+              height: Math.ceil(b.height),
+              paths: closedPaths.map((p) => ({ d: state.pathToD(p), title: p.title || state.filename })),
             }),
           });
           if (!resp.ok) throw new Error(await resp.text());
@@ -309,27 +333,33 @@ export function PathEditorModal({
         }
       },
       apply() {
-        if (state.points.length < 3) return;
-        const b = state.getBounds();
+        const closedPaths = state.paths.filter((p) => p.closed && p.points.length >= 3);
+        if (closedPaths.length === 0) return;
+        const b = state.getAllBounds();
         state.clearPersisted();
-        onApply({
-          d: state.toD(),
-          name: state.title || "path",
-          svgWidth: Math.ceil(b.x + b.width),
-          svgHeight: Math.ceil(b.y + b.height),
-        });
+        onApply(
+          closedPaths.map((p) => ({
+            d: state.pathToD(p),
+            name: p.title || "path",
+            svgWidth: Math.ceil(b.width),
+            svgHeight: Math.ceil(b.height),
+          })),
+        );
         onOpenChange(false);
       },
     }),
   );
 
   useEffect(() => {
-    if (open && state.points.length === 0 && !state.closed) {
-      if (!state.restore()) state.reset(initialD, initialTitle);
-    }
-    if (!open) {
-      state.points = [];
-      state.closed = false;
+    if (open) {
+      if (initialPaths) {
+        state.reset(initialPaths, initialFilename);
+      } else if (state.paths.length <= 1 && state.points.length === 0 && !state.closed) {
+        if (!state.restore()) state.reset(undefined, initialFilename);
+      }
+    } else {
+      state.paths = [];
+      state.activePathIdx = 0;
     }
   }, [open]);
 
@@ -339,18 +369,17 @@ export function PathEditorModal({
     return () => document.removeEventListener("keydown", state.onKeyDown);
   }, [open]);
 
-  const bounds = state.getBounds();
-  const viewBox =
-    state.points.length > 0
-      ? `${bounds.x - 20} ${bounds.y - 20} ${bounds.width + 40} ${bounds.height + 40}`
-      : "0 0 400 400";
-  const canSave = state.closed && state.points.length >= 3;
+  const bounds = state.getAllBounds();
+  const viewBox = `${bounds.x - 20} ${bounds.y - 20} ${bounds.width + 40} ${bounds.height + 40}`;
+  const hasClosedPaths = state.paths.some((p) => p.closed && p.points.length >= 3);
+  const active = state.active;
+  const pts = state.points;
 
   return (
     <Dialog.Root
       open={open}
       onOpenChange={(next) => {
-        if (!next && state.points.length > 0) state.persist();
+        if (!next && state.paths.some((p) => p.points.length > 0)) state.persist();
         onOpenChange(next);
       }}
     >
@@ -359,7 +388,7 @@ export function PathEditorModal({
         <Dialog.Popup className={popupClass}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
             <Dialog.Title className="text-sm font-semibold text-slate-200">
-              {initialD ? "Edit Path" : "Create Path"}
+              {initialPaths ? "Edit Paths" : "Create Path"}
             </Dialog.Title>
             <Dialog.Close className="p-1 hover:bg-slate-700 rounded transition-colors cursor-pointer">
               <XIcon className="size-5 text-slate-400" />
@@ -369,73 +398,71 @@ export function PathEditorModal({
           <div className="flex flex-1 overflow-hidden">
             {/* SVG canvas */}
             <svg className="flex-1 bg-slate-950 cursor-crosshair" viewBox={viewBox} onClick={state.onSvgClick}>
-              {state.points.length > 0 && (
+              {/* background canvas rect */}
+              {bounds.width > 0 && (
                 <rect
-                  x={0}
-                  y={0}
-                  width={bounds.x + bounds.width}
-                  height={bounds.y + bounds.height}
-                  fill="rgba(255,255,255,0.03)"
-                  stroke="rgba(255,255,255,0.1)"
-                  strokeWidth={0.5}
-                  strokeDasharray="2 2"
+                  x={0} y={0} width={bounds.width} height={bounds.height}
+                  fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" strokeWidth={0.5} strokeDasharray="2 2"
                 />
               )}
-              {canSave && (
-                <polygon
-                  points={state.points.map((p) => `${p.x},${p.y}`).join(" ")}
-                  fill="rgba(234, 179, 8, 0.4)"
-                  stroke="rgba(234, 179, 8, 0.8)"
-                  strokeWidth={1}
-                />
-              )}
-              {state.points.length >= 2 &&
-                state.points.map((p, i) => {
-                  const next = state.closed ? state.points[(i + 1) % state.points.length] : state.points[i + 1];
-                  if (!next) return null;
-                  const mx = p.x + (next.x - p.x) * 0.75;
-                  const my = p.y + (next.y - p.y) * 0.75;
-                  const angle = Math.atan2(next.y - p.y, next.x - p.x) * (180 / Math.PI);
-                  return (
-                    <g key={`edge-${i}`}>
-                      <line x1={p.x} y1={p.y} x2={next.x} y2={next.y} stroke="rgba(234, 179, 8, 0.8)" strokeWidth={1} />
-                      <path
-                        d="M-1.5,-1 L1.5,0 L-1.5,1 Z"
-                        fill="rgba(234, 179, 8, 0.8)"
-                        transform={`translate(${mx},${my}) rotate(${angle})`}
+
+              {/* inactive paths */}
+              {state.paths.map((pathItem, pi) => {
+                if (pi === state.activePathIdx || pathItem.points.length < 2) return null;
+                return (
+                  <g key={`path-${pi}`} opacity={0.3}>
+                    {pathItem.closed && pathItem.points.length >= 3 && (
+                      <polygon
+                        points={pathItem.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                        fill="rgba(234, 179, 8, 0.4)" stroke="rgba(234, 179, 8, 0.8)" strokeWidth={1}
                       />
-                    </g>
-                  );
-                })}
-              {state.closed &&
-                state.points.map((p, i) => {
-                  const next = state.points[(i + 1) % state.points.length];
-                  const mx = (p.x + next.x) / 2;
-                  const my = (p.y + next.y) / 2;
-                  return (
-                    <circle
-                      key={`mid-${i}`}
-                      cx={mx}
-                      cy={my}
-                      r={1}
-                      fill="transparent"
-                      stroke="rgba(0, 246, 130, 0.8)"
-                      strokeWidth={0.25}
-                      className="cursor-copy"
-                      onClick={(e) => state.insertVertex(e, i, mx, my)}
-                    />
-                  );
-                })}
-              {state.points.map((p, i) => (
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* active path fill */}
+              {active.closed && pts.length >= 3 && (
+                <polygon
+                  points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
+                  fill="rgba(234, 179, 8, 0.4)" stroke="rgba(234, 179, 8, 0.8)" strokeWidth={1}
+                />
+              )}
+
+              {/* active path edges with arrows */}
+              {pts.length >= 2 && pts.map((p, i) => {
+                const next = active.closed ? pts[(i + 1) % pts.length] : pts[i + 1];
+                if (!next) return null;
+                const mx = p.x + (next.x - p.x) * 0.75;
+                const my = p.y + (next.y - p.y) * 0.75;
+                const angle = Math.atan2(next.y - p.y, next.x - p.x) * (180 / Math.PI);
+                return (
+                  <g key={`edge-${i}`}>
+                    <line x1={p.x} y1={p.y} x2={next.x} y2={next.y} stroke="rgba(234, 179, 8, 0.8)" strokeWidth={1} />
+                    <path d="M-1.5,-1 L1.5,0 L-1.5,1 Z" fill="rgba(234, 179, 8, 0.8)" transform={`translate(${mx},${my}) rotate(${angle})`} />
+                  </g>
+                );
+              })}
+
+              {/* active path midpoint insert handles */}
+              {active.closed && pts.map((p, i) => {
+                const next = pts[(i + 1) % pts.length];
+                const mx = (p.x + next.x) / 2;
+                const my = (p.y + next.y) / 2;
+                return (
+                  <circle key={`mid-${i}`} cx={mx} cy={my} r={1}
+                    fill="transparent" stroke="rgba(0, 246, 130, 0.8)" strokeWidth={0.25} className="cursor-copy"
+                    onClick={(e) => state.insertVertex(e, i, mx, my)}
+                  />
+                );
+              })}
+
+              {/* active path vertex handles */}
+              {pts.map((p, i) => (
                 <circle
-                  key={`v-${i}`}
-                  data-vertex={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={1}
-                  fill={i === state.selectedIdx ? "#3b82f6" : i === 0 && !state.closed ? "#22c55e" : "#eab308"}
-                  stroke="#fff"
-                  strokeWidth={0.1}
+                  key={`v-${i}`} data-vertex={i} cx={p.x} cy={p.y} r={1}
+                  fill={i === state.selectedIdx ? "#3b82f6" : i === 0 && !active.closed ? "#22c55e" : "#eab308"}
+                  stroke="#fff" strokeWidth={0.1}
                   className={cn("cursor-grab outline-0 focus:stroke-[0.4]")}
                   onClick={(e) => state.selectVertex(e, i)}
                   onDoubleClick={(e) => state.onVertexDoubleClick(e, i)}
@@ -448,115 +475,91 @@ export function PathEditorModal({
 
             {/* Controls panel */}
             <div className="w-56 p-3 border-l border-slate-700 overflow-y-auto flex flex-col gap-3 text-xs text-slate-300">
-              <Field label="Title">
-                <input
-                  className={inputClass}
-                  value={state.title}
-                  onChange={(e) => state.set({ title: e.target.value })}
-                />
-              </Field>
+              {/* Path list */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Paths</span>
+                  <button type="button" className="cursor-pointer text-green-400 hover:text-green-300" onClick={state.addPath}>
+                    <PlusCircleIcon className="size-4" />
+                  </button>
+                </div>
+                {state.paths.map((p, i) => (
+                  <div
+                    key={i}
+                    className={cn("flex items-center gap-1 rounded", i === state.activePathIdx ? "bg-slate-700" : "hover:bg-slate-800")}
+                    onClick={() => state.switchPath(i)}
+                  >
+                    <input
+                      className="flex-1 bg-transparent px-1 py-0.5 text-xs text-slate-200 outline-none truncate cursor-pointer focus:cursor-text"
+                      value={p.title}
+                      placeholder={`path ${i}`}
+                      onChange={(e) => { p.title = e.target.value; state.update(); }}
+                      onClick={(e) => { e.stopPropagation(); state.switchPath(i); }}
+                    />
+                    {state.paths.length > 1 && (
+                      <button type="button" className="cursor-pointer text-red-400 hover:text-red-300 p-0.5" onClick={(e) => { e.stopPropagation(); state.removePath(i); }}>
+                        <MinusCircleIcon className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-slate-700" />
               <Field label="Filename">
-                <input
-                  className={inputClass}
-                  value={state.filename}
-                  onChange={(e) => state.set({ filename: e.target.value })}
-                  placeholder="e.g. my-shape"
-                />
+                <input className={inputClass} value={state.filename} onChange={(e) => state.set({ filename: e.target.value })} placeholder="e.g. my-shape" />
               </Field>
 
-              {state.selectedIdx >= 0 && state.selectedIdx < state.points.length && (
+              {state.selectedIdx >= 0 && state.selectedIdx < pts.length && (
                 <div className="flex flex-col gap-1">
                   <span className="text-slate-500">Vertex {state.selectedIdx}</span>
                   <div className="flex gap-1">
                     <Field label="x" className="flex-1">
-                      <input
-                        type="number"
-                        className={inputClass}
-                        value={state.points[state.selectedIdx].x}
-                        onChange={(e) => state.setVertexX(Number(e.target.value))}
-                      />
+                      <input type="number" className={inputClass} value={pts[state.selectedIdx].x} onChange={(e) => state.setVertexX(Number(e.target.value))} />
                     </Field>
                     <Field label="y" className="flex-1">
-                      <input
-                        type="number"
-                        className={inputClass}
-                        value={state.points[state.selectedIdx].y}
-                        onChange={(e) => state.setVertexY(Number(e.target.value))}
-                      />
+                      <input type="number" className={inputClass} value={pts[state.selectedIdx].y} onChange={(e) => state.setVertexY(Number(e.target.value))} />
                     </Field>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="text-red-400 hover:text-red-300 cursor-pointer"
-                      onClick={() => {
-                        state.pushUndo();
-                        state.deleteVertex(state.selectedIdx);
-                      }}
-                    >
+                    <button type="button" className="text-red-400 hover:text-red-300 cursor-pointer" onClick={() => { state.pushUndo(); state.deleteVertex(state.selectedIdx); }}>
                       delete
                     </button>
-                    <button
-                      type="button"
-                      className="text-blue-400 hover:text-blue-300 cursor-pointer"
-                      onClick={() => {
-                        const el = document.querySelector(`circle[data-vertex="${state.selectedIdx}"]`);
-                        if (el instanceof SVGElement) el.focus();
-                      }}
-                    >
+                    <button type="button" className="text-blue-400 hover:text-blue-300 cursor-pointer" onClick={() => {
+                      const el = document.querySelector(`circle[data-vertex="${state.selectedIdx}"]`);
+                      if (el instanceof SVGElement) el.focus();
+                    }}>
                       focus
                     </button>
                   </div>
                 </div>
               )}
 
+              <div className="flex gap-1">
+                <span className="text-slate-500 flex-1">{pts.length} vertices · {active.closed ? "closed" : "open"}</span>
+                {!active.closed && pts.length >= 3 && (
+                  <button type="button" className="px-2 py-0.5 rounded text-xs cursor-pointer bg-yellow-600 hover:bg-yellow-500 text-white"
+                    onClick={() => { state.pushUndo(); state.closed = true; state.update(); }}>
+                    Close
+                  </button>
+                )}
+                {pts.length > 0 && (
+                  <button type="button" className="px-2 py-0.5 rounded text-xs cursor-pointer bg-red-700 hover:bg-red-600 text-white" onClick={state.clearPolygon}>
+                    Clear
+                  </button>
+                )}
+              </div>
+
               <div className="flex flex-col gap-1 mt-auto pt-3 border-t border-slate-700">
-                <span className="text-slate-500">
-                  {state.points.length} vertices · {state.closed ? "closed" : "open"}
-                </span>
                 <div className="flex gap-1">
-                  {!state.closed && state.points.length >= 3 && (
-                    <button
-                      type="button"
-                      className="flex-1 px-2 py-1 rounded text-xs cursor-pointer bg-yellow-600 hover:bg-yellow-500 text-white"
-                      onClick={() => {
-                        state.pushUndo();
-                        state.set({ closed: true });
-                      }}
-                    >
-                      Close path
-                    </button>
-                  )}
-                  {state.points.length > 0 && (
-                    <button
-                      type="button"
-                      className="flex-1 px-2 py-1 rounded text-xs cursor-pointer bg-red-700 hover:bg-red-600 text-white"
-                      onClick={state.clearPolygon}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex-1 px-2 py-1.5 rounded text-xs cursor-pointer bg-blue-600 hover:bg-blue-500 text-white",
-                      (!state.filename || !canSave) && disabledClass,
-                    )}
-                    onClick={state.save}
-                    disabled={state.saving}
-                  >
+                  <button type="button"
+                    className={cn("flex-1 px-2 py-1.5 rounded text-xs cursor-pointer bg-blue-600 hover:bg-blue-500 text-white", (!state.filename || !hasClosedPaths) && disabledClass)}
+                    onClick={state.save} disabled={state.saving}>
                     {state.saving ? "saving..." : "Save SVG"}
                   </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex-1 px-2 py-1.5 rounded text-xs cursor-pointer bg-green-600 hover:bg-green-500 text-white",
-                      !canSave && disabledClass,
-                    )}
-                    onClick={state.apply}
-                  >
+                  <button type="button"
+                    className={cn("flex-1 px-2 py-1.5 rounded text-xs cursor-pointer bg-green-600 hover:bg-green-500 text-white", !hasClosedPaths && disabledClass)}
+                    onClick={state.apply}>
                     Apply
                   </button>
                 </div>
@@ -579,29 +582,39 @@ function Field({ label, className, children }: { label: string; className?: stri
 }
 
 type Point = { x: number; y: number };
-type Snapshot = { points: Point[]; closed: boolean };
+type PathItem = { points: Point[]; closed: boolean; title: string };
+type MultiSnapshot = { paths: PathItem[] };
+const emptyPathItem: PathItem = { points: [], closed: false, title: "" };
 
 type State = {
-  points: Point[];
-  closed: boolean;
+  paths: PathItem[];
+  activePathIdx: number;
   selectedIdx: number;
   dragging: boolean;
-  title: string;
   filename: string;
   saving: boolean;
-  undoStack: Snapshot[];
-  redoStack: Snapshot[];
+  undoStack: MultiSnapshot[];
+  redoStack: MultiSnapshot[];
 
-  snapshot(): Snapshot;
+  readonly active: PathItem;
+  readonly points: Point[];
+  closed: boolean;
+
+  snapshot(): MultiSnapshot;
   pushUndo(): void;
   undo(): void;
   redo(): void;
 
-  reset(d?: string, title?: string): void;
+  reset(initPaths?: { d: string; title: string }[], filename?: string): void;
   onKeyDown(e: KeyboardEvent): void;
 
-  getBounds(): { x: number; y: number; width: number; height: number };
-  toD(): string;
+  switchPath(idx: number): void;
+  addPath(): void;
+  removePath(idx: number): void;
+
+  getAllBounds(): { x: number; y: number; width: number; height: number };
+  normalizeOrigin(): void;
+  pathToD(pathItem: PathItem): string;
   clientToSvg(svg: SVGSVGElement, clientX: number, clientY: number): Point;
 
   onSvgClick(e: React.MouseEvent<SVGSVGElement>): void;
@@ -613,7 +626,6 @@ type State = {
   clearPolygon(): void;
   setVertexX(x: number): void;
   setVertexY(y: number): void;
-  normalizeOrigin(): void;
 
   persist(): void;
   restore(): boolean;
