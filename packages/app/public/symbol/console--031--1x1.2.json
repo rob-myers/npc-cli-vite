@@ -29,14 +29,15 @@
       "cssTransform": "matrix(1, 0, 0, 1, 48.3, 15.5)"
     },
     {
-      "id": "338f6b16-a416-4baa-acfa-0351685da3b2",
+      "id": "71a2446b-357c-4f50-a22b-b3fb35deabea",
       "name": "obstacle table y=0.8",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": -0.5},
-      "type": "rect",
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M0,0 L52,0 L46,15.5 L46,31 L46,46.5 L52,62 L0,62 L0,0 Z",
       "baseRect": {"width": 52, "height": 62},
-      "cssTransform": "matrix(1, 0, 0, 1, 0.5, -0.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
   "bounds": {"x": 0, "y": 0, "width": 75.4, "height": 61.4},

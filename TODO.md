@@ -17,6 +17,12 @@
 
 - ✅ BUG hmr: on save const Decor not updated until 2nd save?
 
+- ✅ BUG transformed broad wall
+
+- ✅ MapEdit: can create path from rect
+- ✅ MapEdit: can edit path from rect
+  - e.g. for table to avoid intersect with chair
+
 - script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png
