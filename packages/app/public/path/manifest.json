@@ -35,6 +35,13 @@
       "width": 54,
       "height": 63
     },
+    "stellar-cartography-table": {
+      "key": "stellar-cartography-table",
+      "filename": "stellar-cartography-table.svg",
+      "pathCount": 1,
+      "width": 240,
+      "height": 240
+    },
     "triangle-0.5x0.5": {
       "key": "triangle-0.5x0.5",
       "filename": "triangle-0.5x0.5.svg",

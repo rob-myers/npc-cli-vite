@@ -93,6 +93,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       texSkin: new TexArray({ ctKey: "npc-skins", width: 64, height: 64, numTextures: MAX_NPCS }),
 
       assets: null as any,
+      sheets: null as any,
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
@@ -115,7 +116,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       n: null as any,
       obs: null as any,
       r3f: null as any,
-      sheets: null as any,
       view: null as any,
       wall: null as any,
       worker: null as any,

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="30px" height="30px">
+  <path d="M 111.362 61.81 L 84.844 72.75 L 66.342 95.471 L 61.049 122.068 L 67.158 146.017 L 86.62 168.386 L 111.383 178.371 L 139.762 175.624 L 164.755 158.693 L 175.458 140.066 L 178.065 112.345 L 177.039 104.043 L 229.922 52.711 L 239.908 63.002 L 240 240.042 L 0 240.022 L 0 0.02599 L 180.088 0 L 187.309 10.774 L 135.081 63.348 L 111.362 61.81 Z" style="fill: rgb(0, 0, 255); fill-opacity: 0.5; stroke-width: 1; transform-origin: 112.567px 121.888px;">
+    <title>obstacle y=0.7</title>
+  </path>
+</svg>
