@@ -4,7 +4,10 @@ import { PROJECT_ROOT } from "../const.ts";
 
 const PATH_DIR = path.join(PROJECT_ROOT, "packages/app/public/path");
 
-export function savePathSvg(filename: string, body: { title: string; width: number; height: number; d: string }) {
+export function savePathSvg(
+  filename: string,
+  body: { width: number; height: number; paths: { d: string; title: string }[] },
+) {
   if (!filename.endsWith(".svg")) filename += ".svg";
   const filePath = path.join(PATH_DIR, filename);
 
@@ -16,9 +19,12 @@ export function savePathSvg(filename: string, body: { title: string; width: numb
     fs.mkdirSync(PATH_DIR, { recursive: true });
   }
 
+  const pathLines = body.paths
+    .map((p) => `  <path d="${p.d}" fill="#eab308" stroke="#ca8a04"><title>${p.title}</title></path>`)
+    .join("\n");
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${body.width} ${body.height}">`,
-    `  <path d="${body.d}" fill="#eab308" stroke="#ca8a04"><title>${body.title}</title></path>`,
+    pathLines,
     `</svg>`,
   ].join("\n");
 
