@@ -448,7 +448,7 @@ const sciFiFloorPattern = (() => {
   ctx.fillRect(0, 0, s, s);
 
   // tile grid lines
-  ctx.strokeStyle = "rgba(0, 200, 0, 0.2)";
+  ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, size, size);
   ctx.strokeRect(size, 0, size, size);

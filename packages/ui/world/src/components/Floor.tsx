@@ -81,6 +81,13 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout);
 
+        // door shadow
+        for (const door of layout.doors) {
+          ct.lineWidth = 0.08;
+          tmpPoly.outline = door.seg;
+          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#111" });
+        }
+
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
@@ -176,3 +183,4 @@ export type State = {
 };
 
 const tmpMat1 = new Mat();
+const tmpPoly = new Poly();
