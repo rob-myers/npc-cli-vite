@@ -91,8 +91,14 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 #### ⚠️ packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
 
-Using BoxySVG we can convert to shape (if needed) and then Transform > Reduce.
+Must have original image size (no scale down).
 
+Must have offset matching symbol in assets.json
+> e.g. bridge--042 symbol has large offset
+
+#### ⚠️ packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+
+Using BoxySVG we can convert to shape (if needed) and then Transform > Reduce.
 
 #### ⚠️ Worker modules should be disjoint from other ui/world modules
 
