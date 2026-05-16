@@ -18,7 +18,7 @@
     },
     {
       "id": "82dca272-7b06-4d41-a1e4-2a9f2f92d361",
-      "name": "obstacle bed",
+      "name": "obstacle bed h=0.3",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 24, "f": 10},
