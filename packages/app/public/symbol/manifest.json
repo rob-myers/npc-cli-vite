@@ -170,6 +170,15 @@
       "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
       "type": "symbol",
       "key": "misc-stellar-cartography--023--4x4"
+    },
+    "window--007--0x2.4": {
+      "filename": "window--007--0x2.4.json",
+      "thumbnailFilename": "window--007--0x2.4.thumbnail.png",
+      "width": 180,
+      "height": 12,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 181.4, "height": 13.4},
+      "type": "symbol",
+      "key": "window--007--0x2.4"
     }
   }
 }
