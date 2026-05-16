@@ -1,6 +1,5 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
-import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
@@ -196,7 +195,7 @@ export default function Obstacles(_props: Props) {
     useQuery({
       queryKey: [...w.worldQueryPrefix, "obstacle-images"],
       async queryFn() {
-        return loadObstacleImages(w.sheets.symbolSheetDims.length);
+        return await loadObstacleImages(w.sheets.symbolSheetDims.length);
       },
       enabled: !!w.sheets,
     }).data ?? state.images;
@@ -291,20 +290,8 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
-async function loadObstacleImages(numSheets: number): Promise<HTMLImageElement[]> {
-  const images: HTMLImageElement[] = [];
-  for (let sheetId = 0; sheetId < numSheets; sheetId++) {
-    let img: HTMLImageElement;
-    if (import.meta.env.DEV) {
-      img = await loadImage(`/sheet/symbols.${sheetId}.png${getDevCacheBustQueryParam()}`);
-    } else {
-      try {
-        img = await loadImage(`/sheet/symbols.prod.${sheetId}.png`);
-      } catch {
-        img = await loadImage(`/sheet/symbols.${sheetId}.png`);
-      }
-    }
-    images.push(img);
-  }
-  return images;
+function loadObstacleImages(numSheets: number): Promise<HTMLImageElement[]> {
+  return Promise.all(
+    Array.from({ length: numSheets }, (_, i) => i).map((sheetId) => loadImage(`/sheet/symbols.${sheetId}.png`)),
+  );
 }

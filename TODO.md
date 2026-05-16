@@ -11,6 +11,13 @@
 
 - doors have meaningful icons
 
+- 🚧 finish 301
+  - 🚧 finish bridge symbol
+
+- ✅ simplify `gen-starship-sheets` i.e. remove `--prod`
+  - fixes some cases e.g. symbol-bleed
+  - can see error before prod
+
 - ✅ try lower walls
 - try thinner model
 - shaded skin overlay
