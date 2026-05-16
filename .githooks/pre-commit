@@ -1,7 +1,7 @@
 #!/bin/sh
 
-echo "Generating prod gen-starship-sheets..."
-pnpm gen-starship-sheets --prod
+echo "Generating gen-starship-sheets..."
+pnpm gen-starship-sheets
 
 # Stage any generated/updated sheet files
 git add packages/app/public/sheet/ packages/app/public/assets.json

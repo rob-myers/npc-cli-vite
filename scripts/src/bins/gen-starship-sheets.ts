@@ -5,28 +5,20 @@
  * - public/sheets.json
  * creates
  * - public/sheet/symbol.{sheetId}.png
- * - public/sheet/symbol.prod.{sheetId}.png when --prod
  *
  * Usage
  * ```sh
  * pnpm gen-starship-sheets
- *
- * # smaller image for prod where obstacle editing disabled
- * pnpm gen-starship-sheets --prod
  * ```
  *
  * dependencies
  * - `public/assets.json`
  * - `public/starship-symbol/manifest.json`
  * - `pngquant` command to reduce PNG size
- *
- * This approach wastes space inside texture but avoids the need to
- * recompute the spritesheet in development.
  */
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { parseArgs } from "node:util";
 import {
   isHullSymbolImageKey,
   type StarshipSymbolImageKey,
@@ -54,11 +46,6 @@ import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
 import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
 import { collectMasks } from "../service/svg-masks.ts";
-
-const opts = parseArgs({
-  options: { prod: { type: "boolean" } },
-  args: process.argv.slice(2),
-});
 
 const assets = z.parse(AssetsSchema, assetsEncoded);
 const starshipSymbolManifest = z.parse(StarshipSymbolPngsManifestSchema, starshipSymbolManifestEncoded);
@@ -140,27 +127,22 @@ for (const [sheetId, bin] of bins.entries()) {
     const sym = assets.symbol[symKey]!;
     const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
 
-    if (opts.values.prod) {
-      // 🔔 clip to obstacles in production for much smaller file size
-      // 🔔 we don't in development so we can add obstacles without re-running this script
-      const polys = sym.obstacles.map((poly) =>
-        // assume top-left bounds coincides with underlying image top-left
-        poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
-      );
+    // 🔔 clip to obstacles for much smaller file size
+    const polys = sym.obstacles.map((poly) =>
+      // assume top-left bounds coincides with underlying image top-left
+      poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
+    );
 
-      // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
-      for (const poly of polys) {
-        ct.save();
-        drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
-          clip: true,
-          fillStyle: "red",
-          strokeStyle: null,
-        });
-        ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
-        ct.restore();
-      }
-    } else {
+    // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
+    for (const poly of polys) {
+      ct.save();
+      drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
+        clip: true,
+        fillStyle: "red",
+        strokeStyle: null,
+      });
       ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
+      ct.restore();
     }
 
     // erase "mask remove" regions
@@ -203,7 +185,7 @@ for (const [sheetId, bin] of bins.entries()) {
   ct.drawImage(maskCanvas, 0, 0);
   ct.globalCompositeOperation = "source-over";
 
-  await canvas.toFile(`${baseSymbolsSheetPath}.${opts.values.prod ? `prod.${sheetId}` : sheetId}.png`);
+  await canvas.toFile(`${baseSymbolsSheetPath}.${sheetId}.png`);
 }
 
 //#endregion

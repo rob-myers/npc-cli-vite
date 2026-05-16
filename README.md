@@ -172,8 +172,8 @@ The `prepare` script automatically configures `core.hooksPath` to use `.githooks
 
 | Hook | What it does |
 |------|-------------|
-| `pre-commit` | Runs `pnpm gen-starship-sheets --prod` and stages the output |
-| `pre-push` | Runs `pnpm gen-starship-sheets --prod` |
+| `pre-commit` | Runs `pnpm gen-starship-sheets` and stages the output |
+| `pre-push` | Runs `pnpm gen-starship-sheets` |
 
 # Dev scripts
 
