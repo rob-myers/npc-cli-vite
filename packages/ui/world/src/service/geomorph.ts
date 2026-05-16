@@ -533,6 +533,8 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
       polysLookup.obstacles.push(poly);
     } else if (meta.decor === true) {
       polysLookup.decor.push(poly);
+    } else if (meta.window === true) {
+      polysLookup.windows.push(poly);
     } else {
       polysLookup.unsorted.push(poly);
     }

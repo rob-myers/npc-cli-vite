@@ -71,6 +71,18 @@
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 0, "y": -0.7},
           "cssTransform": "matrix(0, 1, -1, 0, 225, 64.3)"
+        },
+        {
+          "id": "3ce3b38b-0558-4d97-ad7a-eefcb361c604",
+          "name": "window--007--0x2.4 y=1.7",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180.5, "f": 300.5},
+          "type": "symbol",
+          "srcKey": "window--007--0x2.4",
+          "baseRect": {"width": 180, "height": 12},
+          "offset": {"x": -0.7, "y": -0.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 179.8, 299.8)"
         }
       ]
     },
@@ -499,18 +511,6 @@
       "type": "rect",
       "baseRect": {"width": 8, "height": 42},
       "cssTransform": "matrix(1, 0, 0, 1, 356, 370)"
-    },
-    {
-      "id": "3ce3b38b-0558-4d97-ad7a-eefcb361c604",
-      "name": "window--007--0x2.4 y=1.7",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180.7, "f": 300.7},
-      "type": "symbol",
-      "srcKey": "window--007--0x2.4",
-      "baseRect": {"width": 180, "height": 12},
-      "offset": {"x": -0.7, "y": -0.7},
-      "cssTransform": "matrix(1, 0, 0, 1, 180, 300)"
     }
   ],
   "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
