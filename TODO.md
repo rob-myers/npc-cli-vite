@@ -19,6 +19,9 @@
 - ✅ can override obstacle skirt height
   - `meta.h` interpreted as skirt height
 
+- ✅ can override obstacle y (ignore accumulation)
+  - `meta.force-y`
+
 - ✅ simplify `gen-starship-sheets` i.e. remove `--prod`
   - fixes some cases e.g. symbol-bleed
   - can see error before prod

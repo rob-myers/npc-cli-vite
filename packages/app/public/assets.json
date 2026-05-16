@@ -2923,7 +2923,7 @@
       "isHull": false,
       "width": 4.5,
       "height": 0.3,
-      "bounds": {"x": -0.0175, "y": -0.0175, "width": 4.535, "height": 0.335},
+      "bounds": {"x": -0.005, "y": -0.0175, "width": 4.535, "height": 0.335},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -2943,6 +2943,23 @@
             "h": 0.2,
             "symKey": "window--007--0x2.4",
             "obsId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [4.525, -0.0125],
+              [4.525, 0.3125],
+              [-0.0125, 0.3125],
+              [-0.0125, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "force-y": 0.4,
+            "symKey": "window--007--0x2.4",
+            "obsId": 1
           }
         }
       ],
@@ -3804,6 +3821,20 @@
             "h": 0.2,
             "symKey": "window--007--0x2.4",
             "obsId": 0,
+            "y": 1.7,
+            "transform": [1, 0, 0, 1, 4.5175, 7.5175]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[9.0425, 7.505], [9.0425, 7.83], [4.505, 7.83], [4.505, 7.505]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "force-y": 0.4,
+            "symKey": "window--007--0x2.4",
+            "obsId": 1,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 4.5175, 7.5175]
           }
@@ -6611,6 +6642,25 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [18.0675, 9.0175],
+              [18.0675, 9.3425],
+              [13.53, 9.3425],
+              [13.53, 9.0175]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "force-y": 0.4,
+            "symKey": "window--007--0x2.4",
+            "obsId": 1,
+            "y": 1.7,
+            "transform": [1, 0, 0, 1, 13.5425, 9.03]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [6.0125, 2.9875],
               [6.0125, 6.0125],
               [5.2375, 6.0125],
@@ -8205,7 +8255,7 @@
       "isHull": false,
       "width": 4.5,
       "height": 0.3,
-      "bounds": {"x": -0.0175, "y": -0.0175, "width": 4.535, "height": 0.335},
+      "bounds": {"x": -0.005, "y": -0.0175, "width": 4.535, "height": 0.335},
       "decor": [],
       "doors": [],
       "obstacles": [
@@ -8225,6 +8275,23 @@
             "h": 0.2,
             "symKey": "window--007--0x2.4",
             "obsId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [4.525, -0.0125],
+              [4.525, 0.3125],
+              [-0.0125, 0.3125],
+              [-0.0125, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "force-y": 0.4,
+            "symKey": "window--007--0x2.4",
+            "obsId": 1
           }
         }
       ],
@@ -10846,7 +10913,7 @@
               "obsId": 0
             }
           },
-          "origSubRect": {"x": 0.01, "y": 0.01, "width": 4.54, "height": 0.33},
+          "origSubRect": {"x": -0.01, "y": 0.01, "width": 4.54, "height": 0.33},
           "transform": {
             "a": 1,
             "b": 0,
@@ -10862,6 +10929,44 @@
             "h": 0.2,
             "symKey": "window--007--0x2.4",
             "obsId": 0
+          }
+        },
+        {
+          "symbolKey": "window--007--0x2.4",
+          "obstacleId": 1,
+          "height": 0.4,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [4.525, -0.0125],
+                [4.525, 0.3125],
+                [-0.0125, 0.3125],
+                [-0.0125, -0.0125]
+              ]
+            ],
+            "meta": {
+              "obstacle": true,
+              "force-y": 0.4,
+              "symKey": "window--007--0x2.4",
+              "obsId": 1
+            }
+          },
+          "origSubRect": {"x": -0.01, "y": 0.01, "width": 4.54, "height": 0.33},
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 13.5425,
+            "f": 9.03
+          },
+          "center": {"x": 15.8, "y": 9.18},
+          "meta": {
+            "obstacle": true,
+            "force-y": 0.4,
+            "symKey": "window--007--0x2.4",
+            "obsId": 1
           }
         },
         {
@@ -13636,5 +13741,5 @@
       "walls": {"color": "#000000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -60415979}
+  "hash": {"obstacles": 895182602}
 }
