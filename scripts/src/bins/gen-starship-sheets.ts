@@ -180,12 +180,14 @@ for (const [sheetId, bin] of bins.entries()) {
       ct.restore();
     }
 
-    // overwrite "mask white" regions
-    for (const maskPoly of masks?.white ?? []) {
-      drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
-        fillStyle: "white",
-        strokeStyle: null,
-      });
+    // overwrite "mask color={color}" regions
+    for (const [fillColor, maskPolys] of Object.entries(masks?.color ?? {})) {
+      for (const maskPoly of maskPolys) {
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
+          fillStyle: fillColor,
+          strokeStyle: null,
+        });
+      }
     }
   }
 

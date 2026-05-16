@@ -7,6 +7,13 @@
       "width": 480,
       "height": 540
     },
+    "bridge-computer": {
+      "key": "bridge-computer",
+      "filename": "bridge-computer.svg",
+      "pathCount": 1,
+      "width": 100,
+      "height": 90
+    },
     "core-geomorph-hull-walls": {
       "key": "core-geomorph-hull-walls",
       "filename": "core-geomorph-hull-walls.svg",
