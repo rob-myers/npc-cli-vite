@@ -20,6 +20,7 @@ import {
   findPanePosition,
   splitPane,
   swapPane,
+  toggleOrientation,
 } from "../components/pane-service";
 
 export const Route = createFileRoute("/")({
@@ -52,6 +53,10 @@ function Index() {
       swapPane(uiId: string, direction: -1 | 1) {
         const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
         if (leaf) swapPane(leaf.id, direction);
+      },
+      toggleOrientation(uiId: string) {
+        const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
+        if (leaf) toggleOrientation(leaf.id);
       },
       getPanePosition(uiId: string) {
         const root = uiStore.getState().persistedPanes.root;

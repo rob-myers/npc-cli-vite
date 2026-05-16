@@ -127,6 +127,19 @@ export function swapPane(targetId: number, direction: -1 | 1) {
   persistPanesToUi();
 }
 
+export function toggleOrientation(targetId: number) {
+  setRoot((prev) => toggleOrientationInner(prev, targetId));
+  persistPanesToUi();
+}
+
+function toggleOrientationInner(node: PaneNode, targetId: number): PaneNode {
+  if (node.type !== "split") return node;
+  if (node.children.some((c) => c.id === targetId)) {
+    return { ...node, vertical: !node.vertical };
+  }
+  return { ...node, children: node.children.map((c) => toggleOrientationInner(c, targetId)) };
+}
+
 function swapChild(node: PaneNode, targetId: number, direction: -1 | 1): PaneNode {
   if (node.type !== "split") return node;
 

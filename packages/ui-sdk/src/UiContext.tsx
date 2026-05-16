@@ -30,6 +30,7 @@ export type LayoutApi = {
   splitPane(uiId: string, vertical: boolean): void;
   closePane(uiId: string): void;
   swapPane(uiId: string, direction: -1 | 1): void;
+  toggleOrientation(uiId: string): void;
   getPanePosition(uiId: string): { vertical: boolean; index: number; siblingCount: number } | null;
 };
 
@@ -46,6 +47,7 @@ export function getFallbackLayoutApi(): LayoutApi {
     splitPane: () => {},
     closePane: () => {},
     swapPane: () => {},
+    toggleOrientation: () => {},
     getPanePosition: () => null,
   };
 }

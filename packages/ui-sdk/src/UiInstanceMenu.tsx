@@ -1,6 +1,7 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { CloseOnClickPopover, cn } from "@npc-cli/util";
 import {
+  ArrowsClockwiseIcon,
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
@@ -71,6 +72,13 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
           <button
             type="button"
             className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
+            onPointerDown={() => layoutApi.closePane(meta.id)}
+          >
+            <XIcon className="size-5" />
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
             onPointerDown={() => layoutApi.splitPane(meta.id, false)}
           >
             <SquareHalfIcon className="size-5" />
@@ -81,13 +89,6 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
             onPointerDown={() => layoutApi.splitPane(meta.id, true)}
           >
             <SquareHalfBottomIcon className="size-5" />
-          </button>
-          <button
-            type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
-            onPointerDown={() => layoutApi.closePane(meta.id)}
-          >
-            <XIcon className="size-5" />
           </button>
         </div>
       )}
@@ -131,10 +132,8 @@ function SwapButtons({ metaId, layoutApi }: { metaId: string; layoutApi: import(
   const canPrev = pos.index > 0;
   const canNext = pos.index < pos.siblingCount - 1;
 
-  if (!canPrev && !canNext) return null;
-
   return (
-    <div className="flex border-b border-white/20 py-1 px-2 gap-1">
+    <div className="flex flex-col border-b border-white/20 py-1 px-2 gap-1">
       {canPrev && (
         <button
           type="button"
@@ -153,6 +152,13 @@ function SwapButtons({ metaId, layoutApi }: { metaId: string; layoutApi: import(
           <NextIcon className="size-5" />
         </button>
       )}
+      <button
+        type="button"
+        className="cursor-pointer text-sm py-0.5 hover:bg-white/20"
+        onPointerDown={() => layoutApi.toggleOrientation(metaId)}
+      >
+        <ArrowsClockwiseIcon className="size-5" />
+      </button>
     </div>
   );
 }
