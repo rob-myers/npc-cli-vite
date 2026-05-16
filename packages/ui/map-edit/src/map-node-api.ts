@@ -81,6 +81,8 @@ export const labelledImageOffsetValue = {
   zero: 0,
   centerExtra003: -0.3,
   halfLineWidth: -0.7,
+  northAlignTable004: -14.4,
+  eastAlignTable004: -4.4,
   eastAlignBed004: -3.7,
   centerXConsole051: 1.3,
   centerXConsole033: 1.6,
