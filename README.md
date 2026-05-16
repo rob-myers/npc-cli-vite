@@ -89,6 +89,11 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
+#### ⚠️ packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+
+Using BoxySVG we can convert to shape (if needed) and then Transform > Reduce.
+
+
 #### ⚠️ Worker modules should be disjoint from other ui/world modules
 
 Otherwise vite HMR can happen multiple times breaking worker re-intialization.
