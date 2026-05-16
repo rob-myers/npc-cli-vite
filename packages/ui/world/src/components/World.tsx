@@ -165,9 +165,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             debug("[World] decor sheets rebuilt: refetching");
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
           }],
-          ["window", "hmr:DerivedGmsData", (e: Event) => {
+          ["window", "hmr:DerivedGmsData", (_e: Event) => {
             debug("[World] HMR: DerivedGmsData updated: recomputing");
-            state.gmsData = new (e as CustomEvent).detail();
+            state.gmsData = new DerivedGmsData();
             for (const gmKey of state.seenGmKeys) {
               state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
             }

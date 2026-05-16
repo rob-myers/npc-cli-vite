@@ -43,7 +43,7 @@ export default class DerivedGmsData {
     );
   }
 
-  async computeGmKey(gm: Geomorph.Layout) {
+  computeGmKey(gm: Geomorph.Layout) {
     const gmData = this.byKey[gm.key];
 
     gmData.doorSegs = gm.doors.map(({ seg, meta }) => ({ seg, hull: meta.hull === true }));
@@ -74,7 +74,7 @@ export default class DerivedGmsData {
     );
     gmData.tops = {
       broad: gm.walls.filter((x) => x.meta.broad === true),
-      nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.015))),
+      nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.05))),
       hullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? door.computeThinPoly(0.15) : [])),
       hullWall: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
       // 🔔 must union after inset e.g. due to broad walls intersecting with others
@@ -152,9 +152,9 @@ export default class DerivedGmsData {
 }
 
 if (import.meta.hot) {
-  import.meta.hot.accept((newModule) => {
-    if (newModule) {
-      window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData", { detail: newModule.default }));
+  import.meta.hot.on("vite:afterUpdate", (payload) => {
+    if (payload.updates.some((update) => update.path.endsWith("DerivedGmsData.ts"))) {
+      window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData"));
     }
   });
 }
