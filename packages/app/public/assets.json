@@ -13741,7 +13741,7 @@
       },
       "floor": {
         "navStroke": "#0005",
-        "patternFill": "#222",
+        "patternFill": "#2244",
         "tileStroke": "#0001"
       },
       "walls": {"color": "#000000", "opacity": 0.5}
