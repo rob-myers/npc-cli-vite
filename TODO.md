@@ -16,6 +16,9 @@
 - 🚧 finish 301
   - 🚧 finish bridge symbol
 
+- onchange obstacle run (debounced) `pnpm gen-starship-sheets`
+  - should trigger react-query refetches: sheets/images
+
 - ✅ can override obstacle skirt height
   - `meta.h` interpreted as skirt height
 
