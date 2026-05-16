@@ -11,8 +11,13 @@
 
 - doors have meaningful icons
 
+- BUG added window symbol to bridge and chair symbols went wonky
+
 - 🚧 finish 301
   - 🚧 finish bridge symbol
+
+- ✅ can override obstacle skirt height
+  - `meta.h` interpreted as skirt height
 
 - ✅ simplify `gen-starship-sheets` i.e. remove `--prod`
   - fixes some cases e.g. symbol-bleed
