@@ -21,13 +21,6 @@
       "width": 1200,
       "height": 1200
     },
-    "diagonal-door": {
-      "key": "diagonal-door",
-      "filename": "diagonal-door.svg",
-      "pathCount": 1,
-      "width": 53,
-      "height": 10
-    },
     "edge-geomorph-hull-walls": {
       "key": "edge-geomorph-hull-walls",
       "filename": "edge-geomorph-hull-walls.svg",
@@ -42,19 +35,19 @@
       "width": 130,
       "height": 180
     },
-    "mapedit-path-test": {
-      "key": "mapedit-path-test",
-      "filename": "mapedit-path-test.svg",
-      "pathCount": 1,
-      "width": 54,
-      "height": 63
-    },
     "stellar-cartography-table": {
       "key": "stellar-cartography-table",
       "filename": "stellar-cartography-table.svg",
       "pathCount": 1,
       "width": 240,
       "height": 240
+    },
+    "table--004--1.2x2.4": {
+      "key": "table--004--1.2x2.4",
+      "filename": "table--004--1.2x2.4.svg",
+      "pathCount": 1,
+      "width": 43,
+      "height": 120
     },
     "triangle-0.5x0.5": {
       "key": "triangle-0.5x0.5",

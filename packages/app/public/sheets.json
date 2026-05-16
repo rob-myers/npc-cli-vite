@@ -15,9 +15,14 @@
       "rect": {"x": 2450, "y": 1224, "width": 907, "height": 67},
       "sheetId": 0
     },
+    "table--004--1.2x2.4": {
+      "key": "table--004--1.2x2.4",
+      "rect": {"x": 2450, "y": 1293, "width": 344, "height": 724},
+      "sheetId": 0
+    },
     "console--019--2x2": {
       "key": "console--019--2x2",
-      "rect": {"x": 2450, "y": 1293, "width": 607, "height": 607},
+      "rect": {"x": 2450, "y": 2019, "width": 607, "height": 607},
       "sheetId": 0
     },
     "bed--003--1x1.6": {
@@ -27,22 +32,22 @@
     },
     "bed--005--0.6x1.2": {
       "key": "bed--005--0.6x1.2",
-      "rect": {"x": 3059, "y": 1602, "width": 382, "height": 202},
+      "rect": {"x": 2796, "y": 1602, "width": 382, "height": 202},
       "sheetId": 0
     },
     "console--031--1x1.2": {
       "key": "console--031--1x1.2",
-      "rect": {"x": 3059, "y": 1806, "width": 377, "height": 307},
+      "rect": {"x": 3180, "y": 1602, "width": 377, "height": 307},
       "sheetId": 0
     },
     "console--033--0.4x0.6": {
       "key": "console--033--0.4x0.6",
-      "rect": {"x": 3443, "y": 1602, "width": 134, "height": 161},
+      "rect": {"x": 2450, "y": 2628, "width": 134, "height": 161},
       "sheetId": 0
     },
     "console--051--0.4x0.6": {
       "key": "console--051--0.4x0.6",
-      "rect": {"x": 3443, "y": 1765, "width": 137, "height": 155},
+      "rect": {"x": 2586, "y": 2628, "width": 137, "height": 155},
       "sheetId": 0
     }
   },
