@@ -187,7 +187,7 @@ export default function Obstacles(_props: Props) {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return {
-      texNode: mix(texNode.depth(uvTexIds), color("#000"), 0.1),
+      texNode: mix(texNode.depth(uvTexIds), color("#000"), 0.25),
       outputNode: w.view.withPickOutput(PICK_TYPE.obstacle),
       uid: generateUUID(),
     };
