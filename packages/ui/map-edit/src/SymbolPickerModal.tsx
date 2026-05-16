@@ -69,7 +69,7 @@ function SymbolPickerModal({
                       <img
                         src={`/symbol/${entry.thumbnailFilename}?${state.cachedBustingQuery}`}
                         alt={entry.filename}
-                        className={cn("max-h-24 object-contain", !state.loadedImages.has(entry.filename) && "hidden")}
+                        className={cn("size-20 object-contain", !state.loadedImages.has(entry.filename) && "hidden")}
                         onLoad={() => {
                           state.loadedImages.add(entry.filename);
                           state.update();

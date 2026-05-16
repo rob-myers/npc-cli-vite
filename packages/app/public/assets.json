@@ -2903,6 +2903,41 @@
           "meta": {"console--051--0.4x0.6": true, "y": 0.5}
         }
       ]
+    },
+    "window--007--0x2.4": {
+      "key": "window--007--0x2.4",
+      "isHull": false,
+      "width": 4.5,
+      "height": 0.3,
+      "bounds": {"x": -0.0175, "y": -0.0175, "width": 4.535, "height": 0.335},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [4.525, -0.0125],
+              [4.525, 0.3125],
+              [-0.0125, 0.3125],
+              [-0.0125, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "window": true,
+            "symKey": "window--007--0x2.4",
+            "obsId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": [],
+      "hullWalls": [],
+      "symbols": []
     }
   },
   "map": {
@@ -8114,6 +8149,39 @@
       "windows": [],
       "removableDoors": [],
       "addableWalls": []
+    },
+    "window--007--0x2.4": {
+      "key": "window--007--0x2.4",
+      "isHull": false,
+      "width": 4.5,
+      "height": 0.3,
+      "bounds": {"x": -0.0175, "y": -0.0175, "width": 4.535, "height": 0.335},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [4.525, -0.0125],
+              [4.525, 0.3125],
+              [-0.0125, 0.3125],
+              [-0.0125, -0.0125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "window": true,
+            "symKey": "window--007--0x2.4",
+            "obsId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": []
     }
   },
   "stratifiedSymbolNodes": [
@@ -8126,7 +8194,7 @@
       {"id": "g-101--multipurpose"},
       {"id": "iris-valves--005--1x1"},
       {"id": "bed--005--0.6x1.2"},
-      {"id": "misc-stellar-cartography--023--4x4"}
+      {"id": "window--007--0x2.4"}
     ],
     [
       {"id": "bridge--042--8x9"},
@@ -8135,7 +8203,8 @@
       {"id": "stateroom--014--2x2"},
       {"id": "stateroom--019--2x3"},
       {"id": "bed--004--0.8x1.4"},
-      {"id": "console--031--1x1.2"}
+      {"id": "console--031--1x1.2"},
+      {"id": "misc-stellar-cartography--023--4x4"}
     ],
     [{"id": "office--001--2x2"}, {"id": "stateroom--036--2x4"}],
     [{"id": "g-301--bridge"}]
@@ -13467,5 +13536,5 @@
       "walls": {"color": "#000000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": 938740046}
+  "hash": {"obstacles": -442009531}
 }
