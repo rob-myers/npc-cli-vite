@@ -530,6 +530,28 @@
       "baseRect": {"width": 60, "height": 120},
       "offset": {"x": -10.850066820162747, "y": 5.502367672012064},
       "cssTransform": "matrix(0, -1, 1, 0, 168, 407)"
+    },
+    {
+      "id": "ae340bb5-68e2-48b7-953f-766ee413d811",
+      "name": "obstacle cpu y=1 tint=#667",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 14, "f": 79.5},
+      "type": "path",
+      "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
+      "baseRect": {"width": 100, "height": 90},
+      "cssTransform": "matrix(1, 0, 0, 1, 14, 79.5)"
+    },
+    {
+      "id": "cb7b3549-4920-4b63-91f2-2e58cba60ffb",
+      "name": "obstacle cpu y=1 tint=#667",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 466, "f": 80},
+      "type": "path",
+      "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
+      "baseRect": {"width": 100, "height": 90},
+      "cssTransform": "matrix(-1, 0, 0, 1, 466, 80)"
     }
   ],
   "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
