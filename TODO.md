@@ -46,7 +46,7 @@
 - BUG on collapse/expand should persist pane dimensions
 - BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
   - fixed manually by refetching
-    - `["world","world-0","sheets"]`
+    - `["world","world-0","sheets"]` (if added/removed)
     - `["world","world-0","obstacle-images"]`
 - BUG need two ctrl-c for while loop walk?
 - BUG saw auto door close with nearby npc
