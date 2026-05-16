@@ -12,6 +12,7 @@ import {
   color,
   instanceIndex,
   int,
+  mix,
   normalWorld,
   positionWorld,
   texture,
@@ -186,8 +187,8 @@ export default function Obstacles(_props: Props) {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return {
-      texNode: texNode.depth(uvTexIds),
-      pickNode: w.view.withPickOutput(PICK_TYPE.obstacle),
+      texNode: mix(texNode.depth(uvTexIds), color("#000"), 0.5),
+      outputNode: w.view.withPickOutput(PICK_TYPE.obstacle),
       uid: generateUUID(),
     };
   }, [w.texObs.hash]);
@@ -244,7 +245,7 @@ export default function Obstacles(_props: Props) {
           transparent
           alphaTest={0.5}
           colorNode={shaderMeta.texNode}
-          outputNode={shaderMeta.pickNode}
+          outputNode={shaderMeta.outputNode}
         />
       </instancedMesh>
 
