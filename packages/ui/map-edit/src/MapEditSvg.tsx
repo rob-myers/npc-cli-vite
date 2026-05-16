@@ -215,7 +215,7 @@ const handleToCursor: Record<ResizeHandle, string> = {
 type Rect = { x: number; y: number; width: number; height: number };
 
 function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
-  const handleSize = (4 * resizeHandleSize) / root.zoom;
+  const handleSize = (4 * resizeHandleSize) / (2 * root.zoom);
 
   if (selectedNode.type === "image") {
     // Rotated UI: compute transformed corners from cssTransform
