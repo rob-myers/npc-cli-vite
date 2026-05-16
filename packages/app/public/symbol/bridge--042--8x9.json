@@ -214,10 +214,10 @@
       "name": "door slide=[-1,0]",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 214, "f": 175.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 214, "f": 176.5},
       "type": "rect",
       "baseRect": {"width": 52.5, "height": 9.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 214, 175.5)"
+      "cssTransform": "matrix(1, 0, 0, 1, 214, 176.5)"
     },
     {
       "id": "73076cb6-90ce-4c0c-8041-6cdd3cbef6dd",
