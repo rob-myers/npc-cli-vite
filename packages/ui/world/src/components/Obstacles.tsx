@@ -134,9 +134,10 @@ export default function Obstacles(_props: Props) {
               const dx = p2.x - p1.x, dy = p2.y - p1.y;
               const len = Math.sqrt(dx * dx + dy * dy);
               const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
+              const skirtDimY = typeof origPoly.meta.h === 'number' ? origPoly.meta.h : skirtDepth;
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
               state.skirtInst.setMatrixAt(sId++,
-                embedXZMat4(tmpMat2, { yScale: skirtDepth, yHeight: height - skirtDepth, mat4: tmpMatFour2 }),
+                embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
               );
             }
           });
