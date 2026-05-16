@@ -219,10 +219,8 @@ export function PathEditorModal({
         state.pushUndo();
         const svg = e.currentTarget;
         let pt: Point;
-        if (state.points.length === 0 && state.activePathIdx === 0) {
+        if (state.points.length === 0) {
           pt = { x: 0, y: 0 };
-        } else if (state.points.length === 0) {
-          pt = state.clientToSvg(svg, e.clientX, e.clientY);
         } else {
           pt = state.clientToSvg(svg, e.clientX, e.clientY);
           if (e.shiftKey) {
@@ -270,7 +268,6 @@ export function PathEditorModal({
         };
         const onUp = () => {
           state.dragging = false;
-          state.normalizeOrigin();
           state.update();
           document.removeEventListener("pointermove", onMove);
           document.removeEventListener("pointerup", onUp);
@@ -370,7 +367,8 @@ export function PathEditorModal({
   }, [open]);
 
   const bounds = state.getAllBounds();
-  const viewBox = `${bounds.x - 20} ${bounds.y - 20} ${bounds.width + 40} ${bounds.height + 40}`;
+  const viewBounds = { x: bounds.x - 20, y: bounds.y - 20, w: bounds.width + 40, h: bounds.height + 40 };
+  const viewBox = `${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`;
   const hasClosedPaths = state.paths.some((p) => p.closed && p.points.length >= 3);
   const active = state.active;
   const pts = state.points;
@@ -398,13 +396,13 @@ export function PathEditorModal({
           <div className="flex flex-1 overflow-hidden">
             {/* SVG canvas */}
             <svg className="flex-1 bg-slate-950 cursor-crosshair" viewBox={viewBox} onClick={state.onSvgClick}>
-              {/* background canvas rect */}
-              {bounds.width > 0 && (
-                <rect
-                  x={0} y={0} width={bounds.width} height={bounds.height}
-                  fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" strokeWidth={0.5} strokeDasharray="2 2"
-                />
-              )}
+              {/* background grid */}
+              <defs>
+                <pattern id="grid-60" width={60} height={60} patternUnits="userSpaceOnUse">
+                  <rect width={60} height={60} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.5} />
+                </pattern>
+              </defs>
+              <rect x={viewBounds.x} y={viewBounds.y} width={viewBounds.w} height={viewBounds.h} fill="url(#grid-60)" />
 
               {/* inactive paths */}
               {state.paths.map((pathItem, pi) => {
@@ -515,10 +513,24 @@ export function PathEditorModal({
                   <span className="text-slate-500">Vertex {state.selectedIdx}</span>
                   <div className="flex gap-1">
                     <Field label="x" className="flex-1">
-                      <input type="number" className={inputClass} value={pts[state.selectedIdx].x} onChange={(e) => state.setVertexX(Number(e.target.value))} />
+                      <input
+                        key={`x-${state.selectedIdx}-${pts[state.selectedIdx].x}`}
+                        type="number"
+                        className={inputClass}
+                        defaultValue={pts[state.selectedIdx].x}
+                        onBlur={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) state.setVertexX(v); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                      />
                     </Field>
                     <Field label="y" className="flex-1">
-                      <input type="number" className={inputClass} value={pts[state.selectedIdx].y} onChange={(e) => state.setVertexY(Number(e.target.value))} />
+                      <input
+                        key={`y-${state.selectedIdx}-${pts[state.selectedIdx].y}`}
+                        type="number"
+                        className={inputClass}
+                        defaultValue={pts[state.selectedIdx].y}
+                        onBlur={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) state.setVertexY(v); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                      />
                     </Field>
                   </div>
                   <div className="flex gap-2">
