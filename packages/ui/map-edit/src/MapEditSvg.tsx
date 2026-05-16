@@ -149,8 +149,8 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             d={node.d}
             style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom }}
             className={cn(
-              "fill-amber-500/50 stroke-amber-700 stroke-1",
-              root.selectedIds.has(node.id) && "stroke-blue-500 stroke-2",
+              "fill-amber-500/50 stroke-amber-700 stroke-0!",
+              root.selectedIds.has(node.id) && "stroke-blue-500 stroke-[0.25]!",
               node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
           >
