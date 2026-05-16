@@ -364,7 +364,7 @@ export function createLayout(
         obstacleId,
         origPoly,
         origSubRect: origPoly.rect.delta(-origSymbol.bounds.x, -origSymbol.bounds.y).precision(2),
-        height: typeof o.meta.y === "number" ? o.meta.y : 0,
+        height: typeof o.meta["force-y"] === "number" ? o.meta["force-y"] : typeof o.meta.y === "number" ? o.meta.y : 0,
         transform: tmpMat1.feedFromArray(transform).json,
         center: tmpMat1.transformPoint(origPoly.center).precision(2),
         meta: origPoly.meta,
