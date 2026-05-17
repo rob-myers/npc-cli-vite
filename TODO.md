@@ -9,14 +9,20 @@
   - ✅ clean e.g. --speech-bubble-width
   - ✅ initial scale bug
 
+- try thinner character
+- can trigger run animation
+- skins in spritesheet with hot reloading
+- support skin-overlay svg for lighting
+
 - doors have meaningful icons
 
-- BUG added window symbol to bridge and chair symbols went wonky
+- ✅ BUG save DerivedGmsData breaks walls?
 
 - 🚧 finish 301
+  - ✅ bridge has window
   - 🚧 finish bridge symbol
 
-- onchange obstacle run (debounced) `pnpm gen-starship-sheets`
+- onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
   - should trigger react-query refetches: sheets/images
 
 - ✅ can override obstacle skirt height
