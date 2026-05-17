@@ -15,9 +15,10 @@
 
 - ✅ clean packages/media/src/blockbench
 
-- 🚧 try thinner character
+- ✅ try thinner character
   - ✅ extra-root.thinner
-  - 🚧 try {left,right}arm size {x,z} 2.5
+  - ✅ try {left,right}arm size {x,z} 2.5
+  - ✅ try {left,right}leg size x:2.75 z:2.5
 
 - skins in spritesheet with hot reloading
 - support skin-overlay svg for lighting
