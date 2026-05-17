@@ -23,7 +23,8 @@
 - 🚧 skins in spritesheet with hot reloading
   - ✅ vite-plugin-watch-assets generates skin/manifest.json
     - manifest meta defined via filename format `{namemc-uid}{key:'medic-0',tags:['foo','bar','baz']}.png`
-  - script `gen-skin-sheets`
+  - ✅ script `gen-skin-sheets`
+  - 🚧 npcs draw skins from spritesheet
 
 - support skin-overlay svg for lighting
   - still use DataArrayTexture (TexArray) but higher res

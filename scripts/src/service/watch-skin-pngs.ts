@@ -43,7 +43,7 @@ export function watchSkinPngs(server: ViteDevServer) {
 }
 
 function isSkinPng(filePath: string) {
-  return filePath.startsWith(SKIN_PUBLIC_DIR) && filePath.endsWith(".png") && !filePath.match(/\.\d+\.png$/);
+  return filePath.startsWith(SKIN_PUBLIC_DIR) && filePath.endsWith(".png") && !filePath.startsWith("skin.");
 }
 
 export async function rebuildSkinManifest() {
