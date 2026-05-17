@@ -224,6 +224,16 @@ export const DecorSheetEntrySchema = z.object({
 });
 export type DecorSheetEntry = z.infer<typeof DecorSheetEntrySchema>;
 
+export const SkinSheetEntrySchema = z.object({
+  key: z.string(),
+  filename: z.string(),
+  rect: rectCodec,
+  sheetId: z.number(),
+  originalWidth: z.number(),
+  originalHeight: z.number(),
+});
+export type SkinSheetEntry = z.infer<typeof SkinSheetEntrySchema>;
+
 const SheetDimSchema = z.object({ width: z.number(), height: z.number() });
 
 /**
@@ -235,15 +245,23 @@ export const SheetsSchema = z.object({
    * - key format `{symbolKey} ${obstacleId}`
    * - `rect` in Starship Geomorphs Units (sgu), possibly scaled-up for higher-res images
    */
-  symbol: z.partialRecord(StarShipSymbolImageKeySchema, StarShipSymbolSheetEntrySchema),
+  symbol: z.partialRecord(StarShipSymbolImageKeySchema, StarShipSymbolSheetEntrySchema).default({}),
   /** Aligned to sheets; its length is the number of the sheets. */
-  symbolSheetDims: z.array(SheetDimSchema),
+  symbolSheetDims: z.array(SheetDimSchema).default([]),
   /** Maximum over all sheets, for texture array */
-  maxSymbolSheetDim: SheetDimSchema,
+  maxSymbolSheetDim: SheetDimSchema.default({ width: 1, height: 1 }),
 
-  decor: z.record(z.string(), DecorSheetEntrySchema),
-  decorSheetDims: z.array(SheetDimSchema),
-  maxDecorSheetDim: SheetDimSchema,
+  decor: z.record(z.string(), DecorSheetEntrySchema).default({}),
+  /** Aligned to sheets; its length is the number of the sheets. */
+  decorSheetDims: z.array(SheetDimSchema).default([]),
+  /** Maximum over all sheets, for texture array */
+  maxDecorSheetDim: SheetDimSchema.default({ width: 1, height: 1 }),
+
+  skin: z.record(z.string(), SkinSheetEntrySchema).default({}),
+  /** Aligned to sheets; its length is the number of the sheets. */
+  skinSheetDims: z.array(SheetDimSchema).default([]),
+  /** Maximum over all sheets */
+  maxSkinSheetDim: SheetDimSchema.default({ width: 1, height: 1 }),
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
 
@@ -254,6 +272,9 @@ export const emptySheets: SheetsType = {
   decor: {},
   decorSheetDims: [],
   maxDecorSheetDim: { width: 1, height: 1 },
+  skin: {},
+  skinSheetDims: [],
+  maxSkinSheetDim: { width: 1, height: 1 },
 };
 
 export const AssetsSkinEntrySchema = z.object({

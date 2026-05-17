@@ -1,5 +1,5 @@
 import { warn } from "@npc-cli/util/legacy/generic";
-import { MaxRectsPacker, Rectangle } from "maxrects-packer";
+import { type Bin, MaxRectsPacker, Rectangle } from "maxrects-packer";
 
 /**
  * Output width is maximum over all sheet widths.
@@ -30,12 +30,12 @@ export function packRectangles<T>(
     }),
   );
 
-  const { bins } = packer;
+  const bins = packer.bins as Bin<Omit<Rectangle, "data"> & { data: T }>[];
   const numRectsPacked = bins.reduce((sum, bin) => sum + bin.rects.length, 0);
 
   if (bins.length === 0) {
     warn(`${opts.logPrefix}: no rectangles to pack`);
-    return { bins: [{ width: 0, height: 0, rects: [] as Rectangle[] }], width: 0, height: 0 };
+    return { bins: [{ width: 0, height: 0, rects: [] }], width: 0, height: 0 };
   } else if (numRectsPacked !== rectsToPack.length) {
     throw Error(`${opts.logPrefix}: expected every image to be packed: ${numRectsPacked} of ${rectsToPack.length}`);
   }
