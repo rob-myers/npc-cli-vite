@@ -11,6 +11,7 @@ interface TexArrayOpts {
   ctKey: string;
   type?: typeof THREE.UnsignedByteType | typeof THREE.FloatType;
   force?: boolean;
+  anisotropy?: number;
 }
 
 export interface TextureItem {
@@ -48,6 +49,7 @@ export class TexArray {
     this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
     this.tex.format = THREE.RGBAFormat;
     this.tex.type = opts.type ?? THREE.UnsignedByteType;
+    this.tex.anisotropy = opts.anisotropy ?? THREE.Texture.DEFAULT_ANISOTROPY;
 
     this.hash = hashJson(opts);
   }

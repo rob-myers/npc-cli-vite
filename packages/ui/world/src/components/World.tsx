@@ -81,6 +81,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 2, // can change
         width: floorTextureDimension,
         height: floorTextureDimension,
+        // anisotropy: 16,
       }),
       texObs: new TexArray({
         ctKey: "obs-tex",
