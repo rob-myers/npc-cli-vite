@@ -113,6 +113,86 @@
       "d": "M0,0 L52.5,0 L52.5,9.5 L0,9.5 L0,0 Z",
       "baseRect": {"width": 53, "height": 10},
       "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, -0.7071067811865475, 0.7071067811865476, 194, 8)"
+    },
+    {
+      "id": "dda7178c-412a-4868-b543-b90c64b49e64",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0.7071067811865476,
+        "b": 0.7071067811865475,
+        "c": -0.7071067811865475,
+        "d": 0.7071067811865476,
+        "e": 184,
+        "f": 6
+      },
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, -0.7071067811865475, 0.7071067811865476, 184, 6)"
+    },
+    {
+      "id": "68be344a-a45b-4a00-b764-dbffe80f7dea",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0.7071067811865476,
+        "b": 0.7071067811865475,
+        "c": 0.7071067811865475,
+        "d": -0.7071067811865476,
+        "e": 186,
+        "f": 4.000000000000002
+      },
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, 0.7071067811865475, -0.7071067811865476, 186, 4)"
+    },
+    {
+      "id": "8edd2a8a-7f02-42f2-9547-cf1755b55b55",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0.7071067811865476,
+        "b": 0.7071067811865475,
+        "c": -0.7071067811865475,
+        "d": 0.7071067811865476,
+        "e": 230,
+        "f": 52
+      },
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, -0.7071067811865475, 0.7071067811865476, 230, 52)"
+    },
+    {
+      "id": "98efa88b-72ec-49db-9029-e0a661518881",
+      "name": "decor quad key=switch",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0.7071067811865476,
+        "b": 0.7071067811865475,
+        "c": 0.7071067811865475,
+        "d": -0.7071067811865476,
+        "e": 232,
+        "f": 50
+      },
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "switch",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, 0.7071067811865475, -0.7071067811865476, 232, 50)"
     }
   ],
   "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
