@@ -106,7 +106,9 @@ export default function Walls() {
     <instancedMesh
       key={mat.uuid}
       name="walls"
-      ref={state.ref("inst")}
+      ref={state.ref("inst", (mesh) => {
+        mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
+      })}
       args={[state.quad, undefined, wallCount]}
       renderOrder={4}
     >
