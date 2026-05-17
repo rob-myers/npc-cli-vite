@@ -11,8 +11,6 @@ const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const PROCESS_SYMBOL_PATH = path.join(PROJECT_ROOT, "scripts/src/service/process-map-edit-save.ts");
 const PATH_SVG_API_PATH = path.join(PROJECT_ROOT, "scripts/src/service/path-svg-api.ts");
 const WATCH_PATH_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-path-svgs.ts");
-const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
-
 export function mapEditApiPlugin(): Plugin {
   let server: ViteDevServer;
   return {
@@ -27,9 +25,6 @@ export function mapEditApiPlugin(): Plugin {
 
       server.ssrLoadModule(WATCH_PATH_SVGS_PATH).then((mod) => {
         (mod as typeof import("./service/watch-path-svgs")).watchPathSvgs(server);
-      });
-      server.ssrLoadModule(WATCH_DECOR_SVGS_PATH).then((mod) => {
-        (mod as typeof import("./service/watch-decor-svgs")).watchDecorSvgs(server);
       });
 
       server.middlewares.use(async (req, res, next) => {
