@@ -256,7 +256,7 @@ export const emptySheets: SheetsType = {
   maxDecorSheetDim: { width: 1, height: 1 },
 };
 
-export const AssetsSkinSchema = z.object({
+export const AssetsSkinEntrySchema = z.object({
   key: z.string(),
   id: z.string(),
   filename: z.string(),
@@ -264,13 +264,13 @@ export const AssetsSkinSchema = z.object({
   url: url(),
 });
 
-export type AssetsSkinType = z.infer<typeof AssetsSkinSchema>;
+export type AssetsSkinEntryType = z.infer<typeof AssetsSkinEntrySchema>;
 
 /**
  * For public/skin/manifest.json
  */
 export const AssetsSkinManifestSchema = z.object({
-  byKey: z.record(z.string(), AssetsSkinSchema),
+  byKey: z.record(z.string(), AssetsSkinEntrySchema),
 });
 
 export type AssetsSkinManifestType = z.infer<typeof AssetsSkinManifestSchema>;
