@@ -83,6 +83,18 @@
           "baseRect": {"width": 180, "height": 12},
           "offset": {"x": -0.7, "y": -0.7},
           "cssTransform": "matrix(1, 0, 0, 1, 179.8, 299.8)"
+        },
+        {
+          "id": "14e63646-0d07-458b-85ab-001a2717ad74",
+          "name": "table--004--1.2x2.4",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 179, "f": 401.5},
+          "type": "symbol",
+          "srcKey": "table--004--1.2x2.4",
+          "baseRect": {"width": 60, "height": 120},
+          "offset": {"x": -10.850066820162747, "y": 5.502367672012064},
+          "cssTransform": "matrix(0, -1, 1, 0, 168.1499, 407.0024)"
         }
       ]
     },
@@ -625,25 +637,6 @@
       "baseRect": {"width": 6, "height": 6},
       "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(0, 1, -1, 0, 358, 360)"
-    },
-    {
-      "id": "14e63646-0d07-458b-85ab-001a2717ad74",
-      "name": "table--004--1.2x2.4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": 178.8501,
-        "f": 401.4976
-      },
-      "type": "symbol",
-      "srcKey": "table--004--1.2x2.4",
-      "baseRect": {"width": 60, "height": 120},
-      "offset": {"x": -10.850066820162747, "y": 5.502367672012064},
-      "cssTransform": "matrix(0, -1, 1, 0, 168, 407)"
     },
     {
       "id": "ae340bb5-68e2-48b7-953f-766ee413d811",
