@@ -9,10 +9,13 @@
   - ✅ clean e.g. --speech-bubble-width
   - ✅ initial scale bug
 
-- try thinner character
 - ✅ can trigger run animation
   - `w n.rob.setMoveAnim run`
   - hacky change `agent.maxSpeed` and `action.timeScale`
+
+- ✅ clean packages/media/src/blockbench
+
+- try thinner character
 - skins in spritesheet with hot reloading
 - support skin-overlay svg for lighting
 
