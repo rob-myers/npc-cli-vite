@@ -300,7 +300,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         };
         w.update();
       },
-
       syncRenderMode() {
         if (w.disabled === true) {
           w.r3f?.set({ frameloop: "demand" });
