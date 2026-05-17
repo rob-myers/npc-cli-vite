@@ -45,28 +45,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPickScale: 0.5, // do not walls by default
 
       cameraMode: isTouchDevice() ? "cardinal" : "free",
-      setCameraMode(mode) {
-        state.cameraMode = mode;
-        const fixedPolar = mode !== "free";
-        const snapAzimuth = mode === "cardinal";
-        state.controls.setParams({ fixedPolar, snapAzimuth });
-        if (fixedPolar) {
-          state.controls.setPolarAngle(Math.PI / 8);
-        }
-        if (snapAzimuth) {
-          const halfPi = Math.PI / 2;
-          const current = state.controls.getAzimuthalAngle();
-          const nearest = Math.round(current / halfPi) * halfPi;
-          state.controls.snapAzimuthTarget = nearest;
-          state.controls.setAzimuthalAngle(nearest);
-        }
-        state.ctrlOpts = {
-          ...state.ctrlOpts,
-          minPolarAngle: Math.PI / 8,
-          maxPolarAngle: mode === "free" ? Math.PI / 2.5 : Math.PI / 8,
-        };
-        w.update();
-      },
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -300,6 +278,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ...point, // can provide as point
         });
       },
+      setCameraMode(mode) {
+        state.cameraMode = mode;
+        const fixedPolar = mode !== "free";
+        const snapAzimuth = mode === "cardinal";
+        state.controls.setParams({ fixedPolar, snapAzimuth });
+        if (fixedPolar) {
+          state.controls.setPolarAngle(Math.PI / 8);
+        }
+        if (snapAzimuth) {
+          const halfPi = Math.PI / 2;
+          const current = state.controls.getAzimuthalAngle();
+          const nearest = Math.round(current / halfPi) * halfPi;
+          state.controls.snapAzimuthTarget = nearest;
+          state.controls.setAzimuthalAngle(nearest);
+        }
+        state.ctrlOpts = {
+          ...state.ctrlOpts,
+          minPolarAngle: Math.PI / 8,
+          maxPolarAngle: mode === "free" ? Math.PI / 2.5 : Math.PI / 8,
+        };
+        w.update();
+      },
+
       syncRenderMode() {
         if (w.disabled === true) {
           w.r3f?.set({ frameloop: "demand" });
