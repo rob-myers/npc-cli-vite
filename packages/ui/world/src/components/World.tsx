@@ -90,7 +90,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64 }),
       texLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
-      texSkin: new TexArray({ ctKey: "npc-skins", width: 64, height: 64, numTextures: MAX_NPCS }),
+      texSkin: new TexArray({ ctKey: "npc-skins", width: 256, height: 256, numTextures: MAX_NPCS }),
 
       assets: null as any,
       sheets: null as any,

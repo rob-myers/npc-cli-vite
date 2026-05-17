@@ -337,13 +337,14 @@ export default function NPCs() {
           fetch(`/skin/manifest.json${cacheBust}`).then((r) => r.json()).then((j) => AssetsSkinManifestSchema.parse(j)),
         ]);
         const skinEntries = Object.values(w.sheets.skin);
+        const { width: tw, height: th } = w.texSkin.opts;
+        w.texSkin.ct.imageSmoothingEnabled = false;
         skinEntries.forEach((entry, i) => {
-          const { originalWidth: ow, originalHeight: oh } = entry;
-          w.texSkin.ct.clearRect(0, 0, ow, oh);
+          w.texSkin.ct.clearRect(0, 0, tw, th);
           w.texSkin.ct.drawImage(
             sheetImages[entry.sheetId],
             entry.rect.x, entry.rect.y, entry.rect.width, entry.rect.height,
-            0, 0, ow, oh,
+            0, 0, tw, th,
           );
           w.texSkin.updateIndex(i);
         });

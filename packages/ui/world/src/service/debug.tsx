@@ -390,8 +390,8 @@ export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
             {entries.map((entry, i) => (
               <div key={entry.key} className="flex flex-col items-center gap-1">
                 <canvas
-                  width={entry.originalWidth}
-                  height={entry.originalHeight}
+                  width={w.texSkin.opts.width}
+                  height={w.texSkin.opts.height}
                   className="w-48 h-48 border border-slate-700"
                   style={{ imageRendering: "pixelated" }}
                   ref={(el) => {
@@ -399,10 +399,10 @@ export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
                     const ct = el.getContext("2d");
                     if (!ct) return;
                     const data = w.texSkin.tex.image.data as Uint8Array;
-                    const { originalWidth: ow, originalHeight: oh } = entry;
-                    const layerSize = ow * oh * 4;
+                    const { width: tw, height: th } = w.texSkin.opts;
+                    const layerSize = tw * th * 4;
                     const slice = new Uint8ClampedArray(data.slice(i * layerSize, (i + 1) * layerSize).buffer);
-                    const imageData = new ImageData(slice, ow, oh);
+                    const imageData = new ImageData(slice, tw, th);
                     ct.putImageData(imageData, 0, 0);
                   }}
                 />

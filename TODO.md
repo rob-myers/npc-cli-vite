@@ -28,8 +28,8 @@
 
 - ✅ support hmr onchange source skin PNGs
 - 🚧 support skin-overlay svg for lighting
-  - still use DataArrayTexture (TexArray) but higher res
-  - skin-overlay.svg composited on top, watched by vite plugin
+  - ✅ still use DataArrayTexture (TexArray) but higher res
+  - 🚧 skin-overlay.svg composited on top, watched by vite plugin
 
 - doors have meaningful icons
 
