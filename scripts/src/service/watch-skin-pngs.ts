@@ -7,7 +7,7 @@ import {
   AssetsSkinManifestSchema,
   type AssetsSkinManifestType,
 } from "@npc-cli/ui__world/assets.schema";
-import { info, parseJsArg, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import type { ViteDevServer } from "vite";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
@@ -51,33 +51,21 @@ export async function rebuildSkinManifest() {
   const byKey: AssetsSkinManifestType["byKey"] = {};
 
   for (const filePath of pngFiles) {
-    // e.g. [{namemc-uid}]{key:'medic-0',tags:['foo','bar','baz']}.png
     const filename = path.basename(filePath);
     const basename = path.basename(filename, ".png");
-    const matched = basename.match(/^\[([^\]]+)\](\S+)$/);
+    // e.g. {key}--{namemcDotComUid}--{tagA}--{tagB}.png
+    const [key, namemcDotComUid, ...tags] = basename.split("--");
 
-    const suffixParseResult = z
-      .object({
-        key: z.string(),
-        tags: z.array(z.string()),
-      })
-      .safeParse(parseJsArg(matched?.[2]));
-
-    if (!matched || !suffixParseResult.success) {
-      warn(
-        `[watch-skin] expected filename format [{namemc-uid}]{key:'medic-0',tags:['foo','bar','baz']}.png: saw "${matched?.[2]}"`,
-      );
+    if (!key || !namemcDotComUid || tags.length === 0) {
+      warn(`[watch-skin] expected filename format {key}--{namemcDotComUid}--{tagA}--{tagB}.png: saw "${filename}"`);
       continue;
     }
 
-    const namemcDotComUid = matched?.[1];
-    const meta = suffixParseResult.data;
-
-    byKey[meta.key] = AssetsSkinEntrySchema.parse({
-      key: meta.key,
+    byKey[key] = AssetsSkinEntrySchema.parse({
+      key,
       id: namemcDotComUid,
       filename,
-      tags: meta.tags,
+      tags,
       url: `https://namemc.com/skin/${namemcDotComUid}`,
     });
   }
