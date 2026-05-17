@@ -47,6 +47,7 @@ export class Npc {
   position: THREE.Vector3;
   queryFilter: QueryFilter;
   moving = false;
+  moveAnim = "walk" as "walk" | "run";
   spawns = 0;
   stuckAccum = 0;
 
@@ -56,6 +57,14 @@ export class Npc {
   reject?: (reason: Error) => void;
 
   w: UseStateRef<import("./World").State>;
+
+  get agent() {
+    return this.agentId === null ? null : (this.w.npc.crowd.agents[this.agentId] ?? null);
+  }
+
+  get running() {
+    return this.moveAnim === "run";
+  }
 
   get skinIndex() {
     return this.skinIndexUniform.value;
@@ -121,6 +130,10 @@ export class Npc {
     }
   }
 
+  setMoveAnim(input: this["moveAnim"]) {
+    this.moveAnim = input;
+  }
+
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult) {
     if (!this.agentId) return;
 
@@ -142,7 +155,7 @@ export class Npc {
     if (!this.moving) {
       this.moving = true;
       this.mixer.clipAction(clips.idle).fadeOut(0.3);
-      this.mixer.clipAction(clips.walk).reset().fadeIn(0.3).play();
+      this.mixer.clipAction(clips[this.moveAnim]).reset().fadeIn(0.3).play();
     }
   }
 
@@ -165,7 +178,9 @@ export class Npc {
     }
 
     this.moving = false;
-    this.mixer.clipAction(clips.walk).fadeOut(0.3);
+
+    this.mixer.existingAction(clips.walk)?.fadeOut(0.3);
+    this.mixer.existingAction(clips.run)?.fadeOut(0.3);
     this.mixer.clipAction(clips.idle).reset().fadeIn(0.3).play();
   }
 
@@ -192,10 +207,10 @@ export class Npc {
   }
 
   syncAnimation(speed: number) {
-    const { walk } = this.w.npc.clips;
-    if (!walk || !this.moving) return;
-    const walkAction = this.mixer.clipAction(walk);
-    walkAction.timeScale = Math.max(1.25 * (0.25 / npcScale), speed);
+    if (!this.moving) return;
+    const { clips } = this.w.npc;
+    const moveAction = this.mixer.clipAction(clips[this.moveAnim]);
+    moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), speed);
   }
 
   groupRef = (group: THREE.Group | null): void => {

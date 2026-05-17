@@ -20,7 +20,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type AssetsSkinType } from "../assets.schema";
-import { idleSeparationWeight, npcBrightness, npcLabelHeight } from "../const";
+import { idleSeparationWeight, npcBrightness, npcLabelHeight, runAgentMaxSpeed, walkAgentMaxSpeed } from "../const";
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
@@ -194,6 +194,7 @@ export default function NPCs() {
             continue;
           }
 
+          agent.maxSpeed = npc.running === true ? runAgentMaxSpeed : walkAgentMaxSpeed;
           const [vx, , vz] = agent.velocity;
           const speed = Math.hypot(vx, vz);
           npc.syncAnimation(Math.max(speed, 0.5));
@@ -411,7 +412,7 @@ function getAgentParams(): crowd.AgentParams {
     radius: 0.2,
     height: 1.2,
     maxAcceleration: 8.0,
-    maxSpeed: 1.5,
+    maxSpeed: walkAgentMaxSpeed,
     collisionQueryRange: 0.75,
     separationWeight: idleSeparationWeight,
     updateFlags:

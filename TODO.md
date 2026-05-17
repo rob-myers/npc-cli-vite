@@ -10,7 +10,9 @@
   - ✅ initial scale bug
 
 - try thinner character
-- can trigger run animation
+- ✅ can trigger run animation
+  - `w n.rob.setMoveAnim run`
+  - hacky change `agent.maxSpeed` and `action.timeScale`
 - skins in spritesheet with hot reloading
 - support skin-overlay svg for lighting
 
@@ -67,6 +69,8 @@
 
 ## Bugs
 
+- BUG npc animation out of sync after save npc.ts (?)
+  - possibly fixed via `cfg clear-all` then respawn
 - BUG on collapse/expand should persist pane dimensions
 - BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
   - fixed manually by refetching

@@ -45,6 +45,11 @@ w bubble.ensure rob
 w bubble.delete rob
 w bubble.ensure rob >/dev/null
 
+w n.rob.agent.maxSpeed
+w n.rob | assign '{moveAnim: "run"}'
+w n.rob | assign '{moveAnim: "walk"}'
+w n.rob.setMoveAnim run
+w n.rob.setMoveAnim walk
 ```
 
 ```sh
