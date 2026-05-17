@@ -10,6 +10,7 @@ import type { Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
+const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
 const ASSETS_JSON_PATH = path.join(PUBLIC_DIR, "assets.json");
 const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.ts");
 const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
@@ -18,6 +19,10 @@ export function watchAssetsPlugin(): Plugin {
   return {
     name: "watch-assets",
     configureServer(server) {
+      server.ssrLoadModule(WATCH_DECOR_SVGS_PATH).then((mod) => {
+        (mod as typeof import("./service/watch-decor-svgs")).watchDecorSvgs(server);
+      });
+
       const symbolGlob = path.join(PUBLIC_DIR, "symbol/*.json");
       const mapGlob = path.join(PUBLIC_DIR, "map/*.json");
       server.watcher.add([symbolGlob, mapGlob, GEOMORPH_SERVICE]);
@@ -43,8 +48,6 @@ export function watchAssetsPlugin(): Plugin {
         server.hot.send({ type: "custom", event: assetsJsonChangingEvent });
 
         try {
-          // const prevHash = (await getAssetsJsonOrNull())?.hash;
-
           // generate assets.json
           await new Promise<void>((resolve, reject) => {
             const proc = childProcess.spawn(
@@ -57,8 +60,6 @@ export function watchAssetsPlugin(): Plugin {
           });
           // inform browser
           server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
-
-          // const postHash = (await getAssetsJsonOrNull())?.hash;
         } catch (err) {
           console.error("[watch-assets] gen-assets-json failed:", err);
         }
