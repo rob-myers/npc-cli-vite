@@ -19,7 +19,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { type AssetsSkinEntryType, AssetsSkinManifestSchema, type AssetsSkinManifestType } from "../assets.schema";
+import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import { idleSeparationWeight, npcBrightness, npcLabelHeight, runAgentMaxSpeed, walkAgentMaxSpeed } from "../const";
 import {
   addEmptyBillboardOffset,
@@ -46,8 +46,8 @@ export default function NPCs() {
       crowd: crowdApi.create(0.5),
       gltf: null,
       skin: {
-        manifest: { byKey: {} },
-        entries: [],
+        manifest: { byKey: {} } as AssetsSkinManifestType,
+        entries: [] as SkinSheetEntry[],
       },
 
       byPickId: {} as Record<number, Npc>,
@@ -329,23 +329,23 @@ export default function NPCs() {
     useQuery({
       queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
       queryFn: async () => {
-        const [gltf, skin] = await Promise.all([
-          // new GLTFLoader().loadAsync(url.templateExtraRootGltf),
+        const [gltf, sheetImages, skinManifest] = await Promise.all([
           new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
-          (async () => {
-            const res = await fetch("/skin/manifest.json");
-            const manifest = AssetsSkinManifestSchema.parse(await res.json());
-            const entries = Object.values(manifest.byKey);
-            const images = await Promise.all(entries.map((entry) => loadImage(`/skin/${entry.filename}`)));
-            entries.forEach((_entry, i) => {
-              w.texSkin.ct.clearRect(0, 0, 64, 64);
-              w.texSkin.ct.drawImage(images[i], 0, 0, 64, 64);
-              w.texSkin.updateIndex(i);
-            });
-            return { manifest, entries: Object.values(manifest.byKey) };
-          })(),
+          Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png`))),
+          fetch("/skin/manifest.json").then((r) => r.json()).then((j) => AssetsSkinManifestSchema.parse(j)),
         ]);
-        return { gltf, skin };
+        const skinEntries = Object.values(w.sheets.skin);
+        skinEntries.forEach((entry, i) => {
+          const { originalWidth: ow, originalHeight: oh } = entry;
+          w.texSkin.ct.clearRect(0, 0, ow, oh);
+          w.texSkin.ct.drawImage(
+            sheetImages[entry.sheetId],
+            entry.rect.x, entry.rect.y, entry.rect.width, entry.rect.height,
+            0, 0, ow, oh,
+          );
+          w.texSkin.updateIndex(i);
+        });
+        return { gltf, skinEntries, skinManifest };
       },
       // staleTime: Infinity,
     }).data ?? null;
@@ -357,7 +357,7 @@ export default function NPCs() {
     state.clips.idle = anims.find((c) => c.name === "idle") ?? emptyAnimationClip;
     state.clips.walk = anims.find((c) => c.name === "walk") ?? emptyAnimationClip;
     state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
-    state.skin = queryData.skin;
+    state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
   }, [queryData]);
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
@@ -371,7 +371,7 @@ export type State = {
   gltf: GLTF | null;
   skin: {
     manifest: AssetsSkinManifestType;
-    entries: AssetsSkinEntryType[];
+    entries: SkinSheetEntry[];
   };
 
   byPickId: Record<number, Npc>;
