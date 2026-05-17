@@ -20,8 +20,14 @@
   - ✅ try {left,right}arm size {x,z} 2.5
   - ✅ try {left,right}leg size x:2.75 z:2.5
 
-- skins in spritesheet with hot reloading
+- 🚧 skins in spritesheet with hot reloading
+  - manifest meta defined via filename format
+    - e.g. `{namemc-uid}__name=medic-0__tags=['foo','bar','baz'].png`
+  - script `gen-skin-sheets`
+
 - support skin-overlay svg for lighting
+  - still use DataArrayTexture (TexArray) but higher res
+  - skin-overlay.svg composited on top, watched by vite plugin
 
 - doors have meaningful icons
 
