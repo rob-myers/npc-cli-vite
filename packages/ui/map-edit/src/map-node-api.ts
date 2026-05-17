@@ -106,6 +106,7 @@ export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
 export const devMessageFromServer = {
   recomputedPathManifest: "map-edit:recompute-path-manifest",
   decorSheetsRebuilt: "decor-sheets-rebuilt",
+  skinSheetsRebuilding: "skin-sheets-rebuilding",
   skinSheetsRebuilt: "skin-sheets-rebuilt",
 } as const;
 

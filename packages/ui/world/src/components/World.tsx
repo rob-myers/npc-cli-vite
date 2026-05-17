@@ -4,7 +4,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson, pause, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -164,6 +164,15 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           ["hot", devMessageFromServer.decorSheetsRebuilt, () => {
             debug("[World] decor sheets rebuilt: refetching");
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
+          }],
+          ["hot", devMessageFromServer.skinSheetsRebuilding, () => {
+            state.setNextPending({ skins: true });
+          }],
+          ["hot", devMessageFromServer.skinSheetsRebuilt, async () => {
+            debug("[World] skin sheets rebuilt: refetching");
+            await pause(100);
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
           }],
           ["window", "hmr:DerivedGmsData", (_e: Event) => {
             debug("[World] HMR: DerivedGmsData updated: recomputing");
@@ -376,11 +385,11 @@ export type State = {
    * Ideally `assets` -> `nav` -> `decor` -> `null`.
    * However, nav/decor could be triggered by HMR.
    */
-  pending: Partial<Record<"assets" | "nav" | "decor", true>>;
+  pending: Partial<Record<"assets" | "nav" | "decor" | "skins", true>>;
   rootEl: HTMLDivElement;
 
   setDisabled(nextDisabled?: boolean): void;
-  setNextPending(next: Partial<Record<"assets" | "nav" | "decor", boolean>>): void;
+  setNextPending(next: Partial<Record<"assets" | "nav" | "decor" | "skins", boolean>>): void;
   setupDevAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;

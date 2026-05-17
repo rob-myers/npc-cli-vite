@@ -1,6 +1,7 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
 
+import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -329,10 +330,11 @@ export default function NPCs() {
     useQuery({
       queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
       queryFn: async () => {
+        const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, skinManifest] = await Promise.all([
           new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
-          Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png`))),
-          fetch("/skin/manifest.json").then((r) => r.json()).then((j) => AssetsSkinManifestSchema.parse(j)),
+          Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
+          fetch(`/skin/manifest.json${cacheBust}`).then((r) => r.json()).then((j) => AssetsSkinManifestSchema.parse(j)),
         ]);
         const skinEntries = Object.values(w.sheets.skin);
         skinEntries.forEach((entry, i) => {
@@ -358,6 +360,7 @@ export default function NPCs() {
     state.clips.walk = anims.find((c) => c.name === "walk") ?? emptyAnimationClip;
     state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
     state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
+    w.setNextPending({ skins: false });
   }, [queryData]);
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);

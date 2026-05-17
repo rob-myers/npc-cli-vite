@@ -20,13 +20,14 @@
   - ✅ try {left,right}arm size {x,z} 2.5
   - ✅ try {left,right}leg size x:2.75 z:2.5
 
-- 🚧 skins in spritesheet with hot reloading
+- ✅ skins in spritesheet with hot reloading
   - ✅ vite-plugin-watch-assets generates skin/manifest.json
     - manifest meta defined via filename format `{namemc-uid}{key:'medic-0',tags:['foo','bar','baz']}.png`
   - ✅ script `gen-skin-sheets`
-  - 🚧 npcs draw skins from spritesheet
+  - ✅ npcs draw skins from spritesheet
 
-- support skin-overlay svg for lighting
+- ✅ support hmr onchange source skin PNGs
+- 🚧 support skin-overlay svg for lighting
   - still use DataArrayTexture (TexArray) but higher res
   - skin-overlay.svg composited on top, watched by vite plugin
 

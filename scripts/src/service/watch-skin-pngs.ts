@@ -25,6 +25,7 @@ export function watchSkinPngs(server: ViteDevServer) {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       try {
+        server.hot.send({ type: "custom", event: devMessageFromServer.skinSheetsRebuilding });
         execSync("pnpm exec gen-skin-sheets", { cwd: PROJECT_ROOT, stdio: "inherit" });
         server.hot.send({ type: "custom", event: devMessageFromServer.skinSheetsRebuilt });
       } catch (e) {
