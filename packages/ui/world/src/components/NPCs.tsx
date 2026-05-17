@@ -330,7 +330,7 @@ export default function NPCs() {
       queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
       queryFn: async () => {
         const [gltf, skin] = await Promise.all([
-          new GLTFLoader().loadAsync(url.templateTest0Gltf),
+          new GLTFLoader().loadAsync(url.templateShadowQuadGltf),
           (async () => {
             const res = await fetch("/skin/manifest.json");
             const manifest = AssetsSkinManifestSchema.parse(await res.json());

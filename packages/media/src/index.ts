@@ -1,12 +1,10 @@
-import templateGltf from "./blockbench/template.gltf?url";
-// 🖼️ general
-// import templateTexture from "./blockbench/testing/fe99881948399dca.png?url";
-// 🖼️ medic
-import templateTexture from "./blockbench/testing/3573d1c9cad6c8fc.png?url";
-import templateTest0Gltf from "./blockbench/testing/template.test-0.gltf?url";
+import templateGltf from "./blockbench/template/template.gltf?url";
+import templateShadowQuadGltf from "./blockbench/with-shadow-quad/template.shadow-quad.gltf?url";
 
 export const url = {
   templateGltf,
-  templateTest0Gltf,
-  templateTexture,
+  /**
+   * Has shadow quad, which is used by label.
+   */
+  templateShadowQuadGltf,
 };
