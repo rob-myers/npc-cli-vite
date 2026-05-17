@@ -21,9 +21,9 @@
   - ✅ try {left,right}leg size x:2.75 z:2.5
 
 - 🚧 skins in spritesheet with hot reloading
-  - manifest meta defined via filename format
-    - e.g. `{namemc-uid}__name=medic-0__tags=['foo','bar','baz'].png`
-  - script `gen-skin-sheets`
+  - 🚧 vite-plugin-watch-assets generates skin/manifest.json
+    - manifest meta defined via filename format `{namemc-uid}{key:'medic-0',tags:['foo','bar','baz']}.png`
+  - 🚧 script `gen-skin-sheets`
 
 - support skin-overlay svg for lighting
   - still use DataArrayTexture (TexArray) but higher res

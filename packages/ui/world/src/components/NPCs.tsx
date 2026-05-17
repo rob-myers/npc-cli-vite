@@ -19,7 +19,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type AssetsSkinType } from "../assets.schema";
+import { type AssetsSkinEntryType, AssetsSkinManifestSchema, type AssetsSkinManifestType } from "../assets.schema";
 import { idleSeparationWeight, npcBrightness, npcLabelHeight, runAgentMaxSpeed, walkAgentMaxSpeed } from "../const";
 import {
   addEmptyBillboardOffset,
@@ -371,7 +371,7 @@ export type State = {
   gltf: GLTF | null;
   skin: {
     manifest: AssetsSkinManifestType;
-    entries: AssetsSkinType[];
+    entries: AssetsSkinEntryType[];
   };
 
   byPickId: Record<number, Npc>;
