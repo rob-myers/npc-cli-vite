@@ -15,7 +15,10 @@
 
 - ✅ clean packages/media/src/blockbench
 
-- try thinner character
+- 🚧 try thinner character
+  - ✅ extra-root.thinner
+  - 🚧 try {left,right}arm size {x,z} 2.5
+
 - skins in spritesheet with hot reloading
 - support skin-overlay svg for lighting
 
@@ -29,6 +32,8 @@
 
 - onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
   - should trigger react-query refetches: sheets/images
+
+- on idle should pin in front otherwise npc "slides back"
 
 - ✅ can override obstacle skirt height
   - `meta.h` interpreted as skirt height
