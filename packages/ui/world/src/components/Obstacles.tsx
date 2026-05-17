@@ -227,7 +227,9 @@ export default function Obstacles(_props: Props) {
     <>
       <instancedMesh
         name="obstacles"
-        ref={state.ref("inst")}
+        ref={state.ref("inst", (mesh) => {
+          mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
+        })}
         args={[undefined, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
         frustumCulled={false}
         position={[0, 0.001, 0]}
