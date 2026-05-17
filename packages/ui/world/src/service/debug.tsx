@@ -367,8 +367,7 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
 
 export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
   const w = useContext(WorldContext);
-  const { manifest } = w.npc.skin;
-  const entries = useMemo(() => (manifest ? Object.values(manifest.byKey) : []), [manifest]);
+  const { entries, manifest } = w.npc.skin;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -391,8 +390,8 @@ export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
             {entries.map((entry, i) => (
               <div key={entry.key} className="flex flex-col items-center gap-1">
                 <canvas
-                  width={64}
-                  height={64}
+                  width={entry.originalWidth}
+                  height={entry.originalHeight}
                   className="w-48 h-48 border border-slate-700"
                   style={{ imageRendering: "pixelated" }}
                   ref={(el) => {
@@ -400,27 +399,37 @@ export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
                     const ct = el.getContext("2d");
                     if (!ct) return;
                     const data = w.texSkin.tex.image.data as Uint8Array;
-                    const layerSize = 64 * 64 * 4;
+                    const { originalWidth: ow, originalHeight: oh } = entry;
+                    const layerSize = ow * oh * 4;
                     const slice = new Uint8ClampedArray(data.slice(i * layerSize, (i + 1) * layerSize).buffer);
-                    const imageData = new ImageData(slice, 64, 64);
+                    const imageData = new ImageData(slice, ow, oh);
                     ct.putImageData(imageData, 0, 0);
                   }}
                 />
-                <a
-                  href={entry.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-slate-400 font-mono hover:text-blue-400 underline"
-                >
-                  {entry.key}
-                </a>
-                <div className="flex flex-wrap justify-center gap-2 mt-1">
-                  {entry.tags.map((tag) => (
-                    <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {(() => {
+                  const skinEntry = manifest.byKey[entry.key];
+                  return skinEntry ? (
+                    <>
+                      <a
+                        href={skinEntry.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-slate-400 font-mono hover:text-blue-400 underline"
+                      >
+                        {entry.key}
+                      </a>
+                      <div className="flex flex-wrap justify-center gap-2 mt-1">
+                        {skinEntry.tags.map((tag) => (
+                          <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-mono">{entry.key}</span>
+                  );
+                })()}
               </div>
             ))}
             {entries.length === 0 && <span className="text-sm text-slate-500">No skins loaded</span>}
