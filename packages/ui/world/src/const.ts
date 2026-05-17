@@ -46,7 +46,7 @@ export const connectorEntranceHalfDepth = {
 /** Unchangeable 🚧 why this value? */
 export const geomorphPngRectWidth = 30.3;
 /** Higher resolution floors */
-export const gmFloorExtraScale = 2;
+export const gmFloorExtraScale = 2.5;
 
 /** This is the width, but also the height even for edge geomorphs, because we use texture arrays. */
 export const floorTextureDimension = Math.ceil(geomorphPngRectWidth * worldToSguScale * gmFloorExtraScale);
