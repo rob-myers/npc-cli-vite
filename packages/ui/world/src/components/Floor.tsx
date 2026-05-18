@@ -104,7 +104,7 @@ export default function Floor() {
             x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
           ),
         );
-        drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
+        drawPolygons(ct, shadowPolys, { fillStyle: "#0006", strokeStyle: null });
       },
 
       transformInstances() {

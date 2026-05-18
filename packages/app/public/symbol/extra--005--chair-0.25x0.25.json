@@ -1,0 +1,34 @@
+{
+  "filename": "extra--005--chair-0.25x0.25.json",
+  "width": 20,
+  "height": 20,
+  "nodes": [
+    {
+      "id": "6d303f06-4842-40e1-9366-db42c2d92da2",
+      "name": "extra--005--chair-0.25x0.25 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0.5},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "extra--005--chair-0.25x0.25",
+      "baseRect": {"width": 19, "height": 19},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0.5, 0.5)"
+    },
+    {
+      "id": "1273386a-d982-4b4a-ab17-ddbfb83df415",
+      "name": "obstacle chair h=0.1",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M 5.39295 0.77048 L 14.6225 0.77048 L 19.4218 5.29293 L 19.3296 14.6148 L 14.6225 19.2296 L 5.39295 19.2296 L 0.77819 14.6148 L 0.77819 5.38523 L 5.39295 0.77048 Z",
+      "baseRect": {"width": 21, "height": 20},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
+  "type": "symbol",
+  "key": "extra--005--chair-0.25x0.25"
+}
