@@ -3,6 +3,7 @@ import { type StarshipSymbolGroup, type StarshipSymbolImageKey, symbolByGroup } 
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
+import { useEffect } from "react";
 import type { DecorManifest } from "./editor.schema";
 
 export type ImagePickerSelection = { type: "symbol"; key: StarshipSymbolImageKey } | { type: "decor"; key: string };
@@ -31,6 +32,8 @@ export function ImagePickerModal({
   });
 
   const decorKeys = decorManifest ? Object.keys(decorManifest.byKey) : [];
+
+  useEffect(() => state.set({ groups: Object.entries(symbolByGroup) }), [symbolByGroup]);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>

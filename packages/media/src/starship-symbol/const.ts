@@ -31,7 +31,10 @@ export const symbolByGroup = {
   extra: {
     "extra--003--chair--0.25x0.25": true,
     "extra--004--desk--0.5x1": true,
-    // 🚧 can add once provided in packages/media/src/starship-symbol/output/extra
+    "extra--005--chair-0.25x0.25": true,
+    /**
+     * 🚧 can add once provided in packages/media/src/starship-symbol/output/extra
+     */
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
 
   "geomorph-core": {

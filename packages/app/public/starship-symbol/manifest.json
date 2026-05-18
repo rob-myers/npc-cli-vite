@@ -12,6 +12,12 @@
       "width": 157,
       "height": 307
     },
+    "extra--005--chair-0.25x0.25": {
+      "key": "extra--005--chair-0.25x0.25",
+      "group": "extra",
+      "width": 95,
+      "height": 95
+    },
     "g-101--multipurpose": {
       "key": "g-101--multipurpose",
       "group": "geomorph-core",

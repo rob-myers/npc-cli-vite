@@ -1,7 +1,5 @@
 #!/usr/bin/env node --import=tsx
 
-// 🚧 manifest does not need modifiedBy
-
 /**
  * - Copy starship symbol PNGs from `symbolByGroup` to packages/app/public/starship-symbol
  * - Compute packages/app/public/starship-symbol/manifest.json

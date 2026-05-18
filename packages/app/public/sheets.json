@@ -49,6 +49,11 @@
       "key": "console--051--0.4x0.6",
       "rect": {"x": 2586, "y": 2628, "width": 137, "height": 155},
       "sheetId": 0
+    },
+    "extra--005--chair-0.25x0.25": {
+      "key": "extra--005--chair-0.25x0.25",
+      "rect": {"x": 2796, "y": 1911, "width": 95, "height": 95},
+      "sheetId": 0
     }
   },
   "symbolSheetDims": [{"width": 3672, "height": 2794}],

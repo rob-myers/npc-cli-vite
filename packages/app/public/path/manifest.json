@@ -35,6 +35,13 @@
       "width": 130,
       "height": 180
     },
+    "octogon-20x20": {
+      "key": "octogon-20x20",
+      "filename": "octogon-20x20.svg",
+      "pathCount": 1,
+      "width": 21,
+      "height": 20
+    },
     "stellar-cartography-table": {
       "key": "stellar-cartography-table",
       "filename": "stellar-cartography-table.svg",

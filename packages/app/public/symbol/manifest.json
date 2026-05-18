@@ -188,6 +188,15 @@
       "bounds": {"x": -2, "y": -12, "width": 68.8, "height": 144.8},
       "type": "symbol",
       "key": "table--004--1.2x2.4"
+    },
+    "extra--005--chair-0.25x0.25": {
+      "filename": "extra--005--chair-0.25x0.25.json",
+      "thumbnailFilename": "extra--005--chair-0.25x0.25.thumbnail.png",
+      "width": 20,
+      "height": 20,
+      "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
+      "type": "symbol",
+      "key": "extra--005--chair-0.25x0.25"
     }
   }
 }
