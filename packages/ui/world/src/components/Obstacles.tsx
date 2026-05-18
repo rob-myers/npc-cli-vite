@@ -10,12 +10,17 @@ import {
   attribute,
   cameraPosition,
   color,
+  Fn,
+  float,
   instanceIndex,
   int,
+  mix,
   normalWorld,
   positionWorld,
   texture,
+  uniformArray,
   uv,
+  vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -23,6 +28,7 @@ import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
+import { getLightPositions, lightRadius } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -185,12 +191,29 @@ export default function Obstacles(_props: Props) {
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
+    const texNodeFinal = texNode.depth(uvTexIds);
     return {
-      texNode: texNode.depth(uvTexIds),
+      colorNode: texNodeFinal,
       outputNode: w.view.withPickOutput(PICK_TYPE.obstacle),
       uid: generateUUID(),
     };
   }, [w.texObs.hash]);
+
+  const skirtCount = w.gmsData.count.obstacleSkirtEdges;
+  const skirtLightMeta = useMemo(() => {
+    const sentinel = new THREE.Vector3(0, -1000, 0);
+    const light0Values = Array.from({ length: skirtCount }, () => sentinel.clone());
+    const light1Values = Array.from({ length: skirtCount }, () => sentinel.clone());
+    const lights0Node = uniformArray(light0Values, "vec3");
+    const lights1Node = uniformArray(light1Values, "vec3");
+    const lightR = float(lightRadius);
+    const factor = Fn(() => {
+      const dist0 = positionWorld.sub(lights0Node.element(instanceIndex)).length();
+      const dist1 = positionWorld.sub(lights1Node.element(instanceIndex)).length();
+      return lightR.sub(dist0).div(lightR).clamp(0, 1).add(lightR.sub(dist1).div(lightR).clamp(0, 1)).clamp(0, 0.05);
+    })();
+    return { light0Values, light1Values, factor };
+  }, [skirtCount]);
 
   state.images =
     useQuery({
@@ -206,21 +229,62 @@ export default function Obstacles(_props: Props) {
     state.transformAndColorObstacles();
     state.positionSkirts();
 
+    // Collect all light world positions
+    const lights: { x: number; z: number }[] = [];
+    for (const gm of w.gms) {
+      const layout = w.assets.layout[gm.key];
+      if (!layout) continue;
+      for (const p of getLightPositions(layout, gm.key)) {
+        const wp = gm.matrix.transformPoint(p);
+        lights.push({ x: wp.x, z: wp.y });
+      }
+    }
+
+    // Per skirt edge: find 2 nearest lights (skirts share parent obstacle's center)
+    let sId = 0;
+    for (const { obstacles, transform } of w.gms) {
+      tmpMat1.setMatrixValue(transform);
+      for (const { origPoly, transform: obTransform } of obstacles) {
+        tmpMat2.feedFromArray([
+          obTransform.a,
+          obTransform.b,
+          obTransform.c,
+          obTransform.d,
+          obTransform.e,
+          obTransform.f,
+        ]);
+        const { rect } = origPoly;
+        const lp = tmpMat1.transformPoint(
+          tmpMat2.transformPoint({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }),
+        );
+        const sorted = lights
+          .map((l) => ({ l, dist: Math.hypot(lp.x - l.x, lp.y - l.z) }))
+          .sort((a, b) => a.dist - b.dist);
+        const l0 = sorted[0];
+        const l1 = sorted[1];
+        for (let i = 0; i < origPoly.outline.length; i++) {
+          skirtLightMeta.light0Values[sId].set(l0 ? l0.l.x : 0, 0, l0 ? l0.l.z : -1000);
+          skirtLightMeta.light1Values[sId].set(l1 ? l1.l.x : 0, 0, l1 ? l1.l.z : -1000);
+          sId++;
+        }
+      }
+    }
+
     state.draw().then(async () => {
       await pause(60); // avoid mismatched instances/uvs
       state.sendDataToGpu();
       w.update();
     });
-  }, [w.mapKey, w.hash, w.gmsData.count.obstacles, state.images]);
+  }, [w.mapKey, w.hash, skirtLightMeta, state.images]);
 
-  const skirtCount = w.gmsData.count.obstacleSkirtEdges;
   const skirtMaterial = useMemo(() => {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
-    mat.colorNode = vec4(color("#222").mul(ndotv), 1);
+    const baseColor = color("#222").mul(ndotv);
+    mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(0.1)), float(1));
     return mat;
-  }, []);
+  }, [skirtLightMeta]);
 
   return (
     <>
@@ -245,7 +309,7 @@ export default function Obstacles(_props: Props) {
           side={THREE.DoubleSide}
           transparent
           alphaTest={0.5}
-          colorNode={shaderMeta.texNode}
+          colorNode={shaderMeta.colorNode}
           outputNode={shaderMeta.outputNode}
         />
       </instancedMesh>
