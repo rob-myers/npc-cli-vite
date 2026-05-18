@@ -33,12 +33,11 @@ export function RoomHitModal({ open, onOpenChange }: DebugModalProps) {
               <div key={gmKey} className="flex flex-col items-center gap-1">
                 <span className="text-xs text-slate-400">{gmKey}</span>
                 <div
+                  className="*:h-100 *:border *:border-white"
                   ref={(el) => {
                     if (!el) return;
                     const canvas = w.gmsData.byKey[gmKey].roomHitCt.canvas;
                     el.replaceChildren(canvas);
-                    canvas.style.width = "200px";
-                    canvas.style.height = "auto";
                   }}
                 />
               </div>

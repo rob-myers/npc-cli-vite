@@ -2,7 +2,13 @@ import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-
 import { geomService } from "@npc-cli/util";
 import { Poly } from "@npc-cli/util/geom/poly";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
-import { floorTextureDimension, gmFloorExtraScale, wallHeight, worldToSguScale } from "../const";
+import {
+  floorTextureDimension,
+  gmFloorExtraScale,
+  roomHitTextureScaleDown,
+  wallHeight,
+  worldToSguScale,
+} from "../const";
 import { RoomGraph } from "./room-graph";
 import { getContext2d } from "./tex-array";
 
@@ -83,12 +89,16 @@ export default class DerivedGmsData {
     };
 
     // draw room/door pick canvas
+    // 🔔 lower resolution than floor texture
     const roomCt = gmData.roomHitCt;
-    roomCt.canvas.width = floorTextureDimension;
-    roomCt.canvas.height = floorTextureDimension;
+    roomCt.canvas.width = floorTextureDimension * roomHitTextureScaleDown;
+    roomCt.canvas.height = floorTextureDimension * roomHitTextureScaleDown;
     roomCt.resetTransform();
     roomCt.clearRect(0, 0, roomCt.canvas.width, roomCt.canvas.height);
-    roomCt.setTransform(worldToCanvas, 0, 0, worldToCanvas, -gm.bounds.x * worldToCanvas, -gm.bounds.y * worldToCanvas);
+
+    const scale = roomHitTextureScaleDown * worldToCanvas;
+    roomCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
+
     for (const [doorId, door] of gm.doors.entries()) {
       drawPolygons(roomCt, [door.poly], { fillStyle: gmHitUtil.encodeDoor(doorId), strokeStyle: null });
     }
@@ -120,7 +130,8 @@ export default class DerivedGmsData {
    */
   findRoomIdContaining(gm: Geomorph.Layout, localPoint: Geom.VectJson, includeDoors = true): null | number {
     const ct = this.byKey[gm.key].roomHitCt;
-    const scale = worldToSguScale * gmHitUtil.extraScale;
+
+    const scale = roomHitTextureScaleDown * worldToCanvas;
     const { data: rgba } = ct.getImageData(
       // transform to canvas coords
       (localPoint.x - gm.bounds.x) * scale,

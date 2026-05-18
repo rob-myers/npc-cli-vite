@@ -58,3 +58,7 @@ w e.toggleLock g0d15
 # toggle a picked door's lock
 w e.toggleLock $( pick 1 as:meta.gdKey )
 ```
+
+```sh
+w gms.0.doors | split | map 'x => x.roomIds'
+```

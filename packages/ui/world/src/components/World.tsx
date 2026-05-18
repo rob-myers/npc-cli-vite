@@ -102,6 +102,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmRoomGraph: new GmRoomGraph(),
       nav: emptyTiledNavmeshResponse,
       pending: {},
+      r3f: null as any,
 
       b: null as any,
       bubble: null as any,
@@ -116,7 +117,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npc: null as any,
       n: null as any,
       obs: null as any,
-      r3f: null as any,
       view: null as any,
       wall: null as any,
       worker: null as any,
