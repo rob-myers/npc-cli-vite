@@ -522,6 +522,7 @@ export async function fetchLitSkinOverlay(cacheBust: string): Promise<HTMLCanvas
     canvas.width = 256;
     canvas.height = 256;
     const ct = canvas.getContext("2d") as CanvasRenderingContext2D;
+    ct.imageSmoothingEnabled = false;
     ct.drawImage(img, 0, 0, 256, 256);
     return canvas;
   } finally {
