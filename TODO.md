@@ -39,14 +39,25 @@
 - ✅ BUG e.g. g-301--bridge: door 4: unexpected adjacent rooms: []
   - room hit canvases are now also smaller
 
-- 🚧 skin/{key}.svg will be used for skin with key
+- ✅ another layer of lighting for floors
+  - ❌ try project light spheres against doors
+    - also it should account for open/close door
+  - ✅ try project light spheres against walls
+    - draw debug light spheres in world space
+    - compute intersections as custom meshes and shown
+
+- 🚧 try specify lights
+- 🚧 try combine light circles continuously
+
+- skin/{key}.svg will be used for skin with key
   - customised on per skin basis
   - can probably remove skin/lit-skin.default.svg afterwards
 
 - support `pick | spawn npc:rob-`
   - rob-0 etc.
 
-- another layer of lighting for floors
+
+- could ask for lighting applied to obstacles via uniform providing circles
 
 - doors have meaningful icons
 
