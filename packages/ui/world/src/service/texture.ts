@@ -484,6 +484,8 @@ export function drawRoomOutlines(
   const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
 
   for (const room of layout.rooms) {
+    // outline looks bad in small rooms
+    if (room.rect.area < 10) continue;
     const noHoles = room.clone().removeHoles();
     pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
     ct.fillStyle = pattern;

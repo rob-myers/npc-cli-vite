@@ -119,7 +119,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, lightSpheresShown: true, originShown: true, openDoorsOnClick: true },
+      reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true },
     },
   );
 
@@ -168,8 +168,9 @@ export function Debug() {
         args={[undefined, undefined, maxLightSpheres]}
         frustumCulled={false}
         visible={state.lightSpheresShown}
+        renderOrder={6}
       >
-        <sphereGeometry args={[lightRadius, 32, 32]} />
+        <sphereGeometry args={[lightRadius, 32, 32, undefined, undefined, undefined, Math.PI / 2]} />
         <primitive object={lightSphereMat} attach="material" />
       </instancedMesh>
 
