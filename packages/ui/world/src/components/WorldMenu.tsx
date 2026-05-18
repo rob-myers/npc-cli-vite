@@ -247,7 +247,10 @@ export function WorldMenu() {
                     label="actions"
                     items={actionItems}
                     className="justify-center"
-                    isActive={() => false}
+                    isActive={(action) => {
+                      if (action === "Wall Lights") return w.wall?.wallLightsShown ?? true;
+                      return false;
+                    }}
                     onToggle={(action) => {
                       if (action === "Spawn NPC") {
                         const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
@@ -259,6 +262,8 @@ export function WorldMenu() {
                       } else if (action === "Clear NPCs") {
                         w.npc.remove(...Object.keys(w.npc.npc));
                         w.view.forceUpdate();
+                      } else if (action === "Wall Lights") {
+                        w.wall?.toggleWallLights();
                       }
                     }}
                   />
@@ -386,7 +391,7 @@ export type State = {
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
-const actionItems = ["Spawn NPC", "Clear NPCs"] as const;
+const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
 const debugItems = ["View Pick", "Room Hit", "Gm Graphs", "Skins", "Colliders", "Light Spheres"] as const;
 
 const selectItemClass = cn(
