@@ -33,6 +33,7 @@
   - ✅ create skin/lit-skin.default.svg 256x256
   - ✅ `w.texSkin` draws it ignoring svg underlay
   - ✅ hmr onchange file
+  - ✅ improve lighting
   - 🚧 improve lighting
 
 - ✅ BUG e.g. g-301--bridge: door 4: unexpected adjacent rooms: []

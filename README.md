@@ -89,6 +89,8 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
+#### BoxySVG cut circle from square empty when circle radius matches square half-width
+
 #### ⚠️ packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
 
 Must have original image size (no scale down).
