@@ -48,8 +48,10 @@ export const geomorphPngRectWidth = 30.3;
 /** Higher resolution floors */
 export const gmFloorExtraScale = 2.5;
 
-/** This is the width, but also the height even for edge geomorphs, because we use texture arrays. */
+/** This is the width and height (even for edge geomorphs) because we use texture arrays. */
 export const floorTextureDimension = Math.ceil(geomorphPngRectWidth * worldToSguScale * gmFloorExtraScale);
+
+export const roomHitTextureScaleDown = Math.ceil(geomorphPngRectWidth * worldToSguScale) / floorTextureDimension;
 
 /** Assumed to exist inside `assets.json` `map` lookup */
 export const emptyMapKey = "empty-map";
