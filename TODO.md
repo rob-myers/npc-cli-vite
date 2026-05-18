@@ -28,16 +28,25 @@
 
 - ✅ support hmr onchange source skin PNGs
 
-- 🚧 support skin/lit-skin.default.svg
+- ✅ support skin/lit-skin.default.svg
   - ✅ still use DataArrayTexture (TexArray) but higher res 256
   - ✅ create skin/lit-skin.default.svg 256x256
   - ✅ `w.texSkin` draws it ignoring svg underlay
   - ✅ hmr onchange file
   - ✅ improve lighting
-  - 🚧 improve lighting
+  - ✅ improve lighting
 
 - ✅ BUG e.g. g-301--bridge: door 4: unexpected adjacent rooms: []
   - room hit canvases are now also smaller
+
+- 🚧 skin/{key}.svg will be used for skin with key
+  - customised on per skin basis
+  - can probably remove skin/lit-skin.default.svg afterwards
+
+- support `pick | spawn npc:rob-`
+  - rob-0 etc.
+
+- another layer of lighting for floors
 
 - doors have meaningful icons
 
