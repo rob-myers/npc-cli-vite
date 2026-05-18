@@ -70,14 +70,6 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.05 });
 
-        // obstacle drop shadows
-        const shadowPolys = Poly.union(
-          layout.obstacles.flatMap((x) =>
-            x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
-          ),
-        );
-        drawPolygons(ct, shadowPolys, { fillStyle: "#0004", strokeStyle: null });
-
         // room outlines
         drawRoomOutlines(ct, layout, w.getTheme().floor);
 
@@ -102,6 +94,14 @@ export default function Floor() {
             drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
           }
         });
+
+        // obstacle drop shadows
+        const shadowPolys = Poly.union(
+          layout.obstacles.flatMap((x) =>
+            x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
+          ),
+        );
+        drawPolygons(ct, shadowPolys, { fillStyle: "#0009", strokeStyle: null });
       },
 
       transformInstances() {
