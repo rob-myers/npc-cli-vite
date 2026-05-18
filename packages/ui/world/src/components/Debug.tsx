@@ -2,20 +2,36 @@ import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import * as THREE from "three";
+import { float, normalView, pow } from "three/tsl";
+import * as THREE from "three/webgpu";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
+import { getLightPositions, lightRadius } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
 export function Debug() {
   const w = useContext(WorldContext);
   const instRef = useRef<THREE.InstancedMesh>(null);
+  const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
+
+  const lightSphereMat = useMemo(() => {
+    const mat = new THREE.MeshBasicNodeMaterial({
+      color: "white",
+      transparent: true,
+      depthWrite: false,
+      side: THREE.FrontSide,
+    });
+    // fresnel: transparent at center, opaque at silhouette edges
+    mat.opacityNode = pow(float(1).sub(normalView.z), float(3)).mul(float(0.8));
+    return mat;
+  }, []);
 
   const state = useStateRef(
     (): State => ({
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
+      lightSpheresShown: false,
       originShown: false,
       openDoorsOnClick: true,
 
@@ -61,6 +77,25 @@ export function Debug() {
           pause().then(w.view.forceUpdate);
         }
       },
+      updateLightSpheres() {
+        const inst = lightSpheresRef.current;
+        if (!inst) return;
+        const positions: THREE.Vector3[] = [];
+        for (const gm of w.gms) {
+          const layout = w.assets.layout[gm.key];
+          if (!layout) continue;
+          for (const p of getLightPositions(layout, gm.key)) {
+            const wp = gm.matrix.transformPoint(p);
+            positions.push(new THREE.Vector3(wp.x, lightSphereHeight, wp.y));
+          }
+        }
+        inst.count = Math.min(positions.length, maxLightSpheres);
+        for (let i = 0; i < inst.count; i++) {
+          tmpMat4.makeTranslation(positions[i]);
+          inst.setMatrixAt(i, tmpMat4);
+        }
+        inst.instanceMatrix.needsUpdate = true;
+      },
       updateInstances() {
         const inst = instRef.current;
         if (!inst) return;
@@ -84,7 +119,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true },
+      reset: { demoNavPathShown: true, lightSpheresShown: true, originShown: true, openDoorsOnClick: true },
     },
   );
 
@@ -94,6 +129,10 @@ export function Debug() {
     state.computeDemoPath();
     state.updateInstances();
   }, [w.nav]);
+
+  useEffect(() => {
+    state.updateLightSpheres();
+  }, [w.hash, w.gmsData]);
 
   useEffect(() => {
     const sub = w.events.subscribe({
@@ -124,6 +163,16 @@ export function Debug() {
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
 
+      <instancedMesh
+        ref={lightSpheresRef}
+        args={[undefined, undefined, maxLightSpheres]}
+        frustumCulled={false}
+        visible={state.lightSpheresShown}
+      >
+        <sphereGeometry args={[lightRadius, 32, 32]} />
+        <primitive object={lightSphereMat} attach="material" />
+      </instancedMesh>
+
       {state.physicsColliders.length > 0 && (
         <group name="static-colliders" visible={state.physicsColliders.length > 0}>
           {/* <lineSegments geometry={state.physicsLines}>
@@ -138,11 +187,14 @@ export function Debug() {
 
 const pathWidth = 0.02;
 const maxPathSegments = 256;
+const maxLightSpheres = 1024;
+const lightSphereHeight = 0;
 const tmpMat4 = new THREE.Matrix4();
 
 export type State = {
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
+  lightSpheresShown: boolean;
   originShown: boolean;
   openDoorsOnClick: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
@@ -153,5 +205,6 @@ export type State = {
   computeDemoPath(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
+  updateLightSpheres(): void;
   updateInstances(): void;
 };

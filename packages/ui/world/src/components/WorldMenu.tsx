@@ -273,6 +273,8 @@ export function WorldMenu() {
                           return w.view?.objectPick.value === 1;
                         case "Colliders":
                           return w.debug?.physicsCollidersShown ?? false;
+                        case "Light Spheres":
+                          return w.debug?.lightSpheresShown ?? true;
                         default:
                           return false;
                       }
@@ -294,6 +296,10 @@ export function WorldMenu() {
                           break;
                         case "Colliders":
                           w.debug?.showPhysicsColliders();
+                          w.update();
+                          break;
+                        case "Light Spheres":
+                          w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
                           w.update();
                           break;
                       }
@@ -381,7 +387,7 @@ const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
 const actionItems = ["Spawn NPC", "Clear NPCs"] as const;
-const debugItems = ["View Pick", "Room Hit", "Gm Graphs", "Skins", "Colliders"] as const;
+const debugItems = ["View Pick", "Room Hit", "Gm Graphs", "Skins", "Colliders", "Light Spheres"] as const;
 
 const selectItemClass = cn(
   "px-2 py-1 text-xs cursor-pointer text-slate-300",
