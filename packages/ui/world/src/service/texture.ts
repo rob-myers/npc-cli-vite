@@ -373,7 +373,7 @@ const logos: LogoFn[] = [
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
 const lightMinDist = 3.2;
-const lightRadius = 1.5;
+export const lightRadius = 1.5;
 
 export function getLightPositions(layout: Geomorph.Layout, gmKey: string) {
   const rng = createRng(hashString(gmKey));
@@ -388,6 +388,8 @@ export function getLightPositions(layout: Geomorph.Layout, gmKey: string) {
 
 export function drawLightCircles(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, gmKey: string) {
   const { x, y, width, height } = layout.bounds;
+
+  // negative space gray
   ct.fillStyle = "rgba(0,0,0,0.2)";
   ct.beginPath();
   ct.rect(x, y, width, height);
@@ -396,6 +398,15 @@ export function drawLightCircles(ct: CanvasRenderingContext2D, layout: Geomorph.
     ct.arc(cx, cy, lightRadius, 0, Math.PI * 2);
   }
   ct.fill("evenodd");
+
+  // light circles
+  ct.fillStyle = "rgba(255,255,150,0.015)";
+  ct.beginPath();
+  for (const { x: cx, y: cy } of getLightPositions(layout, gmKey)) {
+    ct.moveTo(cx + lightRadius, cy);
+    ct.arc(cx, cy, lightRadius, 0, Math.PI * 2);
+  }
+  ct.fill();
 }
 
 interface PolyRoom {

@@ -15634,7 +15634,7 @@
         "patternFill": "#4444",
         "tileStroke": "#0001"
       },
-      "walls": {"color": "#000000", "opacity": 1}
+      "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {
       "background": "bg-white",

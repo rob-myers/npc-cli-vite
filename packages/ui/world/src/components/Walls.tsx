@@ -1,12 +1,13 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { float, uniform } from "three/tsl";
+import { float, Fn, If, instanceIndex, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createXyQuad } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
+import { getLightPositions, lightRadius } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -16,6 +17,13 @@ export default function Walls() {
     (): State => ({
       inst: null,
       quad: createXyQuad(),
+      wallLightsShown: true,
+
+      toggleWallLights() {
+        state.wallLightsShown = !state.wallLightsShown;
+        mat.wallLightsNode.value = state.wallLightsShown ? 1 : 0;
+        w.update();
+      },
 
       getWallMat([u, v], transform, determinant, height, baseHeight) {
         tmpMat1.setMatrixValue(transform);
@@ -89,16 +97,83 @@ export default function Walls() {
   const mat = useMemo(() => {
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
     const opacityUniform = uniform(0.5);
-    const opacityNode = w.view.objectPick
-      .notEqual(0)
-      .select(w.view.objectPick.notEqual(1).select(float(0), float(1)), opacityUniform);
     const outputNode = w.view.withPickOutput(PICK_TYPE.wall);
-    return { opacityUniform, opacityNode, outputNode, uuid: crypto.randomUUID() };
+
+    const baseColorUniform = uniform(new THREE.Color());
+    // Per wall: up to 2 nearest light world positions (sentinel y=-1000 → contributes 0)
+    const sentinel = new THREE.Vector3(0, -1000, 0);
+    const light0Values = Array.from({ length: wallCount }, () => sentinel.clone());
+    const light1Values = Array.from({ length: wallCount }, () => sentinel.clone());
+    const lights0Node = uniformArray(light0Values, "vec3");
+    const lights1Node = uniformArray(light1Values, "vec3");
+    const lightR = float(lightRadius);
+    const wallLightsNode = uniform(1);
+    const factor = Fn(() => {
+      const f = float(0).toVar();
+      If(wallLightsNode.notEqual(0), () => {
+        const dist0 = positionWorld.sub(lights0Node.element(instanceIndex)).length();
+        const dist1 = positionWorld.sub(lights1Node.element(instanceIndex)).length();
+        f.assign(lightR.sub(dist0).div(lightR).clamp(0, 1).add(lightR.sub(dist1).div(lightR).clamp(0, 1)).clamp(0, 1));
+      });
+      return f;
+    })();
+    // reduce opacity where inside a sphere (more transparent = "lighter")
+    const litOpacity = opacityUniform.mul(float(1).sub(factor.mul(1)));
+    // const litOpacity = opacityUniform;
+    const litOpacityNode = w.view.objectPick
+      .notEqual(0)
+      .select(w.view.objectPick.notEqual(1).select(float(0), float(1)), litOpacity);
+
+    const colorNode = mix(baseColorUniform, vec3(1, 1, 0.6), factor.mul(0.1));
+
+    return {
+      opacityUniform,
+      opacityNode: litOpacityNode,
+      colorNode,
+      outputNode,
+      baseColorUniform,
+      wallLightsNode,
+      light0Values,
+      light1Values,
+      uuid: crypto.randomUUID(),
+    };
   }, [wallCount]);
 
   useEffect(() => {
     state.positionInstances();
     mat.opacityUniform.value = w.getTheme().walls.opacity;
+    mat.baseColorUniform.value.set(w.getTheme().walls.color);
+
+    // Collect all light world positions (xz plane)
+    const lights: { x: number; z: number }[] = [];
+    for (const gm of w.gms) {
+      const layout = w.assets.layout[gm.key];
+      if (!layout) continue;
+      for (const p of getLightPositions(layout, gm.key)) {
+        const wp = gm.matrix.transformPoint(p);
+        lights.push({ x: wp.x, z: wp.y });
+      }
+    }
+
+    // Per wall: find 2 nearest light world positions and store them
+    let instanceId = 0;
+    for (const { key: gmKey, transform } of w.gms) {
+      tmpMat1.setMatrixValue(transform);
+      for (const { seg } of w.gmsData.byKey[gmKey].wallSegs) {
+        const mx = (seg[0].x + seg[1].x) / 2;
+        const mz = (seg[0].y + seg[1].y) / 2;
+        const wp = tmpMat1.transformPoint({ x: mx, y: mz });
+        const sorted = lights
+          .map((lp) => ({ lp, dist: Math.hypot(wp.x - lp.x, wp.y - lp.z) }))
+          .sort((a, b) => a.dist - b.dist);
+        const l0 = sorted[0];
+        const l1 = sorted[1];
+        mat.light0Values[instanceId].set(l0 ? l0.lp.x : 0, 0, l0 ? l0.lp.z : -1000);
+        mat.light1Values[instanceId].set(l1 ? l1.lp.x : 0, 0, l1 ? l1.lp.z : -1000);
+        instanceId++;
+      }
+    }
+
     w.update(); // 🔔 must sync onchange theme
   }, [w.mapKey, w.hash, w.gms.length, w.themeKey]);
 
@@ -117,6 +192,7 @@ export default function Walls() {
         side={THREE.DoubleSide}
         transparent
         depthWrite={false}
+        colorNode={mat.colorNode}
         opacityNode={mat.opacityNode}
         outputNode={mat.outputNode}
       />
@@ -127,6 +203,8 @@ export default function Walls() {
 export type State = {
   inst: null | THREE.InstancedMesh;
   quad: THREE.BufferGeometry;
+  wallLightsShown: boolean;
+  toggleWallLights(): void;
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
   getWallMat: (
     seg: [Geom.Vect, Geom.Vect],
