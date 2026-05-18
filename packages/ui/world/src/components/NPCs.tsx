@@ -32,7 +32,7 @@ import {
   parseGroundPoint,
 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
-import { createLabelMaterial, createShadowMaterial, drawLabelLayer } from "../service/texture";
+import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchLitSkinOverlay } from "../service/texture";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
@@ -331,21 +331,22 @@ export default function NPCs() {
       queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
       queryFn: async () => {
         const cacheBust = getDevCacheBustQueryParam();
-        const [gltf, sheetImages, skinManifest] = await Promise.all([
+        const [gltf, sheetImages, skinManifest, litSkinOverlay] = await Promise.all([
           new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
-          fetch(`/skin/manifest.json${cacheBust}`).then((r) => r.json()).then((j) => AssetsSkinManifestSchema.parse(j)),
+          fetch(`/skin/manifest.json${cacheBust}`)
+            .then((r) => r.json())
+            .then((j) => AssetsSkinManifestSchema.parse(j)),
+          fetchLitSkinOverlay(cacheBust),
         ]);
+
         const skinEntries = Object.values(w.sheets.skin);
         const { width: tw, height: th } = w.texSkin.opts;
         w.texSkin.ct.imageSmoothingEnabled = false;
-        skinEntries.forEach((entry, i) => {
+        skinEntries.forEach(({ sheetId, rect }, i) => {
           w.texSkin.ct.clearRect(0, 0, tw, th);
-          w.texSkin.ct.drawImage(
-            sheetImages[entry.sheetId],
-            entry.rect.x, entry.rect.y, entry.rect.width, entry.rect.height,
-            0, 0, tw, th,
-          );
+          w.texSkin.ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+          w.texSkin.ct.drawImage(litSkinOverlay, 0, 0, tw, th);
           w.texSkin.updateIndex(i);
         });
         return { gltf, skinEntries, skinManifest };
