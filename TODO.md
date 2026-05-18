@@ -27,9 +27,12 @@
   - ✅ npcs draw skins from spritesheet
 
 - ✅ support hmr onchange source skin PNGs
-- 🚧 support skin-overlay svg for lighting
-  - ✅ still use DataArrayTexture (TexArray) but higher res
-  - 🚧 skin-overlay.svg composited on top, watched by vite plugin
+
+- 🚧 support skin/lit-skin.default.svg
+  - ✅ still use DataArrayTexture (TexArray) but higher res 256
+  - ✅ create skin/lit-skin.default.svg 256x256
+  - 🚧 w.texSkin draws it ignoring svg underlay
+  - 🚧 hmr onchange file
 
 - doors have meaningful icons
 
