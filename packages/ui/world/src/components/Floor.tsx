@@ -9,7 +9,7 @@ import { MAX_GEOMORPH_INSTANCES } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { PICK_TYPE } from "../service/pick";
-import { drawRoomOutlines, worldToCanvas } from "../service/texture";
+import { drawLightCircles, drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -94,6 +94,9 @@ export default function Floor() {
             drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
           }
         });
+
+        // light circles
+        drawLightCircles(ct, layout, gmKey ?? "");
 
         // obstacle drop shadows
         const shadowPolys = Poly.union(

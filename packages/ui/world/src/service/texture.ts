@@ -372,6 +372,80 @@ const logos: LogoFn[] = [
 
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
+const lightMinDist = 3.2;
+const lightRadius = 1.5;
+
+export function drawLightCircles(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, gmKey: string) {
+  const { x, y, width, height } = layout.bounds;
+  const rng = createRng(hashString(gmKey));
+  ct.fillStyle = "rgba(0,0,0,0.2)";
+  ct.beginPath();
+  ct.rect(x, y, width, height);
+  for (const room of layout.rooms) {
+    for (const { x: cx, y: cy } of poissonDisk(room, rng)) {
+      ct.moveTo(cx + lightRadius, cy);
+      ct.arc(cx, cy, lightRadius, 0, Math.PI * 2);
+    }
+  }
+  ct.fill("evenodd");
+}
+
+interface PolyRoom {
+  rect: { x: number; y: number; width: number; height: number };
+  center: { x: number; y: number };
+  contains(p: { x: number; y: number }): boolean;
+}
+
+function poissonDisk(room: PolyRoom, rng: () => number) {
+  const { rect } = room;
+  const pts: { x: number; y: number }[] = [];
+
+  const c = room.center;
+  if (room.contains(c)) {
+    pts.push({ x: c.x, y: c.y });
+  } else {
+    for (let i = 0; i < 60 && pts.length === 0; i++) {
+      const p = { x: rect.x + rng() * rect.width, y: rect.y + rng() * rect.height };
+      if (room.contains(p)) pts.push(p);
+    }
+  }
+
+  const active = [...pts];
+  while (active.length > 0) {
+    const i = Math.floor(rng() * active.length);
+    const parent = active[i];
+    let placed = false;
+    for (let k = 0; k < 30; k++) {
+      const angle = rng() * Math.PI * 2;
+      const dist = lightMinDist + rng() * lightMinDist;
+      const q = { x: parent.x + Math.cos(angle) * dist, y: parent.y + Math.sin(angle) * dist };
+      if (!room.contains(q) || pts.some((p) => Math.hypot(p.x - q.x, p.y - q.y) < lightMinDist)) continue;
+      pts.push(q);
+      active.push(q);
+      placed = true;
+      break;
+    }
+    if (!placed) active.splice(i, 1);
+  }
+  return pts;
+}
+
+function hashString(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+function createRng(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s ^= s << 13;
+    s ^= s >> 17;
+    s ^= s << 5;
+    return (s >>> 0) / 0x100000000;
+  };
+}
+
 export function drawRoomOutlines(
   ct: CanvasRenderingContext2D,
   layout: Geomorph.Layout,

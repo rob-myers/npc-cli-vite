@@ -531,7 +531,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 2
           }
@@ -553,7 +553,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 3
           }
@@ -4275,7 +4275,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 2
           }
@@ -4297,7 +4297,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 3
           }
@@ -7542,7 +7542,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 2,
             "transform": [1, 0, 0, 1, 9.025, 1.5125]
@@ -7565,7 +7565,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 3,
             "transform": [1, 0, 0, 1, 9.025, 1.5125]
@@ -12390,7 +12390,7 @@
               "obstacle": true,
               "cpu": true,
               "y": 1,
-              "tint": "#667",
+              "tint": "#666",
               "symKey": "bridge--042--8x9",
               "obsId": 2
             }
@@ -12409,7 +12409,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 2
           }
@@ -12435,7 +12435,7 @@
               "obstacle": true,
               "cpu": true,
               "y": 1,
-              "tint": "#667",
+              "tint": "#666",
               "symKey": "bridge--042--8x9",
               "obsId": 3
             }
@@ -12454,7 +12454,7 @@
             "obstacle": true,
             "cpu": true,
             "y": 1,
-            "tint": "#667",
+            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "obsId": 3
           }
@@ -15638,5 +15638,5 @@
       "walls": {"color": "#000000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": 573801549}
+  "hash": {"obstacles": -1462515155}
 }
