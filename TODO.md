@@ -32,8 +32,8 @@
   - ✅ still use DataArrayTexture (TexArray) but higher res 256
   - ✅ create skin/lit-skin.default.svg 256x256
   - ✅ `w.texSkin` draws it ignoring svg underlay
+  - ✅ hmr onchange file
   - 🚧 improve lighting
-  - 🚧 hmr onchange file
 
 - ✅ BUG e.g. g-301--bridge: door 4: unexpected adjacent rooms: []
   - room hit canvases are now also smaller

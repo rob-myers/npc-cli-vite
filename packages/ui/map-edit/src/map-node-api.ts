@@ -108,6 +108,7 @@ export const devMessageFromServer = {
   decorSheetsRebuilt: "decor-sheets-rebuilt",
   skinSheetsRebuilding: "skin-sheets-rebuilding",
   skinSheetsRebuilt: "skin-sheets-rebuilt",
+  skinSvgsChanged: "skin-svgs-changed",
 } as const;
 
 //#endregion
