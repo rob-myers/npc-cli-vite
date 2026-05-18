@@ -12,6 +12,7 @@ import { PROJECT_ROOT } from "./const.ts";
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
 const WATCH_SKIN_PNGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-skin-pngs.ts");
+const WATCH_SKIN_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-skin-svgs.ts");
 const ASSETS_JSON_PATH = path.join(PUBLIC_DIR, "assets.json");
 const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.ts");
 const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
@@ -20,11 +21,23 @@ export function watchAssetsPlugin(): Plugin {
   return {
     name: "watch-assets",
     configureServer(server) {
+      /**
+       * can edit /public/decor/*.svg and see changes in world
+       */
       server.ssrLoadModule(WATCH_DECOR_SVGS_PATH).then((mod) => {
         (mod as typeof import("./service/watch-decor-svgs")).watchDecorSvgs(server);
       });
+      /**
+       * can edit /public/skin/*.png and see changes in world
+       */
       server.ssrLoadModule(WATCH_SKIN_PNGS_PATH).then((mod) => {
         (mod as typeof import("./service/watch-skin-pngs")).watchSkinPngs(server);
+      });
+      /**
+       * can edit /public/skin/*.svg and see changes in world
+       */
+      server.ssrLoadModule(WATCH_SKIN_SVGS_PATH).then((mod) => {
+        (mod as typeof import("./service/watch-skin-svgs")).watchSkinSvgs(server);
       });
 
       const symbolGlob = path.join(PUBLIC_DIR, "symbol/*.json");

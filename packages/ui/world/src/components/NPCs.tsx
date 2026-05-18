@@ -351,7 +351,7 @@ export default function NPCs() {
         });
         return { gltf, skinEntries, skinManifest };
       },
-      // staleTime: Infinity,
+      gcTime: 0,
     }).data ?? null;
 
   useMemo(() => {

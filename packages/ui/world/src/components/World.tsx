@@ -4,7 +4,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { debug, entries, hashJson, pause, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -171,7 +171,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }],
           ["hot", devMessageFromServer.skinSheetsRebuilt, async () => {
             debug("[World] skin sheets rebuilt: refetching");
-            await pause(100);
+            // await pause(100);
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
+          }],
+          ["hot", devMessageFromServer.skinSvgsChanged, async () => {
+            debug("[World] skin svgs changed");
             await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
             queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
           }],
