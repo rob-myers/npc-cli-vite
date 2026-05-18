@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" xmlns:bx="https://boxy-svg.com">
   <defs>
-    <filter id="spot-light-filter-0" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 27 #fffcb6 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feSpecularLighting result="specular-lighting" lighting-color="#fffcb6" specularConstant="0.79" specularExponent="125">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="27" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+    <filter id="spot-light-filter-0" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 22 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
       </feSpecularLighting>
-      <feDiffuseLighting result="diffuse-lighting" lighting-color="#fffcb6" diffuseConstant="0.18">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="27" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
       </feDiffuseLighting>
       <feMerge result="lighting">
         <feMergeNode in="diffuse-lighting"/>
@@ -28,6 +28,71 @@
       </feMerge>
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
+    <filter id="filter-2" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 22 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <filter id="filter-3" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 22 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <filter id="filter-4" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 22 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <filter id="filter-5" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 27 #efefef 125 0.98 0.15 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.98" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="27" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.15">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="27" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <filter id="filter-6" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 22 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="22" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
   </defs>
   <g>
     <title>ignore</title>
@@ -41,8 +106,25 @@
   <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);">
     <title>right-arm-front</title>
   </rect>
-  <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);"/>
-  <rect x="160" width="32" height="32" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-1&quot;);" y="32">
+  <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);">
+    <title>right-arm-front</title>
+  </rect>
+  <rect x="160" width="32" height="32" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-1&quot;); visibility: hidden;" y="32">
+    <title>face</title>
+  </rect>
+  <rect width="32" height="32" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-2&quot;);" y="32" x="128">
+    <title>face</title>
+  </rect>
+  <rect width="32" height="32" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-3&quot;);" y="32">
+    <title>face</title>
+  </rect>
+  <rect width="32" height="32" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-4&quot;);" x="31.4486">
+    <title>face</title>
+  </rect>
+  <rect width="32" height="48" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-5&quot;);" y="80" x="128">
+    <title>face</title>
+  </rect>
+  <rect width="32" height="32" style="fill: rgb(255, 255, 255); opacity: 0.5; filter: url(&quot;#filter-6&quot;);" y="32" x="97">
     <title>face</title>
   </rect>
 </svg>
