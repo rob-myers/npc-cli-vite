@@ -346,7 +346,13 @@ export default function NPCs() {
         skinEntries.forEach(({ sheetId, rect }, i) => {
           w.texSkin.ct.clearRect(0, 0, tw, th);
           w.texSkin.ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+          // darken before apply lighting
+          w.texSkin.ct.fillStyle = "rgba(0,0,0,0.4)";
+          w.texSkin.ct.fillRect(0, 0, tw, th);
+          w.texSkin.ct.globalCompositeOperation = "soft-light";
+          // w.texSkin.ct.globalCompositeOperation = "lighter";
           w.texSkin.ct.drawImage(litSkinOverlay, 0, 0, tw, th);
+          w.texSkin.ct.globalCompositeOperation = "source-over";
           w.texSkin.updateIndex(i);
         });
         return { gltf, skinEntries, skinManifest };
