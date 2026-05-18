@@ -796,12 +796,9 @@ export class TtyXterm {
     /**
      * If cursor at right-edge and press key it does not move (🤔 why?),
      * so we force it to jump to next line.
-     *
-     * Exceptions:
-     * (a) delete 1st character of multiline input.
-     * (b) delete 1st character while TTY connected to process e.g. `map 'x => 2 ** x'`
+     * Exception: multiline input whose last char is \n (handled by endsWith check).
      */
-    if (!(realNewInput.endsWith("\n") || this.promptReady) && this.inputEndsAtEdge(newInput)) {
+    if (!realNewInput.endsWith("\n") && this.inputEndsAtEdge(newInput)) {
       this.xterm.write("\r\n");
     }
     this.input = newInput;
