@@ -45,9 +45,10 @@
   - ✅ try project light spheres against walls
     - draw debug light spheres in world space
     - compute intersections as custom meshes and shown
+- ✅ lighting applied to obstacles skirts
 
-- 🚧 try specify lights
-- 🚧 try combine light circles continuously
+- ✅ restrict lights to rooms
+- 🚧 specify lights in hull symbol
 
 - skin/{key}.svg will be used for skin with key
   - customised on per skin basis
@@ -55,9 +56,6 @@
 
 - support `pick | spawn npc:rob-`
   - rob-0 etc.
-
-
-- could ask for lighting applied to obstacles via uniform providing circles
 
 - doors have meaningful icons
 
