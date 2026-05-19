@@ -51,11 +51,18 @@
 
 - specify lights in hull symbol
 
-- 🚧 skin/{key}.svg will be used for skin with key
+- ✅ skin/{key}.svg will be used for skin with key
   - customised on per skin basis
   - ✅ manifest skinPath e.g. `skin/medic-0.svg`
-  - 🚧 apply as overlay
-  - remove skin/lit-skin.default.svg afterwards
+  - ✅ apply as overlay
+  - ✅ remove skin/lit-skin.default.svg afterwards
+  - ✅ on create svg rebuild skin manifest and inform browser
+
+- 🚧 skin composite operation?
+  - lighten vs source-over
+  - could group svg elements
+
+- BUG npc label should not move with animation
 
 - doors have meaningful icons
 
