@@ -116,6 +116,8 @@ export default function NPCs() {
           npc.doorKeys = oldNpc.doorKeys;
           npc.last = oldNpc.last;
           npc.bubbleOffset = oldNpc.bubbleOffset;
+          npc.mixer = oldNpc.mixer;
+
           state.placeNpcAt(npc, npc.position);
         }
         state.update();
