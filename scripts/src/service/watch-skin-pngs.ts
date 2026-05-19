@@ -12,8 +12,9 @@ import type { ViteDevServer } from "vite";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 
-// SKIN_PUBLIC_DIR is actually a symlink to packages/media/src/skin
-const SKIN_PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public/skin");
+const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
+/** symlink to packages/media/src/skin */
+const SKIN_PUBLIC_DIR = path.join(PUBLIC_DIR, "skin");
 const SKIN_MANIFEST_PATH = path.join(SKIN_PUBLIC_DIR, "manifest.json");
 
 export function watchSkinPngs(server: ViteDevServer) {
@@ -56,18 +57,20 @@ export async function rebuildSkinManifest() {
     const basename = path.basename(filename, ".png");
     // e.g. {key}--{namemcDotComUid}--{tagA}--{tagB}.png
     const [key, namemcDotComUid, ...tags] = basename.split("--");
+    const svgPath = `skin/${key}.svg`;
 
     if (!key || !namemcDotComUid || tags.length === 0) {
       warn(`[watch-skin] expected filename format {key}--{namemcDotComUid}--{tagA}--{tagB}.png: saw "${filename}"`);
       continue;
     }
 
-    byKey[key] = AssetsSkinEntrySchema.parse({
+    byKey[key] = AssetsSkinEntrySchema.decode({
       key,
       id: namemcDotComUid,
       filename,
       tags,
       url: `https://namemc.com/skin/${namemcDotComUid}`,
+      svgPath: fs.existsSync(path.join(PUBLIC_DIR, svgPath)) ? svgPath : null,
     });
   }
 

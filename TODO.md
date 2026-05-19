@@ -48,16 +48,21 @@
 - ✅ lighting applied to obstacles skirts
 
 - ✅ restrict lights to rooms
-- 🚧 specify lights in hull symbol
 
-- skin/{key}.svg will be used for skin with key
+- specify lights in hull symbol
+
+- 🚧 skin/{key}.svg will be used for skin with key
   - customised on per skin basis
-  - can probably remove skin/lit-skin.default.svg afterwards
+  - ✅ manifest skinPath e.g. `skin/medic-0.svg`
+  - 🚧 apply as overlay
+  - remove skin/lit-skin.default.svg afterwards
+
+- doors have meaningful icons
 
 - support `pick | spawn npc:rob-`
   - rob-0 etc.
 
-- doors have meaningful icons
+- support `look`
 
 - ✅ BUG save DerivedGmsData breaks walls?
 
