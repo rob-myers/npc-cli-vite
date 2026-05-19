@@ -63,7 +63,9 @@
   - ✅ fix medic-0 and robot-0
   - ❌ on create spritesheet using svg if present
 
-- BUG npc label should not move with animation
+- 🚧 BUG npc label should not move with animation
+
+- BUG hot reload via save skin breaks walk animation?
 
 - doors have meaningful icons
 
