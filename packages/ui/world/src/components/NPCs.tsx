@@ -32,7 +32,7 @@ import {
   parseGroundPoint,
 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
-import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchLitSkinOverlay } from "../service/texture";
+import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchSkinOverlay } from "../service/texture";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
@@ -330,14 +330,29 @@ export default function NPCs() {
     useQuery({
       queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
       queryFn: async () => {
+        // 🚧 stale on hmr so apply fix
+
         const cacheBust = getDevCacheBustQueryParam();
-        const [gltf, sheetImages, skinManifest, litSkinOverlay] = await Promise.all([
+        const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverlay }] = await Promise.all([
           new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
-          fetch(`/skin/manifest.json${cacheBust}`)
-            .then((r) => r.json())
-            .then((j) => AssetsSkinManifestSchema.parse(j)),
-          fetchLitSkinOverlay(cacheBust),
+          fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => {
+            /**
+             * Faster hot-reloads than if we applied SVG overlays to spritesheet.
+             */
+            const manifest = AssetsSkinManifestSchema.parse(await r.json());
+            return {
+              manifest,
+              skinKeyToSvgOverlay: Object.fromEntries(
+                await Promise.all(
+                  Object.entries(manifest.byKey).map(
+                    async ([key, { svgPath }]) =>
+                      [key, svgPath ? await fetchSkinOverlay(svgPath, cacheBust) : null] as const,
+                  ),
+                ),
+              ),
+            };
+          }),
         ]);
 
         const skinEntries = Object.values(w.sheets.skin);
@@ -346,13 +361,19 @@ export default function NPCs() {
         skinEntries.forEach(({ sheetId, rect }, i) => {
           w.texSkin.ct.clearRect(0, 0, tw, th);
           w.texSkin.ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
-          // darken before apply lighting
-          w.texSkin.ct.fillStyle = "rgba(0,0,0,0.4)";
-          w.texSkin.ct.fillRect(0, 0, tw, th);
-          w.texSkin.ct.globalCompositeOperation = "soft-light";
-          // w.texSkin.ct.globalCompositeOperation = "lighter";
-          w.texSkin.ct.drawImage(litSkinOverlay, 0, 0, tw, th);
-          w.texSkin.ct.globalCompositeOperation = "source-over";
+
+          const overlayImg = skinKeyToSvgOverlay[skinEntries[i].key];
+          if (overlayImg) {
+            // 🚧 can specify globalCompositeOperation
+            // darken before apply lighting
+            w.texSkin.ct.fillStyle = "rgba(0,0,0,0.4)";
+            w.texSkin.ct.fillRect(0, 0, tw, th);
+            w.texSkin.ct.globalCompositeOperation = "soft-light";
+            // w.texSkin.ct.globalCompositeOperation = "lighten";
+            w.texSkin.ct.drawImage(overlayImg, 0, 0, tw, th);
+            w.texSkin.ct.globalCompositeOperation = "source-over";
+          }
+
           w.texSkin.updateIndex(i);
         });
         return { gltf, skinEntries, skinManifest };

@@ -3,6 +3,7 @@ import path from "node:path";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import type { ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "../const.ts";
+import { rebuildSkinManifest } from "./watch-skin-pngs.ts";
 
 // SKIN_PUBLIC_DIR is actually a symlink to packages/media/src/skin
 const SKIN_PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public/skin");
@@ -14,7 +15,9 @@ export function watchSkinSvgs(server: ViteDevServer) {
 
   const rebuild = () => {
     if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+    debounceTimer = setTimeout(async () => {
+      // rebuild manifest in case just created svg
+      await rebuildSkinManifest();
       server.hot.send({ type: "custom", event: devMessageFromServer.skinSvgsChanged });
     }, 200);
   };

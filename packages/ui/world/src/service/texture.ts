@@ -625,8 +625,8 @@ function getFloorPattern(patternFill: string, tileStroke: string): CanvasPattern
   return cachedFloorPattern;
 }
 
-export async function fetchLitSkinOverlay(cacheBust: string): Promise<HTMLCanvasElement> {
-  const svgText = await fetch(`/skin/lit-skin.default.svg${cacheBust}`).then((r) => r.text());
+export async function fetchSkinOverlay(svgPath: string, cacheBust: string): Promise<HTMLCanvasElement> {
+  const svgText = await fetch(`/${svgPath}${cacheBust}`).then((r) => r.text());
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgText, "image/svg+xml");
   for (const g of Array.from(doc.querySelectorAll("g"))) {
