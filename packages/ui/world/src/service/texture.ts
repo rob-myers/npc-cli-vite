@@ -1,4 +1,5 @@
 import { geomService } from "@npc-cli/util";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import {
   attribute,
   cameraProjectionMatrix,
@@ -377,36 +378,57 @@ export const lightRadius = 1.5;
 
 export function getLightPositions(layout: Geomorph.Layout, gmKey: string) {
   const rng = createRng(hashString(gmKey));
-  const all: { x: number; y: number }[] = [];
-  for (const room of layout.rooms) {
-    for (const p of poissonDisk(room, rng, all)) {
-      all.push(p);
+  const output: { x: number; y: number; roomId: number }[] = [];
+  for (const [roomId, room] of layout.rooms.entries()) {
+    for (const p of poissonDisk(room, rng, output)) {
+      output.push({ ...p, roomId });
     }
   }
-  return all;
+  return output;
 }
 
-export function drawLightCircles(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, gmKey: string) {
-  const { x, y, width, height } = layout.bounds;
+export function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, gmKey: string) {
+  const lights = getLightPositions(layout, gmKey);
+  if (lights.length === 0) return;
 
-  // negative space gray
-  ct.fillStyle = "rgba(0,0,0,0.2)";
-  ct.beginPath();
-  ct.rect(x, y, width, height);
-  for (const { x: cx, y: cy } of getLightPositions(layout, gmKey)) {
-    ct.moveTo(cx + lightRadius, cy);
-    ct.arc(cx, cy, lightRadius, 0, Math.PI * 2);
-  }
-  ct.fill("evenodd");
+  // Auxiliary canvas: dark overlay with light holes punched out, then composited onto main
+  const aux = document.createElement("canvas");
+  aux.width = ct.canvas.width;
+  aux.height = ct.canvas.height;
+  const auxCt = aux.getContext("2d") as CanvasRenderingContext2D;
+  auxCt.setTransform(ct.getTransform());
+  auxCt.strokeStyle = "#f00";
+  auxCt.lineWidth = 0.01;
 
-  // light circles
-  ct.fillStyle = "rgba(255,255,150,0.015)";
-  ct.beginPath();
-  for (const { x: cx, y: cy } of getLightPositions(layout, gmKey)) {
-    ct.moveTo(cx + lightRadius, cy);
-    ct.arc(cx, cy, lightRadius, 0, Math.PI * 2);
+  for (const [roomId, room] of layout.rooms.entries()) {
+    // clip to room
+    auxCt.save();
+    drawPolygons(auxCt, room, { fillStyle: null, strokeStyle: null, clip: true });
+    auxCt.fillStyle = "rgba(0,0,0,0.45)";
+    auxCt.fill();
+
+    // Punch out light circles with radial fade
+    auxCt.globalCompositeOperation = "destination-out";
+    for (const { x: cx, y: cy } of lights.filter((l) => l.roomId === roomId)) {
+      const grad = auxCt.createRadialGradient(cx, cy, 0, cx, cy, lightRadius);
+      grad.addColorStop(0, "rgba(0,0,0,1)");
+      grad.addColorStop(0.5, "rgba(0,0,0,0.85)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      auxCt.fillStyle = grad;
+      auxCt.beginPath();
+      auxCt.arc(cx, cy, lightRadius, 0, Math.PI * 2);
+      auxCt.fill();
+      // auxCt.stroke();
+    }
+
+    auxCt.restore();
   }
-  ct.fill();
+
+  // Composite offscreen onto main canvas
+  const transform = ct.getTransform();
+  ct.resetTransform();
+  ct.drawImage(aux, 0, 0);
+  ct.setTransform(transform);
 }
 
 interface PolyRoom {
