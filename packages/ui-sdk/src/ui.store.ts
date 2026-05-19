@@ -159,15 +159,13 @@ export type PersistedPaneNode =
     };
 
 export function getDefaultPanes(): PersistedPanesLayout {
-  const toUi = getDefaultTabs();
-  const tabsUis = Object.values(toUi).flatMap((meta) => (meta.uiKey === "Tabs" ? meta : []));
-
+  const { tabs, toUi } = getDefaultTabs();
   return {
     root: {
       type: "split",
       id: 0,
-      vertical: false,
-      children: tabsUis.map((meta, i) => ({ type: "leaf", id: i + 1, uiId: meta.id })),
+      vertical: true, // better for mobile
+      children: tabs.map((meta, i) => ({ type: "leaf", id: i + 1, uiId: meta.id })),
       sizes: [100, 100],
     },
     toUi,
