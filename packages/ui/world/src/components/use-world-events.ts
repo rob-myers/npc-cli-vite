@@ -146,6 +146,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               state.removeFromSensors(...e.npcKeys);
             }
 
+            w.bubble.delete(...e.npcKeys);
+
             break;
           }
           case "requested-physics": {
