@@ -51,7 +51,7 @@ function drawBasePanel() {
   const w = texW;
   const h = texH;
 
-  ct.fillStyle = "#1a2230";
+  ct.fillStyle = "#000";
   ct.fillRect(0, 0, w, h);
 
   // vertical sheen
@@ -116,7 +116,7 @@ function drawBasePanel() {
   // rivets along edges
   for (const rx of [8, w - 8]) {
     for (let ry = 16; ry < h; ry += 28) {
-      ct.fillStyle = "rgba(140,160,180,0.35)";
+      ct.fillStyle = "rgba(140,160,180,1)";
       ct.beginPath();
       ct.arc(rx, ry, 3, 0, Math.PI * 2);
       ct.fill();

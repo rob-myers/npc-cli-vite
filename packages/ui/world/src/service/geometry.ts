@@ -1,8 +1,3 @@
-/**
- * 🔔 editing causes full-page-reload sinc this file also used by webworker.
- * Can fix by split into separate files.
- */
-
 import { Rect } from "@npc-cli/util/geom/rect";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
