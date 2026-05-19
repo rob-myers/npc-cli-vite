@@ -2,12 +2,11 @@ import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
 import Tabs from "@npc-cli/ui__tabs";
 import World from "@npc-cli/ui__world";
-import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 
 /**
  * We provide `toUi` for panes.
  */
-export function getDefaultTabs(): { [uiKey: string]: UiInstanceMeta } {
+export function getDefaultTabs() {
   const uid = () => `ui-${crypto.randomUUID()}`;
 
   const ttyKey = "tty-0";
@@ -53,5 +52,8 @@ export function getDefaultTabs(): { [uiKey: string]: UiInstanceMeta } {
   jshMeta.parentId = tabs0Meta.id;
   mapEditMeta.parentId = tabs0Meta.id;
 
-  return Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta].map((meta) => [meta.id, meta]));
+  return {
+    tabs: [tabs0Meta, tabs1Meta],
+    toUi: Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta].map((meta) => [meta.id, meta])),
+  };
 }

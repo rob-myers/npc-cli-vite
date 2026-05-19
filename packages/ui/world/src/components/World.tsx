@@ -58,7 +58,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       themeKey: meta.themeKey,
       worldQueryPrefix: ["world", meta.worldKey],
 
-      brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? 1,
+      brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? 1.5,
 
       events: new Broadcaster(),
       reqAnimId: -1,
