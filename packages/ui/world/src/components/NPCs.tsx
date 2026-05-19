@@ -116,7 +116,8 @@ export default function NPCs() {
           npc.doorKeys = oldNpc.doorKeys;
           npc.last = oldNpc.last;
           npc.bubbleOffset = oldNpc.bubbleOffset;
-          npc.mixer = oldNpc.mixer;
+
+          npc.moveAnim = oldNpc.moveAnim;
 
           state.placeNpcAt(npc, npc.position);
         }
@@ -294,10 +295,10 @@ export default function NPCs() {
           const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
           const graph = buildGraph(clone);
           const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
-          const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
 
           const shadowQuad = createSkinnedXzQuad(1, 1);
-          const labelQuad = createSkinnedLabelQuad(0.5, 0.125, npcLabelHeight, headBoneIndex >= 0 ? headBoneIndex : 0);
+          // const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
+          const labelQuad = createSkinnedLabelQuad(0.5, 0.125, npcLabelHeight, 0);
           addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
           addEmptyBillboardOffset(shadowQuad);
           const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
