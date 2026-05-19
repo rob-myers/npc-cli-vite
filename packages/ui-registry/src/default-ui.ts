@@ -1,8 +1,13 @@
 import Jsh from "@npc-cli/ui__jsh";
+import MapEdit from "@npc-cli/ui__map-edit";
+import Tabs from "@npc-cli/ui__tabs";
 import World from "@npc-cli/ui__world";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 
-export function getDefaultUiMetas(): UiInstanceMeta[] {
+/**
+ * We provide `toUi` for panes.
+ */
+export function getDefaultTabs(): { [uiKey: string]: UiInstanceMeta } {
   const uid = () => `ui-${crypto.randomUUID()}`;
 
   const ttyKey = "tty-0";
@@ -20,18 +25,33 @@ export function getDefaultUiMetas(): UiInstanceMeta[] {
       },
     },
   });
+
   const worldMeta = World.schema.decode({ id: uid(), title: worldKey, uiKey: "World", worldKey });
 
-  const tabsMeta: UiInstanceMeta = {
+  const mapEditMeta = MapEdit.schema.decode({
+    id: uid(),
+    title: "map-edit-0",
+    uiKey: "MapEdit",
+  });
+
+  const tabs0Meta = Tabs.schema.decode({
     id: uid(),
     title: "tabs-0",
     uiKey: "Tabs",
-    items: [worldMeta.id, jshMeta.id],
+    items: [worldMeta.id],
     currentTabId: worldMeta.id,
-  };
+  });
+  worldMeta.parentId = tabs0Meta.id;
 
-  jshMeta.parentId = tabsMeta.id;
-  worldMeta.parentId = tabsMeta.id;
+  const tabs1Meta = Tabs.schema.decode({
+    id: uid(),
+    title: "tabs-1",
+    uiKey: "Tabs",
+    items: [jshMeta.id, mapEditMeta.id],
+    currentTabId: jshMeta.id,
+  });
+  jshMeta.parentId = tabs0Meta.id;
+  mapEditMeta.parentId = tabs0Meta.id;
 
-  return [tabsMeta, jshMeta, worldMeta];
+  return Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta].map((meta) => [meta.id, meta]));
 }
