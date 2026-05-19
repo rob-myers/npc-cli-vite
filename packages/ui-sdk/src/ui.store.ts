@@ -1,4 +1,4 @@
-import { type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
+import { getDefaultTabs, type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
 import { castDraft, type Draft } from "immer";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
@@ -159,22 +159,17 @@ export type PersistedPaneNode =
     };
 
 export function getDefaultPanes(): PersistedPanesLayout {
-  const uid = () => `ui-${crypto.randomUUID()}`;
-  const tabs0Id = uid();
-  const tabs1Id = uid();
+  const toUi = getDefaultTabs();
+  const tabsUis = Object.values(toUi).flatMap((meta) => (meta.uiKey === "Tabs" ? meta : []));
+
   return {
     root: {
       type: "split",
       id: 0,
       vertical: false,
-      children: [
-        { type: "leaf", id: 1, uiId: tabs0Id },
-        { type: "leaf", id: 2, uiId: tabs1Id },
-      ],
+      children: tabsUis.map((meta, i) => ({ type: "leaf", id: i + 1, uiId: meta.id })),
+      sizes: [100, 100],
     },
-    toUi: {
-      [tabs0Id]: { id: tabs0Id, title: "tabs-0", uiKey: "Tabs", items: [] },
-      [tabs1Id]: { id: tabs1Id, title: "tabs-1", uiKey: "Tabs", items: [] },
-    },
+    toUi,
   };
 }
