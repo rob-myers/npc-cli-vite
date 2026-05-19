@@ -333,7 +333,7 @@ export default function NPCs() {
         // 🚧 stale on hmr so apply fix
 
         const cacheBust = getDevCacheBustQueryParam();
-        const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverlay }] = await Promise.all([
+        const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
           new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => {
@@ -343,7 +343,7 @@ export default function NPCs() {
             const manifest = AssetsSkinManifestSchema.parse(await r.json());
             return {
               manifest,
-              skinKeyToSvgOverlay: Object.fromEntries(
+              skinKeyToSvgOverride: Object.fromEntries(
                 await Promise.all(
                   Object.entries(manifest.byKey).map(
                     async ([key, { svgPath }]) =>
@@ -360,18 +360,13 @@ export default function NPCs() {
         w.texSkin.ct.imageSmoothingEnabled = false;
         skinEntries.forEach(({ sheetId, rect }, i) => {
           w.texSkin.ct.clearRect(0, 0, tw, th);
-          w.texSkin.ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
 
-          const overlayImg = skinKeyToSvgOverlay[skinEntries[i].key];
-          if (overlayImg) {
-            // 🚧 can specify globalCompositeOperation
-            // darken before apply lighting
-            w.texSkin.ct.fillStyle = "rgba(0,0,0,0.4)";
-            w.texSkin.ct.fillRect(0, 0, tw, th);
-            w.texSkin.ct.globalCompositeOperation = "soft-light";
-            // w.texSkin.ct.globalCompositeOperation = "lighten";
-            w.texSkin.ct.drawImage(overlayImg, 0, 0, tw, th);
-            w.texSkin.ct.globalCompositeOperation = "source-over";
+          const svgImage = skinKeyToSvgOverride[skinEntries[i].key];
+
+          if (svgImage) {
+            w.texSkin.ct.drawImage(svgImage, 0, 0, tw, th);
+          } else {
+            w.texSkin.ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
           }
 
           w.texSkin.updateIndex(i);

@@ -58,9 +58,10 @@
   - ✅ remove skin/lit-skin.default.svg afterwards
   - ✅ on create svg rebuild skin manifest and inform browser
 
-- 🚧 skin composite operation?
-  - lighten vs source-over
-  - could group svg elements
+- ✅ skin/{key}.svg overwrites skin/{key}.png if present
+  - ✅ only draw it rather than draw as overlay
+  - ✅ fix medic-0 and robot-0
+  - ❌ on create spritesheet using svg if present
 
 - BUG npc label should not move with animation
 
