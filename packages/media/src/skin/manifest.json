@@ -5,28 +5,32 @@
       "id": "fe99881948399dca",
       "filename": "general-0--fe99881948399dca--general.png",
       "tags": ["general"],
-      "url": "https://namemc.com/skin/fe99881948399dca"
+      "url": "https://namemc.com/skin/fe99881948399dca",
+      "svgPath": null
     },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
       "filename": "medic-0--3573d1c9cad6c8fc--medic--doctor--mask.png",
       "tags": ["medic", "doctor", "mask"],
-      "url": "https://namemc.com/skin/3573d1c9cad6c8fc"
+      "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
+      "svgPath": "skin/medic-0.svg"
     },
     "robot-0": {
       "key": "robot-0",
       "id": "e91cc700154075b2",
       "filename": "robot-0--e91cc700154075b2--robot.png",
       "tags": ["robot"],
-      "url": "https://namemc.com/skin/e91cc700154075b2"
+      "url": "https://namemc.com/skin/e91cc700154075b2",
+      "svgPath": null
     },
     "soldier-0": {
       "key": "soldier-0",
       "id": "351d1a96305a63b9",
       "filename": "soldier-0--351d1a96305a63b9--soldier.png",
       "tags": ["soldier"],
-      "url": "https://namemc.com/skin/351d1a96305a63b9"
+      "url": "https://namemc.com/skin/351d1a96305a63b9",
+      "svgPath": null
     }
   }
 }

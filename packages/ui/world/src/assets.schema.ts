@@ -283,6 +283,8 @@ export const AssetsSkinEntrySchema = z.object({
   filename: z.string(),
   tags: z.array(z.string()),
   url: url(),
+  /** `skin/{key}.svg` */
+  svgPath: z.string().nullable().default(null),
 });
 
 export type AssetsSkinEntryType = z.infer<typeof AssetsSkinEntrySchema>;
