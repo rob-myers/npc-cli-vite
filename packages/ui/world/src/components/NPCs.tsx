@@ -56,6 +56,10 @@ export default function NPCs() {
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
 
+      configureCrowd() {
+        // improve initial path accuracy
+        state.crowd.quickSearchIterations = 50;
+      },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
@@ -380,6 +384,8 @@ export default function NPCs() {
     }).data ?? null;
 
   useMemo(() => {
+    state.configureCrowd();
+
     if (!queryData) return;
     state.gltf = queryData.gltf;
     const anims = queryData.gltf.animations;
@@ -409,6 +415,7 @@ export type State = {
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
 
+  configureCrowd(): void;
   createMaterials(
     pickId: number,
     skinIndex: number,
