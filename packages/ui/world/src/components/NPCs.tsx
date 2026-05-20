@@ -215,7 +215,6 @@ export default function NPCs() {
           }
 
           const stuck = npc.updateStuck(delta);
-
           if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
             npc.startIdle();
           }

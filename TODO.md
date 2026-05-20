@@ -72,7 +72,10 @@
 
 - doors have meaningful icons
 
-- support `pick | spawn npc:rob-`
+- 🚧 improve basic "turn towards" behaviour
+  - avoid sliding
+
+- ✅ support `pick | spawn npc:rob-`
   - rob-0 etc.
 
 - support `look`
