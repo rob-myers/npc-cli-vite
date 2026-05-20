@@ -68,6 +68,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       hash: 0,
       gmsHash: 0,
+      lastHmr: 0,
 
       // hmr recreates but not named canvas
       texFloor: new TexArray({
@@ -243,12 +244,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useWorldEvents(state);
 
-  const _worldQuery = useQuery({
-    // Distinct query per World instance even if same map
-    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, import.meta.hot?.data.__LAST_HMR_WORLD__],
+  // distinct query per World instance even if same map
+  useQuery({
+    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, state.lastHmr],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_WORLD__) {
         import.meta.hot.data.__JUST_HMR_WORLD__ = false;
+        state.set({ lastHmr: Date.now() });
         return null; // ignore 1st stale invoke after HMR
       }
 
@@ -351,6 +353,7 @@ export type State = {
   hash: number;
   /** Hash of `w.gms` */
   gmsHash: number;
+  lastHmr: number;
   texFloor: TexArray;
   texCeil: TexArray;
   texObs: TexArray;
@@ -420,10 +423,9 @@ declare module "@react-three/fiber" {
 }
 
 import.meta.hot?.on("vite:beforeUpdate", (foo) => {
-  const updatedThisFile = foo.updates.some((update) => update.path.endsWith("World.tsx"));
+  const updatedThisFile = foo.updates.some((payload) => payload.path.endsWith("World.tsx"));
   if (import.meta.hot && updatedThisFile) {
     // used to ignore stale queryFn and trigger fresh one
     import.meta.hot.data.__JUST_HMR_WORLD__ = true;
-    import.meta.hot.data.__LAST_HMR_WORLD__ = Date.now();
   }
 });
