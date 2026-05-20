@@ -28,32 +28,6 @@
       </feMerge>
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
-    <filter id="filter-2" bx:preset="spot-light 1 0.5 0.5 1 0.05 0.75 0 24 #efefef 8 0.5 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.5" specularExponent="8">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="24" pointsAtX="0.05" pointsAtY="0.75" pointsAtZ="0"/>
-      </feSpecularLighting>
-      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="24" pointsAtX="0.05" pointsAtY="0.75" pointsAtZ="0"/>
-      </feDiffuseLighting>
-      <feMerge result="lighting">
-        <feMergeNode in="diffuse-lighting"/>
-        <feMergeNode in="specular-lighting"/>
-      </feMerge>
-      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
-    </filter>
-    <filter id="filter-3" bx:preset="spot-light 1 0.5 0.5 1 0.05 0.75 0 24 #efefef 8 0.5 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.5" specularExponent="8">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="24" pointsAtX="0.05" pointsAtY="0.75" pointsAtZ="0"/>
-      </feSpecularLighting>
-      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="24" pointsAtX="0.05" pointsAtY="0.75" pointsAtZ="0"/>
-      </feDiffuseLighting>
-      <feMerge result="lighting">
-        <feMergeNode in="diffuse-lighting"/>
-        <feMergeNode in="specular-lighting"/>
-      </feMerge>
-      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
-    </filter>
     <filter id="saturate-filter-0" bx:preset="saturate 1 0.34" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
       <feColorMatrix type="saturate" values="0.34"/>
     </filter>
@@ -108,7 +82,7 @@
   </g>
   <g style="pointer-events: none;">
     <title>head</title>
-    <rect width="32" height="32" style="filter: none; opacity: 0.2; visibility: hidden;" x="31.4486">
+    <rect width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); fill: none; stroke-opacity: 0.5;" x="31.4486">
       <title>top</title>
     </rect>
     <rect x="32" width="32" height="32" style="fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light;" y="32">
@@ -117,10 +91,10 @@
     <rect width="32" height="32" style="filter: none; opacity: 0.2;" y="32" x="96">
       <title>back</title>
     </rect>
-    <rect x="64" width="32" height="32" style="fill: rgb(255, 255, 255); filter: url(&quot;#filter-2&quot;); pointer-events: auto; opacity: 0.37; mix-blend-mode: hard-light; visibility: hidden;" y="32">
+    <rect x="64" width="32" height="32" style="filter: none; pointer-events: auto; mix-blend-mode: hard-light; fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px; opacity: 0.5;" y="32">
       <title>left</title>
     </rect>
-    <rect width="32" height="32" style="fill: rgb(255, 255, 255); pointer-events: auto; opacity: 0.37; mix-blend-mode: hard-light; filter: url(&quot;#filter-3&quot;); visibility: hidden;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+    <rect width="32" height="32" style="pointer-events: auto; mix-blend-mode: hard-light; filter: none; fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px; opacity: 0.5;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
       <title>right</title>
     </rect>
   </g>
