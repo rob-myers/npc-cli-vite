@@ -186,6 +186,7 @@ export default function NPCs() {
       onTick(delta) {
         crowdApi.update(state.crowd, w.nav.navMesh, delta);
         const { positions } = state.physics;
+        const worldSeconds = w.timer.getElapsedTime();
 
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
@@ -196,12 +197,7 @@ export default function NPCs() {
           npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
 
           if (npc.moving === false) {
-            // idle looks at close neighbour
-            if (agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist) {
-              const neighbor = state.crowd.agents[agent.neis[0].agentId];
-              npc.lookAt = { x: neighbor.position[0], y: neighbor.position[2] };
-            }
-            npc.updateLookAt(delta);
+            npc.updateIdle(agent, delta, worldSeconds);
             continue;
           }
 
@@ -214,7 +210,7 @@ export default function NPCs() {
             npc.smoothRotateToward(vx, vz, delta);
           }
 
-          const stuck = npc.updateStuck(delta);
+          const stuck = npc.updateStuck(delta, worldSeconds);
           if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
             npc.startIdle();
           }
@@ -474,7 +470,10 @@ function getAgentParams(): crowd.AgentParams {
     height: 1.2,
     maxAcceleration: 8.0,
     maxSpeed: walkAgentMaxSpeed,
-    collisionQueryRange: 0.75,
+    // collisionQueryRange: 1,
+    // collisionQueryRange: 0.75,
+    // cannot be smaller; maybe should be larger
+    collisionQueryRange: 0.5,
     separationWeight: idleSeparationWeight,
     updateFlags:
       crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
@@ -487,7 +486,6 @@ function getAgentParams(): crowd.AgentParams {
 }
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
-const neighborLookAtDist = 0.25;
 const closePolygonDistance = 0.05;
 const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
 

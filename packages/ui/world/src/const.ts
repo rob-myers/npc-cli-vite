@@ -112,7 +112,10 @@ export const runAgentMaxSpeed = 2.5;
 
 export const walkSeparationWeight = 0.25;
 
-export const idleSeparationWeight = 0.5;
+// export const idleSeparationWeight = 0.5;
+// export const idleSeparationWeight = 0.25;
+// low weight (relative to walk) means less sliding
+export const idleSeparationWeight = 0.1;
 
 export const defaultDoorCloseMs = 3000;
 
