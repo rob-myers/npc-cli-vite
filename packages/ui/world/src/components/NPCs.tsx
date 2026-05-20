@@ -50,6 +50,7 @@ export default function NPCs() {
         manifest: { byKey: {} } as AssetsSkinManifestType,
         entries: [] as SkinSheetEntry[],
       },
+      lastHmr: 0,
 
       byPickId: {} as Record<number, Npc>,
       nextPickId: 0,
@@ -335,9 +336,13 @@ export default function NPCs() {
 
   const queryData =
     useQuery({
-      queryKey: [...w.worldQueryPrefix, "skins-and-gltf"],
+      queryKey: [...w.worldQueryPrefix, "skins-and-gltf", state.lastHmr],
       queryFn: async () => {
-        // 🚧 stale on hmr so apply fix
+        if (import.meta.hot?.data.__JUST_HMR_NPCS__) {
+          import.meta.hot.data.__JUST_HMR_NPCS__ = false;
+          state.set({ lastHmr: Date.now() });
+          return null; // ignore 1st stale invoke after HMR
+        }
 
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
@@ -409,6 +414,7 @@ export type State = {
     manifest: AssetsSkinManifestType;
     entries: SkinSheetEntry[];
   };
+  lastHmr: number;
 
   byPickId: Record<number, Npc>;
   nextPickId: number;
@@ -470,3 +476,11 @@ const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonD
 
 const emptyAnimationClip = new THREE.AnimationClip();
 emptyAnimationClip.name = "empty-animation-clip";
+
+import.meta.hot?.on("vite:beforeUpdate", (payload) => {
+  const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));
+  if (import.meta.hot && updatedThisFile) {
+    // used to ignore stale queryFn and trigger fresh one
+    import.meta.hot.data.__JUST_HMR_NPCS__ = true;
+  }
+});
