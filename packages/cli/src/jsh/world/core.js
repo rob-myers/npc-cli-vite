@@ -262,15 +262,23 @@ export async function* pick(ct) {
  * ```sh
  * spawn npc:foo-bar-baz at:[7,0,7]
  * spawn npc:rob at:$( pick 1 | map point )
+ * # spawn multiple
+ * pick | spawn npc:rob-
  * ```
- * @param {JshCli.RunArg} ctxt
+ * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
  * @param {{ granted?: string } & JshCli.SpawnOpts} [opts]
  */
-export async function spawn({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", skin: "as" })) {
-  await w.npc.spawn(opts);
-  // if (typeof opts.granted === 'string') {
-  //   w.e.grantAccess(opts.granted, opts.npcKey);
-  // }
+export async function spawn({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey", skin: "as" })) {
+  // 🚧 support opts.granted
+
+  if (api.isTtyAt(0)) {
+    await w.npc.spawn(opts);
+  } else {
+    let numSpawns = 0;
+    while ((datum = await api.read()) !== api.eof) {
+      await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum });
+    }
+  }
 }
 
 /**
