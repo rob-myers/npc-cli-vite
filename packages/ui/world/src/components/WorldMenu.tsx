@@ -248,7 +248,7 @@ export function WorldMenu() {
                     items={actionItems}
                     className="justify-center"
                     isActive={(action) => {
-                      if (action === "Wall Lights") return w.wall?.wallLightsShown ?? true;
+                      if (action === "Wall Lights") return w.wall?.lightsShown ?? true;
                       return false;
                     }}
                     onToggle={(action) => {
@@ -263,7 +263,7 @@ export function WorldMenu() {
                         w.npc.remove(...Object.keys(w.npc.npc));
                         w.view.forceUpdate();
                       } else if (action === "Wall Lights") {
-                        w.wall?.toggleWallLights();
+                        w.wall?.toggleLights();
                       }
                     }}
                   />

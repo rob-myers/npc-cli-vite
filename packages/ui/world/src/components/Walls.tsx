@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { float, Fn, If, instanceIndex, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
+import { Fn, float, If, instanceIndex, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -17,11 +17,11 @@ export default function Walls() {
     (): State => ({
       inst: null,
       quad: createXyQuad(),
-      wallLightsShown: true,
+      lightsShown: true,
 
-      toggleWallLights() {
-        state.wallLightsShown = !state.wallLightsShown;
-        mat.wallLightsNode.value = state.wallLightsShown ? 1 : 0;
+      toggleLights() {
+        state.lightsShown = !state.lightsShown;
+        mat.wallLightsNode.value = state.lightsShown ? 1 : 0;
         w.update();
       },
 
@@ -203,8 +203,8 @@ export default function Walls() {
 export type State = {
   inst: null | THREE.InstancedMesh;
   quad: THREE.BufferGeometry;
-  wallLightsShown: boolean;
-  toggleWallLights(): void;
+  lightsShown: boolean;
+  toggleLights(): void;
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
   getWallMat: (
     seg: [Geom.Vect, Geom.Vect],
