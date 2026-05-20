@@ -3,6 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { loadImage } from "@npc-cli/util/legacy/dom";
+import { keys } from "@npc-cli/util/legacy/generic";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -33,6 +34,7 @@ import {
 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchSkinOverlay } from "../service/texture";
+import { crossFadeSynchronized } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
@@ -394,9 +396,25 @@ export default function NPCs() {
     if (!queryData) return;
     state.gltf = queryData.gltf;
     const anims = queryData.gltf.animations;
-    state.clips.idle = anims.find((c) => c.name === "idle") ?? emptyAnimationClip;
-    state.clips.walk = anims.find((c) => c.name === "walk") ?? emptyAnimationClip;
-    state.clips.run = anims.find((c) => c.name === "run") ?? emptyAnimationClip;
+
+    /** 🔔 on new clips fade old ones, else hmr can break animations */
+    const clips = {
+      idle: anims.find((c) => c.name === "idle") ?? emptyAnimationClip,
+      walk: anims.find((c) => c.name === "walk") ?? emptyAnimationClip,
+      run: anims.find((c) => c.name === "run") ?? emptyAnimationClip,
+    };
+    const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
+    for (const npc of Object.values(state.npc)) {
+      for (const [oldClip, clip] of pairedClips) {
+        const oldAct = npc.mixer.existingAction(oldClip);
+        if (!oldAct?.isRunning()) continue;
+        const act = npc.mixer.clipAction(clip);
+        crossFadeSynchronized(oldAct, act);
+        // npc.mixer.uncacheAction(oldAct.getClip());
+      }
+    }
+    Object.assign(state.clips, clips);
+
     state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
     w.setNextPending({ skins: false });
   }, [queryData]);
