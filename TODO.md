@@ -65,7 +65,10 @@
 
 - ✅ BUG npc label should not move with animation
 
-- 🚧 BUG hot reload via save skin breaks walk animation?
+- ✅ BUG refresh assets breaks walk animation
+  - repro in prod on switch tabs
+  - repro in dev on save geomorph.ts
+  - devHotReload not executed
 
 - doors have meaningful icons
 
