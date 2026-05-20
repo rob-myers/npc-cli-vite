@@ -73,10 +73,13 @@
 - doors have meaningful icons
 
 - 🚧 improve basic "turn towards" behaviour
-  - avoid sliding
+  - ✅ avoid sliding by playing walk animation
+  - better animation e.g. shuffle
 
 - ✅ support `pick | spawn npc:rob-`
   - rob-0 etc.
+
+- ceiling should ignore pick too
 
 - support `look`
 

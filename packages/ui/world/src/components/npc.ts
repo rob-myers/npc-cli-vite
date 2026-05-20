@@ -38,6 +38,8 @@ export class Npc {
     blockingArea: -1,
     /** Seconds elapsed */
     pinTime: 0,
+    /** World time when NPC last became idle (seconds) */
+    idleTime: 0,
     pos: { x: 0, y: 0 },
     dst: { x: 0, y: 0 },
     dstGrId: null as Geomorph.GmRoomId | null,
@@ -47,6 +49,8 @@ export class Npc {
   position: THREE.Vector3;
   queryFilter: QueryFilter;
   moving = false;
+  /** while idle and due to separationWeight */
+  separating = false;
   moveAnim = "walk" as "walk" | "run";
   spawns = 0;
   stuckAccum = 0;
@@ -177,16 +181,17 @@ export class Npc {
       });
     }
 
-    this.moving = false;
-
     this.mixer.existingAction(clips.walk)?.fadeOut(0.3);
     this.mixer.existingAction(clips.run)?.fadeOut(0.3);
     this.mixer.clipAction(clips.idle).reset().fadeIn(0.3).play();
+
+    this.moving = false;
+    this.separating = false;
   }
 
-  updateStuck(delta: number): boolean {
+  updateStuck(delta: number, worldSeconds: number): boolean {
     // delay stuck a bit
-    if (this.w.timer.getElapsedTime() - this.last.pinTime < 2.5) {
+    if (worldSeconds - this.last.pinTime < 2.5) {
       return false;
     }
 
@@ -213,6 +218,20 @@ export class Npc {
     moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), speed);
   }
 
+  syncSeparation(speed: number, worldSeconds: number) {
+    if (!(speed > separationSpeedThreshold && worldSeconds - this.last.idleTime > separationCooldown)) {
+      return;
+    }
+    // 🚧 use other animation e.g. shuffle?
+    const { clips } = this.w.npc;
+    if (!this.separating) {
+      this.separating = true;
+      this.mixer.existingAction(clips.idle)?.fadeOut(0.3);
+      this.mixer.clipAction(clips.walk).reset().fadeIn(0.3).play();
+    }
+    this.mixer.clipAction(clips.walk).timeScale = -Math.max(0.25 / npcScale, speed) * separationAnimScale;
+  }
+
   groupRef = (group: THREE.Group | null): void => {
     if (!group) {
       this.mixer.stopAllAction();
@@ -231,6 +250,31 @@ export class Npc {
       this.mixer.update(0);
     }
   };
+
+  updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
+    // 🚧 clarify
+    const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
+    if (shouldSeparate) {
+      const neiAgentId = agent.neis[0].agentId;
+      const neiNpc = Object.values(this.w.n).find((n) => n.agentId === neiAgentId);
+      if (neiNpc?.moving === true) {
+        const neighbor = this.w.npc.crowd.agents[neiAgentId];
+        this.lookAt = { x: neighbor.position[0], y: neighbor.position[2] };
+        const [vx, , vz] = agent.velocity;
+        const speed = Math.hypot(vx, vz);
+        this.syncSeparation(speed, worldSeconds);
+      } else {
+        this.lookAt = null;
+      }
+    } else {
+      this.lookAt = null;
+      if (this.separating) {
+        this.startIdle();
+      }
+    }
+
+    this.updateLookAt(delta / 4);
+  }
 
   async waitUntilResolved() {
     await new Promise<string>((resolve, reject) => {
@@ -253,3 +297,8 @@ export type NpcInit = {
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
 };
+
+const separationSpeedThreshold = 0.05;
+const separationCooldown = 0.5;
+const separationAnimScale = 0.25;
+const neighborLookAtDist = 0.25;
