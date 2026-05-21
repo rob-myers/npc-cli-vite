@@ -3,7 +3,7 @@ import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import type { MapEditFileSpecifier, MapNode, PathManifest } from "./editor.schema";
-import { PathEditorModal } from "./PathEditorModal";
+import { PathEditorModal, type ProvidedPath } from "./PathEditorModal";
 
 export interface ParsedPath {
   d: string;
@@ -30,7 +30,7 @@ export function PathPickerModal({
   const state = useStateRef(() => ({
     loading: null as string | null,
     editorOpen: import.meta.hot?.data.__editorOpen ?? false,
-    editorInitialPaths: undefined as { d: string; title: string }[] | undefined,
+    editorInitialPaths: undefined as ProvidedPath[] | undefined,
     editorInitialFilename: undefined as string | undefined,
     cachedBustingQuery: `t=${Date.now()}`,
     updateCacheBustingQuery() {
@@ -78,7 +78,7 @@ export function PathPickerModal({
     }
   }
 
-  async function handleEdit(key: string, _width: number, _height: number) {
+  async function handleEdit(key: string) {
     state.set({ loading: key });
     try {
       const resp = await fetch(`/path/${key}.svg`);
@@ -87,12 +87,12 @@ export function PathPickerModal({
       const doc = parser.parseFromString(text, "image/svg+xml");
       const pathEls = doc.querySelectorAll("svg > path");
 
-      const paths: { d: string; title: string }[] = [];
+      const paths: ProvidedPath[] = [];
       for (const pathEl of pathEls) {
         const d = pathEl.getAttribute("d");
         if (!d) continue;
         const titleEl = pathEl.querySelector("title");
-        paths.push({ d, title: titleEl?.textContent?.trim() || key });
+        paths.push({ d, title: titleEl?.textContent?.trim() || key, transform: "" });
       }
 
       // close then reopen to force reset with new data
@@ -153,7 +153,7 @@ export function PathPickerModal({
                       : `M0,0 L${width},0 L${width},${height} L0,${height} Z`;
                   state.set({
                     editorOpen: true,
-                    editorInitialPaths: [{ d, title: selectedNode.name }],
+                    editorInitialPaths: [{ d, title: selectedNode.name, transform: selectedNode.cssTransform }],
                     editorInitialFilename: undefined,
                   });
                 }}
@@ -199,7 +199,7 @@ export function PathPickerModal({
                         className="absolute top-1 right-1 p-1 rounded bg-slate-700/80 hover:bg-blue-600 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEdit(entry.key, entry.width, entry.height);
+                          handleEdit(entry.key);
                         }}
                         title="Edit in path editor"
                       >

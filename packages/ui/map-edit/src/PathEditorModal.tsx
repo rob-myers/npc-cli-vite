@@ -16,7 +16,7 @@ export function PathEditorModal({
 }: {
   fileSpecifier: MapEditFileSpecifier;
   initialFilename?: string;
-  initialPaths?: { d: string; title: string }[];
+  initialPaths?: ProvidedPath[];
   open: boolean;
   onApply: (paths: ParsedPath[]) => void;
   onOpenChange: (open: boolean) => void;
@@ -82,8 +82,9 @@ export function PathEditorModal({
         if (initPaths && initPaths.length > 0) {
           state.paths = initPaths.map((ip) => {
             const poly = geomService.svgPathToPolygon(ip.d);
+            const domMat = new DOMMatrix(ip.transform);
             return {
-              points: poly ? poly.outline.map((v) => ({ x: v.x, y: v.y })) : [],
+              points: poly ? poly.outline.map((v) => domMat.transformPoint({ x: v.x, y: v.y })) : [],
               closed: true,
               title: ip.title,
             };
@@ -411,9 +412,7 @@ export function PathEditorModal({
           </div>
 
           <div className="flex flex-1 overflow-hidden">
-            {/* SVG canvas */}
             <svg className="flex-1 bg-slate-950 cursor-crosshair" viewBox={viewBox} onClick={state.onSvgClick}>
-              {/* background grid */}
               <defs>
                 <pattern id="grid-60" width={60} height={60} patternUnits="userSpaceOnUse">
                   <rect
@@ -740,7 +739,7 @@ type State = {
   undo(): void;
   redo(): void;
 
-  reset(initPaths?: { d: string; title: string }[], filename?: string): void;
+  reset(initPaths?: ProvidedPath[], filename?: string): void;
   onKeyDown(e: KeyboardEvent): void;
 
   switchPath(idx: number): void;
@@ -777,3 +776,5 @@ const popupClass = cn(
 const inputClass = "bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-200 w-full";
 const disabledClass = "opacity-50 pointer-events-none";
 const storageKey = "path-editor-draft";
+
+export type ProvidedPath = { d: string; title: string; transform: string };
