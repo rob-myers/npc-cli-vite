@@ -286,7 +286,7 @@ export default function Doors() {
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
-    const edge = new THREE.MeshStandardNodeMaterial({ color: "#fff", metalness: 0.8, roughness: 0.3 });
+    const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
     const top = new THREE.MeshStandardNodeMaterial({ color: "#000", metalness: 0.6, roughness: 0.3 });
 
     const { atlas, count } = createPanelAtlas();
