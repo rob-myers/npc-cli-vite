@@ -55,6 +55,11 @@
       "rect": {"x": 2586, "y": 2628, "width": 137, "height": 155},
       "sheetId": 0
     },
+    "extra--001--fresher--0.5x0.5": {
+      "key": "extra--001--fresher--0.5x0.5",
+      "rect": {"x": 2725, "y": 2628, "width": 137, "height": 117},
+      "sheetId": 0
+    },
     "extra--003--chair--0.25x0.25": {
       "key": "extra--003--chair--0.25x0.25",
       "rect": {"x": 2796, "y": 1911, "width": 97, "height": 103},
