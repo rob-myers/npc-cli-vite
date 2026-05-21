@@ -79,7 +79,7 @@
 - ✅ support `pick | spawn npc:rob-`
   - rob-0 etc.
 
-- ceiling should ignore pick too
+- ✅ ceiling should ignore pick too
 
 - support `look`
 
@@ -88,9 +88,6 @@
 - 🚧 finish 301
   - ✅ bridge has window
   - 🚧 finish bridge symbol
-
-- onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
-  - should trigger react-query refetches: sheets/images
 
 - on idle should pin in front otherwise npc "slides back"
 
@@ -116,9 +113,17 @@
 - ✅ MapEdit: can edit path from rect
   - e.g. for table to avoid intersect with chair
 
-- script `gen-skin-sheets`
+- ✅ script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png
+
+- 🚧 onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
+  - should trigger react-query refetches: sheets/images
+  - currently triggered by commit/push which auto commits each `symbol.{id}.png`
+  - fixed manually by refetching
+    - `["world","world-0","sheets"]` (if added/removed)
+    - `["world","world-0","obstacle-images"]`
+
 - skin remapping
   - currently only have skinIndex
 - world context menu?
@@ -139,10 +144,6 @@
 - BUG npc animation out of sync after save npc.ts (?)
   - possibly fixed via `cfg clear-all` then respawn
 - BUG on collapse/expand should persist pane dimensions
-- BUG on add new symbol and run `pnpm gen-starship-sheets` obstacle images do not update
-  - fixed manually by refetching
-    - `["world","world-0","sheets"]` (if added/removed)
-    - `["world","world-0","obstacle-images"]`
 - BUG need two ctrl-c for while loop walk?
 - BUG saw auto door close with nearby npc
   - maybe door was closing and didn't open quickly enough
