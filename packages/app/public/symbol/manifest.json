@@ -197,6 +197,15 @@
       "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
       "type": "symbol",
       "key": "extra--005--chair-0.25x0.25"
+    },
+    "extra--001--fresher--0.5x0.5": {
+      "filename": "extra--001--fresher--0.5x0.5.json",
+      "thumbnailFilename": "extra--001--fresher--0.5x0.5.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": 0, "y": 0, "width": 27.4, "height": 23.4},
+      "type": "symbol",
+      "key": "extra--001--fresher--0.5x0.5"
     }
   }
 }

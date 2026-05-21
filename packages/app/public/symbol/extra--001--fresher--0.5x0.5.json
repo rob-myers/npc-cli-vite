@@ -1,0 +1,33 @@
+{
+  "filename": "extra--001--fresher--0.5x0.5.json",
+  "width": 120,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "cce885e2-cfff-4031-8f49-794397e6c739",
+      "name": "extra--001--fresher--0.5x0.5 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "extra--001--fresher--0.5x0.5",
+      "baseRect": {"width": 27.400000000000002, "height": 23.400000000000002},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "22fe15de-b3af-47a2-9d53-5f4852b354d3",
+      "name": "obstacle sink h=0.3",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "rect",
+      "baseRect": {"width": 27.5, "height": 22.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 27.4, "height": 23.4},
+  "type": "symbol",
+  "key": "extra--001--fresher--0.5x0.5"
+}
