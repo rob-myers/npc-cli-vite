@@ -400,6 +400,7 @@ function TabHeaderItem({
                     onValueChange={(title) => {
                       const target = allTabs.find((t) => t.title === title);
                       if (!target || target.id === tabsMetaId) return;
+
                       uiStore.setState((draft) => {
                         const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
                         const targetMeta = draft.byId[target.id]?.meta as TabsUiMeta | undefined;
@@ -421,7 +422,11 @@ function TabHeaderItem({
                     </Select.Trigger>
                     <Select.Portal>
                       <Select.Positioner className="z-10000" sideOffset={4}>
-                        <Select.Popup className="bg-black border border-white/20 rounded shadow-lg py-1">
+                        <Select.Popup
+                          className="bg-black border border-white/20 rounded shadow-lg py-1"
+                          // must prevent selection from selecting current tab
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Select.List>
                             {allTabs.map((t) => (
                               <Select.Item
