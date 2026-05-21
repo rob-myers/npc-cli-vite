@@ -553,6 +553,10 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
       meta.symKey = savedFile.key;
       // local id inside SVG symbol
       meta.obsId = polysLookup.obstacles.length - 1;
+      if (typeof meta.inset === "number") {
+        // convert inset to world coords
+        meta.inset = toPrecision(meta.inset * sguToWorldScale, 6);
+      }
     }
   }
 

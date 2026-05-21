@@ -1,6 +1,6 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
-import { Mat, Vect } from "@npc-cli/util/geom";
+import { geomService, Mat, Vect } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
@@ -122,36 +122,6 @@ export default function Obstacles(_props: Props) {
         const obstacle = gm.obstacles[id];
         return { gmId, meta: obstacle.meta, height: obstacle.height };
       },
-      positionSkirts() {
-        if (!state.skirtInst) return;
-        let sId = 0;
-
-        state.skirtInst.instanceMatrix.array.fill(0);
-
-        w.gms.forEach(({ obstacles, transform: gmTransform, determinant }) => {
-          obstacles.forEach(({ origPoly, transform: obTransform, height }) => {
-            tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
-            const corners = origPoly.outline.map((p) => tmpMat1.transformPoint(tmpVec1.set(p.x, p.y)).clone());
-
-            // biome-ignore format: succinct
-            for (let i = 0; i < corners.length; i++) {
-              const j = (i + 1) % corners.length;
-              const [p1, p2] = determinant > 0 ? [corners[j], corners[i]] : [corners[i], corners[j]];
-              const dx = p2.x - p1.x, dy = p2.y - p1.y;
-              const len = Math.sqrt(dx * dx + dy * dy);
-              const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
-              const skirtDimY = typeof origPoly.meta.h === 'number' ? origPoly.meta.h : skirtDepth;
-              tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
-              state.skirtInst.setMatrixAt(sId++,
-                embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
-              );
-            }
-          });
-        });
-
-        // state.skirtInst.instanceMatrix.needsUpdate = true;
-        state.skirtInst.computeBoundingSphere();
-      },
       sendDataToGpu() {
         state.quad.getAttribute("uvOffsets").needsUpdate = true;
         state.quad.getAttribute("uvDimensions").needsUpdate = true;
@@ -177,6 +147,42 @@ export default function Obstacles(_props: Props) {
         });
 
         obsInst.computeBoundingSphere();
+      },
+      transformSkirts() {
+        if (!state.skirtInst) return;
+        let sId = 0;
+
+        state.skirtInst.instanceMatrix.array.fill(0);
+
+        w.gms.forEach(({ obstacles, transform: gmTransform, determinant }) => {
+          obstacles.forEach(({ origPoly, transform: obTransform, height }) => {
+            // skirts support numeric meta.inset
+            origPoly =
+              typeof origPoly.meta.inset === "number"
+                ? geomService.createInset(origPoly, origPoly.meta.inset)[0]
+                : origPoly;
+
+            tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
+            const corners = origPoly.outline.map((p) => tmpMat1.transformPoint(tmpVec1.set(p.x, p.y)).clone());
+
+            // biome-ignore format: succinct
+            for (let i = 0; i < corners.length; i++) {
+              const j = (i + 1) % corners.length;
+              const [p1, p2] = determinant > 0 ? [corners[j], corners[i]] : [corners[i], corners[j]];
+              const dx = p2.x - p1.x, dy = p2.y - p1.y;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
+              const skirtDimY = typeof origPoly.meta.h === 'number' ? origPoly.meta.h : skirtDepth;
+              tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
+              state.skirtInst.setMatrixAt(sId++,
+                embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
+              );
+            }
+          });
+        });
+
+        // state.skirtInst.instanceMatrix.needsUpdate = true;
+        state.skirtInst.computeBoundingSphere();
       },
     }),
   );
@@ -227,7 +233,7 @@ export default function Obstacles(_props: Props) {
   React.useEffect(() => {
     state.addUvs();
     state.transformAndColorObstacles();
-    state.positionSkirts();
+    state.transformSkirts();
 
     // Collect all light world positions
     const lights: { x: number; z: number }[] = [];
@@ -345,7 +351,7 @@ export type State = {
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
   decodeInstanceId(instanceId: number): { gmId: number; height: number; meta: Meta };
   transformAndColorObstacles(): void;
-  positionSkirts(): void;
+  transformSkirts(): void;
   sendDataToGpu(): void;
 };
 
