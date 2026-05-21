@@ -121,10 +121,12 @@ export default function Walls() {
     })();
     // reduce opacity where inside a sphere (more transparent = "lighter")
     const litOpacity = opacityUniform.mul(float(1).sub(factor.mul(1)));
-    // const litOpacity = opacityUniform;
-    const litOpacityNode = w.view.objectPick
-      .notEqual(0)
-      .select(w.view.objectPick.notEqual(1).select(float(0), float(1)), litOpacity);
+
+    const litOpacityNode = w.view.objectPick.notEqual(0).select(
+      // objectPick 0.5 ignores walls for easier picking
+      w.view.objectPick.notEqual(1).select(0, 1),
+      litOpacity, // beauty render
+    );
 
     const colorNode = mix(baseColorUniform, vec3(1, 1, 0.6), factor.mul(0.1));
 

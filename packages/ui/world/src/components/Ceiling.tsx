@@ -137,10 +137,16 @@ export default function Ceiling() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
 
+    const opacityNode = w.view.objectPick.notEqual(0).select(
+      // objectPick 0.5 ignores ceiling for easier picking
+      w.view.objectPick.notEqual(1).select(0, 1),
+      0.75, // beauty render
+    );
+
     return {
       texNode: texNode.depth(uvTexIds),
       pickNode: w.view.withPickOutput(PICK_TYPE.ceiling),
-      opacityNode: w.view.objectPick.notEqual(0).select(1, 0.85),
+      opacityNode,
       uid: generateUUID(),
     };
   }, [w.texCeil.hash]);
