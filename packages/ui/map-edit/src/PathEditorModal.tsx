@@ -50,7 +50,10 @@ export function PathEditorModal({
       // --- history ---
 
       snapshot(): MultiSnapshot {
-        return { paths: state.paths.map((p) => ({ ...p, points: p.points.map((pt) => ({ ...pt })) })) };
+        return {
+          paths: state.paths.map((p) => ({ ...p, points: [...p.points] })),
+          activePathIdx: state.activePathIdx,
+        };
       },
       pushUndo() {
         state.undoStack.push(state.snapshot());
@@ -62,6 +65,7 @@ export function PathEditorModal({
         if (!prev) return;
         state.redoStack.push(state.snapshot());
         state.paths = prev.paths;
+        state.activePathIdx = prev.activePathIdx;
         state.selectedIdx = -1;
         state.persist();
         state.update();
@@ -71,6 +75,7 @@ export function PathEditorModal({
         if (!next) return;
         state.undoStack.push(state.snapshot());
         state.paths = next.paths;
+        state.activePathIdx = next.activePathIdx;
         state.selectedIdx = -1;
         state.persist();
         state.update();
@@ -144,15 +149,20 @@ export function PathEditorModal({
       // --- geometry helpers ---
 
       getAllBounds() {
-        let maxX = 0,
-          maxY = 0;
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
         for (const p of state.paths) {
           for (const pt of p.points) {
+            minX = Math.min(minX, pt.x);
+            minY = Math.min(minY, pt.y);
             maxX = Math.max(maxX, pt.x);
             maxY = Math.max(maxY, pt.y);
           }
         }
-        return { x: 0, y: 0, width: maxX || 100, height: maxY || 100 };
+        if (minX === Infinity) return { x: 0, y: 0, width: 100, height: 100 };
+        return { x: minX, y: minY, width: maxX - minX || 100, height: maxY - minY || 100 };
       },
       normalizeOrigin() {
         const pts = state.getPoints();
@@ -726,7 +736,7 @@ function Field({ label, className, children }: { label: string; className?: stri
 
 type Point = { x: number; y: number };
 type PathItem = { points: Point[]; closed: boolean; title: string };
-type MultiSnapshot = { paths: PathItem[] };
+type MultiSnapshot = { paths: PathItem[]; activePathIdx: number };
 const emptyPathItem: PathItem = { points: [], closed: false, title: "" };
 
 type State = {
