@@ -87,7 +87,13 @@
 
 - 🚧 finish 301
   - ✅ bridge has window
+  - ✅ sink
+  - 🚧 toilets
   - 🚧 finish bridge symbol
+
+- 🚧 MapEdit: internal path editor shows ambient image in background
+  - ✅ show image
+  - 🚧 take account of image node.offset
 
 - on idle should pin in front otherwise npc "slides back"
 
