@@ -1,3 +1,4 @@
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { deltaAngle } from "maath/misc";
 import * as THREE from "three";
 import { EventDispatcher, PerspectiveCamera, TOUCH } from "three";
@@ -28,8 +29,8 @@ export class CameraControls extends EventDispatcher {
   minAzimuthAngle = -Infinity;
   maxAzimuthAngle = Infinity;
   panDampingFactor = defaultDampingFactor;
-  azimuthalDampingFactor = defaultDampingFactor * 0.85;
-  polarDampingFactor = defaultDampingFactor;
+  azimuthalDampingFactor = defaultDampingFactor * (isTouchDevice() ? 2 : 1);
+  polarDampingFactor = defaultDampingFactor * (isTouchDevice() ? 2 : 1);
   /**
    * This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
    * Set to false to disable zooming.
@@ -875,7 +876,7 @@ export class CameraControls extends EventDispatcher {
     // restrict theta to be between desired limits
     let min = fixedAzimuth ?? this.minAzimuthAngle;
     let max = fixedAzimuth ?? this.maxAzimuthAngle;
-    if (isFinite(min) && isFinite(max)) {
+    if (Number.isFinite(min) && Number.isFinite(max)) {
       if (min < -Math.PI) min += twoPI;
       else if (min > Math.PI) min -= twoPI;
       if (max < -Math.PI) max += twoPI;
