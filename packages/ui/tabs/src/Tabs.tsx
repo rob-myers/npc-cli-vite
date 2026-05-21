@@ -388,6 +388,7 @@ function TabHeaderItem({
                 <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
               }
               className="bg-gray-700 py-0.5 px-1 flex flex-col"
+              positionerClassName="z-10000"
               arrowClassName="fill-gray-700"
               side="bottom"
               sideOffset={8}
