@@ -158,13 +158,12 @@ export default function Obstacles(_props: Props) {
         w.gms.forEach(({ obstacles, transform: gmTransform, determinant }) => {
           obstacles.forEach(({ origPoly, transform: obTransform, height }) => {
             // skirts support numeric meta.inset
-            origPoly =
+            tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
+            const corners = (
               typeof origPoly.meta.inset === "number"
                 ? geomService.createInset(origPoly, origPoly.meta.inset)[0]
-                : origPoly;
-
-            tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
-            const corners = origPoly.outline.map((p) => tmpMat1.transformPoint(tmpVec1.set(p.x, p.y)).clone());
+                : origPoly
+            ).outline.map((p) => tmpMat1.transformPoint(tmpVec1.set(p.x, p.y)).clone());
 
             // biome-ignore format: succinct
             for (let i = 0; i < corners.length; i++) {
