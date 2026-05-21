@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "3c3e5ea6-dee8-419d-9b8e-6b4281fba211",
-      "name": "extra--003--chair--0.25x0.25 1",
+      "name": "extra--003--chair--0.25x0.25",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
@@ -17,14 +17,14 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0.3, -0.3)"
     },
     {
-      "id": "d4f02952-e08b-43cc-b8e1-7dc0898c5f21",
-      "name": "obstacle chair",
+      "id": "939c091b-e76a-4de9-a6ef-b4df225f9113",
+      "name": "obstacle chair inset=4",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -0.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
       "type": "rect",
-      "baseRect": {"width": 20, "height": 21},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, -0.5)"
+      "baseRect": {"width": 20.5, "height": 20.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
     }
   ],
   "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
