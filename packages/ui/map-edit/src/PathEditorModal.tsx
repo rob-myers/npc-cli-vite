@@ -428,8 +428,11 @@ export function PathEditorModal({
 
               {/* grid */}
               <rect x={viewBounds.x} y={viewBounds.y} width={viewBounds.w} height={viewBounds.h} fill="url(#grid-60)" />
+
               {/* background image */}
-              <image x={0} y={0} className="scale-20" href={`/starship-symbol/${fileSpecifier.key}.png`} />
+              {fileSpecifier.type === "symbol" && (
+                <image x={0} y={0} className="scale-20" href={`/starship-symbol/${fileSpecifier.key}.png`} />
+              )}
 
               {/* inactive paths */}
               {state.paths.map((pathItem, pi) => {
