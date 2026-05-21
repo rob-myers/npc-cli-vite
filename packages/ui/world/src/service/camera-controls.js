@@ -355,10 +355,18 @@ export class CameraControls extends EventDispatcher {
         const cy = this.pointers.length === 1 ? event.pageY : this.u.rotateEnd.y;
         this.handleDirectionalSnap(cx, cy);
       } else {
-        this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-        if (!this.params.fixedPolar) {
-          this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+        const isFree = !this.params.fixedPolar;
+        if (isFree && this.rotateAxis === "none") {
+          const ax = Math.abs(this.u.rotateDelta.x);
+          const ay = Math.abs(this.u.rotateDelta.y);
+          if (ax > 2 || ay > 2) {
+            this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+          }
         }
+        const horiz = !isFree || this.rotateAxis !== "vertical";
+        const vert = isFree && this.rotateAxis !== "horizontal";
+        if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+        if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
       }
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
@@ -779,9 +787,7 @@ export class CameraControls extends EventDispatcher {
     const ay = Math.abs(dy);
     // require dominant axis to be at least 2x the other
     if (Math.min(ax, ay) * 2 > Math.max(ax, ay)) return;
-    const delta = ay > ax
-      ? (dy > 0 ? Math.PI : 0)
-      : (dx > 0 ? -halfPi : halfPi);
+    const delta = ay > ax ? (dy > 0 ? Math.PI : 0) : dx > 0 ? -halfPi : halfPi;
     this.snapAzimuthBy(delta);
   }
 
