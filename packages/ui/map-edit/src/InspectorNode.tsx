@@ -90,6 +90,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
     <div>
       <div
         ref={state.ref("rowEl")}
+        data-node-id={node.id}
         className={cn(
           "relative grid grid-cols-[minmax(auto,1.5rem)_auto_1.5em] items-center cursor-pointer hover:brightness-125",
           "bg-background border-b border-b-on-background/10",
