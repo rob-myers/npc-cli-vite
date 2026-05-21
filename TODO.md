@@ -91,10 +91,11 @@
   - 🚧 toilets
   - 🚧 finish bridge symbol
 
-- 🚧 MapEdit: internal path editor shows ambient image in background
+- ✅ MapEdit: internal path editor shows ambient image in background
   - ✅ show image
   - ✅ initialPaths should provide transform
-  - 🚧 take account of image node.offset
+  - ✅ take account of image node.offset
+    - e.g. see main bridge curved table in bridge--042
 
 - on idle should pin in front otherwise npc "slides back"
 

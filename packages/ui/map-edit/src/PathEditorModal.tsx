@@ -3,18 +3,18 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom";
 import { MinusCircleIcon, PlusCircleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import type { MapEditFileSpecifier } from "./editor.schema";
+import type { State as MapEditState } from "./MapEdit";
 import type { ParsedPath } from "./PathPickerModal";
 
 export function PathEditorModal({
-  fileSpecifier,
+  getRootState,
   initialFilename,
   initialPaths,
   open,
   onApply,
   onOpenChange,
 }: {
-  fileSpecifier: MapEditFileSpecifier;
+  getRootState(): MapEditState;
   initialFilename?: string;
   initialPaths?: ProvidedPath[];
   open: boolean;
@@ -429,9 +429,19 @@ export function PathEditorModal({
               <rect x={viewBounds.x} y={viewBounds.y} width={viewBounds.w} height={viewBounds.h} fill="url(#grid-60)" />
 
               {/* background image */}
-              {fileSpecifier.type === "symbol" && (
-                <image x={0} y={0} className="scale-20" href={`/starship-symbol/${fileSpecifier.key}.png`} />
-              )}
+              {(() => {
+                const rootState = getRootState();
+                const fileSpecifier = rootState.currentFile;
+                const underlayNode = rootState.getUnderlayNode();
+                return (
+                  fileSpecifier.type === "symbol" && (
+                    <image
+                      href={`/starship-symbol/${fileSpecifier.key}.png`}
+                      transform={`${underlayNode?.cssTransform ?? ""} scale(0.2)`}
+                    />
+                  )
+                );
+              })()}
 
               {/* inactive paths */}
               {state.paths.map((pathItem, pi) => {

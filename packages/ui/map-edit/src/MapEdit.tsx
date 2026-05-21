@@ -613,6 +613,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const [node] = findNodeById(state.nodes, selectedId);
         return node;
       },
+      getUnderlayNode() {
+        // underlay image node should always be 1st node
+        const [first] = state.nodes;
+        return first?.type === "image" ? first : null;
+      },
       groupSelected() {
         if (state.isReadOnly()) return;
         if (state.selectedIds.size === 0) return;
@@ -1611,7 +1616,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       />
 
       <PathPickerModal
-        fileSpecifier={state.currentFile}
+        getRootState={() => state}
         open={state.pickPathOpen}
         onOpenChange={(open) => {
           if (!open) state.set({ pickPathOpen: false });
@@ -1732,6 +1737,7 @@ export type State = {
   getNextName: (type: MapNodeType, prefix?: string) => string;
   getNextSuffix: (type: MapNodeType, prefix: string) => number;
   getSelectedNode: () => MapNode | null;
+  getUnderlayNode: () => ImageMapNode | null;
   groupSelected: () => void;
   /** Must manually update state to see changes. */
   deleteNodes: (nodeIds: string[]) => void;
