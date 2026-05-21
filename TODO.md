@@ -88,7 +88,7 @@
 - 🚧 finish 301
   - ✅ bridge has window
   - ✅ sink
-  - 🚧 toilets
+  - ✅ toilet
   - 🚧 finish bridge symbol
 
 - ✅ MapEdit: internal path editor shows ambient image in background
@@ -96,6 +96,15 @@
   - ✅ initialPaths should provide transform
   - ✅ take account of image node.offset
     - e.g. see main bridge curved table in bridge--042
+
+- 🚧 onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
+  - should trigger react-query refetches: sheets/images
+  - currently triggered by commit/push which auto commits each `symbol.{id}.png`
+  - fixed manually by refetching
+    - `["world","world-0","sheets"]` (if added/removed)
+    - `["world","world-0","obstacle-images"]`
+
+- BUG packages/app/public/symbol/stateroom--036--2x4.thumbnail.png
 
 - on idle should pin in front otherwise npc "slides back"
 
@@ -124,13 +133,6 @@
 - ✅ script `gen-skin-sheets`
   - writes to sheets.json
   - generates sheet/skin.{i}.png
-
-- 🚧 onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
-  - should trigger react-query refetches: sheets/images
-  - currently triggered by commit/push which auto commits each `symbol.{id}.png`
-  - fixed manually by refetching
-    - `["world","world-0","sheets"]` (if added/removed)
-    - `["world","world-0","obstacle-images"]`
 
 - skin remapping
   - currently only have skinIndex
