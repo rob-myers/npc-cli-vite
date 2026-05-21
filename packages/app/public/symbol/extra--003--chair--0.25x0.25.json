@@ -8,33 +8,26 @@
       "name": "extra--003--chair--0.25x0.25 1",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 0,
-        "f": 0
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
+      "srcType": "symbol",
       "srcKey": "extra--003--chair--0.25x0.25",
-      "baseRect": {
-        "width": 19.400000000000002,
-        "height": 20.6
-      },
-      "offset": {
-        "x": 0.3,
-        "y": -0.3
-      },
+      "baseRect": {"width": 19.400000000000002, "height": 20.6},
+      "offset": {"x": 0.3, "y": -0.3},
       "cssTransform": "matrix(1, 0, 0, 1, 0.3, -0.3)"
+    },
+    {
+      "id": "d4f02952-e08b-43cc-b8e1-7dc0898c5f21",
+      "name": "obstacle chair",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -0.5},
+      "type": "rect",
+      "baseRect": {"width": 20, "height": 21},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, -0.5)"
     }
   ],
-  "bounds": {
-    "width": 19.4,
-    "height": 20.6,
-    "x": 0.3,
-    "y": -0.3
-  },
+  "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
   "type": "symbol",
   "key": "extra--003--chair--0.25x0.25"
 }
