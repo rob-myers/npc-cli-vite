@@ -93,6 +93,7 @@
 
 - 🚧 MapEdit: internal path editor shows ambient image in background
   - ✅ show image
+  - ✅ initialPaths should provide transform
   - 🚧 take account of image node.offset
 
 - on idle should pin in front otherwise npc "slides back"
