@@ -8,6 +8,7 @@ import {
   type StarshipSymbolPngsManifest,
   StarshipSymbolPngsManifestSchema,
   sguScalePngToSvgFactor,
+  symbolByGroupHash,
 } from "@npc-cli/media/starship-symbol";
 import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const";
 import type { ThemeName } from "@npc-cli/ui-sdk";
@@ -1304,7 +1305,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   }, []);
 
   [state.pngsManifest, state.symbolsManifest, state.mapsManifest, state.pathManifest, state.decorManifest] = useQuery({
-    queryKey: ["map-edit-manifests"],
+    // refetch on edit `symbolByGroup` mapping
+    queryKey: ["map-edit-manifests", symbolByGroupHash],
     queryFn: async () => {
       const pngsManifest = await fetchParsed("/starship-symbol/manifest.json", StarshipSymbolPngsManifestSchema);
       const symbolsManifest = await fetchParsed("/symbol/manifest.json", SymbolsManifestSchema);

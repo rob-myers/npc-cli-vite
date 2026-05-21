@@ -1,4 +1,4 @@
-import { keys } from "@npc-cli/util/legacy/generic";
+import { hashJson, keys } from "@npc-cli/util/legacy/generic";
 
 /**
  * Symbols not directly based on some extracted spaceship symbol PNG.
@@ -204,6 +204,8 @@ export const symbolByGroup = {
     "stateroom--036--2x4": true,
   },
 } as const;
+
+export const symbolByGroupHash = hashJson(symbolByGroup);
 
 export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
