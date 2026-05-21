@@ -2,7 +2,8 @@ import { Dialog } from "@base-ui/react/dialog";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import type { MapEditFileSpecifier, MapNode, PathManifest } from "./editor.schema";
+import type { MapNode, PathManifest } from "./editor.schema";
+import type { State as MapEditState } from "./MapEdit";
 import { PathEditorModal, type ProvidedPath } from "./PathEditorModal";
 
 export interface ParsedPath {
@@ -13,14 +14,14 @@ export interface ParsedPath {
 }
 
 export function PathPickerModal({
-  fileSpecifier,
+  getRootState,
   open,
   pathManifest,
   selectedNode,
   onOpenChange,
   onSelect,
 }: {
-  fileSpecifier: MapEditFileSpecifier;
+  getRootState(): MapEditState;
   open: boolean;
   pathManifest: PathManifest | null;
   selectedNode?: MapNode | null;
@@ -215,7 +216,7 @@ export function PathPickerModal({
       </Dialog.Portal>
 
       <PathEditorModal
-        fileSpecifier={fileSpecifier}
+        getRootState={getRootState}
         initialFilename={state.editorInitialFilename}
         initialPaths={state.editorInitialPaths}
         open={state.editorOpen}
