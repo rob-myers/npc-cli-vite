@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
 /**
+ * Each symbol with at least one obstacle gets packed into a sheet.
+ * We also erase the parts of the symbol which are not obstacles.
+ * This can waste space for some symbols e.g. bridge--042.
+ * However, it should be a bit faster than splitting into many obstacles,
+ * and won't change as much as one adds obstacles to symbols.
+ *
  * creates/mutates
  * - public/sheets.json
  * creates
@@ -51,8 +57,8 @@ const assets = z.parse(AssetsSchema, assetsEncoded);
 const starshipSymbolManifest = z.parse(StarshipSymbolPngsManifestSchema, starshipSymbolManifestEncoded);
 
 /** unflattened symbols with at least one obstacle */
-const symbolsWithAnObstacle = Object.values(assets.symbol).filter(({ obstacles }) => obstacles.length > 0);
-const manifestEntries = symbolsWithAnObstacle.map((x) => starshipSymbolManifest.byKey[x.key]);
+const symbolsWithAtLeastOneObstacle = Object.values(assets.symbol).filter(({ obstacles }) => obstacles.length > 0);
+const manifestEntries = symbolsWithAtLeastOneObstacle.map((x) => starshipSymbolManifest.byKey[x.key]);
 
 const {
   bins,
@@ -109,7 +115,7 @@ const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");
 mkdirSync(symbolsSheetDirectory, { recursive: true });
 
-/** symbol key → array of polygons to erase, in SVG viewBox coordinates */
+/** mapping from "symbol key" to array of polygons to erase, in SVG viewBox coordinates */
 const masksBySymbol = collectMasks(path.resolve(starshipSymbolDir, "mask"));
 
 const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, "symbols");
