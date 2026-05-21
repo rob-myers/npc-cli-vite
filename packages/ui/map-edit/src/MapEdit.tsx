@@ -1315,6 +1315,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       const decorManifest = await fetchParsed("/decor/manifest.json", DecorManifestSchema);
       return [pngsManifest, symbolsManifest, mapsManifest, pathManifest, decorManifest] as const;
     },
+    refetchOnReconnect: true,
   }).data ?? [null, null, null, null, null];
 
   useEffect(() => {

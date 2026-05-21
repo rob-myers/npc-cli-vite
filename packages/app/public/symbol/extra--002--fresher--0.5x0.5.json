@@ -1,0 +1,34 @@
+{
+  "filename": "extra--002--fresher--0.5x0.5.json",
+  "width": 24,
+  "height": 32,
+  "nodes": [
+    {
+      "id": "7139b512-ab4b-403a-b7d1-42fc908ad2ed",
+      "name": "extra--002--fresher--0.5x0.5 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "extra--002--fresher--0.5x0.5",
+      "baseRect": {"width": 22.8, "height": 31.200000000000003},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "ede6f529-3cfe-4e94-b19d-1a8659750d94",
+      "name": "obstacle toilet inset=2",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M0.5,0 L22.5,0 L22.5,15.8 L20,23.9 L17,31.5 L11.5,31.5 L6,31.5 L2.5,23.7 L0.5,15.8 L0.5,0 Z",
+      "baseRect": {"width": 22, "height": 32},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 22.8, "height": 31.2},
+  "type": "symbol",
+  "key": "extra--002--fresher--0.5x0.5"
+}
