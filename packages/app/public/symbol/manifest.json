@@ -206,6 +206,15 @@
       "bounds": {"x": 0, "y": 0, "width": 27.4, "height": 23.4},
       "type": "symbol",
       "key": "extra--001--fresher--0.5x0.5"
+    },
+    "extra--002--fresher--0.5x0.5": {
+      "filename": "extra--002--fresher--0.5x0.5.json",
+      "thumbnailFilename": "extra--002--fresher--0.5x0.5.thumbnail.png",
+      "width": 24,
+      "height": 32,
+      "bounds": {"x": 0, "y": 0, "width": 22.8, "height": 31.2},
+      "type": "symbol",
+      "key": "extra--002--fresher--0.5x0.5"
     }
   }
 }

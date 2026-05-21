@@ -96,6 +96,18 @@
       "cssTransform": "matrix(1, 0, 0, 1, 82.5, -0.5)"
     },
     {
+      "id": "371cc26c-ae97-4c5a-ab44-8af4063fcf9a",
+      "name": "extra--002--fresher--0.5x0.5 y=0.7",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 48.5, "f": 0},
+      "type": "symbol",
+      "srcKey": "extra--002--fresher--0.5x0.5",
+      "baseRect": {"width": 24, "height": 32},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 48.5, 0)"
+    },
+    {
       "id": "032bfcbd-3314-4750-9e48-fa1ce9c19a45",
       "name": "wall",
       "locked": false,
