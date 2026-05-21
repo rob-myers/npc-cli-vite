@@ -18,13 +18,13 @@
     },
     {
       "id": "bb4e41e5-dcd4-4e32-9e03-a4b81dd60cba",
-      "name": "surface table",
-      "locked": true,
+      "name": "obstacle surface table h=0.2",
+      "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
       "type": "rect",
-      "baseRect": {"width": 30, "height": 60},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+      "baseRect": {"width": 31, "height": 61},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
     }
   ],
   "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4},
