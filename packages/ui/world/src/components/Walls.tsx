@@ -1,6 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
+import type MathNode from "three/src/nodes/math/MathNode.js";
 import { Fn, float, If, instanceIndex, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
@@ -16,8 +17,9 @@ export default function Walls() {
   const state = useStateRef(
     (): State => ({
       inst: null,
-      quad: createXyQuad(),
       lightsShown: true,
+      mat: {} as any,
+      quad: createXyQuad(),
 
       toggleLights() {
         state.lightsShown = !state.lightsShown;
@@ -139,6 +141,8 @@ export default function Walls() {
     };
   }, [wallCount]);
 
+  state.mat = mat;
+
   useEffect(() => {
     state.positionInstances();
     mat.opacityUniform.value = w.getTheme().walls.opacity;
@@ -202,8 +206,20 @@ export default function Walls() {
 
 export type State = {
   inst: null | THREE.InstancedMesh;
-  quad: THREE.BufferGeometry;
   lightsShown: boolean;
+  mat: {
+    opacityUniform: THREE.UniformNode<number>;
+    opacityNode: THREE.Node;
+    colorNode: MathNode;
+    outputNode: THREE.Node;
+    baseColorUniform: THREE.UniformNode<THREE.Color>;
+    wallLightsNode: THREE.UniformNode<number>;
+    light0Values: THREE.Vector3[];
+    light1Values: THREE.Vector3[];
+    uuid: `${string}-${string}-${string}-${string}-${string}`;
+  };
+  quad: THREE.BufferGeometry;
+
   toggleLights(): void;
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
   getWallMat: (
