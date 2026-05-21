@@ -132,14 +132,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       //#endregion
 
       devForceReadOnly: false,
-      isReadOnly() {
-        return (
-          isTouchDevice() ||
-          ((import.meta.env.PROD || (import.meta.env.DEV && state.devForceReadOnly)) &&
-            state.currentFile.type === "symbol" &&
-            !isHullSymbolImageKey(state.currentFile.key))
-        );
-      },
 
       isPanning: false,
       isPinching: false,
@@ -191,6 +183,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       // will extend with symbol/manifest.json
       savedFileSpecifiers: getLocalStorageFileSpecs(),
+
+      isReadOnly() {
+        return (
+          isTouchDevice() ||
+          ((import.meta.env.PROD || (import.meta.env.DEV && state.devForceReadOnly)) &&
+            state.currentFile.type === "symbol" &&
+            !isHullSymbolImageKey(state.currentFile.key))
+        );
+      },
 
       onPanPointerDown(e) {
         if (e.button === 0 && !state.isPinching) {
@@ -1610,6 +1611,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       />
 
       <PathPickerModal
+        fileSpecifier={state.currentFile}
         open={state.pickPathOpen}
         onOpenChange={(open) => {
           if (!open) state.set({ pickPathOpen: false });

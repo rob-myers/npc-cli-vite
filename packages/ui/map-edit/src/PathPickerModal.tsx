@@ -2,7 +2,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import type { MapNode, PathManifest } from "./editor.schema";
+import type { MapEditFileSpecifier, MapNode, PathManifest } from "./editor.schema";
 import { PathEditorModal } from "./PathEditorModal";
 
 export interface ParsedPath {
@@ -13,17 +13,19 @@ export interface ParsedPath {
 }
 
 export function PathPickerModal({
+  fileSpecifier,
   open,
-  onOpenChange,
-  onSelect,
   pathManifest,
   selectedNode,
+  onOpenChange,
+  onSelect,
 }: {
+  fileSpecifier: MapEditFileSpecifier;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (paths: ParsedPath[]) => void;
   pathManifest: PathManifest | null;
   selectedNode?: MapNode | null;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (paths: ParsedPath[]) => void;
 }) {
   const state = useStateRef(() => ({
     loading: null as string | null,
@@ -145,9 +147,10 @@ export function PathPickerModal({
                 onClick={() => {
                   if (!canOpenSelection || !selectedNode) return;
                   const { width, height } = selectedNode.baseRect;
-                  const d = selectedNode.type === "path"
-                    ? selectedNode.d
-                    : `M0,0 L${width},0 L${width},${height} L0,${height} Z`;
+                  const d =
+                    selectedNode.type === "path"
+                      ? selectedNode.d
+                      : `M0,0 L${width},0 L${width},${height} L0,${height} Z`;
                   state.set({
                     editorOpen: true,
                     editorInitialPaths: [{ d, title: selectedNode.name }],
@@ -212,17 +215,18 @@ export function PathPickerModal({
       </Dialog.Portal>
 
       <PathEditorModal
+        fileSpecifier={fileSpecifier}
+        initialFilename={state.editorInitialFilename}
+        initialPaths={state.editorInitialPaths}
         open={state.editorOpen}
-        onOpenChange={(editorOpen) => {
-          state.set({ editorOpen });
-          if (import.meta.hot) import.meta.hot.data.__editorOpen = editorOpen;
-        }}
         onApply={(paths) => {
           onSelect(paths);
           onOpenChange(false);
         }}
-        initialPaths={state.editorInitialPaths}
-        initialFilename={state.editorInitialFilename}
+        onOpenChange={(editorOpen) => {
+          state.set({ editorOpen });
+          if (import.meta.hot) import.meta.hot.data.__editorOpen = editorOpen;
+        }}
       />
     </Dialog.Root>
   );

@@ -10,6 +10,8 @@ import { useUpdate } from "./use-update.js";
  * - Its `initializer` is a parameterless function constructing this object.
  * - On HMR it will update these properties "suitably", relative to options.
  *
+ * 🔔 does not support getters or setters
+ *
  * @template {Record<string, any>} State
  * @param {() => State} initializer Should be side-effect free.
  * @param {Options<State>} [opts]
