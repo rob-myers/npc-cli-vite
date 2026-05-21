@@ -3623,8 +3623,8 @@
     "extra--001--fresher--0.5x0.5": {
       "key": "extra--001--fresher--0.5x0.5",
       "isHull": false,
-      "width": 3,
-      "height": 3,
+      "width": 0.7,
+      "height": 0.575,
       "bounds": {"x": 0, "y": 0, "width": 0.685, "height": 0.585},
       "decor": [],
       "doors": [],
@@ -10904,8 +10904,8 @@
     "extra--001--fresher--0.5x0.5": {
       "key": "extra--001--fresher--0.5x0.5",
       "isHull": false,
-      "width": 3,
-      "height": 3,
+      "width": 0.7,
+      "height": 0.575,
       "bounds": {"x": 0, "y": 0, "width": 0.685, "height": 0.585},
       "decor": [],
       "doors": [],

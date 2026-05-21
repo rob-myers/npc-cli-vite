@@ -201,8 +201,8 @@
     "extra--001--fresher--0.5x0.5": {
       "filename": "extra--001--fresher--0.5x0.5.json",
       "thumbnailFilename": "extra--001--fresher--0.5x0.5.thumbnail.png",
-      "width": 120,
-      "height": 120,
+      "width": 28,
+      "height": 23,
       "bounds": {"x": 0, "y": 0, "width": 27.4, "height": 23.4},
       "type": "symbol",
       "key": "extra--001--fresher--0.5x0.5"
