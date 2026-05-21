@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { getRelativePointer, isRMB, isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
@@ -24,6 +24,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   const state = useStateRef(
     (): State => ({
+      cameraMode: "free",
       canvas: null as any,
       controls: null as any,
       clickIds: [],
@@ -43,8 +44,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
-
-      cameraMode: isTouchDevice() ? "cardinal" : "free",
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -275,7 +274,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           longDown: state.lastPointer.longPress,
           rightDown: state.lastPointer.rightPress,
 
-          ...point, // can provide as point
+          ...point, // can provide as point with meta
         });
       },
       setCameraMode(mode) {
@@ -296,7 +295,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.ctrlOpts = {
           ...state.ctrlOpts,
           minPolarAngle: Math.PI / 8,
-          maxPolarAngle: mode === "free" ? Math.PI / 2.5 : Math.PI / 8,
+          maxPolarAngle: Math.PI / 2.5,
         };
         w.update();
       },
@@ -378,10 +377,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         <CameraControls
           ref={state.ref("controls")}
           domElement={state.canvas}
-          initialAngle={{
-            azimuthal: 0,
-            polar: Math.PI / 5,
-          }}
+          initialAngle={{ azimuthal: Math.PI / 4, polar: Math.PI / 5 }}
           initialPosition={{ x: 4, y: 18, z: 4 }}
           minPanDistance={0}
           // onChange={state.onChangeControls}
@@ -399,6 +395,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 }
 
 export type State = {
+  cameraMode: "free" | "azimuthal" | "cardinal";
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -421,7 +418,6 @@ export type State = {
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
-  cameraMode: "free" | "azimuthal" | "cardinal";
   setCameraMode(mode: "free" | "azimuthal" | "cardinal"): void;
   syncRenderMode(): RootState["frameloop"];
   /**
