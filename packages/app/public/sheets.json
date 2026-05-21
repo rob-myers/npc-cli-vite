@@ -40,6 +40,11 @@
       "rect": {"x": 3180, "y": 1602, "width": 377, "height": 307},
       "sheetId": 0
     },
+    "extra--004--desk--0.5x1": {
+      "key": "extra--004--desk--0.5x1",
+      "rect": {"x": 2796, "y": 1293, "width": 157, "height": 307},
+      "sheetId": 0
+    },
     "console--033--0.4x0.6": {
       "key": "console--033--0.4x0.6",
       "rect": {"x": 2450, "y": 2628, "width": 134, "height": 161},
@@ -57,7 +62,7 @@
     },
     "extra--005--chair-0.25x0.25": {
       "key": "extra--005--chair-0.25x0.25",
-      "rect": {"x": 2796, "y": 1806, "width": 95, "height": 95},
+      "rect": {"x": 2955, "y": 1293, "width": 95, "height": 95},
       "sheetId": 0
     }
   },
