@@ -887,9 +887,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         // Expand/contract selection
         if (!state.selectedIds.has(nodeId)) {
           state.set({ selectedIds: new Set([nodeId]), selectionBox: null });
-        } else if (!nodeId) {
-          state.set({ selectedIds: new Set(), selectionBox: null });
         }
+
+        if (state.selectedIds.size === 1) {
+          state.scrollInspectorNodeIntoView(nodeId);
+        }
+
         state.startDragSelection(e);
       },
       onSvgPointerMove(e) {
@@ -1031,6 +1034,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const wasMoveSelection = state.dragEl?.type === "move-selection";
         state.dragEl = null;
         if (wasMoveSelection) state.applyBoundsOffset();
+      },
+      scrollInspectorNodeIntoView(nodeId) {
+        const inspectorParentEl = state.containerEl?.parentElement;
+        const inspectorNodeEl = inspectorParentEl?.querySelector(`aside [data-node-id="${nodeId}"]`);
+        inspectorNodeEl?.scrollIntoView({ block: "nearest" });
       },
       startDragSelection(e) {
         if (state.isReadOnly()) return;
@@ -1695,6 +1703,7 @@ export type State = {
   /** All saved file specifiers including drafts */
   savedFileSpecifiers: MapEditFileSpecifier[];
 
+  scrollInspectorNodeIntoView(nodeId: string): void;
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
   startSelectionBox: (e: React.PointerEvent<SVGSVGElement>, increment: number) => void;
