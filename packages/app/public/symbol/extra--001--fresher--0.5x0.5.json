@@ -17,13 +17,14 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
-      "id": "22fe15de-b3af-47a2-9d53-5f4852b354d3",
-      "name": "obstacle sink h=0.3",
+      "id": "9aecbc9f-5f4c-4ed9-aace-8cd085a00ab7",
+      "name": "obstacle sink h=0.2 inset=1",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-      "type": "rect",
-      "baseRect": {"width": 27.5, "height": 22.5},
+      "type": "path",
+      "d": "M0,0 L27.5,0 L27.5,11.3 L27.5,16.9 L20.7,23 L13.9,23 L6.9,23 L0,16.9 L0,11.3 L0,0 L0,0 L0,0 Z",
+      "baseRect": {"width": 28, "height": 23},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
