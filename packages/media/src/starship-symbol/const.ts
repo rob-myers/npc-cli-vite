@@ -35,6 +35,7 @@ export const symbolByGroup = {
      * - afterwards run `pnpm starship-pngs-to-public`
      */
     "extra--001--fresher--0.5x0.5": true,
+    "extra--002--fresher--0.5x0.5": true,
     "extra--003--chair--0.25x0.25": true,
     "extra--004--desk--0.5x1": true,
     "extra--005--chair-0.25x0.25": true,
