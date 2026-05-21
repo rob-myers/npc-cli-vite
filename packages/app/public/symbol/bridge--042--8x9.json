@@ -95,6 +95,49 @@
           "baseRect": {"width": 60, "height": 120},
           "offset": {"x": -10.850066820162747, "y": 5.502367672012064},
           "cssTransform": "matrix(0, -1, 1, 0, 168.1499, 407.0024)"
+        },
+        {
+          "id": "9863bc34-64f8-4213-9c11-0a9c261ac2f9",
+          "name": "extra--003--chair--0.25x0.25 y=0.4",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 38.5, "f": 328},
+          "type": "symbol",
+          "srcKey": "extra--003--chair--0.25x0.25",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": -0.37608205866850614, "y": -0.19637282181518473},
+          "cssTransform": "matrix(0, -1, 1, 0, 38.1239, 327.8036)"
+        },
+        {
+          "id": "5625849d-fc95-4cf6-9b04-adfb11a437f4",
+          "name": "extra--003--chair--0.25x0.25 y=0.4",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0.25881904510252074,
+            "b": 0.9659258262890683,
+            "c": 0.9659258262890683,
+            "d": -0.25881904510252074,
+            "e": 50.5,
+            "f": 368
+          },
+          "type": "symbol",
+          "srcKey": "extra--003--chair--0.25x0.25",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": -0.2708470951723305, "y": -0.32659764395462265},
+          "cssTransform": "matrix(0.25881904510252074, 0.9659258262890683, 0.9659258262890683, -0.25881904510252074, 50.2292, 367.6734)"
+        },
+        {
+          "id": "c499ad48-1e2d-491f-968a-517b008a8af4",
+          "name": "extra--004--desk--0.5x1 y=0.6",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 18.5, "f": 361},
+          "type": "symbol",
+          "srcKey": "extra--004--desk--0.5x1",
+          "baseRect": {"width": 30, "height": 60},
+          "offset": {"x": -0.4582032509020978, "y": 0.8775248035598476},
+          "cssTransform": "matrix(0, -1, 1, 0, 18.0418, 361.8775)"
         }
       ]
     },
@@ -659,49 +702,6 @@
       "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
       "baseRect": {"width": 100, "height": 90},
       "cssTransform": "matrix(-1, 0, 0, 1, 466, 80)"
-    },
-    {
-      "id": "9863bc34-64f8-4213-9c11-0a9c261ac2f9",
-      "name": "extra--003--chair--0.25x0.25 y=0.4",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 38.5, "f": 328},
-      "type": "symbol",
-      "srcKey": "extra--003--chair--0.25x0.25",
-      "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": -0.37608205866850614, "y": -0.19637282181518473},
-      "cssTransform": "matrix(0, -1, 1, 0, 38.1239, 327.8036)"
-    },
-    {
-      "id": "5625849d-fc95-4cf6-9b04-adfb11a437f4",
-      "name": "extra--003--chair--0.25x0.25 y=0.4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0.25881904510252074,
-        "b": 0.9659258262890683,
-        "c": 0.9659258262890683,
-        "d": -0.25881904510252074,
-        "e": 50.5,
-        "f": 368
-      },
-      "type": "symbol",
-      "srcKey": "extra--003--chair--0.25x0.25",
-      "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": -0.2708470951723305, "y": -0.32659764395462265},
-      "cssTransform": "matrix(0.25881904510252074, 0.9659258262890683, 0.9659258262890683, -0.25881904510252074, 50.2292, 367.6734)"
-    },
-    {
-      "id": "c499ad48-1e2d-491f-968a-517b008a8af4",
-      "name": "extra--004--desk--0.5x1 y=0.6",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 18.5, "f": 361},
-      "type": "symbol",
-      "srcKey": "extra--004--desk--0.5x1",
-      "baseRect": {"width": 30, "height": 60},
-      "offset": {"x": -0.4582032509020978, "y": 0.8775248035598476},
-      "cssTransform": "matrix(0, -1, 1, 0, 18.0418, 361.8775)"
     }
   ],
   "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
