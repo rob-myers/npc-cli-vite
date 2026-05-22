@@ -30,6 +30,12 @@
       "width": 95,
       "height": 95
     },
+    "extra--021--shower": {
+      "key": "extra--021--shower",
+      "group": "extra",
+      "width": 181,
+      "height": 294
+    },
     "g-101--multipurpose": {
       "key": "g-101--multipurpose",
       "group": "geomorph-core",
