@@ -49,8 +49,6 @@
 
 - ✅ restrict lights to rooms
 
-- specify lights in hull symbol
-
 - ✅ skin/{key}.svg will be used for skin with key
   - customised on per skin basis
   - ✅ manifest skinPath e.g. `skin/medic-0.svg`
@@ -69,14 +67,6 @@
   - repro in prod on switch tabs
   - repro in dev on save geomorph.ts
   - devHotReload not executed
-
-- 🚧 improve basic "turn towards" behaviour
-  - ✅ avoid sliding by playing walk animation
-  - 🚧 start using textured npc in blockbench
-  - add animations
-    - sit
-    - lie
-    - shuffle
 
 - ✅ support `pick | spawn npc:rob-`
   - rob-0 etc.
@@ -121,8 +111,8 @@
   - can see error before prod
 
 - ✅ try lower walls
-- try thinner model
-- shaded skin overlay
+  - try thinner model
+  - shaded skin overlay
 
 - ✅ BUG hmr: on save const Decor not updated until 2nd save?
 
@@ -136,9 +126,19 @@
   - writes to sheets.json
   - generates sheet/skin.{i}.png
 
+- 🚧 improve basic "turn towards" behaviour
+  - ✅ avoid sliding by playing walk animation
+  - 🚧 start using textured npc in blockbench
+  - add animations
+    - sit
+    - lie
+    - shuffle
+
+- specify lights in hull symbol
 - doors have meaningful icons
 - support `look`
 - remove all suffices e.g. --0.25x0.25 from all symbols
+- change lighting from "loop thru radii in shaders" to "multiply by texture"
 - on idle should pin in front otherwise npc "slides back"
 - skin remapping
   - currently only have skinIndex
