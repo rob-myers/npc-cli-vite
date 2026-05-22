@@ -558,7 +558,7 @@
     {
       "id": "02f2b3cb-a123-45fc-93e6-64682b90cd56",
       "name": "wall",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 240},
       "type": "rect",
@@ -568,7 +568,7 @@
     {
       "id": "c1b8537d-718c-4a58-ae0e-9ff938f31c42",
       "name": "wall",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 240},
       "type": "rect",
@@ -770,6 +770,17 @@
       "type": "rect",
       "baseRect": {"width": 4, "height": 32},
       "cssTransform": "matrix(1, 0, 0, 1, 436, 270)"
+    },
+    {
+      "id": "7af2eddc-c4df-4a64-95c6-9cd05799e7db",
+      "name": "obstacle y=0.6",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -4},
+      "type": "path",
+      "d": "M166.5,442.7 L198.5,450.9 L230.8,454.3 L253.6,454.7 L283.9,450.7 L310.9,443 L333.6,433.4 L359.7,419.6 L360,449.8 L341.8,459 L314.2,469.8 L287.1,476.5 L254.7,481.5 L231.9,482 L196.5,477.5 L160.4,468 L120,449.8 L120,419.6 L144.5,433.2 L166.5,442.7 Z",
+      "baseRect": {"width": 240, "height": 63},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, -4)"
     }
   ],
   "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
