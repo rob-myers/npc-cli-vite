@@ -67,7 +67,9 @@ function parseSvgForManifest(
   key: string,
 ): { filename: string; key: string; pathCount: number; width: number; height: number } | null {
   const meta = { width: 0, height: 0, pathCount: 0, depth: 0 };
-  const viewBoxRegex = /^0 0 (\d+) (\d+)$/;
+  // - expect strict spacing
+  // - expect width and height to be integers
+  const viewBoxRegex = /^(?:\S+) (?:\S+) (\d+) (\d+)$/;
 
   const parser = new Parser({
     onopentag(name, attrs) {
