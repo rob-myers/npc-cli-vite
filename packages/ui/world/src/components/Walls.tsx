@@ -26,7 +26,6 @@ export default function Walls() {
         mat.wallLightsNode.value = state.lightsShown ? 1 : 0;
         w.update();
       },
-
       getWallMat([u, v], transform, determinant, height, baseHeight) {
         tmpMat1.setMatrixValue(transform);
         if (determinant > 0) {
@@ -50,7 +49,6 @@ export default function Walls() {
           { yScale: height ?? wallHeight, yHeight: baseHeight, mat4: tmpMatFour1 },
         );
       },
-
       decodeInstanceId(instanceId: number) {
         let id = instanceId;
         const gmId = w.gms.findIndex(({ key }) => {
@@ -60,7 +58,6 @@ export default function Walls() {
         const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
         return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
       },
-
       positionInstances() {
         const { inst: ws } = state;
         if (!ws) return;
