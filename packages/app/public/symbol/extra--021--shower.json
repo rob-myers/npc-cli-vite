@@ -1,0 +1,33 @@
+{
+  "filename": "extra--021--shower.json",
+  "width": 120,
+  "height": 240,
+  "nodes": [
+    {
+      "id": "e65011dc-c856-41ac-877d-66f1d14162d4",
+      "name": "extra--021--shower 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "extra--021--shower",
+      "baseRect": {"width": 36.2, "height": 58.800000000000004},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "59b865f5-6f0b-4979-8ec3-76cf7c7b5a46",
+      "name": "obstacle shower",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "rect",
+      "baseRect": {"width": 36, "height": 58.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 36.2, "height": 58.8},
+  "type": "symbol",
+  "key": "extra--021--shower"
+}

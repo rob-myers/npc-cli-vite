@@ -215,6 +215,15 @@
       "bounds": {"x": 0, "y": 0, "width": 22.8, "height": 31.2},
       "type": "symbol",
       "key": "extra--002--fresher--0.5x0.5"
+    },
+    "extra--021--shower": {
+      "filename": "extra--021--shower.json",
+      "thumbnailFilename": "extra--021--shower.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": 0, "y": 0, "width": 36.2, "height": 58.8},
+      "type": "symbol",
+      "key": "extra--021--shower"
     }
   }
 }
