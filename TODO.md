@@ -106,6 +106,8 @@
 
 - BUG packages/app/public/symbol/stateroom--036--2x4.thumbnail.png
 
+- BUG cannot navigate into tile near origin?
+
 - remove suffix e.g. --0.25x0.25 from all symbols
 
 - on idle should pin in front otherwise npc "slides back"
