@@ -394,11 +394,11 @@ export type State = {
    * Ideally `assets` -> `nav` -> `decor` -> `null`.
    * However, nav/decor could be triggered by HMR.
    */
-  pending: Partial<Record<"assets" | "nav" | "decor" | "skins", true>>;
+  pending: Partial<Record<PendingKey, true>>;
   rootEl: HTMLDivElement;
 
   setDisabled(nextDisabled?: boolean): void;
-  setNextPending(next: Partial<Record<"assets" | "nav" | "decor" | "skins", boolean>>): void;
+  setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
   setupDevAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
@@ -429,3 +429,5 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
     import.meta.hot.data.__JUST_HMR_WORLD__ = true;
   }
 });
+
+type PendingKey = "assets" | "decor" | "nav" | "obstacles" | "skins";
