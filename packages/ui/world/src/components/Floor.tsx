@@ -99,12 +99,15 @@ export default function Floor() {
         drawLights(ct, layout, gmKey ?? "");
 
         // obstacle drop shadows
-        const shadowPolys = Poly.union(
-          layout.obstacles.flatMap((x) =>
-            x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
+        drawPolygons(
+          ct,
+          Poly.union(
+            layout.obstacles.flatMap((x) =>
+              x.origPoly.meta["no-shadow"] ? [] : x.origPoly.clone().applyMatrix(tmpMat1.setMatrixValue(x.transform)),
+            ),
           ),
+          { fillStyle: "#0006", strokeStyle: null },
         );
-        drawPolygons(ct, shadowPolys, { fillStyle: "#0006", strokeStyle: null });
       },
 
       transformInstances() {
