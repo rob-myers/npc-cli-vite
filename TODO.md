@@ -72,7 +72,7 @@
 
 - 🚧 improve basic "turn towards" behaviour
   - ✅ avoid sliding by playing walk animation
-  - start using textured npc in blockbench
+  - 🚧 start using textured npc in blockbench
   - add animations
     - sit
     - lie
@@ -97,7 +97,7 @@
   - ✅ take account of image node.offset
     - e.g. see main bridge curved table in bridge--042
 
-- 🚧 onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
+- ✅ onchange obstacle can trigger `pnpm gen-starship-sheets` from UI
   - should trigger react-query refetches: sheets/images
   - currently triggered by commit/push which auto commits each `symbol.{id}.png`
   - fixed manually by refetching

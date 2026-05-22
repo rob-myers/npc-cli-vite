@@ -99,25 +99,51 @@ export function watchAssetsPlugin(): Plugin {
       server.watcher.on("add", onFileChange);
 
       server.middlewares.use(async (req, res, next) => {
-        const match = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
-        if (!match || req.method !== "POST") return next();
-
-        let body = "";
-        for await (const chunk of req) body += chunk;
-        const parsed = jsonParser.pipe(WorldThemeSchema).safeParse(body);
-        if (!parsed.success) {
-          res.writeHead(400).end();
-          return;
+        if (req.url === "/api/gen-starship-sheets" && req.method === "POST") {
+          return handleGenStarshipSheets(res);
         }
-
-        const assets = JSON.parse(fs.readFileSync(ASSETS_JSON_PATH, "utf-8"));
-        assets.theme ??= {};
-        assets.theme[decodeURIComponent(match[1])] = parsed.data;
-        fs.writeFileSync(ASSETS_JSON_PATH, safeJsonCompact(assets));
-        res.writeHead(200).end();
+        const themeMatch = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
+        if (themeMatch && req.method === "POST") {
+          return handleAssetsTheme(req, res, themeMatch[1]);
+        }
+        next();
       });
     },
   };
+}
+
+import type { IncomingMessage, ServerResponse } from "node:http";
+
+async function handleGenStarshipSheets(res: ServerResponse) {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const proc = childProcess.spawn("pnpm", ["gen-starship-sheets"], {
+        cwd: PROJECT_ROOT,
+        stdio: "inherit",
+      });
+      proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
+      proc.on("error", reject);
+    });
+    res.writeHead(200).end();
+  } catch (err) {
+    console.error("[gen-starship-sheets] failed:", err);
+    res.writeHead(500).end();
+  }
+}
+
+async function handleAssetsTheme(req: IncomingMessage, res: ServerResponse, themeKey: string) {
+  let body = "";
+  for await (const chunk of req) body += chunk;
+  const parsed = jsonParser.pipe(WorldThemeSchema).safeParse(body);
+  if (!parsed.success) {
+    res.writeHead(400).end();
+    return;
+  }
+  const assets = JSON.parse(fs.readFileSync(ASSETS_JSON_PATH, "utf-8"));
+  assets.theme ??= {};
+  assets.theme[decodeURIComponent(themeKey)] = parsed.data;
+  fs.writeFileSync(ASSETS_JSON_PATH, safeJsonCompact(assets));
+  res.writeHead(200).end();
 }
 
 // Type mirroring avoids HMR issue
