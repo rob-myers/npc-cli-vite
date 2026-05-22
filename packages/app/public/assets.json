@@ -18377,7 +18377,7 @@
       "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {
-      "background": "bg-blue-300",
+      "background": "bg-blue-100",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
         "nonHull": {"fill": "#000", "stroke": "#3335"}
