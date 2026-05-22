@@ -129,9 +129,9 @@
 - 🚧 improve basic "turn towards" behaviour
   - ✅ avoid sliding by playing walk animation
   - 🚧 start using textured npc in blockbench
-  - add animations
-    - sit
-    - lie
+  - 🚧 add animations
+    - ✅ lie
+    - ✅ sit
     - shuffle
 
 - specify lights in hull symbol

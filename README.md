@@ -153,6 +153,9 @@ Stuff I've noticed
 - select two objects then can Cmd+Drag create box e.g. of vertices
 - z gets to wireframe and back
 
+Personal keybindings setup
+- Shift + P ~ Perspective camera
+
 # Pngquant
 
 ```sh
