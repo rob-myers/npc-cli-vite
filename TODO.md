@@ -104,11 +104,15 @@
     - `["world","world-0","sheets"]` (if added/removed)
     - `["world","world-0","obstacle-images"]`
 
-- BUG packages/app/public/symbol/stateroom--036--2x4.thumbnail.png
+- ✅ BUG packages/app/public/symbol/stateroom--036--2x4.thumbnail.png
+  - node.baseRect is wrong for symbols extra--001 and extra--021
+  - using width/height from packages/app/public/symbol/manifest.json which are too large
+    - i.e. we didn't resize the width/height of individual symbols to almost match
+  - but we probably shouldn't use that width/height anyway...
 
 - BUG cannot navigate into tile near origin?
 
-- remove suffix e.g. --0.25x0.25 from all symbols
+- remove all suffices e.g. --0.25x0.25 from all symbols
 
 - on idle should pin in front otherwise npc "slides back"
 
