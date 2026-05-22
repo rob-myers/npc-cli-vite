@@ -287,7 +287,7 @@ export default function Obstacles(_props: Props) {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
-    const baseColor = color("#222").mul(ndotv);
+    const baseColor = color("#111").mul(ndotv);
     mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(0.1)), float(1));
     return mat;
   }, [skirtLightMeta]);
