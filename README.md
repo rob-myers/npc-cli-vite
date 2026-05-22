@@ -147,14 +147,20 @@ Needed for `skia-canvas`.
 
 # Blockbench
 
-Stuff I've noticed
-- can select model face
-- can drag uv square area (not diagonal)
-- select two objects then can Cmd+Drag create box e.g. of vertices
-- z gets to wireframe and back
+
+Can select model face
+
+Can drag uv square area (not diagonal)
+
+Select two objects then can Cmd+Drag create box e.g. of vertices
+
+`z` gets to wireframe and back
+
+RMB to translate view
 
 Personal keybindings setup
 - Shift + P ~ Perspective camera
+
 
 # Pngquant
 
