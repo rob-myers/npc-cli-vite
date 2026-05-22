@@ -70,26 +70,26 @@
   - repro in dev on save geomorph.ts
   - devHotReload not executed
 
-- doors have meaningful icons
-
 - 🚧 improve basic "turn towards" behaviour
   - ✅ avoid sliding by playing walk animation
-  - better animation e.g. shuffle
+  - start using textured npc in blockbench
+  - add animations
+    - sit
+    - lie
+    - shuffle
 
 - ✅ support `pick | spawn npc:rob-`
   - rob-0 etc.
 
 - ✅ ceiling should ignore pick too
 
-- support `look`
-
 - ✅ BUG save DerivedGmsData breaks walls?
 
-- 🚧 finish 301
+- ✅ finish 301
   - ✅ bridge has window
   - ✅ sink
   - ✅ toilet
-  - 🚧 finish bridge symbol
+  - ✅ finish bridge symbol
 
 - ✅ MapEdit: internal path editor shows ambient image in background
   - ✅ show image
@@ -109,12 +109,6 @@
   - using width/height from packages/app/public/symbol/manifest.json which are too large
     - i.e. we didn't resize the width/height of individual symbols to almost match
   - but we probably shouldn't use that width/height anyway...
-
-- BUG cannot navigate into tile near origin?
-
-- remove all suffices e.g. --0.25x0.25 from all symbols
-
-- on idle should pin in front otherwise npc "slides back"
 
 - ✅ can override obstacle skirt height
   - `meta.h` interpreted as skirt height
@@ -142,6 +136,10 @@
   - writes to sheets.json
   - generates sheet/skin.{i}.png
 
+- doors have meaningful icons
+- support `look`
+- remove all suffices e.g. --0.25x0.25 from all symbols
+- on idle should pin in front otherwise npc "slides back"
 - skin remapping
   - currently only have skinIndex
 - world context menu?
@@ -159,6 +157,9 @@
 
 ## Bugs
 
+- 🚧 BUG cannot navigate into tile near origin?
+  - unclear how to fix since nav mesh is correct
+  - post bug?
 - BUG npc animation out of sync after save npc.ts (?)
   - possibly fixed via `cfg clear-all` then respawn
 - BUG on collapse/expand should persist pane dimensions

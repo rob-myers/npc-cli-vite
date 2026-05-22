@@ -107,6 +107,42 @@
           "baseRect": {"width": 480, "height": 540},
           "offset": {"x": -4.5, "y": -14},
           "cssTransform": "matrix(1, 0, 0, 1, 356.5, 46.5)"
+        },
+        {
+          "id": "50d051b3-998c-4a63-be15-6e213eb26b94",
+          "name": "console--031--1x1.2",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 844, "f": 56},
+          "type": "symbol",
+          "srcKey": "console--031--1x1.2",
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 844, 56)"
+        },
+        {
+          "id": "97258f26-b3d2-4ab6-9781-a7a83c0dd2cc",
+          "name": "console--031--1x1.2",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 57.5},
+          "type": "symbol",
+          "srcKey": "console--031--1x1.2",
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, 1, 360, 57.5)"
+        },
+        {
+          "id": "64ce3e7e-f524-40ca-bf04-990d68bea076",
+          "name": "misc-stellar-cartography--023--4x4",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1198, "f": 359.5},
+          "type": "symbol",
+          "srcKey": "misc-stellar-cartography--023--4x4",
+          "baseRect": {"width": 240, "height": 240},
+          "offset": {"x": 2, "y": -1.5},
+          "cssTransform": "matrix(-1, 0, 0, 1, 1200, 358)"
         }
       ]
     },
@@ -492,42 +528,6 @@
       "d": "M 0 60 L 60 60 L 60 0 L 131.33 69.02 L 120.2 82.5 L 109.2 97.5 L 96.2 117.1 L 85.2 138.8 L 77.2 156.8 L 69.2 181.2 L 0 181 L 0 60 Z",
       "baseRect": {"width": 130, "height": 180},
       "cssTransform": "matrix(1, 0, 0, 1, 302, 60)"
-    },
-    {
-      "id": "97258f26-b3d2-4ab6-9781-a7a83c0dd2cc",
-      "name": "console--031--1x1.2",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 57.5},
-      "type": "symbol",
-      "srcKey": "console--031--1x1.2",
-      "baseRect": {"width": 60, "height": 60},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(-1, 0, 0, 1, 360, 57.5)"
-    },
-    {
-      "id": "50d051b3-998c-4a63-be15-6e213eb26b94",
-      "name": "console--031--1x1.2",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 844, "f": 56},
-      "type": "symbol",
-      "srcKey": "console--031--1x1.2",
-      "baseRect": {"width": 60, "height": 60},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, 844, 56)"
-    },
-    {
-      "id": "64ce3e7e-f524-40ca-bf04-990d68bea076",
-      "name": "misc-stellar-cartography--023--4x4",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1198, "f": 359.5},
-      "type": "symbol",
-      "srcKey": "misc-stellar-cartography--023--4x4",
-      "baseRect": {"width": 240, "height": 240},
-      "offset": {"x": 2, "y": -1.5},
-      "cssTransform": "matrix(-1, 0, 0, 1, 1200, 358)"
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
