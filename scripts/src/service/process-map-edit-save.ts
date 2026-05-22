@@ -41,17 +41,17 @@ export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
-export async function processSavedFile(savedFile: MapEditSavedFile) {
-  await createSavedFilePreviewPng(savedFile);
+export async function createThumbnailAndEnsureManifest(savedFile: MapEditSavedFile) {
+  await createSavedFileThumbnail(savedFile);
 
-  // ensure both manifests
   await ensureManifests("symbol", {
     changedFiles: [savedFile].filter((x) => x.type === "symbol"),
   });
+
   await ensureManifests("map", { changedFiles: [savedFile].filter((x) => x.type === "map") });
 }
 
-async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
+async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
   const isHullSymbol = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key);
   const { filename, nodes, bounds } = savedFile;
   const outputThumbnailFilepath = path.resolve(
@@ -66,8 +66,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
   const ct = canvas.getContext("2d");
 
   if (savedFile.type === "map") {
-    // currently unsupported
-    // 🚧 draw by following createMapDefFromSavedFile
+    // currently unsupported i.e. blank
     return await canvas.toFile(outputThumbnailFilepath);
   }
 
@@ -83,19 +82,19 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       case "image":
       case "symbol": {
         if (isHullSymbol) break; // avoid large hull thumbnails
-        if (node.type === "image" && node.srcKey === null) {
+        if (node.srcKey === null) {
           break;
         }
 
         const image = await loadImage(getImageOrSymbolNodeImageUrl(node));
 
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
-        ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
+
+        ct.scale(0.2, 0.2);
+        ct.drawImage(image, 0, 0, image.width, image.height);
+        ct.scale(5, 5);
+
         ct.globalAlpha = 1;
-        if (node.type === "symbol") {
-          ct.strokeStyle = "rgba(0,255,0,0.5)";
-          ct.strokeRect(0, 0, node.baseRect.width, node.baseRect.height);
-        }
 
         break;
       }
@@ -106,7 +105,7 @@ async function createSavedFilePreviewPng(savedFile: MapEditSavedFile) {
       }
       case "path": {
         ct.strokeStyle = isHullSymbol ? "rgba(0,0,0,0)" : "rgba(0,0,0,1)";
-        ct.fillStyle = "rgba(255,255,0,1)";
+        ct.fillStyle = "rgba(255,255,0,0.25)";
         const parsedPoly = geomService.svgPathToPolygon(node.d);
         if (!parsedPoly) {
           warn(`${filename}: failed to parse path.d data for node ${node.name}`);
@@ -138,6 +137,8 @@ type ProcessFileOpts = {
 };
 
 /**
+ * 🚧 two separate functions
+ *
  * - if `changedFiles` undefined then regenerate all
  * - otherwise ensure `changedFiles` and also missing files
  */
@@ -210,7 +211,8 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
   }
 
   const prevManifestRaw = safeJsonCompact(prevManifest);
-  const nextManifestRaw = safeJsonCompact(z.decode(schema.manifest, { byKey }));
+  const nextManifest = { byKey };
+  const nextManifestRaw = safeJsonCompact(z.decode(schema.manifest, nextManifest));
 
   if (prevManifestRaw === nextManifestRaw) {
     info(`${path.basename(import.meta.filename)}: ${type}: no changes detected`);
