@@ -170,12 +170,17 @@ export function WorldMenu() {
                   onValueChange={(key) => key && uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key))}
                 />
 
-                <MenuSelect
-                  label={w.themeKey}
-                  value={w.themeKey}
-                  items={themeKeys}
-                  onValueChange={(key) => key && uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = key))}
-                />
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  closeOnClick={false}
+                  onClick={() => {
+                    const currentIdx = themeKeys.indexOf(w.themeKey);
+                    const nextIdx = (currentIdx + 1) % themeKeys.length;
+                    uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = themeKeys[nextIdx]));
+                  }}
+                >
+                  theme: {w.themeKey}
+                </Menu.Item>
 
                 {import.meta.env.DEV && (
                   <>
