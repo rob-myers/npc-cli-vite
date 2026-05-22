@@ -7,6 +7,13 @@
       "width": 480,
       "height": 540
     },
+    "bridge-briefing-side-table": {
+      "key": "bridge-briefing-side-table",
+      "filename": "bridge-briefing-side-table.svg",
+      "pathCount": 1,
+      "width": 240,
+      "height": 63
+    },
     "bridge-computer": {
       "key": "bridge-computer",
       "filename": "bridge-computer.svg",
