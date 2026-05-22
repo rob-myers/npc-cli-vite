@@ -128,11 +128,23 @@
 
 - 🚧 improve basic "turn towards" behaviour
   - ✅ avoid sliding by playing walk animation
-  - 🚧 start using textured npc in blockbench
-  - 🚧 add animations
+  - ✅ start using textured npc in blockbench
+  - ✅ add animations
     - ✅ lie
     - ✅ sit
-    - shuffle
+    - ✅ shuffle-back
+  - ❌ try https://github.com/enfp-dev-studio/blockbench-mcp
+  - ✅ try https://github.com/jasonjgardner/blockbench-mcp-plugin
+    - before `claude` could run `claude mcp add blockbench --transport http http://localhost:3000/bb-mcp`
+    - extend ~/.claude.json with
+    ```json
+    "mcpServers": {
+      "blockbench": {
+        "type": "http",
+        "url": "http://localhost:3000/bb-mcp"
+      }
+    }
+    ```
 
 - specify lights in hull symbol
 - doors have meaningful icons
