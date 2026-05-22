@@ -99,7 +99,7 @@ function computeNavOriginFixingMesh(meshes: THREE.Mesh[]) {
   const dx = (((boxAll.min.x % 1.5) + 1.5) % 1.5) - 1.5;
   const dz = (((boxAll.min.z % 1.5) + 1.5) % 1.5) - 1.5;
   const origin = new THREE.Vector3(boxAll.min.x - dx - 1.5, 0, boxAll.min.z - dz - 1.5);
-  const originForcingMesh = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial());
+  const originForcingMesh = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.001, 0.001), new THREE.MeshBasicMaterial());
   originForcingMesh.position.copy(origin);
   originForcingMesh.updateMatrixWorld();
   return originForcingMesh;

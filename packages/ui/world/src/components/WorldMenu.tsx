@@ -278,8 +278,10 @@ export function WorldMenu() {
                           return w.view?.objectPick.value === 1;
                         case "Colliders":
                           return w.debug?.physicsCollidersShown ?? false;
-                        case "Light Spheres":
+                        case "Lights":
                           return w.debug?.lightSpheresShown ?? true;
+                        case "NavMesh":
+                          return w.debug?.navMeshShown ?? false;
                         default:
                           return false;
                       }
@@ -293,7 +295,7 @@ export function WorldMenu() {
                         case "Room Hit":
                           state.set({ debugHitOpen: true });
                           break;
-                        case "Gm Graphs":
+                        case "Graphs":
                           state.set({ gmGraphsOpen: true });
                           break;
                         case "Skins":
@@ -303,8 +305,12 @@ export function WorldMenu() {
                           w.debug?.showPhysicsColliders();
                           w.update();
                           break;
-                        case "Light Spheres":
+                        case "Lights":
                           w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
+                          w.update();
+                          break;
+                        case "NavMesh":
+                          w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
                           w.update();
                           break;
                       }
@@ -392,7 +398,7 @@ const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
 const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
-const debugItems = ["View Pick", "Room Hit", "Gm Graphs", "Skins", "Colliders", "Light Spheres"] as const;
+const debugItems = ["View Pick", "Room Hit", "Graphs", "Skins", "Colliders", "Lights", "NavMesh"] as const;
 
 const selectItemClass = cn(
   "px-2 py-1 text-xs cursor-pointer text-slate-300",

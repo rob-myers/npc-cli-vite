@@ -1,6 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
+import { createNavMeshHelper } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import { float, normalView, pow } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -32,6 +33,7 @@ export function Debug() {
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
       lightSpheresShown: false,
+      navMeshShown: false,
       originShown: false,
       openDoorsOnClick: true,
 
@@ -145,6 +147,10 @@ export function Debug() {
     return () => sub.unsubscribe();
   }, [state.openDoorsOnClick]);
 
+  const navMeshHelper = useMemo(() => {
+    return createNavMeshHelper(w.nav?.navMesh);
+  }, [w.nav?.navMesh]);
+
   return (
     <>
       <mesh name="origin" position={[0, 5, 0]} visible={state.originShown}>
@@ -182,6 +188,8 @@ export function Debug() {
           <MemoizedDebugPhysicsColliders staticColliders={state.physicsColliders} w={w} />
         </group>
       )}
+
+      {state.navMeshShown && <primitive object={navMeshHelper.object} />}
     </>
   );
 }
@@ -196,6 +204,7 @@ export type State = {
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
   lightSpheresShown: boolean;
+  navMeshShown: boolean;
   originShown: boolean;
   openDoorsOnClick: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
