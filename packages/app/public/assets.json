@@ -2954,7 +2954,7 @@
           "width": 0.7,
           "height": 0.575,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2.05, "f": 0},
-          "meta": {"extra--001--fresher--0.5x0.5": true}
+          "meta": {"extra--001--fresher": true, "y": 1}
         },
         {
           "symbolKey": "extra--021--shower",
@@ -6195,6 +6195,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher--0.5x0.5",
             "obsId": 0,
+            "y": 1,
             "transform": [1, 0, 0, 1, 2.05, 0]
           }
         },
@@ -8273,6 +8274,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher--0.5x0.5",
             "obsId": 0,
+            "y": 1,
             "transform": [-1, 0, 0, 1, 27.95, 0]
           }
         },
@@ -9119,6 +9121,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher--0.5x0.5",
             "obsId": 0,
+            "y": 1,
             "transform": [1, 0, 0, 1, 2.05, 0]
           }
         },
@@ -9322,6 +9325,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher--0.5x0.5",
             "obsId": 0,
+            "y": 1,
             "transform": [0, -1, 1, 0, 0, 12.95]
           }
         },
@@ -14007,7 +14011,7 @@
         {
           "symbolKey": "extra--001--fresher--0.5x0.5",
           "obstacleId": 0,
-          "height": 0,
+          "height": 1,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -15531,7 +15535,7 @@
         {
           "symbolKey": "extra--001--fresher--0.5x0.5",
           "obstacleId": 0,
-          "height": 0,
+          "height": 1,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -15896,7 +15900,7 @@
         {
           "symbolKey": "extra--001--fresher--0.5x0.5",
           "obstacleId": 0,
-          "height": 0,
+          "height": 1,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
