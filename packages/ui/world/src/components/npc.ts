@@ -17,6 +17,7 @@ import {
 } from "../const";
 import { groudPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
+import { emptyAnimationClip } from "../service/three-animation";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -59,10 +60,10 @@ export class Npc {
   position: THREE.Vector3;
   queryFilter: QueryFilter;
   moving = false;
-  pendingMove = false;
+  arrive = false;
   /** while idle and due to separationWeight */
   separating = false;
-  moveAnim = "walk" as "walk" | "run";
+  moveClip = emptyAnimationClip;
   spawns = 0;
   stuckAccum = 0;
 
@@ -77,8 +78,12 @@ export class Npc {
     return this.agentId === null ? null : (this.w.npc.crowd.agents[this.agentId] ?? null);
   }
 
+  get clips() {
+    return this.w.npc.clips;
+  }
+
   get running() {
-    return this.moveAnim === "run";
+    return this.moveClip.name === "run";
   }
 
   get skinIndex() {
@@ -120,6 +125,8 @@ export class Npc {
     };
 
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
+
+    this.moveClip = this.clips.walk;
   }
 
   changeSkin(keyOrIndex: string | number) {
@@ -140,11 +147,8 @@ export class Npc {
 
     this.resolve?.("spawned");
 
-    const { idle } = this.w.npc.clips;
-    if (idle) {
-      this.mixer.clipAction(idle).play();
-      this.mixer.update(0);
-    }
+    this.mixer.clipAction(this.clips.idle).play();
+    this.mixer.update(0);
   };
 
   pinTo(result: FindNearestPolyResult) {
@@ -155,11 +159,7 @@ export class Npc {
     return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
   }
 
-  setMoveAnim(input: this["moveAnim"]) {
-    this.moveAnim = input;
-  }
-
-  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, pendingMove = false) {
+  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
     if (!this.agentId) return;
 
     const { crowd, clips } = this.w.npc;
@@ -178,12 +178,12 @@ export class Npc {
     this.last.blockingArea = -1;
     this.stuckAccum = 0;
     this.last.pos = { x: this.position.x, y: this.position.z };
-    this.pendingMove = pendingMove;
+    this.arrive = arrive;
 
     if (!this.moving) {
       this.moving = true;
       this.mixer.clipAction(clips.idle).fadeOut(0.3);
-      this.mixer.clipAction(clips[this.moveAnim]).reset().fadeIn(0.3).play();
+      this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
     }
   }
 
@@ -192,8 +192,8 @@ export class Npc {
 
     this.resolve?.("idle");
 
-    if (this.pendingMove) {
-      this.pendingMove = false;
+    if (!this.arrive) {
+      this.arrive = true;
       return;
     }
 
@@ -231,8 +231,7 @@ export class Npc {
 
   syncAnimation(speed: number) {
     if (!this.moving) return;
-    const { clips } = this.w.npc;
-    const moveAction = this.mixer.clipAction(clips[this.moveAnim]);
+    const moveAction = this.mixer.clipAction(this.moveClip);
     moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), speed);
   }
 

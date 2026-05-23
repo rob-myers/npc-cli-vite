@@ -65,4 +65,11 @@ declare namespace JshCli {
     // as?: string | Record<string, SkinReMapValue>;
     as?: string;
   };
+
+  type MoveOpts = {
+    npcKey: string;
+    to: JshCli.PointAnyFormat;
+    arrive?: boolean;
+    fast?: boolean;
+  };
 }

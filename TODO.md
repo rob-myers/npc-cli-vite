@@ -167,13 +167,16 @@
   - ✅ fix 1st spawn
   - ✅ `pick | spawn npc:rob facing`
 
-- specify lights in hull symbol
+- 🚧 specify lights in hull symbol
+  - via scalable path
+  - can uniformly scale path?
 
-- start 101
+- ✅ `move npc:rob to:$( pick 1 ) fast`
 
 - can spawn on chair
 - can spawn on bed
 
+- start 101
 
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previsou

@@ -1,4 +1,4 @@
-import type * as THREE from "three";
+import * as THREE from "three";
 
 export function crossFadeSynchronized(
   oldAction: THREE.AnimationAction,
@@ -18,3 +18,7 @@ export function crossFadeSynchronized(
   // Smoothly blend from old to new while locked in position
   oldAction.crossFadeTo(newAction, duration, true);
 }
+
+export const emptyAnimationClip = new THREE.AnimationClip();
+
+emptyAnimationClip.name = "empty-animation-clip";
