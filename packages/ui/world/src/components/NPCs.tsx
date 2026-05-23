@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { loadImage } from "@npc-cli/util/legacy/dom";
-import { keys } from "@npc-cli/util/legacy/generic";
+import { keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -22,7 +22,14 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
-import { idleSeparationWeight, npcBrightness, npcLabelHeight, runAgentMaxSpeed, walkAgentMaxSpeed } from "../const";
+import {
+  fromAnimationClipKey,
+  idleSeparationWeight,
+  npcBrightness,
+  npcLabelHeight,
+  runAgentMaxSpeed,
+  walkAgentMaxSpeed,
+} from "../const";
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
@@ -45,7 +52,7 @@ export default function NPCs() {
 
   const state = useStateRef(
     (): State => ({
-      clips: { idle: emptyAnimationClip, walk: emptyAnimationClip, run: emptyAnimationClip },
+      clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
       crowd: crowdApi.create(0.5),
       gltf: null,
       skin: {
@@ -343,7 +350,8 @@ export default function NPCs() {
 
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
-          new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
+          // new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
+          new GLTFLoader().loadAsync(url.templateMoreAnimsGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => {
             /**
@@ -393,11 +401,10 @@ export default function NPCs() {
     const anims = queryData.gltf.animations;
 
     /** 🔔 on new clips fade old ones, else hmr can break animations */
-    const clips = {
-      idle: anims.find((c) => c.name === "idle") ?? emptyAnimationClip,
-      walk: anims.find((c) => c.name === "walk") ?? emptyAnimationClip,
-      run: anims.find((c) => c.name === "run") ?? emptyAnimationClip,
-    };
+    const clips = mapValues(
+      fromAnimationClipKey,
+      (_, clipName) => anims.find((c) => c.name === clipName) ?? emptyAnimationClip,
+    );
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     for (const npc of Object.values(state.npc)) {
       for (const [oldClip, clip] of pairedClips) {
@@ -419,8 +426,10 @@ export default function NPCs() {
   return state.gltf && Object.values(state.npc).map((npc) => <MemoNpcInstance key={npc.key} npc={npc} />);
 }
 
+export type AnimationClipKey = keyof typeof fromAnimationClipKey;
+
 export type State = {
-  clips: { idle: THREE.AnimationClip; walk: THREE.AnimationClip; run: THREE.AnimationClip };
+  clips: Record<AnimationClipKey, THREE.AnimationClip>;
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
   skin: {

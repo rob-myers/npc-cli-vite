@@ -1,6 +1,7 @@
 import templateGltf from "./blockbench/template/template.gltf?url";
 import extraRootThinnerGltf from "./blockbench/with-extra-root//extra-root.thinner.gltf?url";
 import templateExtraRootGltf from "./blockbench/with-extra-root/template.extra-root.gltf?url";
+import templateMoreAnimsGltf from "./blockbench/with-extra-root/thinner.more-anims.gltf?url";
 
 export const url = {
   templateGltf,
@@ -13,4 +14,5 @@ export const url = {
    */
   templateExtraRootGltf,
   extraRootThinnerGltf,
+  templateMoreAnimsGltf,
 };

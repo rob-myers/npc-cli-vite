@@ -117,21 +117,31 @@ export class Npc {
     this.skinIndexUniform.value = index;
   }
 
+  groupRef = (group: THREE.Group | null): void => {
+    if (!group) {
+      this.mixer.stopAllAction();
+      return;
+    }
+    this.group = group;
+    this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
+    this.position = this.skinnedMesh.position;
+    this.mixer = new THREE.AnimationMixer(group);
+
+    this.resolve?.("spawned");
+
+    const { idle } = this.w.npc.clips;
+    if (idle) {
+      this.mixer.clipAction(idle).play();
+      this.mixer.update(0);
+    }
+  };
+
   pinTo(result: FindNearestPolyResult) {
     if (this.agentId === null || result.success === false) {
       return false;
     }
     this.last.pinTime = this.w.timer.getElapsedTime();
     return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
-  }
-
-  updateLookAt(delta: number) {
-    if (this.lookAt === null) return;
-    const dx = this.lookAt.x - this.position.x;
-    const dz = this.lookAt.y - this.position.z;
-    if (dx * dx + dz * dz > 0.001) {
-      this.smoothRotateToward(dx, dz, delta);
-    }
   }
 
   setMoveAnim(input: this["moveAnim"]) {
@@ -189,20 +199,6 @@ export class Npc {
     this.separating = false;
   }
 
-  updateStuck(delta: number, worldSeconds: number): boolean {
-    // delay stuck a bit
-    if (worldSeconds - this.last.pinTime < 2.5) {
-      return false;
-    }
-
-    const dx = this.position.x - this.last.pos.x;
-    const dz = this.position.z - this.last.pos.y;
-    const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < 0.0065 ? delta : 0;
-    this.last.pos = { x: this.position.x, y: this.position.z };
-    return this.stuckAccum > 0.4;
-  }
-
   smoothRotateToward(vx: number, vz: number, delta: number) {
     const target = Math.atan2(vx, vz) + Math.PI;
     let diff = target - this.skinnedMesh.rotation.y;
@@ -232,25 +228,6 @@ export class Npc {
     this.mixer.clipAction(clips.walk).timeScale = -Math.max(0.25 / npcScale, speed) * separationAnimScale;
   }
 
-  groupRef = (group: THREE.Group | null): void => {
-    if (!group) {
-      this.mixer.stopAllAction();
-      return;
-    }
-    this.group = group;
-    this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
-    this.position = this.skinnedMesh.position;
-    this.mixer = new THREE.AnimationMixer(group);
-
-    this.resolve?.("spawned");
-
-    const { idle } = this.w.npc.clips;
-    if (idle) {
-      this.mixer.clipAction(idle).play();
-      this.mixer.update(0);
-    }
-  };
-
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
     // 🚧 clarify
     const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
@@ -274,6 +251,28 @@ export class Npc {
     }
 
     this.updateLookAt(delta / 4);
+  }
+  updateLookAt(delta: number) {
+    if (this.lookAt === null) return;
+    const dx = this.lookAt.x - this.position.x;
+    const dz = this.lookAt.y - this.position.z;
+    if (dx * dx + dz * dz > 0.001) {
+      this.smoothRotateToward(dx, dz, delta);
+    }
+  }
+
+  updateStuck(delta: number, worldSeconds: number): boolean {
+    // delay stuck a bit
+    if (worldSeconds - this.last.pinTime < 2.5) {
+      return false;
+    }
+
+    const dx = this.position.x - this.last.pos.x;
+    const dz = this.position.z - this.last.pos.y;
+    const dist = Math.hypot(dx, dz);
+    this.stuckAccum += dist < 0.0065 ? delta : 0;
+    this.last.pos = { x: this.position.x, y: this.position.z };
+    return this.stuckAccum > 0.4;
   }
 
   async waitUntilResolved() {
