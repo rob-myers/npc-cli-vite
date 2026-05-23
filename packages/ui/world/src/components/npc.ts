@@ -159,7 +159,7 @@ export class Npc {
     this.moveAnim = input;
   }
 
-  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult) {
+  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, pendingMove = false) {
     if (!this.agentId) return;
 
     const { crowd, clips } = this.w.npc;
@@ -178,7 +178,7 @@ export class Npc {
     this.last.blockingArea = -1;
     this.stuckAccum = 0;
     this.last.pos = { x: this.position.x, y: this.position.z };
-    this.pendingMove = false;
+    this.pendingMove = pendingMove;
 
     if (!this.moving) {
       this.moving = true;
