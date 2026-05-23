@@ -17,6 +17,7 @@ import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
   brightnessStorageKey,
+  contrastStorageKey,
   defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
@@ -59,6 +60,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       worldQueryPrefix: ["world", meta.worldKey],
 
       brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? 1.5,
+      contrast: tryLocalStorageGetParsed(contrastStorageKey) ?? 1,
 
       events: new Broadcaster(),
       reqAnimId: -1,
@@ -339,6 +341,7 @@ export type State = {
   worldQueryPrefix: ["world", worldKey: string];
 
   brightness: number;
+  contrast: number;
 
   events: Broadcaster<JshCli.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };

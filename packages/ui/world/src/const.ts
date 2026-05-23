@@ -70,6 +70,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 export const brightnessStorageKey = `world-brightness-value`;
+export const contrastStorageKey = `world-contrast-value`;
 
 export const defaultThemeKey = "default-theme";
 
@@ -107,6 +108,7 @@ export const gmIdGridDim = 600 * sguToWorldScale;
 export const colliderHeight = 1.8;
 
 export const idleMaxAcceleration = 4.0;
+export const idleSeparatingMaxAcceleration = 0.25;
 export const walkMaxAcceleration = 8.0;
 export const idleAgentMaxSpeed = 0.5;
 export const walkAgentMaxSpeed = 1.5;

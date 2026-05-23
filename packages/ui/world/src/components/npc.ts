@@ -7,6 +7,7 @@ import * as THREE from "three/webgpu";
 import {
   idleAgentMaxSpeed,
   idleMaxAcceleration,
+  idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   npcDefaultBubbleHeight,
   npcScale,
@@ -235,17 +236,20 @@ export class Npc {
     moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), speed);
   }
 
-  syncSeparation(speed: number, worldSeconds: number) {
+  syncSeparation(agent: crowdApi.Agent, speed: number, worldSeconds: number) {
     if (!(speed > separationSpeedThreshold && worldSeconds - this.last.idleTime > separationCooldown)) {
       return;
     }
     const { clips } = this.w.npc;
     if (!this.separating) {
       this.separating = true;
+      agent.maxAcceleration = idleSeparatingMaxAcceleration;
       this.mixer.existingAction(clips.idle)?.fadeOut(0.3);
       this.mixer.clipAction(clips["shuffle-back"]).reset().fadeIn(0.3).play();
     }
-    this.mixer.clipAction(clips["shuffle-back"]).timeScale = (0.25 / npcScale) * separationAnimScale * speed * 4;
+
+    const timeScale = (1 / npcScale) * separationAnimScale * speed;
+    this.mixer.clipAction(clips["shuffle-back"]).timeScale = timeScale < 0.5 ? 0 : timeScale;
   }
 
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
@@ -258,7 +262,7 @@ export class Npc {
         this.lookAt = { x: neighbor.position[0], y: neighbor.position[2] };
         const [vx, , vz] = agent.velocity;
         const speed = Math.hypot(vx, vz);
-        this.syncSeparation(speed, worldSeconds);
+        this.syncSeparation(agent, speed, worldSeconds);
       } else {
         this.lookAt = null;
       }
@@ -317,7 +321,7 @@ export type NpcInit = {
   geometry: THREE.BufferGeometry;
 };
 
-const separationSpeedThreshold = 0.05;
+const separationSpeedThreshold = 0.005;
 const separationCooldown = 0.5;
 const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;
