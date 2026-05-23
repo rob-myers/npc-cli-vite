@@ -69,6 +69,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 }
 
 /**
+ * Usage
  * ```sh
  * move npc:rob to:$( pick 1 )
  * move npc:rob to:$( pick 3 )
