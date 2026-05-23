@@ -154,12 +154,27 @@
 
 - ✅ `pick | move npc:rob along` should not slow down at each corner
 
-- `move npc:rob to:$( pick 2 )`
+- 🚧 `move npc:rob to:$( pick 2 )`
+  - command substitution only "uses spaces" when 1st emit is `string | number`,
+    otherwise emits an array of values
+  - `move` command supports array value for `to`
+
+- ✅ improve lie and sit
+  - had loads of issues with blockbench mcp
+  - need more interactive approach e.g. provide initial keyframe and talk through it
+
+- `spawn npc:rob at:$( pick ) facing:$( pick )`
+
+- specify lights in hull symbol
+
+- start 101
+
+- can spawn on chair
+- can spawn on bed
+
 
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previsou
-
-- specify lights in hull symbol
 - doors have meaningful icons
 - support `look`
 - remove all suffices e.g. --0.25x0.25 from all symbols
