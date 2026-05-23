@@ -78,20 +78,27 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  *
  * # move along picked path
  * pick | move npc:rob along
+ *
+ * move npc:rob fast to:$( pick 1 )
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
- * @param {{ npcKey: string; to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
+ * @param {Omit<JshCli.MoveOpts, 'to'> & { to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+
   const { dispose } = api.handleStatus({
-    cleanups: (killed) => killed && w.n[opts.npcKey]?.reject?.(new Error("killed")),
+    cleanups: (killed) => killed && npc.reject?.(new Error("killed")),
   });
+
+  npc.moveClip = opts.fast ? npc.clips.run : npc.clips.walk;
 
   try {
     if (api.isTtyAt(0)) {
+      // move to point or smoothly along points
       const points = expectArrayOfPoints(opts.to) ? opts.to : [opts.to];
       for (const [index, point] of points.entries()) {
-        await w.npc.move({ npcKey: opts.npcKey, to: point, pendingMove: index < points.length - 1 });
+        await w.npc.move({ npcKey: opts.npcKey, to: point, arrive: index === points.length - 1 });
       }
       return;
     }
@@ -104,7 +111,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       return;
     }
 
-    // move smoothly along path
+    // move smoothly along lazily supplied path
     let pendingRead = api.read();
     while (true) {
       const next = await pendingRead;
@@ -115,7 +122,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum });
 
       // biome-ignore format: avoid newlines
-      await Promise.race([movePromise, pendingRead.then(() => { w.n[opts.npcKey].pendingMove = true; })]);
+      await Promise.race([movePromise, pendingRead.then(() => { npc.arrive = false; })]);
       await movePromise;
     }
   } finally {

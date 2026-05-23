@@ -43,7 +43,7 @@ import {
 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchSkinOverlay } from "../service/texture";
-import { crossFadeSynchronized } from "../service/three-animation";
+import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc } from "./npc";
@@ -133,7 +133,7 @@ export default function NPCs() {
           npc.last = oldNpc.last;
           npc.bubbleOffset = oldNpc.bubbleOffset;
 
-          npc.moveAnim = oldNpc.moveAnim;
+          npc.moveClip = oldNpc.moveClip;
 
           state.placeNpcAt(npc, npc.position);
         }
@@ -159,7 +159,7 @@ export default function NPCs() {
       getSkinIndex(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
-      async move({ npcKey, to, pendingMove = false }) {
+      async move({ npcKey, to, arrive = true }) {
         const npc = state.npc[npcKey];
 
         if (typeof npcKey !== "string" || !npc) {
@@ -178,7 +178,7 @@ export default function NPCs() {
 
         npc.reject?.(new Error("move again"));
 
-        npc.startMoving(groundPoint, result, pendingMove);
+        npc.startMoving(groundPoint, result, arrive);
         w.events.next({ key: "started-moving", npcKey });
 
         try {
@@ -222,7 +222,7 @@ export default function NPCs() {
           const stuck = npc.updateStuck(delta, worldSeconds);
           if (stuck === true) {
             npc.startIdle();
-          } else if (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.pendingMove ? 0.4 : 0.1) === true) {
+          } else if (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.arrive ? 0.1 : 0.4) === true) {
             // arrived
             npc.startIdle();
           }
@@ -423,6 +423,7 @@ export default function NPCs() {
     );
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     for (const npc of Object.values(state.npc)) {
+      npc.moveClip = clips[npc.moveClip.name as AnimationClipKey] ?? clips.walk;
       for (const [oldClip, clip] of pairedClips) {
         const oldAct = npc.mixer.existingAction(oldClip);
         if (!oldAct?.isRunning()) continue;
@@ -483,7 +484,7 @@ export type State = {
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;
-  move(opts: { npcKey: string; to: JshCli.PointAnyFormat; pendingMove?: boolean }): Promise<void>;
+  move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;
   remove(...npcKeys: string[]): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
@@ -513,9 +514,6 @@ function getAgentParams(): crowd.AgentParams {
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const closePolygonDistance = 0.05;
 const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
-
-const emptyAnimationClip = new THREE.AnimationClip();
-emptyAnimationClip.name = "empty-animation-clip";
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));
