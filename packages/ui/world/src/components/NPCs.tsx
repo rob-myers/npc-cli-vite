@@ -1,5 +1,5 @@
 import { url } from "@npc-cli/media";
-import { useStateRef } from "@npc-cli/util";
+import { geomService, useStateRef } from "@npc-cli/util";
 
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { loadImage } from "@npc-cli/util/legacy/dom";
@@ -236,7 +236,7 @@ export default function NPCs() {
         w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
         positions.length = 0;
       },
-      placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat) {
+      placeNpcAt(npc, at) {
         const groundPoint = parseGroundPoint(at);
         const result = state.getClosestPoly(groundPoint);
         if (result.success) {
@@ -284,7 +284,7 @@ export default function NPCs() {
         state.update();
         w.events.next({ key: "removed-npcs", npcKeys });
       },
-      async spawn({ npcKey, at, as }) {
+      async spawn({ npcKey, at, as, angle, facing }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`npcKey must match: ${npcKeyPattern}`);
         }
@@ -292,10 +292,18 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
-        // 🔔 would prefer not to reference `w.e`
         const gmRoomId = w.e.findRoomContaining(at, true);
         if (gmRoomId === null) {
-          throw Error(`must be in some room`);
+          throw Error("must be in some room");
+        }
+
+        if (facing) {
+          at = parseGroundPoint(at);
+          facing = parseGroundPoint(facing);
+          angle = geomService.getThreeRotationY(facing.y - at.y, facing.x - at.x);
+        } else if (angle !== undefined) {
+          // absorb errors else npc disappears
+          angle = Number(angle) || 0;
         }
 
         if (npcKey in state.npc) {
@@ -304,6 +312,7 @@ export default function NPCs() {
           npc.spawns++;
           if (as) npc.changeSkin(as);
 
+          npc.skinnedMesh.rotation.y = angle ?? 0;
           w.view.forceUpdate();
         } else {
           const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
@@ -333,6 +342,8 @@ export default function NPCs() {
 
           state.update();
           await new Promise<string>((resolve) => (npc.resolve = resolve));
+
+          npc.skinnedMesh.rotation.y = angle ?? 0;
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
