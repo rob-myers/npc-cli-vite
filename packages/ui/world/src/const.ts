@@ -106,16 +106,16 @@ export const gmIdGridDim = 600 * sguToWorldScale;
 
 export const colliderHeight = 1.8;
 
+export const idleMaxAcceleration = 4.0;
+export const walkMaxAcceleration = 8.0;
+export const idleAgentMaxSpeed = 0.5;
 export const walkAgentMaxSpeed = 1.5;
-
 export const runAgentMaxSpeed = 2.5;
-
-export const walkSeparationWeight = 0.25;
-
+export const walkSeparationWeight = 0.5;
 // export const idleSeparationWeight = 0.5;
 // export const idleSeparationWeight = 0.25;
 // low weight (relative to walk) means less sliding
-export const idleSeparationWeight = 0.1;
+export const idleSeparationWeight = 0.5;
 
 export const defaultDoorCloseMs = 3000;
 
