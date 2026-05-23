@@ -79,12 +79,16 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * # move along picked path
  * pick | move npc:rob along
  *
+ * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
  * move npc:rob fast to:$( pick 1 )
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
  * @param {Omit<JshCli.MoveOpts, 'to'> & { to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
-export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function move(
+  { api, args, w, datum },
+  opts = api.jsArg(args, { npc: "npcKey", towards: "facing", look: "facing" }),
+) {
   const npc = w.npc.get(opts.npcKey);
 
   const { dispose } = api.handleStatus({
