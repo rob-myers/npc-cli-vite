@@ -89,9 +89,11 @@ Must use version 1.6.0 (libsharpyuv: 0.4.2).
 
 # Gotchas
 
-#### Height related MapEdit symbol file dimensions are already in meters e.g. y=1, h=1
+#### ⚠️ In VSCode can manually reconnect to mcp server via `/mcp` then click button
 
-#### BoxySVG cut circle from square empty when circle radius matches square half-width
+#### ⚠️ Height related MapEdit symbol file dimensions are already in meters e.g. y=1, h=1
+
+#### ⚠️ BoxySVG cut circle from square empty when circle radius matches square half-width
 
 #### ⚠️ packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
 
