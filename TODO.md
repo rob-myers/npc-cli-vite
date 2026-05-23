@@ -126,7 +126,7 @@
   - writes to sheets.json
   - generates sheet/skin.{i}.png
 
-- 🚧 improve basic "turn towards" behaviour
+- ✅ improve basic "turn towards" behaviour
   - ✅ avoid sliding by playing walk animation
   - ✅ start using textured npc in blockbench
   - ✅ add animations
@@ -146,10 +146,14 @@
     }
     ```
   - ✅ use "shuffle-back" during idle separation
-  - 🚧 idle pin target should change
-  - 🚧 try look towards target while separated
+  - ❌ try look towards target while separated
+  - ✅ try prevent "slide back to pin"
+    - idle separated npc has very low maxAcceleration
+  - ✅ try avoid unnatural shuffle back animation
+    - stop animating (timescale 0) under threshold speed
 
 - ✅ `pick | move npc:rob along` should not slow down at each corner
+
 - `move npc:rob to:$( pick 2 )`
 
 - hot reloading of `pick | move npc:rob` while change `move`?

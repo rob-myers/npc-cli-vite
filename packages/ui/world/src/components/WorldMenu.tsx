@@ -3,12 +3,12 @@ import { Select } from "@base-ui/react/select";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretDownIcon, CaretRightIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretRightIcon, CircleHalfIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useContext, useEffect, useRef, useState } from "react";
 import { WorldThemeSchema } from "../assets.schema";
-import { brightnessStorageKey } from "../const";
+import { brightnessStorageKey, contrastStorageKey } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
@@ -136,22 +136,38 @@ export function WorldMenu() {
                       tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-16 accent-white"
-                  />
-                  <button
-                    type="button"
                     className={cn(
-                      "text-[10px] px-1 rounded cursor-pointer",
-                      !state.suppressGrayscale ? "bg-green-700 text-white" : "bg-slate-700 text-slate-400",
+                      "w-16 accent-white cursor-pointer",
+                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[14px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
                     )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      state.set({ suppressGrayscale: !state.suppressGrayscale });
+                  />
+                </div>
+                <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                  <CircleHalfIcon
+                    className="size-4 text-white cursor-pointer shrink-0"
+                    onClick={() => {
+                      w.contrast = 1;
                       w.update();
+                      tryLocalStorageSet(contrastStorageKey, "1");
                     }}
-                  >
-                    gray pause
-                  </button>
+                  />
+                  <input
+                    type="range"
+                    min="0.75"
+                    max="1.75"
+                    step="0.05"
+                    value={w.contrast}
+                    onChange={(e) => {
+                      w.contrast = Number(e.target.value);
+                      w.update();
+                      tryLocalStorageSet(contrastStorageKey, String(w.contrast));
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "w-16 accent-white cursor-pointer",
+                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[14px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                    )}
+                  />
                 </div>
 
                 {w.view && (
@@ -180,7 +196,7 @@ export function WorldMenu() {
                     uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = themeKeys[nextIdx]));
                   }}
                 >
-                  theme: {w.themeKey}
+                  {w.themeKey}
                 </Menu.Item>
 
                 {import.meta.env.DEV && (
