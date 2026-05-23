@@ -163,7 +163,9 @@
   - had loads of issues with blockbench mcp
   - need more interactive approach e.g. provide initial keyframe and talk through it
 
-- `spawn npc:rob at:$( pick ) facing:$( pick )`
+- ✅ `spawn npc:rob at:$( pick ) facing:$( pick )`
+  - ✅ fix 1st spawn
+  - ✅ `pick | spawn npc:rob facing`
 
 - specify lights in hull symbol
 

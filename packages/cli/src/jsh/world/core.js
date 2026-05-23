@@ -24,7 +24,7 @@ export async function cfg({ w, args, api }) {
   const [command, ...rest] = args;
 
   switch (command) {
-    case "clear-npcs":
+    case "clear":
       w.npc.remove(...Object.keys(w.npc.npc));
       w.view.forceUpdate();
       break;
@@ -71,6 +71,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 /**
  * ```sh
  * move npc:rob to:$( pick 1 )
+ * move npc:rob to:$( pick 3 )
  *
  * # move immediately
  * pick | move npc:rob
@@ -291,24 +292,38 @@ export async function* pick(ct) {
 
 /**
  * ```sh
- * spawn npc:foo-bar-baz at:[7,0,7]
- * spawn npc:rob at:$( pick 1 | map point )
+ * spawn npc:foo at:[7,0,7]
+ * spawn npc:rob at:$( pick 1 )
+ *
  * # spawn multiple
  * pick | spawn npc:rob-
+ *
+ * spawn npc:rob at:$( pick 1 ) angle:Math.PI
+ * spawn npc:rob at:$( pick 1 ) facing:$( pick 1 )
+ *
+ * # alternating (at, facing)
+ * pick | spawn npc:rob facing
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
- * @param {{ granted?: string } & JshCli.SpawnOpts} [opts]
+ * @param {JshCli.SpawnOpts} [opts]
  */
 export async function spawn({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey", skin: "as" })) {
-  // 🚧 support opts.granted
-
   if (api.isTtyAt(0)) {
-    await w.npc.spawn(opts);
-  } else {
-    let numSpawns = 0;
+    return await w.npc.spawn(opts);
+  }
+
+  let numSpawns = 0;
+  if (!opts.facing) {
     while ((datum = await api.read()) !== api.eof) {
       await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum });
     }
+    return;
+  }
+
+  while (true) {
+    const datum1 = await api.read();
+    const datum2 = await api.read();
+    await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum1, facing: datum2 });
   }
 }
 

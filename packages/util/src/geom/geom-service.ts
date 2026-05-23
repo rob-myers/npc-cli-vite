@@ -90,6 +90,10 @@ class GeomService {
     return (d1.x * (p1.y - p0.y) - d1.y * (p1.x - p0.x)) / (d0.y * d1.x - d1.y * d0.x);
   }
 
+  getThreeRotationY(dy: number, dx: number) {
+    return -Math.atan2(dy, dx) - Math.PI / 2;
+  }
+
   /**
    * Inset/outset a ring by amount.
    */

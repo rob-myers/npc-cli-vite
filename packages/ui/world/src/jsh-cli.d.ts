@@ -47,21 +47,16 @@ declare namespace JshCli {
   type EnterColliderEvent = Extract<Event, { key: "enter-collider" }>;
   type ExitColliderEvent = Extract<Event, { key: "exit-collider" }>;
 
-  interface SpawnOpts {
-    // 🚧 angle, skinKey, runSpeed, walkSpeed
-    // interface SpawnOpts extends Partial<Pick<NPCDef, "angle" | "classKey" | "runSpeed" | "walkSpeed">> {
+  type SpawnOpts = {
     npcKey: string;
     /**
      * - Navigable points always on ground
      * - Doable points may be above ground via `meta.y`.
      */
     at?: MaybeMeta<PointAnyFormat>;
-
-    // 🚧 facing, meta, as
-    // /** Position to look towards (overrides `angle`) */
-    // facing?: GroundPoint;
-    // /** Can override `at?.meta`*/
-    // meta?: Meta;
+    angle?: number;
+    /** Position to look towards: overrides `angle` */
+    facing?: PointAnyFormat;
     // /**
     //  * Skin to apply.
     //  * - `string` for skin shortcuts e.g. `soldier-0` or `soldier-0/-///`
@@ -69,5 +64,5 @@ declare namespace JshCli {
     //  */
     // as?: string | Record<string, SkinReMapValue>;
     as?: string;
-  }
+  };
 }
