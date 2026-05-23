@@ -159,7 +159,7 @@ export default function NPCs() {
       getSkinIndex(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
-      async move({ npcKey, to }) {
+      async move({ npcKey, to, pendingMove = false }) {
         const npc = state.npc[npcKey];
 
         if (typeof npcKey !== "string" || !npc) {
@@ -178,7 +178,7 @@ export default function NPCs() {
 
         npc.reject?.(new Error("move again"));
 
-        npc.startMoving(groundPoint, result);
+        npc.startMoving(groundPoint, result, pendingMove);
         w.events.next({ key: "started-moving", npcKey });
 
         try {
@@ -472,7 +472,7 @@ export type State = {
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;
-  move(opts: { npcKey: string; to: JshCli.PointAnyFormat }): Promise<void>;
+  move(opts: { npcKey: string; to: JshCli.PointAnyFormat; pendingMove?: boolean }): Promise<void>;
   onTick(delta: number): void;
   remove(...npcKeys: string[]): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;

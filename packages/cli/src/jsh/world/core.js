@@ -79,7 +79,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * pick | move npc:rob along
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
- * @param {{ npcKey: string; to: JshCli.PointAnyFormat; along: boolean }} [opts]
+ * @param {{ npcKey: string; to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const { dispose } = api.handleStatus({
@@ -88,7 +88,11 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
 
   try {
     if (api.isTtyAt(0)) {
-      return await w.npc.move(opts);
+      const points = expectArrayOfPoints(opts.to) ? opts.to : [opts.to];
+      for (const [index, point] of points.entries()) {
+        await w.npc.move({ npcKey: opts.npcKey, to: point, pendingMove: index < points.length - 1 });
+      }
+      return;
     }
 
     if (!opts.along) {
@@ -116,6 +120,14 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
   } finally {
     dispose();
   }
+}
+
+/**
+ * @param {unknown} x
+ * @returns {x is JshCli.PointAnyFormat[]}
+ */
+function expectArrayOfPoints(x) {
+  return Array.isArray(x) && typeof x[0] !== "number";
 }
 
 /**

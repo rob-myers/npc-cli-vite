@@ -548,7 +548,6 @@ export class JShSemantics {
 
       for (const part of node.Parts) {
         const value = part.string as string;
-        // biome-ignore lint/suspicious/noExplicitAny: TODO justify
         const brace = part.type === "Lit" && !!(part as any).braceExp;
 
         if (part.type === "ParamExp" || part.type === "CmdSubst") {
@@ -652,8 +651,13 @@ export class JShSemantics {
             yield this.expand(values); // When `foo=$( bar )` forward non-string values
           } else {
             if (values.length > 1) {
-              // yield expand(jsStringify(values));
-              yield this.expand(values.map((x) => (typeof x === "string" ? x : jsStringify(x))));
+              if (typeof values[0] === "string" || typeof values[0] === "number") {
+                // standard space separated
+                yield this.expand(values.map((x) => (typeof x === "string" ? x : jsStringify(x))));
+              } else {
+                // array e.g for to:$( pick 2 )
+                yield this.expand(jsStringify(values));
+              }
             } else if (typeof values[0] === "string") {
               yield this.expand(values[0].replace(/\n*$/, ""));
             } else {

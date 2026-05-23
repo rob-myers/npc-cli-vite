@@ -154,10 +154,10 @@
 
 - ✅ `pick | move npc:rob along` should not slow down at each corner
 
-- 🚧 `move npc:rob to:$( pick 2 )`
-  - command substitution only "uses spaces" when 1st emit is `string | number`,
-    otherwise emits an array of values
-  - `move` command supports array value for `to`
+- ✅ `move npc:rob to:$( pick 2 )`
+  - ✅ command substitution only "uses spaces" when 1st emit is `string | number`
+  - ✅ otherwise emits a jsStringified array
+  - ✅ `move` command supports array value for `to`
 
 - ✅ improve lie and sit
   - had loads of issues with blockbench mcp
