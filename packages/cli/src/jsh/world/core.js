@@ -71,8 +71,10 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 /**
  * ```sh
  * move npc:rob to:$( pick 1 )
+ *
  * # move immediately
  * pick | move npc:rob
+ *
  * # move along picked path
  * pick | move npc:rob along
  * ```
@@ -83,16 +85,33 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
   const { dispose } = api.handleStatus({
     cleanups: (killed) => killed && w.n[opts.npcKey]?.reject?.(new Error("killed")),
   });
+
   try {
     if (api.isTtyAt(0)) {
-      await w.npc.move(opts);
-    } else {
+      return await w.npc.move(opts);
+    }
+
+    if (!opts.along) {
+      // move immediately to lastest destination
       while ((datum = await api.read()) !== api.eof) {
-        const promise = w.npc.move({ npcKey: opts.npcKey, to: datum });
-        if (opts.along) {
-          await promise;
-        }
+        w.npc.move({ npcKey: opts.npcKey, to: datum });
       }
+      return;
+    }
+
+    // move smoothly along path
+    let pendingRead = api.read();
+    while (true) {
+      const next = await pendingRead;
+      if (next === api.eof) break;
+
+      datum = next;
+      pendingRead = api.read();
+      const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum });
+
+      // biome-ignore format: avoid newlines
+      await Promise.race([movePromise, pendingRead.then(() => { w.n[opts.npcKey].pendingMove = true; })]);
+      await movePromise;
     }
   } finally {
     dispose();

@@ -4,7 +4,16 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { idleSeparationWeight, npcDefaultBubbleHeight, npcScale, walkSeparationWeight } from "../const";
+import {
+  idleAgentMaxSpeed,
+  idleMaxAcceleration,
+  idleSeparationWeight,
+  npcDefaultBubbleHeight,
+  npcScale,
+  walkAgentMaxSpeed,
+  walkMaxAcceleration,
+  walkSeparationWeight,
+} from "../const";
 import { groudPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -49,6 +58,7 @@ export class Npc {
   position: THREE.Vector3;
   queryFilter: QueryFilter;
   moving = false;
+  pendingMove = false;
   /** while idle and due to separationWeight */
   separating = false;
   moveAnim = "walk" as "walk" | "run";
@@ -156,6 +166,8 @@ export class Npc {
     // whilst walking, doors should block npcs
     agent.queryFilter = this.queryFilter;
     agent.separationWeight = walkSeparationWeight;
+    agent.maxAcceleration = walkMaxAcceleration;
+    agent.maxSpeed = walkAgentMaxSpeed;
     crowdApi.requestMoveTarget(crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
 
     this.last.dst = groundPoint;
@@ -165,6 +177,7 @@ export class Npc {
     this.last.blockingArea = -1;
     this.stuckAccum = 0;
     this.last.pos = { x: this.position.x, y: this.position.z };
+    this.pendingMove = false;
 
     if (!this.moving) {
       this.moving = true;
@@ -178,10 +191,17 @@ export class Npc {
 
     this.resolve?.("idle");
 
+    if (this.pendingMove) {
+      this.pendingMove = false;
+      return;
+    }
+
     if (this.agentId) {
       const agent = crowd.agents[this.agentId];
 
       agent.separationWeight = idleSeparationWeight;
+      agent.maxSpeed = idleAgentMaxSpeed;
+      agent.maxAcceleration = idleMaxAcceleration;
       this.pinTo(this.w.npc.getClosestPoly(this.position));
 
       const [vx, , vz] = agent.velocity;
@@ -193,7 +213,8 @@ export class Npc {
 
     this.mixer.existingAction(clips.walk)?.fadeOut(0.3);
     this.mixer.existingAction(clips.run)?.fadeOut(0.3);
-    this.mixer.clipAction(clips.idle).reset().fadeIn(0.3).play();
+    this.mixer.existingAction(clips["shuffle-back"])?.fadeOut(0.3);
+    this.mixer.clipAction(clips.idle).reset().fadeIn(0.5).play();
 
     this.moving = false;
     this.separating = false;
@@ -218,18 +239,16 @@ export class Npc {
     if (!(speed > separationSpeedThreshold && worldSeconds - this.last.idleTime > separationCooldown)) {
       return;
     }
-    // 🚧 use other animation e.g. shuffle?
     const { clips } = this.w.npc;
     if (!this.separating) {
       this.separating = true;
       this.mixer.existingAction(clips.idle)?.fadeOut(0.3);
-      this.mixer.clipAction(clips.walk).reset().fadeIn(0.3).play();
+      this.mixer.clipAction(clips["shuffle-back"]).reset().fadeIn(0.3).play();
     }
-    this.mixer.clipAction(clips.walk).timeScale = -Math.max(0.25 / npcScale, speed) * separationAnimScale;
+    this.mixer.clipAction(clips["shuffle-back"]).timeScale = (0.25 / npcScale) * separationAnimScale * speed * 4;
   }
 
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
-    // 🚧 clarify
     const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
     if (shouldSeparate) {
       const neiAgentId = agent.neis[0].agentId;
@@ -252,6 +271,7 @@ export class Npc {
 
     this.updateLookAt(delta / 4);
   }
+
   updateLookAt(delta: number) {
     if (this.lookAt === null) return;
     const dx = this.lookAt.x - this.position.x;
@@ -270,7 +290,7 @@ export class Npc {
     const dx = this.position.x - this.last.pos.x;
     const dz = this.position.z - this.last.pos.y;
     const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < 0.0065 ? delta : 0;
+    this.stuckAccum += dist < 0.008 ? delta : 0;
     this.last.pos = { x: this.position.x, y: this.position.z };
     return this.stuckAccum > 0.4;
   }
@@ -299,5 +319,5 @@ export type NpcInit = {
 
 const separationSpeedThreshold = 0.05;
 const separationCooldown = 0.5;
-const separationAnimScale = 0.25;
+const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;

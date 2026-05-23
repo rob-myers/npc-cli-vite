@@ -24,11 +24,13 @@ import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import {
   fromAnimationClipKey,
+  idleAgentMaxSpeed,
   idleSeparationWeight,
   npcBrightness,
   npcLabelHeight,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
+  walkMaxAcceleration,
 } from "../const";
 import {
   addEmptyBillboardOffset,
@@ -218,7 +220,10 @@ export default function NPCs() {
           }
 
           const stuck = npc.updateStuck(delta, worldSeconds);
-          if (stuck === true || crowdApi.isAgentAtTarget(state.crowd, npc.agentId, 0.1) === true) {
+          if (stuck === true) {
+            npc.startIdle();
+          } else if (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.pendingMove ? 0.4 : 0.1) === true) {
+            // arrived
             npc.startIdle();
           }
 
@@ -477,8 +482,8 @@ function getAgentParams(): crowd.AgentParams {
   return {
     radius: 0.2,
     height: 1.2,
-    maxAcceleration: 8.0,
-    maxSpeed: walkAgentMaxSpeed,
+    maxAcceleration: walkMaxAcceleration,
+    maxSpeed: idleAgentMaxSpeed,
     // collisionQueryRange: 1,
     // collisionQueryRange: 0.75,
     // cannot be smaller; maybe should be larger

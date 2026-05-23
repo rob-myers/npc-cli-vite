@@ -145,6 +145,15 @@
       }
     }
     ```
+  - ✅ use "shuffle-back" during idle separation
+  - 🚧 idle pin target should change
+  - 🚧 try look towards target while separated
+
+- ✅ `pick | move npc:rob along` should not slow down at each corner
+- `move npc:rob to:$( pick 2 )`
+
+- hot reloading of `pick | move npc:rob` while change `move`?
+  - maybe just clarify current setup vs previsou
 
 - specify lights in hull symbol
 - doors have meaningful icons
