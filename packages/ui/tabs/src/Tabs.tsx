@@ -184,6 +184,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         <div
           ref={tabBarRef}
           className={cn(
+            "w-full", // easier drag between tabs
             "flex items-end overflow-x-auto [scrollbar-width:thin] touch-pan-x",
             state.isDropTarget && "bg-blue-400/10",
           )}
