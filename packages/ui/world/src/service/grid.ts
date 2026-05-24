@@ -4,7 +4,7 @@ import { decorGridSize, gmIdGridDim } from "../const";
 //#region decor grid
 
 export function addToDecorGrid(item: Geomorph.Decor, grid: Geomorph.DecorGrid) {
-  const rect = item.bounds2d;
+  const rect = item.bounds;
   const [mx, my] = coordToDecorGrid(rect.x, rect.y);
   const [Mx, My] = coordToDecorGrid(rect.x + rect.width, rect.y + rect.height);
   const isApplyReach = item.meta["apply-reach"] === true;
@@ -51,7 +51,7 @@ function applyReach(item: Geomorph.DecorPoint | Geomorph.DecorQuad, parent: Geom
 
   item.meta.gridMin = [omx, omy];
   item.meta.gridMax = [oMx, oMy];
-  item.meta.reachRect = tmpRect.copy(parent.bounds2d).precision(2).tuple;
+  item.meta.reachRect = tmpRect.copy(parent.bounds).precision(2).tuple;
 }
 
 export function coordToDecorGrid(x: number, y: number): [x: number, y: number] {
@@ -69,7 +69,7 @@ function findApplyReachContaining(
 ): Geomorph.Decor | null {
   const point = item.type === "point" ? item : item.center;
   for (const other of tile) {
-    if (other.meta["apply-reach"] === true && tmpRect.copy(other.bounds2d).contains(point) === true) {
+    if (other.meta["apply-reach"] === true && tmpRect.copy(other.bounds).contains(point) === true) {
       return other;
     }
   }
@@ -133,7 +133,7 @@ export function queryDecorGridRect(
         if (
           reachRect === true && Array.isArray(d.meta.reachRect)
             ? queryRect.intersectsArgs(...(d.meta.reachRect as [number, number, number, number]))
-            : queryRect.intersects(d.bounds2d)
+            : queryRect.intersects(d.bounds)
         ) {
           decor[d.key] = d;
         }

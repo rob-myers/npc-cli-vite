@@ -117,6 +117,7 @@ export const GeomorphLayoutSchema = z.object({
   num: StarShipGeomorphNumberSchema,
   bounds: rectCodec,
 
+  /** Instantiated in `createLayoutInstance` */
   decor: z.array(DecorSchema),
   doors: z.array(connectorCodec),
   hullPoly: z.array(polyCodec),

@@ -10,7 +10,8 @@ const GmRoomIdSchema = z.object({
 const BaseDecorSchema = z.object({
   key: z.string(),
   meta: MetaSchema.and(GmRoomIdSchema),
-  bounds2d: rectCodec,
+  /** 2D bounds in XZ plane (for decor quads this is pre-tilting) */
+  bounds: rectCodec,
   updatedAt: z.number().optional(),
 });
 

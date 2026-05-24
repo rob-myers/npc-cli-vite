@@ -268,6 +268,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.gms = mapDef.gms.map(({ gmKey, transform }, gmId) =>
         createLayoutInstance(state.assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
       );
+
       state.seenGmKeys = state.gms.reduce<StarShipGeomorphKey[]>(
         (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
         [],

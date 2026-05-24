@@ -6,7 +6,7 @@
   - 🚧 can create decor rect with sensor
   - can create decor circle with sensor
   - can remove decor rect/circle
-  - decor has `key`
+  - ✅ decor has `key`
   - lights as decor circle
   - do-points as decor point
     - visual representation
