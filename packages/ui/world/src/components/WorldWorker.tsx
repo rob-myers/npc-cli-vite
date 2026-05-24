@@ -87,7 +87,7 @@ export default function WorldWorker() {
      * e.g. don't want full-page-reload on edit packages/ui/world/src/const.ts
      *
      * - we send specially craft payloads to worker
-     * - this avoids e.g. parse or instantiate geomorphs.
+     * - this avoids e.g. parse via shared schema, or instantiate geomorphs.
      */
     const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
     state.worker = worker;
@@ -102,7 +102,6 @@ export default function WorldWorker() {
   useEffect(() => {
     if (w.hash === 0) return;
 
-    // console.log("🔔🔔 BOOTING WORKER 🔔🔔");
     w.setNextPending({ nav: true });
 
     /**
