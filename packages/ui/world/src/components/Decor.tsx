@@ -58,7 +58,7 @@ export default function Decor() {
 
   w.decor = state;
 
-  const { data } = useQuery({
+  const { data: materials } = useQuery({
     queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, state.lastHmr],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_DECOR__) {
@@ -118,7 +118,7 @@ export default function Decor() {
 
       await pause(100);
 
-      // 4. transform and position instances
+      // 4. transform instances
       state.gdKeyToInstanceId = {};
       state.inst.instanceMatrix.array.fill(0);
       let instanceId = 0;
@@ -170,21 +170,22 @@ export default function Decor() {
       await pause(100);
 
       // 5. enrich decor.meta and build decor grid
-      const pointWithMeta = { x: 0, y: 0, meta: {} as Meta };
+      const metaPoint = { x: 0, y: 0, meta: {} as Meta };
       state.clearGrid();
 
       for (let gmId = 0; gmId < w.gms.length; gmId++) {
         const gm = w.gms[gmId];
         for (const decor of gm.decor) {
-          // gmRoomId
-          pointWithMeta.x = "center" in decor ? decor.center.x : decor.bounds2d.x;
-          pointWithMeta.y = "center" in decor ? decor.center.y : decor.bounds2d.y;
-          pointWithMeta.meta = decor.meta;
-          const gmRoomId = w.e.findRoomContaining(pointWithMeta, true);
+          metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
+          metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
+          metaPoint.meta = decor.meta;
+          const gmRoomId = w.e.findRoomContaining(metaPoint, true);
           if (gmRoomId !== null) {
             Object.assign(decor.meta, gmRoomId);
           }
-          // decor grid
+
+          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${metaPoint.x}-${metaPoint.y}`;
+
           addToDecorGrid(decor, state.grid);
         }
       }
@@ -229,7 +230,7 @@ export default function Decor() {
     gcTime: 0,
   });
 
-  state.materials = data ?? state.materials;
+  state.materials = materials ?? state.materials;
 
   return (
     <instancedMesh

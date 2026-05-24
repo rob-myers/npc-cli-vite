@@ -133,11 +133,12 @@ export function createLayoutInstance(
 }
 
 function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number): T {
-  const bounds2d = d.bounds2d.clone().applyMatrix(matrix).precision(precision);
+  // decor.key defined in <Decor> once gmRoomId computed
+  const bounds = d.bounds.clone().applyMatrix(matrix).precision(precision);
   const meta = { ...d.meta, gmId } as T["meta"];
 
-  // gmDoorId
   if (typeof meta.doorId === "number") {
+    // gmDoorId
     meta.gdKey = `g${gmId}d${meta.doorId}`;
   }
 
@@ -147,7 +148,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
       return {
         ...d,
         meta,
-        bounds2d,
+        bounds,
         x: toPrecision(p.x),
         y: toPrecision(p.y),
         orient: toPrecision((180 / Math.PI) * matrix.transformAngle(d.orient * (Math.PI / 180))),
@@ -159,7 +160,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
       return {
         ...d,
         meta,
-        bounds2d,
+        bounds,
         transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
         center: { x: toPrecision(center.x), y: toPrecision(center.y) },
         topCenter: { x: toPrecision(topCenter.x), y: toPrecision(topCenter.y) },
@@ -170,7 +171,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
       return {
         ...d,
         meta,
-        bounds2d,
+        bounds,
         points: d.points.map((p) => {
           const q = matrix.transformPoint({ ...p });
           return { x: toPrecision(q.x), y: toPrecision(q.y) };
@@ -184,7 +185,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
       return {
         ...d,
         meta,
-        bounds2d,
+        bounds,
         center: { x: toPrecision(center.x), y: toPrecision(center.y) },
       };
     }
@@ -389,7 +390,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     return {
       type: "rect",
       ...base,
-      bounds2d: poly.rect.precision(3),
+      bounds: poly.rect.precision(3),
       points: poly.outline.map((x) => x.clone().precision(3)),
       center: poly.center.precision(3),
       angle,
@@ -411,7 +412,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       type: "quad",
       key: base.key,
       meta: quadMeta,
-      bounds2d: polyRect.clone(),
+      bounds: polyRect.clone(),
       transform,
       center,
       topCenter,
@@ -421,7 +422,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     const baseRect = geomService.polyToAngledRect(poly).baseRect.precision(precision);
     const center = poly.center.precision(precision);
     const radius = Math.max(baseRect.width, baseRect.height) / 2;
-    return { type: "circle", ...base, bounds2d: polyRect, radius, center };
+    return { type: "circle", ...base, bounds: polyRect, radius, center };
   } else {
     // 🔔 fallback to decor point
     const center = poly.center.precision(precision);
@@ -436,7 +437,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     delete meta.direction;
     const orient = toPrecision((180 / Math.PI) * Math.atan2(direction.y, direction.x));
 
-    return { type: "point", ...base, bounds2d, x: center.x, y: center.y, orient };
+    return { type: "point", ...base, bounds: bounds2d, x: center.x, y: center.y, orient };
   }
 }
 
