@@ -3,10 +3,12 @@
 - 🚧 simplify decor
   - ❌ sensors should be decor rects in grid
     - inside/nearby door sensors needn't have corresponding decor rects
+  - ✅ decor has `key`
+  - ✅ decor quad does not need x/y/width/height
+  - 🚧 `w decor.create` infers decor entry from `decor.img`
   - 🚧 can create decor rect with sensor
   - can create decor circle with sensor
   - can remove decor rect/circle
-  - ✅ decor has `key`
   - lights as decor circle
   - do-points as decor point
     - visual representation
