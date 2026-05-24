@@ -9,9 +9,6 @@ catalog:
   "@biomejs/biome": ^2.4.8
   "@dimforge/rapier3d-compat": ^0.19.3
   "@dragdroptouch/drag-drop-touch": ^2.0.3
-  "@gltf-transform/core": ^4.3.0
-  "@gltf-transform/extensions": ^4.3.0
-  "@gltf-transform/functions": ^4.3.0
   "@inquirer/prompts": ^8.1.0
   "@phosphor-icons/react": ^2.1.10
   "@react-three/drei": ^10.7.7
