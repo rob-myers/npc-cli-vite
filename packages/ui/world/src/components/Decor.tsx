@@ -44,10 +44,11 @@ export default function Decor() {
         Object.values(state.grid).forEach((col) => col.clear());
       },
       create(def) {
-        let d: Geomorph.Decor;
         const meta = (def.meta ?? {}) as Meta<Geomorph.GmRoomId>;
         meta.decor = true;
         meta.decorKey = def.key;
+
+        let d: Geomorph.Decor;
 
         switch (def.type) {
           case "circle": {
@@ -202,12 +203,11 @@ export default function Decor() {
       }
 
       if (!w.sheets) return null;
-      const { decor, decorSheetDims, maxDecorSheetDim } = w.sheets;
       w.setNextPending({ decor: true });
 
       // 1. load sheet images
       const images = await Promise.all(
-        Array.from({ length: decorSheetDims.length }, (_, i) =>
+        Array.from({ length: w.sheets.decorSheetDims.length }, (_, i) =>
           loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`),
         ),
       );
@@ -215,9 +215,9 @@ export default function Decor() {
       // 2. draw sheets into texture array
       const { ct } = w.texDecor;
       w.texDecor.resize({
-        numTextures: decorSheetDims.length,
-        width: maxDecorSheetDim.width,
-        height: maxDecorSheetDim.height,
+        numTextures: w.sheets.decorSheetDims.length,
+        width: w.sheets.maxDecorSheetDim.width,
+        height: w.sheets.maxDecorSheetDim.height,
         // force: true, // else texture blank on save const.ts
       });
       for (let sheetId = 0; sheetId < images.length; sheetId++) {
@@ -235,13 +235,13 @@ export default function Decor() {
       for (const gm of w.gms) {
         for (const item of gm.decor) {
           if (item.type !== "quad") continue;
-          const entry = decor[item.meta.img] as DecorSheetEntry | undefined;
+          const entry = w.sheets.decor[item.meta.img] as DecorSheetEntry | undefined;
           if (!entry) {
             warn(`decor "${item.meta.img}" not found in sheets.json`);
             uvIdx++;
             continue;
           }
-          const dims = decorSheetDims[entry.sheetId];
+          const dims = w.sheets.decorSheetDims[entry.sheetId];
           if (!dims) continue;
           state.uvOffsets.set([entry.rect.x / dims.width, entry.rect.y / dims.height], uvIdx * 2);
           state.uvDimensions.set([entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
@@ -258,40 +258,38 @@ export default function Decor() {
       let instanceId = 0;
       let tiltMat4 = new THREE.Matrix4();
 
-      for (let gmId = 0; gmId < w.gms.length; gmId++) {
-        const gm = w.gms[gmId];
-        for (let decorId = 0; decorId < gm.decor.length; decorId++) {
-          const item = gm.decor[decorId];
-          if (item.type !== "quad") continue;
-          const entry = decor[item.meta.img];
+      for (const [gmId, gm] of w.gms.entries()) {
+        for (const [decorId, decor] of gm.decor.entries()) {
+          if (decor.type !== "quad") continue;
+          const entry = w.sheets.decor[decor.meta.img];
 
-          tmpMat.setMatrixValue(item.transform);
+          tmpMat.setMatrixValue(decor.transform);
 
-          const shouldTilt = item.meta.tilt === true; // currently only switches
+          const shouldTilt = decor.meta.tilt === true; // currently only switches
           if (shouldTilt) {
             const { a, b, c, d } = tmpMat;
             const det = a * d - b * c;
             tiltMat4 = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
-            setRotMatrixAboutPoint(tiltMat4, item.topCenter.x, item.meta.y, item.topCenter.y);
+            setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
           }
 
           const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
           const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
           tmpMat.preMultiply([imgW, 0, 0, imgH, 0, 0]);
-          const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: item.meta.y ?? 0, mat4: tmpMat4 });
+          const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
           if (shouldTilt) mat4.premultiply(tiltMat4);
 
           state.inst.setMatrixAt(instanceId, mat4);
 
-          if (typeof item.meta.doorId === "number") {
+          if (typeof decor.meta.doorId === "number") {
             // tint via un/locked doors
-            const gdKey: Geomorph.GmDoorKey = `g${gmId}d${item.meta.doorId}`;
+            const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
             const { locked } = w.door.byKey[gdKey];
             state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
             // build gdKey -> instances
             (state.gdKeyToInstanceId[gdKey] ??= []).push(instanceId);
           } else {
-            state.inst.setColorAt(instanceId, tmpColor.set(item.meta.tint ?? "#ffffff"));
+            state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
           state.instanceIdToDecorId[instanceId] = { gmId, decorId };
@@ -307,8 +305,7 @@ export default function Decor() {
       const metaPoint = { x: 0, y: 0, meta: {} as Meta };
       state.clearGrid();
 
-      for (let gmId = 0; gmId < w.gms.length; gmId++) {
-        const gm = w.gms[gmId];
+      for (const [gmId, gm] of w.gms.entries()) {
         for (const decor of gm.decor) {
           metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
           metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
