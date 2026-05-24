@@ -17,9 +17,6 @@
     "gen-ui": "./src/bins/gen-ui.ts"
   },
   "dependencies": {
-    "@gltf-transform/core": "catalog:",
-    "@gltf-transform/extensions": "catalog:",
-    "@gltf-transform/functions": "catalog:",
     "@inquirer/prompts": "catalog:",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/graph": "workspace:^",
