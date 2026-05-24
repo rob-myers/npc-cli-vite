@@ -165,16 +165,6 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
         topCenter: { x: toPrecision(topCenter.x), y: toPrecision(topCenter.y) },
       };
     }
-    case "cuboid": {
-      const p = matrix.transformPoint({ x: d.center.x, y: d.center.z });
-      return {
-        ...d,
-        meta,
-        bounds2d,
-        transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
-        center: geomService.toPrecisionV3({ x: p.x, y: d.center.y, z: p.y }),
-      };
-    }
     case "rect": {
       const center = matrix.transformPoint({ ...d.center });
       return {
@@ -315,12 +305,11 @@ export function createLayout(
           typeof x.meta["nav-outset"] === "number" ? x.meta["nav-outset"] * sguToWorldScale : obstacleOutset,
         ),
       ),
-      ...decor
-        .filter(isDecorCuboid)
-        .filter((d) => d.meta.nav === true)
-        // 🔔 originally all decor was a <use> of a unit-quad
-        // .map((d) => geomService.applyUnitQuadTransformWithOutset(tmpMat1.feedFromArray(d.transform), obstacleOutset)),
-        .map((d) => geomService.createOutset(Poly.fromRect(d.bounds2d), obstacleOutset)[0]),
+      // 🚧 may cut out non-navigable decor quads
+      // ...decor
+      //   .filter(isDecorCuboid)
+      //   .filter((d) => d.meta.nav === true)
+      //   .map((d) => geomService.createOutset(Poly.fromRect(d.bounds2d), obstacleOutset)[0]),
     ],
     hullOutline,
   )
@@ -427,18 +416,6 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       center,
       topCenter,
     };
-  } else if (meta.cuboid === true) {
-    // decor cuboids follow "decor quad approach"
-    const polyRect = poly.rect.precision(precision);
-    const { transform } = poly.meta;
-    delete poly.meta.transform;
-
-    const center2d = poly.center;
-    const y3d = typeof meta.y === "number" ? meta.y : 0;
-    const height3d = typeof meta.h === "number" ? meta.h : 0.5; // 🚧 remove hard-coding
-    const center = geomService.toPrecisionV3({ x: center2d.x, y: y3d + height3d / 2, z: center2d.y });
-
-    return { type: "cuboid", ...base, bounds2d: polyRect, transform, center };
   } else if (meta.circle === true) {
     const polyRect = poly.rect.precision(precision);
     const baseRect = geomService.polyToAngledRect(poly).baseRect.precision(precision);
@@ -776,10 +753,6 @@ export function instantiateFlatSymbol(
     removableDoors: [],
     addableWalls: [],
   };
-}
-
-function isDecorCuboid(d: Geomorph.Decor): d is Geomorph.DecorCuboid {
-  return d.type === "cuboid";
 }
 
 export function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {

@@ -1,11 +1,12 @@
 # TODO
 
-- simplify decor
+- 🚧 simplify decor
+  - sensors should be decor rects in grid
+    - currently only quads in grid
+  - lights as decor circle
+  - do-points as decor point
+  - labels as decor point
 
-- decor for
-  - lights (changes floor/obstacles/walls)
-  - do-points (visible)
-  - labels (opt visible)
 
 - specify lights in hull symbol
   - via image node

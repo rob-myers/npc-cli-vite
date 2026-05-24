@@ -1,11 +1,4 @@
-import {
-  MetaSchema,
-  pointCodec,
-  RectJsonSchema,
-  rectCodec,
-  SixTupleSchema,
-  Vector3LikeSchema,
-} from "@npc-cli/util/geom";
+import { MetaSchema, pointCodec, RectJsonSchema, rectCodec, SixTupleSchema } from "@npc-cli/util/geom";
 import z from "zod";
 
 const GmRoomIdSchema = z.object({
@@ -35,18 +28,6 @@ export const DecorCircleDefSchema = BaseDecorDefSchema.extend({
   type: z.literal("circle"),
   radius: z.number(),
   center: pointCodec,
-});
-
-export const DecorCuboidSchema = BaseDecorSchema.extend({
-  type: z.literal("cuboid"),
-  center: Vector3LikeSchema,
-  transform: SixTupleSchema,
-});
-export const DecorCuboidDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
-  type: z.literal("cuboid"),
-  baseY: z.number(),
-  height3d: z.number(),
-  transform: SixTupleSchema.optional(),
 });
 
 export const DecorPointSchema = BaseDecorSchema.extend({
@@ -93,7 +74,6 @@ export const DecorRectDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape
 
 export const DecorSchema = z.discriminatedUnion("type", [
   DecorCircleSchema,
-  DecorCuboidSchema,
   DecorPointSchema,
   DecorQuadSchema,
   DecorRectSchema,
@@ -102,7 +82,6 @@ export type Decor = z.infer<typeof DecorSchema>;
 
 export const DecorDefSchema = z.discriminatedUnion("type", [
   DecorCircleDefSchema,
-  DecorCuboidDefSchema,
   DecorPointDefSchema,
   DecorQuadDefSchema,
   DecorRectDefSchema,

@@ -58,11 +58,9 @@ declare namespace Geomorph {
   type DecorDef = import("./decor.schema").DecorDef;
 
   type DecorPoint = Extract<Decor, { type: "point" }>;
-  type DecorCuboid = Extract<Decor, { type: "cuboid" }>;
   type DecorRect = Extract<Decor, { type: "rect" }>;
   type DecorCircle = Extract<Decor, { type: "circle" }>;
   type DecorQuad = Extract<Decor, { type: "quad" }>;
-  type DecorDecal = Extract<Decor, { type: "decal" }>;
 
   type DecorSheetRectCtxt = Meta<{
     decorImgKey: string;
