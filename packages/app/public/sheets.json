@@ -84,8 +84,8 @@
   "symbolSheetDims": [{"width": 3672, "height": 2794}],
   "maxSymbolSheetDim": {"width": 3672, "height": 2794},
   "decor": {
-    "arrow-square-right-duotone": {
-      "key": "arrow-square-right-duotone",
+    "arrow-right": {
+      "key": "arrow-right",
       "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
@@ -112,15 +112,15 @@
       "originalWidth": 40,
       "originalHeight": 15
     },
-    "number-circle-one-duotone": {
-      "key": "number-circle-one-duotone",
+    "number-one": {
+      "key": "number-one",
       "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
-    "number-circle-zero-duotone": {
-      "key": "number-circle-zero-duotone",
+    "number-zero": {
+      "key": "number-zero",
       "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
