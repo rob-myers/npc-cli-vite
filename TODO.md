@@ -8,7 +8,10 @@
   - ✅ `w decor.create` infers decor entry from `decor.img`
   - ✅ can create decor rect/circle/point
     - `demo_add_decor`
-  - lights as decor circle
+  - 🚧 lights as decor circle
+    - ✅ decor image `circle-1` (sgu)
+    - 🚧 can uniformly scale image node around its center
+    - 🚧 uniform scale picked up by decor
   - do-points as decor point
     - visual representation
   - labels as decor point

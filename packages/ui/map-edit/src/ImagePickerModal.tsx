@@ -78,7 +78,7 @@ export function ImagePickerModal({
                       <button
                         key={key}
                         type="button"
-                        className="aspect-square bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
+                        className="aspect-square rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
                         onClick={() => {
                           onSelect({ type: "decor", key });
                           onOpenChange(false);
