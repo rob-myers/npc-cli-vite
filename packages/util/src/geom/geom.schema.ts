@@ -9,11 +9,11 @@ export const CoordSchema = z.tuple([z.number(), z.number()]);
 export const MetaSchema = z.record(z.string(), z.any());
 
 export const VectSchema = z.instanceof(Vect);
-export const PointJsonSchema = z.object({
+export const VectJsonSchema = z.object({
   x: z.number(),
   y: z.number(),
 });
-export const pointCodec = z.codec(PointJsonSchema, VectSchema, {
+export const pointCodec = z.codec(VectJsonSchema, VectSchema, {
   decode: (pointJson) => Vect.from(pointJson),
   encode: (point) => point.json,
 });

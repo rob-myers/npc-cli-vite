@@ -1,6 +1,6 @@
-import { useStateRef } from "@npc-cli/util";
+import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { Mat } from "@npc-cli/util/geom";
+import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
@@ -8,9 +8,18 @@ import React from "react";
 import { attribute, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
-import { lockedDoorTint, MAX_DECOR_QUAD_INSTANCES, sguToWorldScale, unlockedDoorTint } from "../const";
+import {
+  decorIconRadius,
+  decorIconRadiusOutset,
+  lockedDoorTint,
+  MAX_DECOR_QUAD_INSTANCES,
+  precision,
+  sguToWorldScale,
+  unlockedDoorTint,
+} from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
 import { addToDecorGrid } from "../service/grid";
+import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
 import { WorldContext } from "./world-context";
 
@@ -34,11 +43,136 @@ export default function Decor() {
       clearGrid() {
         Object.values(state.grid).forEach((col) => col.clear());
       },
+      create(def) {
+        let d: Geomorph.Decor;
+        const meta = (def.meta ?? {}) as Meta<Geomorph.GmRoomId>;
+        meta.decor = true;
+        meta.decorKey = def.key;
+
+        switch (def.type) {
+          case "circle": {
+            d = {
+              type: "circle",
+              key: def.key,
+              meta: Object.assign(meta, { circle: true }),
+              bounds: Rect.fromJson({
+                x: def.center.x - def.radius,
+                y: def.center.y - def.radius,
+                width: def.radius * 2,
+                height: def.radius * 2,
+              }),
+              radius: def.radius,
+              center: def.center,
+            };
+            break;
+          }
+          case "quad": {
+            /**
+             * Decor quads MUST have a respective "entry" i.e. decor image,
+             * providing dimensions via decor manifest.json original{Width,Height} (sgu).
+             *
+             * We do not permit scaling i.e. this determines their baseRect (0, 0, w, h).
+             * Actual polygon will be `transform` applied to this baseRect.
+             */
+
+            const transform = def.transform ?? [1, 0, 0, 1, 0, 0];
+
+            // 🚧 infer from def.img
+            const entry = { width: 60, height: 60 };
+
+            const matrix = tmpMat.feedFromArray(transform);
+            const poly = Poly.fromRect({ x: 0, y: 0, width: entry.width, height: entry.height }).applyMatrix(matrix);
+
+            const center = poly.center.precision(3);
+            const { baseRect } = geomService.polyToAngledRect(poly);
+            const topCenter = center
+              .clone()
+              .translate(-(transform[2] * baseRect.height) / 2, -(transform[3] * baseRect.height) / 2)
+              .precision(3);
+
+            d = {
+              type: "quad",
+              key: def.key,
+              meta: Object.assign(meta, {
+                quad: true,
+                color: def.color,
+                img: def.img,
+                y: def.y3d,
+              }),
+              bounds: poly.rect.precision(2),
+              transform,
+              center,
+              topCenter,
+            };
+            break;
+          }
+          case "rect": {
+            const poly = geomService.angledRectToPoly({ baseRect: tmpRect.setFromJson(def), angle: def.angle ?? 0 });
+            d = {
+              type: "rect",
+              key: def.key,
+              meta: Object.assign(meta, { rect: true }),
+              bounds: poly.rect,
+              points: poly.outline.map((x) => x.clone()),
+              center: poly.center.precision(2),
+              angle: def.angle ?? 0,
+            };
+            break;
+          }
+          case "point": {
+            const center = tmpVect.copy(def).precision(precision);
+            const radius = decorIconRadius + decorIconRadiusOutset;
+            const bounds = tmpRect
+              .set(center.x - radius, center.y - radius, 2 * radius, 2 * radius)
+              .precision(precision);
+
+            // if ("img" in def && !helper.isDecorImgKey(def.img)) {
+            //   warn(`${"Decor.create"}: def.img not a DecorImgKey, using "icon--warn"`);
+            //   def.img = "icon--warn";
+            // }
+
+            d = {
+              type: "point",
+              key: def.key,
+              meta: Object.assign(meta, {
+                point: true,
+                y: def.y3d,
+                ...(def.img !== undefined && { img: def.img }),
+                ...(meta.do === true && { doPoint: { ...center } }),
+              }),
+              bounds,
+              x: center.x,
+              y: center.y,
+              orient: def.orient ?? 0,
+            };
+            break;
+          }
+          default: {
+            throw new ExhaustiveError(def);
+          }
+        }
+
+        if (state.ensureGmRoomId(d) !== null) {
+          addToDecorGrid(d, state.grid);
+        }
+
+        return d;
+      },
       decodeInstanceId(instanceId) {
         const entry = state.instanceIdToDecorId[instanceId];
         if (!entry) return null;
         const item = w.gms[entry.gmId]?.decor[entry.decorId];
         return item ? { ...item.meta } : null;
+      },
+      ensureGmRoomId(decor) {
+        if (!(decor.meta.gmId >= 0 && decor.meta.roomId >= 0)) {
+          const decorOrigin = decor.type === "point" ? decor : decor.center;
+          const gmRoomId = w.e.findRoomContaining(decorOrigin);
+          return gmRoomId === null ? null : Object.assign(decor.meta, gmRoomId);
+        } else {
+          decor.meta.grKey ??= helper.getGmRoomKey(decor.meta.gmId, decor.meta.roomId);
+          return decor.meta;
+        }
       },
       tintInstances(colorRep, ...instanceIds) {
         if (!state.inst.instanceColor) return;
@@ -265,11 +399,15 @@ export type State = {
   uvTextureIds: Uint32Array;
 
   clearGrid(): void;
+  create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };
 
 const cuboidHeight = 0.05;
+const tmpVect = new Vect();
+const tmpRect = new Rect();
 const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();

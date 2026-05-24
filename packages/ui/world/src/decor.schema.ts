@@ -25,6 +25,7 @@ export const DecorCircleSchema = BaseDecorSchema.extend({
   radius: z.number(),
   center: pointCodec,
 });
+
 export const DecorCircleDefSchema = BaseDecorDefSchema.extend({
   type: z.literal("circle"),
   radius: z.number(),
@@ -38,6 +39,7 @@ export const DecorPointSchema = BaseDecorSchema.extend({
   orient: z.number(),
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string().optional() })),
 });
+
 export const DecorPointDefSchema = BaseDecorDefSchema.extend({
   type: z.literal("point"),
   x: z.number(),
@@ -54,7 +56,8 @@ export const DecorQuadSchema = BaseDecorSchema.extend({
   topCenter: pointCodec,
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
 });
-export const DecorQuadDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
+
+export const DecorQuadDefSchema = BaseDecorDefSchema.extend({
   type: z.literal("quad"),
   img: z.string(),
   color: z.string().optional(),
@@ -68,6 +71,7 @@ export const DecorRectSchema = BaseDecorSchema.extend({
   center: pointCodec,
   angle: z.number(),
 });
+
 export const DecorRectDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
   type: z.literal("rect"),
   angle: z.number().optional(),

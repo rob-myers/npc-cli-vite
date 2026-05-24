@@ -1,10 +1,22 @@
 import svgPathParser from "svg-path-parser";
 import { toPrecision } from "../legacy/generic.js";
+import { Mat } from "./mat.js";
 import { Poly } from "./poly.js";
 import { Rect } from "./rect.js";
 import { Vect } from "./vect.js";
 
 class GeomService {
+  /**
+   * Angled rects are rotated about `(rect.x, rect.y)`
+   */
+  angledRectToPoly(input: Geom.AngledRect<Geom.Rect>): Geom.Poly {
+    const poly = Poly.fromRect(input.baseRect);
+    poly.translate(-input.baseRect.x, -input.baseRect.y);
+    poly.applyMatrix(new Mat().setRotation(input.angle));
+    poly.translate(input.baseRect.x, input.baseRect.y);
+    return poly;
+  }
+
   /**
    * Create a new inset or outset version of polygon,
    * by cutting/unioning quads.
