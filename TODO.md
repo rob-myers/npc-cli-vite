@@ -5,15 +5,15 @@
     - inside/nearby door sensors needn't have corresponding decor rects
   - ✅ decor has `key`
   - ✅ decor quad does not need x/y/width/height
-  - 🚧 `w decor.create` infers decor entry from `decor.img`
-  - 🚧 can create decor rect with sensor
-  - can create decor circle with sensor
-  - can remove decor rect/circle
+  - ✅ `w decor.create` infers decor entry from `decor.img`
+  - ✅ can create decor rect/circle/point
+    - `demo_add_decor`
   - lights as decor circle
   - do-points as decor point
     - visual representation
   - labels as decor point
     - visual representation
+  - 🚧 can remove decor rect/circle
 
 
 - specify lights in hull symbol
@@ -25,6 +25,9 @@
 
 - start 101
 
+- better approach to default profile
+  - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
+- can create colliders from decor rect/circle
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previsou
 - doors have meaningful icons

@@ -106,6 +106,8 @@ export const MAX_NPCS = 256;
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;
 
+export const decorKeyFallback = "icon--warn";
+
 export const gmIdGridDim = 600 * sguToWorldScale;
 
 export const colliderHeight = 1.8;
