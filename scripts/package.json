@@ -14,8 +14,7 @@
     "gen-decor-sheets": "./src/bins/gen-decor-sheets.ts",
     "gen-skin-sheets": "./src/bins/gen-skin-sheets.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
-    "gen-ui": "./src/bins/gen-ui.ts",
-    "pngs-to-webp": "./src/bins/pngs-to-webp.ts"
+    "gen-ui": "./src/bins/gen-ui.ts"
   },
   "dependencies": {
     "@gltf-transform/core": "catalog:",

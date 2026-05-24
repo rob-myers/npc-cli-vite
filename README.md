@@ -76,17 +76,6 @@ magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
 # magick: invalid colormap index `Fuel 057 [25x80].png' @ error/colormap-private.h/ConstrainColormapIndex/35.
 ```
 
-### cwebp
-
-Needed for e.g. `pnpm pngs-to-webp packages/media/src/starship-symbol/output/symbol-machinery`
-
-Must use version 1.6.0 (libsharpyuv: 0.4.2).
-
-- https://developers.google.com/speed/webp/docs/precompiled
-- Check version via `cwebp -version`.
-- `brew install webp` may provide old version depending on your OS version.
-
-
 # Gotchas
 
 #### ⚠️ In VSCode can manually reconnect to mcp server via `/mcp` then click button
