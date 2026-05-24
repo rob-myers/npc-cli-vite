@@ -1,8 +1,8 @@
 {
   "byKey": {
-    "arrow-square-right-duotone": {
-      "key": "arrow-square-right-duotone",
-      "filename": "arrow-square-right-duotone.svg",
+    "arrow-right": {
+      "key": "arrow-right",
+      "filename": "arrow-right.svg",
       "width": 60,
       "height": 60
     },
@@ -24,15 +24,15 @@
       "width": 40,
       "height": 15
     },
-    "number-circle-one-duotone": {
-      "key": "number-circle-one-duotone",
-      "filename": "number-circle-one-duotone.svg",
+    "number-one": {
+      "key": "number-one",
+      "filename": "number-one.svg",
       "width": 60,
       "height": 60
     },
-    "number-circle-zero-duotone": {
-      "key": "number-circle-zero-duotone",
-      "filename": "number-circle-zero-duotone.svg",
+    "number-zero": {
+      "key": "number-zero",
+      "filename": "number-zero.svg",
       "width": 60,
       "height": 60
     },
