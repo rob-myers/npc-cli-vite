@@ -15,7 +15,6 @@
     "gen-skin-sheets": "./src/bins/gen-skin-sheets.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
     "gen-ui": "./src/bins/gen-ui.ts",
-    "test-gltf-transform": "./src/bins/test-gltf-transform.ts",
     "pngs-to-webp": "./src/bins/pngs-to-webp.ts"
   },
   "dependencies": {
