@@ -86,10 +86,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
  * @param {Omit<JshCli.MoveOpts, 'to'> & { to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
-export async function move(
-  { api, args, w, datum },
-  opts = api.jsArg(args, { npc: "npcKey", towards: "facing", look: "facing" }),
-) {
+export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey);
 
   const { dispose } = api.handleStatus({
@@ -133,14 +130,6 @@ export async function move(
   } finally {
     dispose();
   }
-}
-
-/**
- * @param {unknown} x
- * @returns {x is JshCli.PointAnyFormat[]}
- */
-function expectArrayOfPoints(x) {
-  return Array.isArray(x) && typeof x[0] !== "number";
 }
 
 /**
@@ -319,7 +308,10 @@ export async function* pick(ct) {
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
  * @param {JshCli.SpawnOpts} [opts]
  */
-export async function spawn({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey", skin: "as" })) {
+export async function spawn(
+  { api, args, w, datum },
+  opts = api.jsArg(args, { npc: "npcKey", skin: "as", towards: "facing", look: "facing" }),
+) {
   if (api.isTtyAt(0)) {
     return await w.npc.spawn(opts);
   }
@@ -399,4 +391,12 @@ export async function* w(ct) {
       yield `${api.ansi.Cyan}${e}${api.ansi.Reset}`;
     }
   }
+}
+
+/**
+ * @param {unknown} x
+ * @returns {x is JshCli.PointAnyFormat[]}
+ */
+function expectArrayOfPoints(x) {
+  return Array.isArray(x) && typeof x[0] !== "number";
 }

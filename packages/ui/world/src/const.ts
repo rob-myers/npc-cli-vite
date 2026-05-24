@@ -114,9 +114,6 @@ export const idleAgentMaxSpeed = 0.5;
 export const walkAgentMaxSpeed = 1.5;
 export const runAgentMaxSpeed = 2.5;
 export const walkSeparationWeight = 0.5;
-// export const idleSeparationWeight = 0.5;
-// export const idleSeparationWeight = 0.25;
-// low weight (relative to walk) means less sliding
 export const idleSeparationWeight = 0.5;
 
 export const defaultDoorCloseMs = 3000;
@@ -125,9 +122,9 @@ export const npcBrightness = 0.6;
 
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
-export const lockedDoorTint = "#f44";
+export const lockedDoorTint = "#b44";
 
-export const unlockedDoorTint = "#4f4";
+export const unlockedDoorTint = "#4b4";
 
 export const fromAnimationClipKey = {
   idle: true,
