@@ -19,13 +19,12 @@ export default function Decor() {
 
   const state = useStateRef(
     (): State => ({
+      box: createUnitBox(),
       inst: null as any,
       gdKeyToInstanceId: {},
-      instanceIdToDecorId: [],
       grid: {},
+      instanceIdToDecorId: [],
       lastHmr: 0,
-
-      box: createUnitBox(),
       materials: [],
 
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
