@@ -59,4 +59,6 @@ w e.toggleLock $( pick 1 as:meta.gdKey )
 
 ```sh
 w gms.0.doors | split | map 'x => x.roomIds'
+
+w decor.grid | map Object.values | split | map Array.from | log
 ```

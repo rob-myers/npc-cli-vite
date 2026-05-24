@@ -11,6 +11,7 @@ import type { DecorSheetEntry } from "../assets.schema";
 import {
   decorIconRadius,
   decorIconRadiusOutset,
+  decorKeyFallback,
   lockedDoorTint,
   MAX_DECOR_QUAD_INSTANCES,
   precision,
@@ -29,8 +30,9 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       box: createUnitBox(),
+      byKey: {},
       inst: null as any,
-      gdKeyToInstanceId: {},
+      gdKeyToInstanceId: {}, // decor related to doors
       grid: {},
       instanceIdToDecorId: [],
       lastHmr: 0,
@@ -63,7 +65,7 @@ export default function Decor() {
                 height: def.radius * 2,
               }),
               radius: def.radius,
-              center: def.center,
+              center: Vect.from(def.center),
             };
             break;
           }
@@ -72,17 +74,21 @@ export default function Decor() {
              * Decor quads MUST have a respective "entry" i.e. decor image,
              * providing dimensions via decor manifest.json original{Width,Height} (sgu).
              *
-             * We do not permit scaling i.e. this determines their baseRect (0, 0, w, h).
+             * We do not permit scaling i.e. this determines their baseRect `(0, 0, w, h)`.
              * Actual polygon will be `transform` applied to this baseRect.
              */
-
             const transform = def.transform ?? [1, 0, 0, 1, 0, 0];
 
-            // 🚧 infer from def.img
-            const entry = { width: 60, height: 60 };
+            let entry = w.sheets.decor[def.img];
+            if (!entry) {
+              // throw Error(`decor.img not in w.sheets.decor: "${def.img}"`);
+              warn(`def.img "${def.img}" not in w.sheets.decor: using ${decorKeyFallback}`);
+              entry = w.sheets.decor[decorKeyFallback];
+            }
 
             const matrix = tmpMat.feedFromArray(transform);
-            const poly = Poly.fromRect({ x: 0, y: 0, width: entry.width, height: entry.height }).applyMatrix(matrix);
+            // biome-ignore format: preserve newlines
+            const poly = Poly.fromRect({ x: 0, y: 0, width: entry.originalWidth * sguToWorldScale, height: entry.originalHeight * sguToWorldScale }).applyMatrix(matrix);
 
             const center = poly.center.precision(3);
             const { baseRect } = geomService.polyToAngledRect(poly);
@@ -127,10 +133,10 @@ export default function Decor() {
               .set(center.x - radius, center.y - radius, 2 * radius, 2 * radius)
               .precision(precision);
 
-            // if ("img" in def && !helper.isDecorImgKey(def.img)) {
-            //   warn(`${"Decor.create"}: def.img not a DecorImgKey, using "icon--warn"`);
-            //   def.img = "icon--warn";
-            // }
+            if (typeof def.img === "string" && !(def.img in w.sheets.decor)) {
+              warn(`def.img "${def.img}" not in w.sheets.decor: using ${decorKeyFallback}`);
+              def.img = decorKeyFallback;
+            }
 
             d = {
               type: "point",
@@ -157,6 +163,8 @@ export default function Decor() {
           addToDecorGrid(d, state.grid);
         }
 
+        state.byKey[d.key] = d;
+
         return d;
       },
       decodeInstanceId(instanceId) {
@@ -174,6 +182,9 @@ export default function Decor() {
           decor.meta.grKey ??= helper.getGmRoomKey(decor.meta.gmId, decor.meta.roomId);
           return decor.meta;
         }
+      },
+      remove(..._decorKeys) {
+        // 🚧 free up instances?
       },
       tintInstances(colorRep, ...instanceIds) {
         if (!state.inst.instanceColor) return;
@@ -273,9 +284,8 @@ export default function Decor() {
             setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
           }
 
-          const imgW = (entry.originalWidth ?? 1) * sguToWorldScale;
-          const imgH = (entry.originalHeight ?? 1) * sguToWorldScale;
-          tmpMat.preMultiply([imgW, 0, 0, imgH, 0, 0]);
+          // biome-ignore format: preserve newlines
+          tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0,]);
           const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
           if (shouldTilt) mat4.premultiply(tiltMat4);
 
@@ -304,6 +314,7 @@ export default function Decor() {
       // 5. enrich decor.meta and build decor grid
       const metaPoint = { x: 0, y: 0, meta: {} as Meta };
       state.clearGrid();
+      state.byKey = {};
 
       for (const [gmId, gm] of w.gms.entries()) {
         for (const decor of gm.decor) {
@@ -316,6 +327,7 @@ export default function Decor() {
           }
 
           decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${metaPoint.x}-${metaPoint.y}`;
+          state.byKey[decor.key] = decor;
 
           addToDecorGrid(decor, state.grid);
         }
@@ -390,6 +402,7 @@ export type State = {
   lastHmr: number;
 
   box: THREE.BufferGeometry;
+  byKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
@@ -399,6 +412,7 @@ export type State = {
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
+  remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };
 

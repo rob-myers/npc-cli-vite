@@ -1,4 +1,4 @@
-import { MetaSchema, pointCodec, RectJsonSchema, rectCodec, SixTupleSchema } from "@npc-cli/util/geom";
+import { MetaSchema, pointCodec, RectJsonSchema, rectCodec, SixTupleSchema, VectJsonSchema } from "@npc-cli/util/geom";
 import z from "zod";
 
 const GmRoomIdSchema = z.object({
@@ -29,7 +29,7 @@ export const DecorCircleSchema = BaseDecorSchema.extend({
 export const DecorCircleDefSchema = BaseDecorDefSchema.extend({
   type: z.literal("circle"),
   radius: z.number(),
-  center: pointCodec,
+  center: VectJsonSchema,
 });
 
 export const DecorPointSchema = BaseDecorSchema.extend({

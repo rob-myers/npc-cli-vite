@@ -1,7 +1,7 @@
 import { isStringInt } from "@npc-cli/util/legacy/generic";
 
 /**
- * @param {JshCli.RunArg} ctxt
+ * @param {JshCli.RunArg} ct
  */
 export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
   if (typeof WORLD_KEY !== "string") {
@@ -18,7 +18,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 /**
  * - `cfg pick-walls` picks walls
  * - `cfg pick-walls false` won't pick walls
- * @param {JshCli.RunArg} ctxt
+ * @param {JshCli.RunArg} ct
  */
 export async function cfg({ w, args, api }) {
   const [command, ...rest] = args;
@@ -46,7 +46,7 @@ export async function cfg({ w, args, api }) {
  * events where:'e => e.key === "picked"'
  * ```
  * @template {JshCli.Event} [T=JshCli.Event]
- * @param {JshCli.RunArg} ctxt
+ * @param {JshCli.RunArg} ct
  * @param {{ where?(e: JshCli.Event): e is T }} [opts]
  */
 export async function* events({ api, args, w }, opts = api.jsArg(args)) {
@@ -83,7 +83,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
  * move npc:rob fast to:$( pick 1 )
  * ```
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
+ * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
  * @param {Omit<JshCli.MoveOpts, 'to'> & { to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
@@ -133,14 +133,14 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
 }
 
 /**
- * @param {JshCli.RunArg} ctxt
+ * @param {JshCli.RunArg} ct
  */
 export function pause({ w }) {
   w.setDisabled(true);
 }
 
 /**
- * @param {JshCli.RunArg} ctxt
+ * @param {JshCli.RunArg} ct
  */
 export function play({ w }) {
   w.setDisabled(false);
@@ -165,12 +165,7 @@ export function play({ w }) {
  * - given `pick m` and `pick n` execution order wins
  * - given two `pick`s execution order wins
  * - `pick m` always executes before `pick`
- * - on execute `pick m --block` it takes priority
- * - on execute `pick --block` it takes priority
- *
- * TODO
- * - 🚧 support right click
- * - 🚧 support long press
+ * - on execute `pick m --fifo` it defers priority
  *
  * @param {JshCli.RunArg} ct
  */
@@ -305,7 +300,7 @@ export async function* pick(ct) {
  * # alternating (at, facing)
  * pick | spawn npc:rob facing
  * ```
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ctxt
+ * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
  * @param {JshCli.SpawnOpts} [opts]
  */
 export async function spawn(
