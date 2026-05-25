@@ -24,6 +24,9 @@
 - ✅ clean path for extra--005--chair
 
 - 🚧 can spawn on chair
+  - ✅ npc.idleClip
+  - 🚧 do-points have meta.do true
+  - 🚧 offmesh spawn to do-point should trigger idle
 
 - can spawn on bed
 
