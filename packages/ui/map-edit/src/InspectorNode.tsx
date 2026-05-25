@@ -65,11 +65,26 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
             const relY = (y - rect.top) / rect.height;
             const inCenter = relY > 0.25 && relY < 0.75;
             state.set({ closestEdge: inCenter ? null : edge, dropInside: inCenter });
+            if (inCenter && node.type === "group" && !node.expanded) {
+              if (!root.expandTimer) {
+                root.expandTimer = setTimeout(() => {
+                  if (node.type === "group") { node.expanded = true; root.update(); }
+                  root.expandTimer = null;
+                }, 600);
+              }
+            } else {
+              clearTimeout(root.expandTimer ?? undefined);
+              root.expandTimer = null;
+            }
           } else {
             state.set({ closestEdge: edge, dropInside: false });
           }
         },
-        onDragLeave: () => state.set({ closestEdge: null, dropInside: false }),
+        onDragLeave: () => {
+          clearTimeout(root.expandTimer ?? undefined);
+          root.expandTimer = null;
+          state.set({ closestEdge: null, dropInside: false });
+        },
         onDrop: ({ source }) => {
           const edge = state.closestEdge;
           const dropInside = state.dropInside;
