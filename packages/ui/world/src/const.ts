@@ -139,3 +139,5 @@ export const fromAnimationClipKey = {
   sit: true,
   walk: true,
 };
+
+export const defaultIdleAnimationClipKey = "idle";
