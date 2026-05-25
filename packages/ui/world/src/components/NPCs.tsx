@@ -23,6 +23,7 @@ import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, unif
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import {
+  defaultIdleAnimationClipKey,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
   idleSeparationWeight,
@@ -128,13 +129,14 @@ export default function NPCs() {
             geometry: oldNpc.geometry,
             skinIndex: oldNpc.skinIndex,
           });
+
           npc.agentId = oldNpc.agentId;
           npc.doorKeys = oldNpc.doorKeys;
           npc.last = oldNpc.last;
           npc.bubbleOffset = oldNpc.bubbleOffset;
-
           npc.moveClip = oldNpc.moveClip;
           npc.idleClip = oldNpc.idleClip;
+          npc.spawns = oldNpc.spawns;
 
           state.placeNpcAt(npc, npc.position);
         }
@@ -204,7 +206,8 @@ export default function NPCs() {
           if (npc.agentId === null) continue;
 
           const agent = state.crowd.agents[npc.agentId];
-          npc.position.set(agent.position[0], agent.position[1], agent.position[2]);
+          npc.position.x = agent.position[0];
+          npc.position.z = agent.position[2];
 
           if (npc.moving === false) {
             npc.updateIdle(agent, delta, worldSeconds);
@@ -332,10 +335,10 @@ export default function NPCs() {
           });
         }
 
-        npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
+        const meta = at.meta?.do === true ? at.meta : {};
+        npc.idleClip = state.clips[metaToIdleAnimationClipKey(meta ?? {})];
         npc.playIdleClip(0);
         state.placeNpcAt(npc, at);
-        npc.skinnedMesh.rotation.y = angle ?? 0;
 
         if (npc.spawns++ === 0) {
           state.update();
@@ -343,6 +346,14 @@ export default function NPCs() {
         } else {
           if (as) npc.changeSkin(as);
           w.view.forceUpdate();
+        }
+
+        npc.skinnedMesh.position.y = typeof meta.y === "number" ? meta.y : 0;
+        if (typeof meta.orient === "number") {
+          angle = -(meta.orient + 90) * (Math.PI / 180);
+        }
+        if (typeof angle === "number") {
+          npc.skinnedMesh.rotation.y = angle;
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
@@ -509,6 +520,14 @@ function getAgentParams(): crowd.AgentParams {
     // crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS,
     queryFilter: ANY_QUERY_FILTER,
   };
+}
+
+function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
+  if (meta.do !== true) return defaultIdleAnimationClipKey;
+  if (meta.sit === true) return "sit";
+  if (meta.lie === true) return "lie";
+  if (meta.stand === true) return "idle";
+  return defaultIdleAnimationClipKey;
 }
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;

@@ -171,14 +171,13 @@ export class Npc {
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
     if (!this.agentId) return;
 
-    const { crowd, clips } = this.w.npc;
-    const agent = crowd.agents[this.agentId];
+    const agent = this.w.npc.crowd.agents[this.agentId];
     // whilst walking, doors should block npcs
     agent.queryFilter = this.queryFilter;
     agent.separationWeight = walkSeparationWeight;
     agent.maxAcceleration = walkMaxAcceleration;
     agent.maxSpeed = walkAgentMaxSpeed;
-    crowdApi.requestMoveTarget(crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
+    crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
 
     this.last.dst = groundPoint;
     this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
@@ -191,7 +190,7 @@ export class Npc {
 
     if (!this.moving) {
       this.moving = true;
-      this.mixer.clipAction(clips.idle).fadeOut(0.3);
+      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
       this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
     }
   }

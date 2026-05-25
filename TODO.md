@@ -27,8 +27,10 @@
 - 🚧 can spawn on chair
   - ✅ npc.idleClip
   - ✅ offmesh spawn to do-point should trigger idle animation
-  - 🚧 sit should be at seat height
-  - 🚧 apply decor.orient to npc
+  - ✅ sit should be at seat height
+  - ✅ apply decor.orient to npc
+  - 🚧 fix "clamp to navmesh" when too close
+  - legs should not intersect chair
 
 - can spawn on bed
 
