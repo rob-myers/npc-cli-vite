@@ -361,7 +361,7 @@ export function WorldMenu() {
                           break;
                         case "NavMesh":
                           w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
-                          w.update();
+                          w.view.forceUpdate();
                           break;
                       }
                     }}
