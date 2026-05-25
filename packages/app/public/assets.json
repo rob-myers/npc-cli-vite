@@ -1501,6 +1501,29 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [
+              [7.38745, 7.8],
+              [7.38745, 10.09995],
+              [5.0875, 10.09995],
+              [5.0875, 7.8]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "circle": true,
+            "light": true,
+            "img": "circle-1",
+            "point": true,
+            "direction": {"x": 1, "y": 0},
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1,
+            "y": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [[6.1, 14.9], [6.1, 14.75], [6.25, 14.75], [6.25, 14.9]]
           ],
           "meta": {
@@ -6667,6 +6690,29 @@
       "height": 15,
       "bounds": {"x": -0.1375, "y": -0.55, "width": 30.3, "height": 15.7},
       "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [7.38745, 7.8],
+              [7.38745, 10.09995],
+              [5.0875, 10.09995],
+              [5.0875, 7.8]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "circle": true,
+            "light": true,
+            "img": "circle-1",
+            "point": true,
+            "direction": {"x": 1, "y": 0},
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1,
+            "y": 0
+          }
+        },
         {
           "type": "Polygon",
           "coordinates": [
@@ -12175,6 +12221,25 @@
       "num": 301,
       "bounds": {"x": -0.1375, "y": -0.55, "width": 30.3, "height": 15.7},
       "decor": [
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "circle": true,
+            "light": true,
+            "img": "circle-1",
+            "point": true,
+            "direction": {"x": 1, "y": 0},
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1,
+            "y": 0
+          },
+          "bounds": {"x": 5.0875, "y": 7.8, "width": 2.2999, "height": 2.2999},
+          "type": "circle",
+          "radius": 1.14995,
+          "center": {"x": 6.2375, "y": 8.95}
+        },
         {
           "key": "",
           "meta": {
@@ -18910,7 +18975,7 @@
   },
   "theme": {
     "default-theme": {
-      "background": "bg-zinc-800",
+      "background": "bg-zinc-900",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#6666"},
         "nonHull": {"fill": "#3335", "stroke": "#0005"}

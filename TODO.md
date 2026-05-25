@@ -10,8 +10,9 @@
     - `demo_add_decor`
   - 🚧 lights as decor circle
     - ✅ decor image `circle-1` (sgu)
-    - 🚧 can uniformly scale image node around its center
-    - 🚧 uniform scale picked up by decor
+    - ✅ can uniformly scale image node around its center
+    - ✅ uniform scale picked up by decor
+    - 🚧 replace lights with `decor circle light`
   - do-points as decor point
     - visual representation
   - labels as decor point
