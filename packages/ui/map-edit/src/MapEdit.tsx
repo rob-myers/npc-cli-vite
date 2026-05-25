@@ -363,6 +363,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           y: vbY + ((clientY - rect.top - offsetY) / renderHeight) * vbH,
         };
       },
+      getViewportCenter() {
+        if (!state.svgEl) return null;
+        const r = state.svgEl.getBoundingClientRect();
+        return state.clientToSvg(r.x + r.width / 2, r.y + r.height / 2);
+      },
 
       add(type, { selectionAsParent, rect } = {}) {
         if (state.isReadOnly()) return;
@@ -386,13 +391,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           } else {
             // Place new item centered in viewport
             // newItem.transform = { x: 0, y: 0, dx: 0, dy: 0, scale: 1 };
-            const svgRect = state.svgEl.getBoundingClientRect();
-            const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
-            newItem.transform = {
-              ...newItem.transform,
-              e: center.x - newItem.baseRect.width / 2,
-              f: center.y - newItem.baseRect.height / 2,
-            };
+            const center = state.getViewportCenter();
+            if (center) {
+              newItem.transform = {
+                ...newItem.transform,
+                e: center.x - newItem.baseRect.width / 2,
+                f: center.y - newItem.baseRect.height / 2,
+              };
+            }
           }
           newItem.cssTransform = computeNodeCssTransform(newItem);
         }
@@ -796,11 +802,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           node.baseRect.height = meta.height * scaleFactor;
         }
 
-        // position at center of viewport
-        const svgRect = state.svgEl.getBoundingClientRect();
-        const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
-        node.transform.e = center.x - node.baseRect.width / 2;
-        node.transform.f = center.y - node.baseRect.height / 2;
+        const center = state.getViewportCenter();
+        if (center) {
+          node.transform.e = center.x - node.baseRect.width / 2;
+          node.transform.f = center.y - node.baseRect.height / 2;
+        }
 
         node.cssTransform = computeNodeCssTransform(node);
 
@@ -821,10 +827,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         node.srcKey = symbolKey;
         node.baseRect.width = meta.width;
         node.baseRect.height = meta.height;
-
         node.offset = Vect.from(meta.bounds);
-        node.cssTransform = computeNodeCssTransform(node);
 
+        const center = state.getViewportCenter();
+        if (center) {
+          node.transform.e = center.x - meta.width / 2;
+          node.transform.f = center.y - meta.height / 2;
+        }
+
+        node.cssTransform = computeNodeCssTransform(node);
         node.name = symbolKey;
 
         state.update();
@@ -834,8 +845,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!state.svgEl || paths.length === 0) return;
         state.pushHistory();
 
-        // const svgRect = state.svgEl.getBoundingClientRect();
-        // const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
+        const center = state.getViewportCenter();
         const selection = state.getSelectedNode();
         const parent = selection?.type === "group" ? selection : null;
 
@@ -844,8 +854,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           node.d = p.d;
           node.name = p.name;
           node.baseRect = { width: p.svgWidth, height: p.svgHeight };
-          // node.transform = { ...node.transform, e: center.x - p.svgWidth / 2, f: center.y - p.svgHeight / 2 };
-          node.transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+          node.transform = {
+            a: 1, b: 0, c: 0, d: 1,
+            e: center ? center.x - p.svgWidth / 2 : 0,
+            f: center ? center.y - p.svgHeight / 2 : 0,
+          };
           node.cssTransform = computeNodeCssTransform(node);
           return node;
         });
@@ -1787,6 +1800,7 @@ export type State = {
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
+  getViewportCenter: () => { x: number; y: number } | null;
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
