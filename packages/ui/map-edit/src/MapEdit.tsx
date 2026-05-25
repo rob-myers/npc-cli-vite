@@ -1245,6 +1245,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
         if (!savedFile) return;
 
+        const zoom = Math.min(
+          Math.max(zoomToFitFraction * baseSvgSize / Math.max(savedFile.width, savedFile.height), minZoomScale),
+          maxZoomScale,
+        );
+
         state.set({
           nodes: savedFile.nodes,
           selectedIds: new Set(),
@@ -1255,6 +1260,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: false,
           svgWidth: savedFile.width,
           svgHeight: savedFile.height,
+          zoom,
+          pan: {
+            x: zoom * (baseSvgSize - savedFile.width) / 2,
+            y: zoom * (baseSvgSize - savedFile.height) / 2,
+          },
         });
       },
       async deleteFile(file) {
@@ -1847,6 +1857,7 @@ const defaultAsideWidth = 200;
 const zoomDelta = 0.04;
 const minZoomScale = 0.25;
 const maxZoomScale = 40;
+const zoomToFitFraction = 0.85;
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
