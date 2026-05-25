@@ -8,6 +8,7 @@ import {
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import {
   FolderIcon,
+  FolderOpenIcon,
   ImageIcon,
   LockIcon,
   LockOpenIcon,
@@ -28,7 +29,6 @@ import { traverseNodesSync } from "./map-node-api";
  */
 export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) => {
   const state = useStateRef(() => ({
-    isExpanded: true,
     editValue: node.name,
     inputEl: null as HTMLInputElement | null,
     rowEl: null as HTMLDivElement | null,
@@ -105,8 +105,11 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           onDoubleTap.onClick(e.nativeEvent);
         }}
       >
-        <span className="text-on-background pl-0.5 py-0.5">
-          <NodeIcon type={node.type} />
+        <span
+          className="text-on-background pl-0.5 py-0.5"
+          onClick={isGroup ? (e) => { e.stopPropagation(); if (node.type === "group") { node.expanded = !node.expanded; root.update(); } } : undefined}
+        >
+          <NodeIcon type={node.type} isExpanded={isGroup && node.type === "group" ? node.expanded : undefined} />
         </span>
 
         <input
@@ -149,7 +152,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
         </button>
       </div>
 
-      {isGroup === true && state.isExpanded === true && (
+      {isGroup === true && node.type === "group" && node.expanded === true && (
         <div className="border-l border-slate-700/50">
           {node.children.map((child) => (
             <InspectorNode key={child.id} node={child} level={level + 1} root={root} />
@@ -166,10 +169,10 @@ interface TreeItemProps {
   root: UseStateRef<MapEditState>;
 }
 
-export function NodeIcon(props: { type: MapNodeType }) {
+export function NodeIcon(props: { type: MapNodeType; isExpanded?: boolean }) {
   switch (props.type) {
     case "group":
-      return <FolderIcon className="size-4" />;
+      return props.isExpanded ? <FolderOpenIcon className="size-4" /> : <FolderIcon className="size-4" />;
     case "rect":
       return <RectangleIcon className="size-4" />;
     case "image":
