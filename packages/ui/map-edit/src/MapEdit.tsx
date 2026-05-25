@@ -160,6 +160,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       containerEl: null,
       dragEl: null,
+      expandTimer: null as ReturnType<typeof setTimeout> | null,
       svgEl: null,
       wrapperEl: null,
 
@@ -1564,7 +1565,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         )}
         style={{ width: state.asideWidth, minWidth: state.asideWidth }}
       >
-        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-start h-10 pl-3 pr-2 py-2 bg-slate-900/20">
+        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-start min-h-10 pl-3 pr-2 py-2 bg-slate-900/20">
           <MainMenu state={state} />
           <FileMenu state={state} />
         </div>
@@ -1677,6 +1678,7 @@ export type State = {
   redoStack: HistoryEntry[];
   svgEl: SVGSVGElement | null;
   wrapperEl: HTMLDivElement | null;
+  expandTimer: ReturnType<typeof setTimeout> | null;
   dragEl:
     | null
     | {
