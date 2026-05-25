@@ -31,10 +31,14 @@
   - ✅ apply decor.orient to npc
   - 🚧 fix "clamp to navmesh" when too close
   - legs should not intersect chair
+  - improve sit icon
 
 - can spawn on bed
 
 - start 101
+
+- 🚧 fix obstacle skirts: extra--001--fresher
+  - why is `skirtCount` too small?
 
 - doors have meaningful icons
 - labels as decor point
