@@ -223,7 +223,9 @@ export default function NPCs() {
           const stuck = npc.updateStuck(delta, worldSeconds);
           if (stuck === true) {
             npc.startIdle();
-          } else if (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.arrive ? 0.1 : 0.4) === true) {
+          } else if (
+            crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.arrive ? 0.025 : npc.running ? 0.8 : 0.4) === true
+          ) {
             // arrived
             npc.startIdle();
           }
