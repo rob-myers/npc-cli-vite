@@ -161,11 +161,11 @@ export class Npc {
     return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
   }
 
-  playIdleClip() {
+  playIdleClip(duration = 0.5) {
     for (const clip of Object.values(this.clips)) {
-      this.mixer.existingAction(clip)?.fadeOut(0.3);
+      this.mixer.existingAction(clip)?.fadeOut(duration);
     }
-    this.mixer.clipAction(this.idleClip).reset().fadeIn(0.5).play(); // no reset?
+    this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
   }
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
@@ -197,8 +197,6 @@ export class Npc {
   }
 
   startIdle() {
-    const { crowd, clips } = this.w.npc;
-
     this.resolve?.("idle");
 
     if (!this.arrive) {
@@ -207,7 +205,7 @@ export class Npc {
     }
 
     if (this.agentId !== null) {
-      const agent = crowd.agents[this.agentId];
+      const agent = this.w.npc.crowd.agents[this.agentId];
 
       agent.separationWeight = idleSeparationWeight;
       agent.maxSpeed = idleAgentMaxSpeed;
@@ -221,7 +219,7 @@ export class Npc {
       });
     }
 
-    this.playIdleClip();
+    this.playIdleClip(0.3);
 
     this.moving = false;
     this.separating = false;
