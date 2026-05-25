@@ -7,7 +7,7 @@
     </radialGradient>
   </defs>
   <circle cx="45" cy="45" r="40" fill="black" stroke="rgba(255,255,255,0.25)" stroke-width="8"/>
-  <g transform="translate(5, 8) scale(0.9, 0.9)">
+  <g transform="translate(5, 8) scale(0.9, 0.9)" opacity="0.5">
     <!-- torso -->
     <path d="M 30,25 Q 36,22 40,25 L 40,50 L 27,50 Z" fill="url(#fig)"/>
     <!-- head -->
