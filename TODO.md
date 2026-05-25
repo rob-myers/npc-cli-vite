@@ -13,14 +13,17 @@
     - ✅ can uniformly scale image node around its center
     - ✅ uniform scale picked up by decor
     - 🚧 replace lights with `decor circle light`
-  - 🚧 do-points as decor point
+  - ✅ do-points as decor point
     - ✅ add some do-points (arrows) to 301
-    - 🚧 Decor renders them
+    - ✅ Decor renders them
+    - ✅ apply decor.orient
   - 🚧 can remove decor rect/circle
+    - track runtime decor so preserve on hmr
+    - try track gaps
 
 - ✅ clean path for extra--005--chair
 
-- can spawn on chair
+- 🚧 can spawn on chair
 
 - can spawn on bed
 
