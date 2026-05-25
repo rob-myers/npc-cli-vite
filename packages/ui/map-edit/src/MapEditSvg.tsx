@@ -53,7 +53,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
           height={root.selectionBox.height}
           fill="rgba(100, 150, 255, 0.15)"
           stroke="rgba(100, 150, 255, 0.8)"
-          strokeWidth={1 / root.zoom}
+          strokeWidth={2 / root.zoom}
           strokeDasharray={`${4 / root.zoom} ${2 / root.zoom}`}
           className="pointer-events-none"
         />
@@ -150,7 +150,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom }}
             className={cn(
               "fill-amber-500/25 stroke-amber-700 stroke-0!",
-              root.selectedIds.has(node.id) && "stroke-blue-500 stroke-[0.5]!",
+              root.selectedIds.has(node.id) && "stroke-blue-500 stroke-2!",
               node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
           >
