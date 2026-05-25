@@ -34,7 +34,7 @@ const mockBaseNode: BaseMapNode = {
 };
 
 export const templateNodeByKey = {
-  group: { ...mockBaseNode, type: "group", children: [] as MapNode[] },
+  group: { ...mockBaseNode, type: "group", expanded: true, children: [] as MapNode[] },
   image: {
     ...mockBaseNode,
     type: "image",

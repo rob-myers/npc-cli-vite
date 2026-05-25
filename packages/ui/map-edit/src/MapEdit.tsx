@@ -427,6 +427,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             return {
               ...baseProps,
               type: "group" as const,
+              expanded: node.expanded,
               children: node.children.map((c) => state.cloneNode(c, seenDuringClone)),
             };
           }

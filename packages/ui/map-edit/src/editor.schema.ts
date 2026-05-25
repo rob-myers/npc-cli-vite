@@ -15,6 +15,7 @@ export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
 export const MapNodeSchema = z.union([
   BaseNodeSchema.extend({
     type: z.literal("group"),
+    expanded: z.boolean().default(true),
     get children() {
       return z.array(MapNodeSchema);
     },
