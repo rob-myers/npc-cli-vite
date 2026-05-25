@@ -1138,6 +1138,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -1, "y": 0}
@@ -3974,6 +3975,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -1, "y": 0}
@@ -4639,6 +4641,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0, "y": -1},
@@ -4653,6 +4656,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0, "y": -1},
@@ -4667,6 +4671,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0, "y": -1},
@@ -4681,6 +4686,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0, "y": -1},
@@ -5779,6 +5785,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -0.7071067811865475, "y": -0.7071067811865476},
@@ -5928,6 +5935,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0.7071067811865476, "y": -0.7071067811865476},
@@ -6212,6 +6220,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -0.7071067811865476, "y": 0.7071067811865475},
@@ -6428,6 +6437,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0.8660254037844387, "y": 0.5},
@@ -6447,6 +6457,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0.8660254037844387, "y": -0.5000000000000001},
@@ -6742,6 +6753,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -0.7071067811865475, "y": -0.7071067811865476},
@@ -7178,6 +7190,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.41,
@@ -7289,6 +7302,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -7310,6 +7324,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -7746,6 +7761,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -7762,6 +7778,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -7783,6 +7800,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -7804,6 +7822,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -7825,6 +7844,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.61,
@@ -7841,6 +7861,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.61,
@@ -7983,6 +8004,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -8004,6 +8026,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -8115,6 +8138,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -8136,6 +8160,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -8389,6 +8414,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -8410,6 +8436,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -8467,6 +8494,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.41,
@@ -11433,6 +11461,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -1, "y": 0},
@@ -11610,6 +11639,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": -0.9659258262890683, "y": -0.25881904510252074},
@@ -11629,6 +11659,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "direction": {"x": 0.25881904510252074, "y": 0.9659258262890683},
@@ -13103,6 +13134,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.41,
@@ -13205,6 +13237,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13223,6 +13256,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13619,6 +13653,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13637,6 +13672,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13655,6 +13691,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13673,6 +13710,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13691,6 +13729,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.61,
@@ -13709,6 +13748,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.61,
@@ -13852,6 +13892,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13870,6 +13911,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13972,6 +14014,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -13990,6 +14033,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -14260,6 +14304,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -14278,6 +14323,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.51,
@@ -14338,6 +14384,7 @@
           "meta": {
             "decor": true,
             "point": true,
+            "do": true,
             "sit": true,
             "img": "arrow",
             "y": 0.41,
