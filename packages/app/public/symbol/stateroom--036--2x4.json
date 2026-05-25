@@ -23,6 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
+      "expanded": true,
       "children": [
         {
           "id": "d30a05aa-cfd8-4588-aec0-a429be4b80a7",
@@ -218,18 +219,6 @@
       "cssTransform": "matrix(-1, 0, 0, -1, 65, 58.5)"
     },
     {
-      "id": "e86404ce-2eef-416f-a274-64cf9723be8b",
-      "name": "extra--001--fresher y=1",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 82, "f": 0},
-      "type": "symbol",
-      "srcKey": "extra--001--fresher--0.5x0.5",
-      "baseRect": {"width": 28, "height": 23},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, 82, 0)"
-    },
-    {
       "id": "49e837da-87ee-4963-bf6c-d88842a48b96",
       "name": "extra--021--shower",
       "locked": false,
@@ -240,6 +229,18 @@
       "baseRect": {"width": 36, "height": 58},
       "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 0.5, 0.5)"
+    },
+    {
+      "id": "903360e1-2170-43f3-b5d8-ed237e0f04af",
+      "name": "extra--001--fresher--0.5x0.5 y=1",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 82, "f": 0},
+      "type": "symbol",
+      "srcKey": "extra--001--fresher--0.5x0.5",
+      "baseRect": {"width": 28, "height": 23},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 82, 0)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
