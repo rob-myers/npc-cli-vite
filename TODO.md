@@ -18,21 +18,16 @@
     - visual representation
   - 🚧 can remove decor rect/circle
 
-
-- specify lights in hull symbol
-  - via image node
-  - as decor point
-
 - can spawn on chair
 - can spawn on bed
 
 - start 101
 
-- better approach to default profile
+- better approach to default tty profile
   - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
 - can create colliders from decor rect/circle
 - hot reloading of `pick | move npc:rob` while change `move`?
-  - maybe just clarify current setup vs previsou
+  - maybe just clarify current setup vs previous "hot reloading"
 - doors have meaningful icons
 - support `look`
 - remove all suffices e.g. --0.25x0.25 from all symbols
