@@ -988,9 +988,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               transform.c = startTransform.c * k;
               transform.d = startTransform.d * k;
 
-              // anchor the opposite corner: local coords of anchor point
-              const anchorX = isW ? startBaseRect.width : 0;
-              const anchorY = isN ? startBaseRect.height : 0;
+              // metaKey: anchor center; otherwise anchor opposite corner
+              const anchorX = e.metaKey ? startBaseRect.width / 2 : isW ? startBaseRect.width : 0;
+              const anchorY = e.metaKey ? startBaseRect.height / 2 : isN ? startBaseRect.height : 0;
               transform.e = startTransform.e + (startTransform.a * anchorX + startTransform.c * anchorY) * (1 - k);
               transform.f = startTransform.f + (startTransform.b * anchorX + startTransform.d * anchorY) * (1 - k);
             } else {
