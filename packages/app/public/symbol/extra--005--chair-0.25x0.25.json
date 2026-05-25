@@ -17,14 +17,14 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0.5, 0.5)"
     },
     {
-      "id": "1273386a-d982-4b4a-ab17-ddbfb83df415",
-      "name": "obstacle chair h=0.1",
+      "id": "e744465c-539e-4b57-87f2-eee1396b41aa",
+      "name": "obstacle chair h=0.15 inset=1",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",
-      "d": "M 5.39295 0.77048 L 14.6225 0.77048 L 19.4218 5.29293 L 19.3296 14.6148 L 14.6225 19.2296 L 5.39295 19.2296 L 0.77819 14.6148 L 0.77819 5.38523 L 5.39295 0.77048 Z",
-      "baseRect": {"width": 21, "height": 20},
+      "d": "M14.6225,0 L20,5.2 L20,14.6148 L14.6225,20 L5.39295,20 L0,14.6148 L0,5.38523 L5.39295,0 L14.6225,0 Z",
+      "baseRect": {"width": 20, "height": 20},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],

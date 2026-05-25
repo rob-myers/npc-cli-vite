@@ -13,16 +13,20 @@
     - ✅ can uniformly scale image node around its center
     - ✅ uniform scale picked up by decor
     - 🚧 replace lights with `decor circle light`
-  - do-points as decor point
-    - visual representation
+  - 🚧 do-points as decor point
+    - ✅ add some do-points (arrows) to 301
+    - 🚧 Decor renders them
   - labels as decor point
-    - visual representation
+    - add some labels to 301
+    - Decor renders them
   - 🚧 can remove decor rect/circle
 
 - can spawn on chair
 - can spawn on bed
 
 - start 101
+
+- ✅ clean path for extra--005--chair
 
 - better approach to default tty profile
   - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
