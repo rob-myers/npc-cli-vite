@@ -134,6 +134,7 @@ export default function NPCs() {
           npc.bubbleOffset = oldNpc.bubbleOffset;
 
           npc.moveClip = oldNpc.moveClip;
+          npc.idleClip = oldNpc.idleClip;
 
           state.placeNpcAt(npc, npc.position);
         }
@@ -298,9 +299,9 @@ export default function NPCs() {
         }
 
         if (facing) {
-          at = parseGroundPoint(at);
+          const groundPoint = parseGroundPoint(at);
           facing = parseGroundPoint(facing);
-          angle = geomService.getThreeRotationY(facing.y - at.y, facing.x - at.x);
+          angle = geomService.getThreeRotationY(facing.y - groundPoint.y, facing.x - groundPoint.x);
         } else if (angle !== undefined) {
           // absorb errors else npc disappears
           angle = Number(angle) || 0;
@@ -308,6 +309,8 @@ export default function NPCs() {
 
         if (npcKey in state.npc) {
           const npc = state.npc[npcKey];
+          npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
+
           state.placeNpcAt(npc, at);
           npc.spawns++;
           if (as) npc.changeSkin(as);
@@ -335,6 +338,7 @@ export default function NPCs() {
             geometry,
             skinIndex: state.getSkinIndex(as ?? "medic-0"),
           });
+          npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
 
           state.placeNpcAt(npc, at);
           npc.spawns = 1;
@@ -424,6 +428,7 @@ export default function NPCs() {
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     for (const npc of Object.values(state.npc)) {
       npc.moveClip = clips[npc.moveClip.name as AnimationClipKey] ?? clips.walk;
+      npc.idleClip = clips[npc.idleClip.name as AnimationClipKey] ?? clips.idle;
       for (const [oldClip, clip] of pairedClips) {
         const oldAct = npc.mixer.existingAction(oldClip);
         if (!oldAct?.isRunning()) continue;

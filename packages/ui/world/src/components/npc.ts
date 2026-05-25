@@ -60,10 +60,11 @@ export class Npc {
   position: THREE.Vector3;
   queryFilter: QueryFilter;
   moving = false;
-  arrive = false;
+  arrive = true;
   /** while idle and due to separationWeight */
   separating = false;
   moveClip = emptyAnimationClip;
+  idleClip = emptyAnimationClip;
   spawns = 0;
   stuckAccum = 0;
 
@@ -127,6 +128,7 @@ export class Npc {
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
 
     this.moveClip = this.clips.walk;
+    this.idleClip = this.clips.idle;
   }
 
   changeSkin(keyOrIndex: string | number) {
@@ -147,7 +149,7 @@ export class Npc {
 
     this.resolve?.("spawned");
 
-    this.mixer.clipAction(this.clips.idle).play();
+    this.mixer.clipAction(this.idleClip).play();
     this.mixer.update(0);
   };
 
@@ -215,7 +217,7 @@ export class Npc {
     this.mixer.existingAction(clips.walk)?.fadeOut(0.3);
     this.mixer.existingAction(clips.run)?.fadeOut(0.3);
     this.mixer.existingAction(clips["shuffle-back"])?.fadeOut(0.3);
-    this.mixer.clipAction(clips.idle).reset().fadeIn(0.5).play();
+    this.mixer.clipAction(this.idleClip).reset().fadeIn(0.5).play();
 
     this.moving = false;
     this.separating = false;
@@ -243,7 +245,7 @@ export class Npc {
     if (!this.separating) {
       this.separating = true;
       agent.maxAcceleration = idleSeparatingMaxAcceleration;
-      this.mixer.existingAction(clips.idle)?.fadeOut(0.3);
+      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
       this.mixer.clipAction(clips["shuffle-back"]).reset().fadeIn(0.3).play();
     }
 
