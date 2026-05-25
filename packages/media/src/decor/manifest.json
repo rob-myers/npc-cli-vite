@@ -1,15 +1,15 @@
 {
   "byKey": {
+    "arrow-boxed": {
+      "key": "arrow-boxed",
+      "filename": "arrow-boxed.svg",
+      "width": 6,
+      "height": 6
+    },
     "arrow": {"key": "arrow", "filename": "arrow.svg", "width": 6, "height": 6},
     "axes-2d": {
       "key": "axes-2d",
       "filename": "axes-2d.svg",
-      "width": 6,
-      "height": 6
-    },
-    "boxed-arrow": {
-      "key": "boxed-arrow",
-      "filename": "boxed-arrow.svg",
       "width": 6,
       "height": 6
     },
@@ -31,6 +31,12 @@
       "width": 40,
       "height": 15
     },
+    "lie-circled": {
+      "key": "lie-circled",
+      "filename": "lie-circled.svg",
+      "width": 9,
+      "height": 9
+    },
     "number-one": {
       "key": "number-one",
       "filename": "number-one.svg",
@@ -42,6 +48,18 @@
       "filename": "number-zero.svg",
       "width": 60,
       "height": 60
+    },
+    "sit-circled": {
+      "key": "sit-circled",
+      "filename": "sit-circled.svg",
+      "width": 9,
+      "height": 9
+    },
+    "stand-circled": {
+      "key": "stand-circled",
+      "filename": "stand-circled.svg",
+      "width": 9,
+      "height": 9
     },
     "switch": {
       "key": "switch",
