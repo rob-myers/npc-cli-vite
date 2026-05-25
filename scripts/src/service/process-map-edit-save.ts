@@ -82,20 +82,22 @@ async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
       case "image":
       case "symbol": {
         if (isHullSymbol) break; // avoid large hull thumbnails
-        if (node.srcKey === null) {
-          break;
-        }
+        if (node.srcKey === null) break;
 
         const image = await loadImage(getImageOrSymbolNodeImageUrl(node));
-
         if (node.type === "image") ct.globalAlpha = node.locked ? 0.2 : 1;
 
-        ct.scale(0.2, 0.2);
-        ct.drawImage(image, 0, 0, image.width, image.height);
-        ct.scale(5, 5);
+        if (node.type === "image" && node.srcType === "decor") {
+          // decor SVGs are at their natural size — draw at baseRect dimensions
+          ct.drawImage(image, 0, 0, node.baseRect.width, node.baseRect.height);
+        } else {
+          // starship-symbol PNGs are 5× their world size, so scale down
+          ct.scale(0.2, 0.2);
+          ct.drawImage(image, 0, 0, image.width, image.height);
+          ct.scale(5, 5);
+        }
 
         ct.globalAlpha = 1;
-
         break;
       }
       case "rect": {
