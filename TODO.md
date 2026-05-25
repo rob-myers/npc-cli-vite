@@ -16,24 +16,25 @@
   - 🚧 do-points as decor point
     - ✅ add some do-points (arrows) to 301
     - 🚧 Decor renders them
-  - labels as decor point
-    - add some labels to 301
-    - Decor renders them
   - 🚧 can remove decor rect/circle
 
+- ✅ clean path for extra--005--chair
+
 - can spawn on chair
+
 - can spawn on bed
 
 - start 101
 
-- ✅ clean path for extra--005--chair
-
+- doors have meaningful icons
+- labels as decor point
+  - add some labels to 301
+  - Decor renders them
 - better approach to default tty profile
   - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
 - can create colliders from decor rect/circle
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
-- doors have meaningful icons
 - support `look`
 - remove all suffices e.g. --0.25x0.25 from all symbols
 - change lighting from "loop thru radii in shaders" to "multiply by texture"

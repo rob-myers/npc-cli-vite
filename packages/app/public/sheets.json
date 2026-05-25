@@ -84,22 +84,22 @@
   "symbolSheetDims": [{"width": 3672, "height": 2794}],
   "maxSymbolSheetDim": {"width": 3672, "height": 2794},
   "decor": {
+    "arrow-boxed": {
+      "key": "arrow-boxed",
+      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "axes-2d": {
       "key": "axes-2d",
-      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 6,
-      "originalHeight": 6
-    },
-    "boxed-arrow": {
-      "key": "boxed-arrow",
       "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
@@ -126,30 +126,51 @@
       "originalWidth": 40,
       "originalHeight": 15
     },
+    "lie-circled": {
+      "key": "lie-circled",
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 9,
+      "originalHeight": 9
+    },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
+    "sit-circled": {
+      "key": "sit-circled",
+      "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 9,
+      "originalHeight": 9
+    },
+    "stand-circled": {
+      "key": "stand-circled",
+      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 9,
+      "originalHeight": 9
+    },
     "switch": {
       "key": "switch",
-      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 776, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 776, "height": 776}],
-  "maxDecorSheetDim": {"width": 776, "height": 776},
+  "decorSheetDims": [{"width": 1034, "height": 776}],
+  "maxDecorSheetDim": {"width": 1034, "height": 776},
   "skin": {
     "general-0": {
       "key": "general-0",
