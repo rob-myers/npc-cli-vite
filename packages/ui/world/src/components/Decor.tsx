@@ -314,9 +314,12 @@ export default function Decor() {
             }
             const pw = entry.originalWidth * sguToWorldScale;
             const ph = entry.originalHeight * sguToWorldScale;
+            const angle = (decor.orient - 90) * (Math.PI / 180);
+            const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+            const [a, b, c, d] = [cos * pw, sin * pw, -sin * ph, cos * ph];
             // biome-ignore format: preserve newlines
-            tmpMat.feedFromArray([pw, 0, 0, ph, decor.x - pw / 2, decor.y - ph / 2]);
-            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
+            tmpMat.feedFromArray([a, b, c, d, decor.x - (a + c) * 0.5, decor.y - (b + d) * 0.5]);
+            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
             state.inst.setMatrixAt(instanceId, mat4);
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
@@ -443,6 +446,7 @@ function decorPointImgKey(meta: Meta): string {
 }
 
 const cuboidHeight = 0.05;
+const cuboidIconHeight = 0.005;
 const tmpVect = new Vect();
 const tmpRect = new Rect();
 const tmpMat = new Mat();

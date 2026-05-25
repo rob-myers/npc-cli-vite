@@ -7,9 +7,12 @@
     </radialGradient>
   </defs>
   <circle cx="45" cy="45" r="42" fill="#1a2038" stroke="white" stroke-width="2.5"/>
-  <circle cx="38" cy="14" r="9" fill="url(#fig)"/>
-  <path d="M 30,25 Q 38,22 46,25 L 44,55 L 30,55 Z" fill="url(#fig)"/>
-  <path d="M 30,55 L 44,55 L 68,53 L 68,63 L 30,63 Z" fill="url(#fig)"/>
-  <path d="M 61,63 L 69,63 L 69,77 L 61,77 Z" fill="url(#fig)"/>
-  <path d="M 44,32 L 60,50 L 57,53 L 41,36 Z" fill="url(#fig)"/>
+  <!-- torso -->
+  <path d="M 30,25 Q 36,22 40,25 L 40,50 L 27,50 Z" fill="url(#fig)"/>
+  <!-- head -->
+  <circle cx="36" cy="18" r="9.5" fill="url(#fig)"/>
+  <!-- upper legs (thighs) -->
+  <path d="M 27,50 L 43,50 Q 55,50 64,52 L 64,60 L 27,60 Z" fill="url(#fig)"/>
+  <!-- lower legs (shins hanging) -->
+  <path d="M 53,60 64,60 L 64,72 L 54,72 Z" fill="url(#fig)"/>
 </svg>
