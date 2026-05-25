@@ -764,7 +764,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.set({ editingId: null });
       },
       setImageKey(nodeId, selection) {
-        if (state.isReadOnly()) return;
+        if (state.isReadOnly() || !state.svgEl) return;
         state.set({ pickImageForId: null });
 
         const [node] = findNodeById(state.nodes, nodeId) ?? {};
@@ -795,6 +795,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           node.baseRect.width = meta.width * scaleFactor;
           node.baseRect.height = meta.height * scaleFactor;
         }
+
+        // position at center of viewport
+        const svgRect = state.svgEl.getBoundingClientRect();
+        const center = state.clientToSvg(svgRect.x + svgRect.width / 2, svgRect.y + svgRect.height / 2);
+        node.transform.e = center.x - node.baseRect.width / 2;
+        node.transform.f = center.y - node.baseRect.height / 2;
 
         node.cssTransform = computeNodeCssTransform(node);
 
@@ -1246,7 +1252,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!savedFile) return;
 
         const zoom = Math.min(
-          Math.max(zoomToFitFraction * baseSvgSize / Math.max(savedFile.width, savedFile.height), minZoomScale),
+          Math.max((zoomToFitFraction * baseSvgSize) / Math.max(savedFile.width, savedFile.height), minZoomScale),
           maxZoomScale,
         );
 
@@ -1262,8 +1268,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           svgHeight: savedFile.height,
           zoom,
           pan: {
-            x: zoom * (baseSvgSize - savedFile.width) / 2,
-            y: zoom * (baseSvgSize - savedFile.height) / 2,
+            x: (zoom * (baseSvgSize - savedFile.width)) / 2,
+            y: (zoom * (baseSvgSize - savedFile.height)) / 2,
           },
         });
       },
