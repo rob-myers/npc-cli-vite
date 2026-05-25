@@ -309,7 +309,9 @@ export default function NPCs() {
 
         if (npcKey in state.npc) {
           const npc = state.npc[npcKey];
+          // 🚧 abstract e.g. support sit/lie/stand
           npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
+          npc.playIdleClip();
 
           state.placeNpcAt(npc, at);
           npc.spawns++;
@@ -338,7 +340,9 @@ export default function NPCs() {
             geometry,
             skinIndex: state.getSkinIndex(as ?? "medic-0"),
           });
+          // 🚧
           npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
+          npc.playIdleClip();
 
           state.placeNpcAt(npc, at);
           npc.spawns = 1;

@@ -17,6 +17,7 @@
     - ✅ add some do-points (arrows) to 301
     - ✅ Decor renders them
     - ✅ apply decor.orient
+    - ✅ do-points have `meta.do` true
   - 🚧 can remove decor rect/circle
     - track runtime decor so preserve on hmr
     - try track gaps
@@ -25,8 +26,9 @@
 
 - 🚧 can spawn on chair
   - ✅ npc.idleClip
-  - 🚧 do-points have meta.do true
-  - 🚧 offmesh spawn to do-point should trigger idle
+  - ✅ offmesh spawn to do-point should trigger idle animation
+  - 🚧 sit should be at seat height
+  - 🚧 apply decor.orient to npc
 
 - can spawn on bed
 
