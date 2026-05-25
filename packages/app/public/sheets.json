@@ -84,12 +84,12 @@
   "symbolSheetDims": [{"width": 3672, "height": 2794}],
   "maxSymbolSheetDim": {"width": 3672, "height": 2794},
   "decor": {
-    "arrow-right": {
-      "key": "arrow-right",
+    "arrow": {
+      "key": "arrow",
       "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
-      "originalWidth": 60,
-      "originalHeight": 60
+      "originalWidth": 6,
+      "originalHeight": 6
     },
     "axes-2d": {
       "key": "axes-2d",
@@ -98,44 +98,51 @@
       "originalWidth": 6,
       "originalHeight": 6
     },
+    "boxed-arrow": {
+      "key": "boxed-arrow",
+      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
     "circle-1": {
       "key": "circle-1",
-      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "label": {
       "key": "label",
-      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 40,
       "originalHeight": 15
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6

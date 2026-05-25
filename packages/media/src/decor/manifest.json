@@ -1,14 +1,15 @@
 {
   "byKey": {
-    "arrow-right": {
-      "key": "arrow-right",
-      "filename": "arrow-right.svg",
-      "width": 60,
-      "height": 60
-    },
+    "arrow": {"key": "arrow", "filename": "arrow.svg", "width": 6, "height": 6},
     "axes-2d": {
       "key": "axes-2d",
       "filename": "axes-2d.svg",
+      "width": 6,
+      "height": 6
+    },
+    "boxed-arrow": {
+      "key": "boxed-arrow",
+      "filename": "boxed-arrow.svg",
       "width": 6,
       "height": 6
     },
