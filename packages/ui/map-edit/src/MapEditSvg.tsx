@@ -16,9 +16,9 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
     const [selectedId] = root.selectedIds;
     const [node] = findNodeById(root.nodes, selectedId);
     if (!node) return null;
-    if (node.type === "rect" || (node.type === "image" && node.srcType === "decor")) return node;
+    if (node.type === "rect" || node.type === "image") return node;
     return null;
-  }, [root.selectedIds]);
+  }, [root.selectedIds, root.nodes]);
 
   const multiSelectionBounds = useMemo(() => {
     if (root.selectedIds.size <= 1) return null;
@@ -215,7 +215,7 @@ const handleToCursor: Record<ResizeHandle, string> = {
 type Rect = { x: number; y: number; width: number; height: number };
 
 function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
-  const handleSize = (4 * resizeHandleSize) / (2 * root.zoom);
+  const handleSize = (8 * resizeHandleSize) / (2 * root.zoom);
 
   if (selectedNode.type === "image") {
     // Rotated UI: compute transformed corners from cssTransform
