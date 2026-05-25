@@ -245,10 +245,11 @@ export default function Decor() {
       let uvIdx = 0;
       for (const gm of w.gms) {
         for (const item of gm.decor) {
-          if (item.type !== "quad") continue;
-          const entry = w.sheets.decor[item.meta.img] as DecorSheetEntry | undefined;
+          if (item.type !== "quad" && item.type !== "point") continue;
+          const imgKey = item.type === "quad" ? item.meta.img : decorPointImgKey(item.meta);
+          const entry = w.sheets.decor[imgKey] as DecorSheetEntry | undefined;
           if (!entry) {
-            warn(`decor "${item.meta.img}" not found in sheets.json`);
+            warn(`decor "${imgKey}" not found in sheets.json`);
             uvIdx++;
             continue;
           }
@@ -271,34 +272,52 @@ export default function Decor() {
 
       for (const [gmId, gm] of w.gms.entries()) {
         for (const [decorId, decor] of gm.decor.entries()) {
-          if (decor.type !== "quad") continue;
-          const entry = w.sheets.decor[decor.meta.img];
+          if (decor.type !== "quad" && decor.type !== "point") continue;
 
-          tmpMat.setMatrixValue(decor.transform);
+          if (decor.type === "quad") {
+            const entry = w.sheets.decor[decor.meta.img];
 
-          const shouldTilt = decor.meta.tilt === true; // currently only switches
-          if (shouldTilt) {
-            const { a, b, c, d } = tmpMat;
-            const det = a * d - b * c;
-            tiltMat4 = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
-            setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
-          }
+            tmpMat.setMatrixValue(decor.transform);
 
-          // biome-ignore format: preserve newlines
-          tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0,]);
-          const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
-          if (shouldTilt) mat4.premultiply(tiltMat4);
+            const shouldTilt = decor.meta.tilt === true; // currently only switches
+            if (shouldTilt) {
+              const { a, b, c, d } = tmpMat;
+              const det = a * d - b * c;
+              tiltMat4 = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
+              setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
+            }
 
-          state.inst.setMatrixAt(instanceId, mat4);
+            // biome-ignore format: preserve newlines
+            tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0,]);
+            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
+            if (shouldTilt) mat4.premultiply(tiltMat4);
 
-          if (typeof decor.meta.doorId === "number") {
-            // tint via un/locked doors
-            const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
-            const { locked } = w.door.byKey[gdKey];
-            state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
-            // build gdKey -> instances
-            (state.gdKeyToInstanceId[gdKey] ??= []).push(instanceId);
+            state.inst.setMatrixAt(instanceId, mat4);
+
+            if (typeof decor.meta.doorId === "number") {
+              // tint via un/locked doors
+              const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
+              const { locked } = w.door.byKey[gdKey];
+              state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
+              // build gdKey -> instances
+              (state.gdKeyToInstanceId[gdKey] ??= []).push(instanceId);
+            } else {
+              state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
+            }
           } else {
+            // point: flat face-up quad centered at (decor.x, decor.y) in XZ plane
+            const imgKey = decorPointImgKey(decor.meta);
+            const entry = w.sheets.decor[imgKey];
+            if (!entry) {
+              instanceId++;
+              continue;
+            }
+            const pw = entry.originalWidth * sguToWorldScale;
+            const ph = entry.originalHeight * sguToWorldScale;
+            // biome-ignore format: preserve newlines
+            tmpMat.feedFromArray([pw, 0, 0, ph, decor.x - pw / 2, decor.y - ph / 2]);
+            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
+            state.inst.setMatrixAt(instanceId, mat4);
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
@@ -415,6 +434,13 @@ export type State = {
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };
+
+function decorPointImgKey(meta: Meta): string {
+  if (meta.sit === true) return "sit-circled";
+  if (meta.stand === true) return "stand-circled";
+  if (meta.lie === true) return "lie-circled";
+  return decorKeyFallback;
+}
 
 const cuboidHeight = 0.05;
 const tmpVect = new Vect();
