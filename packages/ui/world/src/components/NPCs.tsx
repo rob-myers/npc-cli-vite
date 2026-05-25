@@ -295,33 +295,21 @@ export default function NPCs() {
           throw Error("opts.at: must exist");
         }
 
+        const groundAt = parseGroundPoint(at);
         const gmRoomId = w.e.findRoomContaining(at, true);
-        if (gmRoomId === null) {
-          throw Error("must be in some room");
-        }
+        if (gmRoomId === null) throw Error("must be in some room");
 
         if (facing) {
-          const groundPoint = parseGroundPoint(at);
           facing = parseGroundPoint(facing);
-          angle = geomService.getThreeRotationY(facing.y - groundPoint.y, facing.x - groundPoint.x);
+          angle = geomService.getThreeRotationY(facing.y - groundAt.y, facing.x - groundAt.x);
         } else if (angle !== undefined) {
           // absorb errors else npc disappears
           angle = Number(angle) || 0;
         }
 
-        if (npcKey in state.npc) {
-          const npc = state.npc[npcKey];
-          // 🚧 abstract e.g. support sit/lie/stand
-          npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
-          npc.playIdleClip(0);
+        let npc = state.npc[npcKey];
 
-          state.placeNpcAt(npc, at);
-          npc.spawns++;
-          if (as) npc.changeSkin(as);
-
-          npc.skinnedMesh.rotation.y = angle ?? 0;
-          w.view.forceUpdate();
-        } else {
+        if (!npc) {
           const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
           const graph = buildGraph(clone);
           const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
@@ -333,27 +321,28 @@ export default function NPCs() {
           addEmptyBillboardOffset(shadowQuad);
           const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
 
-          const npc = state.createNpc({
+          npc = state.createNpc({
             key: npcKey,
-            pickId: state.nextPickId,
-            position: groundPointToVector3(parseGroundPoint(at)),
+            pickId: state.nextPickId++,
+            position: groundPointToVector3(groundAt),
             skinnedMesh: clonedSkinnedMesh,
             graph,
             geometry,
             skinIndex: state.getSkinIndex(as ?? "medic-0"),
           });
-          // 🚧
-          npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
-          npc.playIdleClip(0);
+        }
 
-          state.placeNpcAt(npc, at);
-          npc.spawns = 1;
-          state.nextPickId++;
+        npc.idleClip = at.meta?.sit === true ? state.clips.sit : state.clips.idle;
+        npc.playIdleClip(0);
+        state.placeNpcAt(npc, at);
+        npc.skinnedMesh.rotation.y = angle ?? 0;
 
+        if (npc.spawns++ === 0) {
           state.update();
           await new Promise<string>((resolve) => (npc.resolve = resolve));
-
-          npc.skinnedMesh.rotation.y = angle ?? 0;
+        } else {
+          if (as) npc.changeSkin(as);
+          w.view.forceUpdate();
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
