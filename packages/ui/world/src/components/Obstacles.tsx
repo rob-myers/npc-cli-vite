@@ -26,7 +26,7 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
-import { MAX_OBSTACLE_QUAD_INSTANCES, worldToSguScale } from "../const";
+import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
 import { getLightPositions, lightRadius } from "../service/texture";
@@ -155,9 +155,10 @@ export default function Obstacles(_props: Props) {
 
         state.skirtInst.instanceMatrix.array.fill(0);
 
-        w.gms.forEach(({ obstacles, transform: gmTransform, determinant }) => {
-          obstacles.forEach(({ origPoly, transform: obTransform, height }) => {
+        for (const { obstacles, transform: gmTransform, determinant } of w.gms) {
+          for (const { origPoly, transform: obTransform, height } of obstacles) {
             // skirts support numeric meta.inset
+            // 🔔 this may increase the number of edges ~ instances
             tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
             const corners = (
               typeof origPoly.meta.inset === "number"
@@ -178,8 +179,8 @@ export default function Obstacles(_props: Props) {
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
               );
             }
-          });
-        });
+          }
+        }
 
         // state.skirtInst.instanceMatrix.needsUpdate = true;
         state.skirtInst.computeBoundingSphere();
@@ -251,14 +252,7 @@ export default function Obstacles(_props: Props) {
     for (const { obstacles, transform } of w.gms) {
       tmpMat1.setMatrixValue(transform);
       for (const { origPoly, transform: obTransform } of obstacles) {
-        tmpMat2.feedFromArray([
-          obTransform.a,
-          obTransform.b,
-          obTransform.c,
-          obTransform.d,
-          obTransform.e,
-          obTransform.f,
-        ]);
+        tmpMat2.setMatrixValue(obTransform);
         const { rect } = origPoly;
         const lp = tmpMat1.transformPoint(
           tmpMat2.transformPoint({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }),
@@ -320,17 +314,13 @@ export default function Obstacles(_props: Props) {
         />
       </instancedMesh>
 
-      {skirtCount > 0 && (
-        <instancedMesh
-          name="obstacle-skirts"
-          ref={state.ref("skirtInst")}
-          // args={[state.skirtQuad, undefined, skirtCount]}
-          // 🚧 tempfix
-          args={[state.skirtQuad, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
-          frustumCulled={false}
-          material={skirtMaterial}
-        />
-      )}
+      <instancedMesh
+        name="obstacle-skirts"
+        ref={state.ref("skirtInst")}
+        args={[state.skirtQuad, undefined, MAX_OBSTACLE_SKIRT_INSTANCES]}
+        frustumCulled={false}
+        material={skirtMaterial}
+      />
     </>
   );
 }
