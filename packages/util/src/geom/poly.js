@@ -1,6 +1,7 @@
 import * as earcut from "earcut";
 import * as poly2tri from "poly2tri";
 import polygonClipping from "polygon-clipping";
+import { deepClone } from "../legacy/generic.js";
 import { Mat } from "./mat.js";
 import { Rect } from "./rect.js";
 import { Vect } from "./vect.js";
@@ -216,7 +217,8 @@ export class Poly {
   clone() {
     const outline = this.outline.map((p) => p.clone());
     const holes = this.holes.map((hole) => hole.map((p) => p.clone()));
-    return new Poly(outline, holes, { ...this.meta });
+    // return new Poly(outline, holes, { ...this.meta });
+    return new Poly(outline, holes, deepClone(this.meta));
   }
 
   /**

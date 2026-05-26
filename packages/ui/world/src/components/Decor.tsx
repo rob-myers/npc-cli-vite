@@ -34,6 +34,7 @@ export default function Decor() {
       inst: null as any,
       gdKeyToInstanceId: {}, // decor related to doors
       grid: {},
+      // 🚧 pure encoding (gmId, decorId) -> ... instead
       instanceIdToDecorId: [],
       lastHmr: 0,
       materials: [],
@@ -272,7 +273,10 @@ export default function Decor() {
 
       for (const [gmId, gm] of w.gms.entries()) {
         for (const [decorId, decor] of gm.decor.entries()) {
-          if (decor.type !== "quad" && decor.type !== "point") continue;
+          if (decor.type !== "quad" && decor.type !== "point") {
+            // 🚧 we're skipping
+            continue;
+          }
 
           if (decor.type === "quad") {
             const entry = w.sheets.decor[decor.meta.img];
