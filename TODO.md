@@ -40,8 +40,8 @@
 
 - ✅ avoid AnimationMixer warns by play animation before skinnedMesh mount
 
-- 🚧 fix obstacle skirts: extra--001--fresher
-  - why is `skirtCount` too small?
+- ✅ fix obstacle skirts: extra--001--fresher
+  - seems `skirtCount` too small because createInset creates edges
 
 - doors have meaningful icons
 - labels as decor point

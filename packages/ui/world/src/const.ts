@@ -90,6 +90,8 @@ export const MAX_GEOMORPH_INSTANCES = 64;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 
+export const MAX_OBSTACLE_SKIRT_INSTANCES = 1024;
+
 /**
  * A decor quad is represented as a cuboid with single textured face.
  */
