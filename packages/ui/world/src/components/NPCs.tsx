@@ -1,5 +1,5 @@
 import { url } from "@npc-cli/media";
-import { geomService, useStateRef } from "@npc-cli/util";
+import { geomService, useStateRef, Vect } from "@npc-cli/util";
 
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { loadImage } from "@npc-cli/util/legacy/dom";
@@ -342,13 +342,16 @@ export default function NPCs() {
           });
         }
 
+        // 🚧 meta.decorIds -> gm.decors[decorId].meta.groundPoint
         const meta = at.meta?.do === true ? at.meta : {};
-        npc.idleClip = state.clips[metaToIdleAnimationClipKey(meta ?? {})];
-        state.placeNpcAt(npc, at);
+        npc.idleClip = state.clips[metaToIdleAnimationClipKey(meta)];
+        state.placeNpcAt(npc, Vect.isJson(meta.groundPoint) ? meta.groundPoint : at);
 
         if (npc.spawns++ === 0) {
-          state.update();
-          await new Promise<string>((resolve) => (npc.resolve = resolve));
+          await new Promise<string>((resolve) => {
+            npc.resolve = resolve;
+            state.update();
+          });
           npc.playIdleClip(0); // after mount
         } else {
           if (as) npc.changeSkin(as);

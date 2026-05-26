@@ -31,6 +31,8 @@
   - ✅ apply decor.orient to npc
   - ✅ fix "clamp to navmesh" when too close
   - 🚧 legs should not intersect chair
+    - ✅ decor points have meta.groundPoint
+    - ✅ spawn snaps onto `meta.groundPoint`
   - ❌ improve sit icon
     - will only show icon during debug
 
@@ -40,7 +42,9 @@
   - translated correctly on flatten and combine into layout
   - `w.npc.spawn` checks `pick.meta` and `gm.decors[i].meta` for `i in pick.meta.decorIds`
     - e.g. a do-point extends to a whole chair
-  - example of multiple do-points on single obstacle: sofa
+  - example of multiple do-points on single obstacle
+    - sofa
+    - maybe chair i.e. close-to-edge vs further-back
   - `<Decor>` only renders
     - `decor point icon`
     - `decor point label` (future work)
