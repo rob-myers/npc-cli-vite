@@ -344,7 +344,7 @@ export default function NPCs() {
         }
 
         // 🚧 meta.decorIds -> gm.decors[decorId].meta.groundPoint
-        const meta = at.meta?.do === true ? at.meta : {};
+        const meta = typeof at.meta?.do === "string" ? at.meta : {};
         npc.idleClip = state.clips[metaToIdleAnimationClipKey(meta)];
         state.placeNpcAt(npc, Vect.isJson(meta.groundPoint) ? meta.groundPoint : at);
 
@@ -535,10 +535,8 @@ function getAgentParams(): crowd.AgentParams {
 }
 
 function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
-  if (meta.do !== true) return defaultIdleAnimationClipKey;
-  if (meta.sit === true) return "sit";
-  if (meta.lie === true) return "lie";
-  if (meta.stand === true) return "idle";
+  if (typeof meta.do !== "string") return defaultIdleAnimationClipKey;
+  if (meta.do === "sit" || meta.do === "lie" || meta.do === "stand") return meta.do;
   return defaultIdleAnimationClipKey;
 }
 

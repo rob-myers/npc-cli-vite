@@ -145,7 +145,7 @@ export default function Decor() {
                 point: true,
                 y: def.y3d,
                 ...(def.img !== undefined && { img: def.img }),
-                ...(meta.do === true && { doPoint: { ...center } }),
+                ...(typeof meta.do === "string" && { groundPoint: { ...center } }),
               }),
               bounds,
               x: center.x,
@@ -439,9 +439,9 @@ export type State = {
 };
 
 function decorPointImgKey(meta: Meta): string {
-  if (meta.sit === true) return "sit-circled";
-  if (meta.stand === true) return "stand-circled";
-  if (meta.lie === true) return "lie-circled";
+  if (meta.do === "sit") return "sit-circled";
+  if (meta.do === "stand") return "stand-circled";
+  if (meta.do === "lie") return "lie-circled";
   return decorKeyFallback;
 }
 
