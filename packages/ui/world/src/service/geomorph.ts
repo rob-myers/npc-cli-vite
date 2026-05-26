@@ -426,8 +426,8 @@ export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.
 }
 
 /**
- * Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
- * Previously known as `parseSymbol`.
+ * - Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
+ * - Previously known as `parseSymbol`.
  */
 export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
   const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
@@ -489,8 +489,18 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
       meta.doorId = polysLookup.doors.length - 1;
     }
 
+    if (meta.decor === true && meta.on === true) {
+      // decor `on` aligned obstacle
+      const obstacleId = polysLookup.obstacles.length - 1;
+      if (obstacleId >= 0) {
+        meta.obstacleId = obstacleId;
+        const decorId = polysLookup.decor.length - 1;
+        (polysLookup.obstacles[obstacleId].meta.decorIds ??= []).push(decorId);
+      }
+    }
+
     if (meta.obstacle === true) {
-      // Link to original symbol
+      // link to original symbol
       meta.symKey = savedFile.key;
       // local id inside SVG symbol
       meta.obsId = polysLookup.obstacles.length - 1;
