@@ -275,7 +275,8 @@ export default function NPCs() {
             crowdApi.removeAgent(state.crowd, npc.agentId);
             npc.agentId = null;
           }
-          npc.position.copy(groundPointToVector3(groundPoint));
+          npc.position.x = groundPoint.x;
+          npc.position.z = groundPoint.y;
         }
       },
       remove(...npcKeys) {
