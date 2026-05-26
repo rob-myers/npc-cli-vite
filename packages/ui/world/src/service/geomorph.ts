@@ -32,18 +32,28 @@ import { Connector } from "./Connector";
 import { embedXZMat4 } from "./geometry";
 
 /**
- * 🚧 needs review
+ * Compute flattened doors, decor, obstacles,
+ * appropiately restricted with mutated meta.
  *
- * Compute flattened doors and decor:
- * - ensure decor `switch={doorId}` points to correct `doorId`
+ * - ensure decor `obstacleId={obstacleId}` points to correct `obstacleId`
+ * - ensure decor `doorId={doorId}` points to correct `doorId`
  * - when doors are close (e.g. coincide) remove later door
- * - ensure resp. switches removed, set other two as "inner"
+ * - on remove door ensure respective decor removed
+ * - ensure obstacle.meta.decorIds
  */
-function computeFlatDoorsAndDecor(
+function computeFlatDoorsDecorObstacles(
   logPrefix: string,
   symbol: Geomorph.Symbol,
   flats: Geomorph.FlatSymbol[],
-): { flatDoors: Poly[]; flatDecor: Poly[] } {
+): { flatDoors: Poly[]; flatDecor: Poly[]; flatObstacles: Poly[] } {
+  // ensure decor `obstacleId={obstacleId}` points to correct `obstacleId`
+  // 🔔 independent of decor removal below; we never remove obstacles
+  let obstacleIdOffset = symbol.obstacles.length;
+  flats.forEach((flat) => {
+    flat.decor.forEach((d) => typeof d.meta.obstacleId === "number" && (d.meta.obstacleId += obstacleIdOffset));
+    obstacleIdOffset += flat.obstacles.length;
+  });
+
   // ensure `decor.meta.doorId` points to correct doorId
   let doorIdOffset = symbol.doors.length;
   const flatDoors = symbol.doors.concat(
@@ -68,29 +78,38 @@ function computeFlatDoorsAndDecor(
       }
   });
 
+  // on remove door ensure respective decor removed
   const flatDecor = symbol.decor.concat(flats.flatMap((x) => x.decor));
-  let switchIdOffset = 0; // adjust switches on remove door
+  let rmDoorIdOffset = 0;
   const seenRmDoorId = new Set<number>();
+  const filteredFlatDecor = flatDecor.filter((d) => {
+    if (typeof d.meta.doorId === "number") {
+      if (rmDoorIds.has(d.meta.doorId)) {
+        // remove resp. switch
+        if (!seenRmDoorId.has(d.meta.doorId)) {
+          rmDoorIdOffset--;
+          seenRmDoorId.add(d.meta.doorId);
+        }
+        return false;
+      }
+      d.meta.doorId += rmDoorIdOffset; // adjust for prior removals
+    }
+    return true;
+  });
+
+  // ensure obstacle.meta.decorIds, now we've removed decor
+  const mutatedFlatObstacles = symbol.obstacles.concat(flats.flatMap((flat) => flat.obstacles));
+  filteredFlatDecor.forEach((d, decorId) => {
+    const obstacleId = d.meta.obstacleId;
+    if (typeof obstacleId === "number") {
+      (mutatedFlatObstacles[obstacleId].meta.decorIds ??= []).push(decorId);
+    }
+  });
 
   return {
-    flatDoors: flatDoors.filter((_, i) => !rmDoorIds.has(i)),
-    flatDecor: flatDecor.filter((d) => {
-      if (typeof d.meta.doorId === "number") {
-        if (rmDoorIds.has(d.meta.doorId)) {
-          // remove resp. switch
-          if (!seenRmDoorId.has(d.meta.doorId)) {
-            switchIdOffset--;
-            seenRmDoorId.add(d.meta.doorId);
-          }
-          return false;
-        }
-        if (keptDoorIds.has(d.meta.doorId)) {
-          d.meta.inner = true; // set kept switches inner
-        }
-        d.meta.doorId += switchIdOffset; // adjust for prior removals
-      }
-      return true;
-    }),
+    flatDoors: flatDoors.filter((_, doorId) => !rmDoorIds.has(doorId)),
+    flatDecor: filteredFlatDecor,
+    flatObstacles: mutatedFlatObstacles,
   };
 }
 
@@ -490,12 +509,12 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
     }
 
     if (meta.decor === true && meta.on === true) {
-      // decor `on` aligned obstacle
+      // decor can be "on" last obstacle
       const obstacleId = polysLookup.obstacles.length - 1;
       if (obstacleId >= 0) {
         meta.obstacleId = obstacleId;
-        const decorId = polysLookup.decor.length - 1;
-        (polysLookup.obstacles[obstacleId].meta.decorIds ??= []).push(decorId);
+        // const decorId = polysLookup.decor.length - 1;
+        // (polysLookup.obstacles[obstacleId].meta.decorIds ??= []).push(decorId);
       }
     }
 
@@ -614,7 +633,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     }
   });
 
-  const { flatDoors, flatDecor } = computeFlatDoorsAndDecor(symbol.key, symbol, flats);
+  const { flatDoors, flatDecor, flatObstacles } = computeFlatDoorsDecorObstacles(symbol.key, symbol, flats);
 
   return (flattened[key] = {
     key,
@@ -630,7 +649,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     // aggregated and cloned
     doors: flatDoors,
     decor: flatDecor,
-    obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
+    obstacles: flatObstacles,
     unsorted: unsorted.concat(flats.flatMap((x) => x.unsorted)),
     walls: walls.concat(flats.flatMap((x) => x.walls)),
     windows: windows.concat(flats.flatMap((x) => x.windows)),
