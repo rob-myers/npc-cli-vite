@@ -151,13 +151,20 @@ export default function NPCs() {
         }
       },
       getClosestPoly(targetPos, queryFilter = ANY_QUERY_FILTER) {
-        return findNearestPoly(
+        const targetTuple = groudPointToTuple(parseGroundPoint(targetPos));
+        const result = findNearestPoly(
           createFindNearestPolyResult(),
           w.nav.navMesh,
-          groudPointToTuple(parseGroundPoint(targetPos)),
-          polygonQueryHalfExtents,
+          targetTuple,
+          closePolygonHalfExtents,
           queryFilter,
         );
+        if (result.success === true) {
+          // 🔔 force fail when XZ distance exceeds half extent
+          const dist = Math.hypot(result.position[0] - targetTuple[0], result.position[2] - targetTuple[2]);
+          result.success = dist <= closePolygonDistance;
+        }
+        return result;
       },
       getSkinIndex(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
@@ -337,14 +344,15 @@ export default function NPCs() {
 
         const meta = at.meta?.do === true ? at.meta : {};
         npc.idleClip = state.clips[metaToIdleAnimationClipKey(meta ?? {})];
-        npc.playIdleClip(0);
         state.placeNpcAt(npc, at);
 
         if (npc.spawns++ === 0) {
           state.update();
           await new Promise<string>((resolve) => (npc.resolve = resolve));
+          npc.playIdleClip(0); // after mount
         } else {
           if (as) npc.changeSkin(as);
+          npc.playIdleClip(0); // before update
           w.view.forceUpdate();
         }
 
@@ -531,8 +539,8 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
 }
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
-const closePolygonDistance = 0.05;
-const polygonQueryHalfExtents: Vec3 = [closePolygonDistance, 0.05, closePolygonDistance];
+const closePolygonDistance = 0.005;
+const closePolygonHalfExtents: Vec3 = [closePolygonDistance, closePolygonDistance, closePolygonDistance];
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));

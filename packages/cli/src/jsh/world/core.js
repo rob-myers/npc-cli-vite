@@ -324,9 +324,12 @@ export async function spawn(
   }
 
   while (true) {
-    const datum1 = await api.read();
-    const datum2 = await api.read();
-    await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum1, facing: datum2 });
+    await w.npc.spawn({
+      ...opts,
+      npcKey: `${opts.npcKey}${numSpawns++}`,
+      at: await api.read(),
+      facing: await api.read(),
+    });
   }
 }
 
