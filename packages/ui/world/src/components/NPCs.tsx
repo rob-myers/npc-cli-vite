@@ -176,7 +176,7 @@ export default function NPCs() {
         const result = state.getClosestPoly(groundPoint);
 
         if (!result.success) {
-          throw Error("move failed");
+          throw Error("not navigable");
         }
 
         npc.reject?.(new Error("move again"));

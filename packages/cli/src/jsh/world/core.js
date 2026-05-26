@@ -121,7 +121,11 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
 
       datum = next;
       pendingRead = api.read();
-      const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum });
+      const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum }).catch((e) => {
+        // ignore non-navigable stdin
+        if (e instanceof Error && e.message === "not navigable") return;
+        throw e;
+      });
 
       // biome-ignore format: avoid newlines
       await Promise.race([movePromise, pendingRead.then(() => { npc.arrive = false; })]);
