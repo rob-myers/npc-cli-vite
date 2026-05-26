@@ -36,8 +36,9 @@
   - ❌ improve sit icon
     - will only show icon during debug
 
-- extend decor structure inside symbol
-  - decor with `meta.on === true` extended with `obstacleId`
+- 🚧 extend decor structure inside symbol
+  - ✅ `decor point do sit` -> `decor point do=sit` 
+  - decor with `meta.do` extended with `obstacleId`
   - also induces numeric array `obstacle.meta.decorIds`
   - translated correctly on flatten and combine into layout
   - `w.npc.spawn` checks `pick.meta` and `gm.decors[i].meta` for `i in pick.meta.decorIds`
