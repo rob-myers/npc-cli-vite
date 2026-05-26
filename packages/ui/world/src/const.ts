@@ -99,7 +99,7 @@ export const npcScale = 0.8;
 
 export const npcDefaultBubbleHeight = 1.8;
 
-export const npcLabelHeight = 1.5 / npcScale;
+export const npcLabelHeight = 1.6 / npcScale;
 
 export const MAX_NPCS = 256;
 
