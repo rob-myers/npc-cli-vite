@@ -24,13 +24,13 @@
 
 - ✅ clean path for extra--005--chair
 
-- 🚧 can spawn on chair
+- ✅ can spawn on chair
   - ✅ npc.idleClip
   - ✅ offmesh spawn to do-point should trigger idle animation
   - ✅ sit should be at seat height
   - ✅ apply decor.orient to npc
   - ✅ fix "clamp to navmesh" when too close
-  - 🚧 legs should not intersect chair
+  - ✅ legs should not intersect chair
     - ✅ decor points have meta.groundPoint
     - ✅ spawn snaps onto `meta.groundPoint`
   - ❌ improve sit icon
@@ -60,6 +60,7 @@
 - ✅ fix obstacle skirts: extra--001--fresher
   - seems `skirtCount` too small because createInset creates edges
 
+- fetch gltf json so can cache-bust
 - doors have meaningful icons
 - labels as decor point
   - add some labels to 301
