@@ -29,13 +29,16 @@
   - ✅ offmesh spawn to do-point should trigger idle animation
   - ✅ sit should be at seat height
   - ✅ apply decor.orient to npc
-  - 🚧 fix "clamp to navmesh" when too close
+  - ✅ fix "clamp to navmesh" when too close
   - legs should not intersect chair
-  - improve sit icon
+  - ❌ improve sit icon
+    - will only show icon during debug
 
 - can spawn on bed
 
 - start 101
+
+- ✅ avoid AnimationMixer warns by play animation before skinnedMesh mount
 
 - 🚧 fix obstacle skirts: extra--001--fresher
   - why is `skirtCount` too small?
