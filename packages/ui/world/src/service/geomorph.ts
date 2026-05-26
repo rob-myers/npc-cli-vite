@@ -17,7 +17,7 @@ import {
 import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
 import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
-import { debug, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
+import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 import {
   decorIconRadius,
   decorIconRadiusOutset,
@@ -39,13 +39,12 @@ import { embedXZMat4 } from "./geometry";
  * - ensure decor `doorId={doorId}` points to correct `doorId`
  * - when doors are close (e.g. coincide) remove later door
  * - on remove door ensure respective decor removed
- * - ensure obstacle.meta.decorIds
  */
 function computeFlatDoorsDecorObstacles(
   logPrefix: string,
   symbol: Geomorph.Symbol,
   flats: Geomorph.FlatSymbol[],
-): { flatDoors: Poly[]; flatDecor: Poly[]; flatObstacles: Poly[] } {
+): { flatDoors: Poly[]; flatDecor: Poly[] } {
   // ensure decor `obstacleId={obstacleId}` points to correct `obstacleId`
   // 🔔 independent of decor removal below; we never remove obstacles
   let obstacleIdOffset = symbol.obstacles.length;
@@ -79,7 +78,7 @@ function computeFlatDoorsDecorObstacles(
   });
 
   // on remove door ensure respective decor removed
-  const flatDecor = symbol.decor.concat(flats.flatMap((x) => x.decor));
+  const flatDecor = symbol.decor.map((x) => x.cleanClone()).concat(flats.flatMap((x) => x.decor));
   let rmDoorIdOffset = 0;
   const seenRmDoorId = new Set<number>();
   const filteredFlatDecor = flatDecor.filter((d) => {
@@ -97,19 +96,9 @@ function computeFlatDoorsDecorObstacles(
     return true;
   });
 
-  // ensure obstacle.meta.decorIds, now we've removed decor
-  const mutatedFlatObstacles = symbol.obstacles.concat(flats.flatMap((flat) => flat.obstacles));
-  filteredFlatDecor.forEach((d, decorId) => {
-    const obstacleId = d.meta.obstacleId;
-    if (typeof obstacleId === "number") {
-      (mutatedFlatObstacles[obstacleId].meta.decorIds ??= []).push(decorId);
-    }
-  });
-
   return {
     flatDoors: flatDoors.filter((_, doorId) => !rmDoorIds.has(doorId)),
     flatDecor: filteredFlatDecor,
-    flatObstacles: mutatedFlatObstacles,
   };
 }
 
@@ -171,7 +160,7 @@ export function createLayout(
 
   const hullWalls = assets.symbol[gmKey]?.hullWalls;
   if (!hullWalls) {
-    warn(`Missing hull symbol ${gmKey}: falling back to empty layout`);
+    error(`Missing hull symbol ${gmKey}: falling back to empty layout`);
     return createEmptyLayout(gmKey, flat);
   }
 
@@ -187,8 +176,8 @@ export function createLayout(
 
   /**
    * Cut doors from walls pointwise. The latter:
-   * - avoids errors (e.g. for 301).
-   * - permits meta propagation e.g. `h` (height), 'hull' (hull wall)
+   * - avoids errors (e.g. 301).
+   * - permits meta propagation e.g. h (height), hull (hull wall)
    */
   const connectors = flat.doors.concat(flat.windows);
   const cutWalls = uncutWalls.flatMap((x) =>
@@ -250,9 +239,8 @@ export function createLayout(
           typeof x.meta["nav-outset"] === "number" ? x.meta["nav-outset"] * sguToWorldScale : obstacleOutset,
         ),
       ),
-      // 🚧 may cut out non-navigable decor quads
+      // 🚧 in future may cut out non-navigable decor quads
       // ...decor
-      //   .filter(isDecorCuboid)
       //   .filter((d) => d.meta.nav === true)
       //   .map((d) => geomService.createOutset(Poly.fromRect(d.bounds2d), obstacleOutset)[0]),
     ],
@@ -265,8 +253,8 @@ export function createLayout(
   const doors = flat.doors.map((x) => new Connector(x));
   const windows = flat.windows.map((x) => new Connector(x));
 
-  // Joining walls with `{plain,hull}WallMeta` reduces the rendering cost later
-  // 🔔 could save more by joining hull/non-hull but want to distinguish them
+  // - joining walls with `{plain,hull}WallMeta` reduces the rendering cost later
+  // - could save more by joining hull/non-hull but want to distinguish them
   const joinedWalls = Poly.union(cutWalls.filter((x) => x.meta === plainWallMeta)).map((x) =>
     Object.assign(x, { meta: plainWallMeta }),
   );
@@ -274,6 +262,33 @@ export function createLayout(
     Object.assign(x, { meta: hullWallMeta }),
   );
   const unjoinedWalls = cutWalls.filter((x) => x.meta !== plainWallMeta && x.meta !== hullWallMeta);
+
+  // 🚧 ensure obstacle.meta.decorIds
+  const obstacles = flat.obstacles.map((o): Geomorph.LayoutObstacle => {
+    const origObstacleId = o.meta.origObstacleId as number;
+    const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
+    const origSymbol = assets.symbol[symbolKey] as Geomorph.Symbol;
+    const origPoly = origSymbol.obstacles[o.meta.origObstacleId];
+    // o.meta.transform is aggregated in `instantiateFlatSymbol`
+    const transform = (o.meta.transform ?? [1, 0, 0, 1, 0, 0]) as Geom.SixTuple;
+    tmpMat1.feedFromArray(transform);
+    return {
+      symbolKey,
+      obstacleId: origObstacleId,
+      origPoly,
+      origSubRect: origPoly.rect.delta(-origSymbol.bounds.x, -origSymbol.bounds.y).precision(2),
+      height: typeof o.meta["force-y"] === "number" ? o.meta["force-y"] : typeof o.meta.y === "number" ? o.meta.y : 0,
+      transform: tmpMat1.feedFromArray(transform).json,
+      center: tmpMat1.transformPoint(origPoly.center).precision(2),
+      meta: deepClone(origPoly.meta),
+    };
+  });
+  decor.forEach((d, decorId) => {
+    const obstacleId = d.meta.obstacleId;
+    if (typeof obstacleId === "number") {
+      (obstacles[obstacleId].meta.decorIds ??= []).push(decorId);
+    }
+  });
 
   return {
     key: gmKey,
@@ -285,25 +300,7 @@ export function createLayout(
     doors: doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull)),
     hullPoly,
     labels,
-    obstacles: flat.obstacles.map((o): Geomorph.LayoutObstacle => {
-      const obstacleId = o.meta.obsId as number;
-      const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
-      const origSymbol = assets.symbol[symbolKey] as Geomorph.Symbol;
-      const origPoly = origSymbol.obstacles[o.meta.obsId];
-      // o.meta.transform is aggregated in `instantiateFlatSymbol`
-      const transform = (o.meta.transform ?? [1, 0, 0, 1, 0, 0]) as Geom.SixTuple;
-      tmpMat1.feedFromArray(transform);
-      return {
-        symbolKey,
-        obstacleId,
-        origPoly,
-        origSubRect: origPoly.rect.delta(-origSymbol.bounds.x, -origSymbol.bounds.y).precision(2),
-        height: typeof o.meta["force-y"] === "number" ? o.meta["force-y"] : typeof o.meta.y === "number" ? o.meta.y : 0,
-        transform: tmpMat1.feedFromArray(transform).json,
-        center: tmpMat1.transformPoint(origPoly.center).precision(2),
-        meta: origPoly.meta,
-      };
-    }),
+    obstacles,
     rooms: rooms.map((x) => x.precision(precision)),
     unsorted: flat.unsorted.map((x) => x.precision(precision)),
     walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map((x) => x.precision(precision)),
@@ -513,8 +510,6 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
       const obstacleId = polysLookup.obstacles.length - 1;
       if (obstacleId >= 0) {
         meta.obstacleId = obstacleId;
-        // const decorId = polysLookup.decor.length - 1;
-        // (polysLookup.obstacles[obstacleId].meta.decorIds ??= []).push(decorId);
       }
     }
 
@@ -522,7 +517,7 @@ export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomor
       // link to original symbol
       meta.symKey = savedFile.key;
       // local id inside SVG symbol
-      meta.obsId = polysLookup.obstacles.length - 1;
+      meta.origObstacleId = polysLookup.obstacles.length - 1;
       if (typeof meta.inset === "number") {
         // convert inset to world coords
         meta.inset = toPrecision(meta.inset * sguToWorldScale, 6);
@@ -633,7 +628,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     }
   });
 
-  const { flatDoors, flatDecor, flatObstacles } = computeFlatDoorsDecorObstacles(symbol.key, symbol, flats);
+  const { flatDoors, flatDecor } = computeFlatDoorsDecorObstacles(symbol.key, symbol, flats);
 
   return (flattened[key] = {
     key,
@@ -649,7 +644,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     // aggregated and cloned
     doors: flatDoors,
     decor: flatDecor,
-    obstacles: flatObstacles,
+    obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
     unsorted: unsorted.concat(flats.flatMap((x) => x.unsorted)),
     walls: walls.concat(flats.flatMap((x) => x.walls)),
     windows: windows.concat(flats.flatMap((x) => x.windows)),

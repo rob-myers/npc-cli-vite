@@ -40,10 +40,13 @@
   - ✅ `decor point do sit` -> `decor point do=sit` 
   - ✅ decor `meta.on === true` extended with `obstacleId`
   - ✅ also induces numeric array `obstacle.meta.decorIds`
-  - ✅ translated correctly on flatten
+  - ✅ translated correctly on flatten (and layout)
     - 🔔 complex because we may also remove decor (switches)
-  - 🚧 combine into layout
-  - `w.npc.spawn` checks `pick.meta` and `gm.decors[i].meta` for `i in pick.meta.decorIds`
+    - ✅ array `meta.decorIds` was being shared due to shallow clone
+      - poly.clone now takes deepClone of meta
+    - ✅ only compute `obstacle.meta.decorIds` in layout
+    - ✅ deepClone obstacles[i].meta
+  - `w.npc.spawn` checks `pick.meta` and `gm.decors[decorId].meta` for `decorId in pick.meta.decorIds`
     - e.g. a do-point extends to a whole chair
   - example of multiple do-points on single obstacle
     - sofa
@@ -53,6 +56,12 @@
     - `decor point label` (future work)
   - can render all decor points inside `<Debug>`
 
+- 🚧 on pick decor `instanceId` should match `gm.decor[instanceId]`
+  - `w.decor.instanceIdToDecorId` is confusing!
+  - not identity because of `decor circle` which does not have an instancedmesh rep
+  - 🚧 change encoding i.e. `{gmId,decorId}` -> gmId (8 bits) | decorId (10 bits)
+
+- decor point meta should inherit gmRoomId
 
 - can spawn on bed
 
