@@ -94,108 +94,29 @@ function computeFlatDoorsAndDecor(
   };
 }
 
-/** Browser only. */
-export function createLayoutInstance(
-  layout: Geomorph.Layout,
-  gmId: number,
-  transform: Geom.AffineTransform,
-): Geomorph.LayoutInstance {
-  const matrix = new Mat(transform);
-
-  // we only support "edge geomorph" or "full geomorph"
-  const sguGridRect = new Rect(0, 0, 1200, isEdgeGm(layout.num) ? 600 : 1200);
-
-  return {
-    ...layout,
-    gmId,
-    transform,
-    matrix,
-    gridRect: sguGridRect.scale(sguToWorldScale).applyMatrix(matrix),
-    inverseMatrix: matrix.getInverseMatrix(),
-    mat4: embedXZMat4(transform),
-    determinant: matrix.determinant,
-
-    decor: layout.decor.map((d) => instantiateDecor(d, matrix, gmId)),
-    labels: layout.labels.map((d) => instantiateDecor(d, matrix, gmId)),
-
-    // use refs because we'll add roomIds
-    hullDoors: layout.doors.filter((d) => d.meta.hull === true),
-
-    getOtherRoomId(doorId, roomId) {
-      // We support case where roomIds are equal e.g. 303
-      const { roomIds } = this.doors[doorId];
-      return roomIds.find((x, i) => typeof x === "number" && roomIds[1 - i] === roomId) ?? -1;
-    },
-    isHullDoor(doorId) {
-      return doorId < this.hullDoors.length;
-    },
-  };
-}
-
-function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number): T {
-  // decor.key defined in <Decor> once gmRoomId computed
-  const bounds = d.bounds.clone().applyMatrix(matrix).precision(precision);
-  const meta = { ...d.meta, gmId } as T["meta"];
-
-  if (typeof meta.doorId === "number") {
-    // gmDoorId
-    meta.gdKey = `g${gmId}d${meta.doorId}`;
-  }
-
-  switch (d.type) {
-    case "point": {
-      const p = matrix.transformPoint({ x: d.x, y: d.y });
-      const orient = toPrecision((180 / Math.PI) * matrix.transformAngle(d.orient * (Math.PI / 180)));
-      const groundPoint = { x: toPrecision(p.x), y: toPrecision(p.y) };
-      meta.orient = orient; // expose to object-pick
-      meta.groundPoint = groundPoint;
-
-      return {
-        ...d,
-        meta,
-        bounds,
-        ...groundPoint,
-        orient,
-      };
-    }
-    case "quad": {
-      const center = matrix.transformPoint({ ...d.center });
-      const topCenter = matrix.transformPoint({ ...d.topCenter });
-      return {
-        ...d,
-        meta,
-        bounds,
-        transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
-        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
-        topCenter: { x: toPrecision(topCenter.x), y: toPrecision(topCenter.y) },
-      };
-    }
+function convertMapEditNodeToPoly(node: MapNode, meta: Meta): Poly | null {
+  switch (node.type) {
     case "rect": {
-      const center = matrix.transformPoint({ ...d.center });
-      return {
-        ...d,
-        meta,
-        bounds,
-        points: d.points.map((p) => {
-          const q = matrix.transformPoint({ ...p });
-          return { x: toPrecision(q.x), y: toPrecision(q.y) };
-        }),
-        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
-        angle: toPrecision((180 / Math.PI) * matrix.transformAngle(d.angle * (Math.PI / 180))),
-      };
+      const { a, b, c, d, e, f } = node.transform;
+      const mat = new Mat([a, b, c, d, e, f]);
+      return Poly.fromRect({ x: 0, y: 0, ...node.baseRect })
+        .applyMatrix(mat)
+        .setMeta(meta);
     }
-    case "circle": {
-      const center = matrix.transformPoint({ ...d.center });
-      return {
-        ...d,
-        meta,
-        bounds,
-        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
-      };
+    case "path": {
+      const { a, b, c, d, e, f } = node.transform;
+      const mat = new Mat([a, b, c, d, e, f]);
+      return geomService.svgPathToPolygon(node.d)?.applyMatrix(mat)?.setMeta(meta) ?? null;
     }
-    default:
-      return { ...d, meta };
+    case "image": {
+      if (isDecorImageMapNode(node)) {
+        return extractDecorPolyFromMapEditNode(node, meta);
+      }
+      break;
+    }
   }
+
+  return null;
 }
 
 function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol): Geomorph.Layout {
@@ -445,6 +366,44 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   }
 }
 
+/** Browser only. */
+export function createLayoutInstance(
+  layout: Geomorph.Layout,
+  gmId: number,
+  transform: Geom.AffineTransform,
+): Geomorph.LayoutInstance {
+  const matrix = new Mat(transform);
+
+  // we only support "edge geomorph" or "full geomorph"
+  const sguGridRect = new Rect(0, 0, 1200, isEdgeGm(layout.num) ? 600 : 1200);
+
+  return {
+    ...layout,
+    gmId,
+    transform,
+    matrix,
+    gridRect: sguGridRect.scale(sguToWorldScale).applyMatrix(matrix),
+    inverseMatrix: matrix.getInverseMatrix(),
+    mat4: embedXZMat4(transform),
+    determinant: matrix.determinant,
+
+    decor: layout.decor.map((d) => instantiateDecor(d, matrix, gmId)),
+    labels: layout.labels.map((d) => instantiateDecor(d, matrix, gmId)),
+
+    // use refs because we'll add roomIds
+    hullDoors: layout.doors.filter((d) => d.meta.hull === true),
+
+    getOtherRoomId(doorId, roomId) {
+      // We support case where roomIds are equal e.g. 303
+      const { roomIds } = this.doors[doorId];
+      return roomIds.find((x, i) => typeof x === "number" && roomIds[1 - i] === roomId) ?? -1;
+    },
+    isHullDoor(doorId) {
+      return doorId < this.hullDoors.length;
+    },
+  };
+}
+
 export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.MapDef {
   type GeomorphNode = SymbolMapNode & { srcKey: StarShipGeomorphKey };
   const geomorphNodes = filterNodes(
@@ -668,6 +627,72 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
   });
 }
 
+function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number): T {
+  // decor.key defined in <Decor> once gmRoomId computed
+  const bounds = d.bounds.clone().applyMatrix(matrix).precision(precision);
+  const meta = { ...d.meta, gmId } as T["meta"];
+
+  if (typeof meta.doorId === "number") {
+    // gmDoorId
+    meta.gdKey = `g${gmId}d${meta.doorId}`;
+  }
+
+  switch (d.type) {
+    case "point": {
+      const p = matrix.transformPoint({ x: d.x, y: d.y });
+      const orient = toPrecision((180 / Math.PI) * matrix.transformAngle(d.orient * (Math.PI / 180)));
+      const groundPoint = { x: toPrecision(p.x), y: toPrecision(p.y) };
+      meta.orient = orient; // expose to object-pick
+      meta.groundPoint = groundPoint;
+
+      return {
+        ...d,
+        meta,
+        bounds,
+        ...groundPoint,
+        orient,
+      };
+    }
+    case "quad": {
+      const center = matrix.transformPoint({ ...d.center });
+      const topCenter = matrix.transformPoint({ ...d.topCenter });
+      return {
+        ...d,
+        meta,
+        bounds,
+        transform: tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray(),
+        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
+        topCenter: { x: toPrecision(topCenter.x), y: toPrecision(topCenter.y) },
+      };
+    }
+    case "rect": {
+      const center = matrix.transformPoint({ ...d.center });
+      return {
+        ...d,
+        meta,
+        bounds,
+        points: d.points.map((p) => {
+          const q = matrix.transformPoint({ ...p });
+          return { x: toPrecision(q.x), y: toPrecision(q.y) };
+        }),
+        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
+        angle: toPrecision((180 / Math.PI) * matrix.transformAngle(d.angle * (Math.PI / 180))),
+      };
+    }
+    case "circle": {
+      const center = matrix.transformPoint({ ...d.center });
+      return {
+        ...d,
+        meta,
+        bounds,
+        center: { x: toPrecision(center.x), y: toPrecision(center.y) },
+      };
+    }
+    default:
+      return { ...d, meta };
+  }
+}
+
 /**
  * - aggregates obstacle transform as meta.transform
  * - supports removable doors
@@ -765,31 +790,6 @@ export function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
     input = getGeomorphNumber(input);
   }
   return 301 <= input && input < 500;
-}
-
-function convertMapEditNodeToPoly(node: MapNode, meta: Meta): Poly | null {
-  switch (node.type) {
-    case "rect": {
-      const { a, b, c, d, e, f } = node.transform;
-      const mat = new Mat([a, b, c, d, e, f]);
-      return Poly.fromRect({ x: 0, y: 0, ...node.baseRect })
-        .applyMatrix(mat)
-        .setMeta(meta);
-    }
-    case "path": {
-      const { a, b, c, d, e, f } = node.transform;
-      const mat = new Mat([a, b, c, d, e, f]);
-      return geomService.svgPathToPolygon(node.d)?.applyMatrix(mat)?.setMeta(meta) ?? null;
-    }
-    case "image": {
-      if (isDecorImageMapNode(node)) {
-        return extractDecorPolyFromMapEditNode(node, meta);
-      }
-      break;
-    }
-  }
-
-  return null;
 }
 
 /**
