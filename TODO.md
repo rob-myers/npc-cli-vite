@@ -40,7 +40,9 @@
   - ✅ `decor point do sit` -> `decor point do=sit` 
   - ✅ decor `meta.on === true` extended with `obstacleId`
   - ✅ also induces numeric array `obstacle.meta.decorIds`
-  - 🚧 translated correctly on flatten and combine into layout
+  - ✅ translated correctly on flatten
+    - 🔔 complex because we may also remove decor (switches)
+  - 🚧 combine into layout
   - `w.npc.spawn` checks `pick.meta` and `gm.decors[i].meta` for `i in pick.meta.decorIds`
     - e.g. a do-point extends to a whole chair
   - example of multiple do-points on single obstacle
