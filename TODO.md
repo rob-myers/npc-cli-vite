@@ -20,7 +20,7 @@
     - ✅ do-points have `meta.do` true
   - 🚧 can remove decor rect/circle
     - track runtime decor so preserve on hmr
-    - try track gaps
+    - track gaps?
 
 - ✅ clean path for extra--005--chair
 
@@ -30,9 +30,22 @@
   - ✅ sit should be at seat height
   - ✅ apply decor.orient to npc
   - ✅ fix "clamp to navmesh" when too close
-  - legs should not intersect chair
+  - 🚧 legs should not intersect chair
   - ❌ improve sit icon
     - will only show icon during debug
+
+- extend decor structure inside symbol
+  - decor with `meta.on === true` extended with `obstacleId`
+  - also induces numeric array `obstacle.meta.decorIds`
+  - translated correctly on flatten and combine into layout
+  - `w.npc.spawn` checks `pick.meta` and `gm.decors[i].meta` for `i in pick.meta.decorIds`
+    - e.g. a do-point extends to a whole chair
+  - example of multiple do-points on single obstacle: sofa
+  - `<Decor>` only renders
+    - `decor point icon`
+    - `decor point label` (future work)
+  - can render all decor points inside `<Debug>`
+
 
 - can spawn on bed
 
