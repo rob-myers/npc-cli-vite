@@ -12666,7 +12666,6 @@
           "meta": {}
         }
       ],
-      "labels": [],
       "obstacles": [],
       "rooms": [
         {
@@ -15013,7 +15012,6 @@
           "meta": {}
         }
       ],
-      "labels": [],
       "obstacles": [
         {
           "symbolKey": "console--019--2x2",

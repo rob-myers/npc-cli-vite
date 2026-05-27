@@ -17,7 +17,7 @@ import {
 } from "@npc-cli/util/geom";
 import { Matrix4 } from "three/src/math/Matrix4.js";
 import z, { url } from "zod";
-import { DecorPointSchema, DecorSchema } from "./decor.schema.ts";
+import { DecorSchema } from "./decor.schema.ts";
 import { Connector } from "./service/Connector.ts";
 
 export const ConnectorJsonSchema = z.object({
@@ -121,7 +121,6 @@ export const GeomorphLayoutSchema = z.object({
   decor: z.array(DecorSchema),
   doors: z.array(connectorCodec),
   hullPoly: z.array(polyCodec),
-  labels: z.array(DecorPointSchema),
   obstacles: z.array(GeomorphLayoutObstacleSchema),
   rooms: z.array(polyCodec),
   unsorted: z.array(polyCodec),

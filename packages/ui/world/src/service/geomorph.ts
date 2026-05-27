@@ -136,7 +136,6 @@ function createEmptyLayout(gmKey: StarShipGeomorphKey, flat: Geomorph.FlatSymbol
     decor: [],
     doors: [],
     hullPoly: [],
-    labels: [],
     obstacles: [],
     rooms: [],
     unsorted: [],
@@ -215,16 +214,7 @@ export function createLayout(
     }
   }
 
-  const decor: Geomorph.Decor[] = [];
-  const labels: Geomorph.DecorPoint[] = [];
-  for (const poly of flat.decor) {
-    const d = createLayoutDecorFromPoly(poly);
-    if (typeof poly.meta.label === "string" && d.type === "point") {
-      labels.push(d);
-    } else {
-      decor.push(d);
-    }
-  }
+  const decor = flat.decor.map(createLayoutDecorFromPoly);
 
   const ignoreNavPoints = decor.flatMap((d) => (d.type === "point" && d.meta["ignore-nav"] ? d : []));
   const symbolObstacles = flat.obstacles.filter((d) => d.meta["permit-nav"] !== true);
@@ -299,7 +289,6 @@ export function createLayout(
     // ensure hull doors are 1st
     doors: doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull)),
     hullPoly,
-    labels,
     obstacles,
     rooms: rooms.map((x) => x.precision(precision)),
     unsorted: flat.unsorted.map((x) => x.precision(precision)),
@@ -403,8 +392,7 @@ export function createLayoutInstance(
     mat4: embedXZMat4(transform),
     determinant: matrix.determinant,
 
-    decor: layout.decor.map((d) => instantiateDecor(d, matrix, gmId)),
-    labels: layout.labels.map((d) => instantiateDecor(d, matrix, gmId)),
+    decor: layout.decor.map((d, decorId) => instantiateDecor(d, matrix, gmId, decorId)),
 
     // use refs because we'll add roomIds
     hullDoors: layout.doors.filter((d) => d.meta.hull === true),
@@ -651,10 +639,10 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
   });
 }
 
-function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number): T {
+function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number, decorId: number): T {
   // decor.key defined in <Decor> once gmRoomId computed
   const bounds = d.bounds.clone().applyMatrix(matrix).precision(precision);
-  const meta = { ...d.meta, gmId } as T["meta"];
+  const meta = { ...d.meta, gmId, decorId } as T["meta"];
 
   if (typeof meta.doorId === "number") {
     // gmDoorId
