@@ -145,8 +145,8 @@ catalogs:
       specifier: ^12.23.26
       version: 12.23.26
     navcat:
-      specifier: 0.2.0
-      version: 0.2.0
+      specifier: 0.4.1
+      version: 0.4.1
     nodemon:
       specifier: ^3.1.14
       version: 3.1.14
@@ -762,7 +762,7 @@ importers:
         version: 12.23.26(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       navcat:
         specifier: 'catalog:'
-        version: 0.2.0(three@0.184.0)
+        version: 0.4.1(three@0.184.0)
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -2859,6 +2859,9 @@ packages:
   mathcat@0.0.11:
     resolution: {integrity: sha512-HIGDmqrjy6KE4LRH9uGLdYoVl+69idwtE5OjHILnNB4IL4RE2aVNagjLAWFKWH5xlcxNH9i+AoBgRKR4VdsyFw==}
 
+  mathcat@0.0.12:
+    resolution: {integrity: sha512-gUBe1U/sh7JQ+aSMJDiLG++B3t5rSGAYdEIqPBSEEFUHK9mAcC7yE0f7RZ1SjXI57bDLSYJyrA74XQPT1tJxoA==}
+
   maxrects-packer@2.7.3:
     resolution: {integrity: sha512-bG6qXujJ1QgttZVIH4WDanhoJtvbud/xP/XPyf6A69C9RdA61BM4TomFALCq2nrTa+tARRIBB4LuIFsnUQU2wA==}
 
@@ -3017,8 +3020,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  navcat@0.2.0:
-    resolution: {integrity: sha512-maceGQOmkMZudHKeeUyY48hbuvcHl8M1dG6aPLQjH26/vD776GI1lWHJosqBD9NU0Zo6SxDI1cGFFtezCoCBnA==}
+  navcat@0.4.1:
+    resolution: {integrity: sha512-dMsXyMh06V5MZaDx93C+xO9GnGIU6TczsnNI8zD41EL1ybOxHgk0uqVTiVZel8cmysR2E+hJA4bK1EOTSM+S6Q==}
     peerDependencies:
       three: '>=0.180.0'
     peerDependenciesMeta:
@@ -5353,6 +5356,8 @@ snapshots:
 
   mathcat@0.0.11: {}
 
+  mathcat@0.0.12: {}
+
   maxrects-packer@2.7.3: {}
 
   mdast-util-from-markdown@2.0.2:
@@ -5690,9 +5695,9 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  navcat@0.2.0(three@0.184.0):
+  navcat@0.4.1(three@0.184.0):
     dependencies:
-      mathcat: 0.0.11
+      mathcat: 0.0.12
     optionalDependencies:
       three: 0.184.0
 
