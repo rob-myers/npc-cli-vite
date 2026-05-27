@@ -46,7 +46,12 @@
       - poly.clone now takes deepClone of meta
     - ✅ only compute `obstacle.meta.decorIds` in layout
     - ✅ deepClone obstacles[i].meta
-  - `w.npc.spawn` checks `pick.meta` and `gm.decors[decorId].meta` for `decorId in pick.meta.decorIds`
+  - ❌ on pick decor `instanceId` should match `gm.decor[instanceId]`
+    - `w.decor.instanceIdToDecorId` needn't be aligned to gms[0].decor + gms[1].decor + ...
+    - ✅ provide `meta.decorId` to all instantiated decor
+  - ✅ decor point meta should inherit gmRoomId\
+    - e.g. `w gms.0.decor.68.meta`
+  - ✅ `w.npc.spawn` checks `pick.meta` and `gm.decors[decorId].meta` for `decorId in pick.meta.decorIds`
     - e.g. a do-point extends to a whole chair
   - example of multiple do-points on single obstacle
     - sofa
@@ -56,12 +61,8 @@
     - `decor point label` (future work)
   - can render all decor points inside `<Debug>`
 
-- 🚧 on pick decor `instanceId` should match `gm.decor[instanceId]`
-  - `w.decor.instanceIdToDecorId` is confusing!
-  - not identity because of `decor circle` which does not have an instancedmesh rep
-  - 🚧 change encoding i.e. `{gmId,decorId}` -> gmId (8 bits) | decorId (10 bits)
-
-- decor point meta should inherit gmRoomId
+- 🚧 npc can be at doable
+  - w.e.doableToNpc and w.e.npcToDoable
 
 - can spawn on bed
 

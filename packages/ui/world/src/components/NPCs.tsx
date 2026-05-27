@@ -1,5 +1,5 @@
 import { url } from "@npc-cli/media";
-import { geomService, useStateRef, Vect } from "@npc-cli/util";
+import { geomService, useStateRef } from "@npc-cli/util";
 
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { loadImage } from "@npc-cli/util/legacy/dom";
@@ -138,9 +138,25 @@ export default function NPCs() {
           npc.idleClip = oldNpc.idleClip;
           npc.spawns = oldNpc.spawns;
 
-          state.placeNpcAt(npc, npc.position);
+          // 🚧 w.e.npcToDoable ? "doable" : "navigable"
+          state.placeNpcAt(npc, npc.position, "navigable");
         }
         state.update();
+      },
+      findFreeDoable(meta) {
+        // 🚧 track used doables
+        if (typeof meta.gmId !== "number") return null;
+        if (typeof meta.do === "string") {
+          return { meta, at: meta.groundPoint };
+        }
+
+        // 🚧 pick 1st unused
+        // obstacle.meta can have decorIds
+        if (Array.isArray(meta.decorIds) && meta.decorIds.every(Number.isFinite)) {
+          meta = w.gms[meta.gmId].decor[meta.decorIds[0]].meta;
+          return { meta, at: meta.groundPoint };
+        }
+        return null;
       },
       get(npcKey) {
         const npc = state.npc[npcKey];
@@ -249,7 +265,7 @@ export default function NPCs() {
         w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
         positions.length = 0;
       },
-      placeNpcAt(npc, at) {
+      placeNpcAt(npc, at, type) {
         const groundPoint = parseGroundPoint(at);
         const result = state.getClosestPoly(groundPoint);
         if (result.success) {
@@ -270,6 +286,8 @@ export default function NPCs() {
 
           // might have spawned into a sensor
           state.physics.positions.push(npc.bodyUid, ...agent.position);
+        } else if (type === "navigable") {
+          throw Error("not placable");
         } else {
           if (npc.agentId !== null) {
             crowdApi.removeAgent(state.crowd, npc.agentId);
@@ -343,10 +361,14 @@ export default function NPCs() {
           });
         }
 
-        // 🚧 meta.decorIds -> gm.decors[decorId].meta.groundPoint
-        const meta = typeof at.meta?.do === "string" ? at.meta : {};
-        npc.idleClip = state.clips[metaToIdleAnimationClipKey(meta)];
-        state.placeNpcAt(npc, Vect.isJson(meta.groundPoint) ? meta.groundPoint : at);
+        const doable = state.findFreeDoable(at?.meta ?? {});
+        if (doable) {
+          state.placeNpcAt(npc, doable.at, "doable");
+          npc.idleClip = state.clips[metaToIdleAnimationClipKey(doable.meta)];
+        } else {
+          state.placeNpcAt(npc, at, "navigable");
+          npc.idleClip = state.clips.idle;
+        }
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
@@ -360,9 +382,9 @@ export default function NPCs() {
           w.view.forceUpdate();
         }
 
-        npc.skinnedMesh.position.y = typeof meta.y === "number" ? meta.y : 0;
-        if (typeof meta.orient === "number") {
-          angle = -(meta.orient + 90) * (Math.PI / 180);
+        npc.skinnedMesh.position.y = typeof doable?.meta.y === "number" ? doable.meta.y : 0;
+        if (typeof doable?.meta.orient === "number") {
+          angle = -(doable.meta.orient + 90) * (Math.PI / 180);
         }
         if (typeof angle === "number") {
           npc.skinnedMesh.rotation.y = angle;
@@ -502,8 +524,9 @@ export type State = {
     geometry: THREE.BufferGeometry;
     skinIndex: number;
   }): Npc;
-  placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat): void;
+  placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat, type: "navigable" | "doable"): void;
   devHotReload(): void;
+  findFreeDoable(meta: Meta): null | { meta: Meta; at: Geom.VectJson };
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;
@@ -535,7 +558,6 @@ function getAgentParams(): crowd.AgentParams {
 }
 
 function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
-  if (typeof meta.do !== "string") return defaultIdleAnimationClipKey;
   if (meta.do === "sit" || meta.do === "lie" || meta.do === "stand") return meta.do;
   return defaultIdleAnimationClipKey;
 }
