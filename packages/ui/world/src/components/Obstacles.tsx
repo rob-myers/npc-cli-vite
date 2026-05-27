@@ -319,7 +319,8 @@ export default function Obstacles(_props: Props) {
         ref={state.ref("skirtInst")}
         args={[state.skirtQuad, undefined, MAX_OBSTACLE_SKIRT_INSTANCES]}
         frustumCulled={false}
-        material={skirtMaterial}
+        // fix issue with early mount
+        material={w.assets ? skirtMaterial : undefined}
       />
     </>
   );
