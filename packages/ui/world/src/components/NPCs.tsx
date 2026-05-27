@@ -143,18 +143,18 @@ export default function NPCs() {
         }
         state.update();
       },
-      findFreeDoable(meta) {
+      findFreeDoMeta(meta) {
         // 🚧 track used doables
-        if (typeof meta.gmId !== "number") return null;
+
+        // decor points have meta.gmId and meta.groundPoint
         if (typeof meta.do === "string") {
-          return { meta, at: meta.groundPoint };
+          return meta;
         }
 
-        // 🚧 pick 1st unused
-        // obstacle.meta can have decorIds
-        if (Array.isArray(meta.decorIds) && meta.decorIds.every(Number.isFinite)) {
+        // obstacle.meta can have numeric decorIds
+        if (Array.isArray(meta.decorIds)) {
           meta = w.gms[meta.gmId].decor[meta.decorIds[0]].meta;
-          return { meta, at: meta.groundPoint };
+          return meta;
         }
         return null;
       },
@@ -361,10 +361,10 @@ export default function NPCs() {
           });
         }
 
-        const doable = state.findFreeDoable(at?.meta ?? {});
-        if (doable) {
-          state.placeNpcAt(npc, doable.at, "doable");
-          npc.idleClip = state.clips[metaToIdleAnimationClipKey(doable.meta)];
+        const doMeta = state.findFreeDoMeta(at?.meta ?? {});
+        if (doMeta) {
+          state.placeNpcAt(npc, doMeta.groundPoint, "doable");
+          npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
         } else {
           state.placeNpcAt(npc, at, "navigable");
           npc.idleClip = state.clips.idle;
@@ -382,9 +382,9 @@ export default function NPCs() {
           w.view.forceUpdate();
         }
 
-        npc.skinnedMesh.position.y = typeof doable?.meta.y === "number" ? doable.meta.y : 0;
-        if (typeof doable?.meta.orient === "number") {
-          angle = -(doable.meta.orient + 90) * (Math.PI / 180);
+        npc.skinnedMesh.position.y = doMeta?.y ?? 0;
+        if (typeof doMeta?.orient === "number") {
+          angle = -(doMeta.orient + 90) * (Math.PI / 180);
         }
         if (typeof angle === "number") {
           npc.skinnedMesh.rotation.y = angle;
@@ -526,7 +526,7 @@ export type State = {
   }): Npc;
   placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat, type: "navigable" | "doable"): void;
   devHotReload(): void;
-  findFreeDoable(meta: Meta): null | { meta: Meta; at: Geom.VectJson };
+  findFreeDoMeta(meta: Meta): null | Meta<{ groundPoint: Geom.VectJson; y?: number; orient?: number }>;
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;
