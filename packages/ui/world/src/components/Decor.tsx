@@ -32,9 +32,10 @@ export default function Decor() {
       box: createUnitBox(),
       byKey: {},
       inst: null as any,
-      gdKeyToInstanceId: {}, // decor related to doors
+      // door related
+      gdKeyToInstanceId: {},
       grid: {},
-      // 🚧 pure encoding (gmId, decorId) -> ... instead
+      // decor needn't have an instance
       instanceIdToDecorId: [],
       lastHmr: 0,
       materials: [],
@@ -74,9 +75,6 @@ export default function Decor() {
             /**
              * Decor quads MUST have a respective "entry" i.e. decor image,
              * providing dimensions via decor manifest.json original{Width,Height} (sgu).
-             *
-             * We do not permit scaling i.e. this determines their baseRect `(0, 0, w, h)`.
-             * Actual polygon will be `transform` applied to this baseRect.
              */
             const transform = def.transform ?? [1, 0, 0, 1, 0, 0];
 
