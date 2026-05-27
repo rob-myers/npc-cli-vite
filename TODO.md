@@ -61,8 +61,9 @@
     - `decor point label` (future work)
   - can render all decor points inside `<Debug>`
 
-- 🚧 BUG pre-existing spawn on-mesh -> on-mesh
+- ✅ BUG pre-existing spawn on-mesh -> on-mesh
   - off-mesh <--> on-mesh seems fine
+  - force remove/add agent fixed it
 
 - 🚧 npc can be at doable
   - w.e.doableToNpc and w.e.npcToDoable

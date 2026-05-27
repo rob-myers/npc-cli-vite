@@ -269,22 +269,17 @@ export default function NPCs() {
         const groundPoint = parseGroundPoint(at);
         const result = state.getClosestPoly(groundPoint);
         if (result.success) {
-          if (npc.agentId === null) {
-            npc.agentId = crowdApi.addAgent(
-              state.crowd,
-              w.nav.navMesh,
-              groudPointToTuple(groundPoint),
-              getAgentParams(),
-            );
+          // always remove agent so can teleport without issues
+          if (npc.agentId !== null) {
+            crowdApi.removeAgent(state.crowd, npc.agentId);
+            npc.agentId = null;
           }
-          const agent = state.crowd.agents[npc.agentId];
-          // can teleport past closed doors
-          agent.queryFilter = ANY_QUERY_FILTER;
+          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
+
           npc.pinTo(result);
-          agent.position[0] = groundPoint.x;
-          agent.position[2] = groundPoint.y;
 
           // might have spawned into a sensor
+          const agent = state.crowd.agents[npc.agentId];
           state.physics.positions.push(npc.bodyUid, ...agent.position);
         } else if (type === "navigable") {
           throw Error("not placable");
