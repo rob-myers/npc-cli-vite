@@ -373,22 +373,19 @@ const logos: LogoFn[] = [
 
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
-const lightMinDist = 3.2;
-export const lightRadius = 1.5;
-
-export function getLightPositions(layout: Geomorph.Layout, gmKey: string) {
-  const rng = createRng(hashString(gmKey));
-  const output: { x: number; y: number; roomId: number }[] = [];
-  for (const [roomId, room] of layout.rooms.entries()) {
-    for (const p of poissonDisk(room, rng, output)) {
-      output.push({ ...p, roomId });
-    }
-  }
-  return output;
+/**
+ * We require a geomorph instance:
+ * - we'll restrict Lights to rooms but `roomId` only available in instantiated decor.
+ * - want to support dynamically added lights.
+ */
+export function getLightMetas(gm: Geomorph.LayoutInstance) {
+  return gm.decor
+    .filter((d): d is Geomorph.DecorCircle => d.type === "circle" && d.meta.light === true)
+    .map((d) => ({ ...d.center, radius: d.radius, roomId: d.meta.roomId }));
 }
 
-export function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, gmKey: string) {
-  const lights = getLightPositions(layout, gmKey);
+export function drawLights(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance) {
+  const lights = getLightMetas(gm);
   if (lights.length === 0) return;
 
   // Auxiliary canvas: dark overlay with light holes punched out, then composited onto main
@@ -400,7 +397,7 @@ export function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout
   auxCt.strokeStyle = "#f00";
   auxCt.lineWidth = 0.01;
 
-  for (const [roomId, room] of layout.rooms.entries()) {
+  for (const [roomId, room] of gm.rooms.entries()) {
     // clip to room
     auxCt.save();
     drawPolygons(auxCt, room, { fillStyle: null, strokeStyle: null, clip: true });
@@ -409,14 +406,14 @@ export function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout
 
     // Punch out light circles with radial fade
     auxCt.globalCompositeOperation = "destination-out";
-    for (const { x: cx, y: cy } of lights.filter((l) => l.roomId === roomId)) {
-      const grad = auxCt.createRadialGradient(cx, cy, 0, cx, cy, lightRadius);
+    for (const { x: cx, y: cy, radius } of lights.filter((l) => l.roomId === roomId)) {
+      const grad = auxCt.createRadialGradient(cx, cy, 0, cx, cy, radius);
       grad.addColorStop(0, "rgba(0,0,0,1)");
       grad.addColorStop(0.5, "rgba(0,0,0,0.85)");
       grad.addColorStop(1, "rgba(0,0,0,0)");
       auxCt.fillStyle = grad;
       auxCt.beginPath();
-      auxCt.arc(cx, cy, lightRadius, 0, Math.PI * 2);
+      auxCt.arc(cx, cy, radius, 0, Math.PI * 2);
       auxCt.fill();
       // auxCt.stroke();
     }
@@ -429,66 +426,6 @@ export function drawLights(ct: CanvasRenderingContext2D, layout: Geomorph.Layout
   ct.resetTransform();
   ct.drawImage(aux, 0, 0);
   ct.setTransform(transform);
-}
-
-interface PolyRoom {
-  rect: { x: number; y: number; width: number; height: number };
-  center: { x: number; y: number };
-  contains(p: { x: number; y: number }): boolean;
-}
-
-function poissonDisk(room: PolyRoom, rng: () => number, global: { x: number; y: number }[] = []) {
-  const { rect } = room;
-  const pts: { x: number; y: number }[] = [];
-
-  const tooCloseToGlobal = (p: { x: number; y: number }) =>
-    global.some((g) => Math.hypot(g.x - p.x, g.y - p.y) < lightMinDist);
-
-  const c = room.center;
-  if (room.contains(c) && !tooCloseToGlobal(c)) {
-    pts.push({ x: c.x, y: c.y });
-  } else {
-    for (let i = 0; i < 60 && pts.length === 0; i++) {
-      const p = { x: rect.x + rng() * rect.width, y: rect.y + rng() * rect.height };
-      if (room.contains(p) && !tooCloseToGlobal(p)) pts.push(p);
-    }
-  }
-
-  const active = [...pts];
-  while (active.length > 0) {
-    const i = Math.floor(rng() * active.length);
-    const parent = active[i];
-    let placed = false;
-    for (let k = 0; k < 30; k++) {
-      const angle = rng() * Math.PI * 2;
-      const dist = lightMinDist + rng() * lightMinDist;
-      const q = { x: parent.x + Math.cos(angle) * dist, y: parent.y + Math.sin(angle) * dist };
-      const tooClose = (p: { x: number; y: number }) => Math.hypot(p.x - q.x, p.y - q.y) < lightMinDist;
-      if (!room.contains(q) || pts.some(tooClose) || global.some(tooClose)) continue;
-      pts.push(q);
-      active.push(q);
-      placed = true;
-      break;
-    }
-    if (!placed) active.splice(i, 1);
-  }
-  return pts;
-}
-
-function hashString(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return h;
-}
-
-function createRng(seed: number) {
-  let s = seed >>> 0;
-  return () => {
-    s ^= s << 13;
-    s ^= s >> 17;
-    s ^= s << 5;
-    return (s >>> 0) / 0x100000000;
-  };
 }
 
 export function drawRoomOutlines(

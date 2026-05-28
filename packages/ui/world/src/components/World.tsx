@@ -111,7 +111,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       bubble: null as any,
       ceil: null as any,
       debug: null as any,
-      decor: null as any,
+      decor: { ready: false } as State["decor"],
       door: null as any,
       d: null as any,
       e: null as any,
@@ -255,6 +255,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.set({ lastHmr: Date.now() });
         return null; // ignore 1st stale invoke after HMR
       }
+
+      // decor not ready until Decor query runs
+      state.decor.ready = false;
 
       state.setNextPending({ assets: true });
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
@@ -406,7 +409,7 @@ export type State = {
   setupDevAssetsSync(): void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
-  isReady(connectionKey: string): boolean;
+  isReady(connectionKey?: string): boolean;
   onTick(): void;
   setupProdHullAssetsSync(): void;
   stopTick(): void;

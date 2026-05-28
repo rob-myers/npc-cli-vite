@@ -39,6 +39,8 @@ export default function Decor() {
       instanceIdToDecorId: [],
       lastHmr: 0,
       materials: [],
+      // also changes on hmr while meta lacks roomId
+      ready: false,
 
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
@@ -350,7 +352,8 @@ export default function Decor() {
             Object.assign(decor.meta, gmRoomId);
           }
 
-          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${metaPoint.x}-${metaPoint.y}`;
+          const suffix = `${metaPoint.x}-${metaPoint.y}`.replace(/\./g, "_"); // we use periods for paths in CLI
+          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
           state.byKey[decor.key] = decor;
 
           addToDecorGrid(decor, state.grid);
@@ -381,6 +384,7 @@ export default function Decor() {
       texMat.colorNode = texNode.mul(0.6);
       texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
 
+      state.ready = true;
       w.setNextPending({ decor: false });
 
       return [
@@ -424,6 +428,7 @@ export type State = {
   instanceIdToDecorId: { gmId: number; decorId: number }[];
   grid: Geomorph.DecorGrid;
   lastHmr: number;
+  ready: boolean;
 
   box: THREE.BufferGeometry;
   byKey: Record<string, Geomorph.Decor>;

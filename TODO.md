@@ -8,11 +8,14 @@
   - ✅ `w decor.create` infers decor entry from `decor.img`
   - ✅ can create decor rect/circle/point
     - `demo_add_decor`
-  - 🚧 lights as decor circle
+  - ✅ lights as decor circle
     - ✅ decor image `circle-1` (sgu)
     - ✅ can uniformly scale image node around its center
     - ✅ uniform scale picked up by decor
-    - 🚧 replace lights with `decor circle light`
+    - ✅ replace lights with `decor circle light`
+    - ✅ fix init and hmr
+    - ✅ clean
+    - ✅ verify light radius respected
   - ✅ do-points as decor point
     - ✅ add some do-points (arrows) to 301
     - ✅ Decor renders them
