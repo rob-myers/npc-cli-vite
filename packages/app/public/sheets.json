@@ -203,16 +203,8 @@
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
-    },
-    "test-0": {
-      "key": "test-0",
-      "filename": "test-0--3573d1c9cad6c8fc--medic--doctor--mask.png",
-      "rect": {"x": 134, "y": 2, "width": 64, "height": 64},
-      "sheetId": 0,
-      "originalWidth": 64,
-      "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 200, "height": 134}],
-  "maxSkinSheetDim": {"width": 200, "height": 134}
+  "skinSheetDims": [{"width": 134, "height": 134}],
+  "maxSkinSheetDim": {"width": 134, "height": 134}
 }
