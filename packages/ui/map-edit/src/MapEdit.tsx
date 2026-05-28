@@ -855,7 +855,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           node.name = p.name;
           node.baseRect = { width: p.svgWidth, height: p.svgHeight };
           node.transform = {
-            a: 1, b: 0, c: 0, d: 1,
+            a: 1,
+            b: 0,
+            c: 0,
+            d: 1,
             e: center ? center.x - p.svgWidth / 2 : 0,
             f: center ? center.y - p.svgHeight / 2 : 0,
           };

@@ -1,5 +1,6 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
 import { AffineTransformSchema, pointCodec, rectCodec } from "@npc-cli/util/geom";
+import { toPrecision } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 
 const BaseNodeSchema = z.object({
@@ -8,7 +9,14 @@ const BaseNodeSchema = z.object({
   locked: z.boolean(),
   visible: z.boolean(),
   /** Independent of `offset` when it is present */
-  transform: AffineTransformSchema,
+  transform: AffineTransformSchema.transform(({ a, b, c, d, e, f }) => ({
+    a: toPrecision(a, 4),
+    b: toPrecision(b, 4),
+    c: toPrecision(c, 4),
+    d: toPrecision(d, 4),
+    e: toPrecision(e, 4),
+    f: toPrecision(f, 4),
+  })),
 });
 export type BaseMapNode = z.infer<typeof BaseNodeSchema>;
 
