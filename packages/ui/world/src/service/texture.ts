@@ -384,7 +384,7 @@ export function getLightMetas(gm: Geomorph.LayoutInstance) {
     .map((d) => ({ ...d.center, radius: d.radius, roomId: d.meta.roomId }));
 }
 
-export function drawLights(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance) {
+export function drawLightsIntoTexture(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance) {
   const lights = getLightMetas(gm);
   if (lights.length === 0) return;
 
@@ -406,7 +406,9 @@ export function drawLights(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInst
 
     // Punch out light circles with radial fade
     auxCt.globalCompositeOperation = "destination-out";
-    for (const { x: cx, y: cy, radius } of lights.filter((l) => l.roomId === roomId)) {
+    for (const { x, y, radius } of lights.filter((l) => l.roomId === roomId)) {
+      // 🔔 must transform from world coords to local geomorph coords
+      const { x: cx, y: cy } = gm.inverseMatrix.transformPoint({ x, y });
       const grad = auxCt.createRadialGradient(cx, cy, 0, cx, cy, radius);
       grad.addColorStop(0, "rgba(0,0,0,1)");
       grad.addColorStop(0.5, "rgba(0,0,0,0.85)");

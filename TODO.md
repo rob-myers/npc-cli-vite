@@ -21,6 +21,7 @@
     - ✅ Decor renders them
     - ✅ apply decor.orient
     - ✅ do-points have `meta.do` true
+  - ✅ fix lights in transformed geomorphs instances
   - 🚧 can remove decor rect/circle
     - track runtime decor so preserve on hmr
     - track gaps?
