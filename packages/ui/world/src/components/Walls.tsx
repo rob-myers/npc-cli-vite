@@ -23,7 +23,7 @@ export default function Walls() {
 
       toggleLights() {
         state.lightsShown = !state.lightsShown;
-        mat.wallLightsNode.value = state.lightsShown ? 1 : 0;
+        state.mat.wallLightsNode.value = state.lightsShown ? 1 : 0;
         w.update();
       },
       getWallMat([u, v], transform, determinant, height, baseHeight) {
