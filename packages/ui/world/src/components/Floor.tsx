@@ -9,7 +9,7 @@ import { MAX_GEOMORPH_INSTANCES } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { PICK_TYPE } from "../service/pick";
-import { drawLights, drawRoomOutlines, worldToCanvas } from "../service/texture";
+import { drawLightsIntoTexture, drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -40,7 +40,6 @@ export default function Floor() {
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
       },
-
       async draw() {
         // one texture per gmId = texId (nav tris can change near hull doors)
         for (const [gmId] of w.gms.entries()) {
@@ -49,7 +48,6 @@ export default function Floor() {
           await pause();
         }
       },
-
       drawGm(gmId) {
         const { ct } = w.texFloor;
 
@@ -99,7 +97,7 @@ export default function Floor() {
         });
 
         // light circles
-        drawLights(ct, gm);
+        drawLightsIntoTexture(ct, gm);
 
         // obstacle drop shadows
         drawPolygons(
@@ -112,7 +110,6 @@ export default function Floor() {
           { fillStyle: "#0006", strokeStyle: null },
         );
       },
-
       transformInstances() {
         if (!state.inst) return;
         for (const [gmId, gm] of w.gms.entries()) {

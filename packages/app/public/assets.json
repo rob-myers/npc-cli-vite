@@ -1667,7 +1667,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[4.375, 6.2625], [4.375, 8.8125], [1.825, 8.8125], [1.825, 6.2625]]
+            [
+              [2.7375, 6.3375],
+              [2.7375, 8.8875],
+              [0.1875, 8.8875],
+              [0.1875, 6.3375]
+            ]
           ],
           "meta": {
             "decor": true,
@@ -1720,10 +1725,29 @@
           "type": "Polygon",
           "coordinates": [
             [
-              [9.09995, 11.325],
-              [9.09995, 14.97495],
-              [5.45, 14.97495],
-              [5.45, 11.325]
+              [8.48745, 10.225],
+              [8.48745, 13.87495],
+              [4.8375, 13.87495],
+              [4.8375, 10.225]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "circle": true,
+            "light": true,
+            "img": "circle-1",
+            "point": true,
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [5.12495, 11.9625],
+              [5.12495, 15.61245],
+              [1.475, 15.61245],
+              [1.475, 11.9625]
             ]
           ],
           "meta": {
@@ -7143,7 +7167,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[4.375, 6.2625], [4.375, 8.8125], [1.825, 8.8125], [1.825, 6.2625]]
+            [
+              [2.7375, 6.3375],
+              [2.7375, 8.8875],
+              [0.1875, 8.8875],
+              [0.1875, 6.3375]
+            ]
           ],
           "meta": {
             "decor": true,
@@ -7208,10 +7237,33 @@
           "type": "Polygon",
           "coordinates": [
             [
-              [9.09995, 11.325],
-              [9.09995, 14.97495],
-              [5.45, 14.97495],
-              [5.45, 11.325]
+              [8.48745, 10.225],
+              [8.48745, 13.87495],
+              [4.8375, 13.87495],
+              [4.8375, 10.225]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "circle": true,
+            "light": true,
+            "img": "circle-1",
+            "point": true,
+            "direction": {"x": 1, "y": 0},
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1,
+            "y": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [5.12495, 11.9625],
+              [5.12495, 15.61245],
+              [1.475, 15.61245],
+              [1.475, 11.9625]
             ]
           ],
           "meta": {
@@ -13161,10 +13213,10 @@
             "roomId": -1,
             "y": 0
           },
-          "bounds": {"x": 1.825, "y": 6.2625, "width": 2.55, "height": 2.55},
+          "bounds": {"x": 0.1875, "y": 6.3375, "width": 2.55, "height": 2.55},
           "type": "circle",
           "radius": 1.275,
-          "center": {"x": 3.1, "y": 7.5375}
+          "center": {"x": 1.4625, "y": 7.6125}
         },
         {
           "key": "",
@@ -13218,10 +13270,29 @@
             "roomId": -1,
             "y": 0
           },
-          "bounds": {"x": 5.45, "y": 11.325, "width": 3.6499, "height": 3.65},
+          "bounds": {"x": 4.8375, "y": 10.225, "width": 3.65, "height": 3.65},
           "type": "circle",
           "radius": 1.825,
-          "center": {"x": 7.275, "y": 13.15}
+          "center": {"x": 6.6625, "y": 12.05}
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "circle": true,
+            "light": true,
+            "img": "circle-1",
+            "point": true,
+            "direction": {"x": 1, "y": 0},
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1,
+            "y": 0
+          },
+          "bounds": {"x": 1.475, "y": 11.9625, "width": 3.65, "height": 3.65},
+          "type": "circle",
+          "radius": 1.825,
+          "center": {"x": 3.3, "y": 13.7875}
         },
         {
           "key": "",
@@ -15309,7 +15380,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [17]
+            "decorIds": [18]
           }
         },
         {
@@ -15347,7 +15418,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [22]
+            "decorIds": [23]
           }
         },
         {
@@ -15385,7 +15456,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [23]
+            "decorIds": [24]
           }
         },
         {
@@ -15889,7 +15960,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [42]
+            "decorIds": [43]
           }
         },
         {
@@ -15927,7 +15998,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [43]
+            "decorIds": [44]
           }
         },
         {
@@ -15965,7 +16036,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [44]
+            "decorIds": [45]
           }
         },
         {
@@ -16003,7 +16074,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [45]
+            "decorIds": [46]
           }
         },
         {
@@ -16982,7 +17053,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [46]
+            "decorIds": [47]
           }
         },
         {
@@ -17060,7 +17131,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [47]
+            "decorIds": [48]
           }
         },
         {
@@ -17152,7 +17223,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [52]
+            "decorIds": [53]
           }
         },
         {
@@ -17190,7 +17261,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [53]
+            "decorIds": [54]
           }
         },
         {
@@ -17228,7 +17299,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [58]
+            "decorIds": [59]
           }
         },
         {
@@ -17266,7 +17337,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [59]
+            "decorIds": [60]
           }
         },
         {
@@ -17589,7 +17660,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [72]
+            "decorIds": [73]
           }
         },
         {
@@ -17627,7 +17698,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [73]
+            "decorIds": [74]
           }
         },
         {
@@ -17929,7 +18000,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "decorIds": [76]
+            "decorIds": [77]
           }
         }
       ],
