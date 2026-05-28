@@ -71,6 +71,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       hash: 0,
       gmsHash: 0,
       lastHmr: 0,
+      lastQuery: 0,
 
       // hmr recreates but not named canvas
       texFloor: new TexArray({
@@ -247,7 +248,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   useWorldEvents(state);
 
   // distinct query per World instance even if same map
-  useQuery({
+  state.lastQuery = useQuery({
     queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, state.lastHmr],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_WORLD__) {
@@ -293,7 +294,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     },
     enabled: state.threeReady, // 🔔 fixes horrible issue on refresh
     gcTime: 0,
-  }); // query unique to component instance
+  }).dataUpdatedAt; // query unique to component instance
 
   useEffect(() => {
     if (import.meta.env.DEV && import.meta.hot) {
@@ -361,6 +362,8 @@ export type State = {
   /** Hash of `w.gms` */
   gmsHash: number;
   lastHmr: number;
+  /** Last time the world query succeeded */
+  lastQuery: number;
   texFloor: TexArray;
   texCeil: TexArray;
   texObs: TexArray;

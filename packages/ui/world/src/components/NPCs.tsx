@@ -138,24 +138,26 @@ export default function NPCs() {
           npc.idleClip = oldNpc.idleClip;
           npc.spawns = oldNpc.spawns;
 
-          // 🚧 w.e.npcToDoable ? "doable" : "navigable"
-          state.placeNpcAt(npc, npc.position, "navigable");
+          state.placeNpcAt(npc, npc.position, w.e.npcToDoable[npc.key] ? "doable" : "navigable");
         }
         state.update();
       },
-      findFreeDoMeta(meta) {
-        // 🚧 track used doables
-
-        // decor points have meta.gmId and meta.groundPoint
+      findFreeDoMeta(meta, npcKey) {
         if (typeof meta.do === "string") {
+          const otherNpcKey = w.e.doableToNpc[meta.key];
+          if (otherNpcKey && otherNpcKey !== npcKey) throw Error("not doable");
           return meta;
         }
 
-        // obstacle.meta can have numeric decorIds
-        if (Array.isArray(meta.decorIds)) {
-          meta = w.gms[meta.gmId].decor[meta.decorIds[0]].meta;
-          return meta;
+        if (meta.obstacle === true && Array.isArray(meta.decorIds)) {
+          const gm = w.gms[meta.gmId];
+          const ds = (meta.decorIds as number[]).map((decorId) => gm.decor[decorId] as Geomorph.DecorPoint);
+          const found = ds.find((d) => !w.e.doableToNpc[d.key] || w.e.doableToNpc[d.key] === npcKey) ?? null;
+          if (!found) throw Error("not doable");
+          return found.meta;
         }
+
+        // not doable
         return null;
       },
       get(npcKey) {
@@ -303,6 +305,7 @@ export default function NPCs() {
           npc.geometry.dispose();
           delete state.byPickId[npc.pickId];
           delete state.npc[npcKey];
+          w.e.setNpcDo(npcKey, null);
           npc.reject?.(new Error("removed npc"));
         }
         if (Object.keys(state.npc).length === 0) {
@@ -356,13 +359,15 @@ export default function NPCs() {
           });
         }
 
-        const doMeta = state.findFreeDoMeta(at?.meta ?? {});
-        if (doMeta) {
+        const doMeta = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
+        if (doMeta !== null) {
           state.placeNpcAt(npc, doMeta.groundPoint, "doable");
           npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
+          w.e.setNpcDo(npcKey, doMeta.key);
         } else {
           state.placeNpcAt(npc, at, "navigable");
           npc.idleClip = state.clips.idle;
+          w.e.setNpcDo(npcKey, null);
         }
 
         if (npc.spawns++ === 0) {
@@ -521,7 +526,16 @@ export type State = {
   }): Npc;
   placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat, type: "navigable" | "doable"): void;
   devHotReload(): void;
-  findFreeDoMeta(meta: Meta): null | Meta<{ groundPoint: Geom.VectJson; y?: number; orient?: number }>;
+  /**
+   * - Instantiated decor point with meta.do has groundPoint, orient, y.
+   * - It is enriched with `decor.key` in <Decor>.
+   * - Returns `null` if `meta` is not doable.
+   * - Throws if `meta` is doable but not free.
+   */
+  findFreeDoMeta(
+    meta: Meta,
+    npcKey: string,
+  ): null | Meta<{ key: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
   getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;

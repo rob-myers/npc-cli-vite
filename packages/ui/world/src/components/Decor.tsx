@@ -206,7 +206,8 @@ export default function Decor() {
   w.decor = state;
 
   const { data: materials } = useQuery({
-    queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, state.lastHmr],
+    // 🔔 force recompute decor mutations on run world query
+    queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, state.lastHmr, w.lastQuery],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_DECOR__) {
         import.meta.hot.data.__JUST_HMR_DECOR__ = false;
@@ -355,6 +356,7 @@ export default function Decor() {
           const suffix = `${metaPoint.x}-${metaPoint.y}`.replace(/\./g, "_"); // we use periods for paths in CLI
           decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
           state.byKey[decor.key] = decor;
+          decor.meta.key = decor.key;
 
           addToDecorGrid(decor, state.grid);
         }

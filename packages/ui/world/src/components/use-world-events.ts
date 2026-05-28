@@ -13,9 +13,11 @@ import type { State as WorldState } from "./World";
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
+      doableToNpc: {},
       doorOpen: {},
       doorToNpcs: {},
       externalNpcs: new Set(),
+      npcToDoable: {},
       npcToDoors: {},
       npcToRoom: new Map(),
       roomToNpcs: [],
@@ -294,6 +296,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       removeFromSensors(..._npcKeys) {
         // 🚧 needed on removed-npcs?
       },
+      setNpcDo(npcKey, decorKey) {
+        const currentDecorKey = w.e.npcToDoable[npcKey];
+        if (typeof currentDecorKey === "string") {
+          w.e.doableToNpc[currentDecorKey] = null;
+        }
+        if (typeof decorKey === "string") {
+          w.e.doableToNpc[decorKey] = npcKey;
+        }
+        w.e.npcToDoable[npcKey] = decorKey;
+      },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -370,9 +382,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 }
 
 export type State = {
+  doableToNpc: { [decorKey: string]: string | null };
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };
   externalNpcs: Set<string>;
+  npcToDoable: { [npcKey: string]: string | null };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
   /**
    * Relates `npcKey` to current room.
@@ -406,6 +420,7 @@ export type State = {
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
   removeFromSensors(...npcKeys: string[]): void;
+  setNpcDo(npcKey: string, decorKey: string | null): void;
   toggleDoor(gdKey: Geomorph.GmDoorKey, opts?: { npcKey?: string } & Geomorph.ToggleDoorOpts): boolean;
   toggleLock(
     gdKey: Geomorph.GmDoorKey,

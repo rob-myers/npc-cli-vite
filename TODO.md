@@ -24,7 +24,7 @@
   - ✅ fix lights in transformed geomorphs instances
   - 🚧 can remove decor rect/circle
     - track runtime decor so preserve on hmr
-    - track gaps?
+    - ❌ track gaps
 
 - ✅ clean path for extra--005--chair
 
@@ -57,6 +57,8 @@
     - e.g. `w gms.0.decor.68.meta`
   - ✅ `w.npc.spawn` checks `pick.meta` and `gm.decors[decorId].meta` for `decorId in pick.meta.decorIds`
     - e.g. a do-point extends to a whole chair
+  - ✅ npc can be at doable
+    - w.e.doableToNpc and w.e.npcToDoable
   - example of multiple do-points on single obstacle
     - sofa
     - maybe chair i.e. close-to-edge vs further-back
@@ -68,9 +70,6 @@
 - ✅ BUG pre-existing spawn on-mesh -> on-mesh
   - off-mesh <--> on-mesh seems fine
   - force remove/add agent fixed it
-
-- 🚧 npc can be at doable
-  - w.e.doableToNpc and w.e.npcToDoable
 
 - can spawn on bed
 
