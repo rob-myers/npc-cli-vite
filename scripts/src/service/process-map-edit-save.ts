@@ -41,14 +41,17 @@ export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
-export async function createThumbnailAndEnsureManifest(savedFile: MapEditSavedFile) {
-  await createSavedFileThumbnail(savedFile);
+export async function saveMapEditFile(filePath: string, body: string) {
+  const fileToSave = parseRawMapEditFile(body);
+  fs.writeFileSync(filePath, safeJsonCompact(fileToSave));
+
+  await createSavedFileThumbnail(fileToSave);
 
   await ensureManifests("symbol", {
-    changedFiles: [savedFile].filter((x) => x.type === "symbol"),
+    changedFiles: [fileToSave].filter((x) => x.type === "symbol"),
   });
 
-  await ensureManifests("map", { changedFiles: [savedFile].filter((x) => x.type === "map") });
+  await ensureManifests("map", { changedFiles: [fileToSave].filter((x) => x.type === "map") });
 }
 
 async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
