@@ -8,14 +8,7 @@
       "name": "table--004--1.2x2.4 1",
       "locked": true,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 2.4,
-        "f": 2.4000000000000004
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2.4, "f": 2.4},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "table--004--1.2x2.4",
@@ -87,72 +80,72 @@
       "name": "extra--005--chair-0.25x0.25 y=0.3",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 51.5, "f": 87.5},
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 71.5, "f": 87.5},
       "type": "symbol",
       "srcKey": "extra--005--chair-0.25x0.25",
       "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": 0.5, "y": 0.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 52, 88)"
+      "offset": {"x": -0.5, "y": 0.5},
+      "cssTransform": "matrix(-1, 0, 0, 1, 71, 88)"
     },
     {
       "id": "547ff29a-913f-4659-8577-e3b3ac0ec23b",
       "name": "extra--005--chair-0.25x0.25 y=0.3",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 51.5, "f": 63.5},
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 71.5, "f": 63.5},
       "type": "symbol",
       "srcKey": "extra--005--chair-0.25x0.25",
       "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": 0.5, "y": 0.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 52, 64)"
+      "offset": {"x": -0.5, "y": 0.5},
+      "cssTransform": "matrix(-1, 0, 0, 1, 71, 64)"
     },
     {
       "id": "12330a84-3a24-4067-968c-176212e2eae6",
       "name": "extra--005--chair-0.25x0.25 y=0.3",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 51.5, "f": 39.5},
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 71.5, "f": 39.5},
       "type": "symbol",
       "srcKey": "extra--005--chair-0.25x0.25",
       "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": 0.5, "y": 0.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 52, 40)"
+      "offset": {"x": -0.5, "y": 0.5},
+      "cssTransform": "matrix(-1, 0, 0, 1, 71, 40)"
     },
     {
       "id": "fb9f695f-0146-4e30-b9c5-bc1b8ff35b56",
       "name": "extra--005--chair-0.25x0.25 y=0.3",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 51.5, "f": 15.5},
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 71.5, "f": 15.5},
       "type": "symbol",
       "srcKey": "extra--005--chair-0.25x0.25",
       "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": 0.5, "y": 0.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 52, 16)"
+      "offset": {"x": -0.5, "y": 0.5},
+      "cssTransform": "matrix(-1, 0, 0, 1, 71, 16)"
     },
     {
       "id": "d432e10c-b4a3-4e95-b56a-624817269808",
       "name": "extra--005--chair-0.25x0.25 y=0.3",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 21.5, "f": -18.5},
+      "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 41.5, "f": -18.5},
       "type": "symbol",
       "srcKey": "extra--005--chair-0.25x0.25",
       "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": 0.5, "y": 0.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 22, -18)"
+      "offset": {"x": -0.6268034311141769, "y": 0.32728803635864123},
+      "cssTransform": "matrix(0, 1, -1, 0, 40.8732, -18.1727)"
     },
     {
       "id": "4964d5fe-ed64-448c-bdde-d11a30540c57",
       "name": "extra--005--chair-0.25x0.25 y=0.3",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 21.5, "f": 119.5},
+      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 21.5, "f": 139.5},
       "type": "symbol",
       "srcKey": "extra--005--chair-0.25x0.25",
       "baseRect": {"width": 20, "height": 20},
-      "offset": {"x": 0.5, "y": 0.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 22, 120)"
+      "offset": {"x": 0.32728803635864123, "y": -0.6268034311141769},
+      "cssTransform": "matrix(0, -1, 1, 0, 21.8273, 138.8732)"
     }
   ],
   "bounds": {"x": -2, "y": -12, "width": 68.8, "height": 144.8},
