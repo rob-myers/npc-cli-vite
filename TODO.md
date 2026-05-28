@@ -71,6 +71,9 @@
   - off-mesh <--> on-mesh seems fine
   - force remove/add agent fixed it
 
+- 🚧 npc design rethink
+  - 🚧 try match style via `test-0`
+
 - can spawn on bed
 
 - start 101
