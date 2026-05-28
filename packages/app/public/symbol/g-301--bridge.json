@@ -518,15 +518,15 @@
             "b": 0,
             "c": 0,
             "d": 1.7,
-            "e": 73,
-            "f": 250.5
+            "e": 7.5,
+            "f": 253.5
           },
           "type": "image",
           "srcType": "decor",
           "srcKey": "circle-1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1.7, 0, 0, 1.7, 73, 250.5)"
+          "cssTransform": "matrix(1.7, 0, 0, 1.7, 7.5, 253.5)"
         },
         {
           "id": "74065766-c391-4683-acc3-8863c4d741b9",
@@ -578,15 +578,35 @@
             "b": 0,
             "c": 0,
             "d": 2.4333,
-            "e": 218,
-            "f": 453
+            "e": 193.5,
+            "f": 409
           },
           "type": "image",
           "srcType": "decor",
           "srcKey": "circle-1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 218, 453)"
+          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 193.5, 409)"
+        },
+        {
+          "id": "2b0e437e-af65-4a8b-ba0d-f12ba55d7235",
+          "name": "decor circle light",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 2.4333,
+            "b": 0,
+            "c": 0,
+            "d": 2.4333,
+            "e": 59,
+            "f": 478.5
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "circle-1",
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 59, 478.5)"
         }
       ]
     },
