@@ -52,8 +52,11 @@ export default function Floor() {
 
       drawGm(gmId) {
         const { ct } = w.texFloor;
-        // get untransformed layout i.e. not an instance
-        const gmKey = w.gms[gmId]?.key;
+
+        // - most aspects only depend on uninstantiated geomorph `layout`
+        // - however lights depend on instantiated decor (with gmRoomId)
+        const gm = w.gms[gmId];
+        const gmKey = gm?.key;
         const layout = w.assets.layout[gmKey];
         if (!layout) return;
 
@@ -96,7 +99,7 @@ export default function Floor() {
         });
 
         // light circles
-        drawLights(ct, layout, gmKey ?? "");
+        drawLights(ct, gm);
 
         // obstacle drop shadows
         drawPolygons(
@@ -149,8 +152,9 @@ export default function Floor() {
   useEffect(() => {
     state.transformInstances();
     state.addUvs();
-    state.draw().then(() => w.update());
-  }, [w.hash, w.nav, w.gmsData, w.themeKey]);
+    // render initially or once decor has gmRoomIds
+    (w.decor.ready || !w.isReady()) && state.draw().then(() => w.update());
+  }, [w.hash, w.nav, w.gmsData, w.themeKey, w.decor.ready]);
 
   return (
     <instancedMesh

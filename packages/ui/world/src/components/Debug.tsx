@@ -6,7 +6,7 @@ import { useContext, useEffect, useMemo, useRef } from "react";
 import { float, normalView, pow } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
-import { getLightPositions, lightRadius } from "../service/texture";
+import { getLightMetas } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
@@ -83,17 +83,17 @@ export function Debug() {
         const inst = lightSpheresRef.current;
         if (!inst) return;
         const positions: THREE.Vector3[] = [];
+        const radii: number[] = [];
         for (const gm of w.gms) {
-          const layout = w.assets.layout[gm.key];
-          if (!layout) continue;
-          for (const p of getLightPositions(layout, gm.key)) {
+          for (const p of getLightMetas(gm)) {
             const wp = gm.matrix.transformPoint(p);
             positions.push(new THREE.Vector3(wp.x, lightSphereHeight, wp.y));
+            radii.push(p.radius);
           }
         }
         inst.count = Math.min(positions.length, maxLightSpheres);
         for (let i = 0; i < inst.count; i++) {
-          tmpMat4.makeTranslation(positions[i]);
+          tmpMat4.makeTranslation(positions[i]).scale(new THREE.Vector3(radii[i], radii[i], radii[i]));
           inst.setMatrixAt(i, tmpMat4);
         }
         inst.instanceMatrix.needsUpdate = true;
@@ -176,7 +176,7 @@ export function Debug() {
         visible={state.lightSpheresShown}
         renderOrder={6}
       >
-        <sphereGeometry args={[lightRadius, 32, 32, undefined, undefined, undefined, Math.PI / 2]} />
+        <sphereGeometry args={[1, 32, 32, undefined, undefined, undefined, Math.PI / 2]} />
         <primitive object={lightSphereMat} attach="material" />
       </instancedMesh>
 

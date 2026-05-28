@@ -8,7 +8,7 @@ import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createXyQuad } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
-import { getLightPositions, lightRadius } from "../service/texture";
+import { getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -21,10 +21,10 @@ export default function Walls() {
       mat: {} as any,
       quad: createXyQuad(),
 
-      toggleLights() {
-        state.lightsShown = !state.lightsShown;
-        state.mat.wallLightsNode.value = state.lightsShown ? 1 : 0;
-        w.update();
+      toggleLights(next = !state.lightsShown) {
+        state.mat.wallLightsNode.value = next ? 1 : 0;
+        state.set({ lightsShown: next });
+        w.view.forceUpdate();
       },
       getWallMat([u, v], transform, determinant, height, baseHeight) {
         tmpMat1.setMatrixValue(transform);
@@ -38,14 +38,8 @@ export default function Walls() {
         const rad = Math.atan2(tmpVec2.y - tmpVec1.y, tmpVec2.x - tmpVec1.x);
         const len = u.distanceTo(v);
         return geometry.embedXZMat4(
-          {
-            a: len * Math.cos(rad),
-            b: len * Math.sin(rad),
-            c: -Math.sin(rad),
-            d: Math.cos(rad),
-            e: tmpVec1.x,
-            f: tmpVec1.y,
-          },
+          // biome-ignore format: avoid newlines
+          { a: len * Math.cos(rad), b: len * Math.sin(rad), c: -Math.sin(rad), d: Math.cos(rad), e: tmpVec1.x, f: tmpVec1.y },
           { yScale: height ?? wallHeight, yHeight: baseHeight, mat4: tmpMatFour1 },
         );
       },
@@ -100,19 +94,23 @@ export default function Walls() {
 
     const baseColorUniform = uniform(new THREE.Color());
     // Per wall: up to 2 nearest light world positions (sentinel y=-1000 → contributes 0)
-    const sentinel = new THREE.Vector3(0, -1000, 0);
+    // xyz = world position, w = radius (non-zero to avoid div-by-zero in shader)
+    const sentinel = new THREE.Vector4(0, -1000, 0, 1);
     const light0Values = Array.from({ length: wallCount }, () => sentinel.clone());
     const light1Values = Array.from({ length: wallCount }, () => sentinel.clone());
-    const lights0Node = uniformArray(light0Values, "vec3");
-    const lights1Node = uniformArray(light1Values, "vec3");
-    const lightR = float(lightRadius);
+    const lights0Node = uniformArray(light0Values, "vec4");
+    const lights1Node = uniformArray(light1Values, "vec4");
     const wallLightsNode = uniform(1);
     const factor = Fn(() => {
       const f = float(0).toVar();
       If(wallLightsNode.notEqual(0), () => {
-        const dist0 = positionWorld.sub(lights0Node.element(instanceIndex)).length();
-        const dist1 = positionWorld.sub(lights1Node.element(instanceIndex)).length();
-        f.assign(lightR.sub(dist0).div(lightR).clamp(0, 1).add(lightR.sub(dist1).div(lightR).clamp(0, 1)).clamp(0, 1));
+        const l0 = lights0Node.element(instanceIndex);
+        const l1 = lights1Node.element(instanceIndex);
+        const dist0 = positionWorld.sub(l0.xyz).length();
+        const dist1 = positionWorld.sub(l1.xyz).length();
+        const r0 = l0.w;
+        const r1 = l1.w;
+        f.assign(r0.sub(dist0).div(r0).clamp(0, 1).add(r1.sub(dist1).div(r1).clamp(0, 1)).clamp(0, 1));
       });
       return f;
     })();
@@ -147,14 +145,16 @@ export default function Walls() {
     mat.opacityUniform.value = w.getTheme().walls.opacity;
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
 
-    // Collect all light world positions (xz plane)
-    const lights: { x: number; z: number }[] = [];
+    if (!w.decor.ready) {
+      return;
+    }
+
+    // Collect all light world positions (xz plane) with per-light radius
+    const lights: { x: number; z: number; radius: number }[] = [];
     for (const gm of w.gms) {
-      const layout = w.assets.layout[gm.key];
-      if (!layout) continue;
-      for (const p of getLightPositions(layout, gm.key)) {
+      for (const p of getLightMetas(gm)) {
         const wp = gm.matrix.transformPoint(p);
-        lights.push({ x: wp.x, z: wp.y });
+        lights.push({ x: wp.x, z: wp.y, radius: p.radius });
       }
     }
 
@@ -171,14 +171,14 @@ export default function Walls() {
           .sort((a, b) => a.dist - b.dist);
         const l0 = sorted[0];
         const l1 = sorted[1];
-        mat.light0Values[instanceId].set(l0 ? l0.lp.x : 0, 0, l0 ? l0.lp.z : -1000);
-        mat.light1Values[instanceId].set(l1 ? l1.lp.x : 0, 0, l1 ? l1.lp.z : -1000);
+        mat.light0Values[instanceId].set(l0 ? l0.lp.x : 0, l0 ? 0 : -1000, l0 ? l0.lp.z : 0, l0 ? l0.lp.radius : 1);
+        mat.light1Values[instanceId].set(l1 ? l1.lp.x : 0, l1 ? 0 : -1000, l1 ? l1.lp.z : 0, l1 ? l1.lp.radius : 1);
         instanceId++;
       }
     }
 
     w.update(); // 🔔 must sync onchange theme
-  }, [w.mapKey, w.hash, w.gms.length, w.themeKey]);
+  }, [w.mapKey, w.hash, w.themeKey, w.decor.ready]);
 
   return wallCount ? (
     <instancedMesh
@@ -213,13 +213,13 @@ export type State = {
     outputNode: THREE.Node;
     baseColorUniform: THREE.UniformNode<THREE.Color>;
     wallLightsNode: THREE.UniformNode<number>;
-    light0Values: THREE.Vector3[];
-    light1Values: THREE.Vector3[];
+    light0Values: THREE.Vector4[];
+    light1Values: THREE.Vector4[];
     uuid: `${string}-${string}-${string}-${string}-${string}`;
   };
   quad: THREE.BufferGeometry;
 
-  toggleLights(): void;
+  toggleLights(next?: boolean): void;
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
   getWallMat: (
     seg: [Geom.Vect, Geom.Vect],

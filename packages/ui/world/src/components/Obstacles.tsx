@@ -5,7 +5,7 @@ import { geomService, Mat, Vect } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import {
   attribute,
@@ -29,7 +29,7 @@ import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
-import { getLightPositions, lightRadius } from "../service/texture";
+import { getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -208,16 +208,20 @@ export default function Obstacles(_props: Props) {
 
   const skirtCount = w.gmsData.count.obstacleSkirtEdges;
   const skirtLightMeta = useMemo(() => {
-    const sentinel = new THREE.Vector3(0, -1000, 0);
+    // xyz = world position, w = radius (non-zero to avoid div-by-zero in shader)
+    const sentinel = new THREE.Vector4(0, -1000, 0, 1);
     const light0Values = Array.from({ length: skirtCount }, () => sentinel.clone());
     const light1Values = Array.from({ length: skirtCount }, () => sentinel.clone());
-    const lights0Node = uniformArray(light0Values, "vec3");
-    const lights1Node = uniformArray(light1Values, "vec3");
-    const lightR = float(lightRadius);
+    const lights0Node = uniformArray(light0Values, "vec4");
+    const lights1Node = uniformArray(light1Values, "vec4");
     const factor = Fn(() => {
-      const dist0 = positionWorld.sub(lights0Node.element(instanceIndex)).length();
-      const dist1 = positionWorld.sub(lights1Node.element(instanceIndex)).length();
-      return lightR.sub(dist0).div(lightR).clamp(0, 1).add(lightR.sub(dist1).div(lightR).clamp(0, 1)).clamp(0, 0.05);
+      const l0 = lights0Node.element(instanceIndex);
+      const l1 = lights1Node.element(instanceIndex);
+      const dist0 = positionWorld.sub(l0.xyz).length();
+      const dist1 = positionWorld.sub(l1.xyz).length();
+      const r0 = l0.w;
+      const r1 = l1.w;
+      return r0.sub(dist0).div(r0).clamp(0, 1).add(r1.sub(dist1).div(r1).clamp(0, 1)).clamp(0, 0.05);
     })();
     return { light0Values, light1Values, factor };
   }, [skirtCount]);
@@ -231,19 +235,17 @@ export default function Obstacles(_props: Props) {
       enabled: !!w.sheets,
     }).data ?? state.images;
 
-  React.useEffect(() => {
+  useEffect(() => {
     state.addUvs();
     state.transformAndColorObstacles();
     state.transformSkirts();
 
-    // Collect all light world positions
-    const lights: { x: number; z: number }[] = [];
+    // Collect all light world positions with per-light radius
+    const lights: { x: number; z: number; radius: number }[] = [];
     for (const gm of w.gms) {
-      const layout = w.assets.layout[gm.key];
-      if (!layout) continue;
-      for (const p of getLightPositions(layout, gm.key)) {
+      for (const p of getLightMetas(gm)) {
         const wp = gm.matrix.transformPoint(p);
-        lights.push({ x: wp.x, z: wp.y });
+        lights.push({ x: wp.x, z: wp.y, radius: p.radius });
       }
     }
 
@@ -263,8 +265,8 @@ export default function Obstacles(_props: Props) {
         const l0 = sorted[0];
         const l1 = sorted[1];
         for (let i = 0; i < origPoly.outline.length; i++) {
-          skirtLightMeta.light0Values[sId].set(l0 ? l0.l.x : 0, 0, l0 ? l0.l.z : -1000);
-          skirtLightMeta.light1Values[sId].set(l1 ? l1.l.x : 0, 0, l1 ? l1.l.z : -1000);
+          skirtLightMeta.light0Values[sId].set(l0 ? l0.l.x : 0, l0 ? 0 : -1000, l0 ? l0.l.z : 0, l0 ? l0.l.radius : 1);
+          skirtLightMeta.light1Values[sId].set(l1 ? l1.l.x : 0, l1 ? 0 : -1000, l1 ? l1.l.z : 0, l1 ? l1.l.radius : 1);
           sId++;
         }
       }
@@ -275,7 +277,7 @@ export default function Obstacles(_props: Props) {
       state.sendDataToGpu();
       w.update();
     });
-  }, [w.mapKey, w.hash, skirtLightMeta, state.images]);
+  }, [w.mapKey, w.hash, skirtLightMeta, state.images, w.decor.ready]);
 
   const skirtMaterial = useMemo(() => {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
