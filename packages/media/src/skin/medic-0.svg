@@ -67,49 +67,85 @@
     <title>medic-0--3573d1c9cad6c8fc--medic--doctor--mask</title>
   </image>
   <g style="pointer-events: none;">
-    <title>right-arm-top</title>
-    <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
+    <title>right-leg</title>
+    <rect x="16" y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>front</title>
     </rect>
-    <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
+    <rect y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>right</title>
     </rect>
-    <rect x="192" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
+    <rect x="32" y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>left</title>
     </rect>
-    <rect x="208" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
+    <rect x="48" y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>back</title>
     </rect>
   </g>
-  <g style="" transform="matrix(1, 0, 0, 0.5, 0, 72.000002)">
-    <title>right-arm-bottom</title>
-    <rect x="176" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+  <g style="pointer-events: none;">
+    <title>right-arm</title>
+    <g>
+      <title>top</title>
+      <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>right</title>
+      </rect>
+      <rect x="192" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>left</title>
+      </rect>
+      <rect x="208" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="" transform="matrix(1, 0, 0, 0.5, 0, 72.000002)">
+      <title>bottom</title>
+      <rect x="176" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+        <title>front</title>
+      </rect>
+      <rect x="160" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+        <title>right</title>
+      </rect>
+      <rect x="192" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+        <title>left</title>
+      </rect>
+      <rect x="208" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+        <title>back</title>
+      </rect>
+    </g>
+  </g>
+  <g style="pointer-events: none;">
+    <title>left-leg</title>
+    <rect x="80" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>front</title>
     </rect>
-    <rect x="160" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+    <rect y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;" x="64">
       <title>right</title>
     </rect>
-    <rect x="192" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+    <rect x="96" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>left</title>
     </rect>
-    <rect x="208" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+    <rect x="112" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
       <title>back</title>
     </rect>
   </g>
   <g style="pointer-events: none;" transform="matrix(1, 0, 0, 1, -32.000001, 128.000003)">
-    <title>left-arm-top</title>
-    <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
-      <title>front</title>
-    </rect>
-    <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
-      <title>right</title>
-    </rect>
-    <rect x="192" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
-      <title>left</title>
-    </rect>
-    <rect x="208" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5;">
-      <title>back</title>
-    </rect>
+    <title>left-arm</title>
+    <g>
+      <title>top</title>
+      <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>right</title>
+      </rect>
+      <rect x="192" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>left</title>
+      </rect>
+      <rect x="208" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>back</title>
+      </rect>
+    </g>
   </g>
   <g style="pointer-events: none;">
     <title>head</title>
