@@ -1069,9 +1069,14 @@ export class CameraControls extends EventDispatcher {
       } else {
         const remaining = this.minDistance - this.spherical.radius;
         const step = remaining < 0.05 ? remaining : remaining * 0.08;
-        this.u.scale = (this.spherical.radius + step) / this.spherical.radius;
-        // pin cursor during tween only when dollyDirection is valid (wheel/mouse path)
-        if (this.u.dollyDirection.lengthSq() > 0) this.u.zoomingToCursor = true;
+        if (this.u.dollyDirection.lengthSq() > 0) {
+          // wheel/mouse: drive via handleZoomToCursor so cursor stays pinned
+          this.u.scale = (this.spherical.radius + step) / this.spherical.radius;
+          this.u.zoomingToCursor = true;
+        } else {
+          // touch: apply step directly — u.scale is reset before next PATH B runs
+          this.spherical.radius = Math.min(this.minDistance, this.spherical.radius + step);
+        }
         this.dispatchEvent(changeEvent); // keep frame chain alive during slow tween
       }
     }
