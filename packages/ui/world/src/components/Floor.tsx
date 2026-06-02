@@ -66,7 +66,7 @@ export default function Floor() {
 
         // try inset by half hull doorway to avoid adjacent doorway overlap
         const hullFloor = geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
-        drawPolygons(ct, hullFloor, { fillStyle: "#111", strokeStyle: null });
+        drawPolygons(ct, hullFloor, { fillStyle: w.getTheme().floor.hullFill, strokeStyle: null });
 
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.05 });

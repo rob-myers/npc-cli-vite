@@ -155,11 +155,12 @@ export const WorldThemeSchema = z.object({
   }),
   floor: z
     .object({
+      hullFill: z.string().default("#111"),
       navStroke: z.string().default("#000c"),
       patternFill: z.string().default("#222"),
       tileStroke: z.string().default("#0001"),
     })
-    .default({ navStroke: "#000c", patternFill: "#222", tileStroke: "#0001" }),
+    .default({ hullFill: "#111", navStroke: "#000c", patternFill: "#222", tileStroke: "#0001" }),
   walls: z
     .object({
       color: z.string().default("#000000"),
