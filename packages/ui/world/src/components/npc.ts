@@ -161,7 +161,7 @@ export class Npc {
     return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
   }
 
-  playIdleClip(duration = 0.5) {
+  playIdleClip(duration = 0.1) {
     for (const clip of Object.values(this.clips)) {
       this.mixer.existingAction(clip)?.fadeOut(duration);
     }
@@ -235,7 +235,7 @@ export class Npc {
   syncAnimation(speed: number) {
     if (!this.moving) return;
     const moveAction = this.mixer.clipAction(this.moveClip);
-    moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), speed);
+    moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
   }
 
   syncSeparation(agent: crowdApi.Agent, speed: number, worldSeconds: number) {
