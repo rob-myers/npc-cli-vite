@@ -415,9 +415,6 @@ export class CameraControls extends EventDispatcher {
         }
       } else if (ratio < 1) {
         // pinching fingers (zoom out)
-        if (this.extraZoomActive && this.spherical.radius / ratio >= this.minDistance) {
-          this._setExtraZoomActive(false);
-        }
         this._setReadyForExtraZoom(false);
       }
     }
