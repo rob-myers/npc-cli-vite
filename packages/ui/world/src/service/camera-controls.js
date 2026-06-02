@@ -1041,12 +1041,13 @@ export class CameraControls extends EventDispatcher {
       );
     }
 
-    // tween radius back to minDistance when not actively zooming in and no pointer held
+    // tween radius back beyond minDistance (to 1.06× so we clear the 1.05 entry threshold)
     if (this.extraZoomActive && this._extraZoomTimer === undefined && this.pointers.length === 0) {
       if (this.spherical.radius >= this.minDistance) {
         this._setExtraZoomActive(false);
       } else {
-        const remaining = this.minDistance - this.spherical.radius;
+        const tweenTarget = this.minDistance * 1.06;
+        const remaining = tweenTarget - this.spherical.radius;
         const step = remaining < 0.05 ? remaining : remaining * 0.12;
         if (this.u.dollyDirection.lengthSq() > 0) {
           // wheel/mouse: drive via handleZoomToCursor so cursor stays pinned
@@ -1054,7 +1055,7 @@ export class CameraControls extends EventDispatcher {
           this.u.zoomingToCursor = true;
         } else {
           // touch: apply step directly — u.scale is reset before next PATH B runs
-          this.spherical.radius = Math.min(this.minDistance, this.spherical.radius + step);
+          this.spherical.radius = Math.min(tweenTarget, this.spherical.radius + step);
         }
         this.dispatchEvent(changeEvent); // keep frame chain alive during slow tween
       }
