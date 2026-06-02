@@ -1072,9 +1072,9 @@ export class CameraControls extends EventDispatcher {
       } else {
         const remaining = this.minDistance - this.spherical.radius;
         const step = remaining < 0.05 ? remaining : remaining * 0.08;
-        // drive tween via cursor-zoom path so the cursor stays pinned
         this.u.scale = (this.spherical.radius + step) / this.spherical.radius;
-        this.u.zoomingToCursor = true;
+        // pin cursor during tween only when dollyDirection is valid (wheel/mouse path)
+        if (this.u.dollyDirection.lengthSq() > 0) this.u.zoomingToCursor = true;
         this.dispatchEvent(changeEvent); // keep frame chain alive during slow tween
       }
     }
