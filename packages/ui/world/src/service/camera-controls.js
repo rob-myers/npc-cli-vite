@@ -143,32 +143,18 @@ export class CameraControls extends EventDispatcher {
     }
     this.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail: { active }, bubbles: true }));
   }
-  /** True after a scroll gesture ends while at minDistance — gates entry into extra-zoom */
+  /** True when camera is at minDistance — visual indicator only */
   readyForExtraZoom = false;
-  /** True after readyForExtraZoom has been set long enough that momentum has dissipated */
-  _extraZoomEntryAllowed = false;
-  /** True when a fresh touch gesture started while entry was already allowed */
-  _touchReadyAtGestureStart = false;
 
   /** @param {boolean} ready */
   _setReadyForExtraZoom(ready) {
     if (this.readyForExtraZoom === ready) return;
     this.readyForExtraZoom = ready;
-    clearTimeout(this._extraZoomEntryTimer);
-    this._extraZoomEntryTimer = undefined;
-    this._extraZoomEntryAllowed = false;
-    if (ready) {
-      this._extraZoomEntryTimer = setTimeout(() => {
-        this._extraZoomEntryTimer = undefined;
-        if (this.readyForExtraZoom) this._extraZoomEntryAllowed = true;
-      }, 150);
-    }
-    this.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail: { ready }, bubbles: true }));
+    this.domElement.dispatchEvent(new CustomEvent("extrazoomready", { detail: { ready }, bubbles: true }));
   }
   /** Ground point to tween target toward during extra-zoom */
   _extraZoomTargetGoal = new THREE.Vector3();
   _extraZoomTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
-  _extraZoomEntryTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
   _normalZoomTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
   _extraZoomCooldownTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
 
@@ -348,7 +334,7 @@ export class CameraControls extends EventDispatcher {
     if (this.extraZoomActive && this._extraZoomTimer === undefined && event.deltaY < 0) return;
     const zoomScale = this.getZoomScale();
     if (event.deltaY < 0) {
-      if (this.extraZoom > 1 && (this.extraZoomActive || (this.readyForExtraZoom && this._extraZoomEntryAllowed))) {
+      if (this.extraZoom > 1 && (this.extraZoomActive || this.spherical.radius <= this.minDistance * 1.05)) {
         if (!this.extraZoomActive) this.u.panOffset.set(0, 0, 0); // freeze target on entry
         this._setExtraZoomActive(true);
         this._setReadyForExtraZoom(false);
@@ -403,15 +389,12 @@ export class CameraControls extends EventDispatcher {
     if (this.extraZoom > 1) {
       if (ratio > 1) {
         // spreading fingers (zoom in)
-        if (this.extraZoomActive || this._touchReadyAtGestureStart) {
+        if (this.extraZoomActive || this.spherical.radius / ratio <= this.minDistance * 1.05) {
           if (!this.extraZoomActive) {
             this.u.panOffset.set(0, 0, 0);
             this._setExtraZoomActive(true);
             this._setReadyForExtraZoom(false);
-            this._touchReadyAtGestureStart = false;
           }
-        } else if (!this.extraZoomActive && this.spherical.radius / ratio <= this.minDistance * 1.05) {
-          this._setReadyForExtraZoom(true);
         }
       } else if (ratio < 1) {
         // pinching fingers (zoom out)
@@ -683,9 +666,6 @@ export class CameraControls extends EventDispatcher {
     this.addPointer(event);
 
     if (event.pointerType === "touch") {
-      if (this.readyForExtraZoom && this._extraZoomEntryAllowed) {
-        this._touchReadyAtGestureStart = true;
-      }
       this.onTouchStart(event);
     } else {
       this.onMouseDown(event);
@@ -721,7 +701,6 @@ export class CameraControls extends EventDispatcher {
         this.pointerLastUp.x - this.pointerFirstDown.x,
         this.pointerLastUp.y - this.pointerFirstDown.y,
       );
-      this._touchReadyAtGestureStart = false;
     }
 
     if (this.params.snapAzimuth) {
@@ -1068,7 +1047,7 @@ export class CameraControls extends EventDispatcher {
         this._setExtraZoomActive(false);
       } else {
         const remaining = this.minDistance - this.spherical.radius;
-        const step = remaining < 0.05 ? remaining : remaining * 0.2;
+        const step = remaining < 0.05 ? remaining : remaining * 0.12;
         if (this.u.dollyDirection.lengthSq() > 0) {
           // wheel/mouse: drive via handleZoomToCursor so cursor stays pinned
           this.u.scale = (this.spherical.radius + step) / this.spherical.radius;
