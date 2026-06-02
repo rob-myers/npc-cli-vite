@@ -442,7 +442,7 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {PointerEvent} event */
   handleTouchMovePan(event) {
-    // if (this.extraZoomActive) return;
+    if (this.extraZoomActive) return;
     if (this.pointers.length == 1) {
       this.u.panEnd.set(event.pageX, event.pageY);
     } else {
@@ -459,13 +459,7 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {PointerEvent} event */
   handleTouchMoveRotate(event) {
-    if (this.extraZoomActive) {
-      // this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.panSpeed);
-      // this.pan(this.u.rotateDelta.x, this.u.rotateDelta.y);
-      // this.u.rotateStart.copy(this.u.rotateEnd);
-      this.handleTouchMovePan(event);
-      return;
-    }
+    if (this.extraZoomActive) return;
 
     if (this.pointers.length == 1) {
       this.u.rotateEnd.set(event.pageX, event.pageY);
