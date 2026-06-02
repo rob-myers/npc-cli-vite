@@ -63,8 +63,7 @@ export function WorldMenu() {
           body: JSON.stringify(theme),
         });
         if (res.ok) {
-          w.hash = hashJson(w.assets);
-          w.update();
+          w.set({ hash: hashJson(w.assets) });
         }
       },
       saveThemeDebounced() {
@@ -241,7 +240,7 @@ export function WorldMenu() {
                         <textarea
                           key={w.themeKey}
                           ref={state.ref("themeEditorRef")}
-                          className="w-40 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                          className="w-44 h-32 bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
                           defaultValue={JSON.stringify(w.getTheme(), null, 2)}
                           onKeyDown={(e) => e.stopPropagation()}
                           onClick={(e) => e.stopPropagation()}
