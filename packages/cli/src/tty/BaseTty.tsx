@@ -1,10 +1,9 @@
 import { useThemeName } from "@npc-cli/theme";
-import { cn, useEffectNonStrict, useStateRef } from "@npc-cli/util";
+import { cn, useBeforeUnloadOrVisibilityChange, useEffectNonStrict, useStateRef } from "@npc-cli/util";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { type ITheme, Terminal as XTermTerminal } from "@xterm/xterm";
 import React from "react";
-import { useBeforeunload } from "react-beforeunload";
 import { scrollback } from "../shell/const";
 import { type Session, sessionApi } from "../shell/session";
 import { stripAnsi } from "../shell/util";
@@ -137,7 +136,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     }
   }, [themeName, state.xterm]);
 
-  useBeforeunload(() => {
+  useBeforeUnloadOrVisibilityChange(() => {
     sessionApi.persistHistory(props.sessionKey);
     sessionApi.persistHome(props.sessionKey);
   });

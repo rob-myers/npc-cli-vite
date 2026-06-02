@@ -13,7 +13,16 @@ import {
 import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const";
 import type { ThemeName } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, Mat, Rect, type UseStateRef, useStateRef, Vect } from "@npc-cli/util";
+import {
+  cn,
+  ExhaustiveError,
+  Mat,
+  Rect,
+  type UseStateRef,
+  useBeforeUnloadOrVisibilityChange,
+  useStateRef,
+  Vect,
+} from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
@@ -29,7 +38,6 @@ import {
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useCallback, useContext, useEffect, useMemo } from "react";
-import { useBeforeunload } from "react-beforeunload";
 import z from "zod";
 import { queryClientApi } from "../../../cli/src/shell/query-client";
 import {
@@ -1538,7 +1546,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   }, [state.wrapperEl]);
 
   // autosave draft in dev/prod
-  useBeforeunload(() => state.save(state.currentFile, { saveToDiskInDev: false }));
+  useBeforeUnloadOrVisibilityChange(() => state.save(state.currentFile, { saveToDiskInDev: false }));
 
   const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;

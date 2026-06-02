@@ -79,7 +79,7 @@
   - ✅ can do temp peek zoom
   - 🚧 clean up approach: break into subclass
 
-- fix walk -> idle animation i.e. should be fast
+- ✅ fix walk -> idle animation i.e. should be fast
 
 - can spawn on bed
 
