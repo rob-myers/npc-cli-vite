@@ -396,7 +396,28 @@ export class CameraControls extends EventDispatcher {
 
     this.u.dollyEnd.set(0, distance);
     this.u.dollyDelta.set(0, (this.u.dollyEnd.y / this.u.dollyStart.y) ** this.zoomSpeed);
-    this.dollyOut(this.u.dollyDelta.y);
+    const ratio = this.u.dollyDelta.y;
+
+    if (this.extraZoom > 1) {
+      if (ratio > 1) {
+        // spreading fingers (zoom in)
+        if (!this.extraZoomActive && this.readyForExtraZoom) {
+          this.u.panOffset.set(0, 0, 0);
+          this._setExtraZoomActive(true);
+          this._setReadyForExtraZoom(false);
+        } else if (!this.extraZoomActive && this.spherical.radius / ratio <= this.minDistance * 1.05) {
+          this._setReadyForExtraZoom(true);
+        }
+      } else if (ratio < 1) {
+        // pinching fingers (zoom out)
+        if (this.extraZoomActive && this.spherical.radius / ratio >= this.minDistance) {
+          this._setExtraZoomActive(false);
+        }
+        this._setReadyForExtraZoom(false);
+      }
+    }
+
+    this.dollyOut(ratio);
     this.u.dollyStart.copy(this.u.dollyEnd);
   }
 
