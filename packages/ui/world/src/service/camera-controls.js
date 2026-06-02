@@ -401,10 +401,12 @@ export class CameraControls extends EventDispatcher {
     if (this.extraZoom > 1) {
       if (ratio > 1) {
         // spreading fingers (zoom in)
-        if (!this.extraZoomActive && this.readyForExtraZoom) {
-          this.u.panOffset.set(0, 0, 0);
-          this._setExtraZoomActive(true);
-          this._setReadyForExtraZoom(false);
+        if (this.extraZoomActive || (this.readyForExtraZoom && this._extraZoomEntryAllowed)) {
+          if (!this.extraZoomActive) {
+            this.u.panOffset.set(0, 0, 0);
+            this._setExtraZoomActive(true);
+            this._setReadyForExtraZoom(false);
+          }
         } else if (!this.extraZoomActive && this.spherical.radius / ratio <= this.minDistance * 1.05) {
           this._setReadyForExtraZoom(true);
         }
