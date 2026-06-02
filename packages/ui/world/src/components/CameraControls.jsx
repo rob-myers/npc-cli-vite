@@ -88,6 +88,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
       panSpeed={props.panSpeed}
       zoomSpeed={props.zoomSpeed}
       zoomToCursor={props.zoomToCursor}
+      extraZoom={props.extraZoom ?? 1}
     />
   );
 });
@@ -95,9 +96,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
 /**
  * @typedef Props
  * @property {HTMLElement} domElement
- * @property {(e?: import('three').Event) => void} [onChange]
- * @property {() => void} [onEnd]
- * @property {() => void} [onStart]
+ * @property {number} [extraZoom]
  * @property {{ azimuthal: number; polar: number; }} [initialAngle]
  * @property {{ x: number; y: number; z: number }} [initialPosition]
  * @property {number} [minAzimuthAngle]
@@ -107,6 +106,9 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
  * @property {number} [minPolarAngle]
  * @property {number} [maxPolarAngle]
  * @property {number} [minPanDistance] // 🚧 implement in controls (from patch to make mobile touch more precise)
+ * @property {(e?: import('three').Event) => void} [onChange]
+ * @property {() => void} [onEnd]
+ * @property {() => void} [onStart]
  * @property {number} [panSpeed]
  * @property {number} [zoomSpeed]
  * @property {boolean} [zoomToCursor]
