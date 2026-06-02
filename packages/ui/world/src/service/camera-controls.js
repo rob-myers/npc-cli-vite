@@ -147,6 +147,8 @@ export class CameraControls extends EventDispatcher {
   readyForExtraZoom = false;
   /** True after readyForExtraZoom has been set long enough that momentum has dissipated */
   _extraZoomEntryAllowed = false;
+  /** True when a fresh touch gesture started while entry was already allowed */
+  _touchReadyAtGestureStart = false;
 
   /** @param {boolean} ready */
   _setReadyForExtraZoom(ready) {
@@ -401,11 +403,12 @@ export class CameraControls extends EventDispatcher {
     if (this.extraZoom > 1) {
       if (ratio > 1) {
         // spreading fingers (zoom in)
-        if (this.extraZoomActive || (this.readyForExtraZoom && this._extraZoomEntryAllowed)) {
+        if (this.extraZoomActive || this._touchReadyAtGestureStart) {
           if (!this.extraZoomActive) {
             this.u.panOffset.set(0, 0, 0);
             this._setExtraZoomActive(true);
             this._setReadyForExtraZoom(false);
+            this._touchReadyAtGestureStart = false;
           }
         } else if (!this.extraZoomActive && this.spherical.radius / ratio <= this.minDistance * 1.05) {
           this._setReadyForExtraZoom(true);
@@ -689,6 +692,9 @@ export class CameraControls extends EventDispatcher {
     this.addPointer(event);
 
     if (event.pointerType === "touch") {
+      if (this.readyForExtraZoom && this._extraZoomEntryAllowed) {
+        this._touchReadyAtGestureStart = true;
+      }
       this.onTouchStart(event);
     } else {
       this.onMouseDown(event);
@@ -724,6 +730,7 @@ export class CameraControls extends EventDispatcher {
         this.pointerLastUp.x - this.pointerFirstDown.x,
         this.pointerLastUp.y - this.pointerFirstDown.y,
       );
+      this._touchReadyAtGestureStart = false;
     }
 
     if (this.params.snapAzimuth) {
@@ -1053,7 +1060,10 @@ export class CameraControls extends EventDispatcher {
       this.spherical.radius = Math.max(minR, Math.min(this.maxDistance, this.spherical.radius));
     } else if (this.extraZoomActive) {
       const minR = this.minDistance / this.extraZoom;
-      this.spherical.radius = Math.max(minR, Math.min(this.maxDistance, this.spherical.radius * this.u.scale));
+      this.spherical.radius = Math.max(minR, Math.min(this.minDistance, this.spherical.radius * this.u.scale));
+      if (this.spherical.radius >= this.minDistance) {
+        this._setExtraZoomActive(false);
+      }
     } else {
       this.spherical.radius = Math.max(
         this.minDistance,
