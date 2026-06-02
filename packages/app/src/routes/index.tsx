@@ -2,26 +2,26 @@ import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
 import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
+import { useBeforeUnloadOrVisibilityChange } from "@npc-cli/util";
 import { createFileRoute } from "@tanstack/react-router";
 import "allotment/dist/style.css";
 import { motion } from "motion/react";
 import { useRef } from "react";
-import { useBeforeunload } from "react-beforeunload";
 import { useStore } from "zustand";
-import { UiPortalContainer } from "../components/UiPortalContainer";
 import { PaneTree } from "../components/PaneTree";
 import { PaneTreeWrapper } from "../components/PaneTreeWrapper";
 import {
   closePane,
   ensureLeafUis,
   findLeafByUiId,
+  findPanePosition,
   initNextId,
   persistPanesToUi,
-  findPanePosition,
   splitPane,
   swapPane,
   toggleOrientation,
 } from "../components/pane-service";
+import { UiPortalContainer } from "../components/UiPortalContainer";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -78,7 +78,7 @@ function Index() {
     ensureLeafUis(root);
   }
 
-  useBeforeunload(() => persistPanesToUi());
+  useBeforeUnloadOrVisibilityChange(() => persistPanesToUi());
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>

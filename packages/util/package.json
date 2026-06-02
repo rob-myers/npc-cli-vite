@@ -30,6 +30,7 @@
     "poly2tri": "catalog:",
     "polygon-clipping": "catalog:",
     "react": "catalog:",
+    "react-beforeunload": "catalog:",
     "skia-canvas": "catalog:",
     "svg-path-parser": "catalog:",
     "tailwind-merge": "catalog:",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/earcut": "catalog:",
+    "@types/react-beforeunload": "catalog:",
     "@types/svg-path-parser": "catalog:"
   }
 }

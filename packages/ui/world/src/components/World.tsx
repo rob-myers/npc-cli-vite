@@ -1,7 +1,7 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { Broadcaster, cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
@@ -9,7 +9,6 @@ import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
-import { useBeforeunload } from "react-beforeunload";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
@@ -305,7 +304,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     }
   }, []); // sync assets in dev/prod
 
-  useBeforeunload(() => {
+  useBeforeUnloadOrVisibilityChange(() => {
     state.menu?.persistY();
   });
 
