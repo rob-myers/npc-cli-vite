@@ -3,7 +3,14 @@ import { Select } from "@base-ui/react/select";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretDownIcon, CaretRightIcon, CircleHalfIcon, GlobeStandIcon, SunIcon } from "@phosphor-icons/react";
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  CircleHalfIcon,
+  GlobeStandIcon,
+  MagnifyingGlassIcon,
+  SunIcon,
+} from "@phosphor-icons/react";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -73,6 +80,7 @@ export function WorldMenu() {
 
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
+  const { extraZoomActive, readyForExtraZoom } = w.view?.controls ?? {};
 
   return (
     <>
@@ -111,6 +119,17 @@ export function WorldMenu() {
               {pendingKeys.length > 0 && <Spinner className="size-4" />}
             </div>
           </Menu.Trigger>
+
+          {(extraZoomActive || readyForExtraZoom) && (
+            <div
+              className={cn(
+                "pointer-events-none flex justify-center rounded p-1 select-none",
+                extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
+              )}
+            >
+              <MagnifyingGlassIcon size={22} weight="bold" />
+            </div>
+          )}
 
           <Menu.Portal>
             <Menu.Positioner className="z-50" sideOffset={4} align="start">

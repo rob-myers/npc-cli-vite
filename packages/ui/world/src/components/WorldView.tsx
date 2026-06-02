@@ -35,6 +35,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxPolarAngle: Math.PI / 4,
         minDistance: 15,
         maxDistance: 60,
+        extraZoom: 2,
         panSpeed: 2,
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
@@ -335,9 +336,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
     w.rootEl.addEventListener("keydown", state.onKeyDown);
 
+    const onExtraZoomChange = (_e: Event) => w.update();
+    w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
+
     return () => {
       ro.disconnect();
       w.rootEl?.removeEventListener("keydown", state.onKeyDown);
+      w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
     };
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
 
@@ -399,7 +404,7 @@ export type State = {
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
-  ctrlOpts: MapControlsProps;
+  ctrlOpts: MapControlsProps & { extraZoom?: number };
   lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
