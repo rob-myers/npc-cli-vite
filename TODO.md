@@ -71,8 +71,10 @@
   - off-mesh <--> on-mesh seems fine
   - force remove/add agent fixed it
 
-- 🚧 npc design rethink
-  - 🚧 try match style via `test-0`
+- ✅ default-theme -> dark-theme
+- ✅ default theme is light-theme
+
+- fix walk -> idle animation i.e. should be fast
 
 - can spawn on bed
 
