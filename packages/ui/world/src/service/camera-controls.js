@@ -292,15 +292,7 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {MouseEvent} event */
   handleMouseMoveRotate(event) {
-    if (this.extraZoomActive) {
-      // this.u.rotateEnd.set(event.clientX, event.clientY);
-      // this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.panSpeed);
-      // this.pan(this.u.rotateDelta.x, this.u.rotateDelta.y);
-      // this.u.rotateStart.copy(this.u.rotateEnd);
-      // this.update();
-      this.handleMouseMovePan(event);
-      return;
-    }
+    if (this.extraZoomActive) this.u.dollyDirection.set(0, 0, 0);
     this.u.rotateEnd.set(event.clientX, event.clientY);
     this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
 
@@ -439,8 +431,6 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {PointerEvent} event */
   handleTouchMoveRotate(event) {
-    if (this.extraZoomActive) return;
-
     if (this.pointers.length == 1) {
       this.u.rotateEnd.set(event.pageX, event.pageY);
     } else {
