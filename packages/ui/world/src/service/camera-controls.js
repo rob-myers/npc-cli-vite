@@ -439,7 +439,7 @@ export class CameraControls extends EventDispatcher {
 
   /** @param {PointerEvent} event */
   handleTouchMovePan(event) {
-    if (this.extraZoomActive) return;
+    if (this.extraZoomActive && this.pointers.length !== 1) return;
     if (this.pointers.length == 1) {
       this.u.panEnd.set(event.pageX, event.pageY);
     } else {
@@ -1068,7 +1068,7 @@ export class CameraControls extends EventDispatcher {
         this._setExtraZoomActive(false);
       } else {
         const remaining = this.minDistance - this.spherical.radius;
-        const step = remaining < 0.05 ? remaining : remaining * 0.08;
+        const step = remaining < 0.05 ? remaining : remaining * 0.2;
         if (this.u.dollyDirection.lengthSq() > 0) {
           // wheel/mouse: drive via handleZoomToCursor so cursor stays pinned
           this.u.scale = (this.spherical.radius + step) / this.spherical.radius;
