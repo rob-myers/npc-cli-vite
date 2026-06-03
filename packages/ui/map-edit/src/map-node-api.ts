@@ -78,18 +78,20 @@ export const mapNodeTypes = keys({
 export const baseSvgSize = 600;
 
 export const labelledImageOffsetValue = {
-  zero: 0,
   centerExtra003: -0.3,
-  halfLineWidth: -0.7,
-  northAlignTable004: -14.4,
-  eastAlignTable004: -4.4,
-  eastAlignBed004: -3.7,
   centerXConsole051: 1.3,
   centerXConsole033: 1.6,
   centerYConsole033: -1.1,
   centerYConsole051: -0.5,
   centerYStateRoom012: 2,
   centerXExtra004: -3,
+  centerXFuel010: -3.8,
+  centerYFuel010: -3.9,
+  eastAlignBed004: -3.7,
+  eastAlignTable004: -4.4,
+  halfLineWidth: -0.7,
+  northAlignTable004: -14.4,
+  zero: 0,
 } as const;
 
 export const imageOffsetValues = Object.values(labelledImageOffsetValue)

@@ -223,12 +223,117 @@
           "name": "fuel--010--2x4 y=1.5",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1, "f": 2},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.3, "f": 1.7},
           "type": "symbol",
           "srcKey": "fuel--010--2x4",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, -2.7, -1.7)"
+          "cssTransform": "matrix(1, 0, 0, 1, -4, -2)"
+        },
+        {
+          "id": "97447bd8-99de-476c-b079-b32cb0b1e594",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 359.7, "f": 1.7},
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 356, -2)"
+        },
+        {
+          "id": "a93756d9-24c0-4676-926b-7c205c36e052",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 599.7, "f": 1.7},
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 596, -2)"
+        },
+        {
+          "id": "0d882080-a674-4441-be67-0688fff999e8",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 959.7, "f": 1.7},
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 956, -2)"
+        },
+        {
+          "id": "3ee0763f-d66a-48a9-a15b-231686f8f094",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.3, "f": 1081.7},
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, -4, 1078)"
+        },
+        {
+          "id": "20d40093-46f3-4595-8d8e-ee8d064da231",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 359.7,
+            "f": 1081.7
+          },
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 356, 1078)"
+        },
+        {
+          "id": "8542f5f6-d57c-40d1-8227-6b8025a150fd",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 599.7,
+            "f": 1081.7
+          },
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 596, 1078)"
+        },
+        {
+          "id": "d4fa75ee-9f8c-44b0-89a7-4621ca8b3a36",
+          "name": "fuel--010--2x4 y=1.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 959.7,
+            "f": 1081.7
+          },
+          "type": "symbol",
+          "srcKey": "fuel--010--2x4",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -3.7, "y": -3.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 956, 1078)"
         }
       ]
     }
