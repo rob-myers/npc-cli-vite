@@ -51,7 +51,7 @@ function drawBasePanel() {
   const w = texW;
   const h = texH;
 
-  ct.fillStyle = "#222";
+  ct.fillStyle = "#000";
   ct.fillRect(0, 0, w, h);
 
   // vertical sheen
