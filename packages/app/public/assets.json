@@ -4232,7 +4232,7 @@
             "e": 2.3125,
             "f": 1.4125
           },
-          "meta": {"console--051--0.4x0.6": true, "y": 0.8}
+          "meta": {"console--051--0.4x0.6": true, "y": 0.5}
         },
         {
           "symbolKey": "console--051--0.4x0.6",
@@ -4246,7 +4246,7 @@
             "e": 2.325,
             "f": 1.1875
           },
-          "meta": {"console--051--0.4x0.6": true, "y": 0.8}
+          "meta": {"console--051--0.4x0.6": true, "y": 0.5}
         },
         {
           "symbolKey": "bed--003--1x1.6",
@@ -4583,7 +4583,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 8,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -4606,7 +4606,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 9,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -4647,7 +4647,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 14,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -4670,7 +4670,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 15,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -4716,7 +4716,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 20,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -4739,7 +4739,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 21,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -5193,7 +5193,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [
               0.342,
               0.9397,
@@ -5221,7 +5221,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [
               -0.342,
               0.9397,
@@ -5314,7 +5314,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [0.342, -0.9397, 0.9397, 0.342, 10.42518, 11.20477]
           }
         },
@@ -5335,7 +5335,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [-0.342, -0.9397, -0.9397, 0.342, 10.20018, 11.19227]
           }
         },
@@ -5436,7 +5436,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [-0.342, -0.9397, -0.9397, 0.342, 19.57482, 11.20477]
           }
         },
@@ -5457,7 +5457,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [0.342, -0.9397, 0.9397, 0.342, 19.79982, 11.19227]
           }
         },
@@ -14442,7 +14442,7 @@
             "img": "arrow",
             "direction": {"x": -0.9397, "y": -0.342},
             "obstacleId": 0,
-            "y": 0.81
+            "y": 0.51
           }
         },
         {
@@ -14458,7 +14458,7 @@
             "img": "arrow",
             "direction": {"x": -0.9397, "y": 0.342},
             "obstacleId": 1,
-            "y": 0.81
+            "y": 0.51
           }
         },
         {
@@ -14508,7 +14508,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [0.9397, 0.342, -0.342, 0.9397, 2.3125, 1.4125]
           }
         },
@@ -14529,7 +14529,7 @@
             "inset": 0.05,
             "symKey": "console--051--0.4x0.6",
             "origObstacleId": 0,
-            "y": 0.8,
+            "y": 0.5,
             "transform": [0.9397, -0.342, -0.342, -0.9397, 2.325, 1.1875]
           }
         },
@@ -14710,7 +14710,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 8,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -14730,7 +14730,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 9,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -14770,7 +14770,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 14,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -14790,7 +14790,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 15,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -14830,7 +14830,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 20,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -14850,7 +14850,7 @@
             "on": true,
             "img": "arrow",
             "obstacleId": 21,
-            "y": 0.81,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -15510,7 +15510,7 @@
         {
           "symbolKey": "console--051--0.4x0.6",
           "obstacleId": 0,
-          "height": 0.8,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -15548,7 +15548,7 @@
         {
           "symbolKey": "console--051--0.4x0.6",
           "obstacleId": 0,
-          "height": 0.8,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -15737,7 +15737,7 @@
         {
           "symbolKey": "console--051--0.4x0.6",
           "obstacleId": 0,
-          "height": 0.8,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -15775,7 +15775,7 @@
         {
           "symbolKey": "console--051--0.4x0.6",
           "obstacleId": 0,
-          "height": 0.8,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -15964,7 +15964,7 @@
         {
           "symbolKey": "console--051--0.4x0.6",
           "obstacleId": 0,
-          "height": 0.8,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -16002,7 +16002,7 @@
         {
           "symbolKey": "console--051--0.4x0.6",
           "obstacleId": 0,
-          "height": 0.8,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [

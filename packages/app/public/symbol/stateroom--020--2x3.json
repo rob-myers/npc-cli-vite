@@ -27,7 +27,7 @@
       "children": [
         {
           "id": "8994755e-b6cb-499e-8368-bf798916e472",
-          "name": "console--051--0.4x0.6 y=0.8",
+          "name": "console--051--0.4x0.6 y=0.5",
           "locked": false,
           "visible": true,
           "transform": {
@@ -46,7 +46,7 @@
         },
         {
           "id": "6f3b382f-cc47-4812-95eb-b5da67d5845d",
-          "name": "console--051--0.4x0.6 y=0.8",
+          "name": "console--051--0.4x0.6 y=0.5",
           "locked": false,
           "visible": true,
           "transform": {
