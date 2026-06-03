@@ -54,12 +54,14 @@ export function closePane(targetId: number) {
       uiStoreApi.removeItem(uiId);
     }
   }
-  const fallbackUiId = createTabsUi();
-  const fallbackId = nextId++;
-  setRoot((prev) => {
-    const result = removeNode(prev, targetId);
-    return result ?? { type: "leaf", id: fallbackId, uiId: fallbackUiId };
-  });
+  const newRoot = removeNode(persistedPanes.root, targetId);
+  if (newRoot === null) {
+    const fallbackUiId = createTabsUi();
+    const fallbackId = nextId++;
+    setRoot(() => ({ type: "leaf", id: fallbackId, uiId: fallbackUiId }));
+  } else {
+    setRoot(() => newRoot);
+  }
   persistPanesToUi();
 }
 

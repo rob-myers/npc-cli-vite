@@ -136,32 +136,12 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         if (sourceTabsMetaId === meta.id) return;
 
         // Move tab from source to end of target Tabs
-        uiStore.setState((draft) => {
-          const sourceMeta = draft.byId[sourceTabsMetaId]?.meta as TabsUiMeta | undefined;
-          const targetMeta = draft.byId[meta.id]?.meta as TabsUiMeta | undefined;
-          const draggedTab = draft.byId[draggedId];
-
-          if (!sourceMeta || !targetMeta || !draggedTab) return;
-
-          // Don't add if already in target (prevents duplicate when TabItem handler already ran)
-          if (targetMeta.items.includes(draggedId)) return;
-
-          // Remove from source Tabs
-          sourceMeta.items = sourceMeta.items.filter((itemId) => itemId !== draggedId);
-          // Update current tab if needed
-          if (sourceMeta.currentTabId === draggedId) {
-            sourceMeta.currentTabId = sourceMeta.items[0];
-          }
-
-          // Add to end of target Tabs
-          targetMeta.items.push(draggedId);
-
-          // Update the tab's parentId
-          draggedTab.meta.parentId = meta.id;
-
-          // Set as current tab in target Tabs
-          targetMeta.currentTabId = draggedId;
+        const sourceWasEmptied = moveTabBetweenPanes(uiStore, {
+          draggedId,
+          sourceTabsMetaId,
+          targetTabsMetaId: meta.id,
         });
+        if (sourceWasEmptied) layoutApi.closePane(sourceTabsMetaId);
       },
     });
   }, [meta.id]);
@@ -247,6 +227,7 @@ function TabHeaderItem({
   uiStore,
   uiStoreApi,
 }: TabHeaderItemProps) {
+  const { layoutApi } = useContext(UiContext);
   const byId = useStore(uiStore, (s) => s.byId);
   const allTabs = useMemo(
     () =>
@@ -330,37 +311,13 @@ function TabHeaderItem({
             });
           } else {
             // Move tab between different Tabs instances
-            uiStore.setState((draft) => {
-              const sourceMeta = draft.byId[sourceTabsMetaId]?.meta as TabsUiMeta | undefined;
-              const targetMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
-              const draggedTab = draft.byId[draggedId];
-
-              if (!sourceMeta || !targetMeta || !draggedTab) return;
-
-              // Don't add if already in target (prevents duplicates)
-              if (targetMeta.items.includes(draggedId)) return;
-
-              // Remove from source Tabs
-              sourceMeta.items = sourceMeta.items.filter((itemId) => itemId !== draggedId);
-              // Update current tab if needed
-              if (sourceMeta.currentTabId === draggedId) {
-                sourceMeta.currentTabId = sourceMeta.items[0];
-              }
-
-              // Add to target Tabs at the position of the drop target
-              const targetIndex = targetMeta.items.indexOf(id);
-              if (targetIndex !== -1) {
-                targetMeta.items.splice(targetIndex, 0, draggedId);
-              } else {
-                targetMeta.items.push(draggedId);
-              }
-
-              // Update the tab's parentId
-              draggedTab.meta.parentId = tabsMetaId;
-
-              // Set as current tab in target Tabs
-              targetMeta.currentTabId = draggedId;
+            const sourceWasEmptied = moveTabBetweenPanes(uiStore, {
+              draggedId,
+              sourceTabsMetaId,
+              targetTabsMetaId: tabsMetaId,
+              insertBeforeId: id,
             });
+            if (sourceWasEmptied) layoutApi.closePane(sourceTabsMetaId);
           }
         },
       }),
@@ -402,20 +359,13 @@ function TabHeaderItem({
                       const target = allTabs.find((t) => t.title === title);
                       if (!target || target.id === tabsMetaId) return;
 
-                      uiStore.setState((draft) => {
-                        const sourceMeta = draft.byId[tabsMetaId]?.meta as TabsUiMeta | undefined;
-                        const targetMeta = draft.byId[target.id]?.meta as TabsUiMeta | undefined;
-                        const item = draft.byId[tab.id];
-                        if (!sourceMeta || !targetMeta || !item) return;
-                        sourceMeta.items = sourceMeta.items.filter((id) => id !== tab.id);
-                        if (sourceMeta.currentTabId === tab.id) {
-                          sourceMeta.currentTabId = sourceMeta.items[0];
-                        }
-                        item.meta.parentId = target.id;
-                        item.meta.disabled = targetMeta.disabled;
-                        targetMeta.items.push(tab.id);
-                        targetMeta.currentTabId = tab.id;
+                      const sourceWasEmptied = moveTabBetweenPanes(uiStore, {
+                        draggedId: tab.id,
+                        sourceTabsMetaId: tabsMetaId,
+                        targetTabsMetaId: target.id,
+                        copyDisabled: true,
                       });
+                      if (sourceWasEmptied) layoutApi.closePane(tabsMetaId);
                     }}
                   >
                     <Select.Trigger className="flex items-center gap-1 text-sm text-white bg-gray-600 px-2 cursor-pointer outline-none">
@@ -474,6 +424,45 @@ function TabHeaderItem({
       </div>
     </div>
   );
+}
+
+function moveTabBetweenPanes(
+  uiStore: typeof import("@npc-cli/ui-sdk/ui.store").uiStore,
+  opts: {
+    draggedId: string;
+    sourceTabsMetaId: string;
+    targetTabsMetaId: string;
+    insertBeforeId?: string;
+    copyDisabled?: boolean;
+  },
+): boolean {
+  let sourceWasEmptied = false;
+  uiStore.setState((draft) => {
+    const sourceMeta = draft.byId[opts.sourceTabsMetaId]?.meta as TabsUiMeta | undefined;
+    const targetMeta = draft.byId[opts.targetTabsMetaId]?.meta as TabsUiMeta | undefined;
+    const draggedTab = draft.byId[opts.draggedId];
+    if (!sourceMeta || !targetMeta || !draggedTab) return;
+    if (targetMeta.items.includes(opts.draggedId)) return;
+
+    sourceMeta.items = sourceMeta.items.filter((id) => id !== opts.draggedId);
+    if (sourceMeta.currentTabId === opts.draggedId) {
+      sourceMeta.currentTabId = sourceMeta.items[0];
+    }
+    sourceWasEmptied = sourceMeta.items.length === 0;
+
+    draggedTab.meta.parentId = opts.targetTabsMetaId;
+    if (opts.copyDisabled) draggedTab.meta.disabled = targetMeta.disabled;
+
+    if (opts.insertBeforeId !== undefined) {
+      const idx = targetMeta.items.indexOf(opts.insertBeforeId);
+      targetMeta.items.splice(idx !== -1 ? idx : targetMeta.items.length, 0, opts.draggedId);
+    } else {
+      targetMeta.items.push(opts.draggedId);
+    }
+
+    targetMeta.currentTabId = opts.draggedId;
+  });
+  return sourceWasEmptied;
 }
 
 const noopTouchCleanup = Object.assign(() => {}, { resetDraggable() {} });
