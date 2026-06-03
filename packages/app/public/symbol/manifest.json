@@ -233,6 +233,15 @@
       "bounds": {"x": -3.8, "y": -3.9, "width": 247.6, "height": 127.8},
       "type": "symbol",
       "key": "fuel--010--2x4"
+    },
+    "stateroom--020--2x3": {
+      "filename": "stateroom--020--2x3.json",
+      "thumbnailFilename": "stateroom--020--2x3.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "stateroom--020--2x3"
     }
   }
 }
