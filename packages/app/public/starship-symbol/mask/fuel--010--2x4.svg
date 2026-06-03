@@ -6,4 +6,7 @@
   <rect x="442.838" y="72.659" width="301.795" height="127.341" style="fill-opacity: 0.5; fill: rgb(255, 0, 0);">
     <title>mask color=rgb(205,205,205)</title>
   </rect>
+  <rect width="1128" height="528" style="fill-opacity: 0.5; fill: rgb(0, 0, 255);" x="36" y="36">
+    <title>mask color=rgba(255,255,255,0.5)</title>
+  </rect>
 </svg>

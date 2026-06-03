@@ -115,7 +115,7 @@ const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");
 mkdirSync(symbolsSheetDirectory, { recursive: true });
 
-/** mapping from "symbol key" to array of polygons to erase, in SVG viewBox coordinates */
+/** mapping from "symbol key" to array of polygons to erase/color, in SVG viewBox coordinates */
 const masksBySymbol = collectMasks(path.resolve(starshipSymbolDir, "mask"));
 
 const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, "symbols");
@@ -151,8 +151,9 @@ for (const [sheetId, bin] of bins.entries()) {
       ct.restore();
     }
 
-    // erase "mask remove" regions
     const masks = masksBySymbol[symKey];
+
+    // erase "mask remove" regions
     const offsetX = rect.x - sym.bounds.x * scale;
     const offsetY = rect.y - sym.bounds.y * scale;
 
