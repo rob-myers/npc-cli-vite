@@ -972,8 +972,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             // track offset so multiSelectionBounds rect moves without recomputing
             const firstStart = state.dragEl.starts.values().next().value;
             if (firstStart) {
-              const firstId = state.dragEl.starts.keys().next().value;
-              const [firstNode] = findNodeById(state.nodes, firstId!);
+              const firstId = state.dragEl.starts.keys().next().value as string;
+              const [firstNode] = findNodeById(state.nodes, firstId);
               if (isNodeTransformable(firstNode)) {
                 state.selectionBoundsOffset = {
                   x: firstNode.transform.e - firstStart.x,
@@ -1463,7 +1463,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         return;
       }
       if (e.key === "E" || e.key === "Q") {
-        if (state.selectedIds.size > 0) state.rotateSelected(e.key === "E" ? 15 : -15);
+        if (state.selectedIds.size > 0) state.rotateSelected(e.key === "E" ? 5 : -5);
         return;
       }
 
@@ -1798,8 +1798,8 @@ export type State = {
   ensureSelectionDescendants: (selectedIds: Set<string>) => Set<MapNode>;
   copySelected: () => void;
   pasteFromClipboard: () => Promise<void>;
-  rotateNode: (nodeId: string, degrees: -90 | 90 | -15 | 15) => void;
-  rotateSelected: (degrees: -90 | 90 | -15 | 15) => void;
+  rotateNode: (nodeId: string, degrees: -90 | 90 | -5 | 5) => void;
+  rotateSelected: (degrees: -90 | 90 | -5 | 5) => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
