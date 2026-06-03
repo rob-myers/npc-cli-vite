@@ -294,8 +294,8 @@ export default function Doors() {
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
 
-    const openRatio = attribute("openRatio", "float");
-    const slideSign = attribute("slideSign", "float");
+    const openRatio = attribute<"float">("openRatio", "float");
+    const slideSign = attribute<"float">("slideSign", "float");
     const cs = float(1).sub(openRatio);
     const collapsedX = positionLocal.x.mul(cs).add(slideSign.mul(openRatio).mul(0.5));
 

@@ -192,9 +192,9 @@ export default function Obstacles(_props: Props) {
 
   const shaderMeta = useMemo(() => {
     const texArray = w.texObs;
-    const uvDims = attribute("uvDimensions", "vec2");
-    const uvOffs = attribute("uvOffsets", "vec2");
-    const uvTexIds = attribute("uvTextureIds", "uint");
+    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
+    const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
@@ -212,8 +212,8 @@ export default function Obstacles(_props: Props) {
     const sentinel = new THREE.Vector4(0, -1000, 0, 1);
     const light0Values = Array.from({ length: skirtCount }, () => sentinel.clone());
     const light1Values = Array.from({ length: skirtCount }, () => sentinel.clone());
-    const lights0Node = uniformArray(light0Values, "vec4");
-    const lights1Node = uniformArray(light1Values, "vec4");
+    const lights0Node = uniformArray<"vec4">(light0Values, "vec4");
+    const lights1Node = uniformArray<"vec4">(light1Values, "vec4");
     const factor = Fn(() => {
       const l0 = lights0Node.element(instanceIndex);
       const l1 = lights1Node.element(instanceIndex);

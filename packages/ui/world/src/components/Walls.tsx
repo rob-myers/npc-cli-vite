@@ -1,7 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import type MathNode from "three/src/nodes/math/MathNode.js";
 import { Fn, float, If, instanceIndex, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
@@ -98,8 +97,8 @@ export default function Walls() {
     const sentinel = new THREE.Vector4(0, -1000, 0, 1);
     const light0Values = Array.from({ length: wallCount }, () => sentinel.clone());
     const light1Values = Array.from({ length: wallCount }, () => sentinel.clone());
-    const lights0Node = uniformArray(light0Values, "vec4");
-    const lights1Node = uniformArray(light1Values, "vec4");
+    const lights0Node = uniformArray<"vec4">(light0Values, "vec4");
+    const lights1Node = uniformArray<"vec4">(light1Values, "vec4");
     const wallLightsNode = uniform(1);
     const factor = Fn(() => {
       const f = float(0).toVar();
@@ -207,12 +206,12 @@ export type State = {
   inst: null | THREE.InstancedMesh;
   lightsShown: boolean;
   mat: {
-    opacityUniform: THREE.UniformNode<number>;
-    opacityNode: THREE.Node;
-    colorNode: MathNode;
+    opacityUniform: THREE.UniformNode<"float", number>;
+    opacityNode: THREE.Node<"float">;
+    colorNode: THREE.Node<"vec3">;
     outputNode: THREE.Node;
-    baseColorUniform: THREE.UniformNode<THREE.Color>;
-    wallLightsNode: THREE.UniformNode<number>;
+    baseColorUniform: THREE.UniformNode<"color", THREE.Color>;
+    wallLightsNode: THREE.UniformNode<"float", number>;
     light0Values: THREE.Vector4[];
     light1Values: THREE.Vector4[];
     uuid: `${string}-${string}-${string}-${string}-${string}`;

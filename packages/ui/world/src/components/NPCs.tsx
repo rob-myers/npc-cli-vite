@@ -510,7 +510,7 @@ export type State = {
     pickId: number,
     skinIndex: number,
   ): {
-    skinIndexUniform: ReturnType<typeof uniform<number>>;
+    skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
     material: THREE.MeshStandardNodeMaterial;
     shadowMaterial: THREE.MeshBasicNodeMaterial;
     labelMaterial: THREE.MeshBasicNodeMaterial;
