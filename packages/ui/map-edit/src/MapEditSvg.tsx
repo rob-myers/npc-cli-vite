@@ -130,7 +130,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             style={{ transform: node.cssTransform }}
             preserveAspectRatio="none"
             className={cn(
-              "outline-1 outline-white/0",
+              "outline-1 outline-white/0 cursor-move",
               "opacity-75 outline-green-500/50 outline-dashed",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
               node.locked === true ? "pointer-events-none opacity-25" : "pointer-events-auto",
@@ -149,7 +149,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             d={node.d}
             style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom }}
             className={cn(
-              "fill-amber-500/25 stroke-amber-700 stroke-0!",
+              "fill-amber-500/25 stroke-amber-700 stroke-0! cursor-move",
               root.selectedIds.has(node.id) && "stroke-blue-500 stroke-1!",
               node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
@@ -174,7 +174,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0.01}
             className={cn(
-              "fill-green-700/50",
+              "fill-green-700/50 cursor-move",
               // isSelected && "outline outline-blue-500",
               isSelected && "stroke-blue-500",
               cn(node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto"),
