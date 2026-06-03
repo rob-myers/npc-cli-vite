@@ -5,84 +5,89 @@
       "rect": {"x": 2, "y": 2, "width": 2446, "height": 2790},
       "sheetId": 0
     },
+    "fuel--010--2x4": {
+      "key": "fuel--010--2x4",
+      "rect": {"x": 2450, "y": 2, "width": 1238, "height": 639},
+      "sheetId": 0
+    },
     "misc-stellar-cartography--023--4x4": {
       "key": "misc-stellar-cartography--023--4x4",
-      "rect": {"x": 2450, "y": 2, "width": 1220, "height": 1220},
+      "rect": {"x": 2450, "y": 643, "width": 1220, "height": 1220},
       "sheetId": 0
     },
     "window--007--0x2.4": {
       "key": "window--007--0x2.4",
-      "rect": {"x": 2450, "y": 1224, "width": 907, "height": 67},
+      "rect": {"x": 2450, "y": 1865, "width": 907, "height": 67},
       "sheetId": 0
     },
     "table--004--1.2x2.4": {
       "key": "table--004--1.2x2.4",
-      "rect": {"x": 2450, "y": 1293, "width": 344, "height": 724},
+      "rect": {"x": 2450, "y": 1934, "width": 344, "height": 724},
       "sheetId": 0
     },
     "console--019--2x2": {
       "key": "console--019--2x2",
-      "rect": {"x": 2450, "y": 2019, "width": 607, "height": 607},
+      "rect": {"x": 2796, "y": 1934, "width": 607, "height": 607},
       "sheetId": 0
     },
     "bed--003--1x1.6": {
       "key": "bed--003--1x1.6",
-      "rect": {"x": 3059, "y": 1293, "width": 502, "height": 307},
+      "rect": {"x": 2, "y": 2794, "width": 502, "height": 307},
       "sheetId": 0
     },
     "bed--005--0.6x1.2": {
       "key": "bed--005--0.6x1.2",
-      "rect": {"x": 2796, "y": 1602, "width": 382, "height": 202},
+      "rect": {"x": 506, "y": 2794, "width": 382, "height": 202},
       "sheetId": 0
     },
     "console--031--1x1.2": {
       "key": "console--031--1x1.2",
-      "rect": {"x": 3180, "y": 1602, "width": 377, "height": 307},
+      "rect": {"x": 890, "y": 2794, "width": 377, "height": 307},
       "sheetId": 0
     },
     "extra--004--desk--0.5x1": {
       "key": "extra--004--desk--0.5x1",
-      "rect": {"x": 2796, "y": 1293, "width": 157, "height": 307},
+      "rect": {"x": 1269, "y": 2794, "width": 157, "height": 307},
       "sheetId": 0
     },
     "extra--021--shower": {
       "key": "extra--021--shower",
-      "rect": {"x": 3059, "y": 1911, "width": 181, "height": 294},
+      "rect": {"x": 1428, "y": 2794, "width": 181, "height": 294},
       "sheetId": 0
     },
     "console--033--0.4x0.6": {
       "key": "console--033--0.4x0.6",
-      "rect": {"x": 2450, "y": 2628, "width": 134, "height": 161},
+      "rect": {"x": 1611, "y": 2794, "width": 134, "height": 161},
       "sheetId": 0
     },
     "extra--002--fresher--0.5x0.5": {
       "key": "extra--002--fresher--0.5x0.5",
-      "rect": {"x": 2586, "y": 2628, "width": 114, "height": 156},
+      "rect": {"x": 1747, "y": 2794, "width": 114, "height": 156},
       "sheetId": 0
     },
     "console--051--0.4x0.6": {
       "key": "console--051--0.4x0.6",
-      "rect": {"x": 2702, "y": 2628, "width": 137, "height": 155},
+      "rect": {"x": 3405, "y": 1865, "width": 137, "height": 155},
       "sheetId": 0
     },
     "extra--001--fresher--0.5x0.5": {
       "key": "extra--001--fresher--0.5x0.5",
-      "rect": {"x": 2841, "y": 2628, "width": 137, "height": 117},
+      "rect": {"x": 3544, "y": 1865, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair--0.25x0.25": {
       "key": "extra--003--chair--0.25x0.25",
-      "rect": {"x": 2796, "y": 1806, "width": 97, "height": 103},
+      "rect": {"x": 506, "y": 2998, "width": 97, "height": 103},
       "sheetId": 0
     },
     "extra--005--chair-0.25x0.25": {
       "key": "extra--005--chair-0.25x0.25",
-      "rect": {"x": 2955, "y": 1293, "width": 95, "height": 95},
+      "rect": {"x": 605, "y": 2998, "width": 95, "height": 95},
       "sheetId": 0
     }
   },
-  "symbolSheetDims": [{"width": 3672, "height": 2794}],
-  "maxSymbolSheetDim": {"width": 3672, "height": 2794},
+  "symbolSheetDims": [{"width": 3690, "height": 3103}],
+  "maxSymbolSheetDim": {"width": 3690, "height": 3103},
   "decor": {
     "arrow-boxed": {
       "key": "arrow-boxed",
