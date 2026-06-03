@@ -8,6 +8,7 @@ import {
   modelWorldMatrix,
   output,
   positionLocal,
+  select,
   texture as tslTexture,
   uniform,
   uv,
@@ -626,7 +627,7 @@ export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
   mat.colorNode = layerNode;
   mat.opacityNode = layerNode.a;
 
-  const offset = attribute("billboardOffset", "vec2");
+  const offset = attribute<"vec2">("billboardOffset", "vec2");
   const worldCenter = modelWorldMatrix.mul(vec4(positionLocal, 1));
   const viewCenter = cameraViewMatrix.mul(worldCenter);
   const viewPos = viewCenter.add(vec4(offset, 0, 0));
@@ -635,7 +636,7 @@ export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
   return mat;
 }
 
-export function createShadowMaterial(objectPick: THREE.UniformNode<number>) {
+export function createShadowMaterial(objectPick: THREE.UniformNode<"float", number>) {
   const center = uv().sub(0.5);
   const dist = center.dot(center).mul(4);
   const alpha = float(1).sub(dist).clamp(0, 1);
@@ -643,6 +644,6 @@ export function createShadowMaterial(objectPick: THREE.UniformNode<number>) {
   mat.colorNode = vec4(0, 0, 0, 1);
   mat.opacityNode = alpha.mul(0.6);
   // could also set a special colour preventing close clicks
-  mat.outputNode = objectPick.notEqual(0).select(vec4(0, 0, 0, 0), output);
+  mat.outputNode = (select as any)(objectPick.notEqual(0), vec4(0, 0, 0, 0), output);
   return mat;
 }

@@ -134,8 +134,8 @@ export default function Floor() {
 
   const shaderMeta = useMemo(() => {
     const texArray = w.texFloor;
-    const uvDims = attribute("uvDimensions", "vec2");
-    const uvOffs = attribute("uvOffsets", "vec2");
+    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));

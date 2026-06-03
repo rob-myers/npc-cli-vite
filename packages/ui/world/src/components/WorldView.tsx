@@ -9,7 +9,8 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { motion } from "motion/react";
 import { useContext, useEffect } from "react";
-import { float, instanceIndex, output, uniform, vec4 } from "three/tsl";
+import { vignette } from "three/addons/tsl/display/CRT.js";
+import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
@@ -45,6 +46,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
+      postProcessing: true,
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -300,6 +302,39 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         };
         w.update();
       },
+      setupPostProcessing() {
+        const gl = w.r3f.gl as unknown as THREE.WebGPURenderer;
+        const { scene, camera } = w.r3f;
+        const scenePass = pass(scene, camera);
+        const sceneColor = scenePass.getTextureNode("output");
+
+        const pipeline = new THREE.RenderPipeline(gl);
+        pipeline.outputNode = vignette(
+          sceneColor.rgb, // The input image color
+          float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
+          float(0.8), // Smoothness: Controls gradient falloff softness
+          screenUV, // Coordinates mapping
+        );
+
+        const originalRender = gl.render.bind(gl);
+        let inPipeline = false;
+        gl.render = (s: THREE.Scene, c: THREE.Camera) => {
+          if (!inPipeline && gl.getRenderTarget() === null) {
+            inPipeline = true;
+            pipeline.render();
+            inPipeline = false;
+          } else {
+            originalRender(s, c);
+          }
+        };
+        w.isReady() && state.forceUpdate();
+
+        return () => {
+          gl.render = originalRender;
+          pipeline.dispose();
+          state.forceUpdate();
+        };
+      },
       syncRenderMode() {
         if (w.disabled === true) {
           w.r3f?.set({ frameloop: "demand" });
@@ -312,15 +347,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       withPickOutput(typeId) {
         const idx = float(instanceIndex);
         const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-        return state.objectPick.notEqual(0).select(pickVec, output);
+        // 🔔 any fixes horrible: Expression produces a union type that is too complex to represent.
+        return (select as any)(state.objectPick.notEqual(0), pickVec, output);
       },
       withPickOutputId(typeId, idUniform) {
         const idx = float(idUniform);
         const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-        return state.objectPick.notEqual(0).select(pickVec, output);
+        return (select as any)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true } },
+    { reset: { ctrlOpts: true, postProcessing: true } },
   );
 
   w.view = state;
@@ -393,6 +429,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         <NpcBubbles />
 
+        {state.postProcessing && <PostProcessing />}
+
         {props.children}
       </Canvas>
     </motion.div>
@@ -408,9 +446,10 @@ export type State = {
   lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
-  objectPick: THREE.UniformNode<number>;
+  objectPick: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
+  postProcessing: boolean;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(): void;
@@ -431,8 +470,15 @@ export type State = {
    */
   withPickOutput(typeId: number): THREE.Node;
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
-  withPickOutputId(typeId: number, idUniform: THREE.UniformNode<number>): THREE.Node;
+  withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
+  setupPostProcessing(): () => void;
 };
+
+function PostProcessing() {
+  const w = useContext(WorldContext);
+  useEffect(() => w.view.setupPostProcessing(), []);
+  return null;
+}
 
 export type Picked = {
   instanceId: number;

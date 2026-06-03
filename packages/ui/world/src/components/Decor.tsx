@@ -373,9 +373,9 @@ export default function Decor() {
       if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
 
       // 7. build materials
-      const uvDims = attribute("uvDimensions", "vec2");
-      const uvOffs = attribute("uvOffsets", "vec2");
-      const uvTexIds = attribute("uvTextureIds", "uint");
+      const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+      const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
+      const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
       // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
       const flippedUv = vec2(uv().x, uv().y.oneMinus());
       const transformedUv = flippedUv.mul(uvDims).add(uvOffs);

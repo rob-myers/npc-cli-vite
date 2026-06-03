@@ -130,9 +130,9 @@ export default function Ceiling() {
 
   const shaderMeta = useMemo(() => {
     const texArray = w.texCeil;
-    const uvDims = attribute("uvDimensions", "vec2");
-    const uvOffs = attribute("uvOffsets", "vec2");
-    const uvTexIds = attribute("uvTextureIds", "float");
+    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
+    const uvTexIds = attribute<"float">("uvTextureIds", "float");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));

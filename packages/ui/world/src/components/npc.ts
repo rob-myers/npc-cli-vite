@@ -29,7 +29,7 @@ export class Npc {
   /** Physics body */
   bodyUid: number;
   /** Skin selection */
-  skinIndexUniform: ReturnType<typeof uniform<number>>;
+  skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
   /** Labels are store in an ArrayTexture */
   labelLayerIndex: number;
 
@@ -312,7 +312,7 @@ export class Npc {
 export type NpcInit = {
   key: string;
   pickId: number;
-  skinIndexUniform: THREE.UniformNode<number>;
+  skinIndexUniform: THREE.UniformNode<"float", number>;
   labelLayerIndex: number;
   position: THREE.Vector3;
   material: THREE.MeshStandardNodeMaterial;
