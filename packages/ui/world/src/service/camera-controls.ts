@@ -131,7 +131,7 @@ class ExtraZoom {
     }
     const tweenTarget = ctrl.minDistance * 1.06;
     const remaining = tweenTarget - spherical.radius;
-    const step = remaining < 0.05 ? remaining : remaining * 0.12;
+    const step = remaining < 0.05 ? remaining : remaining * 0.05;
     if (u.dollyDirection.lengthSq() > 0) {
       // wheel/mouse: drive via handleZoomToCursor so cursor stays pinned
       u.scale = (spherical.radius + step) / spherical.radius;
