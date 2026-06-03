@@ -334,6 +334,56 @@
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
           "cssTransform": "matrix(1, 0, 0, 1, 956, 1078)"
+        },
+        {
+          "id": "e31216d5-0b43-4b83-bbd3-e984bf458751",
+          "name": "stateroom--020--2x3",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 360.5, "f": 119},
+          "type": "symbol",
+          "srcKey": "stateroom--020--2x3",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -2.5072137244567076, "y": -1.309152145434565},
+          "cssTransform": "matrix(0, 1, 1, 0, 357.9928, 117.6908)"
+        },
+        {
+          "id": "fb92d76c-81ec-4b17-8cae-6f260dfe5a61",
+          "name": "stateroom--020--2x3",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 360.5072,
+            "f": 540.6908
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--020--2x3",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -2.5072, "y": 1.3092},
+          "cssTransform": "matrix(0, -1, 1, 0, 358, 542)"
+        },
+        {
+          "id": "dfbd6843-9bb7-481e-bcc7-db8971438eb7",
+          "name": "stateroom--020--2x3",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 839.4928,
+            "f": 540.6908
+          },
+          "type": "symbol",
+          "srcKey": "stateroom--020--2x3",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 2.5072, "y": 1.3092},
+          "cssTransform": "matrix(0, -1, -1, 0, 842, 542)"
         }
       ]
     }
