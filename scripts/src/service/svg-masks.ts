@@ -7,7 +7,9 @@ import { Parser } from "htmlparser2";
 type MaskFilePolys = { remove: Geom.Poly[]; color: { [color: string]: Geom.Poly[] } };
 
 /**
- * Collect all "mask remove" and "mask color={color}" polygons from SVGs in `maskDir`.
+ * Collect all polygons with these titles from SVGs in `maskDir`:
+ * - "mask remove"
+ * - "mask color={color}"
  *
  * Each SVG is named `{symbolKey}.svg` and may contain `<path>` or `<rect>`
  * elements with a `<title>mask remove</title>` or `<title>mask color={color}</title>` child.
