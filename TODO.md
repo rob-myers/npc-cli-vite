@@ -89,8 +89,9 @@
   - seems `skirtCount` too small because createInset creates edges
 
 - 🚧 start 302
+  - ✅ BUG hull doors not opening for larger-map
 
-- BUG map creation
+- BUG MapEdit map creation i.e. draft/new not appearing before refresh
 
 - doors have meaningful icons
 
@@ -108,6 +109,7 @@
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
 - support `look`
+- onchange map sealed doors are staying sealed
 - remove all suffices e.g. --0.25x0.25 from all symbols
 - ❌ change lighting from "loop thru radii in shaders" to "multiply by texture"
   - the lighting was already efficient i.e. precomputes two relative light sources per instance
