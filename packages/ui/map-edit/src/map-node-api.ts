@@ -87,6 +87,7 @@ export const labelledImageOffsetValue = {
   centerXExtra004: -3,
   centerXFuel010: -3.8,
   centerYFuel010: -3.9,
+  centerYCouchChairs006: 2.5,
   eastAlignBed004: -3.7,
   eastAlignTable004: -4.4,
   halfLineWidth: -0.7,
