@@ -138,6 +138,14 @@ Needed for `skia-canvas`.
 
 # Blockbench
 
+https://github.com/jasonjgardner/blockbench-mcp-plugin
+
+https://jasonjgardner.github.io/blockbench-mcp-plugin/mcp.js
+
+VSCode Claude Code
+- `/mcp`
+- possibly reconnect`
+
 
 Can select model face
 

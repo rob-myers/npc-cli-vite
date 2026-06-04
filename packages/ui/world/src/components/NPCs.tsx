@@ -411,7 +411,8 @@ export default function NPCs() {
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
           // new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
-          new GLTFLoader().loadAsync(url.templateMoreAnimsGltf),
+          // new GLTFLoader().loadAsync(url.templateMoreAnimsGltf),
+          new GLTFLoader().loadAsync(url.templateMoreAnimsWipGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => {
             /**
