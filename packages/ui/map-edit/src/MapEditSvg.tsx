@@ -131,9 +131,10 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0 cursor-move",
-              "opacity-75 outline-green-500/50 outline-dashed",
+              "outline-green-500/50 outline-dashed",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
-              node.locked === true ? "pointer-events-none opacity-25" : "pointer-events-auto",
+              node.locked === true ? "pointer-events-none" : "pointer-events-auto",
+              node.locked === true ? (root.currentFile.type === "symbol" ? "opacity-25" : "opacity-50") : "opacity-75",
             )}
           >
             <title>{node.name}</title>
@@ -174,7 +175,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0.01}
             className={cn(
-              node.name.startsWith("wall") ? "fill-red-700/50" : "fill-green-700/50",
+              node.name.startsWith("wall") ? "fill-red-500/50" : "fill-green-700/50",
               "cursor-move",
               // isSelected && "outline outline-blue-500",
               isSelected && "stroke-blue-500",

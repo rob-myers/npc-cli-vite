@@ -36,6 +36,10 @@ Navmesh uses `navcat` (recast/detour JS port). Agents live in a `crowd`. To tele
 
 `POST /api/map-edit/file/:folder/:filename` → `saveMapEditFile(filePath, body)` in `scripts/src/service/process-map-edit-save.ts`. That function: parses + validates body, writes JSON, generates thumbnail (skia-canvas), updates manifest.
 
+`savedFileSpecifiers` is the source of truth for the map/symbol selector in `FileMenu.tsx`. It is rebuilt by `updateSavedFileSpecifiers(drafts)` which merges manifest entries + localStorage drafts. When adding a new entry always produce a **new array** — mutating in place then passing the same reference prevents `useMemo` from recomputing `mapFiles` in `MapFileSelect`.
+
+Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DELETE /api/map-edit/file/...` in dev, then invalidates the manifests query). Symbols are not deletable from the UI — only maps have a trash button in `MapFileSelect`.
+
 ## Conventions
 
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
