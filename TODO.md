@@ -59,13 +59,10 @@
     - e.g. a do-point extends to a whole chair
   - ✅ npc can be at doable
     - w.e.doableToNpc and w.e.npcToDoable
-  - example of multiple do-points on single obstacle
+  - 🚧 example of multiple do-points on single obstacle
     - sofa
-    - maybe chair i.e. close-to-edge vs further-back
-  - `<Decor>` only renders
-    - `decor point icon`
-    - `decor point label` (future work)
-  - can render all decor points inside `<Debug>`
+  - 🚧 `<Decor>` does not render decor points
+  - 🚧  can render all decor points inside `<Debug>`
 
 - ✅ BUG pre-existing spawn on-mesh -> on-mesh
   - off-mesh <--> on-mesh seems fine
@@ -81,7 +78,9 @@
 
 - ✅ fix walk -> idle animation i.e. should be fast
 
-- can spawn on bed
+- 🚧 can spawn on bed
+  - ✅ can spawn via pick decor point
+  - can spawn via pick bed
 
 - start 101
 
@@ -102,7 +101,8 @@
   - maybe just clarify current setup vs previous "hot reloading"
 - support `look`
 - remove all suffices e.g. --0.25x0.25 from all symbols
-- change lighting from "loop thru radii in shaders" to "multiply by texture"
+- ❌ change lighting from "loop thru radii in shaders" to "multiply by texture"
+  - the lighting was already efficient i.e. precomputes two relative light sources per instance
 - on idle should pin in front otherwise npc "slides back"
 - skin remapping
   - currently only have skinIndex
