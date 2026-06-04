@@ -1,6 +1,6 @@
 # TODO
 
-- 🚧 simplify decor
+- ✅ simplify decor
   - ❌ sensors should be decor rects in grid
     - inside/nearby door sensors needn't have corresponding decor rects
   - ✅ decor has `key`
@@ -22,9 +22,7 @@
     - ✅ apply decor.orient
     - ✅ do-points have `meta.do` true
   - ✅ fix lights in transformed geomorphs instances
-  - 🚧 can remove decor rect/circle
-    - track runtime decor so preserve on hmr
-    - ❌ track gaps
+
 
 - ✅ clean path for extra--005--chair
 
@@ -90,8 +88,17 @@
 - ✅ fix obstacle skirts: extra--001--fresher
   - seems `skirtCount` too small because createInset creates edges
 
-- fetch gltf json so can cache-bust
+- 🚧 start 302
+
+- BUG map creation
+
 - doors have meaningful icons
+
+- track runtime decor so preserve on hmr
+- can remove decor rect/circle
+  - ❌ track gaps
+
+- fetch gltf json so can cache-bust
 - labels as decor point
   - add some labels to 301
   - Decor renders them
