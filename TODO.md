@@ -78,11 +78,12 @@
 
 - ✅ fix walk -> idle animation i.e. should be fast
 
-- 🚧 can spawn on bed
+- ✅ can spawn on bed
   - ✅ can spawn via pick decor point
-  - can spawn via pick bed
+  - ✅ can spawn via pick bed
+    - `decor point do=lie on`
 
-- start 101
+- ✅ start 101
 
 - ✅ avoid AnimationMixer warns by play animation before skinnedMesh mount
 
