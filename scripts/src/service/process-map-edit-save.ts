@@ -104,7 +104,7 @@ async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
         break;
       }
       case "rect": {
-        ct.fillStyle = "rgba(0,255,0,0.2)";
+        ct.fillStyle = node.name.startsWith("wall") ? "rgba(255,0,0,0.2)" : "rgba(0,255,0,0.2)";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
