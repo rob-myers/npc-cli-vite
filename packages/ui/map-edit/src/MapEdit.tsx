@@ -1244,12 +1244,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           safeJsonCompact(extendCurrentFileSpecifierMapping(props.meta.id, fileSpecifier)),
         );
 
-        if (!state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier))) {
-          state.savedFileSpecifiers.push(fileSpecifier);
-        }
+        const alreadyKnown = state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier));
         state.set({
           currentFile: fileSpecifier,
-          savedFileSpecifiers: state.savedFileSpecifiers,
+          savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
         });
 

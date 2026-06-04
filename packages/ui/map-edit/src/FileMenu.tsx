@@ -3,7 +3,7 @@ import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { defaultMapKey } from "@npc-cli/ui__world/const";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
-import { FloppyDiskIcon, LockKeyIcon, PlusIcon } from "@phosphor-icons/react";
+import { FloppyDiskIcon, LockKeyIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useCallback, useMemo, useRef } from "react";
 import { SymbolKeySchema } from "./editor.schema";
 import type { State } from "./MapEdit";
@@ -159,6 +159,8 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
           const name = prompt("New map name:")?.trim();
           if (name) {
             const mapKey = name.endsWith(".json") ? name.slice(0, -".json".length) : name;
+            if (state.isDirty && !confirm("Discard unsaved changes?")) return;
+            state.set({ nodes: [] });
             state.save({ type: "map", filename: `${mapKey}.json`, key: mapKey });
           }
         }
@@ -191,7 +193,19 @@ function MapFileSelect({ state }: { state: UseStateRef<State> }) {
                     "data-highlighted:bg-slate-700 data-selected:text-blue-400",
                   )}
                 >
-                  <Select.ItemText>{file.key}</Select.ItemText>
+                  <Select.ItemText className="flex-1">{file.key}</Select.ItemText>
+                  {!state.isReadOnly() && (
+                    <button
+                      className="ml-auto opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete map "${file.key}"?`)) state.deleteFile(file);
+                      }}
+                    >
+                      <TrashIcon className="size-3" />
+                    </button>
+                  )}
                 </Select.Item>
               ))}
               {!state.isReadOnly() && (
