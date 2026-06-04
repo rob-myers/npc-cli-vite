@@ -30,6 +30,11 @@
       "rect": {"x": 2796, "y": 1934, "width": 607, "height": 607},
       "sheetId": 0
     },
+    "couch-and-chairs--006--0.4x2": {
+      "key": "couch-and-chairs--006--0.4x2",
+      "rect": {"x": 3405, "y": 1865, "width": 137, "height": 575},
+      "sheetId": 0
+    },
     "bed--003--1x1.6": {
       "key": "bed--003--1x1.6",
       "rect": {"x": 2, "y": 2794, "width": 502, "height": 307},
@@ -57,22 +62,22 @@
     },
     "console--033--0.4x0.6": {
       "key": "console--033--0.4x0.6",
-      "rect": {"x": 1611, "y": 2794, "width": 134, "height": 161},
+      "rect": {"x": 3544, "y": 1865, "width": 134, "height": 161},
       "sheetId": 0
     },
     "extra--002--fresher--0.5x0.5": {
       "key": "extra--002--fresher--0.5x0.5",
-      "rect": {"x": 1747, "y": 2794, "width": 114, "height": 156},
+      "rect": {"x": 3544, "y": 2028, "width": 114, "height": 156},
       "sheetId": 0
     },
     "console--051--0.4x0.6": {
       "key": "console--051--0.4x0.6",
-      "rect": {"x": 3405, "y": 1865, "width": 137, "height": 155},
+      "rect": {"x": 3544, "y": 2186, "width": 137, "height": 155},
       "sheetId": 0
     },
     "extra--001--fresher--0.5x0.5": {
       "key": "extra--001--fresher--0.5x0.5",
-      "rect": {"x": 3544, "y": 1865, "width": 137, "height": 117},
+      "rect": {"x": 3544, "y": 2343, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair--0.25x0.25": {
