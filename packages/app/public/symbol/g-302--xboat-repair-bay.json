@@ -19,16 +19,16 @@
     {
       "id": "ec67f293-f99e-4afb-9dd3-fe59287038ee",
       "name": "hull",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "e55401eb-f634-4fda-9125-e790b22d9a6f",
           "name": "wall hull sans-n--20x10",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
@@ -39,7 +39,7 @@
         {
           "id": "a2d20fb5-f354-4c6f-a177-0c8a606f472d",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
@@ -50,7 +50,7 @@
         {
           "id": "5184168c-96fc-4478-8df1-21f0ce94361a",
           "name": "wall hull _window",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
@@ -61,7 +61,7 @@
         {
           "id": "601f0444-6c5b-40bc-9e0a-6fdd54dcf8a3",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
@@ -72,7 +72,7 @@
         {
           "id": "bbe640fc-c068-4009-afa9-e914c2a7f05a",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
@@ -83,7 +83,7 @@
         {
           "id": "ea84db77-5dbb-411a-bafd-1dd495c960d4",
           "name": "wall hull _window",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
@@ -94,13 +94,208 @@
         {
           "id": "7bea58ac-1ccb-4433-a5c3-a06db3743ade",
           "name": "wall hull",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "path",
           "d": "M 63.8111 -4 L 123.821 56 L 123.821 122 L 115.82 122 L 115.82 60.0001 L 59.8105 4 L 2.80111 4 L 2.80111 -4 L 63.8111 -4 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        }
+      ]
+    },
+    {
+      "id": "e84b7604-7eca-488f-8fc2-43198d9f3768",
+      "name": "doors 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "80d10dec-5db7-4eb1-9ff2-0f4a2388f081",
+          "name": "door hull edge=s slideDirection=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 252.5, "f": 595.5},
+          "type": "rect",
+          "baseRect": {"width": 47.5, "height": 9},
+          "cssTransform": "matrix(1, 0, 0, 1, 252.5, 595.5)"
+        },
+        {
+          "id": "87246066-f2a9-44e0-a36a-33b49e22336e",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 250, "f": 596},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 250, 596)"
+        },
+        {
+          "id": "beb13ddb-e6a7-484f-9335-df3bc9e7380e",
+          "name": "door hull edge=s slideDirection=[1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 300, "f": 595.5},
+          "type": "rect",
+          "baseRect": {"width": 47.5, "height": 9},
+          "cssTransform": "matrix(1, 0, 0, 1, 300, 595.5)"
+        },
+        {
+          "id": "543f1bf1-aaa8-42d0-ba55-12eec817a089",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 355.5, "f": 596},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 355.5, 596)"
+        },
+        {
+          "id": "73c45355-7c98-48c3-ab06-d44bf5e412b9",
+          "name": "door hull edge=s slideDirection=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 852.5, "f": 595},
+          "type": "rect",
+          "baseRect": {"width": 47.5, "height": 9},
+          "cssTransform": "matrix(1, 0, 0, 1, 852.5, 595)"
+        },
+        {
+          "id": "ac38f8ac-22fc-44ef-86a3-aaa71dbd23be",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 850, "f": 596},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 850, 596)"
+        },
+        {
+          "id": "81237272-0b1c-4d50-9180-d11172397710",
+          "name": "door hull edge=s slideDirection=[1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 900, "f": 595},
+          "type": "rect",
+          "baseRect": {"width": 47.5, "height": 9},
+          "cssTransform": "matrix(1, 0, 0, 1, 900, 595)"
+        },
+        {
+          "id": "af22bfea-cb72-48f4-9d50-4ca2bcc4abff",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 955.5, "f": 596},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 955.5, 596)"
+        },
+        {
+          "id": "6c13da66-8368-4107-9b55-67ea53fbed3d",
+          "name": "door hull edge=w slideDirection=[0,1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": 300},
+          "type": "rect",
+          "baseRect": {"width": 9, "height": 47.5},
+          "cssTransform": "matrix(1, 0, 0, 1, -5, 300)"
+        },
+        {
+          "id": "cf6a707b-e34c-41fe-9232-aec95d9979c5",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 4, "f": 350},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 4, 350)"
+        },
+        {
+          "id": "338f2184-ab0e-4b51-94cc-def74295953d",
+          "name": "door hull edge=w slideDirection=[0,-1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": 252.5},
+          "type": "rect",
+          "baseRect": {"width": 9, "height": 47.5},
+          "cssTransform": "matrix(1, 0, 0, 1, -5, 252.5)"
+        },
+        {
+          "id": "32ebeedc-f389-46dc-95c4-16574a7388a4",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 4, "f": 244},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 4, 244)"
+        },
+        {
+          "id": "f050937c-ff05-4703-8aa4-b08d73d61acb",
+          "name": "door hull edge=e slideDirection=[0,-1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1195, "f": 252.5},
+          "type": "rect",
+          "baseRect": {"width": 9, "height": 47.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 1195, 252.5)"
+        },
+        {
+          "id": "f5669144-2550-4d2f-9291-a470809e893a",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1196, "f": 244},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 1196, 244)"
+        },
+        {
+          "id": "b36a487e-0a16-4b30-9496-278318694215",
+          "name": "door hull edge=e slideDirection=[0,1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1195, "f": 300},
+          "type": "rect",
+          "baseRect": {"width": 9, "height": 47.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 1195, 300)"
+        },
+        {
+          "id": "934cac4e-ab53-4d4a-9580-27eac60833b8",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1196, "f": 350},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 1196, 350)"
         }
       ]
     }
