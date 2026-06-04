@@ -78,7 +78,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
   return nodes.map((node) => {
     switch (node.type) {
       case "group": {
-        // groups do not support transform i.e. folders only
+        // groups do not support transform, they only act as folders
         return (
           <g key={node.id} data-node-id={node.id} className={cn(node.locked && "pointer-events-none")}>
             <title>{node.name}</title>
@@ -174,7 +174,8 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             stroke={isSelected ? "rgba(50, 50, 255, 1)" : "rgba(0, 0, 0, 0.5)"}
             strokeWidth={0.01}
             className={cn(
-              "fill-green-700/50 cursor-move",
+              node.name.startsWith("wall") ? "fill-red-700/50" : "fill-green-700/50",
+              "cursor-move",
               // isSelected && "outline outline-blue-500",
               isSelected && "stroke-blue-500",
               cn(node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto"),
