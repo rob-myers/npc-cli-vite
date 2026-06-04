@@ -242,6 +242,15 @@
       "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
       "type": "symbol",
       "key": "stateroom--020--2x3"
+    },
+    "g-302--xboat-repair-bay": {
+      "filename": "g-302--xboat-repair-bay.json",
+      "thumbnailFilename": "g-302--xboat-repair-bay.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -4, "y": -62, "width": 1212, "height": 667},
+      "type": "symbol",
+      "key": "g-302--xboat-repair-bay"
     }
   }
 }

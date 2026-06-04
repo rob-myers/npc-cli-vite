@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="6039px" height="3039px">
+  <path d="M -4 -4 L 3.80128 -4 L 3.80128 596 L 1196 596 L 1196 -4 L 1203.8 -4 L 1203.8 603.8 L -4 603.8 L -4 -4 Z" style="fill: rgb(255, 0, 0); transform-origin: -4.20004px -4px;">
+    <title>wall hull sans-n--20x10</title>
+  </path>
+  <path d="M 1075.97 -4 L 1204 -4 L 1204 4 L 1075.97 4 L 1075.97 -4 Z" style="fill: rgb(255, 0, 0); transform-origin: -4.20004px -4px;">
+    <title>wall hull</title>
+  </path>
+  <path d="M 239.84 410.736 L 419.869 410.736 L 419.869 424.07 L 239.84 424.07 L 239.84 410.736 Z" style="fill-opacity: 0.4; fill: rgb(255, 0, 0); transform-origin: -4.20004px 19.3274px;">
+    <title>wall hull _window</title>
+  </path>
+  <path d="M 1079.88 304.3 L 600.5 423.8 L 548.291 423.8 L 548.291 424 L 417.869 424 L 419.869 409.9 L 426.871 415.9 L 479.28 416 L 598.599 416 L 1075.97 297 L 1075.97 0 L 1083.98 0 L 1083.98 300 L 1084 303.3 L 1079.88 304.3 Z" style="fill: rgb(255, 0, 0); transform-origin: -4.20004px -4px;">
+    <title>wall hull</title>
+  </path>
+  <path d="M 122.53 238.323 L 238.637 410.431 L 243.79 414.314 L 243.83 421.885 L 236.701 421.868 L 115.897 242.796 L 115.938 235.169 L 119.793 234.981 L 122.53 238.323 Z" style="fill: rgb(255, 0, 0); transform-origin: -4.20004px -4px;">
+    <title>wall hull</title>
+  </path>
+  <path d="M 114.93 120.8 L 124.525 120.8 L 124.525 241.09 L 114.93 241.09 L 114.93 120.8 Z" style="fill-opacity: 0.4; fill: rgb(255, 0, 0); transform-origin: 32.2848px -9.06223px;">
+    <title>wall hull _window</title>
+  </path>
+  <path d="M 63.8111 -4 L 123.821 56 L 123.821 122 L 115.82 122 L 115.82 60.0001 L 59.8105 4 L 2.80111 4 L 2.80111 -4 L 63.8111 -4 Z" style="fill: rgb(255, 0, 0); transform-origin: -4.20004px -4px;">
+    <title>wall hull</title>
+  </path>
+</svg>

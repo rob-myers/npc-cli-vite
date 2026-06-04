@@ -1,5 +1,26 @@
 {
   "byKey": {
+    "301-bridge-outer-machine": {
+      "key": "301-bridge-outer-machine",
+      "filename": "301-bridge-outer-machine.svg",
+      "pathCount": 2,
+      "width": 130,
+      "height": 180
+    },
+    "301-hull-walls": {
+      "key": "301-hull-walls",
+      "filename": "301-hull-walls.svg",
+      "pathCount": 6,
+      "width": 1200,
+      "height": 600
+    },
+    "302-hull-walls": {
+      "key": "302-hull-walls",
+      "filename": "302-hull-walls.svg",
+      "pathCount": 7,
+      "width": 1200,
+      "height": 600
+    },
     "bridge-042-hull-walls": {
       "key": "bridge-042-hull-walls",
       "filename": "bridge-042-hull-walls.svg",
@@ -27,20 +48,6 @@
       "pathCount": 1,
       "width": 1200,
       "height": 1200
-    },
-    "edge-geomorph-hull-walls": {
-      "key": "edge-geomorph-hull-walls",
-      "filename": "edge-geomorph-hull-walls.svg",
-      "pathCount": 6,
-      "width": 1200,
-      "height": 600
-    },
-    "geomorph-301-bridge-outer-machine": {
-      "key": "geomorph-301-bridge-outer-machine",
-      "filename": "geomorph-301-bridge-outer-machine.svg",
-      "pathCount": 2,
-      "width": 130,
-      "height": 180
     },
     "octogon-20x20": {
       "key": "octogon-20x20",
