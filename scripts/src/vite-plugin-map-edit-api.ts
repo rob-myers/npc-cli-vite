@@ -139,9 +139,13 @@ async function handleApiMapEditFile(
       PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-map-edit-save");
 
-    deleteSavedFile(
+    await deleteSavedFile(
       MapEditFileSpecifierSchema.parse({ type: folder, filename, key: path.basename(filename, ".json") }),
     );
+
+    if (folder === "map") {
+      server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
+    }
 
     res.end(JSON.stringify({ success: true }));
     return true;
@@ -149,3 +153,7 @@ async function handleApiMapEditFile(
 }
 
 export const MIRRORED_ALLOWED_MAP_EDIT_FOLDERS: typeof ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"];
+
+// Type mirroring avoids HMR issue
+type WorldConst = typeof import("@npc-cli/ui__world/const");
+const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-json-changed";

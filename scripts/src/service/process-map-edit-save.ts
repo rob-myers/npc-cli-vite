@@ -23,8 +23,15 @@ import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 
+const ASSETS_JSON_PATH = path.resolve(PROJECT_ROOT, "packages/app/public/assets.json");
+
 export async function deleteSavedFile(fileSpecifier: MapEditFileSpecifier) {
   await ensureManifests(fileSpecifier.type, { changedFiles: [], removedFiles: [fileSpecifier] });
+  if (fileSpecifier.type === "map") {
+    const assets = JSON.parse(fs.readFileSync(ASSETS_JSON_PATH, "utf-8"));
+    delete assets.map[fileSpecifier.key];
+    fs.writeFileSync(ASSETS_JSON_PATH, safeJsonCompact(assets));
+  }
 }
 
 function getImageOrSymbolNodeImageUrl(node: ImageMapNode | SymbolMapNode) {
