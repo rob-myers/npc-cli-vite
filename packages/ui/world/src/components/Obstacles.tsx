@@ -117,11 +117,12 @@ export default function Obstacles(_props: Props) {
         return embedXZMat4(mat, { mat4, yHeight: height });
       },
       decodeInstanceId(instanceId) {
+        // 🚧 more efficient decode
         let id = instanceId;
         const gmId = w.gms.findIndex((gm) => id < gm.obstacles.length || ((id -= gm.obstacles.length), false));
         const gm = w.gms[gmId];
         const obstacle = gm.obstacles[id];
-        return { gmId, ...obstacle.meta };
+        return { gmId, obstacleId: id, ...obstacle.meta };
       },
       sendDataToGpu() {
         state.quad.getAttribute("uvOffsets").needsUpdate = true;
@@ -344,7 +345,7 @@ export type State = {
   addUvs(): void;
   draw(): Promise<void>;
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
-  decodeInstanceId(instanceId: number): Meta<{ gmId: number }>;
+  decodeInstanceId(instanceId: number): Meta<{ gmId: number; obstacleId: number }>;
   transformAndColorObstacles(): void;
   transformSkirts(): void;
   sendDataToGpu(): void;
