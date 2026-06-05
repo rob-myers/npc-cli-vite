@@ -38,7 +38,7 @@
   - ❌ improve sit icon
     - will only show icon during debug
 
-- 🚧 extend decor structure inside symbol
+- ✅ extend decor structure inside symbol
   - ✅ `decor point do sit` -> `decor point do=sit` 
   - ✅ decor `meta.on === true` extended with `obstacleId`
   - ✅ also induces numeric array `obstacle.meta.decorIds`
@@ -59,8 +59,8 @@
     - w.e.doableToNpc and w.e.npcToDoable
   - ✅ example of multiple do-points on single obstacle
     - sofa
-  - 🚧 `<Decor>` does not render decor points with `meta.on === true`
-  - 🚧  can render all decor points inside `<Debug>`
+  - ✅ `<Decor>` does not render decor points with `meta.on === true`
+  - ✅  can render all decor points inside `<Debug>`
 
 - ✅ BUG pre-existing spawn on-mesh -> on-mesh
   - off-mesh <--> on-mesh seems fine
