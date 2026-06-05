@@ -68,7 +68,10 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
             if (inCenter && node.type === "group" && !node.expanded) {
               if (!root.expandTimer) {
                 root.expandTimer = setTimeout(() => {
-                  if (node.type === "group") { node.expanded = true; root.update(); }
+                  if (node.type === "group") {
+                    node.expanded = true;
+                    root.update();
+                  }
                   root.expandTimer = null;
                 }, 600);
               }
@@ -122,7 +125,15 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
       >
         <span
           className="text-on-background pl-0.5 py-0.5"
-          onClick={isGroup ? (e) => { e.stopPropagation(); if (node.type === "group") { node.expanded = !node.expanded; root.update(); } } : undefined}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (node.type === "group") {
+              node.expanded = !node.expanded;
+              root.update();
+            } else {
+              root.zoomToNode(node.id);
+            }
+          }}
         >
           <NodeIcon type={node.type} isExpanded={isGroup && node.type === "group" ? node.expanded : undefined} />
         </span>
