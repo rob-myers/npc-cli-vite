@@ -61,6 +61,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const renderer = new THREE.WebGPURenderer({
           canvas,
+          alpha: true,
           antialias: true,
           logarithmicDepthBuffer: true,
           powerPreference: "high-performance",
@@ -309,11 +310,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = vignette(
-          sceneColor.rgb, // The input image color
-          float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
-          float(0.8), // Smoothness: Controls gradient falloff softness
-          screenUV, // Coordinates mapping
+        pipeline.outputNode = vec4(
+          vignette(
+            sceneColor.rgb, // The input image color
+            float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
+            float(0.8), // Smoothness: Controls gradient falloff softness
+            screenUV, // Coordinates mapping
+          ),
+          sceneColor.a,
         );
 
         const originalRender = gl.render.bind(gl);
