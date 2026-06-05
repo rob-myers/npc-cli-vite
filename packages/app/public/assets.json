@@ -27210,7 +27210,7 @@
       "background": "bg-zinc-900",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#6666"},
-        "nonHull": {"fill": "#3335", "stroke": "#0005"}
+        "nonHull": {"fill": "#5555", "stroke": "#0005"}
       },
       "floor": {
         "hullFill": "#111",
@@ -27224,7 +27224,7 @@
       "background": "bg-gray-500",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
-        "nonHull": {"fill": "#000", "stroke": "#333f"}
+        "nonHull": {"fill": "#fff", "stroke": "#000f"}
       },
       "floor": {
         "hullFill": "#222",
