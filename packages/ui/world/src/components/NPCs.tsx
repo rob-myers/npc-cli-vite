@@ -252,7 +252,7 @@ export default function NPCs() {
           if (stuck === true) {
             npc.startIdle();
           } else if (
-            crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.arrive ? 0.025 : npc.running ? 0.8 : 0.4) === true
+            crowdApi.isAgentAtTarget(state.crowd, npc.agentId, npc.arrive ? 0.15 : npc.running ? 0.8 : 0.4) === true
           ) {
             // arrived
             npc.startIdle();
