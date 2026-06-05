@@ -281,11 +281,13 @@ export default function Decor() {
 
       for (const [gmId, gm] of w.gms.entries()) {
         for (const [decorId, decor] of gm.decor.entries()) {
-          if (decor.type !== "quad" && decor.type !== "point") {
-            // 🚧 we're skipping
-            continue;
-          }
-          if (decor.type === "point" && decor.meta.on === true) {
+          if (
+            !(
+              decor.type === "quad" ||
+              // 🚧 e.g. to illustrate behaviours
+              (decor.type === "point" && decor.meta.shown === true)
+            )
+          ) {
             continue;
           }
 
