@@ -184,6 +184,12 @@ export default function Decor() {
           return decor.meta;
         }
       },
+      decorPointImgKey(meta) {
+        if (meta.do === "sit") return "sit-circled";
+        if (meta.do === "stand") return "stand-circled";
+        if (meta.do === "lie") return "lie-circled";
+        return decorKeyFallback;
+      },
       remove(..._decorKeys) {
         // 🚧 free up instances?
       },
@@ -248,7 +254,8 @@ export default function Decor() {
       for (const gm of w.gms) {
         for (const item of gm.decor) {
           if (item.type !== "quad" && item.type !== "point") continue;
-          const imgKey = item.type === "quad" ? item.meta.img : decorPointImgKey(item.meta);
+          if (item.type === "point" && item.meta.on === true) continue;
+          const imgKey = item.type === "quad" ? item.meta.img : state.decorPointImgKey(item.meta);
           const entry = w.sheets.decor[imgKey] as DecorSheetEntry | undefined;
           if (!entry) {
             warn(`decor "${imgKey}" not found in sheets.json`);
@@ -276,6 +283,9 @@ export default function Decor() {
         for (const [decorId, decor] of gm.decor.entries()) {
           if (decor.type !== "quad" && decor.type !== "point") {
             // 🚧 we're skipping
+            continue;
+          }
+          if (decor.type === "point" && decor.meta.on === true) {
             continue;
           }
 
@@ -311,7 +321,7 @@ export default function Decor() {
             }
           } else {
             // point: flat face-up quad centered at (decor.x, decor.y) in XZ plane
-            const imgKey = decorPointImgKey(decor.meta);
+            const imgKey = state.decorPointImgKey(decor.meta);
             const entry = w.sheets.decor[imgKey];
             if (!entry) {
               instanceId++;
@@ -443,17 +453,11 @@ export type State = {
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  decorPointImgKey(meta: Meta): string;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };
-
-function decorPointImgKey(meta: Meta): string {
-  if (meta.do === "sit") return "sit-circled";
-  if (meta.do === "stand") return "stand-circled";
-  if (meta.do === "lie") return "lie-circled";
-  return decorKeyFallback;
-}
 
 const cuboidHeight = 0.05;
 const cuboidIconHeight = 0.005;

@@ -352,6 +352,8 @@ export function WorldMenu() {
                           return w.debug?.lightSpheresShown ?? true;
                         case "NavMesh":
                           return w.debug?.navMeshShown ?? false;
+                        case "Points":
+                          return w.debug?.onPointsShown ?? false;
                         default:
                           return false;
                       }
@@ -387,6 +389,13 @@ export function WorldMenu() {
                           w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
                           w.view.forceUpdate();
                           break;
+                        case "Points": {
+                          const next = !w.debug.onPointsShown;
+                          w.debug?.set({ onPointsShown: next });
+                          if (next) w.debug?.updateOnPoints();
+                          w.view.forceUpdate();
+                          break;
+                        }
                       }
                     }}
                   />
@@ -476,7 +485,17 @@ const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
 const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
-const debugItems = ["View Pick", "Post FX", "Room Hit", "Graphs", "Skins", "Colliders", "Lights", "NavMesh"] as const;
+const debugItems = [
+  "View Pick",
+  "Post FX",
+  "Room Hit",
+  "Graphs",
+  "Skins",
+  "Colliders",
+  "Lights",
+  "NavMesh",
+  "Points",
+] as const;
 
 const selectItemClass = cn(
   "px-2 py-1 text-xs cursor-pointer text-slate-300",

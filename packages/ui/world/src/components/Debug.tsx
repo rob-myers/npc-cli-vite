@@ -3,8 +3,9 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import { float, normalView, pow } from "three/tsl";
+import { attribute, float, normalView, pow, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { sguToWorldScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { getLightMetas } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
@@ -14,7 +15,28 @@ export function Debug() {
   const w = useContext(WorldContext);
   const instRef = useRef<THREE.InstancedMesh>(null);
   const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
+  const onPointsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
+  const onPointsGeo = useMemo(() => {
+    const geo = createXzQuad();
+    geo.setAttribute("uvOffsets", new THREE.InstancedBufferAttribute(new Float32Array(maxOnPoints * 2), 2));
+    geo.setAttribute("uvDimensions", new THREE.InstancedBufferAttribute(new Float32Array(maxOnPoints * 2), 2));
+    geo.setAttribute("uvTextureIds", new THREE.InstancedBufferAttribute(new Uint32Array(maxOnPoints), 1));
+    return geo;
+  }, []);
+
+  const onPointsMat = useMemo(() => {
+    // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
+    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
+    const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
+    const transformedUv = vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs);
+    const texNode = texture(w.texDecor.tex, transformedUv);
+    texNode.depthNode = uvTexIds;
+    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
+    mat.colorNode = texNode;
+    return mat;
+  }, []);
 
   const lightSphereMat = useMemo(() => {
     const mat = new THREE.MeshBasicNodeMaterial({
@@ -34,6 +56,7 @@ export function Debug() {
       demoNavPathShown: false,
       lightSpheresShown: false,
       navMeshShown: false,
+      onPointsShown: false,
       originShown: false,
       openDoorsOnClick: true,
 
@@ -98,6 +121,57 @@ export function Debug() {
         }
         inst.instanceMatrix.needsUpdate = true;
       },
+      updateOnPoints() {
+        const inst = onPointsRef.current;
+        if (!inst || !w.sheets || !w.decor) return;
+        let count = 0;
+        for (const gm of w.gms) {
+          for (const decor of gm.decor) {
+            if (decor.type !== "point" || decor.meta.on !== true) continue;
+            const imgKey = w.decor.decorPointImgKey(decor.meta);
+            const entry = w.sheets.decor[imgKey];
+            if (!entry) {
+              count++;
+              continue;
+            }
+            const dims = w.sheets.decorSheetDims[entry.sheetId];
+            if (!dims) {
+              count++;
+              continue;
+            }
+            (onPointsGeo.getAttribute("uvOffsets").array as Float32Array).set(
+              [entry.rect.x / dims.width, entry.rect.y / dims.height],
+              count * 2,
+            );
+            (onPointsGeo.getAttribute("uvDimensions").array as Float32Array).set(
+              [entry.rect.width / dims.width, entry.rect.height / dims.height],
+              count * 2,
+            );
+            (onPointsGeo.getAttribute("uvTextureIds").array as Uint32Array)[count] = entry.sheetId;
+            const pw = entry.originalWidth * sguToWorldScale;
+            const ph = entry.originalHeight * sguToWorldScale;
+            const angle = (decor.orient - 90) * (Math.PI / 180);
+            const cos = Math.cos(angle),
+              sin = Math.sin(angle);
+            const a = cos * pw,
+              b = sin * pw,
+              c = -sin * ph,
+              d = cos * ph;
+            embedXZMat4(
+              { a, b, c, d, e: decor.x - (a + c) * 0.5, f: decor.y - (b + d) * 0.5 },
+              { yScale: onPointHeight, yHeight: (decor.meta.y ?? 0) + 0.01, mat4: tmpMat4 },
+            );
+            inst.setMatrixAt(count, tmpMat4);
+            if (++count >= maxOnPoints) break;
+          }
+          if (count >= maxOnPoints) break;
+        }
+        inst.count = count;
+        inst.instanceMatrix.needsUpdate = true;
+        onPointsGeo.getAttribute("uvOffsets").needsUpdate = true;
+        onPointsGeo.getAttribute("uvDimensions").needsUpdate = true;
+        onPointsGeo.getAttribute("uvTextureIds").needsUpdate = true;
+      },
       updateInstances() {
         const inst = instRef.current;
         if (!inst) return;
@@ -135,6 +209,10 @@ export function Debug() {
   useEffect(() => {
     state.updateLightSpheres();
   }, [w.hash, w.gmsData]);
+
+  useEffect(() => {
+    state.updateOnPoints();
+  }, [w.hash, w.gmsData, w.decor?.ready]);
 
   useEffect(() => {
     const sub = w.events.subscribe({
@@ -189,6 +267,14 @@ export function Debug() {
         </group>
       )}
 
+      <instancedMesh
+        ref={onPointsRef}
+        args={[onPointsGeo, onPointsMat, maxOnPoints]}
+        frustumCulled={false}
+        visible={state.onPointsShown}
+        renderOrder={-5}
+      />
+
       {state.navMeshShown && <primitive object={navMeshHelper.object} />}
     </>
   );
@@ -197,6 +283,8 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const maxLightSpheres = 1024;
+const maxOnPoints = 1024;
+const onPointHeight = 0.005;
 const lightSphereHeight = 0;
 const tmpMat4 = new THREE.Matrix4();
 
@@ -205,6 +293,7 @@ export type State = {
   demoNavPathShown: boolean;
   lightSpheresShown: boolean;
   navMeshShown: boolean;
+  onPointsShown: boolean;
   originShown: boolean;
   openDoorsOnClick: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
@@ -213,6 +302,7 @@ export type State = {
   })[];
   physicsCollidersShown: boolean;
   computeDemoPath(): void;
+  updateOnPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
   updateLightSpheres(): void;
