@@ -31,10 +31,10 @@
           "locked": false,
           "visible": true,
           "transform": {
-            "a": -0.8660254037844387,
+            "a": -0.866,
             "b": -0.5,
             "c": 0.5,
-            "d": -0.8660254037844387,
+            "d": -0.866,
             "e": 28,
             "f": 199
           },
@@ -50,10 +50,10 @@
           "locked": false,
           "visible": true,
           "transform": {
-            "a": -0.8660254037844387,
-            "b": 0.5000000000000001,
-            "c": 0.5000000000000001,
-            "d": 0.8660254037844387,
+            "a": -0.866,
+            "b": 0.5,
+            "c": 0.5,
+            "d": 0.866,
             "e": 28,
             "f": 200.5
           },
@@ -70,14 +70,7 @@
       "name": "bed--004--0.8x1.4 y=0.5",
       "locked": false,
       "visible": true,
-      "transform": {
-        "a": 0,
-        "b": 1,
-        "c": 1,
-        "d": 0,
-        "e": 8.00002545979816,
-        "f": 68.0000375
-      },
+      "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 8, "f": 68},
       "type": "symbol",
       "srcKey": "bed--004--0.8x1.4",
       "baseRect": {"width": 85, "height": 48},
@@ -241,6 +234,19 @@
       "baseRect": {"width": 28, "height": 23},
       "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 82, 0)"
+    },
+    {
+      "id": "3fa4931d-4d0e-4455-8891-280f5b400650",
+      "name": "decor point do=stand",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 92, "f": 35},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "arrow",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0, -1, 1, 0, 92, 35)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
