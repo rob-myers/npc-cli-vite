@@ -138,6 +138,30 @@ export class JShSemantics {
     );
   }
 
+  private normalizeError(node: JSh.ParsedSh, cmdStackIndex: number, e: any) {
+    const { stack } = node.meta;
+
+    // now know CallExpr command (1st arg) although `foo=bar` has no command
+    const command = node.type === "CallExpr" ? (node.Args[0]?.string ?? "CallExpr") : node.type;
+    stack.splice(cmdStackIndex, 0, command);
+
+    const directlyRunningRun = command === "run" && stack.length === 1;
+
+    if (stack.length >= 3 && stack[1] === "run" && stack[2].endsWith(`.${stack[0]}`)) {
+      // e.g. `spawn: run: core.spawn: ...` -> `spawn: ...`
+      stack.splice(1, 2);
+    }
+
+    const error = e instanceof ShError || e instanceof SigKillError ? e : new ShError("", 1, e as Error);
+    error.message = `${stack.join(": ")}: ${error.message || e}`;
+
+    if (directlyRunningRun) {
+      error.message += `\n${formatMessage(`usage: run '({ api:{read} }) { yield "foo"; yield await read(); }'`, "error")}`;
+    }
+
+    return error;
+  }
+
   /**
    * 🚧 ensure `exitCode`s in each word
    * We normalise textual input e.g. via parameter substitution,
@@ -456,18 +480,7 @@ export class JShSemantics {
         }
       }
     } catch (e) {
-      const { stack } = node.meta;
-      // now know CallExpr command (1st arg), although `foo=bar` has no command
-      const command = node.type === "CallExpr" ? (node.Args[0]?.string ?? "CallExpr") : node.type;
-      stack.splice(cmdStackIndex, 0, command);
-      // normalize error
-      const error = e instanceof ShError || e instanceof SigKillError ? e : new ShError("", 1, e as Error);
-      error.message = `${stack.join(": ")}: ${(e as Error).message || e}`;
-      if (command === "run" && stack.length === 1) {
-        // when directly using `run` append helpful format message
-        error.message +=
-          "\n" + formatMessage(`usage: run '({ api:{read} }) { yield "foo"; yield await read(); }'`, "error");
-      }
+      const error = this.normalizeError(node, cmdStackIndex, e);
       sem.handleShError(node, error);
     }
   }
