@@ -96,6 +96,8 @@
 - BUG obstacles should aggregate height
   - couch-and-chair--006
 
+- fix npc moves through door
+
 - doors have meaningful icons
 
 - track runtime decor so preserve on hmr
@@ -103,6 +105,7 @@
   - ❌ track gaps
 
 - fetch gltf json so can cache-bust
+- npc labels should match animation e.g. sit, lie
 - labels as decor point
   - add some labels to 301
   - Decor renders them
