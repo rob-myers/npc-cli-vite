@@ -4876,7 +4876,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 1,
+            "y": 0.2,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1
           }
@@ -16242,7 +16242,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 1.4,
+            "y": 0.4,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1,
             "transform": [-1, 0, 0, 1, 6.8875, 10.4875]
@@ -16397,7 +16397,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 1,
+            "y": 0.2,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1
           }
@@ -26877,7 +26877,7 @@
         {
           "symbolKey": "couch-and-chairs--006--0.4x2",
           "obstacleId": 1,
-          "height": 1.4,
+          "height": 0.4,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -26886,7 +26886,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
-              "y": 1,
+              "y": 0.2,
               "symKey": "couch-and-chairs--006--0.4x2",
               "origObstacleId": 1
             }
@@ -26904,7 +26904,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 1,
+            "y": 0.2,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1
           }
@@ -27171,5 +27171,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -2010988326}
+  "hash": {"obstacles": -343679203}
 }

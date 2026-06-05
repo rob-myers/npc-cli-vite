@@ -35,6 +35,15 @@
       "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 2422},
       "type": "map",
       "key": "larger-map"
+    },
+    "101-only": {
+      "filename": "101-only.json",
+      "thumbnailFilename": "101-only.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -6, "y": -6, "width": 1206, "height": 1206},
+      "type": "map",
+      "key": "101-only"
     }
   }
 }
