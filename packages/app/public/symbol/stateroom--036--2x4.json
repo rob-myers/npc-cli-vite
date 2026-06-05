@@ -225,7 +225,7 @@
     },
     {
       "id": "903360e1-2170-43f3-b5d8-ed237e0f04af",
-      "name": "extra--001--fresher--0.5x0.5 y=1",
+      "name": "extra--001--fresher--0.5x0.5 y=0.65",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 82, "f": 0},
@@ -234,19 +234,6 @@
       "baseRect": {"width": 28, "height": 23},
       "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 82, 0)"
-    },
-    {
-      "id": "3fa4931d-4d0e-4455-8891-280f5b400650",
-      "name": "decor point do=stand",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 92, "f": 35},
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "arrow",
-      "baseRect": {"width": 6, "height": 6},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0, -1, 1, 0, 92, 35)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
