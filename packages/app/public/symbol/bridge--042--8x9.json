@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "8c0ddce7-acc2-4ffd-9c82-7367ef95b0fc",
@@ -154,7 +154,7 @@
         },
         {
           "id": "6fc6aa86-72a9-4098-b504-ce1b9f8d15d9",
-          "name": "extra--001--fresher--0.5x0.5 y=1",
+          "name": "extra--001--fresher--0.5x0.5 y=0.65",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 370, "f": 301},
