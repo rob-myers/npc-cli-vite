@@ -376,6 +376,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const r = state.svgEl.getBoundingClientRect();
         return state.clientToSvg(r.x + r.width / 2, r.y + r.height / 2);
       },
+      zoomToNode(nodeId) {
+        const svgEl = state.svgEl;
+        if (!svgEl) return;
+        const el = svgEl.querySelector(`[data-node-id="${nodeId}"]`) as SVGGraphicsElement | null;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const svgRect = svgEl.getBoundingClientRect();
+        const renderSize = Math.min(svgRect.width, svgRect.height);
+        const elemSize = Math.max(r.width, r.height, 1);
+        const newZoom = Math.min(Math.max((0.5 * renderSize * state.zoom) / elemSize, state.zoom), maxZoomScale);
+        const t = state.clientToSvg(r.left + r.width / 2, r.top + r.height / 2);
+        state.set({ zoom: newZoom, pan: { x: (baseSvgSize / 2 - t.x) * newZoom, y: (baseSvgSize / 2 - t.y) * newZoom } });
+      },
 
       add(type, { selectionAsParent, rect } = {}) {
         if (state.isReadOnly()) return;
@@ -1810,6 +1823,7 @@ export type State = {
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };
   getViewportCenter: () => { x: number; y: number } | null;
+  zoomToNode: (nodeId: string) => void;
   onSvgPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
   onSvgPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
