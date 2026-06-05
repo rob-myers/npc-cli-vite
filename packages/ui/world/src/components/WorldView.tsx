@@ -34,7 +34,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 4,
-        minDistance: w.touchDevice ? 10 : 18,
+        minDistance: w.touchDevice ? 10 : 15,
         maxDistance: 60,
         extraZoom: 2,
         panSpeed: 2,
