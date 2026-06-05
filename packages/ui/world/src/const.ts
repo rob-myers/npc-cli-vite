@@ -139,6 +139,7 @@ export const fromAnimationClipKey = {
   run: true,
   "shuffle-back": true,
   sit: true,
+  stand: true,
   walk: true,
 };
 
