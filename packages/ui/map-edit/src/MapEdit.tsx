@@ -387,7 +387,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const elemSize = Math.max(r.width, r.height, 1);
         const newZoom = Math.min(Math.max((0.5 * renderSize * state.zoom) / elemSize, state.zoom), maxZoomScale);
         const t = state.clientToSvg(r.left + r.width / 2, r.top + r.height / 2);
-        state.set({ zoom: newZoom, pan: { x: (baseSvgSize / 2 - t.x) * newZoom, y: (baseSvgSize / 2 - t.y) * newZoom } });
+        state.set({
+          zoom: newZoom,
+          pan: { x: (baseSvgSize / 2 - t.x) * newZoom, y: (baseSvgSize / 2 - t.y) * newZoom },
+        });
       },
 
       add(type, { selectionAsParent, rect } = {}) {
@@ -1900,7 +1903,7 @@ const defaultAsideWidth = 200;
 const zoomDelta = 0.04;
 const minZoomScale = 0.25;
 const maxZoomScale = 40;
-const zoomToFitFraction = 0.85;
+const zoomToFitFraction = 1;
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
