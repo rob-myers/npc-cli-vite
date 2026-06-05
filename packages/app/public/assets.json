@@ -27224,7 +27224,7 @@
       "background": "bg-gray-500",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#666"},
-        "nonHull": {"fill": "#fff", "stroke": "#000f"}
+        "nonHull": {"fill": "#888", "stroke": "#000f"}
       },
       "floor": {
         "hullFill": "#222",
