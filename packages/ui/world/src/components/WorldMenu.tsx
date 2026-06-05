@@ -413,7 +413,11 @@ export function WorldMenu() {
       </motion.div>
 
       <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
-      <GeomorphGraphsModal open={state.gmGraphsOpen} onOpenChange={(open) => state.set({ gmGraphsOpen: open })} />
+      <GeomorphGraphsModal
+        open={state.gmGraphsOpen}
+        onOpenChange={(open) => state.set({ gmGraphsOpen: open })}
+        container={w.rootEl}
+      />
       {w.npc && (
         <SkinDebugModal open={state.skinDebugOpen} onOpenChange={(open) => state.set({ skinDebugOpen: open })} />
       )}

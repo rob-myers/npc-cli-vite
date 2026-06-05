@@ -4876,7 +4876,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.2,
+            "y": 1,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1
           }
@@ -4941,6 +4941,22 @@
         {
           "gmKey": "g-302--xboat-repair-bay",
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 29.975}
+        }
+      ]
+    },
+    "101-only": {
+      "key": "101-only",
+      "gms": [
+        {
+          "gmKey": "g-101--multipurpose",
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": -0.0125,
+            "f": -0.0125
+          }
         }
       ]
     }
@@ -16226,7 +16242,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.4,
+            "y": 1.4,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1,
             "transform": [-1, 0, 0, 1, 6.8875, 10.4875]
@@ -16381,7 +16397,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.2,
+            "y": 1,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1
           }
@@ -16421,7 +16437,6 @@
       {"id": "extra--002--fresher--0.5x0.5"},
       {"id": "extra--021--shower"},
       {"id": "fuel--010--2x4"},
-      {"id": "g-302--xboat-repair-bay"},
       {"id": "couch-and-chairs--006--0.4x2"}
     ],
     [
@@ -16433,7 +16448,8 @@
       {"id": "console--031--1x1.2"},
       {"id": "misc-stellar-cartography--023--4x4"},
       {"id": "table--004--1.2x2.4"},
-      {"id": "stateroom--020--2x3"}
+      {"id": "stateroom--020--2x3"},
+      {"id": "g-302--xboat-repair-bay"}
     ],
     [
       {"id": "bridge--042--8x9"},
@@ -26861,7 +26877,7 @@
         {
           "symbolKey": "couch-and-chairs--006--0.4x2",
           "obstacleId": 1,
-          "height": 0.4,
+          "height": 1.4,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -26870,7 +26886,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
-              "y": 0.2,
+              "y": 1,
               "symKey": "couch-and-chairs--006--0.4x2",
               "origObstacleId": 1
             }
@@ -26888,7 +26904,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.2,
+            "y": 1,
             "symKey": "couch-and-chairs--006--0.4x2",
             "origObstacleId": 1
           }
@@ -27155,5 +27171,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -343679203}
+  "hash": {"obstacles": -2010988326}
 }
