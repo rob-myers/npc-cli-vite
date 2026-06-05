@@ -134,7 +134,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
               "outline-green-500/50 outline-dashed",
               root.selectedIds.has(node.id) === true && "outline-blue-500 outline-solid",
               node.locked === true ? "pointer-events-none" : "pointer-events-auto",
-              node.locked === true ? (root.currentFile.type === "symbol" ? "opacity-25" : "opacity-50") : "opacity-75",
+              node.locked === true ? (root.currentFile.type === "symbol" ? "opacity-25" : "opacity-100") : "opacity-75",
             )}
           >
             <title>{node.name}</title>
