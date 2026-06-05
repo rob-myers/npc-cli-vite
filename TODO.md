@@ -91,7 +91,10 @@
 - 🚧 start 302
   - ✅ BUG hull doors not opening for larger-map
 
-- BUG MapEdit map creation i.e. draft/new not appearing before refresh
+- ✅ BUG MapEdit map creation i.e. draft/new not appearing before refresh
+
+- BUG obstacles should aggregate height
+  - couch-and-chair--006
 
 - doors have meaningful icons
 
