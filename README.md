@@ -78,6 +78,8 @@ magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
 
 # Gotchas
 
+### Hull doors can have navRectId -1 if hull walls not properly aligned
+
 #### ⚠️ In VSCode can manually reconnect to mcp server via `/mcp` then click button
 
 #### ⚠️ Height related MapEdit symbol file dimensions are already in meters e.g. y=1, h=1

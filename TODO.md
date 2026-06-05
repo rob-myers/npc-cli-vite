@@ -88,7 +88,7 @@
 - ✅ fix obstacle skirts: extra--001--fresher
   - seems `skirtCount` too small because createInset creates edges
 
-- 🚧 start 302
+- ✅ start 302
   - ✅ BUG hull doors not opening for larger-map
 
 - ✅ BUG MapEdit map creation i.e. draft/new not appearing before refresh

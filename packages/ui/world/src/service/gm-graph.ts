@@ -57,6 +57,124 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
     return null;
   }
 
+  static fromGms(gms: Geomorph.LayoutInstance[], { permitErrors } = { permitErrors: false }) {
+    const graph = new GmGraph(gms);
+    let index = 0;
+
+    const nodes: Graph.GmGraphNode[] = [
+      ...gms.flatMap((gm, gmId) =>
+        gm.navRects.map(
+          (navRect, navRectId): Graph.GmGraphNodeGm => ({
+            type: "gm",
+            gmKey: gm.key,
+            gmId,
+            id: getGmNodeId(gm.num, extractTransform(gm), navRectId),
+            transform: extractTransform(gm),
+            navRectId,
+            rect: navRect.clone().applyMatrix(gm.matrix),
+            ...createBaseAstar({
+              centroid: gm.matrix.transformPoint(gm.bounds.center),
+            }),
+            index: index++,
+          }),
+        ),
+      ),
+
+      ...gms.flatMap(({ key: gmKey, num: gmNum, hullDoors, matrix, transform, bounds, doors }, gmId) =>
+        hullDoors.map((hullDoor, hullDoorId): Graph.GmGraphNodeDoor => {
+          const alongNormal = hullDoor.center.clone().addScaled(hullDoor.normal, 20);
+          const gmInFront = bounds.contains(alongNormal);
+          const tf = extractTransform({ transform });
+          const direction = GmGraph.computeHullDoorDirection(hullDoor, hullDoorId, tf, gmKey);
+          return {
+            type: "door",
+            gmKey,
+            gmId,
+            id: getGmDoorNodeId(gmNum, tf, hullDoorId),
+            doorId: doors.indexOf(hullDoor),
+            hullDoorId,
+            transform: tf,
+            gmInFront,
+            direction,
+            sealed: true,
+            ...createBaseAstar({
+              centroid: matrix.transformPoint(hullDoor.center.clone()),
+            }),
+            index: index++,
+          };
+        }),
+      ),
+    ];
+
+    graph.registerNodes(nodes);
+
+    nodes.forEach((node) => {
+      if (node.type === "door") {
+        const { matrix, doors } = gms[node.gmId];
+        const nonNullIndex = doors[node.doorId].roomIds.findIndex((x) => x !== null);
+        const entry = doors[node.doorId].entries[nonNullIndex] as Geom.Vect | undefined;
+        if (entry !== undefined) {
+          graph.entry.set(node, matrix.transformPoint(entry.clone()));
+        } else if (permitErrors === true) {
+          error(`door ${node.doorId} lacks entry`);
+        } else {
+          throw Error(`${node.gmKey}: door ${node.doorId} lacks entry`);
+        }
+      }
+    });
+
+    graph.nodesArray.forEach((node) =>
+      node.type === "gm" ? graph.gmNodeByGmId[node.gmId].push(node) : graph.doorNodeByGmId[node.gmId].push(node),
+    );
+
+    Object.values(graph.gmNodeByGmId).forEach((nodes) => nodes.sort((a, b) => (a.rect.area < b.rect.area ? -1 : 1)));
+
+    const localEdges: Graph.GmGraphEdgeOpts[] = gms.flatMap(({ num: gmNum, hullDoors, transform }) => {
+      const tf = extractTransform({ transform });
+      return hullDoors.map(({ navRectId }, hullDoorId) => ({
+        src: getGmNodeId(gmNum, tf, navRectId),
+        dst: getGmDoorNodeId(gmNum, tf, hullDoorId),
+      }));
+    });
+
+    const globalEdges = gms.flatMap((srcGm, gmId) => {
+      const adjItems = gms.filter((dstGm, dstGmId) => dstGmId !== gmId && dstGm.gridRect.intersects(srcGm.gridRect));
+      const [srcRect, dstRect] = [new Rect(), new Rect()];
+      const [srcMatrix, dstMatrix] = [new Mat(), new Mat()];
+
+      return srcGm.hullDoors.flatMap((srcDoor, hullDoorId) => {
+        const srcDoorNodeId = getGmDoorNodeId(srcGm.num, extractTransform(srcGm), hullDoorId);
+        srcMatrix.setMatrixValue(srcGm.transform);
+        srcRect.copy(srcDoor.poly.rect.applyMatrix(srcMatrix));
+
+        const gmDoorPairs = adjItems.flatMap((gm) => gm.hullDoors.map((door) => [gm, door] as const));
+        const matching = gmDoorPairs.find(([{ transform }, { poly }]) =>
+          srcRect.intersects(dstRect.copy(poly.rect.applyMatrix(dstMatrix.setMatrixValue(transform)))),
+        );
+        if (matching !== undefined) {
+          const [dstGm, dstDoor] = matching;
+          const dstHullDoorId = dstGm.hullDoors.indexOf(dstDoor);
+          const dstDoorNodeId = getGmDoorNodeId(dstGm.num, extractTransform(dstGm), dstHullDoorId);
+          (graph.getNode(srcDoorNodeId) as Graph.GmGraphNodeDoor).sealed = false;
+          return { src: srcDoorNodeId, dst: dstDoorNodeId };
+        } else {
+          return [];
+        }
+      });
+    });
+
+    [...localEdges, ...globalEdges].forEach(({ src, dst }) => {
+      if (src && dst) {
+        graph.connect({ src, dst });
+        graph.connect({ src: dst, dst: src });
+      }
+    });
+
+    graph.edgesArray.forEach(({ src, dst }) => src.astar.neighbours.push(dst.index));
+
+    return graph;
+  }
+
   dispose() {
     super.dispose();
     this.gms.length = 0;
@@ -198,124 +316,6 @@ export class GmGraph extends BaseGraph<Graph.GmGraphNode, Graph.GmGraphEdgeOpts>
     } else {
       return dp > 0;
     }
-  }
-
-  static fromGms(gms: Geomorph.LayoutInstance[], { permitErrors } = { permitErrors: false }) {
-    const graph = new GmGraph(gms);
-    let index = 0;
-
-    const nodes: Graph.GmGraphNode[] = [
-      ...gms.flatMap((gm, gmId) =>
-        gm.navRects.map(
-          (navRect, navRectId): Graph.GmGraphNodeGm => ({
-            type: "gm",
-            gmKey: gm.key,
-            gmId,
-            id: getGmNodeId(gm.num, extractTransform(gm), navRectId),
-            transform: extractTransform(gm),
-            navRectId,
-            rect: navRect.clone().applyMatrix(gm.matrix),
-            ...createBaseAstar({
-              centroid: gm.matrix.transformPoint(gm.bounds.center),
-            }),
-            index: index++,
-          }),
-        ),
-      ),
-
-      ...gms.flatMap(({ key: gmKey, num: gmNum, hullDoors, matrix, transform, bounds, doors }, gmId) =>
-        hullDoors.map((hullDoor, hullDoorId): Graph.GmGraphNodeDoor => {
-          const alongNormal = hullDoor.center.clone().addScaled(hullDoor.normal, 20);
-          const gmInFront = bounds.contains(alongNormal);
-          const tf = extractTransform({ transform });
-          const direction = GmGraph.computeHullDoorDirection(hullDoor, hullDoorId, tf, gmKey);
-          return {
-            type: "door",
-            gmKey,
-            gmId,
-            id: getGmDoorNodeId(gmNum, tf, hullDoorId),
-            doorId: doors.indexOf(hullDoor),
-            hullDoorId,
-            transform: tf,
-            gmInFront,
-            direction,
-            sealed: true,
-            ...createBaseAstar({
-              centroid: matrix.transformPoint(hullDoor.center.clone()),
-            }),
-            index: index++,
-          };
-        }),
-      ),
-    ];
-
-    graph.registerNodes(nodes);
-
-    nodes.forEach((node) => {
-      if (node.type === "door") {
-        const { matrix, doors } = gms[node.gmId];
-        const nonNullIndex = doors[node.doorId].roomIds.findIndex((x) => x !== null);
-        const entry = doors[node.doorId].entries[nonNullIndex] as Geom.Vect | undefined;
-        if (entry !== undefined) {
-          graph.entry.set(node, matrix.transformPoint(entry.clone()));
-        } else if (permitErrors === true) {
-          error(`door ${node.doorId} lacks entry`);
-        } else {
-          throw Error(`${node.gmKey}: door ${node.doorId} lacks entry`);
-        }
-      }
-    });
-
-    graph.nodesArray.forEach((node) =>
-      node.type === "gm" ? graph.gmNodeByGmId[node.gmId].push(node) : graph.doorNodeByGmId[node.gmId].push(node),
-    );
-
-    Object.values(graph.gmNodeByGmId).forEach((nodes) => nodes.sort((a, b) => (a.rect.area < b.rect.area ? -1 : 1)));
-
-    const localEdges: Graph.GmGraphEdgeOpts[] = gms.flatMap(({ num: gmNum, hullDoors, transform }) => {
-      const tf = extractTransform({ transform });
-      return hullDoors.map(({ navRectId }, hullDoorId) => ({
-        src: getGmNodeId(gmNum, tf, navRectId),
-        dst: getGmDoorNodeId(gmNum, tf, hullDoorId),
-      }));
-    });
-
-    const globalEdges = gms.flatMap((srcGm, gmId) => {
-      const adjItems = gms.filter((dstGm, dstGmId) => dstGmId !== gmId && dstGm.gridRect.intersects(srcGm.gridRect));
-      const [srcRect, dstRect] = [new Rect(), new Rect()];
-      const [srcMatrix, dstMatrix] = [new Mat(), new Mat()];
-
-      return srcGm.hullDoors.flatMap((srcDoor, hullDoorId) => {
-        const srcDoorNodeId = getGmDoorNodeId(srcGm.num, extractTransform(srcGm), hullDoorId);
-        srcMatrix.setMatrixValue(srcGm.transform);
-        srcRect.copy(srcDoor.poly.rect.applyMatrix(srcMatrix));
-
-        const gmDoorPairs = adjItems.flatMap((gm) => gm.hullDoors.map((door) => [gm, door] as const));
-        const matching = gmDoorPairs.find(([{ transform }, { poly }]) =>
-          srcRect.intersects(dstRect.copy(poly.rect.applyMatrix(dstMatrix.setMatrixValue(transform)))),
-        );
-        if (matching !== undefined) {
-          const [dstGm, dstDoor] = matching;
-          const dstHullDoorId = dstGm.hullDoors.indexOf(dstDoor);
-          const dstDoorNodeId = getGmDoorNodeId(dstGm.num, extractTransform(dstGm), dstHullDoorId);
-          (graph.getNode(srcDoorNodeId) as Graph.GmGraphNodeDoor).sealed = false;
-          return { src: srcDoorNodeId, dst: dstDoorNodeId };
-        } else {
-          return [];
-        }
-      });
-    });
-
-    [...localEdges, ...globalEdges].forEach(({ src, dst }) => {
-      if (src && dst) {
-        graph.connect({ src, dst });
-        graph.connect({ src: dst, dst: src });
-      }
-    });
-
-    graph.edgesArray.forEach(({ src, dst }) => src.astar.neighbours.push(dst.index));
-
-    return graph;
   }
 
   get ready() {
