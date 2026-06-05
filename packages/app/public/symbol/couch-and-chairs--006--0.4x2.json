@@ -45,6 +45,45 @@
       "type": "rect",
       "baseRect": {"width": 26, "height": 84},
       "cssTransform": "matrix(1, 0, 0, 1, 1.5, 18)"
+    },
+    {
+      "id": "da661647-9f40-4575-bf62-2f06bc7f178e",
+      "name": "decor point do=sit on",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 16, "f": 31.5},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "arrow",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(-1, 0, 0, 1, 16, 31.5)"
+    },
+    {
+      "id": "45bac6fd-1489-4708-a2fc-e67d21c1aa7b",
+      "name": "decor point do=sit on",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 16, "f": 56},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "arrow",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(-1, 0, 0, 1, 16, 56)"
+    },
+    {
+      "id": "7de5ce38-6e5b-4b02-aba9-dd571a98bf4f",
+      "name": "decor point do=sit on",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 16, "f": 80.5},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "arrow",
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(-1, 0, 0, 1, 16, 80.5)"
     }
   ],
   "bounds": {"x": 1.3, "y": 2.5, "width": 27.4, "height": 115},

@@ -57,9 +57,9 @@
     - e.g. a do-point extends to a whole chair
   - ✅ npc can be at doable
     - w.e.doableToNpc and w.e.npcToDoable
-  - 🚧 example of multiple do-points on single obstacle
+  - ✅ example of multiple do-points on single obstacle
     - sofa
-  - 🚧 `<Decor>` does not render decor points
+  - 🚧 `<Decor>` does not render decor points with `meta.on === true`
   - 🚧  can render all decor points inside `<Debug>`
 
 - ✅ BUG pre-existing spawn on-mesh -> on-mesh
