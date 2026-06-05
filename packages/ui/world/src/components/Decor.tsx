@@ -353,7 +353,8 @@ export default function Decor() {
             Object.assign(decor.meta, gmRoomId);
           }
 
-          const suffix = `${metaPoint.x}-${metaPoint.y}`.replace(/\./g, "_"); // we use periods for paths in CLI
+          // we use periods for paths in CLI
+          const suffix = `${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_");
           decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
           state.byKey[decor.key] = decor;
           decor.meta.key = decor.key;
