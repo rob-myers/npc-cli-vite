@@ -772,7 +772,7 @@ export function instantiateFlatSymbol(
       poly.cleanClone(mat, {
         // aggregate height from MapEdit symbols
         ...(typeof meta.y === "number" && {
-          y: toPrecision(meta.y + (parseInt(poly.meta.y, 10) || 0)),
+          y: toPrecision(meta.y + (parseFloat(poly.meta.y) || 0)),
         }),
         // - we compute transform during symbol flattening
         // - this is the only place we set `meta.transform` for obstacles
