@@ -314,7 +314,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           vignette(
             sceneColor.rgb, // The input image color
             float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
-            float(0.8), // Smoothness: Controls gradient falloff softness
+            float(0.7), // Smoothness: Controls gradient falloff softness
             screenUV, // Coordinates mapping
           ),
           sceneColor.a,
