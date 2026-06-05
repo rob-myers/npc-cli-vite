@@ -5,7 +5,7 @@ import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { WorldContext } from "../components/world-context";
 
-export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void };
+export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void; container?: HTMLElement | null };
 
 const gmGraphsFilterKey = "world-gm-graphs-filter";
 
@@ -49,7 +49,7 @@ export function RoomHitModal({ open, onOpenChange }: DebugModalProps) {
   );
 }
 
-export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
+export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
   const [activeGraph, setActiveGraph] = useState<"gm" | "room">(
     () => (tryLocalStorageGetParsed<string>(gmGraphsFilterKey) as "gm" | "room") || "room",
@@ -113,19 +113,6 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
       const label = node.id;
       const gm = w.gms[node.gmId];
       const worldRoom = gm.rooms[node.roomId]?.clone().applyMatrix(gm.matrix);
-      if (worldRoom) {
-        const c = worldRoom.center;
-        const s = 0.92;
-        for (const p of worldRoom.outline) {
-          p.x = c.x + (p.x - c.x) * s;
-          p.y = c.y + (p.y - c.y) * s;
-        }
-        for (const hole of worldRoom.holes)
-          for (const p of hole) {
-            p.x = c.x + (p.x - c.x) * s;
-            p.y = c.y + (p.y - c.y) * s;
-          }
-      }
       const roomPath = worldRoom?.svgPath ?? "";
       const tw = label.length * roomFontSize * 0.6 + roomFontSize * 1.2;
       const th = roomFontSize * 1.8;
@@ -141,13 +128,13 @@ export function GeomorphGraphsModal({ open, onOpenChange }: DebugModalProps) {
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
+      <Dialog.Portal container={container}>
+        <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "absolute left-1/2 top-[5%] z-50 -translate-x-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-4xl w-[90vw] h-[85vh] flex flex-col touch-none",
+            "max-w-4xl w-[90%] h-[90%] flex flex-col touch-none",
           )}
           ref={(el) => {
             if (!el) return;
