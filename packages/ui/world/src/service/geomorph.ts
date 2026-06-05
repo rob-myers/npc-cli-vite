@@ -195,25 +195,6 @@ export function createLayout(
     x.holes.map((ring) => new Poly(ring).fixOrientation()),
   );
 
-  // 🔔 Room meta is specified by:
-  // - "decor meta ..."
-  // - "decor label=text ..."
-  // could compute faster client-side via pixel-look-up
-  const metaDecor = new Set(flat.decor.filter((x) => typeof x.meta.label === "string" || x.meta.meta === true));
-  for (const room of rooms) {
-    for (const d of metaDecor) {
-      if (room.contains(d.outline[0])) {
-        metaDecor.delete(d); // at most 1 room
-        Object.assign(room.meta, d.meta, {
-          decor: undefined,
-          meta: undefined,
-          y: undefined,
-          label: room.meta.label ?? d.meta.label, // 1st label has priority
-        });
-      }
-    }
-  }
-
   const decor = flat.decor.map(createLayoutDecorFromPoly);
 
   const ignoreNavPoints = decor.flatMap((d) => (d.type === "point" && d.meta["ignore-nav"] ? d : []));
@@ -253,7 +234,6 @@ export function createLayout(
   );
   const unjoinedWalls = cutWalls.filter((x) => x.meta !== plainWallMeta && x.meta !== hullWallMeta);
 
-  // 🚧 ensure obstacle.meta.decorIds
   const obstacles = flat.obstacles.map((o): Geomorph.LayoutObstacle => {
     const origObstacleId = o.meta.origObstacleId as number;
     const symbolKey = o.meta.symKey as StarshipSymbolImageKey;
@@ -424,125 +404,6 @@ export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.
         // 🔔 ignoring offset amounts to correcting bounds
         e: toPrecision(gm.transform.e * sguToWorldScale, 6),
         f: toPrecision(gm.transform.f * sguToWorldScale, 6),
-      },
-    })),
-  };
-}
-
-/**
- * - Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
- * - Previously known as `parseSymbol`.
- */
-export function createSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
-  const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
-
-  const symbols = [] as Geomorph.Symbol["symbols"];
-
-  type ParsePolysKey = Exclude<SymbolPolysKey, "removableDoors" | "addableWalls">;
-
-  const polysLookup: Record<ParsePolysKey, Geomorph.Symbol[ParsePolysKey]> = {
-    decor: [] as Geomorph.Symbol["decor"],
-    doors: [] as Geomorph.Symbol["doors"],
-    hullWalls: [] as Geomorph.Symbol["hullWalls"],
-    obstacles: [] as Geomorph.Symbol["obstacles"],
-    unsorted: [] as Geomorph.Symbol["unsorted"],
-    walls: [] as Geomorph.Symbol["walls"],
-    windows: [] as Geomorph.Symbol["windows"],
-  };
-
-  for (const node of allNodes) {
-    const ownTags = textToTags(node.name);
-    const meta = tagsToMeta(ownTags);
-
-    if (node.type === "symbol") {
-      node.srcKey !== null &&
-        symbols.push({
-          symbolKey: node.srcKey,
-          width: node.baseRect.width,
-          height: node.baseRect.height,
-          // 🔔 symbol geometry is already offset
-          transform: { ...node.transform },
-          meta,
-        });
-      continue;
-    }
-
-    const poly = convertMapEditNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
-    if (poly === null) continue;
-
-    if (meta.wall === true) {
-      polysLookup.walls.push(poly);
-    } else if (meta.door === true) {
-      polysLookup.doors.push(poly);
-    } else if (meta.obstacle === true) {
-      polysLookup.obstacles.push(poly);
-    } else if (meta.decor === true) {
-      polysLookup.decor.push(poly);
-    } else if (meta.window === true) {
-      polysLookup.windows.push(poly);
-    } else {
-      polysLookup.unsorted.push(poly);
-    }
-
-    if (meta.wall === true && meta.hull === true) {
-      polysLookup.hullWalls.push(poly);
-    }
-
-    if (meta.switch === true) {
-      // switches are aligned to doors
-      meta.doorId = polysLookup.doors.length - 1;
-    }
-
-    if (meta.decor === true && meta.on === true) {
-      // decor can be "on" last obstacle
-      const obstacleId = polysLookup.obstacles.length - 1;
-      if (obstacleId >= 0) {
-        meta.obstacleId = obstacleId;
-      }
-    }
-
-    if (meta.obstacle === true) {
-      // link to original symbol
-      meta.symKey = savedFile.key;
-      // local id inside SVG symbol
-      meta.origObstacleId = polysLookup.obstacles.length - 1;
-      if (typeof meta.inset === "number") {
-        // convert inset to world coords
-        meta.inset = toPrecision(meta.inset * sguToWorldScale, 6);
-      }
-    }
-  }
-
-  // sgu -> world scale, noting hullWalls repeated in walls
-  const s = sguToWorldScale;
-  const scaled = new Set<Geom.Poly>();
-  for (const polys of Object.values(polysLookup))
-    for (const p of polys) {
-      !scaled.has(p) && scaled.add(p.scale(s).precision(6));
-    }
-
-  return {
-    key: savedFile.key,
-    isHull: isHullSymbolImageKey(savedFile.key),
-    width: toPrecision(savedFile.width * s, 6),
-    height: toPrecision(savedFile.height * s, 6),
-    bounds: savedFile.bounds.clone().scale(s).precision(6),
-
-    ...polysLookup,
-
-    removableDoors: polysLookup.doors.flatMap((doorPoly, doorId) =>
-      doorPoly.meta.optional ? { doorId, wall: Poly.intersect([doorPoly], polysLookup.walls)[0] } : [],
-    ),
-    addableWalls: polysLookup.walls.filter((x) => x.meta.optional === true),
-
-    symbols: symbols.map((sym) => ({
-      ...sym,
-      width: toPrecision(sym.width * s, 6),
-      height: toPrecision(sym.height * s, 6),
-      transform: {
-        ...sym.transform,
-        e: toPrecision(sym.transform.e * s, 6),
-        f: toPrecision(sym.transform.f * s, 6),
       },
     })),
   };
@@ -802,6 +663,131 @@ export function isEdgeGm(input: StarShipGeomorphKey | StarshipGeomorphNumber) {
     input = getGeomorphNumber(input);
   }
   return 301 <= input && input < 500;
+}
+
+/**
+ * - Convert a MapEdit saved symbol into a `Geomorph.Symbol`.
+ * - Previously known as `parseSymbol`.
+ */
+export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorph.Symbol {
+  const allNodes = filterNodes(savedFile.nodes, (_node: MapNode): _node is MapNode => true);
+
+  const symbols = [] as Geomorph.Symbol["symbols"];
+
+  type ParsePolysKey = Exclude<SymbolPolysKey, "removableDoors" | "addableWalls">;
+
+  const polysLookup: Record<ParsePolysKey, Geomorph.Symbol[ParsePolysKey]> = {
+    decor: [] as Geomorph.Symbol["decor"],
+    doors: [] as Geomorph.Symbol["doors"],
+    hullWalls: [] as Geomorph.Symbol["hullWalls"],
+    obstacles: [] as Geomorph.Symbol["obstacles"],
+    unsorted: [] as Geomorph.Symbol["unsorted"],
+    walls: [] as Geomorph.Symbol["walls"],
+    windows: [] as Geomorph.Symbol["windows"],
+  };
+
+  let roomLabel = undefined as string | undefined;
+
+  for (const node of allNodes) {
+    const ownTags = textToTags(node.name);
+    const meta = tagsToMeta(ownTags);
+
+    if (node.type === "symbol") {
+      node.srcKey !== null &&
+        symbols.push({
+          symbolKey: node.srcKey,
+          width: node.baseRect.width,
+          height: node.baseRect.height,
+          // 🔔 symbol geometry is already offset
+          transform: { ...node.transform },
+          meta,
+        });
+      continue;
+    }
+
+    const poly = convertMapEditNodeToPoly(node, meta)?.precision(precision).cleanFinalReps().fixOrientation() ?? null;
+    if (poly === null) continue;
+
+    if (meta.wall === true) {
+      polysLookup.walls.push(poly);
+    } else if (meta.door === true) {
+      roomLabel !== undefined && (poly.meta.label = roomLabel);
+      polysLookup.doors.push(poly);
+    } else if (meta.obstacle === true) {
+      polysLookup.obstacles.push(poly);
+    } else if (meta.decor === true) {
+      polysLookup.decor.push(poly);
+    } else if (meta.window === true) {
+      polysLookup.windows.push(poly);
+    } else {
+      polysLookup.unsorted.push(poly);
+    }
+
+    if (meta.wall === true && meta.hull === true) {
+      polysLookup.hullWalls.push(poly);
+    }
+
+    if (meta.switch === true) {
+      // switches are aligned to doors
+      meta.doorId = polysLookup.doors.length - 1;
+    }
+
+    if (meta.decor === true) {
+      if (meta.on === true) {
+        // decor can be "on" last obstacle
+        const obstacleId = polysLookup.obstacles.length - 1;
+        if (obstacleId >= 0) {
+          meta.obstacleId = obstacleId;
+        }
+      }
+      roomLabel = meta.label; // expect at most one `decor point label=foo`
+    }
+
+    if (meta.obstacle === true) {
+      // link to original symbol
+      meta.symKey = savedFile.key;
+      // local id inside SVG symbol
+      meta.origObstacleId = polysLookup.obstacles.length - 1;
+      if (typeof meta.inset === "number") {
+        // convert inset to world coords
+        meta.inset = toPrecision(meta.inset * sguToWorldScale, 6);
+      }
+    }
+  }
+
+  // sgu -> world scale, noting hullWalls repeated in walls
+  const s = sguToWorldScale;
+  const scaled = new Set<Geom.Poly>();
+  for (const polys of Object.values(polysLookup))
+    for (const p of polys) {
+      !scaled.has(p) && scaled.add(p.scale(s).precision(6));
+    }
+
+  return {
+    key: savedFile.key,
+    isHull: isHullSymbolImageKey(savedFile.key),
+    width: toPrecision(savedFile.width * s, 6),
+    height: toPrecision(savedFile.height * s, 6),
+    bounds: savedFile.bounds.clone().scale(s).precision(6),
+
+    ...polysLookup,
+
+    removableDoors: polysLookup.doors.flatMap((doorPoly, doorId) =>
+      doorPoly.meta.optional ? { doorId, wall: Poly.intersect([doorPoly], polysLookup.walls)[0] } : [],
+    ),
+    addableWalls: polysLookup.walls.filter((x) => x.meta.optional === true),
+
+    symbols: symbols.map((sym) => ({
+      ...sym,
+      width: toPrecision(sym.width * s, 6),
+      height: toPrecision(sym.height * s, 6),
+      transform: {
+        ...sym.transform,
+        e: toPrecision(sym.transform.e * s, 6),
+        f: toPrecision(sym.transform.f * s, 6),
+      },
+    })),
+  };
 }
 
 /**

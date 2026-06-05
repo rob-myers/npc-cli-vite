@@ -22,8 +22,8 @@ import { defaultThemeKey, defaultWorldTheme } from "@npc-cli/ui__world/const";
 import {
   createLayout,
   createMapDefFromSavedFile,
-  createSymbolFromSavedFile,
   flattenSymbol,
+  parseSymbolFromSavedFile,
 } from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, error, hashJson, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
@@ -122,7 +122,7 @@ function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType)
 
     const savedFile = symRes.data;
     if (savedFile.type === "symbol") {
-      const symbol = createSymbolFromSavedFile(savedFile);
+      const symbol = parseSymbolFromSavedFile(savedFile);
       assets.symbol[symbol.key] = symbol;
     } else {
       const mapDef = createMapDefFromSavedFile(savedFile);

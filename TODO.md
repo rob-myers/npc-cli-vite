@@ -93,12 +93,18 @@
 
 - ✅ BUG MapEdit map creation i.e. draft/new not appearing before refresh
 
-- BUG obstacles should aggregate height
+- ✅ BUG obstacles should aggregate height
   - couch-and-chair--006
 
-- fix npc moves through door
+- 🚧 doors have meaningful icons
+  - ❌ normal convention for doors
+  - ✅ `decor point label=foo` induces `door.meta.label` per door
+    - must be before door
+  - 🚧 label stateroom -> stateroom related icon
+  - add label to other rooms
+  - icons for other room types
 
-- doors have meaningful icons
+- fix npc moves through door
 
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle

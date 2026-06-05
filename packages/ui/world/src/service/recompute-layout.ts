@@ -22,7 +22,7 @@ import {
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, info, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
 import type { AssetsType } from "../assets.schema";
-import { createLayout, createSymbolFromSavedFile, flattenSymbol } from "./geomorph";
+import { createLayout, flattenSymbol, parseSymbolFromSavedFile } from "./geomorph";
 
 /**
  * - Overlay hull symbols localStorage symbol drafts onto `baseAssets`.
@@ -38,7 +38,7 @@ export function recomputeHullSymbolUsingDrafts(
     if (draft.type !== "symbol" || !isHullSymbolImageKey(draft.key)) {
       continue;
     }
-    const symbol = createSymbolFromSavedFile(draft);
+    const symbol = parseSymbolFromSavedFile(draft);
     assets.symbol[symbol.key] = symbol;
     geomorphKeys.push(symbol.key as StarShipGeomorphKey);
   }
@@ -71,7 +71,7 @@ export function recomputeAllSymbolsFromLocalStorageDrafts(assets: AssetsType): b
     const parsed = jsonParser.pipe(MapEditSavedFileSchema).safeParse(raw);
     if (!parsed.success || parsed.data.type !== "symbol") continue;
 
-    const symbol = createSymbolFromSavedFile(parsed.data);
+    const symbol = parseSymbolFromSavedFile(parsed.data);
     assets.symbol[symbol.key] = symbol;
     changed = true;
   }
