@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "8c0ddce7-acc2-4ffd-9c82-7367ef95b0fc",
@@ -193,7 +193,7 @@
     {
       "id": "d030a697-b194-4079-86ef-b8fcb383cc33",
       "name": "doors",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -202,7 +202,7 @@
         {
           "id": "50f4058b-e508-4b43-8951-5240b220f752",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 475, "f": 187.5},
           "type": "rect",
@@ -212,7 +212,7 @@
         {
           "id": "79218b39-9dbb-4830-bd88-b07a2efdccff",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 478, "f": 233.5},
           "type": "image",
@@ -225,7 +225,7 @@
         {
           "id": "19e083a1-740b-474b-b7d3-a83e2d36bb08",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 482, "f": 233.5},
           "type": "image",
@@ -238,7 +238,7 @@
         {
           "id": "36b57a80-3724-4d6d-b7d5-ef35e0fe71ef",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 472, "f": 182},
           "type": "image",
@@ -251,7 +251,7 @@
         {
           "id": "17783229-5fd3-4013-8770-da0f371e9a6e",
           "name": "door slide=[-1,0]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 214, "f": 176.5},
           "type": "rect",
@@ -261,7 +261,7 @@
         {
           "id": "73076cb6-90ce-4c0c-8041-6cdd3cbef6dd",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 268, "f": 182},
           "type": "image",
@@ -274,7 +274,7 @@
         {
           "id": "e46350ed-2d7d-4278-a3fa-f19bfe98b909",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 268, "f": 178.5},
           "type": "image",
@@ -287,7 +287,7 @@
         {
           "id": "8aae69e9-5321-48cd-aada-74840840b4c7",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 206, "f": 178},
           "type": "image",
@@ -300,7 +300,7 @@
         {
           "id": "86454360-1128-494f-9160-0d2d9e801692",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 206, "f": 181.5},
           "type": "image",
@@ -313,7 +313,7 @@
         {
           "id": "f2a4143a-76c9-4fbe-a8e4-66d2497aab1a",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 188},
           "type": "rect",
@@ -323,7 +323,7 @@
         {
           "id": "8f9a62b6-358f-4676-be43-2e1682443f4b",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 13, "f": 182.5},
           "type": "image",
@@ -336,7 +336,7 @@
         {
           "id": "2b38b78a-0ecc-4cf5-9dbd-9612795e603f",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 1.5, "f": 234},
           "type": "image",
@@ -349,7 +349,7 @@
         {
           "id": "16c05b32-ce35-4870-aded-54486125c844",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": -2.5, "f": 234},
           "type": "image",
@@ -362,7 +362,7 @@
         {
           "id": "011f2cee-8016-49eb-bfa9-f47113f8fad9",
           "name": "door slide=[-1,0]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 128, "f": 147},
           "type": "rect",
@@ -372,7 +372,7 @@
         {
           "id": "6a2afea6-d6cd-4fd7-984d-03e7d778719d",
           "name": "door slide=[1,0]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 308, "f": 147},
           "type": "rect",
@@ -382,7 +382,7 @@
         {
           "id": "11e8c310-a44f-4e62-bb37-6c682e935d65",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 358, "f": 360},
           "type": "image",
@@ -395,7 +395,7 @@
         {
           "id": "283b3b47-e310-4da1-93f1-cf081e8633c8",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 362, "f": 360},
           "type": "image",
@@ -408,7 +408,7 @@
         {
           "id": "0b640094-ade5-4363-9b4d-5f3c63a20ce3",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 370},
           "type": "rect",
@@ -418,7 +418,7 @@
         {
           "id": "da5c2e7a-3296-48b2-a6eb-5016f4d85487",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 250},
           "type": "rect",
@@ -428,7 +428,7 @@
         {
           "id": "3dfbba7b-8b66-48b0-9a24-eafa342da660",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 360},
           "type": "image",
@@ -441,7 +441,7 @@
         {
           "id": "6aba946e-3a83-47df-8224-4c05205276c4",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 360},
           "type": "image",
@@ -454,7 +454,7 @@
         {
           "id": "440e09cd-bcdb-41ea-b822-92cc9be32f97",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 370},
           "type": "rect",
@@ -464,7 +464,7 @@
         {
           "id": "0ecc63a4-d0fa-44f3-8ebe-69031c83c9a7",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 242},
           "type": "image",
@@ -477,7 +477,7 @@
         {
           "id": "044a3876-80ef-4ab5-b44f-d9915541134d",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 242},
           "type": "image",
@@ -490,7 +490,7 @@
         {
           "id": "c3772c73-a93f-4815-94fb-ba486e8bad74",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 250},
           "type": "rect",
@@ -500,7 +500,7 @@
         {
           "id": "78bad6c5-c12d-4ee5-a9f0-afba2c26e2e5",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 172.5, "f": 300},
           "type": "image",
@@ -513,7 +513,7 @@
         {
           "id": "ab1ee4e0-3bea-46e1-8c46-b031b27bde6b",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 172.5, "f": 303.5},
           "type": "image",
@@ -526,7 +526,7 @@
         {
           "id": "8fdabcbf-46e6-412c-b8a0-2a2539e85fd8",
           "name": "door slide=[-1,0]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 128, "f": 297},
           "type": "rect",
@@ -536,9 +536,246 @@
       ]
     },
     {
+      "id": "596b1341-9765-4ebc-b859-7122c402c76a",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "521acaa7-0ee2-4731-9d08-26982a7961b6",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
+          "type": "path",
+          "d": "M 63.2 63 L 68.6 68.6 L 62.2 75.2 L 37.2 106.2 L 16.8 144.2 L 5.08 178.4 L 482 178.4 L 482 182.6 L -3.2 182.08 L 9.8 142 L 23.2 115.2 L 36.6 93.6 L 56.4 70 L 63.2 63 Z",
+          "baseRect": {"width": 480, "height": 540},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
+        },
+        {
+          "id": "3f85148c-9013-4d38-b52d-dde422123af7",
+          "name": "wall dark",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
+          "type": "path",
+          "d": "M 417.6 63 L 412.2 68.6 L 418.6 75.2 L 439.4 100.6 L 457.6 130.4 L 470 160.4 L 476 180.4 L 484 180.4 L 471.2 142.2 L 457.6 115.2 L 444.2 93.6 L 424.4 70 L 417.6 63 Z",
+          "baseRect": {"width": 480, "height": 540},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
+        },
+        {
+          "id": "0ad3a307-79b6-42ce-9495-994afc34419a",
+          "name": "wall dark broad",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -1},
+          "type": "path",
+          "d": "M 476.6 241.223 L 476.582 238.4 L 484 238.4 L 484 241.223 L 483.8 544.423 L 240.2 544.823 L 240 544.823 L -3.4 544.423 L -3.6 243.223 L -3.6 239.023 L 4 243.223 L 8.6 287.023 L 19 322.623 L 35.8 359.623 L 43.596 372.029 L 60 393.648 L 74.335 409.123 L 94.4 426.039 L 117.558 443.286 L 130.816 450.025 L 154.455 461.495 L 174.874 468.667 L 221.652 476.995 L 242.6 477.459 L 274.254 474.957 L 300 469.65 L 334.274 457.671 L 362.306 443.204 L 371.926 436.734 L 390.429 422.576 L 406.831 408.394 L 421.872 391.741 L 434.383 374.906 L 444.6 359.623 L 461.4 322.623 L 471.8 287.023 L 476.6 241.223 Z",
+          "baseRect": {"width": 480, "height": 540},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, -1)"
+        },
+        {
+          "id": "a5c536ce-34c4-4341-ba1b-9b48c08808a3",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 180},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 62.5},
+          "cssTransform": "matrix(1, 0, 0, 1, -2.5, 180)"
+        },
+        {
+          "id": "98573041-d872-4a42-b28e-2078bc7b8f19",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 478, "f": 180},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 62.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 478, 180)"
+        },
+        {
+          "id": "8d745945-6d6a-446f-81db-06321526460f",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 149},
+          "type": "rect",
+          "baseRect": {"width": 62, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 149)"
+        },
+        {
+          "id": "bd2ada93-8e03-4c24-8288-e7c428b9b7f1",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 149},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 32},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 149)"
+        },
+        {
+          "id": "1bc2560e-e82b-46c3-90d3-f9ad75e598e8",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": 149},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 32},
+          "cssTransform": "matrix(1, 0, 0, 1, 178, 149)"
+        },
+        {
+          "id": "f4427af9-65ab-4d04-a710-2388eac242a8",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 149},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 32},
+          "cssTransform": "matrix(1, 0, 0, 1, 358, 149)"
+        },
+        {
+          "id": "f02c0183-f0f9-4f4c-9be2-ca2615eff92a",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 298, "f": 149},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 32},
+          "cssTransform": "matrix(1, 0, 0, 1, 298, 149)"
+        },
+        {
+          "id": "528c757e-6b8a-4e89-9f7a-0fed70413cba",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 298, "f": 149},
+          "type": "rect",
+          "baseRect": {"width": 62, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 298, 149)"
+        },
+        {
+          "id": "6cd62bb9-3265-49fb-9969-387480d1c36a",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 238},
+          "type": "rect",
+          "baseRect": {"width": 122, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 238)"
+        },
+        {
+          "id": "75fbc628-a7a9-4f4a-b9b9-6df145b6b48d",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 300},
+          "type": "rect",
+          "baseRect": {"width": 360, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 300)"
+        },
+        {
+          "id": "439eb533-5125-4a1f-96e2-c4396aecc2ea",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 300},
+          "type": "rect",
+          "baseRect": {"width": 120, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 360, 300)"
+        },
+        {
+          "id": "841c81c0-28fd-45b4-ada8-3a1a127383f8",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 238},
+          "type": "rect",
+          "baseRect": {"width": 122, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 358, 238)"
+        },
+        {
+          "id": "02f2b3cb-a123-45fc-93e6-64682b90cd56",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 240},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 206},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 240)"
+        },
+        {
+          "id": "c1b8537d-718c-4a58-ae0e-9ff938f31c42",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 240},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 206},
+          "cssTransform": "matrix(1, 0, 0, 1, 358, 240)"
+        },
+        {
+          "id": "a8c5c8f1-5e53-438e-8847-689718393f36",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 400, "f": 270},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 32},
+          "cssTransform": "matrix(1, 0, 0, 1, 400, 270)"
+        },
+        {
+          "id": "2ff747e7-e4e5-4263-8c94-4951e0beacd0",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 436, "f": 270},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 32},
+          "cssTransform": "matrix(1, 0, 0, 1, 436, 270)"
+        }
+      ]
+    },
+    {
+      "id": "4fef2e98-5a1c-4b69-82d1-c51c85455adb",
+      "name": "machines",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "ae340bb5-68e2-48b7-953f-766ee413d811",
+          "name": "obstacle cpu y=1 tint=#666",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 14, "f": 79.5},
+          "type": "path",
+          "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
+          "baseRect": {"width": 100, "height": 90},
+          "cssTransform": "matrix(1, 0, 0, 1, 14, 79.5)"
+        },
+        {
+          "id": "cb7b3549-4920-4b63-91f2-2e58cba60ffb",
+          "name": "obstacle cpu y=1 tint=#666",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 466, "f": 80},
+          "type": "path",
+          "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
+          "baseRect": {"width": 100, "height": 90},
+          "cssTransform": "matrix(-1, 0, 0, 1, 466, 80)"
+        }
+      ]
+    },
+    {
       "id": "d13b07f6-877c-4926-abfc-9675ac7b8fe7",
-      "name": "obstacle y=0.81",
-      "locked": false,
+      "name": "obstacle table y=0.81",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
       "type": "path",
@@ -549,7 +786,7 @@
     {
       "id": "101fb0b7-71f8-4ae1-809d-f9bf1f1ad12b",
       "name": "obstacle y=0.8 window-base",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
       "type": "path",
@@ -558,42 +795,9 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
     },
     {
-      "id": "521acaa7-0ee2-4731-9d08-26982a7961b6",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
-      "type": "path",
-      "d": "M 63.2 63 L 68.6 68.6 L 62.2 75.2 L 37.2 106.2 L 16.8 144.2 L 5.08 178.4 L 482 178.4 L 482 182.6 L -3.2 182.08 L 9.8 142 L 23.2 115.2 L 36.6 93.6 L 56.4 70 L 63.2 63 Z",
-      "baseRect": {"width": 480, "height": 540},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
-    },
-    {
-      "id": "3f85148c-9013-4d38-b52d-dde422123af7",
-      "name": "wall dark",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
-      "type": "path",
-      "d": "M 417.6 63 L 412.2 68.6 L 418.6 75.2 L 439.4 100.6 L 457.6 130.4 L 470 160.4 L 476 180.4 L 484 180.4 L 471.2 142.2 L 457.6 115.2 L 444.2 93.6 L 424.4 70 L 417.6 63 Z",
-      "baseRect": {"width": 480, "height": 540},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
-    },
-    {
-      "id": "0ad3a307-79b6-42ce-9495-994afc34419a",
-      "name": "wall dark broad",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -1},
-      "type": "path",
-      "d": "M 476.6 241.223 L 476.582 238.4 L 484 238.4 L 484 241.223 L 483.8 544.423 L 240.2 544.823 L 240 544.823 L -3.4 544.423 L -3.6 243.223 L -3.6 239.023 L 4 243.223 L 8.6 287.023 L 19 322.623 L 35.8 359.623 L 43.596 372.029 L 60 393.648 L 74.335 409.123 L 94.4 426.039 L 117.558 443.286 L 130.816 450.025 L 154.455 461.495 L 174.874 468.667 L 221.652 476.995 L 242.6 477.459 L 274.254 474.957 L 300 469.65 L 334.274 457.671 L 362.306 443.204 L 371.926 436.734 L 390.429 422.576 L 406.831 408.394 L 421.872 391.741 L 434.383 374.906 L 444.6 359.623 L 461.4 322.623 L 471.8 287.023 L 476.6 241.223 Z",
-      "baseRect": {"width": 480, "height": 540},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, -1)"
-    },
-    {
       "id": "0ca27351-81c4-498b-a576-f723b229c739",
       "name": "poly ceil fill=#000000 stroke=#9993 strokeWidth=2",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
       "type": "path",
@@ -602,191 +806,9 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
     },
     {
-      "id": "a5c536ce-34c4-4341-ba1b-9b48c08808a3",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 180},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 62.5},
-      "cssTransform": "matrix(1, 0, 0, 1, -2.5, 180)"
-    },
-    {
-      "id": "98573041-d872-4a42-b28e-2078bc7b8f19",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 478, "f": 180},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 62.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 478, 180)"
-    },
-    {
-      "id": "8d745945-6d6a-446f-81db-06321526460f",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 149},
-      "type": "rect",
-      "baseRect": {"width": 62, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 118, 149)"
-    },
-    {
-      "id": "bd2ada93-8e03-4c24-8288-e7c428b9b7f1",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 149},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 32},
-      "cssTransform": "matrix(1, 0, 0, 1, 118, 149)"
-    },
-    {
-      "id": "1bc2560e-e82b-46c3-90d3-f9ad75e598e8",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": 149},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 32},
-      "cssTransform": "matrix(1, 0, 0, 1, 178, 149)"
-    },
-    {
-      "id": "f4427af9-65ab-4d04-a710-2388eac242a8",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 149},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 32},
-      "cssTransform": "matrix(1, 0, 0, 1, 358, 149)"
-    },
-    {
-      "id": "f02c0183-f0f9-4f4c-9be2-ca2615eff92a",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 298, "f": 149},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 32},
-      "cssTransform": "matrix(1, 0, 0, 1, 298, 149)"
-    },
-    {
-      "id": "528c757e-6b8a-4e89-9f7a-0fed70413cba",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 298, "f": 149},
-      "type": "rect",
-      "baseRect": {"width": 62, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 298, 149)"
-    },
-    {
-      "id": "6cd62bb9-3265-49fb-9969-387480d1c36a",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 238},
-      "type": "rect",
-      "baseRect": {"width": 122, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 238)"
-    },
-    {
-      "id": "75fbc628-a7a9-4f4a-b9b9-6df145b6b48d",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 300},
-      "type": "rect",
-      "baseRect": {"width": 360, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 300)"
-    },
-    {
-      "id": "439eb533-5125-4a1f-96e2-c4396aecc2ea",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 300},
-      "type": "rect",
-      "baseRect": {"width": 120, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 360, 300)"
-    },
-    {
-      "id": "841c81c0-28fd-45b4-ada8-3a1a127383f8",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 238},
-      "type": "rect",
-      "baseRect": {"width": 122, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 358, 238)"
-    },
-    {
-      "id": "02f2b3cb-a123-45fc-93e6-64682b90cd56",
-      "name": "wall",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 240},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 206},
-      "cssTransform": "matrix(1, 0, 0, 1, 118, 240)"
-    },
-    {
-      "id": "c1b8537d-718c-4a58-ae0e-9ff938f31c42",
-      "name": "wall",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 240},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 206},
-      "cssTransform": "matrix(1, 0, 0, 1, 358, 240)"
-    },
-    {
-      "id": "ae340bb5-68e2-48b7-953f-766ee413d811",
-      "name": "obstacle cpu y=1 tint=#666",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 14, "f": 79.5},
-      "type": "path",
-      "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
-      "baseRect": {"width": 100, "height": 90},
-      "cssTransform": "matrix(1, 0, 0, 1, 14, 79.5)"
-    },
-    {
-      "id": "cb7b3549-4920-4b63-91f2-2e58cba60ffb",
-      "name": "obstacle cpu y=1 tint=#666",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 466, "f": 80},
-      "type": "path",
-      "d": "M -2.5 94 L 102.299 93.9096 L 102.5 47.9946 L 50.7351 -4 L 31.5258 20.2736 L 18.6901 39.9746 L 6.81922 65.2476 L -2.5 94 Z",
-      "baseRect": {"width": 100, "height": 90},
-      "cssTransform": "matrix(-1, 0, 0, 1, 466, 80)"
-    },
-    {
-      "id": "a8c5c8f1-5e53-438e-8847-689718393f36",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 400, "f": 270},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 32},
-      "cssTransform": "matrix(1, 0, 0, 1, 400, 270)"
-    },
-    {
-      "id": "2ff747e7-e4e5-4263-8c94-4951e0beacd0",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 436, "f": 270},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 32},
-      "cssTransform": "matrix(1, 0, 0, 1, 436, 270)"
-    },
-    {
       "id": "7af2eddc-c4df-4a64-95c6-9cd05799e7db",
-      "name": "obstacle y=0.6",
-      "locked": false,
+      "name": "obstacle table y=0.6",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -2.5},
       "type": "path",
