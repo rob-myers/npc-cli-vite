@@ -585,7 +585,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const clones = parsed.data.mapEditNodes.flatMap((node) =>
           seen.has(node.id) ? [] : state.cloneNode(node, seen),
         );
-        state.nodes.push(...clones);
+
+        if (state.selectedIds.size === 1) {
+          // append as subsequent sibling
+          const [selectedId] = state.selectedIds;
+          const [, parent] = findNodeById(state.nodes, selectedId);
+          const siblings = parent?.children ?? state.nodes;
+          const idx = siblings.findIndex((n) => n.id === selectedId);
+          siblings.splice(idx + 1, 0, ...clones);
+        } else {
+          state.nodes.push(...clones);
+        }
+
         state.set({ selectedIds: new Set([...getRecursiveNodes(clones)].map((node) => node.id)), selectionBox: null });
       },
       rotateNode(nodeId, deltaDegrees) {
@@ -1105,7 +1116,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           for (const node of list) {
             if (node.id === id) return true;
             if (node.type === "group" && expand(node.children, id)) {
-              if (!node.expanded) { node.expanded = true; state.update(); }
+              if (!node.expanded) {
+                node.expanded = true;
+                state.update();
+              }
               return true;
             }
           }

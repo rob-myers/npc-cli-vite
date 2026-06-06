@@ -373,6 +373,19 @@
           "cssTransform": "matrix(0, 1, -1, 0, -2.5, 234)"
         },
         {
+          "id": "06149ca6-aabd-4769-862f-c641211f1ea6",
+          "name": "decor point label=locker",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 140, "f": 162},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 140, 162)"
+        },
+        {
           "id": "011f2cee-8016-49eb-bfa9-f47113f8fad9",
           "name": "door slide=[-1,0]",
           "locked": true,
@@ -381,6 +394,19 @@
           "type": "rect",
           "baseRect": {"width": 45, "height": 8},
           "cssTransform": "matrix(1, 0, 0, 1, 128, 147)"
+        },
+        {
+          "id": "f709c872-5c29-46ab-a05e-478a67855d69",
+          "name": "decor point label=locker",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 320, "f": 162},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 320, 162)"
         },
         {
           "id": "6a2afea6-d6cd-4fd7-984d-03e7d778719d",
