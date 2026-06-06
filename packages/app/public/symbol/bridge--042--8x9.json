@@ -191,13 +191,26 @@
       ]
     },
     {
+      "id": "ea1bd927-c7b3-436e-bc01-128397f0e0c5",
+      "name": "decor point label=bridge",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 227.5, "f": 116},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 227.5, 116)"
+    },
+    {
       "id": "d030a697-b194-4079-86ef-b8fcb383cc33",
       "name": "doors",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "50f4058b-e508-4b43-8951-5240b220f752",
@@ -416,16 +429,6 @@
           "cssTransform": "matrix(1, 0, 0, 1, 356, 370)"
         },
         {
-          "id": "da5c2e7a-3296-48b2-a6eb-5016f4d85487",
-          "name": "door slide=[0,1]",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 250},
-          "type": "rect",
-          "baseRect": {"width": 8, "height": 42},
-          "cssTransform": "matrix(1, 0, 0, 1, 356, 250)"
-        },
-        {
           "id": "3dfbba7b-8b66-48b0-9a24-eafa342da660",
           "name": "decor quad key=switch",
           "locked": true,
@@ -532,6 +535,36 @@
           "type": "rect",
           "baseRect": {"width": 45, "height": 8},
           "cssTransform": "matrix(1, 0, 0, 1, 128, 297)"
+        },
+        {
+          "id": "838a74b8-2a87-4724-83dc-049dac6150fd",
+          "name": "decor point label=fresher",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 406.5,
+            "f": 251
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 406.5, 251)"
+        },
+        {
+          "id": "da5c2e7a-3296-48b2-a6eb-5016f4d85487",
+          "name": "door slide=[0,1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 250},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 42},
+          "cssTransform": "matrix(1, 0, 0, 1, 356, 250)"
         }
       ]
     },
