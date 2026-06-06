@@ -20,6 +20,7 @@ import {
   defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
+  MAX_DOOR_LABELS,
   MAX_NPCS,
   mapEditSymbolSavedEvent,
 } from "../const";
@@ -93,6 +94,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         height: 1,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64 }),
+      texDoorLabel: new TexArray({ ctKey: "door-labels", width: 256, height: 512, numTextures: MAX_DOOR_LABELS }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 256, height: 256, numTextures: MAX_NPCS }),
 
@@ -367,6 +369,7 @@ export type State = {
   texCeil: TexArray;
   texObs: TexArray;
   texDecor: TexArray;
+  texDoorLabel: TexArray;
   texNpcLabel: TexArray;
   texSkin: TexArray;
 
