@@ -1,13 +1,13 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, instanceIndex, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
+import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
-import { createPanelAtlas } from "../service/texture";
+import { drawDoorLabelLayer } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -254,6 +254,20 @@ export default function Doors() {
 
         return true;
       },
+      buildLabelTextures() {
+        const labelToLayer = new Map<string, number>();
+        const arr = new Float32Array(w.gms.length << 8);
+        for (const { instanceId, connector } of Object.values(state.byKey)) {
+          const label = (connector.meta.label as string | undefined) ?? "todo";
+          if (!labelToLayer.has(label)) {
+            const idx = labelToLayer.size;
+            labelToLayer.set(label, idx);
+            drawDoorLabelLayer(w.texDoorLabel, idx, label);
+          }
+          arr[instanceId] = labelToLayer.get(label) ?? 0;
+        }
+        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(arr, 1));
+      },
       onTick(delta: number) {
         if (state.animTargets.size === 0) return;
         let changed = false;
@@ -282,6 +296,7 @@ export default function Doors() {
   useEffect(() => {
     state.buildByKey();
     state.positionInstances();
+    state.buildLabelTextures();
   }, [w.mapKey, w.hash]);
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
@@ -289,7 +304,6 @@ export default function Doors() {
     const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
     const top = new THREE.MeshStandardNodeMaterial({ color: "#000", metalness: 0.6, roughness: 0.3 });
 
-    const { atlas, count } = createPanelAtlas();
     const panelOpts = { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide, transparent: false, depthWrite: true };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
@@ -304,11 +318,11 @@ export default function Doors() {
       mat.outputNode = w.view.withPickOutput(PICK_TYPE.door);
     }
 
-    const texLayer = instanceIndex.mod(int(count));
+    const texLayer = attribute<"float">("doorLabelLayer", "float").toInt();
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
-    front.colorNode = texture(atlas, vec2(uv().x.mul(cs).add(frontOffset), uv().y)).depth(texLayer);
+    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y)).depth(texLayer);
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
-    back.colorNode = texture(atlas, vec2(uv().x.mul(cs).add(backOffset), uv().y)).depth(texLayer);
+    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y)).depth(texLayer);
 
     return [edge, edge, top, edge, front, back];
   }, []);
@@ -333,6 +347,7 @@ export type State = {
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
   buildByKey: () => void;
+  buildLabelTextures: () => void;
   cancelClose: (door: Geomorph.DoorState) => void;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {

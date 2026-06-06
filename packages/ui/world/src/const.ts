@@ -104,6 +104,7 @@ export const npcDefaultBubbleHeight = 1.8;
 export const npcLabelHeight = 1.6 / npcScale;
 
 export const MAX_NPCS = 256;
+export const MAX_DOOR_LABELS = 32;
 
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;

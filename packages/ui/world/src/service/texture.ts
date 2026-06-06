@@ -21,30 +21,8 @@ import type { TexArray } from "./tex-array";
 const texW = 256;
 const texH = 512;
 
-export function createPanelAtlas() {
-  const count = logos.length;
-  const data = new Uint8Array(texW * texH * 4 * count);
-
-  // draw base panel once, then stamp each logo variant
-  const base = drawBasePanel();
-  for (let i = 0; i < count; i++) {
-    const canvas = document.createElement("canvas");
-    canvas.width = texW;
-    canvas.height = texH;
-    const ct = canvas.getContext("2d") as CanvasRenderingContext2D;
-    ct.drawImage(base, 0, 0);
-    drawLogo(ct, logos[i]);
-    data.set(ct.getImageData(0, 0, texW, texH).data, i * texW * texH * 4);
-  }
-
-  const atlas = new THREE.DataArrayTexture(data, texW, texH, count);
-  atlas.colorSpace = THREE.SRGBColorSpace;
-  atlas.needsUpdate = true;
-  return { atlas, count };
-}
-
-/** Draw the shared door panel (everything except the per-door logo) */
-function drawBasePanel() {
+/** Draw the shared door panel (everything except the per-door label) */
+function drawDoorBasePanel() {
   const canvas = document.createElement("canvas");
   canvas.width = texW;
   canvas.height = texH;
@@ -63,15 +41,15 @@ function drawBasePanel() {
   ct.fillStyle = grad;
   ct.fillRect(0, 0, w, h);
 
-  // fine horizontal score lines
-  ct.strokeStyle = "rgba(160,180,200,0.2)";
-  ct.lineWidth = 1;
-  for (let y = 8; y < h; y += 12) {
-    ct.beginPath();
-    ct.moveTo(8, y);
-    ct.lineTo(w - 8, y);
-    ct.stroke();
-  }
+  // // fine horizontal score lines
+  // ct.strokeStyle = "rgba(160,180,200,0.2)";
+  // ct.lineWidth = 1;
+  // for (let y = 8; y < h; y += 12) {
+  //   ct.beginPath();
+  //   ct.moveTo(8, y);
+  //   ct.lineTo(w - 8, y);
+  //   ct.stroke();
+  // }
 
   // 4 recessed panels with bevels
   for (const p of panels) {
@@ -152,29 +130,6 @@ function drawBasePanel() {
   return canvas;
 }
 
-/** Draw a logo with glow onto a panel canvas (in top half of door) */
-function drawLogo(ct: CanvasRenderingContext2D, logo: LogoFn) {
-  // top half of door = canvas panels 2-3 (DataArrayTexture flipY=false)
-  const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
-  const logoR = Math.min(panels[2].h, texW - panelInset * 2) * 0.35;
-
-  // circular border
-  ct.strokeStyle = "rgba(180,220,255,0.5)";
-  ct.lineWidth = 2.5;
-  ct.beginPath();
-  ct.arc(texW / 2, logoY, logoR + 10, 0, Math.PI * 2);
-  ct.stroke();
-
-  // glow pass
-  ct.save();
-  ct.shadowColor = "rgba(100,180,255,0.7)";
-  ct.shadowBlur = 14;
-  logo(ct, texW / 2, logoY, logoR);
-  ct.restore();
-  // crisp pass
-  logo(ct, texW / 2, logoY, logoR);
-}
-
 // --- panel layout constants ---
 
 const panelInset = 14;
@@ -185,190 +140,6 @@ const panels = [
   { y: texH * 0.74 + 8, h: texH * 0.24 - 8 },
 ];
 const cornerLen = 20;
-
-// --- logo drawing ---
-
-const logoColor = "#ffffff";
-const logoLineWidth = 8;
-
-type LogoFn = (ct: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
-
-function icon(fn: (ct: CanvasRenderingContext2D) => void): LogoFn {
-  return (ct) => {
-    ct.strokeStyle = logoColor;
-    ct.fillStyle = logoColor;
-    ct.lineWidth = logoLineWidth;
-    ct.lineCap = "round";
-    ct.lineJoin = "round";
-    fn(ct);
-  };
-}
-
-const logos: LogoFn[] = [
-  // stateroom / bedroom
-  (ct, cx, cy, r) =>
-    icon(() => {
-      ct.strokeRect(cx - r * 0.85, cy - r * 0.3, r * 1.7, r * 1.0);
-      ct.beginPath();
-      ct.roundRect(cx - r * 0.7, cy - r * 0.15, r * 0.55, r * 0.45, 4);
-      ct.stroke();
-      ct.beginPath();
-      ct.moveTo(cx - r * 0.85, cy - r * 0.3);
-      ct.lineTo(cx - r * 0.85, cy - r * 0.7);
-      ct.lineTo(cx + r * 0.85, cy - r * 0.7);
-      ct.lineTo(cx + r * 0.85, cy - r * 0.3);
-      ct.stroke();
-      ct.beginPath();
-      ct.moveTo(cx - r * 0.85, cy + r * 0.7);
-      ct.lineTo(cx - r * 0.85, cy + r * 0.85);
-      ct.moveTo(cx + r * 0.85, cy + r * 0.7);
-      ct.lineTo(cx + r * 0.85, cy + r * 0.85);
-      ct.stroke();
-    })(ct, cx, cy, r),
-  // office — desk with monitor
-  (ct, cx, cy, r) =>
-    icon(() => {
-      ct.strokeRect(cx - r * 0.5, cy - r * 0.8, r * 1.0, r * 0.7);
-      ct.beginPath();
-      ct.moveTo(cx, cy - r * 0.1);
-      ct.lineTo(cx, cy + r * 0.15);
-      ct.moveTo(cx - r * 0.3, cy + r * 0.15);
-      ct.lineTo(cx + r * 0.3, cy + r * 0.15);
-      ct.stroke();
-      ct.beginPath();
-      ct.moveTo(cx - r * 0.9, cy + r * 0.4);
-      ct.lineTo(cx + r * 0.9, cy + r * 0.4);
-      ct.moveTo(cx - r * 0.8, cy + r * 0.4);
-      ct.lineTo(cx - r * 0.8, cy + r * 0.85);
-      ct.moveTo(cx + r * 0.8, cy + r * 0.4);
-      ct.lineTo(cx + r * 0.8, cy + r * 0.85);
-      ct.stroke();
-    })(ct, cx, cy, r),
-  // study — open book
-  (ct, cx, cy, r) =>
-    icon(() => {
-      ct.beginPath();
-      ct.moveTo(cx, cy - r * 0.6);
-      ct.quadraticCurveTo(cx - r * 0.9, cy - r * 0.5, cx - r * 0.9, cy + r * 0.4);
-      ct.lineTo(cx, cy + r * 0.3);
-      ct.stroke();
-      ct.beginPath();
-      ct.moveTo(cx, cy - r * 0.6);
-      ct.quadraticCurveTo(cx + r * 0.9, cy - r * 0.5, cx + r * 0.9, cy + r * 0.4);
-      ct.lineTo(cx, cy + r * 0.3);
-      ct.stroke();
-      ct.beginPath();
-      ct.moveTo(cx, cy - r * 0.6);
-      ct.lineTo(cx, cy + r * 0.3);
-      ct.stroke();
-      ct.lineWidth = 2;
-      for (const ly of [0.15, 0.35, 0.55]) {
-        ct.beginPath();
-        ct.moveTo(cx - r * 0.7, cy - r * 0.3 + r * ly);
-        ct.lineTo(cx - r * 0.15, cy - r * 0.25 + r * ly);
-        ct.stroke();
-      }
-    })(ct, cx, cy, r),
-  // deck / bridge — ship wheel
-  (ct, cx, cy, r) =>
-    icon(() => {
-      ct.beginPath();
-      ct.arc(cx, cy, r * 0.8, 0, Math.PI * 2);
-      ct.stroke();
-      ct.beginPath();
-      ct.arc(cx, cy, r * 0.25, 0, Math.PI * 2);
-      ct.stroke();
-      for (let i = 0; i < 8; i++) {
-        const a = (Math.PI / 4) * i;
-        ct.beginPath();
-        ct.moveTo(cx + r * 0.25 * Math.cos(a), cy + r * 0.25 * Math.sin(a));
-        ct.lineTo(cx + r * 0.8 * Math.cos(a), cy + r * 0.8 * Math.sin(a));
-        ct.stroke();
-      }
-    })(ct, cx, cy, r),
-  // engineering — gear/cog
-  (ct, cx, cy, r) =>
-    icon(() => {
-      const teeth = 8;
-      const outer = r * 0.85;
-      const inner = r * 0.6;
-      ct.beginPath();
-      for (let i = 0; i < teeth; i++) {
-        const a1 = ((Math.PI * 2) / teeth) * i - Math.PI / 2;
-        const a2 = a1 + (Math.PI / teeth) * 0.5;
-        const a3 = a1 + Math.PI / teeth;
-        const a4 = a1 + (Math.PI / teeth) * 1.5;
-        ct.lineTo(cx + outer * Math.cos(a1), cy + outer * Math.sin(a1));
-        ct.lineTo(cx + outer * Math.cos(a2), cy + outer * Math.sin(a2));
-        ct.lineTo(cx + inner * Math.cos(a3), cy + inner * Math.sin(a3));
-        ct.lineTo(cx + inner * Math.cos(a4), cy + inner * Math.sin(a4));
-      }
-      ct.closePath();
-      ct.stroke();
-      ct.beginPath();
-      ct.arc(cx, cy, r * 0.2, 0, Math.PI * 2);
-      ct.stroke();
-    })(ct, cx, cy, r),
-  // medical — cross
-  (ct, cx, cy, r) =>
-    icon(() => {
-      const a = r * 0.3;
-      ct.beginPath();
-      ct.moveTo(cx - a, cy - r * 0.8);
-      ct.lineTo(cx + a, cy - r * 0.8);
-      ct.lineTo(cx + a, cy - a);
-      ct.lineTo(cx + r * 0.8, cy - a);
-      ct.lineTo(cx + r * 0.8, cy + a);
-      ct.lineTo(cx + a, cy + a);
-      ct.lineTo(cx + a, cy + r * 0.8);
-      ct.lineTo(cx - a, cy + r * 0.8);
-      ct.lineTo(cx - a, cy + a);
-      ct.lineTo(cx - r * 0.8, cy + a);
-      ct.lineTo(cx - r * 0.8, cy - a);
-      ct.lineTo(cx - a, cy - a);
-      ct.closePath();
-      ct.stroke();
-    })(ct, cx, cy, r),
-  // mess / galley — fork and knife
-  (ct, cx, cy, r) =>
-    icon(() => {
-      const fx = cx - r * 0.3;
-      ct.beginPath();
-      ct.moveTo(fx, cy + r * 0.8);
-      ct.lineTo(fx, cy - r * 0.1);
-      ct.stroke();
-      for (const dx of [-r * 0.15, 0, r * 0.15]) {
-        ct.beginPath();
-        ct.moveTo(fx + dx, cy - r * 0.1);
-        ct.lineTo(fx + dx, cy - r * 0.7);
-        ct.stroke();
-      }
-      const kx = cx + r * 0.3;
-      ct.beginPath();
-      ct.moveTo(kx, cy + r * 0.8);
-      ct.lineTo(kx, cy - r * 0.1);
-      ct.stroke();
-      ct.beginPath();
-      ct.moveTo(kx, cy - r * 0.1);
-      ct.lineTo(kx + r * 0.18, cy - r * 0.5);
-      ct.lineTo(kx, cy - r * 0.75);
-      ct.stroke();
-    })(ct, cx, cy, r),
-  // bathroom / toilet
-  (ct, cx, cy, r) =>
-    icon(() => {
-      ct.beginPath();
-      ct.ellipse(cx, cy + r * 0.1, r * 0.5, r * 0.65, 0, 0, Math.PI * 2);
-      ct.stroke();
-      ct.strokeRect(cx - r * 0.45, cy - r * 0.85, r * 0.9, r * 0.35);
-      ct.beginPath();
-      ct.arc(cx, cy - r * 0.67, r * 0.08, 0, Math.PI * 2);
-      ct.fill();
-      ct.beginPath();
-      ct.ellipse(cx, cy + r * 0.1, r * 0.35, r * 0.5, 0, 0, Math.PI * 2);
-      ct.stroke();
-    })(ct, cx, cy, r),
-];
 
 // --- floor texture ---
 
@@ -598,6 +369,33 @@ function loadSvgImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+let basePanelCanvas: HTMLCanvasElement | null = null;
+
+export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label: string) {
+  const { ct } = texArray;
+  ct.clearRect(0, 0, texW, texH);
+  ct.drawImage((basePanelCanvas ??= drawDoorBasePanel()), 0, 0);
+
+  const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
+  ct.save();
+  ct.translate(texW / 2, logoY);
+  ct.scale(1, -1);
+  ct.shadowColor = "rgba(255,255,255,0.7)";
+  ct.shadowBlur = 0;
+  ct.strokeStyle = "black";
+  ct.lineWidth = 0.25;
+  ct.fillStyle = "white";
+  ct.font = "32px monospace";
+  ct.textAlign = "center";
+  ct.textBaseline = "middle";
+  ct.letterSpacing = "1px";
+  ct.fillText(label, 0, 0);
+  ct.strokeText(label, 0, 0);
+  ct.restore();
+
+  texArray.updateIndex(layerIndex);
 }
 
 export function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) {

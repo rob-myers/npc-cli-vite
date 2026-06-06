@@ -100,9 +100,9 @@
   - ❌ normal convention for doors
   - ✅ `decor point label=foo` induces `door.meta.label` per door
     - must be before door
-  - 🚧 label stateroom -> stateroom related icon
-  - add label to other rooms
-  - icons for other room types
+  - ✅ label stateroom -> stateroom related icon
+  - 🚧 add label to other rooms
+  - 🚧 icons for other room types
 
 - fix npc moves through door
 
