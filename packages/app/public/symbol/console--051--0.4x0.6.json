@@ -21,10 +21,10 @@
       "name": "obstacle chair h=0.3 inset=2",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": -0.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1.5, "f": -0.5},
       "type": "rect",
-      "baseRect": {"width": 27, "height": 30.5},
-      "cssTransform": "matrix(1, 0, 0, 1, 2, -0.5)"
+      "baseRect": {"width": 27.5, "height": 31},
+      "cssTransform": "matrix(1, 0, 0, 1, 1.5, -0.5)"
     },
     {
       "id": "db7293a8-2aa6-4564-b02b-10ca8aa3594d",
