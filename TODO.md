@@ -96,14 +96,21 @@
 - ✅ BUG obstacles should aggregate height
   - couch-and-chair--006
 
-- 🚧 doors have meaningful icons
+- ✅ doors have meaningful labels
   - ❌ normal convention for doors
   - ✅ `decor point label=foo` induces `door.meta.label` per door
     - must be before door
   - ✅ label stateroom -> stateroom related icon
   - 🔔 symbols should not be between `decor point label={label}` and doors
-  - 🚧 add label to other rooms
-  - 🚧 icons for other room types
+  - ✅ add labels to all rooms in 301
+  - ✅ add labels to all rooms in 101 (only one atm)
+
+- 🚧 BUG MapEdit: on move multiple nodes their order changes
+
+- BUG MapEdit: on start drag should not select text
+
+- small-map-0 -> 301-only
+  - also clean up other map names
 
 - fix npc moves through door
 
