@@ -169,6 +169,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       containerEl: null,
       dragEl: null,
       expandTimer: null as ReturnType<typeof setTimeout> | null,
+      lastClickedNode: null as { id: string; time: number } | null,
       svgEl: null,
       wrapperEl: null,
 
@@ -948,6 +949,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.scrollInspectorNodeIntoView(nodeId);
         }
 
+        // Double-click: expand any collapsed ancestor groups in the inspector
+        const now = Date.now();
+        if (state.lastClickedNode?.id === nodeId && now - state.lastClickedNode.time < 300) {
+          state.expandCollapsedAncestors(nodeId);
+          state.lastClickedNode = null;
+        } else {
+          state.lastClickedNode = { id: nodeId, time: now };
+        }
+
         state.startDragSelection(e);
       },
       onSvgPointerMove(e) {
@@ -1089,6 +1099,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const wasMoveSelection = state.dragEl?.type === "move-selection";
         state.dragEl = null;
         if (wasMoveSelection) state.applyBoundsOffset();
+      },
+      expandCollapsedAncestors(nodeId: string) {
+        function expand(list: MapNode[], id: string): boolean {
+          for (const node of list) {
+            if (node.id === id) return true;
+            if (node.type === "group" && expand(node.children, id)) {
+              if (!node.expanded) { node.expanded = true; state.update(); }
+              return true;
+            }
+          }
+          return false;
+        }
+        expand(state.nodes, nodeId);
       },
       scrollInspectorNodeIntoView(nodeId) {
         const inspectorParentEl = state.containerEl?.parentElement;
@@ -1732,7 +1755,9 @@ export type State = {
   redoStack: HistoryEntry[];
   svgEl: SVGSVGElement | null;
   wrapperEl: HTMLDivElement | null;
+  expandCollapsedAncestors: (nodeId: string) => void;
   expandTimer: ReturnType<typeof setTimeout> | null;
+  lastClickedNode: { id: string; time: number } | null;
   dragEl:
     | null
     | {
