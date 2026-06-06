@@ -535,12 +535,18 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.deleteNodes(Array.from(state.selectedIds));
         state.set({ selectedIds: new Set(), selectionBox: null });
       },
+      insertAfterNode(afterId: string, nodes: MapNode[]) {
+        const [, parent] = findNodeById(state.nodes, afterId);
+        const siblings = parent?.children ?? state.nodes;
+        const idx = siblings.findIndex((n) => n.id === afterId);
+        siblings.splice(idx + 1, 0, ...nodes);
+      },
       duplicateNode(rootNodeId, seenDuringClone) {
         if (state.isReadOnly()) return null;
-        const [node, parent] = findNodeById(state.nodes, rootNodeId);
+        const [node] = findNodeById(state.nodes, rootNodeId);
         if (!node) return null;
         const clone = state.cloneNode(node, seenDuringClone);
-        (parent?.children ?? state.nodes).push(clone);
+        state.insertAfterNode(rootNodeId, [clone]);
         return clone;
       },
       duplicateSelected() {
@@ -587,12 +593,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         );
 
         if (state.selectedIds.size === 1) {
-          // append as subsequent sibling
           const [selectedId] = state.selectedIds;
-          const [, parent] = findNodeById(state.nodes, selectedId);
-          const siblings = parent?.children ?? state.nodes;
-          const idx = siblings.findIndex((n) => n.id === selectedId);
-          siblings.splice(idx + 1, 0, ...clones);
+          state.insertAfterNode(selectedId, clones);
         } else {
           state.nodes.push(...clones);
         }
@@ -1846,6 +1848,7 @@ export type State = {
   redo: () => void;
   cloneNode: (node: MapNode, seenDuringClone?: Set<string>) => MapNode;
   /** Must manually update state to see changes. */
+  insertAfterNode: (afterId: string, nodes: MapNode[]) => void;
   duplicateNode: (rootNodeId: string, seenDuringClone?: Set<string>) => MapNode | null;
   duplicateSelected: () => void;
   ensureSelectionDescendants: (selectedIds: Set<string>) => Set<MapNode>;
