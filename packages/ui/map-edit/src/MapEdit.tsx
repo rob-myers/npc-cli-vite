@@ -1887,7 +1887,6 @@ function SelectedImageNodeUI({ node, state }: { node: ImageMapNode; state: UseSt
           value={node.offset.x}
           onChange={(e) => {
             node.offset.x = Number(e.target.value) || 0;
-            console.log("🚧");
             node.cssTransform = computeNodeCssTransform(node);
             state.update();
           }}
