@@ -95,7 +95,7 @@ export const MAX_OBSTACLE_SKIRT_INSTANCES = 2048;
 /**
  * A decor quad is represented as a cuboid with single textured face.
  */
-export const MAX_DECOR_QUAD_INSTANCES = 512;
+export const MAX_DECOR_QUAD_INSTANCES = 1024;
 
 export const npcScale = 0.7;
 

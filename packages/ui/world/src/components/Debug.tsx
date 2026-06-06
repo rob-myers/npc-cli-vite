@@ -128,7 +128,7 @@ export function Debug() {
         for (const gm of w.gms) {
           for (const decor of gm.decor) {
             if (decor.type !== "point" || decor.meta.on !== true) continue;
-            const imgKey = w.decor.decorPointImgKey(decor.meta);
+            const imgKey = w.decor.getDecorPointImgKey(decor);
             const entry = w.sheets.decor[imgKey];
             if (!entry) {
               count++;
