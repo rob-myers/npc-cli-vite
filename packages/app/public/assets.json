@@ -28605,7 +28605,7 @@
       "floor": {
         "hullFill": "#444",
         "navStroke": "#000c",
-        "patternFill": "#666",
+        "patternFill": "#222",
         "tileStroke": "#0001"
       },
       "walls": {"color": "#000", "opacity": 0.3}
