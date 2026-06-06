@@ -740,7 +740,7 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
           meta.obstacleId = obstacleId;
         }
       }
-      roomLabel = meta.label; // expect at most one `decor point label=foo`
+      roomLabel = typeof meta.label === "string" ? meta.label : roomLabel;
     }
 
     if (meta.obstacle === true) {
