@@ -409,6 +409,19 @@
           "cssTransform": "matrix(0.5, 0, 0, 0.5, 320, 162)"
         },
         {
+          "id": "1707348a-2cb9-49c7-a27f-422df7b239c3",
+          "name": "decor point label=bridge",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 230, "f": 234},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 230, 234)"
+        },
+        {
           "id": "6a2afea6-d6cd-4fd7-984d-03e7d778719d",
           "name": "door slide=[1,0]",
           "locked": true,
@@ -443,6 +456,19 @@
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, 1, 1, 0, 362, 360)"
+        },
+        {
+          "id": "ac4e4c9a-d688-4208-bfab-3de478e73eb8",
+          "name": "decor point label=briefing",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 230, "f": 368},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 230, 368)"
         },
         {
           "id": "0b640094-ade5-4363-9b4d-5f3c63a20ce3",
