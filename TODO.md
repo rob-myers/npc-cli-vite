@@ -101,6 +101,7 @@
   - ✅ `decor point label=foo` induces `door.meta.label` per door
     - must be before door
   - ✅ label stateroom -> stateroom related icon
+  - 🔔 symbols should not be between `decor point label={label}` and doors
   - 🚧 add label to other rooms
   - 🚧 icons for other room types
 
