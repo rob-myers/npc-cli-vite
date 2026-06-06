@@ -342,7 +342,7 @@ export function WorldMenu() {
                     className="justify-center"
                     isActive={(item) => {
                       switch (item) {
-                        case "View Pick":
+                        case "Pick":
                           return w.view?.objectPick.value === 1;
                         case "Post FX":
                           return w.view?.postProcessing ?? true;
@@ -360,7 +360,7 @@ export function WorldMenu() {
                     }}
                     onToggle={(item) => {
                       switch (item) {
-                        case "View Pick":
+                        case "Pick":
                           w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
                           w.view.forceUpdate();
                           break;
@@ -486,7 +486,7 @@ const themeEditorStorageKey = "world-theme-editor-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
 const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
 const debugItems = [
-  "View Pick",
+  "Pick",
   "Post FX",
   "Room Hit",
   "Graphs",
