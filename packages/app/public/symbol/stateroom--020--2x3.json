@@ -19,7 +19,7 @@
     {
       "id": "9e531b08-b6dc-4ee5-92ad-10781d0b44d9",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -28,7 +28,7 @@
         {
           "id": "8994755e-b6cb-499e-8368-bf798916e472",
           "name": "console--051--0.4x0.6 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0.9397,
@@ -47,7 +47,7 @@
         {
           "id": "6f3b382f-cc47-4812-95eb-b5da67d5845d",
           "name": "console--051--0.4x0.6 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0.9397,
@@ -66,7 +66,7 @@
         {
           "id": "5c5d355a-6ff9-42f5-9456-0d274bf062ed",
           "name": "bed--003--1x1.6 y=1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 1, "f": 0.5},
           "type": "symbol",
@@ -78,7 +78,7 @@
         {
           "id": "b5e98aac-869a-4e53-901d-30b624a8bc04",
           "name": "extra--004--desk--0.5x1 y=0.9",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 120.5},
           "type": "symbol",
@@ -90,7 +90,7 @@
         {
           "id": "b4867e3f-a9b2-4bda-a435-eb9151dd590c",
           "name": "extra--003--chair--0.25x0.25 y=0.7",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 33.5, "f": 140.5},
           "type": "symbol",
@@ -104,7 +104,7 @@
     {
       "id": "d8e69382-3c19-4ab7-941c-302c4076519c",
       "name": "decor point label=stateroom",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 74.5, "f": 145.5},
       "type": "image",
@@ -117,16 +117,16 @@
     {
       "id": "c3d35fb1-3c77-4f46-a4c1-cba8ba597eac",
       "name": "doors",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "bc0b04d8-9e34-45e0-bb1c-c8dc1f873af2",
           "name": "door slide=[0,1]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 128},
           "type": "rect",
@@ -136,7 +136,7 @@
         {
           "id": "a8dbaa98-800f-4be7-ba7c-5e55f4fac196",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 120},
           "type": "image",
@@ -149,7 +149,7 @@
         {
           "id": "df61d36f-3eaf-4f63-9993-872c7971f293",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 122, "f": 126},
           "type": "image",
@@ -162,44 +162,55 @@
       ]
     },
     {
-      "id": "6cb6a8a3-1216-471b-bb47-5fbb871e8a3e",
-      "name": "wall",
-      "locked": false,
+      "id": "b4d6b224-2ed8-42cf-8280-d93c9db3ec56",
+      "name": "walls",
+      "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 178},
-      "type": "rect",
-      "baseRect": {"width": 122, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, 178)"
-    },
-    {
-      "id": "139b5cb9-717b-453c-9b2b-d17e0728529f",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -2},
-      "type": "rect",
-      "baseRect": {"width": 122, "height": 4},
-      "cssTransform": "matrix(1, 0, 0, 1, 0, -2)"
-    },
-    {
-      "id": "758b483f-0105-44f9-863f-25b70a3f617c",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 182},
-      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
-    },
-    {
-      "id": "6fec15c1-ee82-415d-a6be-9bb4558e6557",
-      "name": "wall",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
-      "type": "rect",
-      "baseRect": {"width": 4, "height": 182},
-      "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "6cb6a8a3-1216-471b-bb47-5fbb871e8a3e",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 178},
+          "type": "rect",
+          "baseRect": {"width": 122, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 178)"
+        },
+        {
+          "id": "139b5cb9-717b-453c-9b2b-d17e0728529f",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 122, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, -2)"
+        },
+        {
+          "id": "758b483f-0105-44f9-863f-25b70a3f617c",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 182},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "6fec15c1-ee82-415d-a6be-9bb4558e6557",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 182},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+        }
+      ]
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
