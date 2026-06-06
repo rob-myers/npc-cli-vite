@@ -95,7 +95,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           const ids = source.data.ids as string[];
           const targetEdge = dropInside && isGroup ? "inside" : edge;
           if (targetEdge === "top" || targetEdge === "bottom" || targetEdge === "inside") {
-            ids.forEach((srcId) => root.moveNode(srcId, id, targetEdge));
+            root.moveNodes(ids, id, targetEdge);
           }
         },
       }),

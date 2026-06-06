@@ -555,11 +555,49 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         state.pushHistory();
         const seenDuringClone = new Set<string>();
         const duplicatedIds = new Set<string>();
-        for (const id of state.selectedIds) {
-          if (seenDuringClone.has(id)) continue;
+
+        if (state.selectedIds.size === 1) {
+          const [id] = state.selectedIds;
           const clone = state.duplicateNode(id, seenDuringClone);
           if (clone) getRecursiveNodes([clone]).forEach(({ id }) => duplicatedIds.add(id));
+        } else {
+          // Check if all selected share the same parent
+          const parentIds = new Set<string | null>();
+          for (const id of state.selectedIds) {
+            const [, parent] = findNodeById(state.nodes, id);
+            parentIds.add(parent?.id ?? null);
+          }
+
+          if (parentIds.size === 1) {
+            // All siblings: sort by position, clone all, insert after last
+            const [, commonParent] = findNodeById(state.nodes, [...state.selectedIds][0]);
+            const siblings = commonParent?.children ?? state.nodes;
+            const sorted = [...state.selectedIds].sort(
+              (a, b) => siblings.findIndex((n) => n.id === a) - siblings.findIndex((n) => n.id === b),
+            );
+            const clones: MapNode[] = [];
+            for (const id of sorted) {
+              if (seenDuringClone.has(id)) continue;
+              const [node] = findNodeById(state.nodes, id);
+              if (!node) continue;
+              const clone = state.cloneNode(node, seenDuringClone);
+              clones.push(clone);
+              getRecursiveNodes([clone]).forEach(({ id }) => duplicatedIds.add(id));
+            }
+            state.insertAfterNode(sorted[sorted.length - 1], clones);
+          } else {
+            // Mixed parents: append all to end
+            for (const id of state.selectedIds) {
+              if (seenDuringClone.has(id)) continue;
+              const [node] = findNodeById(state.nodes, id);
+              if (!node) continue;
+              const clone = state.cloneNode(node, seenDuringClone);
+              state.nodes.push(clone);
+              getRecursiveNodes([clone]).forEach(({ id }) => duplicatedIds.add(id));
+            }
+          }
         }
+
         state.set({ selectedIds: duplicatedIds, selectionBox: null });
       },
       ensureSelectionDescendants(selectedIds) {
@@ -691,6 +729,28 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
+      },
+      moveNodes(srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside") {
+        if (state.isReadOnly()) return;
+        const ordered: MapNode[] = [];
+        traverseNodesSync(state.nodes, (node) => {
+          if (srcIds.includes(node.id) && !findNodeById([node], dstId)[0]) ordered.push(node);
+        });
+        if (!ordered.length) return;
+        const [dstNode, dstParent] = findNodeById(state.nodes, dstId);
+        if (!dstNode) return;
+        for (const node of ordered) {
+          const [, srcParent] = findNodeById(state.nodes, node.id);
+          removeNodeFromParent(srcParent?.children ?? state.nodes, node.id);
+        }
+        if (edge === "inside" && dstNode.type === "group") {
+          dstNode.children.push(...ordered);
+        } else {
+          const siblings = dstParent?.children ?? state.nodes;
+          const idx = siblings.findIndex((n) => n.id === dstId);
+          siblings.splice(edge === "top" ? idx : idx + 1, 0, ...ordered);
+        }
+        state.update();
       },
       moveNode(srcId, dstId, edge) {
         if (state.isReadOnly()) return;
@@ -1856,6 +1916,7 @@ export type State = {
   pasteFromClipboard: () => Promise<void>;
   rotateNode: (nodeId: string, degrees: -90 | 90 | -5 | 5) => void;
   rotateSelected: (degrees: -90 | 90 | -5 | 5) => void;
+  moveNodes: (srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside") => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
