@@ -34,12 +34,12 @@ function drawDoorBasePanel() {
   ct.fillRect(0, 0, w, h);
 
   // vertical sheen
-  const grad = ct.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, "rgba(120,150,180,0.15)");
-  grad.addColorStop(0.5, "rgba(0,0,0,0)");
-  grad.addColorStop(1, "rgba(0,0,0,0.2)");
-  ct.fillStyle = grad;
-  ct.fillRect(0, 0, w, h);
+  // const grad = ct.createLinearGradient(0, 0, 0, h);
+  // grad.addColorStop(0, "rgba(120,150,180,0.15)");
+  // grad.addColorStop(0.5, "rgba(0,0,0,0)");
+  // grad.addColorStop(1, "rgba(0,0,0,0.2)");
+  // ct.fillStyle = grad;
+  // ct.fillRect(0, 0, w, h);
 
   // // fine horizontal score lines
   // ct.strokeStyle = "rgba(160,180,200,0.2)";
@@ -53,14 +53,14 @@ function drawDoorBasePanel() {
 
   // 4 recessed panels with bevels
   for (const p of panels) {
-    ct.fillStyle = "rgba(255,255,255,0.06)";
+    ct.fillStyle = "rgba(255,255,255,0.03)";
     ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
 
     ct.strokeStyle = "rgba(160,180,200,0.35)";
     ct.lineWidth = 1.5;
     ct.strokeRect(panelInset, p.y, w - panelInset * 2, p.h);
 
-    ct.strokeStyle = "rgba(180,200,220,0.3)";
+    ct.strokeStyle = "rgba(180,200,220,0.1)";
     ct.lineWidth = 1.5;
     ct.beginPath();
     ct.moveTo(panelInset + 1, p.y + p.h);
@@ -80,7 +80,7 @@ function drawDoorBasePanel() {
   // horizontal dividers between panels
   ct.lineWidth = 2;
   for (const lineY of [texH * 0.24, texH * 0.5, texH * 0.74]) {
-    ct.strokeStyle = "rgba(160,180,200,0.3)";
+    ct.strokeStyle = "rgba(160,180,200,0.1)";
     ct.beginPath();
     ct.moveTo(4, lineY);
     ct.lineTo(w - 4, lineY);
@@ -95,7 +95,7 @@ function drawDoorBasePanel() {
   // rivets along edges
   for (const rx of [8, w - 8]) {
     for (let ry = 16; ry < h; ry += 28) {
-      ct.fillStyle = "rgba(140,160,180,0.5)";
+      ct.fillStyle = "rgba(140,160,180,0.1)";
       ct.beginPath();
       ct.arc(rx, ry, 3, 0, Math.PI * 2);
       ct.fill();
@@ -107,7 +107,7 @@ function drawDoorBasePanel() {
   }
 
   // outer border
-  ct.strokeStyle = "rgba(160,180,200,0.5)";
+  ct.strokeStyle = "rgba(160,180,200,0.1)";
   ct.lineWidth = 5;
   ct.strokeRect(0, 0, w, h);
 
@@ -382,17 +382,25 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   ct.save();
   ct.translate(texW / 2, logoY);
   ct.scale(1, -1);
-  ct.shadowColor = "rgba(255,255,255,0.7)";
-  ct.shadowBlur = 0;
-  ct.strokeStyle = "black";
-  ct.lineWidth = 0.25;
-  ct.fillStyle = "white";
-  ct.font = "32px monospace";
+  ct.font = "36px sans-serif";
   ct.textAlign = "center";
   ct.textBaseline = "middle";
-  ct.letterSpacing = "1px";
+
+  const measured = ct.measureText(label);
+  const padX = 12;
+  const padY = 8;
+  const rw = measured.width + padX * 2;
+  const rh = 36 + padY * 2;
+  ct.fillStyle = "rgba(30, 30, 30, 0.92)";
+  ct.strokeStyle = "rgba(220, 220, 220, 0.92)";
+  ct.lineWidth = 2;
+  ct.beginPath();
+  ct.roundRect(-rw / 2, -rh / 2, rw, rh, 6);
+  ct.fill();
+  ct.stroke();
+
+  ct.fillStyle = "#fff";
   ct.fillText(label, 0, 0);
-  ct.strokeText(label, 0, 0);
   ct.restore();
 
   texArray.updateIndex(layerIndex);
