@@ -86,7 +86,7 @@ export default function NPCs() {
           skinIndexUniform,
           material: mat,
           shadowMaterial: createShadowMaterial(w.view.objectPick),
-          labelMaterial: createLabelMaterial(w.texLabel, pickId),
+          labelMaterial: createLabelMaterial(w.texNpcLabel, pickId),
         };
       },
       createNpc(opts: {
@@ -109,7 +109,7 @@ export default function NPCs() {
           geometry: opts.geometry,
           ...mats,
         });
-        drawLabelLayer(w.texLabel, opts.pickId, opts.key);
+        drawLabelLayer(w.texNpcLabel, opts.pickId, opts.key);
         state.npc[opts.key] = npc;
         state.byPickId[npc.pickId] = npc;
         return npc;
