@@ -116,7 +116,7 @@
     {
       "id": "8861360e-16d1-4e4c-8491-e7ece0f31e61",
       "name": "decor point label=stateroom",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 76, "f": 166.5},
       "type": "image",
