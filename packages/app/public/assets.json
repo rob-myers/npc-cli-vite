@@ -436,6 +436,50 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [0.52048, 3.61869],
+              [0.817253, 2.986865],
+              [1.138145, 2.49434],
+              [1.618378, 1.8875],
+              [2.9125, 3.187365],
+              [2.907475, 4.33524],
+              [0.2875, 4.3375]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [11.7125, 4.35],
+              [9.092525, 4.34774],
+              [9.0875, 3.199865],
+              [10.381623, 1.9],
+              [10.861855, 2.50684],
+              [11.182748, 2.999365],
+              [11.47952, 3.63119]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [2.110675, 1.398775],
               [2.534875, 1.0715],
               [2.9749, 0.796275],
@@ -478,9 +522,10 @@
           ],
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.81,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 0
+            "origObstacleId": 2
           }
         },
         {
@@ -532,50 +577,6 @@
             "y": 0.8,
             "window-base": true,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 1
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [0.52048, 3.61869],
-              [0.817253, 2.986865],
-              [1.138145, 2.49434],
-              [1.618378, 1.8875],
-              [2.9125, 3.187365],
-              [2.907475, 4.33524],
-              [0.2875, 4.3375]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
-            "origObstacleId": 2
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [11.7125, 4.35],
-              [9.092525, 4.34774],
-              [9.0875, 3.199865],
-              [10.381623, 1.9],
-              [10.861855, 2.50684],
-              [11.182748, 2.999365],
-              [11.47952, 3.63119]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
             "origObstacleId": 3
           }
         },
@@ -606,6 +607,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.6,
             "symKey": "bridge--042--8x9",
             "origObstacleId": 4
@@ -7801,6 +7803,50 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [0.52048, 3.61869],
+              [0.817253, 2.986865],
+              [1.138145, 2.49434],
+              [1.618378, 1.8875],
+              [2.9125, 3.187365],
+              [2.907475, 4.33524],
+              [0.2875, 4.3375]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [11.7125, 4.35],
+              [9.092525, 4.34774],
+              [9.0875, 3.199865],
+              [10.381623, 1.9],
+              [10.861855, 2.50684],
+              [11.182748, 2.999365],
+              [11.47952, 3.63119]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [2.110675, 1.398775],
               [2.534875, 1.0715],
               [2.9749, 0.796275],
@@ -7843,9 +7889,10 @@
           ],
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.81,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 0
+            "origObstacleId": 2
           }
         },
         {
@@ -7897,50 +7944,6 @@
             "y": 0.8,
             "window-base": true,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 1
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [0.52048, 3.61869],
-              [0.817253, 2.986865],
-              [1.138145, 2.49434],
-              [1.618378, 1.8875],
-              [2.9125, 3.187365],
-              [2.907475, 4.33524],
-              [0.2875, 4.3375]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
-            "origObstacleId": 2
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [11.7125, 4.35],
-              [9.092525, 4.34774],
-              [9.0875, 3.199865],
-              [10.381623, 1.9],
-              [10.861855, 2.50684],
-              [11.182748, 2.999365],
-              [11.47952, 3.63119]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
             "origObstacleId": 3
           }
         },
@@ -7971,6 +7974,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.6,
             "symKey": "bridge--042--8x9",
             "origObstacleId": 4
@@ -13203,6 +13207,52 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [9.533, 5.1437],
+              [9.8298, 4.5119],
+              [10.1506, 4.0193],
+              [10.6309, 3.4125],
+              [11.925, 4.7124],
+              [11.92, 5.8602],
+              [9.3, 5.8625]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 0,
+            "transform": [1, 0, 0, 1, 9.0125, 1.525]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [20.725, 5.875],
+              [18.105, 5.8727],
+              [18.1, 4.7249],
+              [19.3941, 3.425],
+              [19.8744, 4.0318],
+              [20.1952, 4.5244],
+              [20.492, 5.1562]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 1,
+            "transform": [1, 0, 0, 1, 9.0125, 1.525]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [11.1232, 2.9238],
               [11.5474, 2.5965],
               [11.9874, 2.3213],
@@ -13245,9 +13295,10 @@
           ],
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.81,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 0,
+            "origObstacleId": 2,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
         },
@@ -13300,52 +13351,6 @@
             "y": 0.8,
             "window-base": true,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 1,
-            "transform": [1, 0, 0, 1, 9.0125, 1.525]
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [9.533, 5.1437],
-              [9.8298, 4.5119],
-              [10.1506, 4.0193],
-              [10.6309, 3.4125],
-              [11.925, 4.7124],
-              [11.92, 5.8602],
-              [9.3, 5.8625]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
-            "origObstacleId": 2,
-            "transform": [1, 0, 0, 1, 9.0125, 1.525]
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [20.725, 5.875],
-              [18.105, 5.8727],
-              [18.1, 4.7249],
-              [19.3941, 3.425],
-              [19.8744, 4.0318],
-              [20.1952, 4.5244],
-              [20.492, 5.1562]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
             "origObstacleId": 3,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
@@ -13377,6 +13382,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.6,
             "symKey": "bridge--042--8x9",
             "origObstacleId": 4,
@@ -23644,6 +23650,96 @@
         {
           "symbolKey": "bridge--042--8x9",
           "obstacleId": 0,
+          "height": 1,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [0.52048, 3.61869],
+                [0.817253, 2.986865],
+                [1.138145, 2.49434],
+                [1.618378, 1.8875],
+                [2.9125, 3.187365],
+                [2.907475, 4.33524],
+                [0.2875, 4.3375]
+              ]
+            ],
+            "meta": {
+              "obstacle": true,
+              "cpu": true,
+              "y": 1,
+              "tint": "#666",
+              "symKey": "bridge--042--8x9",
+              "origObstacleId": 0
+            }
+          },
+          "origSubRect": {"x": 0.4, "y": 2.21, "width": 2.63, "height": 2.45},
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 9.0125,
+            "f": 1.525
+          },
+          "center": {"x": 10.47, "y": 4.79},
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "symbolKey": "bridge--042--8x9",
+          "obstacleId": 1,
+          "height": 1,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [11.7125, 4.35],
+                [9.092525, 4.34774],
+                [9.0875, 3.199865],
+                [10.381623, 1.9],
+                [10.861855, 2.50684],
+                [11.182748, 2.999365],
+                [11.47952, 3.63119]
+              ]
+            ],
+            "meta": {
+              "obstacle": true,
+              "cpu": true,
+              "y": 1,
+              "tint": "#666",
+              "symKey": "bridge--042--8x9",
+              "origObstacleId": 1
+            }
+          },
+          "origSubRect": {"x": 9.2, "y": 2.23, "width": 2.63, "height": 2.45},
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 9.0125,
+            "f": 1.525
+          },
+          "center": {"x": 19.56, "y": 4.8},
+          "meta": {
+            "obstacle": true,
+            "cpu": true,
+            "y": 1,
+            "tint": "#666",
+            "symKey": "bridge--042--8x9",
+            "origObstacleId": 1
+          }
+        },
+        {
+          "symbolKey": "bridge--042--8x9",
+          "obstacleId": 2,
           "height": 0.81,
           "origPoly": {
             "type": "Polygon",
@@ -23691,9 +23787,10 @@
             ],
             "meta": {
               "obstacle": true,
+              "table": true,
               "y": 0.81,
               "symKey": "bridge--042--8x9",
-              "origObstacleId": 0
+              "origObstacleId": 2
             }
           },
           "origSubRect": {"x": 2.05, "y": 0.31, "width": 8.11, "height": 1.56},
@@ -23708,14 +23805,15 @@
           "center": {"x": 14.93, "y": 2.5},
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.81,
             "symKey": "bridge--042--8x9",
-            "origObstacleId": 0
+            "origObstacleId": 2
           }
         },
         {
           "symbolKey": "bridge--042--8x9",
-          "obstacleId": 1,
+          "obstacleId": 3,
           "height": 0.8,
           "origPoly": {
             "type": "Polygon",
@@ -23766,7 +23864,7 @@
               "y": 0.8,
               "window-base": true,
               "symKey": "bridge--042--8x9",
-              "origObstacleId": 1
+              "origObstacleId": 3
             }
           },
           "origSubRect": {"x": 1.64, "y": 0.01, "width": 8.97, "height": 2.13},
@@ -23783,96 +23881,6 @@
             "obstacle": true,
             "y": 0.8,
             "window-base": true,
-            "symKey": "bridge--042--8x9",
-            "origObstacleId": 1
-          }
-        },
-        {
-          "symbolKey": "bridge--042--8x9",
-          "obstacleId": 2,
-          "height": 1,
-          "origPoly": {
-            "type": "Polygon",
-            "coordinates": [
-              [
-                [0.52048, 3.61869],
-                [0.817253, 2.986865],
-                [1.138145, 2.49434],
-                [1.618378, 1.8875],
-                [2.9125, 3.187365],
-                [2.907475, 4.33524],
-                [0.2875, 4.3375]
-              ]
-            ],
-            "meta": {
-              "obstacle": true,
-              "cpu": true,
-              "y": 1,
-              "tint": "#666",
-              "symKey": "bridge--042--8x9",
-              "origObstacleId": 2
-            }
-          },
-          "origSubRect": {"x": 0.4, "y": 2.21, "width": 2.63, "height": 2.45},
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 9.0125,
-            "f": 1.525
-          },
-          "center": {"x": 10.47, "y": 4.79},
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
-            "symKey": "bridge--042--8x9",
-            "origObstacleId": 2
-          }
-        },
-        {
-          "symbolKey": "bridge--042--8x9",
-          "obstacleId": 3,
-          "height": 1,
-          "origPoly": {
-            "type": "Polygon",
-            "coordinates": [
-              [
-                [11.7125, 4.35],
-                [9.092525, 4.34774],
-                [9.0875, 3.199865],
-                [10.381623, 1.9],
-                [10.861855, 2.50684],
-                [11.182748, 2.999365],
-                [11.47952, 3.63119]
-              ]
-            ],
-            "meta": {
-              "obstacle": true,
-              "cpu": true,
-              "y": 1,
-              "tint": "#666",
-              "symKey": "bridge--042--8x9",
-              "origObstacleId": 3
-            }
-          },
-          "origSubRect": {"x": 9.2, "y": 2.23, "width": 2.63, "height": 2.45},
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": 1,
-            "e": 9.0125,
-            "f": 1.525
-          },
-          "center": {"x": 19.56, "y": 4.8},
-          "meta": {
-            "obstacle": true,
-            "cpu": true,
-            "y": 1,
-            "tint": "#666",
             "symKey": "bridge--042--8x9",
             "origObstacleId": 3
           }
@@ -23908,6 +23916,7 @@
             ],
             "meta": {
               "obstacle": true,
+              "table": true,
               "y": 0.6,
               "symKey": "bridge--042--8x9",
               "origObstacleId": 4
@@ -23925,6 +23934,7 @@
           "center": {"x": 15.16, "y": 12.8},
           "meta": {
             "obstacle": true,
+            "table": true,
             "y": 0.6,
             "symKey": "bridge--042--8x9",
             "origObstacleId": 4
@@ -28981,5 +28991,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": 142175577}
+  "hash": {"obstacles": -515633993}
 }
