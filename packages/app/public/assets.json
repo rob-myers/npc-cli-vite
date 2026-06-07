@@ -503,7 +503,12 @@
         {
           "type": "Polygon",
           "coordinates": [[[9.1, 6.25], [9.1, 7.3], [8.9, 7.3], [8.9, 6.25]]],
-          "meta": {"door": true, "slide": [0, 1], "label": "fresher"}
+          "meta": {
+            "door": true,
+            "slide": [0, 1],
+            "backLabel": "bridge",
+            "label": "fresher"
+          }
         },
         {
           "type": "Polygon",
@@ -8286,7 +8291,12 @@
         {
           "type": "Polygon",
           "coordinates": [[[9.1, 6.25], [9.1, 7.3], [8.9, 7.3], [8.9, 6.25]]],
-          "meta": {"door": true, "slide": [0, 1], "label": "fresher"}
+          "meta": {
+            "door": true,
+            "slide": [0, 1],
+            "backLabel": "bridge",
+            "label": "fresher"
+          }
         },
         {
           "type": "Polygon",
@@ -13569,7 +13579,13 @@
               [17.9125, 7.775]
             ]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "fresher", "det": 1}
+          "meta": {
+            "door": true,
+            "slide": [0, 1],
+            "backLabel": "bridge",
+            "label": "fresher",
+            "det": 1
+          }
         },
         {
           "type": "Polygon",
@@ -24266,6 +24282,7 @@
             "meta": {
               "door": true,
               "slide": [0, 1],
+              "backLabel": "bridge",
               "label": "fresher",
               "det": 1
             }
