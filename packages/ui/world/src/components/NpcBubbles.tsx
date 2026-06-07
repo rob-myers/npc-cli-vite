@@ -53,15 +53,16 @@ export default function NpcBubbles() {
   w.bubble = state;
   w.b = state.byKey;
 
-  React.useMemo(() => {
-    if (import.meta.env.DEV) {
-      for (const bubble of Object.values(state.byKey)) {
-        const tempBubble = new SpeechBubbleApi(bubble.key, w);
-        Object.assign(bubble, { ...tempBubble }, { ...bubble });
-        Object.setPrototypeOf(bubble, Object.getPrototypeOf(tempBubble));
-      }
+  // On HMR, SpeechBubbleApi is a new class reference — refresh existing bubble prototypes.
+  const apiRef = React.useRef(SpeechBubbleApi);
+  if (import.meta.env.DEV && apiRef.current !== SpeechBubbleApi) {
+    apiRef.current = SpeechBubbleApi;
+    for (const bubble of Object.values(state.byKey)) {
+      const tempBubble = new SpeechBubbleApi(bubble.key, w);
+      Object.assign(bubble, { ...tempBubble }, { ...bubble });
+      Object.setPrototypeOf(bubble, Object.getPrototypeOf(tempBubble));
     }
-  }, []);
+  }
 
   return Object.values(state.byKey).map((bubble) => (
     <MemoizedSpeechBubble key={bubble.key} bubble={bubble} epochMs={bubble.epochMs} />
@@ -85,11 +86,14 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   const [selectMode, setSelectMode] = React.useState(false);
 
   React.useEffect(() => {
+    b.mountConnector();
     setTimeout(() => {
+      b.initializeOffset();
       b.update();
       b.resolveOnMount();
       b.html3d?.onFrame();
     }, 30);
+    return () => b.unmountConnector();
   }, []);
 
   return (
@@ -103,18 +107,33 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       tracked={b.tracked}
       visible
     >
-      {/* demo ui */}
-      <div className="relative *:pointer-events-auto">
+      <div
+        className={cn(
+          "relative pointer-events-auto",
+          selectMode ? "cursor-default" : "cursor-grab active:cursor-grabbing",
+        )}
+        onPointerDown={(e) => {
+          if (selectMode) return;
+          e.stopPropagation();
+          b.onDragStart(e.nativeEvent);
+        }}
+        onPointerMove={(e) => {
+          if (!b.isDragging) return;
+          e.stopPropagation();
+          b.onDragMove(e.nativeEvent);
+        }}
+        onPointerUp={(e) => {
+          if (!b.isDragging) return;
+          e.stopPropagation();
+          b.onDragEnd(e.nativeEvent);
+        }}
+        onWheel={b.forwardWheelEvents.bind(b)}
+      >
         <div
           className={cn(
-            "text-[#ff9] p-4 text-[2rem] rounded-2xl bg-black/30 leading-[1.2]",
+            "text-[#ff9] p-4 text-[2rem] rounded-2xl bg-black/30 border border-white/30 leading-[1.2]",
             selectMode ? "cursor-crosshair" : "select-none",
           )}
-          onWheel={b.forwardWheelEvents.bind(b)}
-          {...(!selectMode && {
-            onPointerDown: b.forwardPointerEvents.bind(b),
-            onPointerUp: b.forwardPointerEvents.bind(b),
-          })}
         >
           Hello, world!
         </div>
@@ -130,7 +149,6 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     </Html3d>
   );
 }
+const speechBubbleBaseScale = 4;
 
 const MemoizedSpeechBubble = React.memo<SpeechBubbleProps & { epochMs: number }>(NpcBubble);
-
-const speechBubbleBaseScale = 4;
