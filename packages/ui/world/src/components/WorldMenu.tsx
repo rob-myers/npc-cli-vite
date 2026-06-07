@@ -352,6 +352,8 @@ export function WorldMenu() {
                           return w.debug?.lightSpheresShown ?? true;
                         case "NavMesh":
                           return w.debug?.navMeshShown ?? false;
+                        case "Normals":
+                          return w.debug?.doorNormalsShown ?? true;
                         case "Points":
                           return w.debug?.onPointsShown ?? false;
                         default:
@@ -388,6 +390,10 @@ export function WorldMenu() {
                         case "NavMesh":
                           w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
                           setTimeout(() => w.view.forceUpdate());
+                          break;
+                        case "Normals":
+                          w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
+                          w.view.forceUpdate();
                           break;
                         case "Points": {
                           const next = !w.debug.onPointsShown;
@@ -494,6 +500,7 @@ const debugItems = [
   "Colliders",
   "Lights",
   "NavMesh",
+  "Normals",
   "Points",
 ] as const;
 

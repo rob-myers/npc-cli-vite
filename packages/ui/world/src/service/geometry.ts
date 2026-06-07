@@ -107,6 +107,26 @@ export function createDoorBox() {
   return g;
 }
 
+/** Flat XZ-plane arrow pointing +X, x∈[0,1], for instanced debug rendering. */
+export function createArrowGeo(): THREE.BufferGeometry {
+  const shaftEnd = 0.65, shaftHW = 0.08, headHW = 0.22;
+  // biome-ignore format: vertex layout
+  const positions = new Float32Array([
+    0,        0, -shaftHW,  // 0 shaft bl
+    shaftEnd, 0, -shaftHW,  // 1 shaft br
+    shaftEnd, 0,  shaftHW,  // 2 shaft tr
+    0,        0,  shaftHW,  // 3 shaft tl
+    shaftEnd, 0, -headHW,   // 4 head base-
+    1.0,      0,  0,        // 5 head apex
+    shaftEnd, 0,  headHW,   // 6 head base+
+  ]);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geo.setIndex(new THREE.BufferAttribute(new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6]), 1));
+  geo.computeVertexNormals();
+  return geo;
+}
+
 /**
  * Create an XZ plane quad with skinning attributes.
  * All vertices are bound to `jointIndex` with weight 1.
