@@ -195,10 +195,10 @@ export class Npc {
     }
   }
 
-  startIdle() {
+  startIdle({ force = false } = {}) {
     this.resolve?.("idle");
 
-    if (!this.arrive) {
+    if (!this.arrive && !force) {
       this.arrive = true;
       return;
     }
@@ -222,6 +222,7 @@ export class Npc {
 
     this.moving = false;
     this.separating = false;
+    this.arrive = true;
   }
 
   smoothRotateToward(vx: number, vz: number, delta: number) {
