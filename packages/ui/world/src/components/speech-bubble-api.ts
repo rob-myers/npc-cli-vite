@@ -85,11 +85,7 @@ export class SpeechBubbleApi {
 
     // Unproject target screen position (anchor + initOffset) at same depth
     tmpVec2
-      .set(
-        ((screenX + this.initOffset.x) / width) * 2 - 1,
-        -((screenY + this.initOffset.y) / height) * 2 + 1,
-        ndcZ,
-      )
+      .set(((screenX + this.initOffset.x) / width) * 2 - 1, -((screenY + this.initOffset.y) / height) * 2 + 1, ndcZ)
       .unproject(camera);
 
     this.offset.x = tmpVec2.x - tmpVec.x;
@@ -144,17 +140,11 @@ export class SpeechBubbleApi {
     const ndcZ = tmpVec2.copy(tmpVec).project(camera).z;
 
     // Unproject drag-start and current pointer positions at anchor depth
-    tmpVec.set(
-      (this.dragStartClient.x / width) * 2 - 1,
-      -(this.dragStartClient.y / height) * 2 + 1,
-      ndcZ,
-    ).unproject(camera);
+    tmpVec
+      .set((this.dragStartClient.x / width) * 2 - 1, -(this.dragStartClient.y / height) * 2 + 1, ndcZ)
+      .unproject(camera);
 
-    tmpVec2.set(
-      (e.clientX / width) * 2 - 1,
-      -(e.clientY / height) * 2 + 1,
-      ndcZ,
-    ).unproject(camera);
+    tmpVec2.set((e.clientX / width) * 2 - 1, -(e.clientY / height) * 2 + 1, ndcZ).unproject(camera);
 
     this.offset.x = this.dragWorldOffsetAtStart.x + tmpVec2.x - tmpVec.x;
     this.offset.y = this.dragWorldOffsetAtStart.y + tmpVec2.y - tmpVec.y;
@@ -177,9 +167,7 @@ export class SpeechBubbleApi {
     const cr = this.html3d.domTarget.getBoundingClientRect();
     const br = this.html3d.innerDiv.getBoundingClientRect();
 
-    tmpVec
-      .setFromMatrixPosition(this.tracked.object.matrixWorld)
-      .addScaledVector(this.tracked.offset, labelCenterFrac);
+    tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).addScaledVector(this.tracked.offset, mouthFrac);
     const [nx, ny] = toScreen(tmpVec, this.w.r3f);
 
     const bLeft = br.left - cr.left;
@@ -187,11 +175,24 @@ export class SpeechBubbleApi {
     const bTop = br.top - cr.top;
     const bBottom = br.bottom - cr.top;
 
-    // Nearest point on bubble rect to label center
+    // Nearest point on bubble rect to mouth center
     const bx = Math.max(bLeft, Math.min(bRight, nx));
     const by = Math.max(bTop, Math.min(bBottom, ny));
 
-    this.connectorPolyline.setAttribute("points", `${nx},${ny} ${bx},${by}`);
+    // Offset start toward bubble by approx head radius so line begins at NPC's near side
+    const dx = bx - nx;
+    const dy = by - ny;
+    const len = Math.sqrt(dx * dx + dy * dy);
+
+    if (len <= npcHeadRadius) {
+      this.connectorPolyline.setAttribute("points", "");
+      return;
+    }
+
+    const sx = nx + (dx / len) * npcHeadRadius;
+    const sy = ny + (dy / len) * npcHeadRadius;
+
+    this.connectorPolyline.setAttribute("points", `${sx},${sy} ${bx},${by}`);
   }
 
   update: () => void = noop;
@@ -201,8 +202,9 @@ function noop() {}
 
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
-// fraction along tracked.offset (npcDefaultBubbleHeight=1.8) to reach label center
-const labelCenterFrac = 1.6 / 1.8;
+// fraction along tracked.offset (npcDefaultBubbleHeight=1.8) to reach mouth area
+const mouthFrac = 1.1 / 1.8;
+const npcHeadRadius = 32; // screen pixels
 
 function toScreen(v: THREE.Vector3, r3f: WorldState["r3f"]): [number, number] {
   const { camera } = r3f;
