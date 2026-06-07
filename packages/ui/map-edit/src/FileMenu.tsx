@@ -85,7 +85,8 @@ function SymbolFileSelect({ state }: { state: UseStateRef<State> }) {
           key: parsedKey,
         } as const;
 
-        if (savedKeys.has(parsedKey)) {
+        const existsOnDisk = savedKeys.has(parsedKey) || !!state.symbolsManifest?.byKey[parsedKey];
+        if (existsOnDisk) {
           state.load(fileSpecifier);
         } else {
           state.openFresh(fileSpecifier);
