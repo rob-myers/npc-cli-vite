@@ -193,7 +193,7 @@
     {
       "id": "ea1bd927-c7b3-436e-bc01-128397f0e0c5",
       "name": "decor point label=bridge",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 227.5, "f": 116},
       "type": "image",
@@ -206,7 +206,7 @@
     {
       "id": "d030a697-b194-4079-86ef-b8fcb383cc33",
       "name": "doors",
-      "locked": true,
+      "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -215,7 +215,7 @@
         {
           "id": "50f4058b-e508-4b43-8951-5240b220f752",
           "name": "door slide=[0,1]",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 475, "f": 187.5},
           "type": "rect",
@@ -225,7 +225,7 @@
         {
           "id": "79218b39-9dbb-4830-bd88-b07a2efdccff",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 478, "f": 233.5},
           "type": "image",
@@ -238,7 +238,7 @@
         {
           "id": "19e083a1-740b-474b-b7d3-a83e2d36bb08",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 482, "f": 233.5},
           "type": "image",
@@ -251,7 +251,7 @@
         {
           "id": "36b57a80-3724-4d6d-b7d5-ef35e0fe71ef",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 472, "f": 182},
           "type": "image",
@@ -263,8 +263,8 @@
         },
         {
           "id": "17783229-5fd3-4013-8770-da0f371e9a6e",
-          "name": "door slide=[-1,0]",
-          "locked": true,
+          "name": "door slide=[1,0]",
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 214, "f": 176.5},
           "type": "rect",
@@ -274,7 +274,7 @@
         {
           "id": "73076cb6-90ce-4c0c-8041-6cdd3cbef6dd",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 268, "f": 182},
           "type": "image",
@@ -287,7 +287,7 @@
         {
           "id": "e46350ed-2d7d-4278-a3fa-f19bfe98b909",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 268, "f": 178.5},
           "type": "image",
@@ -300,7 +300,7 @@
         {
           "id": "8aae69e9-5321-48cd-aada-74840840b4c7",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 206, "f": 178},
           "type": "image",
@@ -313,7 +313,7 @@
         {
           "id": "86454360-1128-494f-9160-0d2d9e801692",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 206, "f": 181.5},
           "type": "image",
@@ -326,7 +326,7 @@
         {
           "id": "f2a4143a-76c9-4fbe-a8e4-66d2497aab1a",
           "name": "door slide=[0,1]",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 188},
           "type": "rect",
@@ -336,7 +336,7 @@
         {
           "id": "8f9a62b6-358f-4676-be43-2e1682443f4b",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 13, "f": 182.5},
           "type": "image",
@@ -349,7 +349,7 @@
         {
           "id": "2b38b78a-0ecc-4cf5-9dbd-9612795e603f",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 1.5, "f": 234},
           "type": "image",
@@ -362,7 +362,7 @@
         {
           "id": "16c05b32-ce35-4870-aded-54486125c844",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": -2.5, "f": 234},
           "type": "image",
@@ -388,7 +388,7 @@
         {
           "id": "011f2cee-8016-49eb-bfa9-f47113f8fad9",
           "name": "door slide=[-1,0]",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 128, "f": 147},
           "type": "rect",
@@ -410,8 +410,8 @@
         },
         {
           "id": "6a2afea6-d6cd-4fd7-984d-03e7d778719d",
-          "name": "door slide=[1,0]",
-          "locked": true,
+          "name": "door slide=[-1,0]",
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 308, "f": 147},
           "type": "rect",
@@ -433,8 +433,8 @@
         },
         {
           "id": "c3772c73-a93f-4815-94fb-ba486e8bad74",
-          "name": "door slide=[0,1]",
-          "locked": true,
+          "name": "door slide=[0,-1]",
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 250},
           "type": "rect",
@@ -444,7 +444,7 @@
         {
           "id": "044a3876-80ef-4ab5-b44f-d9915541134d",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 242},
           "type": "image",
@@ -457,7 +457,7 @@
         {
           "id": "0ecc63a4-d0fa-44f3-8ebe-69031c83c9a7",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 242},
           "type": "image",
@@ -490,7 +490,7 @@
         {
           "id": "da5c2e7a-3296-48b2-a6eb-5016f4d85487",
           "name": "door slide=[0,1]",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 250},
           "type": "rect",
@@ -513,7 +513,7 @@
         {
           "id": "78bad6c5-c12d-4ee5-a9f0-afba2c26e2e5",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 172.5, "f": 300},
           "type": "image",
@@ -526,7 +526,7 @@
         {
           "id": "8fdabcbf-46e6-412c-b8a0-2a2539e85fd8",
           "name": "door slide=[-1,0]",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 128, "f": 297},
           "type": "rect",
@@ -536,7 +536,7 @@
         {
           "id": "ab1ee4e0-3bea-46e1-8c46-b031b27bde6b",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 172.5, "f": 303.5},
           "type": "image",
@@ -548,8 +548,8 @@
         },
         {
           "id": "440e09cd-bcdb-41ea-b822-92cc9be32f97",
-          "name": "door slide=[0,1]",
-          "locked": true,
+          "name": "door slide=[0,-1]",
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 370},
           "type": "rect",
@@ -559,7 +559,7 @@
         {
           "id": "3dfbba7b-8b66-48b0-9a24-eafa342da660",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 360},
           "type": "image",
@@ -572,7 +572,7 @@
         {
           "id": "6aba946e-3a83-47df-8224-4c05205276c4",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 360},
           "type": "image",
@@ -598,7 +598,7 @@
         {
           "id": "0b640094-ade5-4363-9b4d-5f3c63a20ce3",
           "name": "door slide=[0,1]",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 370},
           "type": "rect",
@@ -608,7 +608,7 @@
         {
           "id": "283b3b47-e310-4da1-93f1-cf081e8633c8",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 362, "f": 360},
           "type": "image",
@@ -621,7 +621,7 @@
         {
           "id": "11e8c310-a44f-4e62-bb37-6c682e935d65",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 358, "f": 360},
           "type": "image",

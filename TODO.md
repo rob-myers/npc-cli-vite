@@ -2,11 +2,12 @@
 
 - 🚧 door normals determined by slide direction
   - ✅ debug draw normals
-  - 🚧 createLayout connector has normal derived from `meta.slide`
+  - ✅ createLayout connector has normal derived from `meta.slide`
     - weirdly the angled-rect convention "works" most of the time
     - normal should point "from larger to smaller" if possible
     - ✅ account for flipping of symbol instances
       - ✅ `door.meta.det` in -1, +1
+  - 🚧 migrate doors
 - can specify per-side door labels
 
 - speech bubble improvements
