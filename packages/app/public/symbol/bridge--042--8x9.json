@@ -489,7 +489,7 @@
         },
         {
           "id": "da5c2e7a-3296-48b2-a6eb-5016f4d85487",
-          "name": "door slide=[0,1]",
+          "name": "door slide=[0,1] backLabel=bridge",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 250},
