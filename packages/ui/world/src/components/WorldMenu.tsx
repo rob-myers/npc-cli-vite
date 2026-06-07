@@ -398,43 +398,45 @@ export function WorldMenu() {
                     }
                   }}
                 />
+
+                <div
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    state.debugOpen = !state.debugOpen;
+                    tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
+                    state.update();
+                  }}
+                >
+                  {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                  debug
+                </div>
+                {state.debugOpen && (
+                  <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
+                    {debugItems.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        className={cn(
+                          "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                          isDebugActive(item)
+                            ? "text-green-400 bg-slate-700"
+                            : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDebugToggle(item);
+                        }}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
         </Menu.Root>
-
-        <div className="bg-gray-800 text-white select-none">
-          <div
-            className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-            onClick={() => {
-              state.debugOpen = !state.debugOpen;
-              tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
-              state.update();
-            }}
-          >
-            {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-            debug
-          </div>
-          {state.debugOpen && (
-            <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
-              {debugItems.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                    isDebugActive(item)
-                      ? "text-green-400 bg-slate-700"
-                      : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
-                  )}
-                  onClick={() => onDebugToggle(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         <AnimatePresence>
           {toastKeys.map((key) => (
