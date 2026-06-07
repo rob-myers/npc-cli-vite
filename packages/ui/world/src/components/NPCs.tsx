@@ -347,7 +347,8 @@ export default function NPCs() {
 
           const shadowQuad = createSkinnedXzQuad(1, 1);
           // const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
-          const labelQuad = createSkinnedLabelQuad(0.5, 0.125, npcLabelHeight, 0);
+          const scaleLabelQuad = 2;
+          const labelQuad = createSkinnedLabelQuad(0.5 * scaleLabelQuad, 0.125 * scaleLabelQuad, npcLabelHeight, 0);
           addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
           addEmptyBillboardOffset(shadowQuad);
           const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
