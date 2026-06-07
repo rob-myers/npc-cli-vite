@@ -62,11 +62,11 @@ export default function Doors() {
           }
         }
       },
-      buildLabelTextures() {
+      buildDoorWithLabelTextures() {
         const labelToLayer = new Map<string, number>();
         const arr = new Float32Array(w.gms.length << 8);
         for (const { instanceId, connector } of Object.values(state.byKey)) {
-          const label = (connector.meta.label as string | undefined) ?? "todo";
+          const label = (connector.meta.label as string | undefined) ?? "";
           if (!labelToLayer.has(label)) {
             const idx = labelToLayer.size;
             labelToLayer.set(label, idx);
@@ -296,7 +296,7 @@ export default function Doors() {
   useEffect(() => {
     state.buildByKey();
     state.positionInstances();
-    state.buildLabelTextures();
+    state.buildDoorWithLabelTextures();
   }, [w.mapKey, w.hash]);
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
@@ -347,7 +347,7 @@ export type State = {
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
   buildByKey: () => void;
-  buildLabelTextures: () => void;
+  buildDoorWithLabelTextures: () => void;
   cancelClose: (door: Geomorph.DoorState) => void;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
