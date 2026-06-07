@@ -13,7 +13,7 @@ import { WorldContext } from "./world-context";
 
 export function Debug() {
   const w = useContext(WorldContext);
-  const instRef = useRef<THREE.InstancedMesh>(null);
+  const navPathRef = useRef<THREE.InstancedMesh>(null);
   const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
   const decorPointsRef = useRef<THREE.InstancedMesh>(null);
   const doorNormalsRef = useRef<THREE.InstancedMesh>(null);
@@ -141,7 +141,7 @@ export function Debug() {
         inst.count = count;
         inst.instanceMatrix.needsUpdate = true;
       },
-      updateOnPoints() {
+      updateDecorPoints() {
         const inst = decorPointsRef.current;
         if (!inst || !w.sheets || !w.decor) return;
         let count = 0;
@@ -192,8 +192,8 @@ export function Debug() {
         decorPointsGeo.getAttribute("uvDimensions").needsUpdate = true;
         decorPointsGeo.getAttribute("uvTextureIds").needsUpdate = true;
       },
-      updateInstances() {
-        const inst = instRef.current;
+      updateNavPathInstances() {
+        const inst = navPathRef.current;
         if (!inst) return;
         const { demoNavPath: ps } = state;
         inst.count = Math.max(0, ps.length - 1);
@@ -215,7 +215,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true },
+      reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true, arrowGeo: false },
     },
   );
 
@@ -223,7 +223,7 @@ export function Debug() {
 
   useEffect(() => {
     state.computeDemoPath();
-    state.updateInstances();
+    state.updateNavPathInstances();
   }, [w.nav]);
 
   useEffect(() => {
@@ -232,7 +232,7 @@ export function Debug() {
   }, [w.hash, w.gmsData]);
 
   useEffect(() => {
-    state.updateOnPoints();
+    state.updateDecorPoints();
   }, [w.hash, w.gmsData, w.decor?.ready]);
 
   useEffect(() => {
@@ -258,7 +258,7 @@ export function Debug() {
       </mesh>
 
       <instancedMesh
-        ref={instRef}
+        ref={navPathRef}
         args={[quad, undefined, maxPathSegments]}
         frustumCulled={false}
         position={[0, 1, 0]}
@@ -319,7 +319,7 @@ const maxDoorNormals = 512;
 const onPointHeight = 0.005;
 const lightSphereHeight = 0;
 const arrowLen = 0.5;
-const arrowWidth = 0.5;
+const arrowWidth = 0.25;
 const doorNormalHeight = 0.05;
 const tmpMat4 = new THREE.Matrix4();
 
@@ -340,9 +340,9 @@ export type State = {
   physicsCollidersShown: boolean;
   computeDemoPath(): void;
   updateDoorNormals(): void;
-  updateOnPoints(): void;
+  updateDecorPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
   updateLightSpheres(): void;
-  updateInstances(): void;
+  updateNavPathInstances(): void;
 };

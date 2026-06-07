@@ -398,7 +398,7 @@ export function WorldMenu() {
                         case "Points": {
                           const next = !w.debug.onPointsShown;
                           w.debug?.set({ onPointsShown: next });
-                          if (next) w.debug?.updateOnPoints();
+                          if (next) w.debug?.updateDecorPoints();
                           w.view.forceUpdate();
                           break;
                         }
