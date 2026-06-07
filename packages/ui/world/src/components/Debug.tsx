@@ -286,7 +286,7 @@ export function Debug() {
         visible={state.doorNormalsShown}
         renderOrder={-4}
       >
-        <meshBasicMaterial color="cyan" side={THREE.DoubleSide} />
+        <meshBasicMaterial color="green" side={THREE.DoubleSide} />
       </instancedMesh>
 
       {state.physicsColliders.length > 0 && (

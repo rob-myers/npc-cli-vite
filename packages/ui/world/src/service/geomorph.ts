@@ -577,6 +577,7 @@ export function instantiateFlatSymbol(
   transform: Geom.AffineTransform,
 ): Geomorph.FlatSymbol {
   const mat = tmpMat1.setMatrixValue(transform);
+  const det = Math.round(mat.determinant); // -1 or +1
 
   /** e.g. `['s']` means only permit 'optional'-tagged doors with tag 's' */
   const doorTags = meta.doors as string[] | undefined;
@@ -627,7 +628,7 @@ export function instantiateFlatSymbol(
         if (!Array.isArray(sd)) return poly.cleanClone(mat);
         // transform meta.slide
         const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
-        return poly.cleanClone(mat, { slide: [v.x, v.y] });
+        return poly.cleanClone(mat, { slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
       }),
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {

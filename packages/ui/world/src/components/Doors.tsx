@@ -55,7 +55,7 @@ export default function Doors() {
 
               src: ut.json,
               dst: vt.json,
-              normal: tmpMat.transformSansTranslate(connector.normal.clone()),
+              normal: tmpMat.transformSansTranslate(connector.normal.clone()).json,
 
               closeTimeoutId: -1,
             };
