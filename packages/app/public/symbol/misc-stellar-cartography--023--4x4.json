@@ -110,7 +110,7 @@
     {
       "id": "05e71ceb-3545-4ff2-8ab0-a987b51876d1",
       "name": "decor point label=cartography",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 124.5, "f": 97.5},
       "type": "image",
@@ -123,16 +123,16 @@
     {
       "id": "02e99fe1-9d00-4f42-9783-574bdc776d03",
       "name": "doors",
-      "locked": true,
+      "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "4ed77ad5-6329-4506-ad16-8d9f535e7f90",
-          "name": "door",
-          "locked": true,
+          "name": "door slide=[-1,-1]",
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 0.7071,
@@ -150,7 +150,7 @@
         {
           "id": "dda7178c-412a-4868-b543-b90c64b49e64",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 0.7071,
@@ -170,7 +170,7 @@
         {
           "id": "68be344a-a45b-4a00-b764-dbffe80f7dea",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 0.7071,
@@ -190,7 +190,7 @@
         {
           "id": "8edd2a8a-7f02-42f2-9547-cf1755b55b55",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 0.7071,
@@ -210,7 +210,7 @@
         {
           "id": "98efa88b-72ec-49db-9029-e0a661518881",
           "name": "decor quad key=switch",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {
             "a": 0.7071,
