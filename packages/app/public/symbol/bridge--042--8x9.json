@@ -548,7 +548,7 @@
         },
         {
           "id": "440e09cd-bcdb-41ea-b822-92cc9be32f97",
-          "name": "door slide=[0,-1]",
+          "name": "door slide=[0,-1] backLabel=briefing",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 370},
@@ -597,7 +597,7 @@
         },
         {
           "id": "0b640094-ade5-4363-9b4d-5f3c63a20ce3",
-          "name": "door slide=[0,1]",
+          "name": "door slide=[0,1] backLabel=briefing",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 370},
