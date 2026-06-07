@@ -109,7 +109,9 @@ export function createDoorBox() {
 
 /** Flat XZ-plane arrow pointing +X, x∈[0,1], for instanced debug rendering. */
 export function createArrowGeo(): THREE.BufferGeometry {
-  const shaftEnd = 0.65, shaftHW = 0.08, headHW = 0.22;
+  const shaftEnd = 0.75,
+    shaftHW = 0.02,
+    headHW = 0.2;
   // biome-ignore format: vertex layout
   const positions = new Float32Array([
     0,        0, -shaftHW,  // 0 shaft bl
