@@ -214,10 +214,9 @@ export default function NPCs() {
         } catch (e) {
           if (e instanceof Error && e.message === "move again") {
             return;
-          } else {
-            npc.startIdle();
-            throw e;
           }
+          npc.startIdle({ force: true });
+          throw e;
         }
       },
       onTick(delta) {
@@ -250,7 +249,7 @@ export default function NPCs() {
 
           const stuck = npc.updateStuck(delta, worldSeconds);
           if (stuck === true) {
-            npc.startIdle();
+            npc.startIdle({ force: true });
           } else if (
             crowdApi.isAgentAtTarget(
               state.crowd,
