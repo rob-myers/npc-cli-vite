@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
+import { attribute, float, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
@@ -65,6 +65,11 @@ export default function Doors() {
       buildDoorWithLabelTextures() {
         const labelToLayer = new Map<string, number>();
         const arr = new Float32Array(w.gms.length << 8);
+
+        // door sans label
+        labelToLayer.set("", 0);
+        drawDoorLabelLayer(w.texDoorLabel, 0, "");
+
         for (const { instanceId, connector } of Object.values(state.byKey)) {
           const label = (connector.meta.label as string | undefined) ?? "";
           if (!labelToLayer.has(label)) {
@@ -146,6 +151,7 @@ export default function Doors() {
         }
 
         const slideSignArray = new Float32Array(n).fill(1);
+        const flipFrontBackArray = new Float32Array(n);
 
         // zero-scale all instances so unused slots are invisible
         zeroMat4.makeScale(0, 0, 0);
@@ -203,11 +209,16 @@ export default function Doors() {
             );
 
             inst.setMatrixAt(instanceId, tmpMat4);
+
+            // box local -z maps to world 2D (nz, -nx); flip when door.normal points the other way
+            const ds = state.byKey[helper.getGmDoorKey(gmId, localId)];
+            flipFrontBackArray[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
           }
         }
 
         state.box.setAttribute("openRatio", new THREE.InstancedBufferAttribute(state.openRatioArray, 1));
         state.box.setAttribute("slideSign", new THREE.InstancedBufferAttribute(slideSignArray, 1));
+        state.box.setAttribute("flipFrontBack", new THREE.InstancedBufferAttribute(flipFrontBackArray, 1));
 
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
@@ -319,10 +330,19 @@ export default function Doors() {
     }
 
     const texLayer = attribute<"float">("doorLabelLayer", "float").toInt();
+    const flip = attribute<"float">("flipFrontBack", "float");
+    const notFlipped = flip.lessThan(float(0.5));
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
-    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y)).depth(texLayer);
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
-    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y)).depth(texLayer);
+    // 0 corresponds to doors sans label; flip swaps which face shows the label
+    front.colorNode = texture(
+      w.texDoorLabel.tex,
+      vec2(uv().x.mul(cs).add(notFlipped.select(frontOffset, backOffset)), uv().y),
+    ).depth(notFlipped.select(texLayer, int(0)));
+    back.colorNode = texture(
+      w.texDoorLabel.tex,
+      vec2(uv().x.mul(cs).add(notFlipped.select(backOffset, frontOffset)), uv().y),
+    ).depth(notFlipped.select(int(0), texLayer));
 
     return [edge, edge, top, edge, front, back];
   }, []);

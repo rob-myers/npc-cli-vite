@@ -11,8 +11,8 @@
   - ✅ migrate doors
 
 - 🚧 can specify per-side door labels
-  - Doors applies `label` to "front" of door only
-  - `door.meta.backLabel`
+  - ✅ Doors applies `label` to "front" of door only
+  - 🚧 support `door.meta.backLabel`
 
 - speech bubble improvements
   - exists i.e. `w bubble.ensure rob`
