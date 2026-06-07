@@ -43,7 +43,7 @@ export function Debug() {
       arrowGeo: createArrowGeo(),
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
-      doorNormalsShown: true,
+      doorNormalsShown: false,
       lightSpheresShown: false,
       navMeshShown: false,
       doPointsShown: false,
