@@ -321,7 +321,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ),
             sceneColor.a,
           ),
-          uniform(0.005),
+          uniform(0.0025),
         );
 
         const originalRender = gl.render.bind(gl);

@@ -178,9 +178,9 @@ export function createLayout(
    * - avoids errors (e.g. 301).
    * - permits meta propagation e.g. h (height), hull (hull wall)
    */
-  const connectors = flat.doors.concat(flat.windows);
+  const connectorPolys = flat.doors.concat(flat.windows);
   const cutWalls = uncutWalls.flatMap((x) =>
-    Poly.cutOut(connectors, [x]).map((y) =>
+    Poly.cutOut(connectorPolys, [x]).map((y) =>
       Object.assign(y, {
         meta: specialWallMetaKeys.some((key) => key in x.meta)
           ? x.meta
