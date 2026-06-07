@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, int, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
+import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
@@ -64,7 +64,8 @@ export default function Doors() {
       },
       buildDoorWithLabelTextures() {
         const labelToLayer = new Map<string, number>();
-        const arr = new Float32Array(w.gms.length << 8);
+        const frontArray = new Float32Array(w.gms.length << 8);
+        const backArray = new Float32Array(w.gms.length << 8);
 
         // door sans label
         labelToLayer.set("", 0);
@@ -77,9 +78,18 @@ export default function Doors() {
             labelToLayer.set(label, idx);
             drawDoorLabelLayer(w.texDoorLabel, idx, label);
           }
-          arr[instanceId] = labelToLayer.get(label) ?? 0;
+          frontArray[instanceId] = labelToLayer.get(label) ?? 0;
+
+          const backLabel = (connector.meta.backLabel as string | undefined) ?? "";
+          if (!labelToLayer.has(backLabel)) {
+            const idx = labelToLayer.size;
+            labelToLayer.set(backLabel, idx);
+            drawDoorLabelLayer(w.texDoorLabel, idx, backLabel);
+          }
+          backArray[instanceId] = labelToLayer.get(backLabel) ?? 0;
         }
-        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(arr, 1));
+        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(frontArray, 1));
+        state.box.setAttribute("doorBackLabelLayer", new THREE.InstancedBufferAttribute(backArray, 1));
       },
       cancelClose(door) {
         window.clearTimeout(door.closeTimeoutId);
@@ -330,19 +340,20 @@ export default function Doors() {
     }
 
     const texLayer = attribute<"float">("doorLabelLayer", "float").toInt();
+    const backTexLayer = attribute<"float">("doorBackLabelLayer", "float").toInt();
     const flip = attribute<"float">("flipFrontBack", "float");
     const notFlipped = flip.lessThan(float(0.5));
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
-    // 0 corresponds to doors sans label; flip swaps which face shows the label
+    // flip swaps which face shows the front vs back label
     front.colorNode = texture(
       w.texDoorLabel.tex,
       vec2(uv().x.mul(cs).add(notFlipped.select(frontOffset, backOffset)), uv().y),
-    ).depth(notFlipped.select(texLayer, int(0)));
+    ).depth(notFlipped.select(texLayer, backTexLayer));
     back.colorNode = texture(
       w.texDoorLabel.tex,
       vec2(uv().x.mul(cs).add(notFlipped.select(backOffset, frontOffset)), uv().y),
-    ).depth(notFlipped.select(int(0), texLayer));
+    ).depth(notFlipped.select(backTexLayer, texLayer));
 
     return [edge, edge, top, edge, front, back];
   }, []);

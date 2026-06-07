@@ -10,9 +10,14 @@
       - ✅ `door.meta.det` in -1, +1
   - ✅ migrate doors
 
-- 🚧 can specify per-side door labels
+- ✅ can specify per-side door labels
   - ✅ Doors applies `label` to "front" of door only
-  - 🚧 support `door.meta.backLabel`
+  - support `door.meta.backLabel`
+    - ✅ attribute `doorBackLabelLayer`
+    - ✅ literals e.g. for non-hull doors in hull symbols
+    - ❌ `$leftDoorLabel` e.g. for bridge--046 and can specify `leftDoorLabel='sector-b'`
+
+- BUG hmr issue onchange meta of door i.e. not seeing updated
 
 - speech bubble improvements
   - exists i.e. `w bubble.ensure rob`
