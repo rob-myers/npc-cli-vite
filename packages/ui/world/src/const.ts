@@ -101,7 +101,7 @@ export const npcScale = 0.7;
 
 export const npcDefaultBubbleHeight = 1.8;
 
-export const npcLabelHeight = 1.6 / npcScale;
+export const npcLabelHeight = 1.8 / npcScale;
 
 export const MAX_NPCS = 256;
 export const MAX_DOOR_LABELS = 32;

@@ -19,9 +19,14 @@
 
 - 🚧 speech bubble improvements
   - ✅ exists i.e. `w bubble.ensure rob`
-  - 🚧 draggable
-  - connector from npc to bubble
+  - ✅ draggable
+  - ✅ connector from npc to bubble
+  - ✅ consider intersection with npc label
+  - 🚧 clean
 
+- on canvas resize update speech bubbles
+- ✅ on kill `pick | move npc:rob along` with two picks it should stop 
+  - can force idle overriding
 - on kill `move` npc should not slide back
 - small-map-0 -> 301-only
   - also clean up other map names
