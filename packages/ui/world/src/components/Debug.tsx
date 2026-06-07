@@ -6,7 +6,7 @@ import { useContext, useEffect, useMemo, useRef } from "react";
 import { attribute, float, normalView, pow, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
-import { createXzQuad, embedXZMat4 } from "../service/geometry";
+import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { getLightMetas } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
@@ -16,6 +16,7 @@ export function Debug() {
   const instRef = useRef<THREE.InstancedMesh>(null);
   const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
   const decorPointsRef = useRef<THREE.InstancedMesh>(null);
+  const doorNormalsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
   const decorPointsGeo = useMemo(() => {
     const geo = createXzQuad();
@@ -52,8 +53,10 @@ export function Debug() {
 
   const state = useStateRef(
     (): State => ({
+      arrowGeo: createArrowGeo(),
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
+      doorNormalsShown: true,
       lightSpheresShown: false,
       navMeshShown: false,
       onPointsShown: false,
@@ -119,6 +122,23 @@ export function Debug() {
           tmpMat4.makeTranslation(positions[i]).scale(new THREE.Vector3(radii[i], radii[i], radii[i]));
           inst.setMatrixAt(i, tmpMat4);
         }
+        inst.instanceMatrix.needsUpdate = true;
+      },
+      updateDoorNormals() {
+        const inst = doorNormalsRef.current;
+        if (!inst) return;
+        let count = 0;
+        for (const door of Object.values(w.door.byKey)) {
+          if (count >= maxDoorNormals) break;
+          const mid = { x: (door.src.x + door.dst.x) / 2, y: (door.src.y + door.dst.y) / 2 };
+          const n = door.normal;
+          embedXZMat4(
+            { a: n.x * arrowLen, b: n.y * arrowLen, c: -n.y * arrowWidth, d: n.x * arrowWidth, e: mid.x, f: mid.y },
+            { yHeight: doorNormalHeight, mat4: tmpMat4 },
+          );
+          inst.setMatrixAt(count++, tmpMat4);
+        }
+        inst.count = count;
         inst.instanceMatrix.needsUpdate = true;
       },
       updateOnPoints() {
@@ -208,6 +228,7 @@ export function Debug() {
 
   useEffect(() => {
     state.updateLightSpheres();
+    state.updateDoorNormals();
   }, [w.hash, w.gmsData]);
 
   useEffect(() => {
@@ -258,6 +279,16 @@ export function Debug() {
         <primitive object={lightSphereMat} attach="material" />
       </instancedMesh>
 
+      <instancedMesh
+        ref={doorNormalsRef}
+        args={[state.arrowGeo, undefined, maxDoorNormals]}
+        frustumCulled={false}
+        visible={state.doorNormalsShown}
+        renderOrder={-4}
+      >
+        <meshBasicMaterial color="cyan" side={THREE.DoubleSide} />
+      </instancedMesh>
+
       {state.physicsColliders.length > 0 && (
         <group name="static-colliders" visible={state.physicsColliders.length > 0}>
           {/* <lineSegments geometry={state.physicsLines}>
@@ -284,13 +315,19 @@ const pathWidth = 0.02;
 const maxPathSegments = 256;
 const maxLightSpheres = 1024;
 const maxDecorPoints = 1024;
+const maxDoorNormals = 512;
 const onPointHeight = 0.005;
 const lightSphereHeight = 0;
+const arrowLen = 0.5;
+const arrowWidth = 0.5;
+const doorNormalHeight = 0.05;
 const tmpMat4 = new THREE.Matrix4();
 
 export type State = {
+  arrowGeo: THREE.BufferGeometry;
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
+  doorNormalsShown: boolean;
   lightSpheresShown: boolean;
   navMeshShown: boolean;
   onPointsShown: boolean;
@@ -302,6 +339,7 @@ export type State = {
   })[];
   physicsCollidersShown: boolean;
   computeDemoPath(): void;
+  updateDoorNormals(): void;
   updateOnPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;

@@ -1,10 +1,18 @@
 # TODO
 
+- 🚧 door normals determined by slide direction
+  - ✅ debug draw normals
+  - 🚧 createLayout connector has normal derived from `meta.slide`
+- can specify per-side door labels
+
+- speech bubble improvements
+  - exists i.e. `w bubble.ensure rob`
+  - draggable
+  - connector from npc to bubble
+
 - small-map-0 -> 301-only
   - also clean up other map names
-
 - fix npc moves through door
-
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle
   - ❌ track gaps
