@@ -15,11 +15,11 @@ export default function Doors() {
 
   const state = useStateRef(
     (): State => ({
+      animTargets: new Map(),
       box: createDoorBox(),
       byKey: {},
       inst: null,
       openRatioArray: new Float32Array(0),
-      animTargets: new Map(),
 
       buildByKey() {
         const prevByKey = state.byKey;
@@ -62,6 +62,20 @@ export default function Doors() {
           }
         }
       },
+      buildLabelTextures() {
+        const labelToLayer = new Map<string, number>();
+        const arr = new Float32Array(w.gms.length << 8);
+        for (const { instanceId, connector } of Object.values(state.byKey)) {
+          const label = (connector.meta.label as string | undefined) ?? "todo";
+          if (!labelToLayer.has(label)) {
+            const idx = labelToLayer.size;
+            labelToLayer.set(label, idx);
+            drawDoorLabelLayer(w.texDoorLabel, idx, label);
+          }
+          arr[instanceId] = labelToLayer.get(label) ?? 0;
+        }
+        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(arr, 1));
+      },
       cancelClose(door) {
         window.clearTimeout(door.closeTimeoutId);
         delete door.closeTimeoutId;
@@ -78,6 +92,20 @@ export default function Doors() {
         const { meta, roomIds } = gm.doors[doorId];
         return { gmId, doorId, gdKey, seg, hull, roomIds, ...meta };
       },
+      forceDoor(gmId, doorId, open) {
+        const isOpen = state.isOpen(gmId, doorId);
+        if (typeof open === "boolean" && open === isOpen) {
+          return;
+        }
+        const shouldOpen = open === undefined ? !isOpen : open;
+        const instanceId = state.encodeGmDoorId(gmId, doorId);
+        state.animTargets.set(instanceId, shouldOpen ? doorOpenTarget : 0);
+        w.events.next({
+          key: shouldOpen ? "door-opening" : "door-closing",
+          open: isOpen,
+          ...state.decodeInstanceId(instanceId),
+        });
+      },
       isOpen(gmId, doorId) {
         return state.openRatioArray[state.encodeGmDoorId(gmId, doorId)] > doorOpenTest;
       },
@@ -88,6 +116,25 @@ export default function Doors() {
         const { gdKey } = state.decodeInstanceId(instanceId);
         state.byKey[gdKey].open = open;
         w.events.next({ key: open ? "door-open" : "door-closed", open, ...state.decodeInstanceId(instanceId) });
+      },
+      onTick(delta: number) {
+        if (state.animTargets.size === 0) return;
+        let changed = false;
+        for (const [instanceId, target] of state.animTargets) {
+          const cur = state.openRatioArray[instanceId];
+          const next = cur + Math.sign(target - cur) * delta * doorSpeed;
+          if ((target - cur) * (target - next) <= 0) {
+            state.onDoorChanged(instanceId, target);
+          } else {
+            state.openRatioArray[instanceId] = next;
+          }
+          changed = true;
+        }
+        if (changed) {
+          const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
+          if (attr) attr.needsUpdate = true;
+          // if (w.disabled) w.view.forceUpdate();
+        }
       },
       positionInstances() {
         const { inst } = state;
@@ -165,20 +212,6 @@ export default function Doors() {
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
       },
-      forceDoor(gmId, doorId, open) {
-        const isOpen = state.isOpen(gmId, doorId);
-        if (typeof open === "boolean" && open === isOpen) {
-          return;
-        }
-        const shouldOpen = open === undefined ? !isOpen : open;
-        const instanceId = state.encodeGmDoorId(gmId, doorId);
-        state.animTargets.set(instanceId, shouldOpen ? doorOpenTarget : 0);
-        w.events.next({
-          key: shouldOpen ? "door-opening" : "door-closing",
-          open: isOpen,
-          ...state.decodeInstanceId(instanceId),
-        });
-      },
       toggleDoor(door, opts = {}) {
         if (door.sealed === true) {
           return false;
@@ -253,39 +286,6 @@ export default function Doors() {
         });
 
         return true;
-      },
-      buildLabelTextures() {
-        const labelToLayer = new Map<string, number>();
-        const arr = new Float32Array(w.gms.length << 8);
-        for (const { instanceId, connector } of Object.values(state.byKey)) {
-          const label = (connector.meta.label as string | undefined) ?? "todo";
-          if (!labelToLayer.has(label)) {
-            const idx = labelToLayer.size;
-            labelToLayer.set(label, idx);
-            drawDoorLabelLayer(w.texDoorLabel, idx, label);
-          }
-          arr[instanceId] = labelToLayer.get(label) ?? 0;
-        }
-        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(arr, 1));
-      },
-      onTick(delta: number) {
-        if (state.animTargets.size === 0) return;
-        let changed = false;
-        for (const [instanceId, target] of state.animTargets) {
-          const cur = state.openRatioArray[instanceId];
-          const next = cur + Math.sign(target - cur) * delta * doorSpeed;
-          if ((target - cur) * (target - next) <= 0) {
-            state.onDoorChanged(instanceId, target);
-          } else {
-            state.openRatioArray[instanceId] = next;
-          }
-          changed = true;
-        }
-        if (changed) {
-          const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
-          if (attr) attr.needsUpdate = true;
-          // if (w.disabled) w.view.forceUpdate();
-        }
       },
     }),
   );
