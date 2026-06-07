@@ -5,9 +5,10 @@
   - ✅ createLayout connector has normal derived from `meta.slide`
     - weirdly the angled-rect convention "works" most of the time
     - normal should point "from larger to smaller" if possible
+    - ✅ hull door normal should point outwards
     - ✅ account for flipping of symbol instances
       - ✅ `door.meta.det` in -1, +1
-  - 🚧 migrate doors
+  - ✅ migrate doors
 - can specify per-side door labels
 
 - speech bubble improvements
