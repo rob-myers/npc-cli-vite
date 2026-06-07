@@ -387,7 +387,7 @@ export function WorldMenu() {
                           break;
                         case "NavMesh":
                           w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
-                          w.view.forceUpdate();
+                          setTimeout(() => w.view.forceUpdate());
                           break;
                         case "Points": {
                           const next = !w.debug.onPointsShown;

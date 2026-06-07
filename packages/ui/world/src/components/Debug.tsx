@@ -15,17 +15,17 @@ export function Debug() {
   const w = useContext(WorldContext);
   const instRef = useRef<THREE.InstancedMesh>(null);
   const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
-  const onPointsRef = useRef<THREE.InstancedMesh>(null);
+  const decorPointsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
-  const onPointsGeo = useMemo(() => {
+  const decorPointsGeo = useMemo(() => {
     const geo = createXzQuad();
-    geo.setAttribute("uvOffsets", new THREE.InstancedBufferAttribute(new Float32Array(maxOnPoints * 2), 2));
-    geo.setAttribute("uvDimensions", new THREE.InstancedBufferAttribute(new Float32Array(maxOnPoints * 2), 2));
-    geo.setAttribute("uvTextureIds", new THREE.InstancedBufferAttribute(new Uint32Array(maxOnPoints), 1));
+    geo.setAttribute("uvOffsets", new THREE.InstancedBufferAttribute(new Float32Array(maxDecorPoints * 2), 2));
+    geo.setAttribute("uvDimensions", new THREE.InstancedBufferAttribute(new Float32Array(maxDecorPoints * 2), 2));
+    geo.setAttribute("uvTextureIds", new THREE.InstancedBufferAttribute(new Uint32Array(maxDecorPoints), 1));
     return geo;
   }, []);
 
-  const onPointsMat = useMemo(() => {
+  const decorPointsMat = useMemo(() => {
     // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
@@ -122,7 +122,7 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
       },
       updateOnPoints() {
-        const inst = onPointsRef.current;
+        const inst = decorPointsRef.current;
         if (!inst || !w.sheets || !w.decor) return;
         let count = 0;
         for (const gm of w.gms) {
@@ -139,15 +139,15 @@ export function Debug() {
               count++;
               continue;
             }
-            (onPointsGeo.getAttribute("uvOffsets").array as Float32Array).set(
+            (decorPointsGeo.getAttribute("uvOffsets").array as Float32Array).set(
               [entry.rect.x / dims.width, entry.rect.y / dims.height],
               count * 2,
             );
-            (onPointsGeo.getAttribute("uvDimensions").array as Float32Array).set(
+            (decorPointsGeo.getAttribute("uvDimensions").array as Float32Array).set(
               [entry.rect.width / dims.width, entry.rect.height / dims.height],
               count * 2,
             );
-            (onPointsGeo.getAttribute("uvTextureIds").array as Uint32Array)[count] = entry.sheetId;
+            (decorPointsGeo.getAttribute("uvTextureIds").array as Uint32Array)[count] = entry.sheetId;
             const pw = entry.originalWidth * sguToWorldScale;
             const ph = entry.originalHeight * sguToWorldScale;
             const angle = (decor.orient - 90) * (Math.PI / 180);
@@ -162,15 +162,15 @@ export function Debug() {
               { yScale: onPointHeight, yHeight: (decor.meta.y ?? 0) + 0.01, mat4: tmpMat4 },
             );
             inst.setMatrixAt(count, tmpMat4);
-            if (++count >= maxOnPoints) break;
+            if (++count >= maxDecorPoints) break;
           }
-          if (count >= maxOnPoints) break;
+          if (count >= maxDecorPoints) break;
         }
         inst.count = count;
         inst.instanceMatrix.needsUpdate = true;
-        onPointsGeo.getAttribute("uvOffsets").needsUpdate = true;
-        onPointsGeo.getAttribute("uvDimensions").needsUpdate = true;
-        onPointsGeo.getAttribute("uvTextureIds").needsUpdate = true;
+        decorPointsGeo.getAttribute("uvOffsets").needsUpdate = true;
+        decorPointsGeo.getAttribute("uvDimensions").needsUpdate = true;
+        decorPointsGeo.getAttribute("uvTextureIds").needsUpdate = true;
       },
       updateInstances() {
         const inst = instRef.current;
@@ -268,8 +268,8 @@ export function Debug() {
       )}
 
       <instancedMesh
-        ref={onPointsRef}
-        args={[onPointsGeo, onPointsMat, maxOnPoints]}
+        ref={decorPointsRef}
+        args={[decorPointsGeo, decorPointsMat, maxDecorPoints]}
         frustumCulled={false}
         visible={state.onPointsShown}
         renderOrder={-5}
@@ -283,7 +283,7 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const maxLightSpheres = 1024;
-const maxOnPoints = 1024;
+const maxDecorPoints = 1024;
 const onPointHeight = 0.005;
 const lightSphereHeight = 0;
 const tmpMat4 = new THREE.Matrix4();
