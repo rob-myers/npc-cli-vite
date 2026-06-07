@@ -26,19 +26,6 @@ export function Debug() {
     return geo;
   }, []);
 
-  const decorPointsMat = useMemo(() => {
-    // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
-    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
-    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
-    const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
-    const transformedUv = vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs);
-    const texNode = texture(w.texDecor.tex, transformedUv);
-    texNode.depthNode = uvTexIds;
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
-    mat.colorNode = texNode;
-    return mat;
-  }, []);
-
   const lightSphereMat = useMemo(() => {
     const mat = new THREE.MeshBasicNodeMaterial({
       color: "white",
@@ -59,7 +46,7 @@ export function Debug() {
       doorNormalsShown: true,
       lightSpheresShown: false,
       navMeshShown: false,
-      onPointsShown: false,
+      doPointsShown: false,
       originShown: false,
       openDoorsOnClick: true,
 
@@ -233,7 +220,8 @@ export function Debug() {
 
   useEffect(() => {
     state.updateDecorPoints();
-  }, [w.hash, w.gmsData, w.decor?.ready]);
+    state.update();
+  }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
 
   useEffect(() => {
     const sub = w.events.subscribe({
@@ -245,6 +233,19 @@ export function Debug() {
     });
     return () => sub.unsubscribe();
   }, [state.openDoorsOnClick]);
+
+  const decorPointsMaterial = useMemo(() => {
+    // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
+    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
+    const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
+    const transformedUv = vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs);
+    const texNode = texture(w.texDecor.tex, transformedUv);
+    texNode.depthNode = uvTexIds;
+    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
+    mat.colorNode = texNode;
+    return { material: mat, uid: crypto.randomUUID() };
+  }, [state.doPointsShown]);
 
   const navMeshHelper = useMemo(() => {
     return createNavMeshHelper(w.nav?.navMesh);
@@ -299,10 +300,11 @@ export function Debug() {
       )}
 
       <instancedMesh
+        key={decorPointsMaterial.uid}
         ref={decorPointsRef}
-        args={[decorPointsGeo, decorPointsMat, maxDecorPoints]}
+        args={[decorPointsGeo, decorPointsMaterial.material, maxDecorPoints]}
         frustumCulled={false}
-        visible={state.onPointsShown}
+        visible={state.doPointsShown}
         renderOrder={-5}
       />
 
@@ -330,7 +332,7 @@ export type State = {
   doorNormalsShown: boolean;
   lightSpheresShown: boolean;
   navMeshShown: boolean;
-  onPointsShown: boolean;
+  doPointsShown: boolean;
   originShown: boolean;
   openDoorsOnClick: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
