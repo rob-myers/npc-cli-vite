@@ -42,6 +42,7 @@ export function WorldMenu() {
         tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
       },
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
+      debugOpen: tryLocalStorageGetParsed(debugStorageKey) === true,
       saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
 
       getMaxY() {
@@ -76,6 +77,70 @@ export function WorldMenu() {
   w.menu = state;
 
   const y = useMotionValue(state.getClampedY(state.y));
+
+  const isDebugActive = (item: string) => {
+    switch (item) {
+      case "Pick":
+        return w.view?.objectPick.value === 1;
+      case "Post FX":
+        return w.view?.postProcessing ?? true;
+      case "Colliders":
+        return w.debug?.physicsCollidersShown ?? false;
+      case "Lights":
+        return w.debug?.lightSpheresShown ?? true;
+      case "NavMesh":
+        return w.debug?.navMeshShown ?? false;
+      case "Normals":
+        return w.debug?.doorNormalsShown ?? true;
+      case "Points":
+        return w.debug?.doPointsShown ?? false;
+      default:
+        return false;
+    }
+  };
+
+  const onDebugToggle = (item: string) => {
+    switch (item) {
+      case "Pick":
+        w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
+        w.view.forceUpdate();
+        break;
+      case "Post FX":
+        w.view.set({ postProcessing: !w.view.postProcessing });
+        state.update();
+        break;
+      case "Room Hit":
+        state.set({ debugHitOpen: true });
+        break;
+      case "Graphs":
+        state.set({ gmGraphsOpen: true });
+        break;
+      case "Skins":
+        state.set({ skinDebugOpen: true });
+        break;
+      case "Colliders":
+        w.debug?.showPhysicsColliders();
+        w.update();
+        break;
+      case "Lights":
+        w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
+        w.update();
+        break;
+      case "NavMesh":
+        w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
+        setTimeout(() => w.view.forceUpdate());
+        break;
+      case "Normals":
+        w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
+        w.view.forceUpdate();
+        break;
+      case "Points": {
+        w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
+        w.view.forceUpdate();
+        break;
+      }
+    }
+  };
 
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
@@ -310,106 +375,66 @@ export function WorldMenu() {
                   </>
                 )}
 
-                <div className="flex">
-                  <MenuMultiSelect
-                    label="actions"
-                    items={actionItems}
-                    className="justify-center"
-                    isActive={(action) => {
-                      if (action === "Wall Lights") return w.wall?.lightsShown ?? true;
-                      return false;
-                    }}
-                    onToggle={(action) => {
-                      if (action === "Spawn NPC") {
-                        const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
-                        if (!result.success) return;
-                        const [x, y, z] = result.position;
-                        const key = `npc-${Date.now().toString(36)}`;
-                        w.npc.spawn({ npcKey: key, at: [x, y, z] });
-                        w.update();
-                      } else if (action === "Clear NPCs") {
-                        w.npc.remove(...Object.keys(w.npc.npc));
-                        w.view.forceUpdate();
-                      } else if (action === "Wall Lights") {
-                        w.wall?.toggleLights();
-                      }
-                    }}
-                  />
-
-                  <MenuMultiSelect
-                    label="debug"
-                    items={debugItems}
-                    className="justify-center"
-                    isActive={(item) => {
-                      switch (item) {
-                        case "Pick":
-                          return w.view?.objectPick.value === 1;
-                        case "Post FX":
-                          return w.view?.postProcessing ?? true;
-                        case "Colliders":
-                          return w.debug?.physicsCollidersShown ?? false;
-                        case "Lights":
-                          return w.debug?.lightSpheresShown ?? true;
-                        case "NavMesh":
-                          return w.debug?.navMeshShown ?? false;
-                        case "Normals":
-                          return w.debug?.doorNormalsShown ?? true;
-                        case "Points":
-                          return w.debug?.onPointsShown ?? false;
-                        default:
-                          return false;
-                      }
-                    }}
-                    onToggle={(item) => {
-                      switch (item) {
-                        case "Pick":
-                          w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
-                          w.view.forceUpdate();
-                          break;
-                        case "Post FX":
-                          w.view.set({ postProcessing: !w.view.postProcessing });
-                          state.update();
-                          break;
-                        case "Room Hit":
-                          state.set({ debugHitOpen: true });
-                          break;
-                        case "Graphs":
-                          state.set({ gmGraphsOpen: true });
-                          break;
-                        case "Skins":
-                          state.set({ skinDebugOpen: true });
-                          break;
-                        case "Colliders":
-                          w.debug?.showPhysicsColliders();
-                          w.update();
-                          break;
-                        case "Lights":
-                          w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
-                          w.update();
-                          break;
-                        case "NavMesh":
-                          w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
-                          setTimeout(() => w.view.forceUpdate());
-                          break;
-                        case "Normals":
-                          w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
-                          w.view.forceUpdate();
-                          break;
-                        case "Points": {
-                          const next = !w.debug.onPointsShown;
-                          w.debug?.set({ onPointsShown: next });
-                          if (next) w.debug?.updateDecorPoints();
-                          w.view.forceUpdate();
-                          break;
-                        }
-                      }
-                    }}
-                  />
-                </div>
+                <MenuMultiSelect
+                  label="actions"
+                  items={actionItems}
+                  isActive={(action) => {
+                    if (action === "Wall Lights") return w.wall?.lightsShown ?? true;
+                    return false;
+                  }}
+                  onToggle={(action) => {
+                    if (action === "Spawn NPC") {
+                      const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
+                      if (!result.success) return;
+                      const [x, y, z] = result.position;
+                      const key = `npc-${Date.now().toString(36)}`;
+                      w.npc.spawn({ npcKey: key, at: [x, y, z] });
+                      w.update();
+                    } else if (action === "Clear NPCs") {
+                      w.npc.remove(...Object.keys(w.npc.npc));
+                      w.view.forceUpdate();
+                    } else if (action === "Wall Lights") {
+                      w.wall?.toggleLights();
+                    }
+                  }}
+                />
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
         </Menu.Root>
+
+        <div className="bg-gray-800 text-white select-none">
+          <div
+            className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+            onClick={() => {
+              state.debugOpen = !state.debugOpen;
+              tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
+              state.update();
+            }}
+          >
+            {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+            debug
+          </div>
+          {state.debugOpen && (
+            <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
+              {debugItems.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={cn(
+                    "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                    isDebugActive(item)
+                      ? "text-green-400 bg-slate-700"
+                      : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                  )}
+                  onClick={() => onDebugToggle(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <AnimatePresence>
           {toastKeys.map((key) => (
@@ -477,6 +502,7 @@ export type State = {
   themeEditorRef: HTMLTextAreaElement;
   y: number;
   themeEditorOpen: boolean;
+  debugOpen: boolean;
   saveTimer: ReturnType<typeof setTimeout> | 0;
   minY: number;
   getMaxY(): number;
@@ -489,6 +515,7 @@ export type State = {
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
+const debugStorageKey = "world-debug-panel-open";
 const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
 const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
 const debugItems = [
