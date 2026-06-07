@@ -44,11 +44,21 @@ export class Connector {
 
     const {
       seg: [u, v],
-      normal,
+      normal: angledRectNormal,
     } = geomService.getAngledRectSeg({ angle, baseRect });
 
     this.seg = [u, v];
-    this.normal = normal;
+
+    /**
+     * - Rather than derive normal from "angled rect convention", we derive it
+     *   from `poly.meta.slide` ([number, number]) and `poly.meta.det` (-1 | +1).
+     * - This is important: door labels may be on a specific side.
+     * - The slide direction maybe be flipped, but we undo this when computing
+     *   the door normal i.e. 90deg CCW viewed from above relative to original untransformed symbol.
+     */
+    this.normal = Array.isArray(poly.meta.slide)
+      ? new Vect(poly.meta.slide[0], poly.meta.slide[1]).rotate((-1 * (poly.meta.det ?? 1) * Math.PI) / 2).normalize()
+      : angledRectNormal;
 
     // 🔔 hull door normals should point outwards
     if (this.meta.hull === true) {
@@ -77,8 +87,8 @@ export class Connector {
 
     // 🚧 offset needed?
     const doorEntryDelta = 0.5 * baseRect.height + 0.05;
-    const inFront = poly.center.addScaled(normal, doorEntryDelta).precision(precision);
-    const behind = poly.center.addScaled(normal, -doorEntryDelta).precision(precision);
+    const inFront = poly.center.addScaled(this.normal, doorEntryDelta).precision(precision);
+    const behind = poly.center.addScaled(this.normal, -doorEntryDelta).precision(precision);
 
     this.entries = [inFront, behind];
     this.roomIds = [null, null];
