@@ -18,10 +18,11 @@
     - ❌ `$leftDoorLabel` e.g. for bridge--046 and can specify `leftDoorLabel='sector-b'`
 
 - 🚧 speech bubble improvements
-  - exists i.e. `w bubble.ensure rob`
-  - draggable
+  - ✅ exists i.e. `w bubble.ensure rob`
+  - 🚧 draggable
   - connector from npc to bubble
 
+- on kill `move` npc should not slide back
 - small-map-0 -> 301-only
   - also clean up other map names
 - remove all suffices e.g. --0.25x0.25 from all symbols

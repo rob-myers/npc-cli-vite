@@ -95,7 +95,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   return (
     <Html3d
       ref={b.html3dRef.bind(b)}
-      className="absolute top-0 left-0 [&>div]:flex [&>div]:justify-center"
+      className="pointer-events-none absolute top-0 left-0 [&>div]:flex [&>div]:justify-center"
       baseScale={speechBubbleBaseScale}
       offset={b.offset}
       position={b.position}
@@ -104,10 +104,10 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       visible
     >
       {/* demo ui */}
-      <div className="relative">
+      <div className="relative *:pointer-events-auto">
         <div
           className={cn(
-            "text-[#ff9] p-4 rounded-2xl bg-black/30 leading-[1.2]",
+            "text-[#ff9] p-4 text-[2rem] rounded-2xl bg-black/30 leading-[1.2]",
             selectMode ? "cursor-crosshair" : "select-none",
           )}
           onWheel={b.forwardWheelEvents.bind(b)}
