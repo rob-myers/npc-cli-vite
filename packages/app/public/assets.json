@@ -30555,7 +30555,7 @@
       "background": "bg-[#333]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#fff2"},
-        "nonHull": {"fill": "#5557", "stroke": "#000"}
+        "nonHull": {"fill": "#000", "stroke": "#fff1"}
       },
       "floor": {
         "hullFill": "#444",

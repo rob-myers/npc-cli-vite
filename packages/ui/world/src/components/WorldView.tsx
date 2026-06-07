@@ -34,7 +34,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 4,
-        minDistance: w.touchDevice ? 10 : 15,
+        minDistance: w.touchDevice ? 10 : 10,
         maxDistance: 60,
         extraZoom: 2,
         panSpeed: 2,
@@ -421,7 +421,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={40} makeDefault zoom={1} />
+        <PerspectiveCamera fov={60} makeDefault zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
