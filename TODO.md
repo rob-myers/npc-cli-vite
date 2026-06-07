@@ -1,6 +1,6 @@
 # TODO
 
-- 🚧 door normals determined by slide direction
+- ✅ door normals determined by slide direction
   - ✅ debug draw normals
   - ✅ createLayout connector has normal derived from `meta.slide`
     - weirdly the angled-rect convention "works" most of the time
@@ -9,7 +9,10 @@
     - ✅ account for flipping of symbol instances
       - ✅ `door.meta.det` in -1, +1
   - ✅ migrate doors
-- can specify per-side door labels
+
+- 🚧 can specify per-side door labels
+  - Doors applies `label` to "front" of door only
+  - `door.meta.backLabel`
 
 - speech bubble improvements
   - exists i.e. `w bubble.ensure rob`

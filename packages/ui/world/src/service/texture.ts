@@ -378,30 +378,32 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   ct.clearRect(0, 0, texW, texH);
   ct.drawImage((basePanelCanvas ??= drawDoorBasePanel()), 0, 0);
 
-  const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
-  ct.save();
-  ct.translate(texW / 2, logoY);
-  ct.scale(1, -1);
-  ct.font = "36px sans-serif";
-  ct.textAlign = "center";
-  ct.textBaseline = "middle";
+  if (label !== "") {
+    const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
+    ct.save();
+    ct.translate(texW / 2, logoY);
+    ct.scale(1, -1);
+    ct.font = "36px sans-serif";
+    ct.textAlign = "center";
+    ct.textBaseline = "middle";
 
-  const measured = ct.measureText(label);
-  const padX = 12;
-  const padY = 8;
-  const rw = measured.width + padX * 2;
-  const rh = 36 + padY * 2;
-  ct.fillStyle = "rgba(30, 30, 30, 0.92)";
-  ct.strokeStyle = "rgba(220, 220, 220, 0.92)";
-  ct.lineWidth = 2;
-  ct.beginPath();
-  ct.roundRect(-rw / 2, -rh / 2, rw, rh, 6);
-  ct.fill();
-  ct.stroke();
+    const measured = ct.measureText(label);
+    const padX = 12;
+    const padY = 8;
+    const rw = measured.width + padX * 2;
+    const rh = 36 + padY * 2;
+    ct.fillStyle = "rgba(30, 30, 30, 0.92)";
+    ct.strokeStyle = "rgba(220, 220, 220, 0.92)";
+    ct.lineWidth = 2;
+    ct.beginPath();
+    ct.roundRect(-rw / 2, -rh / 2, rw, rh, 6);
+    ct.fill();
+    ct.stroke();
 
-  ct.fillStyle = "#fff";
-  ct.fillText(label, 0, 0);
-  ct.restore();
+    ct.fillStyle = "#fff";
+    ct.fillText(label, 0, 0);
+    ct.restore();
+  }
 
   texArray.updateIndex(layerIndex);
 }
