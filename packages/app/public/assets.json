@@ -467,7 +467,7 @@
               [11.875, 4.6875]
             ]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "bridge"}
+          "meta": {"door": true, "slide": [0, -1], "label": "bridge"}
         },
         {
           "type": "Polygon",
@@ -8250,7 +8250,7 @@
               [11.875, 4.6875]
             ]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "bridge"}
+          "meta": {"door": true, "slide": [0, -1], "label": "bridge"}
         },
         {
           "type": "Polygon",
@@ -13512,7 +13512,7 @@
               [20.8875, 6.2125]
             ]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "bridge", "det": 1}
+          "meta": {"door": true, "slide": [0, -1], "label": "bridge", "det": 1}
         },
         {
           "type": "Polygon",
@@ -24157,7 +24157,12 @@
                 [20.8875, 6.2125]
               ]
             ],
-            "meta": {"door": true, "slide": [0, 1], "label": "bridge", "det": 1}
+            "meta": {
+              "door": true,
+              "slide": [0, -1],
+              "label": "bridge",
+              "det": 1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
