@@ -17,22 +17,21 @@
     - ✅ literals e.g. for non-hull doors in hull symbols
     - ❌ `$leftDoorLabel` e.g. for bridge--046 and can specify `leftDoorLabel='sector-b'`
 
-- BUG hmr issue onchange meta of door i.e. not seeing updated
-
-- speech bubble improvements
+- 🚧 speech bubble improvements
   - exists i.e. `w bubble.ensure rob`
   - draggable
   - connector from npc to bubble
 
 - small-map-0 -> 301-only
   - also clean up other map names
+- remove all suffices e.g. --0.25x0.25 from all symbols
 - fix npc moves through door
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle
   - ❌ track gaps
 
 - fetch gltf json so can cache-bust
-- npc labels should match animation e.g. sit, lie
+- ✅ npc labels should match animation e.g. sit, lie
 - labels as decor point
   - add some labels to 301
   - Decor renders them
@@ -43,7 +42,6 @@
   - maybe just clarify current setup vs previous "hot reloading"
 - support `look`
 - onchange map sealed doors are staying sealed
-- remove all suffices e.g. --0.25x0.25 from all symbols
 - ❌ change lighting from "loop thru radii in shaders" to "multiply by texture"
   - the lighting was already efficient i.e. precomputes two relative light sources per instance
 - on idle should pin in front otherwise npc "slides back"
