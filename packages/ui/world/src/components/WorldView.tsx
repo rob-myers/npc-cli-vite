@@ -9,7 +9,7 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { motion } from "motion/react";
 import { useContext, useEffect } from "react";
-import { vignette } from "three/addons/tsl/display/CRT.js";
+import { colorBleeding, vignette } from "three/addons/tsl/display/CRT.js";
 import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
@@ -310,14 +310,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = vec4(
-          vignette(
-            sceneColor.rgb, // The input image color
-            float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
-            float(0.7), // Smoothness: Controls gradient falloff softness
-            screenUV, // Coordinates mapping
+
+        pipeline.outputNode = colorBleeding(
+          vec4(
+            vignette(
+              sceneColor.rgb, // The input image color
+              float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
+              float(0.7), // Smoothness: Controls gradient falloff softness
+              screenUV, // Coordinates mapping
+            ),
+            sceneColor.a,
           ),
-          sceneColor.a,
+          uniform(0.005),
         );
 
         const originalRender = gl.render.bind(gl);
