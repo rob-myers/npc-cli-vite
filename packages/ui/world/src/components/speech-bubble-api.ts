@@ -26,6 +26,12 @@ export class SpeechBubbleApi {
   dragStartClient = { x: 0, y: 0 };
   dragWorldOffsetAtStart = { x: 0, y: 0, z: 0 };
 
+  scale = 1;
+  isResizing = false;
+  resizeStartClient = { x: 0, y: 0 };
+  resizeScaleAtStart = 1;
+  bubbleDiv: HTMLElement | null = null;
+
   connectorSvg: SVGSVGElement | null = null;
   connectorPolyline: SVGPolylineElement | null = null;
 
@@ -134,6 +140,26 @@ export class SpeechBubbleApi {
     this.isDragging = false;
   }
 
+  onResizeStart(e: PointerEvent) {
+    this.isResizing = true;
+    this.resizeStartClient = { x: e.clientX, y: e.clientY };
+    this.resizeScaleAtStart = this.scale;
+    (e.target as Element).setPointerCapture(e.pointerId);
+  }
+
+  onResizeMove(e: PointerEvent) {
+    if (!this.isResizing || !this.bubbleDiv) return;
+    const dx = e.clientX - this.resizeStartClient.x;
+    const dy = e.clientY - this.resizeStartClient.y;
+    this.scale = Math.min(Math.max(this.resizeScaleAtStart * Math.exp((dx + dy) * 0.005), 0.4), 4);
+    this.bubbleDiv.style.transform = `scale(${this.scale})`;
+    this.html3d?.onFrame();
+  }
+
+  onResizeEnd(_e: PointerEvent) {
+    this.isResizing = false;
+  }
+
   setTracked(tracked: TrackedObject3D) {
     this.tracked = tracked;
   }
@@ -148,7 +174,7 @@ export class SpeechBubbleApi {
     if (!this.connectorPolyline || !this.tracked || !this.html3d.domTarget) return;
 
     const cr = this.html3d.domTarget.getBoundingClientRect();
-    const br = this.html3d.innerDiv.getBoundingClientRect();
+    const br = (this.bubbleDiv ?? this.html3d.innerDiv).getBoundingClientRect();
 
     // Head top in screen space
     tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).addScaledVector(this.tracked.offset, headTopFrac);
