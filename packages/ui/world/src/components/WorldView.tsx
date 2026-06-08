@@ -311,17 +311,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const pipeline = new THREE.RenderPipeline(gl);
 
-        pipeline.outputNode = colorBleeding(
-          vec4(
+        pipeline.outputNode = vec4(
+          colorBleeding(
             vignette(
               sceneColor.rgb, // The input image color
               float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
               float(0.7), // Smoothness: Controls gradient falloff softness
               screenUV, // Coordinates mapping
             ),
-            sceneColor.a,
+            uniform(0.0025),
           ),
-          uniform(0.0025),
+          sceneColor.a,
         );
 
         const originalRender = gl.render.bind(gl);
