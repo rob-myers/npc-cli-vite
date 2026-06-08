@@ -455,3 +455,19 @@ export function createShadowMaterial(objectPick: THREE.UniformNode<"float", numb
   mat.outputNode = (select as any)(objectPick.notEqual(0), vec4(0, 0, 0, 0), output);
   return mat;
 }
+
+/**
+ * TypeScript is having trouble:
+ * >  error TS2590: Expression produces a union type that is too complex to represent.
+ */
+export type SelectFloatType = (
+  x: THREE.Node<"bool">,
+  y: THREE.Node<"float">,
+  z: THREE.Node<"float">,
+) => THREE.Node<"float">;
+
+/**
+ * TypeScript is having trouble:
+ * >  error TS2590: Expression produces a union type that is too complex to represent.
+ */
+export type SelectAnyType = (x: THREE.Node<"bool">, y: THREE.Node, z: THREE.Node) => THREE.Node;

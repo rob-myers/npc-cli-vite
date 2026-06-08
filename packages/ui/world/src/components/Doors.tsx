@@ -1,13 +1,14 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
+import { select } from "three/src/nodes/tsl/TSLBase.js";
 import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
-import { drawDoorLabelLayer } from "../service/texture";
+import { drawDoorLabelLayer, type SelectAnyType, type SelectFloatType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -346,14 +347,16 @@ export default function Doors() {
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
     // flip swaps which face shows the front vs back label
-    front.colorNode = texture(
-      w.texDoorLabel.tex,
-      vec2(uv().x.mul(cs).add(notFlipped.select(frontOffset, backOffset)), uv().y),
-    ).depth(notFlipped.select(texLayer, backTexLayer));
-    back.colorNode = texture(
-      w.texDoorLabel.tex,
-      vec2(uv().x.mul(cs).add(notFlipped.select(backOffset, frontOffset)), uv().y),
-    ).depth(notFlipped.select(backTexLayer, texLayer));
+
+    const correctedFrontOffset = (select as SelectFloatType)(notFlipped, frontOffset, backOffset);
+    const correctedBackOffset = (select as SelectFloatType)(notFlipped, backOffset, frontOffset);
+
+    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(correctedFrontOffset), uv().y)).depth(
+      (select as SelectAnyType)(notFlipped, texLayer, backTexLayer),
+    );
+    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(correctedBackOffset), uv().y)).depth(
+      (select as SelectAnyType)(notFlipped, backTexLayer, texLayer),
+    );
 
     return [edge, edge, top, edge, front, back];
   }, []);

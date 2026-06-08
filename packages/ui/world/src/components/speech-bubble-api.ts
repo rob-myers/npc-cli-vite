@@ -20,8 +20,6 @@ export class SpeechBubbleApi {
   w: WorldState;
   selectElName: string;
 
-  // Screen-pixel initial offset hint — converted to world units in initializeOffset().
-  initOffset = { x: 60, y: -20 };
   offsetInitialized = false;
   isDragging = false;
   dragStartClient = { x: 0, y: 0 };
@@ -64,33 +62,12 @@ export class SpeechBubbleApi {
     }
   }
 
-  /**
-   * Convert initOffset (screen pixels) to a world-space delta and store in this.offset.
-   * Call once after mount when the camera is ready.
-   */
   initializeOffset() {
-    if (this.offsetInitialized || !this.tracked || !this.w?.r3f) return;
+    if (this.offsetInitialized) return;
     this.offsetInitialized = true;
-    const { camera } = this.w.r3f;
-    const { width, height } = this.w.r3f.get().size;
-
-    // Anchor: NPC world pos + tracked offset
-    tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).add(this.tracked.offset);
-
-    // Project to get NDC depth and screen position
-    tmpVec2.copy(tmpVec).project(camera);
-    const ndcZ = tmpVec2.z;
-    const screenX = (tmpVec2.x * width) / 2 + width / 2;
-    const screenY = (-tmpVec2.y * height) / 2 + height / 2;
-
-    // Unproject target screen position (anchor + initOffset) at same depth
-    tmpVec2
-      .set(((screenX + this.initOffset.x) / width) * 2 - 1, -((screenY + this.initOffset.y) / height) * 2 + 1, ndcZ)
-      .unproject(camera);
-
-    this.offset.x = tmpVec2.x - tmpVec.x;
-    this.offset.y = tmpVec2.y - tmpVec.y;
-    this.offset.z = tmpVec2.z - tmpVec.z;
+    this.offset.x = 0;
+    this.offset.y = defaultBubbleYOffset;
+    this.offset.z = 0;
   }
 
   isMounted() {
@@ -146,9 +123,8 @@ export class SpeechBubbleApi {
 
     tmpVec2.set((e.clientX / width) * 2 - 1, -(e.clientY / height) * 2 + 1, ndcZ).unproject(camera);
 
-    this.offset.x = this.dragWorldOffsetAtStart.x + tmpVec2.x - tmpVec.x;
+    // Constrain to vertical only — bubble stays directly above NPC
     this.offset.y = this.dragWorldOffsetAtStart.y + tmpVec2.y - tmpVec.y;
-    this.offset.z = this.dragWorldOffsetAtStart.z + tmpVec2.z - tmpVec.z;
 
     this.html3d?.onFrame();
   }
@@ -167,32 +143,21 @@ export class SpeechBubbleApi {
     const cr = this.html3d.domTarget.getBoundingClientRect();
     const br = this.html3d.innerDiv.getBoundingClientRect();
 
-    tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).addScaledVector(this.tracked.offset, mouthFrac);
-    const [nx, ny] = toScreen(tmpVec, this.w.r3f);
+    // Head top in screen space
+    tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).addScaledVector(this.tracked.offset, headTopFrac);
+    const [hx, hy] = toScreen(tmpVec, this.w.r3f);
 
-    const bLeft = br.left - cr.left;
-    const bRight = br.right - cr.left;
-    const bTop = br.top - cr.top;
+    // Bubble bottom center in container coords
     const bBottom = br.bottom - cr.top;
+    const bCx = (br.left + br.right) / 2 - cr.left;
 
-    // Nearest point on bubble rect to mouth center
-    const bx = Math.max(bLeft, Math.min(bRight, nx));
-    const by = Math.max(bTop, Math.min(bBottom, ny));
-
-    // Offset start toward bubble by approx head radius so line begins at NPC's near side
-    const dx = bx - nx;
-    const dy = by - ny;
-    const len = Math.sqrt(dx * dx + dy * dy);
-
-    if (len <= npcHeadRadius) {
+    // Only draw when bubble is above head top (screen Y increases downward)
+    if (bBottom >= hy) {
       this.connectorPolyline.setAttribute("points", "");
       return;
     }
 
-    const sx = nx + (dx / len) * npcHeadRadius;
-    const sy = ny + (dy / len) * npcHeadRadius;
-
-    this.connectorPolyline.setAttribute("points", `${sx},${sy} ${bx},${by}`);
+    this.connectorPolyline.setAttribute("points", `${hx},${hy} ${bCx},${bBottom}`);
   }
 
   update: () => void = noop;
@@ -202,9 +167,9 @@ function noop() {}
 
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
-// fraction along tracked.offset (npcDefaultBubbleHeight=1.8) to reach mouth area
-const mouthFrac = 1.1 / 1.8;
-const npcHeadRadius = 32; // screen pixels
+const defaultBubbleYOffset = 0.5; // world meters above the bubble anchor
+// fraction along tracked.offset (npcDefaultBubbleHeight=1.8) to reach head top
+const headTopFrac = 1.55 / 1.8;
 
 function toScreen(v: THREE.Vector3, r3f: WorldState["r3f"]): [number, number] {
   const { camera } = r3f;
