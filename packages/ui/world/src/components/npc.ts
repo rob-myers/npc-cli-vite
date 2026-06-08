@@ -15,7 +15,7 @@ import {
   walkMaxAcceleration,
   walkSeparationWeight,
 } from "../const";
-import { groudPointToTuple, parseGroundPoint } from "../service/geometry";
+import { groundPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { emptyAnimationClip } from "../service/three-animation";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -177,7 +177,7 @@ export class Npc {
     agent.separationWeight = walkSeparationWeight;
     agent.maxAcceleration = walkMaxAcceleration;
     agent.maxSpeed = walkAgentMaxSpeed;
-    crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, groudPointToTuple(groundPoint));
+    crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, groundPointToTuple(groundPoint));
 
     this.last.dst = groundPoint;
     this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);

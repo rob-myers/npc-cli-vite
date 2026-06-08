@@ -4,7 +4,7 @@ import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import { defaultDoorCloseMs } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { groudPointToTuple, groundPointToVector3, parseGroundPoint } from "../service/geometry";
+import { groundPointToTuple, groundPointToVector3, parseGroundPoint } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -105,7 +105,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.npc.crowd,
           npc.agentId,
           result.nodeRef,
-          groudPointToTuple(blockingDoorNode.astar.centroid),
+          groundPointToTuple(blockingDoorNode.astar.centroid),
         );
       },
       npcCanAccess(npcKey, gdKey) {
