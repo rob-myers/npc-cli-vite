@@ -266,7 +266,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.events.next({
           key: "picked",
           ...(clickId && { clickId: clickId.id }),
-          meta: picked,
+          meta: { ...picked, nav: w.npc.getClosestPoly(point).success },
           // npc might lack gmId
           gmRoomId: "gmId" in picked ? w.e.findRoomContaining(point, true) : null,
 
