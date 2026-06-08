@@ -55,9 +55,7 @@ export class SpeechBubbleApi {
   initializeOffset() {
     if (this.offsetInitialized) return;
     this.offsetInitialized = true;
-    this.offset.x = 0;
-    this.offset.y = defaultBubbleYOffset;
-    this.offset.z = 0;
+    this.offset.x = this.offset.y = this.offset.z = 0;
   }
 
   isMounted() {
@@ -134,4 +132,3 @@ function noop() {}
 
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
-const defaultBubbleYOffset = 0.5; // world meters above the bubble anchor

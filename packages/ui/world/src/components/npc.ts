@@ -9,7 +9,9 @@ import {
   idleMaxAcceleration,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
-  npcDefaultBubbleHeight,
+  npcBubbleHeightLying,
+  npcBubbleHeightSitting,
+  npcBubbleHeightStanding,
   npcScale,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
@@ -37,13 +39,14 @@ export class Npc {
   material: THREE.MeshStandardNodeMaterial;
   shadowMaterial: THREE.MeshBasicNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
+  labelYShiftUniform: THREE.UniformNode<"float", number>;
   mixer: THREE.AnimationMixer = emptyAnimationMixer;
   skinnedMesh: THREE.SkinnedMesh;
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
 
   agentId: string | null = null;
-  bubbleOffset = new THREE.Vector3(0, npcDefaultBubbleHeight, 0);
+  bubbleOffset = new THREE.Vector3(0, 0, 0);
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   last = {
     blockingArea: -1,
@@ -102,6 +105,7 @@ export class Npc {
     this.position = init.position;
     this.material = init.material;
     this.labelMaterial = init.labelMaterial;
+    this.labelYShiftUniform = init.labelYShiftUniform;
     this.shadowMaterial = init.shadowMaterial;
     this.skinnedMesh = init.skinnedMesh;
     this.graph = init.graph;
@@ -129,6 +133,12 @@ export class Npc {
 
     this.moveClip = this.clips.walk;
     this.idleClip = this.clips.idle;
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
+    this.setLabelYShift(0);
+  }
+
+  setLabelYShift(shift: number) {
+    this.labelYShiftUniform.value = shift;
   }
 
   changeSkin(keyOrIndex: string | number) {
@@ -190,6 +200,8 @@ export class Npc {
 
     if (!this.moving) {
       this.moving = true;
+      this.bubbleOffset.y = npcBubbleHeightForClip(this.moveClip.name);
+      this.setLabelYShift(0);
       this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
       this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
     }
@@ -219,6 +231,8 @@ export class Npc {
     }
 
     this.playIdleClip(0.3);
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
+    this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
 
     this.moving = false;
     this.separating = false;
@@ -319,6 +333,7 @@ export type NpcInit = {
   material: THREE.MeshStandardNodeMaterial;
   shadowMaterial: THREE.MeshBasicNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
+  labelYShiftUniform: THREE.UniformNode<"float", number>;
   skinnedMesh: THREE.SkinnedMesh;
   graph: ReturnType<typeof buildGraph>;
   geometry: THREE.BufferGeometry;
@@ -328,3 +343,16 @@ const separationSpeedThreshold = 0.005;
 const separationCooldown = 0.5;
 const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;
+
+export function npcBubbleHeightForClip(clipName: string): number {
+  if (clipName === "sit") return npcBubbleHeightSitting;
+  if (clipName === "lie") return npcBubbleHeightLying;
+  return npcBubbleHeightStanding;
+}
+
+// 🚧 why don't these correspond to world meters?
+export function npcLabelYShiftForClip(clipName: string): number {
+  if (clipName === "sit") return 1.6;
+  if (clipName === "lie") return 0.75;
+  return 2;
+}

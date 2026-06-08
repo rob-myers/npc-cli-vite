@@ -17,12 +17,12 @@
     - ✅ literals e.g. for non-hull doors in hull symbols
     - ❌ `$leftDoorLabel` e.g. for bridge--046 and can specify `leftDoorLabel='sector-b'`
 
-- 🚧 speech bubble improvements
+- ✅ speech bubble improvements
   - ✅ exists i.e. `w bubble.ensure rob`
   - ✅ draggable
   - ✅ connector from npc to bubble
   - ✅ consider intersection with npc label
-  - 🚧 clean
+  - ✅ clean
 
 - ✅ on canvas resize speech bubbles updated
 
@@ -31,6 +31,11 @@
   - ✅ can change text
 
 - 🚧 improve label position for sit, lie
+  - ✅ by default offset is 0, 0, 0
+  - hide when bubble exists
+  - fix hmr i.e. preserve label height
+  - slight height adjustments for idle/stand too
+  - clean
 
 - ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
   - on play position is updated
