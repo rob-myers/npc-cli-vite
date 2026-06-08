@@ -37,7 +37,7 @@ import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
   createSkinnedXzQuad,
-  groudPointToTuple,
+  groundPointToTuple,
   groundPointToVector3,
   mergeWithGroups,
   parseGroundPoint,
@@ -138,7 +138,12 @@ export default function NPCs() {
           npc.idleClip = oldNpc.idleClip;
           npc.spawns = oldNpc.spawns;
 
-          state.placeNpcAt(npc, state.getClosestPoly(npc.position));
+          state.placeNpcAt(
+            npc,
+            state.getClosestPoly(npc.position),
+            // 🔔 try to preserve doable
+            w.e.npcToDoable[npc.key] ? npc.position : undefined,
+          );
         }
         state.update();
       },
@@ -169,7 +174,7 @@ export default function NPCs() {
         }
       },
       getClosestPoly(targetPos, queryFilter = ANY_QUERY_FILTER) {
-        const targetTuple = groudPointToTuple(parseGroundPoint(targetPos));
+        const targetTuple = groundPointToTuple(parseGroundPoint(targetPos));
         const result = findNearestPoly(
           createFindNearestPolyResult(),
           w.nav.navMesh,
@@ -270,14 +275,21 @@ export default function NPCs() {
         w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
         positions.length = 0;
       },
-      placeNpcAt(npc, closePolyResult) {
+      placeNpcAt(npc, closePolyResult, override) {
+        const groundPoint = override ?? parseGroundPoint(closePolyResult.position);
+
         if (closePolyResult.success) {
           // always remove agent so can teleport without issues
           if (npc.agentId !== null) {
             crowdApi.removeAgent(state.crowd, npc.agentId);
             npc.agentId = null;
           }
-          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, closePolyResult.position, getAgentParams());
+          npc.agentId = crowdApi.addAgent(
+            state.crowd,
+            w.nav.navMesh,
+            groundPointToTuple(groundPoint),
+            getAgentParams(),
+          );
 
           npc.pinTo(closePolyResult);
 
@@ -292,8 +304,8 @@ export default function NPCs() {
             crowdApi.removeAgent(state.crowd, npc.agentId);
             npc.agentId = null;
           }
-          npc.position.x = closePolyResult.position[0];
-          npc.position.z = closePolyResult.position[2];
+          npc.position.x = groundPoint.x;
+          npc.position.z = groundPoint.y;
         }
       },
       remove(...npcKeys) {
@@ -373,7 +385,7 @@ export default function NPCs() {
         }
 
         if (doMeta !== null) {
-          state.placeNpcAt(npc, closePolyResult);
+          state.placeNpcAt(npc, closePolyResult, doMeta.groundPoint);
           npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
           w.e.setNpcDo(npcKey, doMeta.key);
         } else {
@@ -537,7 +549,7 @@ export type State = {
     geometry: THREE.BufferGeometry;
     skinIndex: number;
   }): Npc;
-  placeNpcAt(npc: Npc, closePolyResult: FindNearestPolyResult): void;
+  placeNpcAt(npc: Npc, closePolyResult: FindNearestPolyResult, override?: JshCli.GroundPoint): void;
   devHotReload(): void;
   /**
    * - Instantiated decor point with meta.do has groundPoint, orient, y.

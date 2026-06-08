@@ -321,7 +321,7 @@ export function groundPointToVector3(point: GroundPoint) {
   return new THREE.Vector3(point.x, 0, point.y);
 }
 
-export function groudPointToTuple(point: GroundPoint): [number, number, number] {
+export function groundPointToTuple(point: GroundPoint): [number, number, number] {
   return [point.x, 0, point.y];
 }
 
