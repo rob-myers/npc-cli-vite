@@ -24,7 +24,14 @@
   - ✅ consider intersection with npc label
   - 🚧 clean
 
-- on canvas resize update speech bubbles
+- ✅ on canvas resize speech bubbles updated
+
+- 🚧 improve speech bubble
+  - ✅ improve position
+  - 🚧 can change text
+
+- improve label position for sit, lie
+
 - ✅ on kill `pick | move npc:rob along` with two picks it should stop 
   - can force idle overriding
 - on kill `move` npc should not slide back
