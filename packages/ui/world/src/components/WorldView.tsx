@@ -427,7 +427,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ref={state.ref("controls")}
           domElement={state.canvas}
           initialAngle={{ azimuthal: Math.PI / 4, polar: Math.PI / 5 }}
-          initialPosition={{ x: 4, y: 18, z: 4 }}
+          initialPosition={{ x: 4, y: 10, z: 4 }}
           minPanDistance={0}
           // onChange={state.onChangeControls}
           // onEnd={state.onControlsEnd}
