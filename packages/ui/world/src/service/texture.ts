@@ -423,7 +423,7 @@ export function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: s
   texArray.updateIndex(layerIndex);
 }
 
-export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
+export function createLabelMaterial(texArray: TexArray, layerIndex: number, hw: number, hh: number) {
   const texNode = tslTexture(texArray.tex);
   const layerNode = texNode.depth(uniform(layerIndex));
   const mat = new THREE.MeshBasicNodeMaterial({
@@ -435,13 +435,16 @@ export function createLabelMaterial(texArray: TexArray, layerIndex: number) {
   mat.colorNode = layerNode;
   mat.opacityNode = layerNode.a;
 
-  const offset = attribute<"vec2">("billboardOffset", "vec2");
-  const worldCenter = modelWorldMatrix.mul(vec4(positionLocal, 1));
-  const viewCenter = cameraViewMatrix.mul(worldCenter);
-  const viewPos = viewCenter.add(vec4(offset, 0, 0));
+  const hwUniform = uniform(hw, "float");
+  const hhUniform = uniform(hh, "float");
+  const labelYShift = uniform(0, "float");
+  const sign = attribute<"vec2">("billboardOffset", "vec2");
+  const anchorLocal = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
+  const viewCenter = cameraViewMatrix.mul(modelWorldMatrix.mul(anchorLocal));
+  const viewPos = viewCenter.add(vec4(sign.x.mul(hwUniform), sign.y.mul(hhUniform), 0, 0));
   mat.vertexNode = cameraProjectionMatrix.mul(viewPos);
 
-  return mat;
+  return { mat, labelYShift };
 }
 
 export function createShadowMaterial(objectPick: THREE.UniformNode<"float", number>) {

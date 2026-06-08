@@ -28,7 +28,6 @@ import {
   idleAgentMaxSpeed,
   idleSeparationWeight,
   npcBrightness,
-  npcLabelHeight,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
@@ -47,7 +46,7 @@ import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchSkinOve
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
-import { Npc } from "./npc";
+import { Npc, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -82,11 +81,13 @@ export default function NPCs() {
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(npcBrightness);
         mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a);
         mat.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
+        const labelResult = createLabelMaterial(w.texNpcLabel, pickId, labelHw, labelHh);
         return {
           skinIndexUniform,
           material: mat,
           shadowMaterial: createShadowMaterial(w.view.objectPick),
-          labelMaterial: createLabelMaterial(w.texNpcLabel, pickId),
+          labelMaterial: labelResult.mat,
+          labelYShiftUniform: labelResult.labelYShift,
         };
       },
       createNpc(opts: {
@@ -367,8 +368,7 @@ export default function NPCs() {
 
           const shadowQuad = createSkinnedXzQuad(1, 1);
           // const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
-          const scaleLabelQuad = 2;
-          const labelQuad = createSkinnedLabelQuad(0.5 * scaleLabelQuad, 0.125 * scaleLabelQuad, npcLabelHeight, 0);
+          const labelQuad = createSkinnedLabelQuad(0, 0);
           addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
           addEmptyBillboardOffset(shadowQuad);
           const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
@@ -387,10 +387,14 @@ export default function NPCs() {
         if (doMeta !== null) {
           state.placeNpcAt(npc, closePolyResult, doMeta.groundPoint);
           npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
+          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
+          npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
           w.e.setNpcDo(npcKey, doMeta.key);
         } else {
           state.placeNpcAt(npc, closePolyResult);
           npc.idleClip = state.clips.idle;
+          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
+          npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
           w.e.setNpcDo(npcKey, null);
         }
 
@@ -539,6 +543,7 @@ export type State = {
     material: THREE.MeshStandardNodeMaterial;
     shadowMaterial: THREE.MeshBasicNodeMaterial;
     labelMaterial: THREE.MeshBasicNodeMaterial;
+    labelYShiftUniform: THREE.UniformNode<"float", number>;
   };
   createNpc(opts: {
     key: string;
@@ -599,6 +604,9 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const closePolygonDistance = 0.005;
 const closePolygonHalfExtents: Vec3 = [closePolygonDistance, closePolygonDistance, closePolygonDistance];
+
+const labelHw = 0.5;
+const labelHh = 0.125;
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));

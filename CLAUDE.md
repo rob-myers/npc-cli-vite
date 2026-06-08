@@ -46,3 +46,5 @@ Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DE
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 - Sentinel for "no light": `Vector4(0, -1000, 0, 1)` — far enough that the clamped factor is always 0.
+
+- const.ts only contains constants, no methods

@@ -151,6 +151,6 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     </Html3d>
   );
 }
-const speechBubbleBaseScale = 4;
+const speechBubbleBaseScale = 2;
 
 const MemoizedSpeechBubble = React.memo<SpeechBubbleProps & { epochMs: number }>(NpcBubble);

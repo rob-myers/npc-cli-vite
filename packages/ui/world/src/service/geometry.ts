@@ -162,7 +162,7 @@ export function createSkinnedXzQuad(width: number, depth: number, jointIndex = 0
  * Corner offsets are stored in a `billboardOffset` vec2 attribute
  * and applied in the vertex shader in view space.
  */
-export function createSkinnedLabelQuad(width: number, height: number, yOffset: number, jointIndex: number) {
+export function createSkinnedLabelQuad(yOffset: number, jointIndex: number) {
   const geo = new THREE.BufferGeometry();
   // biome-ignore format: meaningful newlines
   geo.setAttribute("position", new THREE.Float32BufferAttribute([
@@ -186,14 +186,12 @@ export function createSkinnedLabelQuad(width: number, height: number, yOffset: n
     1, 0,
     0, 0,
   ], 2));
-  const hw = width / 2;
-  const hh = height / 2;
   // biome-ignore format: meaningful newlines
   geo.setAttribute("billboardOffset", new THREE.Float32BufferAttribute([
-    -hw, -hh,
-     hw, -hh,
-     hw,  hh,
-    -hw,  hh,
+    -1, -1,
+     1, -1,
+     1,  1,
+    -1,  1,
   ], 2));
   // biome-ignore format: meaningful newlines
   geo.setIndex([
