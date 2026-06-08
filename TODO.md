@@ -30,7 +30,7 @@
   - ✅ improve position
   - ✅ can change text
 
-- improve label position for sit, lie
+- 🚧 improve label position for sit, lie
 
 - ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
   - on play position is updated
@@ -70,7 +70,7 @@
   - Walls and Doors don't draw i.e. too many
 - fix precision in `assets.json`
 - start generating documentation in README.md
-- support deleting symbols/maps from MapEdit
+- ✅ support deleting maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
 - ℹ️ minecraft skin templates

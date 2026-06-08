@@ -1,5 +1,5 @@
-import { cn, useStateRef } from "@npc-cli/util";
-import { CursorTextIcon, HandIcon } from "@phosphor-icons/react";
+import { useStateRef } from "@npc-cli/util";
+import { ArrowsOutSimpleIcon } from "@phosphor-icons/react";
 import React from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -83,8 +83,6 @@ interface SpeechBubbleProps {
 }
 
 function NpcBubble({ bubble: b }: SpeechBubbleProps) {
-  const [selectMode, setSelectMode] = React.useState(false);
-
   React.useEffect(() => {
     b.mountConnector();
     setTimeout(() => {
@@ -108,12 +106,9 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       visible
     >
       <div
-        className={cn(
-          "relative pointer-events-auto",
-          selectMode ? "cursor-default" : "cursor-grab active:cursor-grabbing",
-        )}
+        ref={(el) => { b.bubbleDiv = el; }}
+        className="relative pointer-events-auto cursor-grab active:cursor-grabbing"
         onPointerDown={(e) => {
-          if (selectMode) return;
           e.stopPropagation();
           b.onDragStart(e.nativeEvent);
         }}
@@ -129,23 +124,28 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         }}
         onWheel={b.forwardWheelEvents.bind(b)}
       >
-        <div
-          className={cn(
-            "text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2]",
-            "text-center",
-            selectMode ? "cursor-crosshair" : "select-none",
-          )}
-        >
+        <div className="text-[#ff9] p-4 text-[2.2rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2] text-center select-none">
           {b.words}
         </div>
-        <button
-          type="button"
-          className="absolute -bottom-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer hover:bg-black/80"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setSelectMode((v) => !v)}
+        <div
+          className="absolute -bottom-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            b.onResizeStart(e.nativeEvent);
+          }}
+          onPointerMove={(e) => {
+            if (!b.isResizing) return;
+            e.stopPropagation();
+            b.onResizeMove(e.nativeEvent);
+          }}
+          onPointerUp={(e) => {
+            if (!b.isResizing) return;
+            e.stopPropagation();
+            b.onResizeEnd(e.nativeEvent);
+          }}
         >
-          {selectMode ? <HandIcon className="size-3" /> : <CursorTextIcon className="size-3" />}
-        </button>
+          <ArrowsOutSimpleIcon className="size-3" />
+        </div>
       </div>
     </Html3d>
   );
