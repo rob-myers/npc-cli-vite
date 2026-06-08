@@ -12,7 +12,7 @@ export class SpeechBubbleApi {
   html3d: Html3dState = {} as Html3dState;
   position = new THREE.Vector3();
   tracked: TrackedObject3D | null = null;
-  /** 3D world-space offset from the tracked anchor — driven by initOffset and drag. */
+  /** 3D world-space offset from the tracked anchor — driven by drag. */
   offset = { x: 0, y: 0, z: 0 };
   resolveOnMount: () => void = noop;
 
@@ -31,9 +31,6 @@ export class SpeechBubbleApi {
   resizeScaleAtStart = 1;
   bubbleDiv: HTMLElement | null = null;
 
-  connectorSvg: SVGSVGElement | null = null;
-  connectorPolyline: SVGPolylineElement | null = null;
-
   constructor(key: string, w: WorldState) {
     this.key = key;
     this.w = w;
@@ -44,7 +41,6 @@ export class SpeechBubbleApi {
     this.update = noop;
     this.w = null as any;
     this.html3dRef(null);
-    this.unmountConnector();
   }
 
   forwardWheelEvents(e: React.WheelEvent) {
@@ -53,18 +49,7 @@ export class SpeechBubbleApi {
   }
 
   html3dRef(html3d: Html3dState | null) {
-    if (html3d !== null) {
-      this.html3d = html3d;
-      const orig = html3d.computePosition.bind(html3d);
-      // Only hook in updateConnector — position comes from Html3d via b.offset prop.
-      html3d.computePosition = () => {
-        const pos = orig();
-        this.updateConnector();
-        return pos;
-      };
-    } else {
-      this.html3d = null as any;
-    }
+    this.html3d = html3d as Html3dState;
   }
 
   initializeOffset() {
@@ -76,33 +61,7 @@ export class SpeechBubbleApi {
   }
 
   isMounted() {
-    return this.connectorSvg !== null;
-  }
-
-  mountConnector() {
-    const parent = this.html3d?.domTarget;
-    if (!parent || this.connectorSvg) return;
-
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible";
-
-    const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-    polyline.setAttribute("stroke", "rgba(255,255,255,0.25)");
-    polyline.setAttribute("stroke-width", "1.5");
-    polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke-linecap", "round");
-    polyline.setAttribute("stroke-linejoin", "round");
-    svg.appendChild(polyline);
-
-    parent.appendChild(svg);
-    this.connectorSvg = svg;
-    this.connectorPolyline = polyline;
-  }
-
-  unmountConnector() {
-    this.connectorSvg?.remove();
-    this.connectorSvg = null;
-    this.connectorPolyline = null;
+    return this.offsetInitialized;
   }
 
   onDragStart(e: PointerEvent) {
@@ -168,29 +127,6 @@ export class SpeechBubbleApi {
     this.w.bubble.update();
   }
 
-  updateConnector() {
-    if (!this.connectorPolyline || !this.tracked || !this.html3d.domTarget) return;
-
-    const cr = this.html3d.domTarget.getBoundingClientRect();
-    const br = (this.bubbleDiv ?? this.html3d.innerDiv).getBoundingClientRect();
-
-    // Head top in screen space
-    tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).addScaledVector(this.tracked.offset, headTopFrac);
-    const [hx, hy] = toScreen(tmpVec, this.w.r3f);
-
-    // Bubble bottom center in container coords
-    const bBottom = br.bottom - cr.top;
-    const bCx = (br.left + br.right) / 2 - cr.left;
-
-    // Only draw when bubble is above head top (screen Y increases downward)
-    if (bBottom >= hy) {
-      this.connectorPolyline.setAttribute("points", "");
-      return;
-    }
-
-    this.connectorPolyline.setAttribute("points", `${hx},${hy} ${bCx},${bBottom}`);
-  }
-
   update: () => void = noop;
 }
 
@@ -199,12 +135,3 @@ function noop() {}
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
 const defaultBubbleYOffset = 0.5; // world meters above the bubble anchor
-// fraction along tracked.offset (npcDefaultBubbleHeight=1.8) to reach head top
-const headTopFrac = 1.55 / 1.8;
-
-function toScreen(v: THREE.Vector3, r3f: WorldState["r3f"]): [number, number] {
-  const { camera } = r3f;
-  const { width, height } = r3f.get().size;
-  tmpVec.copy(v).project(camera);
-  return [(tmpVec.x * width) / 2 + width / 2, (-tmpVec.y * height) / 2 + height / 2];
-}

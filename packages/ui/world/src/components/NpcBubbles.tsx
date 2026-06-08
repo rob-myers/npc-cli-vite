@@ -84,14 +84,12 @@ interface SpeechBubbleProps {
 
 function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   React.useEffect(() => {
-    b.mountConnector();
     setTimeout(() => {
       b.initializeOffset();
       b.update();
       b.resolveOnMount();
       b.html3d?.onFrame();
     }, 30);
-    return () => b.unmountConnector();
   }, []);
 
   return (
@@ -106,7 +104,9 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       visible
     >
       <div
-        ref={(el) => { b.bubbleDiv = el; }}
+        ref={(el) => {
+          b.bubbleDiv = el;
+        }}
         className="relative pointer-events-auto cursor-grab active:cursor-grabbing"
         onPointerDown={(e) => {
           e.stopPropagation();
@@ -124,6 +124,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         }}
         onWheel={b.forwardWheelEvents.bind(b)}
       >
+        <div>{b.key}</div>
         <div className="text-[#ff9] p-4 text-[2.2rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2] text-center select-none">
           {b.words}
         </div>
