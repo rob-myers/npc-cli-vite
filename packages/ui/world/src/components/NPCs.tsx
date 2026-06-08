@@ -276,7 +276,7 @@ export default function NPCs() {
         positions.length = 0;
       },
       placeNpcAt(npc, closePolyResult, override) {
-        const groundPoint = override ?? parseGroundPoint(closePolyResult.position);
+        const groundPoint = parseGroundPoint(override ?? closePolyResult.position);
 
         if (closePolyResult.success) {
           // always remove agent so can teleport without issues
