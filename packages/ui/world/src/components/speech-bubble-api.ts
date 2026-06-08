@@ -19,6 +19,7 @@ export class SpeechBubbleApi {
   key: string;
   w: WorldState;
   selectElName: string;
+  words = "Hello, world!!";
 
   offsetInitialized = false;
   isDragging = false;
@@ -135,6 +136,12 @@ export class SpeechBubbleApi {
 
   setTracked(tracked: TrackedObject3D) {
     this.tracked = tracked;
+  }
+
+  setWords(words: string) {
+    this.words = words;
+    this.epochMs = Date.now();
+    this.w.bubble.update();
   }
 
   updateConnector() {

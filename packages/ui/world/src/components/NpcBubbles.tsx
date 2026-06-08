@@ -131,11 +131,12 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       >
         <div
           className={cn(
-            "text-[#ff9] p-4 text-[2rem] rounded-2xl bg-black/30 border border-white/30 leading-[1.2]",
+            "text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2]",
+            "text-center",
             selectMode ? "cursor-crosshair" : "select-none",
           )}
         >
-          Hello, world!
+          {b.words}
         </div>
         <button
           type="button"

@@ -292,6 +292,27 @@ export async function* pick(ct) {
 
 /**
  * ```sh
+ * say hi npc:rob
+ * say npc:rob
+ * ```
+ *
+ * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
+ * @param {{ npcKey: string; words?: string }} [opts]
+ */
+export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  const words = opts.words ?? args.filter((x) => x in opts).join(" ");
+
+  if (words) {
+    const bubble = w.bubble.ensure(npc.key);
+    bubble.setWords(words);
+  } else {
+    w.bubble.delete(npc.key);
+  }
+}
+
+/**
+ * ```sh
  * spawn npc:foo at:[7,0,7]
  * spawn npc:rob at:$( pick 1 )
  *
