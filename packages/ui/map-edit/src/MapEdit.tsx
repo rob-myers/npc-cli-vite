@@ -1658,10 +1658,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     };
   }, [state.wrapperEl]);
 
-  // autosave draft in dev/prod, but only when dirty to avoid clobbering valid localStorage drafts
-  // with an empty state (e.g. if tab is hidden before the initial async load completes)
+  // - autosave draft in dev
+  // - turn off in prod while debug perf issues
   useBeforeUnloadOrVisibilityChange(() => {
-    if (state.isDirty) state.save(state.currentFile, { saveToDiskInDev: false });
+    if (state.isDirty && import.meta.env.DEV) state.save(state.currentFile, { saveToDiskInDev: false });
   });
 
   const selectedImageNode = useMemo(() => {
