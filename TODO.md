@@ -32,6 +32,9 @@
 
 - improve label position for sit, lie
 
+- ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
+  - on play position is updated
+  - seems during failed spawn npc still exists!
 - ✅ on kill `pick | move npc:rob along` with two picks it should stop 
   - can force idle overriding
 - on kill `move` npc should not slide back

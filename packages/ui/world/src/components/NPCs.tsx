@@ -138,7 +138,7 @@ export default function NPCs() {
           npc.idleClip = oldNpc.idleClip;
           npc.spawns = oldNpc.spawns;
 
-          state.placeNpcAt(npc, npc.position, w.e.npcToDoable[npc.key] ? "doable" : "navigable");
+          state.placeNpcAt(npc, state.getClosestPoly(npc.position));
         }
         state.update();
       },
@@ -270,31 +270,30 @@ export default function NPCs() {
         w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
         positions.length = 0;
       },
-      placeNpcAt(npc, at, type) {
-        const groundPoint = parseGroundPoint(at);
-        const result = state.getClosestPoly(groundPoint);
-        if (result.success) {
+      placeNpcAt(npc, closePolyResult) {
+        if (closePolyResult.success) {
           // always remove agent so can teleport without issues
           if (npc.agentId !== null) {
             crowdApi.removeAgent(state.crowd, npc.agentId);
             npc.agentId = null;
           }
-          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groudPointToTuple(groundPoint), getAgentParams());
+          npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, closePolyResult.position, getAgentParams());
 
-          npc.pinTo(result);
+          npc.pinTo(closePolyResult);
 
           // might have spawned into a sensor
           const agent = state.crowd.agents[npc.agentId];
           state.physics.positions.push(npc.bodyUid, ...agent.position);
-        } else if (type === "navigable") {
-          throw Error("not placable");
+          // } else if (type === "navigable") {
+          //   throw Error("not placable");
         } else {
+          // do not throw in case of hot reload with changing geometry
           if (npc.agentId !== null) {
             crowdApi.removeAgent(state.crowd, npc.agentId);
             npc.agentId = null;
           }
-          npc.position.x = groundPoint.x;
-          npc.position.z = groundPoint.y;
+          npc.position.x = closePolyResult.position[0];
+          npc.position.z = closePolyResult.position[2];
         }
       },
       remove(...npcKeys) {
@@ -329,6 +328,15 @@ export default function NPCs() {
         const gmRoomId = w.e.findRoomContaining(at, true);
         if (gmRoomId === null) throw Error("must be in some room");
 
+        // testing early avoids creating unspawnable npc
+        // - throw if doable but occupied
+        // - throw if not doable and not navigable
+        const doMeta = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
+        const closePolyResult = state.getClosestPoly(groundAt);
+        if (closePolyResult.success === false && doMeta === null) {
+          throw Error("not placable");
+        }
+
         if (facing) {
           facing = parseGroundPoint(facing);
           angle = geomService.getThreeRotationY(facing.y - groundAt.y, facing.x - groundAt.x);
@@ -340,6 +348,7 @@ export default function NPCs() {
         let npc = state.npc[npcKey];
 
         if (!npc) {
+          // 1st spawn
           const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
           const graph = buildGraph(clone);
           const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
@@ -363,13 +372,12 @@ export default function NPCs() {
           });
         }
 
-        const doMeta = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
         if (doMeta !== null) {
-          state.placeNpcAt(npc, doMeta.groundPoint, "doable");
+          state.placeNpcAt(npc, closePolyResult);
           npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
           w.e.setNpcDo(npcKey, doMeta.key);
         } else {
-          state.placeNpcAt(npc, at, "navigable");
+          state.placeNpcAt(npc, closePolyResult);
           npc.idleClip = state.clips.idle;
           w.e.setNpcDo(npcKey, null);
         }
@@ -529,7 +537,7 @@ export type State = {
     geometry: THREE.BufferGeometry;
     skinIndex: number;
   }): Npc;
-  placeNpcAt(npc: Npc, at: JshCli.PointAnyFormat, type: "navigable" | "doable"): void;
+  placeNpcAt(npc: Npc, closePolyResult: FindNearestPolyResult): void;
   devHotReload(): void;
   /**
    * - Instantiated decor point with meta.do has groundPoint, orient, y.
