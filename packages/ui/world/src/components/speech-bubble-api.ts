@@ -18,7 +18,6 @@ export class SpeechBubbleApi {
 
   key: string;
   w: WorldState;
-  selectElName: string;
   words = "Hello, world!!";
 
   offsetInitialized = false;
@@ -38,7 +37,6 @@ export class SpeechBubbleApi {
   constructor(key: string, w: WorldState) {
     this.key = key;
     this.w = w;
-    this.selectElName = `${key}-bubble-options`;
   }
 
   dispose() {
