@@ -323,10 +323,15 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }))
  * spawn npc:rob at:$( pick 1 ) facing:$( pick 1 )
  *
  * # alternating (at, facing)
- * pick | spawn npc:rob facing
+ * pick | spawn npc:rob- facing
+ *
+ * pick | spawn npc:rob-
+ *
+ * # ignore errors when not reading from stdin: non placable or doable
+ * pick | spawn force npc:rob-
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {JshCli.SpawnOpts} [opts]
+ * @param {JshCli.SpawnOpts & { force?: boolean }} [opts]
  */
 export async function spawn(
   { api, args, w, datum },
@@ -336,21 +341,32 @@ export async function spawn(
     return await w.npc.spawn(opts);
   }
 
+  /** @param {unknown} e */
+  function ignoreSpawnErrors(e) {
+    if (opts.force && e instanceof Error && (e.message === "not placable" || e.message === "not doable")) {
+      numSpawns--;
+      return;
+    }
+    throw e;
+  }
+
   let numSpawns = 0;
   if (!opts.facing) {
     while ((datum = await api.read()) !== api.eof) {
-      await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum });
+      await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum }).catch(ignoreSpawnErrors);
     }
     return;
   }
 
   while (true) {
-    await w.npc.spawn({
-      ...opts,
-      npcKey: `${opts.npcKey}${numSpawns++}`,
-      at: await api.read(),
-      facing: await api.read(),
-    });
+    await w.npc
+      .spawn({
+        ...opts,
+        npcKey: `${opts.npcKey}${numSpawns++}`,
+        at: await api.read(),
+        facing: await api.read(),
+      })
+      .catch(ignoreSpawnErrors);
   }
 }
 
