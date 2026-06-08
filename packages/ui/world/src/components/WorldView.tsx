@@ -421,7 +421,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={60} makeDefault zoom={1} />
+        <PerspectiveCamera fov={fov} makeDefault zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
@@ -500,3 +500,5 @@ export type Picked = {
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
 );
+
+const fov = 60;
