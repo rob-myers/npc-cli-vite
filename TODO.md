@@ -26,9 +26,9 @@
 
 - ✅ on canvas resize speech bubbles updated
 
-- 🚧 improve speech bubble
+- ✅ improve speech bubble
   - ✅ improve position
-  - 🚧 can change text
+  - ✅ can change text
 
 - improve label position for sit, lie
 
