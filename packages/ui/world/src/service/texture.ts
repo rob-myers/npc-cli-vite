@@ -414,11 +414,12 @@ export function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: s
   ct.clearRect(0, 0, width, height);
   // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
   // ct.roundRect(0, 0, width, height, 8);
-  ct.fill();
-  ct.fillStyle = "white";
-  ct.font = "36px sans-serif";
+  // ct.fill();
+  ct.fillStyle = "#fff7";
+  ct.font = "400 36px sans-serif";
   ct.textAlign = "center";
   ct.textBaseline = "middle";
+  ct.letterSpacing = "0.1em";
   ct.fillText(npcKey, width / 2, height / 2);
   texArray.updateIndex(layerIndex);
 }
