@@ -241,7 +241,7 @@ export class Npc {
     if (!this.moving) {
       this.moving = true;
       this.bubbleOffset.y = npcBubbleHeightForClip(this.moveClip.name);
-      this.setLabelYShift(0);
+      this.setLabelYShift(npcLabelYShiftForClip(this.moveClip.name));
       this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
       this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
     }

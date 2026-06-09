@@ -30,12 +30,18 @@
   - ✅ improve position
   - ✅ can change text
 
-- 🚧 improve label position for sit, lie
+- 🚧 improve label/bubble position for sit, lie
   - ✅ by default offset is 0, 0, 0
-  - hide when bubble exists
-  - fix hmr i.e. preserve label height
+  - ✅ fix hmr i.e. preserve label height
+  - ✅ fix label whilst moving
+  - hide label when bubble exists
   - slight height adjustments for idle/stand too
   - clean
+
+- can fade to/from black
+- can fade in/out
+  - fade out: fade to black, depthWrite false, fade opacity to 0
+  - fade in: fade opacity to 1, depthWrite true, fade from black
 
 - ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
   - on play position is updated
