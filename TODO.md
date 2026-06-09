@@ -39,6 +39,7 @@
   - clean
 
 - 🚧 can fade to/from black
+  - ✅ npc has `colorScale` and `opacityScale` uniforms
 - can fade in/out
   - fade out: fade to black, depthWrite false, fade opacity to 0
   - fade in: fade opacity to 1, depthWrite true, fade from black
