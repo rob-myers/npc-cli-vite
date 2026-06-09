@@ -183,11 +183,9 @@ export class Npc {
 
   async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
     try {
-      await this.fade("black", 2.5);
-      await this.fade("out", 5);
+      await this.fade("black", 1);
       await this.w.npc.spawn({ npcKey: this.key, at });
-      await this.fade("in", 5);
-      await this.fade("white", 5);
+      await this.fade("white", 1);
     } finally {
       this.fadeState.colorDelta = 0;
       this.fadeState.opacityDelta = 0;
@@ -203,7 +201,7 @@ export class Npc {
         this.fadeState.colorDelta > 0 ? next >= this.fadeState.colorTarget : next <= this.fadeState.colorTarget;
       this.colorScale.value = done ? this.fadeState.colorTarget : next;
       // when uniformly black can turn off depthWrite for subsequent opacity fade
-      this.material.depthWrite = this.colorScale.value > 0;
+      // this.material.depthWrite = this.colorScale.value > 0;
       if (done === true) {
         this.fadeState.colorDelta = 0;
         this.resolve?.("fade-color");
@@ -216,6 +214,7 @@ export class Npc {
       this.opacityScale.value = done ? this.fadeState.opacityTarget : next;
       // avoid sudden disappearance
       this.material.alphaTest = Math.max(0, this.opacityScale.value - 0.01);
+      this.material.depthWrite = this.opacityScale.value > 0.15;
       if (done === true) {
         this.fadeState.opacityDelta = 0;
         this.resolve?.("fade-opacity");
