@@ -26,28 +26,30 @@ const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
 export class Npc {
   key: string;
-  /** Expect ≤ 200 npcs but technically ≤ 65535 */
-  pickId: number;
+
   /** Physics body */
   bodyUid: number;
-  /** Skin selection */
-  skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
+  geometry: THREE.BufferGeometry;
+  graph: ReturnType<typeof buildGraph>;
+  group: THREE.Group | null = null;
   /** Labels are store in an ArrayTexture */
   labelLayerIndex: number;
-
-  group: THREE.Group | null = null;
-  material: THREE.MeshStandardNodeMaterial;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  material: THREE.MeshStandardNodeMaterial;
   mixer: THREE.AnimationMixer = emptyAnimationMixer;
+  /** Expect ≤ 200 npcs but technically ≤ 65535 */
+  pickId: number;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
   skinnedMesh: THREE.SkinnedMesh;
-  graph: ReturnType<typeof buildGraph>;
-  geometry: THREE.BufferGeometry;
+  /** Skin selection */
+  skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
+  arrive = true;
   agentId: string | null = null;
   bubbleOffset = new THREE.Vector3(0, 0, 0);
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
+  idleClip = emptyAnimationClip;
   last = {
     blockingArea: -1,
     /** Seconds elapsed */
@@ -61,13 +63,11 @@ export class Npc {
   lookAt: JshCli.GroundPoint | null = null;
   /** Synced with crowd agent */
   position: THREE.Vector3;
-  queryFilter: QueryFilter;
+  moveClip = emptyAnimationClip;
   moving = false;
-  arrive = true;
+  queryFilter: QueryFilter;
   /** while idle and due to separationWeight */
   separating = false;
-  moveClip = emptyAnimationClip;
-  idleClip = emptyAnimationClip;
   spawns = 0;
   stuckAccum = 0;
 
@@ -173,37 +173,17 @@ export class Npc {
     }
     this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
   }
+
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
   }
 
-  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
-    if (!this.agentId) return;
-
-    const agent = this.w.npc.crowd.agents[this.agentId];
-    // whilst walking, doors should block npcs
-    agent.queryFilter = this.queryFilter;
-    agent.separationWeight = walkSeparationWeight;
-    agent.maxAcceleration = walkMaxAcceleration;
-    agent.maxSpeed = walkAgentMaxSpeed;
-    crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, groundPointToTuple(groundPoint));
-
-    this.last.dst = groundPoint;
-    this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
-
-    this.lookAt = null;
-    this.last.blockingArea = -1;
-    this.stuckAccum = 0;
-    this.last.pos = { x: this.position.x, y: this.position.z };
-    this.arrive = arrive;
-
-    if (!this.moving) {
-      this.moving = true;
-      this.bubbleOffset.y = npcBubbleHeightForClip(this.moveClip.name);
-      this.setLabelYShift(0);
-      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
-    }
+  smoothRotateToward(vx: number, vz: number, delta: number) {
+    const target = Math.atan2(vx, vz) + Math.PI;
+    let diff = target - this.skinnedMesh.rotation.y;
+    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+    if (diff < -Math.PI) diff += Math.PI * 2;
+    this.skinnedMesh.rotation.y += diff * (1 - Math.exp(-5 * delta));
   }
 
   startIdle({ force = false } = {}) {
@@ -238,12 +218,33 @@ export class Npc {
     this.arrive = true;
   }
 
-  smoothRotateToward(vx: number, vz: number, delta: number) {
-    const target = Math.atan2(vx, vz) + Math.PI;
-    let diff = target - this.skinnedMesh.rotation.y;
-    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
-    if (diff < -Math.PI) diff += Math.PI * 2;
-    this.skinnedMesh.rotation.y += diff * (1 - Math.exp(-5 * delta));
+  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
+    if (!this.agentId) return;
+
+    const agent = this.w.npc.crowd.agents[this.agentId];
+    // whilst walking, doors should block npcs
+    agent.queryFilter = this.queryFilter;
+    agent.separationWeight = walkSeparationWeight;
+    agent.maxAcceleration = walkMaxAcceleration;
+    agent.maxSpeed = walkAgentMaxSpeed;
+    crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, groundPointToTuple(groundPoint));
+
+    this.last.dst = groundPoint;
+    this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
+
+    this.lookAt = null;
+    this.last.blockingArea = -1;
+    this.stuckAccum = 0;
+    this.last.pos = { x: this.position.x, y: this.position.z };
+    this.arrive = arrive;
+
+    if (!this.moving) {
+      this.moving = true;
+      this.bubbleOffset.y = npcBubbleHeightForClip(this.moveClip.name);
+      this.setLabelYShift(0);
+      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
+      this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
+    }
   }
 
   syncAnimation(speed: number) {
