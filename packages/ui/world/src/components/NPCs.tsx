@@ -138,6 +138,7 @@ export default function NPCs() {
           npc.moveClip = oldNpc.moveClip;
           npc.idleClip = oldNpc.idleClip;
           npc.spawns = oldNpc.spawns;
+          npc.labelYShiftUniform.value = npcLabelYShiftForClip(npc.idleClip.name);
 
           state.placeNpcAt(
             npc,

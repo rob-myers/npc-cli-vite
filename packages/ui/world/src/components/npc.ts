@@ -137,10 +137,6 @@ export class Npc {
     this.setLabelYShift(0);
   }
 
-  setLabelYShift(shift: number) {
-    this.labelYShiftUniform.value = shift;
-  }
-
   changeSkin(keyOrIndex: string | number) {
     const index = typeof keyOrIndex === "number" ? keyOrIndex : this.w.npc.getSkinIndex(keyOrIndex);
     if (index === -1) throw Error(`Skin "${keyOrIndex}" not found`);
@@ -176,6 +172,9 @@ export class Npc {
       this.mixer.existingAction(clip)?.fadeOut(duration);
     }
     this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
+  }
+  setLabelYShift(shift: number) {
+    this.labelYShiftUniform.value = shift;
   }
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
@@ -354,5 +353,5 @@ export function npcBubbleHeightForClip(clipName: string): number {
 export function npcLabelYShiftForClip(clipName: string): number {
   if (clipName === "sit") return 1.6;
   if (clipName === "lie") return 0.75;
-  return 2;
+  return 2.2;
 }
