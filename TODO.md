@@ -44,8 +44,12 @@
   - fade out: fade to black, depthWrite false, fade opacity to 0
   - fade in: fade opacity to 1, depthWrite true, fade from black
 
-- 🚧 overload `move` to fade spawn
+- ✅ overload `move` to fade spawn
   - no need for nav then spawn
+  - ✅ `npc.fadeSpawn`
+  - ✅ change `w.npc.move`
+    - can move to doable
+    - can move from doable
 
 - ✅ cli syntax to set value directly?
   - currently can `w n.rob.colorScale | assign '{ value: 0.5 }'`
