@@ -29,15 +29,18 @@ export class Npc {
 
   /** Physics body */
   bodyUid: number;
+  colorScale: THREE.UniformNode<"float", number>;
+
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
   group: THREE.Group | null = null;
-  /** Labels are store in an ArrayTexture */
+  /** Points into ArrayTexture */
   labelLayerIndex: number;
   labelMaterial: THREE.MeshBasicNodeMaterial;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   mixer: THREE.AnimationMixer = emptyAnimationMixer;
+  opacityScale: THREE.UniformNode<"float", number>;
   /** Expect ≤ 200 npcs but technically ≤ 65535 */
   pickId: number;
   shadowMaterial: THREE.MeshBasicNodeMaterial;
@@ -99,17 +102,19 @@ export class Npc {
     Object.assign(this, init);
 
     this.key = init.key;
-    this.pickId = init.pickId;
-    this.skinIndexUniform = init.skinIndexUniform;
+    this.colorScale = init.colorScale;
+    this.geometry = init.geometry;
+    this.graph = init.graph;
     this.labelLayerIndex = init.labelLayerIndex;
-    this.position = init.position;
-    this.material = init.material;
     this.labelMaterial = init.labelMaterial;
     this.labelYShiftUniform = init.labelYShiftUniform;
+    this.material = init.material;
+    this.opacityScale = init.opacityScale;
+    this.pickId = init.pickId;
+    this.position = init.position;
     this.shadowMaterial = init.shadowMaterial;
     this.skinnedMesh = init.skinnedMesh;
-    this.graph = init.graph;
-    this.geometry = init.geometry;
+    this.skinIndexUniform = init.skinIndexUniform;
 
     // use case for lastBlockingArea?
     this.queryFilter = {
@@ -326,17 +331,19 @@ export class Npc {
 
 export type NpcInit = {
   key: string;
+  colorScale: THREE.UniformNode<"float", number>;
+  geometry: THREE.BufferGeometry;
+  graph: ReturnType<typeof buildGraph>;
   pickId: number;
-  skinIndexUniform: THREE.UniformNode<"float", number>;
   labelLayerIndex: number;
-  position: THREE.Vector3;
-  material: THREE.MeshStandardNodeMaterial;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
   labelMaterial: THREE.MeshBasicNodeMaterial;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  material: THREE.MeshStandardNodeMaterial;
+  opacityScale: THREE.UniformNode<"float", number>;
+  position: THREE.Vector3;
+  shadowMaterial: THREE.MeshBasicNodeMaterial;
+  skinIndexUniform: THREE.UniformNode<"float", number>;
   skinnedMesh: THREE.SkinnedMesh;
-  graph: ReturnType<typeof buildGraph>;
-  geometry: THREE.BufferGeometry;
 };
 
 const separationSpeedThreshold = 0.005;

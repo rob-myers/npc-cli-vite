@@ -46,7 +46,7 @@ import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchSkinOve
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
-import { Npc, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
+import { Npc, type NpcInit, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -75,19 +75,23 @@ export default function NPCs() {
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
-        const mat = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
+        const mainMaterial = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(npcBrightness);
-        mat.colorNode = vec4(texNode.rgb.mul(ndotv), texNode.a);
-        mat.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
+        const colorScale = uniform(1);
+        const opacityScale = uniform(1);
+        mainMaterial.colorNode = vec4(texNode.rgb.mul(ndotv).mul(colorScale), texNode.a.mul(opacityScale));
+        mainMaterial.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
         const labelResult = createLabelMaterial(w.texNpcLabel, pickId, labelHw, labelHh);
         return {
-          skinIndexUniform,
-          material: mat,
-          shadowMaterial: createShadowMaterial(w.view.objectPick),
+          colorScale,
+          opacityScale,
           labelMaterial: labelResult.mat,
           labelYShiftUniform: labelResult.labelYShift,
+          shadowMaterial: createShadowMaterial(w.view.objectPick),
+          skinIndexUniform,
+          material: mainMaterial,
         };
       },
       createNpc(opts: {
@@ -99,7 +103,6 @@ export default function NPCs() {
         geometry: THREE.BufferGeometry;
         skinIndex: number;
       }) {
-        const mats = state.createMaterials(opts.pickId, opts.skinIndex);
         const npc = new Npc(w, {
           key: opts.key,
           pickId: opts.pickId,
@@ -108,7 +111,7 @@ export default function NPCs() {
           skinnedMesh: opts.skinnedMesh,
           graph: opts.graph,
           geometry: opts.geometry,
-          ...mats,
+          ...state.createMaterials(opts.pickId, opts.skinIndex),
         });
         drawLabelLayer(w.texNpcLabel, opts.pickId, opts.key);
         state.npc[opts.key] = npc;
@@ -539,13 +542,16 @@ export type State = {
   createMaterials(
     pickId: number,
     skinIndex: number,
-  ): {
-    skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
-    material: THREE.MeshStandardNodeMaterial;
-    shadowMaterial: THREE.MeshBasicNodeMaterial;
-    labelMaterial: THREE.MeshBasicNodeMaterial;
-    labelYShiftUniform: THREE.UniformNode<"float", number>;
-  };
+  ): Pick<
+    NpcInit,
+    | "colorScale"
+    | "opacityScale"
+    | "labelMaterial"
+    | "labelYShiftUniform"
+    | "shadowMaterial"
+    | "skinIndexUniform"
+    | "material"
+  >;
   createNpc(opts: {
     key: string;
     pickId: number;
