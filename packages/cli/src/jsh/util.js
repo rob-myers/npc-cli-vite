@@ -246,6 +246,20 @@ export async function* mapBasic(ct) {
 }
 
 /**
+ * ```sh
+ * mkdir foo
+ * mkdir -p bar/baz
+ * ```
+ * @param {JshCli.RunArg} ct
+ */
+export function mkdir(ct) {
+  const { operands, opts } = ct.api.getOpts(ct.args, { boolean: ["p"] });
+  const [varPath] = operands;
+  if (!varPath) throw Error("missing variable path argument");
+  ct.api.set(varPath, {}, opts.p === true);
+}
+
+/**
  * Avoid using generator so we can override it.
  * ```sh
  * # list available voices (device dependent)
