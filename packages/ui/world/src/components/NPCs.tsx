@@ -81,15 +81,22 @@ export default function NPCs() {
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(npcBrightness);
         const colorScale = uniform(1);
         const opacityScale = uniform(1);
-        mainMaterial.colorNode = vec4(texNode.rgb.mul(ndotv).mul(colorScale), texNode.a.mul(opacityScale));
+        const rgb = texNode.rgb.mul(ndotv).mul(colorScale).clamp(0, 1);
+        mainMaterial.colorNode = vec4(rgb, texNode.a.mul(opacityScale));
         mainMaterial.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
-        const labelResult = createLabelMaterial(w.texNpcLabel, pickId, labelHw, labelHh);
+        const label = createLabelMaterial({
+          texArray: w.texNpcLabel,
+          layerIndex: pickId,
+          halfWidth: labelHw,
+          halfHeight: labelHh,
+          opacityScale,
+        });
         return {
           colorScale,
           opacityScale,
-          labelMaterial: labelResult.mat,
-          labelYShiftUniform: labelResult.labelYShift,
-          shadowMaterial: createShadowMaterial(w.view.objectPick),
+          labelMaterial: label.material,
+          labelYShiftUniform: label.labelYShift,
+          shadowMaterial: createShadowMaterial(w.view.objectPick, opacityScale),
           skinIndexUniform,
           material: mainMaterial,
         };
@@ -142,6 +149,11 @@ export default function NPCs() {
           npc.idleClip = oldNpc.idleClip;
           npc.spawns = oldNpc.spawns;
           npc.labelYShiftUniform.value = npcLabelYShiftForClip(npc.idleClip.name);
+
+          npc.colorScale.value = oldNpc.colorScale.value;
+          npc.opacityScale.value = oldNpc.opacityScale.value;
+          npc.fadeState = { ...oldNpc.fadeState };
+          npc.material.depthWrite = oldNpc.material.depthWrite;
 
           state.placeNpcAt(
             npc,
@@ -236,6 +248,7 @@ export default function NPCs() {
 
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
+          npc.fadeStep(delta);
 
           if (npc.agentId === null) continue;
 

@@ -38,11 +38,14 @@
   - slight height adjustments for idle/stand too
   - clean
 
-- 🚧 can fade to/from black
+- ✅ can fade to/from black
   - ✅ npc has `colorScale` and `opacityScale` uniforms
-- can fade in/out
+- ✅ can fade in/out
   - fade out: fade to black, depthWrite false, fade opacity to 0
   - fade in: fade opacity to 1, depthWrite true, fade from black
+
+- 🚧 overload `move` to fade spawn
+  - no need for nav then spawn
 
 - ✅ cli syntax to set value directly?
   - currently can `w n.rob.colorScale | assign '{ value: 0.5 }'`
@@ -62,6 +65,9 @@
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle
   - ❌ track gaps
+
+- npc has selector quad?
+  - maybe just restyle label instead
 
 - fetch gltf json so can cache-bust
 - ✅ npc labels should match animation e.g. sit, lie

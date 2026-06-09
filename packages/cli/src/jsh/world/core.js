@@ -69,6 +69,37 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 }
 
 /**
+ * ```sh
+ * fade npc:rob black
+ * fade npc:rob white
+ * fade npc:rob out
+ * fade npc:rob in
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; speed?: number }} [opts]
+ */
+export async function fade({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+
+  const { dispose } = api.handleStatus({
+    cleanups: (killed) => killed && npc.reject?.(new Error("killed")),
+  });
+
+  try {
+    const fadeType = args.filter((x) => x in opts).join(" ");
+    await new Promise((resolve, reject) => {
+      npc.resolve = resolve;
+      npc.reject = reject;
+      npc.fade(/** @type {*} */ (fadeType), opts.speed);
+    });
+  } finally {
+    dispose();
+    npc.fadeState.colorDelta = 0;
+    npc.fadeState.opacityDelta = 0;
+  }
+}
+
+/**
  * Usage
  * ```sh
  * move npc:rob to:$( pick 1 )
@@ -327,6 +358,7 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }))
  *
  * pick | spawn npc:rob-
  *
+ * 🚧 use --force instead somehow
  * # ignore errors when not reading from stdin: non placable or doable
  * pick | spawn force npc:rob-
  * ```
@@ -335,7 +367,7 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }))
  */
 export async function spawn(
   { api, args, w, datum },
-  opts = api.jsArg(args, { npc: "npcKey", skin: "as", towards: "facing", look: "facing" }),
+  opts = api.jsArg(args, { npc: "npcKey", to: "at", skin: "as", towards: "facing", look: "facing" }),
 ) {
   if (api.isTtyAt(0)) {
     return await w.npc.spawn(opts);
