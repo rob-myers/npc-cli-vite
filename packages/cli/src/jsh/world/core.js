@@ -86,7 +86,7 @@ export async function fade({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   });
 
   try {
-    const fadeType = args.filter((x) => x in opts).join(" ");
+    const [fadeType] = api.getJsOperands(args, opts);
     await new Promise((resolve, reject) => {
       npc.resolve = resolve;
       npc.reject = reject;
@@ -332,7 +332,7 @@ export async function* pick(ct) {
  */
 export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey);
-  const words = opts.words ?? args.filter((x) => x in opts).join(" ");
+  const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
   if (words) {
     const bubble = w.bubble.ensure(npc.key);
@@ -340,6 +340,25 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }))
   } else {
     w.bubble.delete(npc.key);
   }
+}
+
+/**
+ * ```sh
+ * skin npc:rob medic-0
+ * skin npc:rob as:medic-0
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; as?: string }} [opts]
+ */
+export function skin({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  const skinKey = opts.as ?? (api.getJsOperands(args, opts)[0] || "medic-0");
+
+  if (w.npc.getSkinIndex(skinKey) === -1) {
+    throw Error(`skin "${skinKey}" not found`);
+  }
+  npc.setSkin(skinKey);
+  w.view.forceUpdate();
 }
 
 /**

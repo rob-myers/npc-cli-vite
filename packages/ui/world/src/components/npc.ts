@@ -148,12 +148,6 @@ export class Npc {
     this.setLabelYShift(0);
   }
 
-  changeSkin(keyOrIndex: string | number) {
-    const index = typeof keyOrIndex === "number" ? keyOrIndex : this.w.npc.getSkinIndex(keyOrIndex);
-    if (index === -1) throw Error(`Skin "${keyOrIndex}" not found`);
-    this.skinIndexUniform.value = index;
-  }
-
   /** Gradually fade to black/white or fade opacity in/out. Speed is units/second. */
   fade(type: "black" | "white" | "out" | "in", speed = 5) {
     switch (type) {
@@ -240,13 +234,10 @@ export class Npc {
     this.labelYShiftUniform.value = shift;
   }
 
-  setSkin(skinKey: string) {
+  setSkin(skinKey?: string) {
     const skinIndex = this.w.npc.getSkinIndex(skinKey ?? "medic-0");
-    if (skinIndex === -1) {
-      throw Error(`skin "${skinKey}" not found`);
-    }
+    console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
-    this.w.view.forceUpdate();
   }
 
   smoothRotateToward(vx: number, vz: number, delta: number) {
