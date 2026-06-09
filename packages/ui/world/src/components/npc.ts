@@ -51,6 +51,12 @@ export class Npc {
   arrive = true;
   agentId: string | null = null;
   bubbleOffset = new THREE.Vector3(0, 0, 0);
+  fadeState = {
+    colorDelta: 0,
+    colorTarget: 1,
+    opacityDelta: 0,
+    opacityTarget: 1,
+  };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
   last = {
@@ -148,6 +154,57 @@ export class Npc {
     this.skinIndexUniform.value = index;
   }
 
+  /** Gradually fade to black/white or fade opacity in/out. Speed is units/second. */
+  fade(type: "black" | "white" | "out" | "in", speed = 5) {
+    switch (type) {
+      case "black":
+        this.fadeState.colorTarget = 0;
+        this.fadeState.colorDelta = -Math.abs(speed);
+        break;
+      case "white":
+        this.fadeState.colorTarget = 1;
+        this.fadeState.colorDelta = Math.abs(speed);
+        break;
+      case "out":
+        this.fadeState.opacityTarget = 0;
+        this.fadeState.opacityDelta = -Math.abs(speed);
+        break;
+      case "in":
+        this.fadeState.opacityTarget = 1;
+        this.fadeState.opacityDelta = Math.abs(speed);
+        break;
+      default:
+        throw Error(`unknown fade type "${type}"`);
+    }
+  }
+
+  fadeStep(delta: number) {
+    if (this.fadeState.colorDelta !== 0) {
+      const next = this.colorScale.value + this.fadeState.colorDelta * delta;
+      const done =
+        this.fadeState.colorDelta > 0 ? next >= this.fadeState.colorTarget : next <= this.fadeState.colorTarget;
+      this.colorScale.value = done ? this.fadeState.colorTarget : next;
+      // when uniformly black can turn off depthWrite for subsequent opacity fade
+      this.material.depthWrite = this.colorScale.value > 0;
+      if (done === true) {
+        this.fadeState.colorDelta = 0;
+        this.resolve?.("fade-color");
+      }
+    }
+    if (this.fadeState.opacityDelta !== 0) {
+      const next = this.opacityScale.value + this.fadeState.opacityDelta * delta;
+      const done =
+        this.fadeState.opacityDelta > 0 ? next >= this.fadeState.opacityTarget : next <= this.fadeState.opacityTarget;
+      this.opacityScale.value = done ? this.fadeState.opacityTarget : next;
+      // avoid sudden disappearance
+      this.material.alphaTest = Math.max(0, this.opacityScale.value - 0.01);
+      if (done === true) {
+        this.fadeState.opacityDelta = 0;
+        this.resolve?.("fade-opacity");
+      }
+    }
+  }
+
   groupRef = (group: THREE.Group | null): void => {
     if (!group) {
       this.mixer.stopAllAction();
@@ -181,6 +238,15 @@ export class Npc {
 
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
+  }
+
+  setSkin(skinKey: string) {
+    const skinIndex = this.w.npc.getSkinIndex(skinKey ?? "medic-0");
+    if (skinIndex === -1) {
+      throw Error(`skin "${skinKey}" not found`);
+    }
+    this.skinIndexUniform.value = skinIndex;
+    this.w.view.forceUpdate();
   }
 
   smoothRotateToward(vx: number, vz: number, delta: number) {
