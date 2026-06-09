@@ -500,11 +500,7 @@ class CmdService {
         yield args.map(parseJsArg);
         break;
       case "assign": {
-        const { opts, operands } = getOpts(args, {
-          boolean: ["out"], // write to stdout
-        });
-
-        const values = operands.map((arg) => {
+        const values = args.map((arg) => {
           const parsed = parseJsArg(arg);
           return typeof parsed === "string"
             ? // strings are assumed to be variables
@@ -514,12 +510,12 @@ class CmdService {
 
         if (isTtyAt(meta, 0)) {
           Object.assign(values[0], ...values.slice(1));
-          if (opts.out === true) yield values[0];
+          yield values[0];
         } else {
           let datum: any;
           while ((datum = await cmdService.read(meta)) !== EOF) {
             Object.assign(datum, ...values);
-            if (opts.out === true) yield datum;
+            yield datum;
           }
         }
         break;
