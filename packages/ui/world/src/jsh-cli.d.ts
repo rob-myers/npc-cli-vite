@@ -68,7 +68,7 @@ declare namespace JshCli {
 
   type MoveOpts = {
     npcKey: string;
-    to: JshCli.PointAnyFormat;
+    to: MaybeMeta<JshCli.PointAnyFormat>;
     arrive?: boolean;
     fast?: boolean;
   };

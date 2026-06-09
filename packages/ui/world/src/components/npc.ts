@@ -181,8 +181,19 @@ export class Npc {
     }
   }
 
-  fadeSpawn(_at: WithMeta<JshCli.PointAnyFormat>) {
-    //
+  async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
+    try {
+      await this.fade("black", 2.5);
+      await this.fade("out", 5);
+      await this.w.npc.spawn({ npcKey: this.key, at });
+      await this.fade("in", 5);
+      await this.fade("white", 5);
+    } finally {
+      this.fadeState.colorDelta = 0;
+      this.fadeState.opacityDelta = 0;
+      this.opacityScale.value = 1;
+      this.colorScale.value = 1;
+    }
   }
 
   fadeTick(delta: number) {

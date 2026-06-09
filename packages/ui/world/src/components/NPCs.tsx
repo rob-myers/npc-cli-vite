@@ -216,16 +216,22 @@ export default function NPCs() {
           throw Error(`opts.npcKey must exist: saw ${npcKey}`);
         }
 
-        // 🚧 support fade spawn to doable
-        if (npc.agentId === null) {
-          throw Error(`npc has no agent: ${npcKey}`);
-        }
-
         const groundPoint = parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint);
 
         if (!result.success) {
+          const doMeta = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
+          if (doMeta) {
+            // fade spawn to doable
+            await npc.fadeSpawn(to);
+            return;
+          }
           throw Error("not navigable");
+        } else if (npc.agentId === null) {
+          // fade spawn from doable to nav
+          // 🚧 facing `prev --> next`
+          await npc.fadeSpawn(to);
+          return;
         }
 
         npc.reject?.(new Error("move again"));
