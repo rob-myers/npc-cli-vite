@@ -51,6 +51,27 @@ export default function Walls() {
         const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
         return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
       },
+      trimInst: null as null | THREE.InstancedMesh,
+      positionTrimInstances() {
+        const { trimInst: ti } = state;
+        if (!ti) return;
+        const color = new THREE.Color(w.getTheme().walls.color);
+        let id = 0;
+        for (const [_gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
+          for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
+            const wallH = typeof meta.h === "number" ? meta.h : wallHeight;
+            const wallBase = typeof meta.y === "number" ? meta.y : 0;
+            ti.setMatrixAt(
+              id,
+              state.getWallMat(seg, transform, determinant, ceilTrimHeight, wallBase + wallH - ceilTrimHeight),
+            );
+            ti.setColorAt(id++, color);
+          }
+        }
+        ti.computeBoundingSphere();
+        ti.instanceMatrix.needsUpdate = true;
+        if (ti.instanceColor) ti.instanceColor.needsUpdate = true;
+      },
       positionInstances() {
         const { inst: ws } = state;
         if (!ws) return;
@@ -141,6 +162,7 @@ export default function Walls() {
 
   useEffect(() => {
     state.positionInstances();
+    state.positionTrimInstances();
     mat.opacityUniform.value = w.getTheme().walls.opacity;
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
 
@@ -180,30 +202,50 @@ export default function Walls() {
   }, [w.mapKey, w.hash, w.themeKey, w.decor.ready]);
 
   return wallCount ? (
-    <instancedMesh
-      key={mat.uuid}
-      name="walls"
-      ref={state.ref("inst", (mesh) => {
-        mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
-      })}
-      args={[state.quad, undefined, wallCount]}
-      renderOrder={4}
-    >
-      <meshStandardNodeMaterial
+    <>
+      <instancedMesh
         key={mat.uuid}
-        side={THREE.DoubleSide}
-        transparent
-        depthWrite={false}
-        colorNode={mat.colorNode}
-        opacityNode={mat.opacityNode}
-        outputNode={mat.outputNode}
-      />
-    </instancedMesh>
+        name="walls"
+        ref={state.ref("inst", (mesh) => {
+          mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
+        })}
+        args={[state.quad, undefined, wallCount]}
+        renderOrder={4}
+      >
+        <meshStandardNodeMaterial
+          key={mat.uuid}
+          side={THREE.DoubleSide}
+          transparent
+          depthWrite={false}
+          colorNode={mat.colorNode}
+          opacityNode={mat.opacityNode}
+          outputNode={mat.outputNode}
+        />
+      </instancedMesh>
+      <instancedMesh
+        key={`${mat.uuid}-trim`}
+        name="wall-ceil-trim"
+        ref={state.ref("trimInst", (mesh) => {
+          mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
+        })}
+        args={[state.quad, undefined, wallCount]}
+        renderOrder={4}
+      >
+        <meshBasicMaterial
+          side={THREE.DoubleSide}
+          transparent
+          depthWrite={false}
+          opacity={0.75}
+          color={w.getTheme().walls.color}
+        />
+      </instancedMesh>
+    </>
   ) : null;
 }
 
 export type State = {
   inst: null | THREE.InstancedMesh;
+  trimInst: null | THREE.InstancedMesh;
   lightsShown: boolean;
   mat: {
     opacityUniform: THREE.UniformNode<"float", number>;
@@ -228,9 +270,11 @@ export type State = {
     baseHeight?: number,
   ) => THREE.Matrix4;
   positionInstances: () => void;
+  positionTrimInstances: () => void;
 };
 
 const tmpMat1 = new Mat();
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
+const ceilTrimHeight = 0.25;

@@ -19,7 +19,6 @@ export default function Floor() {
     (): State => ({
       inst: null,
       quad: createXzQuad(),
-
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
 
