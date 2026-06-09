@@ -348,7 +348,7 @@ export const sessionApi = {
       session.var[varName] = varValue;
     }
   },
-  setVarDeep(meta: JSh.BaseMeta, varPath: string, varValue: any) {
+  setVarDeep(meta: JSh.BaseMeta, varPath: string, varValue: any, recursive = false) {
     const session = sessionApi.getSession(meta.sessionKey);
     const process = session.process[meta.pid];
     const parts = varPath.split("/");
@@ -375,7 +375,7 @@ export const sessionApi = {
 
     try {
       const leafKey = normalParts.pop() as string;
-      const parent = resolveNormalized(normalParts, root);
+      const parent = resolveNormalized(normalParts, root, recursive);
       parent[leafKey] = varValue;
     } catch (e) {
       throw new ShError(`cannot resolve /${normalParts.join("/")}`, 1);

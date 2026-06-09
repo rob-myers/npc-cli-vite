@@ -185,13 +185,16 @@ export function resolvePath(path: string, root: any, pwd: string) {
 }
 
 /**
- * 🔔 now throws on non-existent path
+ * 🔔 throws on non-existent path unless `recursive`
  */
-export function resolveNormalized(parts: string[], root: any) {
+export function resolveNormalized(parts: string[], root: any, recursive = false): any {
   return parts.reduce((agg, item) => {
-    // Support invocation of functions, where
-    // args assumed valid JSON when []-wrapped,
-    // e.g. myFunc("foo", 42) -> myFunc(...["foo", 42])
+    /**
+     * Support function invocation where args assumed valid JSON when []-wrapped, e.g.
+     * > myFunc("foo", 42) --> myFunc(...["foo", 42])
+     *
+     * You'll need to write e.g. `myFunc'()'` to avoid bad shell syntax.
+     */
     if (item.endsWith(")")) {
       const matched = matchFuncFormat(item);
       if (matched) {
@@ -199,9 +202,10 @@ export function resolveNormalized(parts: string[], root: any) {
         return agg[item.slice(0, -(matched[1].length + 2))](...args);
       }
     }
-    // return agg[item];
     if (item in agg) {
       return agg[item];
+    } else if (recursive === true) {
+      return (agg[item] = {});
     } else {
       throw new ShError(`not found: /${parts.join("/")}`, 1);
     }

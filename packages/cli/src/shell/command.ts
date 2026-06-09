@@ -358,8 +358,8 @@ class CmdService {
 
     safeJsStringify,
 
-    set(varPath: string, varValue: any) {
-      sessionApi.setVarDeep(this.meta, varPath, varValue);
+    set(varPath: string, varValue: any, recursive = false) {
+      sessionApi.setVarDeep(this.meta, varPath, varValue, recursive);
     },
 
     async sleep(seconds: number) {
@@ -499,6 +499,12 @@ class CmdService {
       case "array":
         yield args.map(parseJsArg);
         break;
+      /**
+       * ```sh
+       * assign '{ foo: "bar" }' '{ baz: "qux" }'
+       * expr '{ foo: "bar" }' | assign '{ baz: "qux" }'
+       * ```
+       */
       case "assign": {
         const values = args.map((arg) => {
           const parsed = parseJsArg(arg);
