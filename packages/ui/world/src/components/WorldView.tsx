@@ -2,7 +2,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
-import { testNever } from "@npc-cli/util/legacy/generic";
+import { testNever, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -12,6 +12,7 @@ import { useContext, useEffect } from "react";
 import { colorBleeding, vignette } from "three/addons/tsl/display/CRT.js";
 import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { defaultFov, fovStorageKey } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
@@ -47,6 +48,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
       postProcessing: true,
+      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -421,7 +423,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={fov} makeDefault zoom={1} />
+        <PerspectiveCamera fov={state.fov} makeDefault zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
@@ -458,6 +460,7 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(): void;
@@ -500,5 +503,3 @@ export type Picked = {
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
 );
-
-const fov = 60;
