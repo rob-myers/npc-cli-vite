@@ -160,6 +160,12 @@ export default function Walls() {
 
   state.mat = mat;
 
+  const trimMat = useMemo(() => {
+    const m = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
+    m.opacityNode = w.view.objectPick.equal(0).select(float(0.75), float(0));
+    return m;
+  }, []);
+
   useEffect(() => {
     state.positionInstances();
     state.positionTrimInstances();
@@ -228,17 +234,9 @@ export default function Walls() {
         ref={state.ref("trimInst", (mesh) => {
           mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
         })}
-        args={[state.quad, undefined, wallCount]}
+        args={[state.quad, trimMat, wallCount]}
         renderOrder={4}
-      >
-        <meshBasicMaterial
-          side={THREE.DoubleSide}
-          transparent
-          depthWrite={false}
-          opacity={0.75}
-          color={w.getTheme().walls.color}
-        />
-      </instancedMesh>
+      />
     </>
   ) : null;
 }
@@ -277,4 +275,4 @@ const tmpMat1 = new Mat();
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
-const ceilTrimHeight = 0.25;
+const ceilTrimHeight = 0.2;
