@@ -255,6 +255,13 @@ class CmdService {
 
     getCached,
 
+    /**
+     * Extract operands from output of `processApi.jsArg(opts, aliases)`.
+     */
+    getJsOperands(args: string[], opts: Record<string, any>) {
+      return args.filter((x) => x in opts);
+    },
+
     getKillError(exitCode?: number) {
       return killError(this.meta, exitCode);
     },

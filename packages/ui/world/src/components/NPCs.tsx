@@ -215,6 +215,8 @@ export default function NPCs() {
         if (typeof npcKey !== "string" || !npc) {
           throw Error(`opts.npcKey must exist: saw ${npcKey}`);
         }
+
+        // 🚧 support fade spawn to doable
         if (npc.agentId === null) {
           throw Error(`npc has no agent: ${npcKey}`);
         }
@@ -422,7 +424,7 @@ export default function NPCs() {
           });
           npc.playIdleClip(0); // after mount
         } else {
-          if (as) npc.changeSkin(as);
+          if (as) npc.setSkin(as);
           npc.playIdleClip(0); // before update
           w.view.forceUpdate();
         }
