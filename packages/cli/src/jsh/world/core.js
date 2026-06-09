@@ -87,15 +87,9 @@ export async function fade({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
 
   try {
     const [fadeType] = api.getJsOperands(args, opts);
-    await new Promise((resolve, reject) => {
-      npc.resolve = resolve;
-      npc.reject = reject;
-      npc.fade(/** @type {*} */ (fadeType), opts.speed);
-    });
+    await npc.fade(/** @type {*} */ (fadeType), opts.speed);
   } finally {
     dispose();
-    npc.fadeState.colorDelta = 0;
-    npc.fadeState.opacityDelta = 0;
   }
 }
 

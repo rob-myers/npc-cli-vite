@@ -148,31 +148,44 @@ export class Npc {
     this.setLabelYShift(0);
   }
 
-  /** Gradually fade to black/white or fade opacity in/out. Speed is units/second. */
-  fade(type: "black" | "white" | "out" | "in", speed = 5) {
-    switch (type) {
-      case "black":
-        this.fadeState.colorTarget = 0;
-        this.fadeState.colorDelta = -Math.abs(speed);
-        break;
-      case "white":
-        this.fadeState.colorTarget = 1;
-        this.fadeState.colorDelta = Math.abs(speed);
-        break;
-      case "out":
-        this.fadeState.opacityTarget = 0;
-        this.fadeState.opacityDelta = -Math.abs(speed);
-        break;
-      case "in":
-        this.fadeState.opacityTarget = 1;
-        this.fadeState.opacityDelta = Math.abs(speed);
-        break;
-      default:
-        throw Error(`unknown fade type "${type}"`);
+  /** Fade to black/white or fade opacity in/out. Speed is units/second. */
+  async fade(type: "black" | "white" | "out" | "in", speed = 5) {
+    try {
+      await new Promise((resolve, reject) => {
+        this.resolve = resolve;
+        this.reject = reject;
+        switch (type) {
+          case "black":
+            this.fadeState.colorTarget = 0;
+            this.fadeState.colorDelta = -Math.abs(speed);
+            break;
+          case "white":
+            this.fadeState.colorTarget = 1;
+            this.fadeState.colorDelta = Math.abs(speed);
+            break;
+          case "out":
+            this.fadeState.opacityTarget = 0;
+            this.fadeState.opacityDelta = -Math.abs(speed);
+            break;
+          case "in":
+            this.fadeState.opacityTarget = 1;
+            this.fadeState.opacityDelta = Math.abs(speed);
+            break;
+          default:
+            throw Error(`unknown fade type "${type}"`);
+        }
+      });
+    } finally {
+      this.fadeState.colorDelta = 0;
+      this.fadeState.opacityDelta = 0;
     }
   }
 
-  fadeStep(delta: number) {
+  fadeSpawn(_at: WithMeta<JshCli.PointAnyFormat>) {
+    //
+  }
+
+  fadeTick(delta: number) {
     if (this.fadeState.colorDelta !== 0) {
       const next = this.colorScale.value + this.fadeState.colorDelta * delta;
       const done =
