@@ -24,6 +24,7 @@ import {
   VoiceDevice,
 } from "./io";
 import type { NamedFunction } from "./parse";
+import { queryClientApi } from "./query-client";
 import { TtyShell, ttyError } from "./shell";
 import { computeNormalizedParts, killProcess, resolveNormalized, ShError } from "./util";
 
@@ -352,18 +353,25 @@ export const sessionApi = {
     const session = sessionApi.getSession(meta.sessionKey);
     const process = session.process[meta.pid];
     const parts = varPath.split("/");
+    const cacheShortcuts = session.var.CACHE_SHORTCUTS || {};
 
     let root: Record<string, any>, normalParts: string[];
 
     /**
-     * We support writing to local process variables,
-     * e.g. `( cd && echo 'pwn3d!'>PWD && pwd )`
+     * - We support writing to local process variables,
+     *   e.g. `( cd && echo 'pwn3d!'>PWD && pwd )`
+     * - We support writing to cacheShortcuts,
+     *   e.g. `expr 0.5 > w/n/rob/colorScale`
      */
     const localCtxt =
       parts[0] in process.localVar ? process.localVar : parts[0] in process.inheritVar ? process.inheritVar : null;
     if (localCtxt) {
       root = localCtxt;
       normalParts = parts;
+    } else if (parts[0] in cacheShortcuts) {
+      // 🔔 cacheShortcuts override any local parts[0]
+      root = queryClientApi.get([session.var[cacheShortcuts[parts[0]]]] as any) as Record<string, any>;
+      normalParts = parts.slice(1);
     } else {
       root = { home: session.var };
       normalParts = computeNormalizedParts(varPath, sessionApi.getVar(meta, "PWD") as string);

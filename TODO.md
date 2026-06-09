@@ -38,10 +38,15 @@
   - slight height adjustments for idle/stand too
   - clean
 
-- can fade to/from black
+- 🚧 can fade to/from black
 - can fade in/out
   - fade out: fade to black, depthWrite false, fade opacity to 0
   - fade in: fade opacity to 1, depthWrite true, fade from black
+
+- ✅ cli syntax to set value directly?
+  - currently can `w n.rob.colorScale | assign '{ value: 0.5 }'`
+  - ✅ would like `expr 0.5 > w/n/rob/colorScale/value`
+    - this uses the existing cli deep set functionality
 
 - ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
   - on play position is updated
