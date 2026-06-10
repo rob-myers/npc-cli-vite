@@ -107,7 +107,7 @@ export class SpeechBubbleApi {
     const dx = e.clientX - this.resizeStartClient.x;
     const dy = e.clientY - this.resizeStartClient.y;
     this.scale = Math.min(Math.max(this.resizeScaleAtStart * Math.exp((dx + dy) * 0.005), 0.4), 4);
-    this.bubbleDiv.style.transform = `scale(${this.scale})`;
+    this.bubbleDiv.style.transform = `translateX(-50%) scale(${this.scale})`;
     this.html3d?.onFrame();
   }
 

@@ -95,7 +95,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   return (
     <Html3d
       ref={b.html3dRef.bind(b)}
-      className="pointer-events-none absolute top-0 left-0 [&>div]:flex [&>div]:justify-center"
+      className="pointer-events-none absolute top-0 left-0"
       baseScale={speechBubbleBaseScale}
       offset={b.offset}
       position={b.position}
