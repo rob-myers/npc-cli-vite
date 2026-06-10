@@ -143,7 +143,7 @@ export class Npc {
     this.setLabelYShift(0);
   }
 
-  async scaleDown(speed = 8) {
+  async scaleDown(speed = 4) {
     await new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
@@ -152,7 +152,7 @@ export class Npc {
     });
   }
 
-  async scaleUp(speed = 8) {
+  async scaleUp(speed = 4) {
     await new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
@@ -173,6 +173,9 @@ export class Npc {
       this.scaleState.delta = 0;
       this.skinnedMesh.scale.setScalar(npcScale);
       this.position.y = spawnY;
+      this.opacityScale.value = 1;
+      this.colorScale.value = 1;
+      this.material.alphaTest = 0.9;
     }
   }
 
@@ -182,6 +185,7 @@ export class Npc {
     const next = current + this.scaleState.delta * delta;
     const done = this.scaleState.delta > 0 ? next >= this.scaleState.target : next <= this.scaleState.target;
     const s = Math.max(0, done ? this.scaleState.target : next);
+
     if (this.idleClip.name === "lie") {
       // lying flat: scale width only so NPC appears thin then expands
       this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale);
@@ -189,6 +193,11 @@ export class Npc {
       this.skinnedMesh.scale.setScalar(npcScale * s);
       this.position.y = this.scaleState.baseY + scaleCenterY(this.idleClip.name) * (1 - s);
     }
+
+    this.colorScale.value = next;
+    this.opacityScale.value = next;
+    this.material.alphaTest = next - 0.01;
+
     if (done) {
       this.scaleState.delta = 0;
       this.resolve?.("scale");

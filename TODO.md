@@ -56,6 +56,16 @@
   - ✅ would like `expr 0.5 > w/n/rob/colorScale/value`
     - this uses the existing cli deep set functionality
 
+- ✅ strategy for `move` to doable whilst moving
+
+- ✅ can `spawn npc:rob at:$( pick 1 )` and pick self whilst sitting down
+- ✅ clean up animated spawn attempts
+- ✅ relax `move` close poly half extents
+  - ✅ to doable should override navigable
+  - ✅ spawn to navigable should use result.position
+
+- `npc.lookAt` sans animation
+
 - ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
   - on play position is updated
   - seems during failed spawn npc still exists!
