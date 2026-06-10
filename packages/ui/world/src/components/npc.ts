@@ -143,21 +143,43 @@ export class Npc {
     this.setLabelYShift(0);
   }
 
+  groupRef = (group: THREE.Group | null): void => {
+    if (!group) {
+      this.mixer.stopAllAction();
+      return;
+    }
+    this.group = group;
+    this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
+    this.position = this.skinnedMesh.position;
+    this.mixer = new THREE.AnimationMixer(group);
+
+    this.resolve?.("spawned");
+
+    this.mixer.clipAction(this.idleClip).play();
+    this.mixer.update(0);
+  };
+
+  pinTo(result: FindNearestPolyResult) {
+    if (this.agentId === null || result.success === false) {
+      return false;
+    }
+    this.last.pinTime = this.w.timer.getElapsedTime();
+    return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
+  }
+
+  playIdleClip(duration = 0.1) {
+    for (const clip of Object.values(this.clips)) {
+      this.mixer.existingAction(clip)?.fadeOut(duration);
+    }
+    this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
+  }
+
   async scaleDown(speed = 4) {
     await new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
       this.scaleState.target = 0;
       this.scaleState.delta = -Math.abs(speed);
-    });
-  }
-
-  async scaleUp(speed = 4) {
-    await new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
-      this.scaleState.target = 1;
-      this.scaleState.delta = Math.abs(speed);
     });
   }
 
@@ -204,35 +226,13 @@ export class Npc {
     }
   }
 
-  groupRef = (group: THREE.Group | null): void => {
-    if (!group) {
-      this.mixer.stopAllAction();
-      return;
-    }
-    this.group = group;
-    this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
-    this.position = this.skinnedMesh.position;
-    this.mixer = new THREE.AnimationMixer(group);
-
-    this.resolve?.("spawned");
-
-    this.mixer.clipAction(this.idleClip).play();
-    this.mixer.update(0);
-  };
-
-  pinTo(result: FindNearestPolyResult) {
-    if (this.agentId === null || result.success === false) {
-      return false;
-    }
-    this.last.pinTime = this.w.timer.getElapsedTime();
-    return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
-  }
-
-  playIdleClip(duration = 0.1) {
-    for (const clip of Object.values(this.clips)) {
-      this.mixer.existingAction(clip)?.fadeOut(duration);
-    }
-    this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
+  async scaleUp(speed = 4) {
+    await new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+      this.scaleState.target = 1;
+      this.scaleState.delta = Math.abs(speed);
+    });
   }
 
   setLabelYShift(shift: number) {
