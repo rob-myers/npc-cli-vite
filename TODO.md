@@ -64,7 +64,8 @@
   - ✅ to doable should override navigable
   - ✅ spawn to navigable should use result.position
 
-- `npc.lookAt` sans animation
+- ✅ `npc.lookAt`
+- 🚧 BUG: doable -> navigable then re-nav quickly -> walk animation doesn't play
 
 - ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
   - on play position is updated

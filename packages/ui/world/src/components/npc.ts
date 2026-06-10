@@ -1,5 +1,7 @@
 import type { UseStateRef } from "@npc-cli/util";
+import { geomService } from "@npc-cli/util";
 import type { buildGraph } from "@react-three/fiber";
+import { deltaAngle } from "maath/misc";
 import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, type QueryFilter } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
@@ -64,7 +66,8 @@ export class Npc {
     dst: { x: 0, y: 0 },
     dstGrId: null as Geomorph.GmRoomId | null,
   };
-  lookAt: JshCli.GroundPoint | null = null;
+  lookAtPoint: JshCli.GroundPoint | null = null;
+  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0 };
   /** Synced with crowd agent */
   position: THREE.Vector3;
   moveClip = emptyAnimationClip;
@@ -184,7 +187,7 @@ export class Npc {
   }
 
   async scaleSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
-    let spawnY = 0;
+    let spawnY = this.position.y;
     try {
       await this.scaleDown();
       await this.w.npc.spawn({ npcKey: this.key, at });
@@ -245,6 +248,41 @@ export class Npc {
     this.skinIndexUniform.value = skinIndex;
   }
 
+  async lookAt(at: MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
+    const p = parseGroundPoint(at);
+    const dx = p.x - this.position.x;
+    const dz = p.y - this.position.z;
+    const target = geomService.getThreeRotationY(dz, dx);
+    if (immediate) {
+      this.skinnedMesh.rotation.y = target;
+      return;
+    }
+    await new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+      const startAngle = this.skinnedMesh.rotation.y;
+      const totalDiff = deltaAngle(startAngle, target);
+      // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
+      const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
+      Object.assign(this.lookAtState, { active: true, startAngle, totalDiff, duration, elapsed: 0 });
+    });
+  }
+
+  lookAtTick(delta: number) {
+    if (!this.lookAtState.active) return;
+    const s = this.lookAtState;
+    s.elapsed += delta;
+    if (s.elapsed >= s.duration) {
+      this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff;
+      s.active = false;
+      this.resolve?.("lookAt");
+    } else {
+      const t = s.elapsed / s.duration;
+      // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
+      this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
+    }
+  }
+
   smoothRotateToward(vx: number, vz: number, delta: number) {
     const target = Math.atan2(vx, vz) + Math.PI;
     let diff = target - this.skinnedMesh.rotation.y;
@@ -270,7 +308,7 @@ export class Npc {
       this.pinTo(this.w.npc.getClosestPoly(this.position));
 
       const [vx, , vz] = agent.velocity;
-      this.lookAt = parseGroundPoint({
+      this.lookAtPoint = parseGroundPoint({
         x: this.position.x + vx,
         y: this.position.z + vz,
       });
@@ -287,7 +325,7 @@ export class Npc {
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
     if (!this.agentId) return;
-
+    console.log("startMoving", { groundPoint, result, arrive });
     const agent = this.w.npc.crowd.agents[this.agentId];
     // whilst walking, doors should block npcs
     agent.queryFilter = this.queryFilter;
@@ -299,7 +337,7 @@ export class Npc {
     this.last.dst = groundPoint;
     this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
 
-    this.lookAt = null;
+    this.lookAtPoint = null;
     this.last.blockingArea = -1;
     this.stuckAccum = 0;
     this.last.pos = { x: this.position.x, y: this.position.z };
@@ -343,15 +381,15 @@ export class Npc {
       const neiNpc = Object.values(this.w.n).find((n) => n.agentId === neiAgentId);
       if (neiNpc?.moving === true) {
         const neighbor = this.w.npc.crowd.agents[neiAgentId];
-        this.lookAt = { x: neighbor.position[0], y: neighbor.position[2] };
+        this.lookAtPoint = { x: neighbor.position[0], y: neighbor.position[2] };
         const [vx, , vz] = agent.velocity;
         const speed = Math.hypot(vx, vz);
         this.syncSeparation(agent, speed, worldSeconds);
       } else {
-        this.lookAt = null;
+        this.lookAtPoint = null;
       }
     } else {
-      this.lookAt = null;
+      this.lookAtPoint = null;
       if (this.separating) {
         this.startIdle();
       }
@@ -361,9 +399,9 @@ export class Npc {
   }
 
   updateLookAt(delta: number) {
-    if (this.lookAt === null) return;
-    const dx = this.lookAt.x - this.position.x;
-    const dz = this.lookAt.y - this.position.z;
+    if (this.lookAtPoint === null) return;
+    const dx = this.lookAtPoint.x - this.position.x;
+    const dz = this.lookAtPoint.y - this.position.z;
     if (dx * dx + dz * dz > 0.001) {
       this.smoothRotateToward(dx, dz, delta);
     }

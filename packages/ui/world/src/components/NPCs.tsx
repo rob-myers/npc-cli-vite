@@ -244,6 +244,7 @@ export default function NPCs() {
           return;
         }
 
+        // 🚧 maybe already resolved by scaleSpawn
         npc.reject?.(new Error("move again"));
 
         npc.startMoving(groundPoint, result, arrive);
@@ -267,6 +268,7 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
           npc.scaleTick(delta);
+          npc.lookAtTick(delta);
 
           if (npc.agentId === null) continue;
 
