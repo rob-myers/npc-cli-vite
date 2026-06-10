@@ -152,7 +152,7 @@ export default function NPCs() {
 
           npc.colorScale.value = oldNpc.colorScale.value;
           npc.opacityScale.value = oldNpc.opacityScale.value;
-          npc.fadeState = { ...oldNpc.fadeState };
+          npc.scaleState = { ...oldNpc.scaleState };
           npc.material.depthWrite = oldNpc.material.depthWrite;
 
           state.placeNpcAt(
@@ -177,6 +177,12 @@ export default function NPCs() {
           const found = ds.find((d) => !w.e.doableToNpc[d.key] || w.e.doableToNpc[d.key] === npcKey) ?? null;
           if (!found) throw Error("not doable");
           return found.meta;
+        }
+
+        if (meta.npcKey === npcKey && w.n[npcKey] && w.e.npcToDoable[npcKey] !== null) {
+          const decorKey = w.e.npcToDoable[npcKey];
+          // can respawn onto self whilst doing
+          return w.decor.byKey[decorKey].meta;
         }
 
         // not doable
@@ -223,14 +229,14 @@ export default function NPCs() {
           const doMeta = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
           if (doMeta) {
             // fade spawn to doable
-            await npc.fadeSpawn(to);
+            await npc.scaleSpawn(to);
             return;
           }
           throw Error("not navigable");
         } else if (npc.agentId === null) {
           // fade spawn from doable to nav
           // 🚧 facing `prev --> next`
-          await npc.fadeSpawn(to);
+          await npc.scaleSpawn(to);
           return;
         }
 
@@ -256,7 +262,7 @@ export default function NPCs() {
 
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
-          npc.fadeTick(delta);
+          npc.scaleTick(delta);
 
           if (npc.agentId === null) continue;
 

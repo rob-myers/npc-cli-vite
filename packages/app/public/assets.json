@@ -30554,8 +30554,8 @@
     "light-theme": {
       "background": "bg-[#333]",
       "ceiling": {
-        "hull": {"fill": "#000", "stroke": "#fff2"},
-        "nonHull": {"fill": "#000", "stroke": "#fff1"}
+        "hull": {"fill": "#000", "stroke": "#fff0"},
+        "nonHull": {"fill": "#111", "stroke": "#000"}
       },
       "floor": {
         "hullFill": "#444",
