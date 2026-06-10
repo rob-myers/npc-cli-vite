@@ -73,13 +73,6 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout, w.getTheme().floor);
 
-        // door shadow
-        for (const door of layout.doors) {
-          ct.lineWidth = 0.1;
-          tmpPoly.outline = door.seg;
-          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000" });
-        }
-
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
@@ -94,6 +87,14 @@ export default function Floor() {
             drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
           }
         });
+
+        // door shadow
+        for (const door of layout.doors) {
+          ct.lineWidth = 0.125;
+          tmpPoly.outline = door.seg;
+          ct.lineJoin = "miter";
+          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000a" });
+        }
 
         // light circles
         drawLightsIntoTexture(ct, gm);
