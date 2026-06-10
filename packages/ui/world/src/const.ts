@@ -101,10 +101,6 @@ export const MAX_DECOR_QUAD_INSTANCES = 1024;
 
 export const npcScale = 0.7;
 
-export const npcBubbleHeightStanding = 1.6;
-export const npcBubbleHeightSitting = 0.9;
-export const npcBubbleHeightLying = 0.3;
-
 export const MAX_NPCS = 256;
 export const MAX_DOOR_LABELS = 32;
 

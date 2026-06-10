@@ -107,7 +107,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         ref={(el) => {
           b.bubbleDiv = el;
         }}
-        className="relative pointer-events-auto cursor-grab active:cursor-grabbing"
+        className="relative transform-[translate(-50%)] pointer-events-auto cursor-grab active:cursor-grabbing"
         onPointerDown={(e) => {
           e.stopPropagation();
           b.onDragStart(e.nativeEvent);

@@ -11,9 +11,6 @@ import {
   idleMaxAcceleration,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
-  npcBubbleHeightLying,
-  npcBubbleHeightSitting,
-  npcBubbleHeightStanding,
   npcScale,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
@@ -152,7 +149,7 @@ export class Npc {
     this.moveClip = this.clips.walk;
     this.idleClip = this.clips.idle;
     this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
-    this.setLabelYShift(0);
+    this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
   }
 
   groupRef = (group: THREE.Group | null): void => {
@@ -483,9 +480,9 @@ function scaleCenterY(clipName: string): number {
 }
 
 export function npcBubbleHeightForClip(clipName: string): number {
-  if (clipName === "sit") return npcBubbleHeightSitting;
-  if (clipName === "lie") return npcBubbleHeightLying;
-  return npcBubbleHeightStanding;
+  if (clipName === "sit") return 1.4;
+  if (clipName === "lie") return 0.9;
+  return 2;
 }
 
 // 🚧 why don't these correspond to world meters?
