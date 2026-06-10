@@ -208,6 +208,9 @@ export class Npc {
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
         this.material.alphaTest = 0.9;
+        this.labelMaterial.visible = true;
+        const bubbleDiv = this.w.b[this.key]?.html3d.rootDiv;
+        if (bubbleDiv) bubbleDiv.style.opacity = "";
       }
     }
   }
@@ -228,6 +231,10 @@ export class Npc {
       this.position.y = this.scaleState.baseY + scaleCenterY(this.idleClip.name) * (1 - s);
     }
 
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name) * s;
+    this.labelMaterial.visible = s >= 1;
+    const bubbleDiv = this.w.b[this.key]?.html3d.rootDiv;
+    if (bubbleDiv) bubbleDiv.style.opacity = s < 1 ? "0" : "";
     this.colorScale.value = next;
     this.opacityScale.value = next;
     this.material.alphaTest = next - 0.01;
@@ -476,6 +483,7 @@ const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;
 
 function scaleCenterY(clipName: string): number {
+  if (clipName === "sit") return 0;
   return npcBubbleHeightForClip(clipName) / 2;
 }
 
