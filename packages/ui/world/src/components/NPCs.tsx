@@ -244,8 +244,7 @@ export default function NPCs() {
           return;
         }
 
-        // 🚧 maybe already resolved by scaleSpawn
-        npc.reject?.(new Error("move again"));
+        npc.rejectAll(new Error("move again"));
 
         npc.startMoving(groundPoint, result, arrive);
         w.events.next({ key: "started-moving", npcKey });
@@ -358,7 +357,7 @@ export default function NPCs() {
           delete state.byPickId[npc.pickId];
           delete state.npc[npcKey];
           w.e.setNpcDo(npcKey, null);
-          npc.reject?.(new Error("removed npc"));
+          npc.rejectAll(new Error("removed npc"));
         }
         if (Object.keys(state.npc).length === 0) {
           state.nextPickId = 0;
@@ -437,7 +436,7 @@ export default function NPCs() {
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
-            npc.resolve = resolve;
+            npc.resolve.spawn = resolve;
             state.update();
           });
           npc.playIdleClip(0); // after mount
