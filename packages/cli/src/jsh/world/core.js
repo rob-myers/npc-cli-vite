@@ -69,31 +69,6 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 }
 
 /**
- * ```sh
- * fade npc:rob black
- * fade npc:rob white
- * fade npc:rob out
- * fade npc:rob in
- * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; speed?: number }} [opts]
- */
-export async function fade({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
-  const npc = w.npc.get(opts.npcKey);
-
-  const { dispose } = api.handleStatus({
-    cleanups: (killed) => killed && npc.reject?.(new Error("killed")),
-  });
-
-  try {
-    const [fadeType] = api.getJsOperands(args, opts);
-    await npc.fade(/** @type {*} */ (fadeType), opts.speed);
-  } finally {
-    dispose();
-  }
-}
-
-/**
  * Usage
  * ```sh
  * move npc:rob to:$( pick 1 )

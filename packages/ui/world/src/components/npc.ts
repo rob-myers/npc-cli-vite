@@ -51,12 +51,7 @@ export class Npc {
   arrive = true;
   agentId: string | null = null;
   bubbleOffset = new THREE.Vector3(0, 0, 0);
-  fadeState = {
-    colorDelta: 0,
-    colorTarget: 1,
-    opacityDelta: 0,
-    opacityTarget: 1,
-  };
+  scaleState = { delta: 0, target: 1, baseY: 0 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
   last = {
@@ -148,77 +143,55 @@ export class Npc {
     this.setLabelYShift(0);
   }
 
-  /** Fade to black/white or fade opacity in/out. Speed is units/second. */
-  async fade(type: "black" | "white" | "out" | "in", speed = 5) {
-    try {
-      await new Promise((resolve, reject) => {
-        this.resolve = resolve;
-        this.reject = reject;
-        switch (type) {
-          case "black":
-            this.fadeState.colorTarget = 0;
-            this.fadeState.colorDelta = -Math.abs(speed);
-            break;
-          case "white":
-            this.fadeState.colorTarget = 1;
-            this.fadeState.colorDelta = Math.abs(speed);
-            break;
-          case "out":
-            this.fadeState.opacityTarget = 0;
-            this.fadeState.opacityDelta = -Math.abs(speed);
-            break;
-          case "in":
-            this.fadeState.opacityTarget = 1;
-            this.fadeState.opacityDelta = Math.abs(speed);
-            break;
-          default:
-            throw Error(`unknown fade type "${type}"`);
-        }
-      });
-    } finally {
-      this.fadeState.colorDelta = 0;
-      this.fadeState.opacityDelta = 0;
-    }
+  async scaleDown(speed = 8) {
+    await new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+      this.scaleState.target = 0;
+      this.scaleState.delta = -Math.abs(speed);
+    });
   }
 
-  async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
+  async scaleUp(speed = 8) {
+    await new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+      this.scaleState.target = 1;
+      this.scaleState.delta = Math.abs(speed);
+    });
+  }
+
+  async scaleSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
+    let spawnY = 0;
     try {
-      await this.fade("black", 1);
+      await this.scaleDown();
       await this.w.npc.spawn({ npcKey: this.key, at });
-      await this.fade("white", 1);
+      spawnY = this.position.y;
+      this.scaleState.baseY = spawnY;
+      await this.scaleUp();
     } finally {
-      this.fadeState.colorDelta = 0;
-      this.fadeState.opacityDelta = 0;
-      this.opacityScale.value = 1;
-      this.colorScale.value = 1;
+      this.scaleState.delta = 0;
+      this.skinnedMesh.scale.setScalar(npcScale);
+      this.position.y = spawnY;
     }
   }
 
-  fadeTick(delta: number) {
-    if (this.fadeState.colorDelta !== 0) {
-      const next = this.colorScale.value + this.fadeState.colorDelta * delta;
-      const done =
-        this.fadeState.colorDelta > 0 ? next >= this.fadeState.colorTarget : next <= this.fadeState.colorTarget;
-      this.colorScale.value = done ? this.fadeState.colorTarget : next;
-      // when uniformly black can turn off depthWrite for subsequent opacity fade
-      // this.material.depthWrite = this.colorScale.value > 0;
-      if (done === true) {
-        this.fadeState.colorDelta = 0;
-        this.resolve?.("fade-color");
-      }
+  scaleTick(delta: number) {
+    if (this.scaleState.delta === 0) return;
+    const current = this.skinnedMesh.scale.x / npcScale;
+    const next = current + this.scaleState.delta * delta;
+    const done = this.scaleState.delta > 0 ? next >= this.scaleState.target : next <= this.scaleState.target;
+    const s = Math.max(0, done ? this.scaleState.target : next);
+    if (this.idleClip.name === "lie") {
+      // lying flat: scale width only so NPC appears thin then expands
+      this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale);
+    } else {
+      this.skinnedMesh.scale.setScalar(npcScale * s);
+      this.position.y = this.scaleState.baseY + scaleCenterY(this.idleClip.name) * (1 - s);
     }
-    if (this.fadeState.opacityDelta !== 0) {
-      const next = this.opacityScale.value + this.fadeState.opacityDelta * delta;
-      const done =
-        this.fadeState.opacityDelta > 0 ? next >= this.fadeState.opacityTarget : next <= this.fadeState.opacityTarget;
-      this.opacityScale.value = done ? this.fadeState.opacityTarget : next;
-      // avoid sudden disappearance
-      this.material.alphaTest = Math.max(0, this.opacityScale.value - 0.01);
-      this.material.depthWrite = this.opacityScale.value > 0.15;
-      if (done === true) {
-        this.fadeState.opacityDelta = 0;
-        this.resolve?.("fade-opacity");
-      }
+    if (done) {
+      this.scaleState.delta = 0;
+      this.resolve?.("scale");
     }
   }
 
@@ -430,6 +403,10 @@ const separationSpeedThreshold = 0.005;
 const separationCooldown = 0.5;
 const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;
+
+function scaleCenterY(clipName: string): number {
+  return npcBubbleHeightForClip(clipName) / 2;
+}
 
 export function npcBubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return npcBubbleHeightSitting;
