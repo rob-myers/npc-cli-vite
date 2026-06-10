@@ -51,7 +51,7 @@ export class Npc {
   arrive = true;
   agentId: string | null = null;
   bubbleOffset = new THREE.Vector3(0, 0, 0);
-  scaleState = { delta: 0, target: 1, baseY: 0 };
+  scaleState = { delta: 0, target: 1, baseY: 0, baseX: 0, baseZ: 0 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
   last = {
@@ -188,6 +188,9 @@ export class Npc {
       this.rejectAll(new Error("interrupted"));
       this.resolve.scale = resolve;
       this.reject.scale = reject;
+      this.scaleState.baseX = this.position.x;
+      this.scaleState.baseY = this.position.y;
+      this.scaleState.baseZ = this.position.z;
       this.scaleState.target = 0;
       this.scaleState.delta = -Math.abs(speed);
     });
@@ -199,12 +202,16 @@ export class Npc {
       await this.scaleDown();
       await this.w.npc.spawn({ npcKey: this.key, at });
       spawnY = this.position.y;
+      this.scaleState.baseX = this.position.x;
       this.scaleState.baseY = spawnY;
+      this.scaleState.baseZ = this.position.z;
       await this.scaleUp();
     } finally {
       if (this.scaleState.delta === 0) {
         this.skinnedMesh.scale.setScalar(npcScale);
+        this.position.x = this.scaleState.baseX;
         this.position.y = spawnY;
+        this.position.z = this.scaleState.baseZ;
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
         this.material.alphaTest = 0.9;
@@ -223,9 +230,12 @@ export class Npc {
     const s = Math.max(0, done ? this.scaleState.target : next);
 
     if (this.idleClip.name === "lie") {
-      // lying flat: scale width only so NPC appears thin then expands
-      // this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale);
-      this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale * s);
+      // Root bone is at head; stomach is half the standing height along the facing direction
+      const ry = this.skinnedMesh.rotation.y;
+      const halfH = 0.4;
+      this.skinnedMesh.scale.setScalar(npcScale * s);
+      this.position.x = this.scaleState.baseX + -Math.sin(ry) * halfH * (1 - s);
+      this.position.z = this.scaleState.baseZ + -Math.cos(ry) * halfH * (1 - s);
     } else {
       this.skinnedMesh.scale.setScalar(npcScale * s);
       this.position.y = this.scaleState.baseY + scaleCenterY(this.idleClip.name) * (1 - s);
