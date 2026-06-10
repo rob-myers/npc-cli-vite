@@ -90,7 +90,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
   const npc = w.npc.get(opts.npcKey);
 
   const { dispose } = api.handleStatus({
-    cleanups: (killed) => killed && npc.reject?.(new Error("killed")),
+    cleanups: (killed) => killed && npc.rejectAll(new Error("killed")),
   });
 
   npc.moveClip = opts.fast ? npc.clips.run : npc.clips.walk;

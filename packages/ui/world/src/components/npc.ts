@@ -25,6 +25,7 @@ import { emptyAnimationClip } from "../service/three-animation";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 
 const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
+const rejectNoop = (_e: Error): void => {};
 
 export class Npc {
   key: string;
@@ -78,10 +79,18 @@ export class Npc {
   spawns = 0;
   stuckAccum = 0;
 
-  /** Used for spawn and move */
-  resolve?: (key: string) => void;
-  /** Used for spawn and move */
-  reject?: (reason: Error) => void;
+  resolve = {
+    spawn: (_k: string): void => {},
+    move: (_k: string): void => {},
+    scale: (_k: string): void => {},
+    lookAt: (_k: string): void => {},
+  };
+  reject = {
+    spawn: rejectNoop,
+    move: rejectNoop,
+    scale: rejectNoop,
+    lookAt: rejectNoop,
+  };
 
   w: UseStateRef<import("./World").State>;
 
@@ -156,7 +165,7 @@ export class Npc {
     this.position = this.skinnedMesh.position;
     this.mixer = new THREE.AnimationMixer(group);
 
-    this.resolve?.("spawned");
+    this.resolve.spawn("spawned");
 
     this.mixer.clipAction(this.idleClip).play();
     this.mixer.update(0);
@@ -178,9 +187,10 @@ export class Npc {
   }
 
   async scaleDown(speed = 4) {
-    await new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
+    await new Promise<string>((resolve, reject) => {
+      this.rejectAll(new Error("interrupted"));
+      this.resolve.scale = resolve;
+      this.reject.scale = reject;
       this.scaleState.target = 0;
       this.scaleState.delta = -Math.abs(speed);
     });
@@ -195,12 +205,13 @@ export class Npc {
       this.scaleState.baseY = spawnY;
       await this.scaleUp();
     } finally {
-      this.scaleState.delta = 0;
-      this.skinnedMesh.scale.setScalar(npcScale);
-      this.position.y = spawnY;
-      this.opacityScale.value = 1;
-      this.colorScale.value = 1;
-      this.material.alphaTest = 0.9;
+      if (this.scaleState.delta === 0) {
+        this.skinnedMesh.scale.setScalar(npcScale);
+        this.position.y = spawnY;
+        this.opacityScale.value = 1;
+        this.colorScale.value = 1;
+        this.material.alphaTest = 0.9;
+      }
     }
   }
 
@@ -213,7 +224,8 @@ export class Npc {
 
     if (this.idleClip.name === "lie") {
       // lying flat: scale width only so NPC appears thin then expands
-      this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale);
+      // this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale);
+      this.skinnedMesh.scale.set(npcScale * s, npcScale, npcScale * s);
     } else {
       this.skinnedMesh.scale.setScalar(npcScale * s);
       this.position.y = this.scaleState.baseY + scaleCenterY(this.idleClip.name) * (1 - s);
@@ -225,14 +237,15 @@ export class Npc {
 
     if (done) {
       this.scaleState.delta = 0;
-      this.resolve?.("scale");
+      this.resolve.scale("scale");
     }
   }
 
   async scaleUp(speed = 4) {
-    await new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
+    await new Promise<string>((resolve, reject) => {
+      this.rejectAll(new Error("interrupted"));
+      this.resolve.scale = resolve;
+      this.reject.scale = reject;
       this.scaleState.target = 1;
       this.scaleState.delta = Math.abs(speed);
     });
@@ -257,9 +270,10 @@ export class Npc {
       this.skinnedMesh.rotation.y = target;
       return;
     }
-    await new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
+    await new Promise<string>((resolve, reject) => {
+      this.rejectAll(new Error("interrupted"));
+      this.resolve.lookAt = resolve;
+      this.reject.lookAt = reject;
       const startAngle = this.skinnedMesh.rotation.y;
       const totalDiff = deltaAngle(startAngle, target);
       // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
@@ -275,12 +289,24 @@ export class Npc {
     if (s.elapsed >= s.duration) {
       this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff;
       s.active = false;
-      this.resolve?.("lookAt");
+      this.resolve.lookAt("lookAt");
     } else {
       const t = s.elapsed / s.duration;
       // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
       this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
     }
+  }
+
+  rejectAll(err: Error) {
+    const { reject } = this;
+    this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, lookAt: rejectNoop };
+    // synchronously stop scale or look
+    this.scaleState.delta = 0;
+    this.lookAtState.active = false;
+    reject.spawn(err);
+    reject.move(err);
+    reject.scale(err);
+    reject.lookAt(err);
   }
 
   smoothRotateToward(vx: number, vz: number, delta: number) {
@@ -292,7 +318,7 @@ export class Npc {
   }
 
   startIdle({ force = false } = {}) {
-    this.resolve?.("idle");
+    this.resolve.move("idle");
 
     if (!this.arrive && !force) {
       this.arrive = true;
@@ -423,8 +449,9 @@ export class Npc {
 
   async waitUntilResolved() {
     await new Promise<string>((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
+      this.rejectAll(new Error("interrupted"));
+      this.resolve.move = resolve;
+      this.reject.move = reject;
     });
   }
 }
