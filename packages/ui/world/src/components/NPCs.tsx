@@ -196,19 +196,20 @@ export default function NPCs() {
           return npc;
         }
       },
-      getClosestPoly(targetPos, queryFilter = ANY_QUERY_FILTER) {
+      getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = groundPointToTuple(parseGroundPoint(targetPos));
+        const { halfExtents, distance } = byAccuracy[accuracy];
         const result = findNearestPoly(
           createFindNearestPolyResult(),
           w.nav.navMesh,
           targetTuple,
-          closePolygonHalfExtents,
+          halfExtents,
           queryFilter,
         );
         if (result.success === true) {
           // 🔔 force fail when XZ distance exceeds half extent
           const dist = Math.hypot(result.position[0] - targetTuple[0], result.position[2] - targetTuple[2]);
-          result.success = dist <= closePolygonDistance;
+          result.success = dist <= distance;
         }
         return result;
       },
@@ -223,20 +224,23 @@ export default function NPCs() {
         }
 
         const groundPoint = parseGroundPoint(to);
-        const result = state.getClosestPoly(groundPoint);
+        const result = state.getClosestPoly(groundPoint, "0.5");
+
+        const doMeta = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
+        if (doMeta) {
+          // doable overrides navigable
+          await npc.scaleSpawn(to);
+          return;
+        }
 
         if (!result.success) {
-          const doMeta = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
-          if (doMeta) {
-            // fade spawn to doable
-            await npc.scaleSpawn(to);
-            return;
-          }
           throw Error("not navigable");
-        } else if (npc.agentId === null) {
+        }
+
+        if (npc.agentId === null) {
           // fade spawn from doable to nav
           // 🚧 facing `prev --> next`
-          await npc.scaleSpawn(to);
+          await npc.scaleSpawn(result.position);
           return;
         }
 
@@ -600,7 +604,11 @@ export type State = {
     meta: Meta,
     npcKey: string,
   ): null | Meta<{ key: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
-  getClosestPoly(targetPos: JshCli.PointAnyFormat, queryFilter?: QueryFilter): FindNearestPolyResult;
+  getClosestPoly(
+    targetPos: JshCli.PointAnyFormat,
+    accuracy?: "0.005" | "0.1" | "0.5",
+    queryFilter?: QueryFilter,
+  ): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndex(skinKey: string): number;
   move(opts: JshCli.MoveOpts): Promise<void>;
@@ -637,7 +645,20 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const closePolygonDistance = 0.005;
-const closePolygonHalfExtents: Vec3 = [closePolygonDistance, closePolygonDistance, closePolygonDistance];
+const mediumPolygonDistance = 0.1;
+const farPolygonDistance = 0.5;
+
+const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance: number }> = {
+  "0.005": {
+    halfExtents: [closePolygonDistance, closePolygonDistance, closePolygonDistance],
+    distance: closePolygonDistance,
+  },
+  "0.1": {
+    halfExtents: [mediumPolygonDistance, mediumPolygonDistance, mediumPolygonDistance],
+    distance: mediumPolygonDistance,
+  },
+  "0.5": { halfExtents: [farPolygonDistance, farPolygonDistance, farPolygonDistance], distance: farPolygonDistance },
+};
 
 const labelHw = 0.5;
 const labelHh = 0.125;
