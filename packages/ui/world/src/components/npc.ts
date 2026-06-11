@@ -152,6 +152,23 @@ export class Npc {
     this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
   }
 
+  drawLabel(style?: { color?: string }) {
+    const { ct } = this.w.texNpcLabel;
+    const { width, height } = ct.canvas;
+    ct.clearRect(0, 0, width, height);
+    // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
+    // ct.roundRect(0, 0, width, height, 8);
+    // ct.fill();
+    ct.fillStyle = style?.color ?? "#fff7";
+    ct.font = "400 36px sans-serif";
+    ct.textAlign = "center";
+    ct.textBaseline = "middle";
+    ct.letterSpacing = "0.1em";
+    // the label is the npc's key
+    ct.fillText(this.key, width / 2, height / 2);
+    this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
+  }
+
   groupRef = (group: THREE.Group | null): void => {
     if (!group) {
       this.mixer.stopAllAction();

@@ -82,18 +82,22 @@
   - ✅ can do `ray from:$( pick 1 ) to:$( pick 1 )`
   - ✅ can we refine by door open amount?
 
-- change tint npc label e.g. for selection
-- on kill `move` npc should not slide back
+- ✅ change tint npc label e.g. for selection
+  - `label npc:rob color:#33f`
+  - `label npc:rob` to reset
+
+- 🚧 on kill `move` npc should not slide back
 - small-map-0 -> 301-only
   - also clean up other map names
-- remove all suffices e.g. --0.25x0.25 from all symbols
 - fix npc moves through door
+- remove all suffices e.g. --0.25x0.25 from all symbols
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle
   - ❌ track gaps
+- can create colliders from decor rect/circle
 
-- npc has selector quad?
-  - maybe just restyle label instead
+- ❌ npc has selector quad
+  - restyle label instead
 
 - fetch gltf json so can cache-bust
 - ✅ npc labels should match animation e.g. sit, lie
@@ -102,7 +106,6 @@
   - Decor renders them
 - better approach to default tty profile
   - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
-- can create colliders from decor rect/circle
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
 - support `look`
