@@ -287,7 +287,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (Math.abs(src.x - dst.x) < 0.01 && Math.abs(src.y - dst.y) < 0.01) {
           // avoid 'detect-collisions' throw on zero-length rays
-          return { hit: null, gmDoorIds: [], rooms: [srcGrId.grKey], doors: [], hitDoor: null };
+          return { success: true, hit: null, gmDoorIds: [], rooms: [srcGrId.grKey], doors: [], hitDoor: null };
         }
 
         const [grIds, gdIds] = [[] as Geomorph.GmRoomId[], [] as Geomorph.GmDoorId[]];
@@ -359,6 +359,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         return {
+          success: hit === null,
           hit: hit === null ? null : geomService.precision2d(hit, 2),
           hitDoor,
           doors: gdIds.map(({ gdKey }) => gdKey),

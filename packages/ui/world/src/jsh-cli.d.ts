@@ -74,6 +74,7 @@ declare namespace JshCli {
   };
 
   type RaycastResult = {
+    success: boolean;
     hit: null | Geom.VectJson;
     hitDoor: null | Geomorph.GmDoorKey;
     doors: Geomorph.GmDoorKey[];
