@@ -110,6 +110,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           groundPointToTuple(blockingDoorNode.astar.centroid),
         );
       },
+      getPoint(npcKey) {
+        const npc = w.npc.get(npcKey);
+        return {
+          x: npc.position.x,
+          y: npc.position.z,
+          meta: { npcKey, ...state.npcToRoom.get(npcKey) },
+        };
+      },
       npcCanAccess(npcKey, gdKey) {
         // 🚧 npc can have key
         const door = w.d[gdKey];
@@ -272,7 +280,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       async raycast(origSrc, origDst) {
-        // 🚧 forward meta?
         let src = parseGroundPoint(origSrc);
         const dst = parseGroundPoint(origDst);
 
@@ -511,6 +518,7 @@ export type State = {
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   fixInaccessibleTarget(npc: Npc): void;
+  getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
