@@ -215,6 +215,7 @@ export class Npc {
 
   async scaleSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
     let spawnY = this.position.y;
+    const labelVisible = this.labelMaterial.visible;
     try {
       await this.scaleDown();
       await this.w.npc.spawn({ npcKey: this.key, at });
@@ -232,7 +233,7 @@ export class Npc {
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
         this.material.alphaTest = 0.9;
-        this.labelMaterial.visible = true;
+        this.labelMaterial.visible = labelVisible;
         const bubbleDiv = this.w.b[this.key]?.html3d.rootDiv;
         if (bubbleDiv) bubbleDiv.style.opacity = "";
       }
