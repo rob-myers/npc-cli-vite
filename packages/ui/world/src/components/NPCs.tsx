@@ -154,6 +154,7 @@ export default function NPCs() {
           npc.opacityScale.value = oldNpc.opacityScale.value;
           npc.scaleState = { ...oldNpc.scaleState };
           npc.material.depthWrite = oldNpc.material.depthWrite;
+          npc.labelMaterial.visible = oldNpc.labelMaterial.visible;
 
           state.placeNpcAt(
             npc,
