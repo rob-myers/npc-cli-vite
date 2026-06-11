@@ -308,11 +308,13 @@ export function getTempInstanceMesh(inst: THREE.InstancedMesh, instanceId: numbe
 
 //#endregion
 
-export function parseGroundPoint(input: PointAnyFormat): GroundPoint {
+export function parseGroundPoint(input: MaybeMeta<PointAnyFormat>): MaybeMeta<GroundPoint> {
   if (Array.isArray(input)) {
     return input.length === 3 ? { x: input[0], y: input[2] } : { x: input[0], y: input[1] };
   }
-  return { x: input.x, y: "z" in input ? input.z : input.y };
+  const output: MaybeMeta<GroundPoint> = { x: input.x, y: "z" in input ? input.z : input.y };
+  if ("meta" in input) output.meta = input.meta;
+  return output;
 }
 
 export function groundPointToVector3(point: GroundPoint) {
