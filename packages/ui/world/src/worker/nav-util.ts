@@ -30,6 +30,7 @@ function computeGmInstanceMesh(gmGeom: WW.GmGeomForNav): {
 } {
   const triangulation: Geom.Triangulation = {
     tris: gmGeom.triangulation.tris,
+    // local coords here
     vs: gmGeom.triangulation.vs.map(({ x, y }) => new Vect(x, y)),
   };
 

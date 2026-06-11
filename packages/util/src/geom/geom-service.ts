@@ -102,6 +102,62 @@ class GeomService {
     return (d1.x * (p1.y - p0.y) - d1.y * (p1.x - p0.x)) / (d0.y * d1.x - d1.y * d0.x);
   }
 
+  /**
+   * Compute intersection of line segments
+   * `p0 -- p1` and `q0 -- q1`
+   *
+   * If they intersect, return `lambda` ∊ [0, 1] s.t. intersection is
+   * `p0 + (p1 - p0) * lambda`, else return `null`.
+   */
+  getLineSegsIntersection(
+    p0: Geom.VectJson,
+    p1: Geom.VectJson,
+    q0: Geom.VectJson,
+    q1: Geom.VectJson,
+    ignoreColinear?: boolean,
+  ) {
+    const dpx = p1.x - p0.x,
+      dpy = p1.y - p0.y,
+      dqx = q1.x - q0.x,
+      dqy = q1.y - q0.y,
+      /** The z component of cross product `dp ｘ dq` */
+      z = -dqx * dpy + dpx * dqy;
+
+    let s: number, t: number;
+
+    if (z === 0) {
+      if (ignoreColinear === true) return null;
+      /**
+       * Line segs are parallel, so both have non-normalized
+       * normal (-dpy, dpx). For colinearity they must have
+       * the same dot product w.r.t latter.
+       */
+      if (p0.x * -dpy + p0.y * dpx === q0.x * -dpy + q0.y * dpx) {
+        /**
+         * Check if p0 or p1 lies between both q0 and q1.
+         */
+        t = dqx * dqx + dqy * dqy;
+        s = (p0.x - q0.x) * dqx + (p0.y - q0.y) * dqy;
+        if (0 <= s && s <= t) {
+          return s / t;
+        }
+        s = (p1.x - q0.x) * dqx + (p1.y - q0.y) * dqy;
+        if (0 <= s && s <= t) {
+          return s / t;
+        }
+      }
+      return null;
+    }
+
+    s = (-dpy * (p0.x - q0.x) + dpx * (p0.y - q0.y)) / z;
+    t = (dqx * (p0.y - q0.y) - dqy * (p0.x - q0.x)) / z;
+    if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+      return t;
+    } else {
+      return null;
+    }
+  }
+
   getThreeRotationY(dy: number, dx: number) {
     return -Math.atan2(dy, dx) - Math.PI / 2;
   }
@@ -173,6 +229,12 @@ class GeomService {
         angle: Math.atan2(tempVect2.y, tempVect2.x),
       };
     }
+  }
+
+  precision2d(v: Geom.VectJson, precision = 4) {
+    v.x = Number(v.x.toFixed(precision));
+    v.y = Number(v.y.toFixed(precision));
+    return v;
   }
 
   /**

@@ -291,6 +291,37 @@ export async function* pick(ct) {
 }
 
 /**
+ * Test if ray hits walls or closed doors.
+ * - Point via `ray point`
+ * - Detail via `ray detail`
+ * ```sh
+ * ray from:$( pick 1 ) to:$( pick 1 )
+ * ray from:kate to:will
+ * ray point from:kate to:will
+ * ray detail from:kate to:will
+ * ray from:rob to:rob
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {object} [opts]
+ * @param {JshCli.PointAnyFormat | string} opts.src
+ * @param {JshCli.PointAnyFormat | string} opts.dst
+ * @param {boolean} [opts.point] Output point.
+ * @param {boolean} [opts.detail] Output detailed result.
+ */
+export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src", to: "dst" })) {
+  const src = typeof opts.src === "string" ? w.npc.get(opts.src).position : opts.src;
+  const dst = typeof opts.dst === "string" ? w.npc.get(opts.dst).position : opts.dst;
+  const result = await w.e.raycast(src, dst);
+  if (opts.point === true) {
+    return result.hit;
+  } else if (opts.detail === true) {
+    return result;
+  } else {
+    return result.hit === null;
+  }
+}
+
+/**
  * ```sh
  * say hi npc:rob
  * say npc:rob

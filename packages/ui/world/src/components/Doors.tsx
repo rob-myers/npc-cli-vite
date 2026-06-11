@@ -1,5 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
-import { Mat, Vect } from "@npc-cli/util/geom";
+import { geomService, Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
 import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
@@ -95,6 +95,13 @@ export default function Doors() {
       cancelClose(door) {
         window.clearTimeout(door.closeTimeoutId);
         delete door.closeTimeoutId;
+      },
+      computeRayDoorIntersect(src, dst, gdKey) {
+        const door = w.d[gdKey];
+        const lambda = geomService.getLineSegsIntersection(src, dst, door.src, door.dst);
+        return lambda === null
+          ? null
+          : geomService.precision2d({ x: src.x + lambda * (dst.x - src.x), y: src.y + lambda * (dst.y - src.y) }, 2);
       },
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
@@ -380,6 +387,7 @@ export type State = {
   buildByKey: () => void;
   buildDoorWithLabelTextures: () => void;
   cancelClose: (door: Geomorph.DoorState) => void;
+  computeRayDoorIntersect: (src: Geom.VectJson, dst: Geom.VectJson, gdKey: Geomorph.GmDoorKey) => Geom.VectJson | null;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];

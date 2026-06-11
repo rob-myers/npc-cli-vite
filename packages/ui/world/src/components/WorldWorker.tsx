@@ -3,7 +3,7 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import { helper } from "../service/helper";
 import { parsePhysicsBodyKey } from "../service/physics-bijection";
-import { getNavmeshPayload, getPhysicsDoorData } from "../service/worker-data";
+import { getNavmeshPayload, getPhysicsDoorData, getRaycastPayload } from "../service/worker-data";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -55,6 +55,11 @@ export default function WorldWorker() {
           case "pong":
             break;
 
+          case "raycast-result": {
+            w.e.pendingRaycast[msg.uid]?.resolve(msg);
+            delete w.e.pendingRaycast[msg.uid];
+            break;
+          }
           case "tiled-navmesh-response": {
             w.nav = { ...msg };
             w.events.next({ key: "nav-updated" });
@@ -123,6 +128,7 @@ export default function WorldWorker() {
         position: npc.position,
       })),
       doors: getPhysicsDoorData(w.gms),
+      rayCast: getRaycastPayload(w.gms),
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
