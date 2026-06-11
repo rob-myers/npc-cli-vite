@@ -86,7 +86,7 @@
   - `label npc:rob color:#33f`
   - `label npc:rob` to reset
 
-- 🚧 on kill `move` npc should not slide back
+- on kill `move` npc should not slide back
 - small-map-0 -> 301-only
   - also clean up other map names
 - fix npc moves through door
@@ -99,8 +99,9 @@
 - ❌ npc has selector quad
   - restyle label instead
 
-- fetch gltf json so can cache-bust
 - ✅ npc labels should match animation e.g. sit, lie
+- ✅ support `look`
+- fetch gltf json so can cache-bust
 - labels as decor point
   - add some labels to 301
   - Decor renders them
@@ -108,7 +109,6 @@
   - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
-- support `look`
 - onchange map sealed doors are staying sealed
 - ❌ change lighting from "loop thru radii in shaders" to "multiply by texture"
   - the lighting was already efficient i.e. precomputes two relative light sources per instance
@@ -154,7 +154,7 @@
 
 - 🚧 extend existing symbols with missing obstacles
 
-- 🚧 extend existing symbols with missing decor
+- ✅ extend existing symbols with missing decor
   - ✅ stateroom-012 has decor key=switch
   - ✅ BUG thumbnail wrong for transformed decor: origin?
     - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
