@@ -408,22 +408,6 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   texArray.updateIndex(layerIndex);
 }
 
-export function drawLabelLayer(texArray: TexArray, layerIndex: number, npcKey: string) {
-  const { ct } = texArray;
-  const { width, height } = ct.canvas;
-  ct.clearRect(0, 0, width, height);
-  // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
-  // ct.roundRect(0, 0, width, height, 8);
-  // ct.fill();
-  ct.fillStyle = "#fff7";
-  ct.font = "400 36px sans-serif";
-  ct.textAlign = "center";
-  ct.textBaseline = "middle";
-  ct.letterSpacing = "0.1em";
-  ct.fillText(npcKey, width / 2, height / 2);
-  texArray.updateIndex(layerIndex);
-}
-
 export function createLabelMaterial(opts: {
   texArray: TexArray;
   layerIndex: number;
@@ -443,13 +427,13 @@ export function createLabelMaterial(opts: {
   material.colorNode = layerNode;
   material.opacityNode = layerNode.a.mul(opacityScale);
 
-  const hwUniform = uniform(hw, "float");
-  const hhUniform = uniform(hh, "float");
+  const halfWidthUniform = uniform(hw, "float");
+  const halfHeightUniform = uniform(hh, "float");
   const labelYShift = uniform(0, "float");
   const sign = attribute<"vec2">("billboardOffset", "vec2");
   const anchorLocal = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
   const viewCenter = cameraViewMatrix.mul(modelWorldMatrix.mul(anchorLocal));
-  const viewPos = viewCenter.add(vec4(sign.x.mul(hwUniform), sign.y.mul(hhUniform), 0, 0));
+  const viewPos = viewCenter.add(vec4(sign.x.mul(halfWidthUniform), sign.y.mul(halfHeightUniform), 0, 0));
   material.vertexNode = cameraProjectionMatrix.mul(viewPos);
 
   return { material, labelYShift };

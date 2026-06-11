@@ -42,7 +42,7 @@ import {
   parseGroundPoint,
 } from "../service/geometry";
 import { PICK_TYPE } from "../service/pick";
-import { createLabelMaterial, createShadowMaterial, drawLabelLayer, fetchSkinOverlay } from "../service/texture";
+import { createLabelMaterial, createShadowMaterial, fetchSkinOverlay } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
@@ -120,7 +120,7 @@ export default function NPCs() {
           geometry: opts.geometry,
           ...state.createMaterials(opts.pickId, opts.skinIndex),
         });
-        drawLabelLayer(w.texNpcLabel, opts.pickId, opts.key);
+        npc.drawLabel();
         state.npc[opts.key] = npc;
         state.byPickId[npc.pickId] = npc;
         return npc;

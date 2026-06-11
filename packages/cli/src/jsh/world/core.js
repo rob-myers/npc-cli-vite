@@ -69,6 +69,20 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 }
 
 /**
+ * ```sh
+ * label npc:rob color:#33f
+ * label npc:rob
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; color?: string }} [opts]
+ */
+export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  npc.drawLabel({ color: opts.color });
+  w.view.forceUpdate();
+}
+
+/**
  * Usage
  * ```sh
  * move npc:rob to:$( pick 1 )
