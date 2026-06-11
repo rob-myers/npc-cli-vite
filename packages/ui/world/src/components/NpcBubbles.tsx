@@ -15,17 +15,19 @@ export default function NpcBubbles() {
         for (const npcKey of npcKeys) {
           state.byKey[npcKey]?.dispose();
           delete state.byKey[npcKey];
+          const npc = w.n[npcKey];
+          if (npc) npc.labelMaterial.visible = true;
         }
-        state.update();
+        w.view.forceUpdate();
       },
       ensure(npcKey) {
-        let bubble = state.byKey[npcKey];
-        if (!bubble) {
-          bubble = state.byKey[npcKey] = new SpeechBubbleApi(npcKey, w);
-          const npc = w.npc.get(npcKey);
-          bubble.setTracked({ object: npc.skinnedMesh, offset: npc.bubbleOffset });
-          state.update();
-        }
+        const extant = state.byKey[npcKey];
+        if (extant) return extant;
+        const npc = w.npc.get(npcKey);
+        const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, w));
+        bubble.setTracked({ object: npc.skinnedMesh, offset: npc.bubbleOffset });
+        npc.labelMaterial.visible = false;
+        w.view.forceUpdate();
         return bubble;
       },
     }),
