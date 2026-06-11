@@ -303,8 +303,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         let hit: null | Geom.VectJson = null;
         let hitDoor: null | Geomorph.GmDoorKey = null;
 
-        const raycastUid = shortUuid.generate(); // request(s) uid
-        let maxAdjGeomorphs = 2; // detect ray between at most 2 geomorphs
+        const raycastUid = shortUuid.generate();
+        let maxAdjGeomorphs = 2; // 🔔 detect ray between at most 2 geomorphs
 
         while (maxAdjGeomorphs-- > 0) {
           grIds.push(helper.getGmRoomId(gmId, roomId));
@@ -322,19 +322,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           );
 
           hit = result.hit;
-          // check whether ray hit a closed door 1st
+          // check whether ray is blocked by a door panel (accounting for partial open)
           for (const gdId of result.gmDoorIds) {
             const door = w.d[gdId.gdKey];
-            if (door.open === true) {
-              gdIds.push(gdId); // track doors and rooms
-              const otherRoomId = door.connector.roomIds.find((x) => x !== roomId) ?? null;
-              otherRoomId !== null && grIds.push(helper.getGmRoomId(gmId, otherRoomId));
-            } else {
-              // `null` if ray intersects door rect but not door seg (ends in doorway)
-              hit = w.door.computeRayDoorIntersect(src, dst, gdId.gdKey) ?? hit;
+            const blockResult = w.door.checkRayDoorBlock(src, dst, gdId.gdKey);
+            if (blockResult.blocked) {
+              // `null` if ray intersects door rect but not door seg (ends inside doorway)
+              if (blockResult.hit !== null) hit = blockResult.hit;
               if (hit !== null) hitDoor = gdId.gdKey;
               break;
             }
+            // ray passes through gap
+            gdIds.push(gdId);
+            const otherRoomId = door.connector.roomIds.find((x) => x !== roomId) ?? null;
+            otherRoomId !== null && grIds.push(helper.getGmRoomId(gmId, otherRoomId));
           }
 
           const lastGdId = gdIds[gdIds.length - 1];

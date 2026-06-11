@@ -59,6 +59,7 @@ export default function Doors() {
               normal: tmpMat.transformSansTranslate(connector.normal.clone()).json,
 
               closeTimeoutId: -1,
+              gapAtHighLambda: false,
             };
           }
         }
@@ -102,6 +103,38 @@ export default function Doors() {
         return lambda === null
           ? null
           : geomService.precision2d({ x: src.x + lambda * (dst.x - src.x), y: src.y + lambda * (dst.y - src.y) }, 2);
+      },
+      checkRayDoorBlock(src, dst, gdKey) {
+        const door = w.d[gdKey];
+        const openRatio = state.openRatioArray[door.instanceId];
+        const rayLambda = geomService.getLineSegsIntersection(src, dst, door.src, door.dst);
+
+        if (rayLambda === null) {
+          return { blocked: openRatio === 0, hit: null };
+        }
+
+        if (openRatio === 0) {
+          // blocked by closed door and hits
+          return {
+            blocked: true,
+            hit: geomService.precision2d(
+              { x: src.x + rayLambda * (dst.x - src.x), y: src.y + rayLambda * (dst.y - src.y) },
+              2,
+            ),
+          };
+        }
+
+        const hitX = src.x + rayLambda * (dst.x - src.x);
+        const hitY = src.y + rayLambda * (dst.y - src.y);
+
+        // project hit onto door segment to get doorLambda ∈ [0,1] (0=door.src, 1=door.dst)
+        const dDoorX = door.dst.x - door.src.x;
+        const dDoorY = door.dst.y - door.src.y;
+        const doorLambda = ((hitX - door.src.x) * dDoorX + (hitY - door.src.y) * dDoorY) / (dDoorX ** 2 + dDoorY ** 2);
+
+        const inGap = door.gapAtHighLambda ? doorLambda >= 1 - openRatio : doorLambda <= openRatio;
+
+        return { blocked: !inGap, hit: inGap ? null : geomService.precision2d({ x: hitX, y: hitY }, 2) };
       },
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
@@ -231,6 +264,7 @@ export default function Doors() {
             // box local -z maps to world 2D (nz, -nx); flip when door.normal points the other way
             const ds = state.byKey[helper.getGmDoorKey(gmId, localId)];
             flipFrontBackArray[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
+            ds.gapAtHighLambda = determinant > 0 === slideSignArray[instanceId] > 0;
           }
         }
 
@@ -388,6 +422,11 @@ export type State = {
   buildDoorWithLabelTextures: () => void;
   cancelClose: (door: Geomorph.DoorState) => void;
   computeRayDoorIntersect: (src: Geom.VectJson, dst: Geom.VectJson, gdKey: Geomorph.GmDoorKey) => Geom.VectJson | null;
+  checkRayDoorBlock: (
+    src: Geom.VectJson,
+    dst: Geom.VectJson,
+    gdKey: Geomorph.GmDoorKey,
+  ) => { blocked: boolean; hit: Geom.VectJson | null };
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
