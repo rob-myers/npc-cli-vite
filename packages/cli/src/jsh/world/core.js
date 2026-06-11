@@ -309,8 +309,8 @@ export async function* pick(ct) {
  * @param {boolean} [opts.detail] Output detailed result.
  */
 export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src", to: "dst" })) {
-  const src = typeof opts.src === "string" ? w.npc.get(opts.src).position : opts.src;
-  const dst = typeof opts.dst === "string" ? w.npc.get(opts.dst).position : opts.dst;
+  const src = typeof opts.src === "string" ? w.e.getPoint(opts.src) : opts.src;
+  const dst = typeof opts.dst === "string" ? w.e.getPoint(opts.dst) : opts.dst;
   const result = await w.e.raycast(src, dst);
   if (opts.point === true) {
     return result.hit;
