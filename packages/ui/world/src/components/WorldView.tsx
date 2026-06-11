@@ -265,12 +265,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // always take 1st -- see `pick` for execution order
         const clickId = state.clickIds.shift();
 
+        // npc might lack gmId
+        const gmRoomId = "gmId" in picked ? w.e.findRoomContaining(point, true) : null;
+
         w.events.next({
           key: "picked",
           ...(clickId && { clickId: clickId.id }),
-          meta: { ...picked, nav: w.npc.getClosestPoly(point).success },
-          // npc might lack gmId
-          gmRoomId: "gmId" in picked ? w.e.findRoomContaining(point, true) : null,
+          meta: { ...picked, ...gmRoomId, nav: w.npc.getClosestPoly(point).success },
+          gmRoomId,
 
           distance,
           point,
