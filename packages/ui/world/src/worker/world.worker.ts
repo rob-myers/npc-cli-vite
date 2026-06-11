@@ -5,6 +5,7 @@ import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijectio
 import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
 import { navForFloorDraw } from "./nav-util";
 import { createRigidBody, sendPhysicsDebugData, setupOrRebuildWorld, stepWorld, wallHeight } from "./physics";
+import { sendRaycastResult } from "./ray-cast";
 import { workerStore } from "./worker.store";
 
 self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
@@ -133,8 +134,12 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     }
     case "setup-physics": {
       await setupOrRebuildWorld(msg);
-      console.log(msg);
+      // console.log(msg);
       self.postMessage({ type: "world-setup-response" } satisfies WW.MsgFromWorker);
+      break;
+    }
+    case "get-raycast": {
+      sendRaycastResult(msg);
       break;
     }
     default:

@@ -1,7 +1,8 @@
-import { type UseStateRef, useStateRef } from "@npc-cli/util";
+import { geomService, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
+import shortUuid from "short-uuid";
 import { defaultDoorCloseMs } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { groundPointToTuple, groundPointToVector3, parseGroundPoint } from "../service/geometry";
@@ -20,6 +21,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToDoable: {},
       npcToDoors: {},
       npcToRoom: new Map(),
+      pendingRaycast: {},
       roomToNpcs: [],
 
       canCloseDoor(door) {
@@ -269,6 +271,100 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
+      async raycast(origSrc, origDst) {
+        // 🚧 forward meta?
+        let src = parseGroundPoint(origSrc);
+        const dst = parseGroundPoint(origDst);
+
+        // Both points must reside in a room or doorway
+        const srcGrId = state.findRoomContaining(src, true);
+        const dstGrId = state.findRoomContaining(dst, true);
+        if (srcGrId === null) {
+          throw Error(`${"raycast"}: src must be in a room/doorway ${JSON.stringify({ x: src.x, y: src.y })}`);
+        } else if (dstGrId === null) {
+          throw Error(`${"raycast"}: dst must be in a room/doorway ${JSON.stringify({ x: dst.x, y: dst.y })}`);
+        }
+
+        if (Math.abs(src.x - dst.x) < 0.01 && Math.abs(src.y - dst.y) < 0.01) {
+          // avoid 'detect-collisions' throw on zero-length rays
+          return { hit: null, gmDoorIds: [], rooms: [srcGrId.grKey], doors: [], hitDoor: null };
+        }
+
+        const [grIds, gdIds] = [[] as Geomorph.GmRoomId[], [] as Geomorph.GmDoorId[]];
+        let gmId = srcGrId.gmId;
+        let roomId = srcGrId.roomId;
+        let hit: null | Geom.VectJson = null;
+        let hitDoor: null | Geomorph.GmDoorKey = null;
+
+        const raycastUid = shortUuid.generate(); // request(s) uid
+        let maxAdjGeomorphs = 2; // detect ray between at most 2 geomorphs
+
+        while (maxAdjGeomorphs-- > 0) {
+          grIds.push(helper.getGmRoomId(gmId, roomId));
+
+          w.worker.worker.postMessage({
+            type: "get-raycast",
+            uid: raycastUid,
+            src,
+            dst,
+            gmId,
+          } satisfies WW.MsgToWorker);
+
+          const result = await new Promise<WW.RaycastResultResponse>(
+            (resolve, reject) => (state.pendingRaycast[raycastUid] = { resolve, reject }),
+          );
+
+          hit = result.hit;
+          // check whether ray hit a closed door 1st
+          for (const gdId of result.gmDoorIds) {
+            const door = w.d[gdId.gdKey];
+            if (door.open === true) {
+              gdIds.push(gdId); // track doors and rooms
+              const otherRoomId = door.connector.roomIds.find((x) => x !== roomId) ?? null;
+              otherRoomId !== null && grIds.push(helper.getGmRoomId(gmId, otherRoomId));
+            } else {
+              // `null` if ray intersects door rect but not door seg (ends in doorway)
+              hit = w.door.computeRayDoorIntersect(src, dst, gdId.gdKey) ?? hit;
+              if (hit !== null) hitDoor = gdId.gdKey;
+              break;
+            }
+          }
+
+          const lastGdId = gdIds[gdIds.length - 1];
+
+          if (
+            hit !== null || // hit something
+            lastGdId === undefined || // no doors touched
+            w.d[lastGdId.gdKey].hull === false // last open door NOT a hull door
+          ) {
+            break;
+          }
+
+          // check open hull door intersect
+          hit = w.door.computeRayDoorIntersect(src, dst, lastGdId.gdKey);
+          const adjCtxt = w.gmGraph.getAdjacentRoomCtxt(gmId, lastGdId.doorId);
+
+          if (
+            hit === null || // dst in hull doorway (distinct gmId since hull doorways overlap)
+            adjCtxt === null // should be unreachable: sealed hull door always closed
+          ) {
+            break;
+          }
+
+          // next, start from hull door intersection
+          src = hit;
+          hit = null;
+          gmId = adjCtxt.adjGmId;
+          roomId = adjCtxt.adjRoomId;
+        }
+
+        return {
+          hit: hit === null ? null : geomService.precision2d(hit, 2),
+          hitDoor,
+          doors: gdIds.map(({ gdKey }) => gdKey),
+          rooms: grIds.map(({ grKey }) => grKey),
+        };
+      },
       async recomputeNpcRoomRelationships() {
         const prevRoomToNpcs = state.roomToNpcs;
         const prevExternalNpcs = state.externalNpcs;
@@ -392,6 +488,7 @@ export type State = {
    * Relates `npcKey` to current room.
    */
   npcToRoom: Map<string, Geomorph.GmRoomId>;
+  pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(): void } };
   /**
    * The "inverse" of npcToRoom i.e. `roomToNpc[gmId][roomId]` is a set of `npcKey`s
    */
@@ -419,6 +516,7 @@ export type State = {
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
+  raycast(src: MaybeMeta<JshCli.PointAnyFormat>, dst: MaybeMeta<JshCli.PointAnyFormat>): Promise<JshCli.RaycastResult>;
   removeFromSensors(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   toggleDoor(gdKey: Geomorph.GmDoorKey, opts?: { npcKey?: string } & Geomorph.ToggleDoorOpts): boolean;

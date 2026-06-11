@@ -46,6 +46,14 @@ declare namespace WW {
         mapKey: string;
         npcs: NpcDef[];
         doors: PhysicsDoorDef[];
+        rayCast: RaycastSetupData;
+      }
+    | {
+        type: "get-raycast";
+        uid: string;
+        src: Geom.VectJson;
+        dst: Geom.VectJson;
+        gmId: number;
       };
 
   type AddPhysicsColliders = Extract<PhysicsMsgToWorker, { type: "add-physics-colliders" }>;
@@ -55,6 +63,7 @@ declare namespace WW {
   type RemovePhysicsColliders = Extract<PhysicsMsgToWorker, { type: "remove-physics-colliders" }>;
   type SendNpcPhysicsPositions = Extract<PhysicsMsgToWorker, { type: "send-npc-positions" }>;
   type SetupPhysicsWorld = Extract<PhysicsMsgToWorker, { type: "setup-physics" }>;
+  type GetRaycast = Extract<PhysicsMsgToWorker, { type: "get-raycast" }>;
 
   type PhysicsBodyGeom =
     | {
@@ -99,13 +108,19 @@ declare namespace WW {
         items: PhysicDebugItem[];
         /** [ux, uy, vx, vy, ...] */
         lines: number[];
+      }
+    | {
+        type: "raycast-result";
+        uid: string;
+        hit: null | Geom.VectJson;
+        gmDoorIds: Geomorph.GmDoorId[];
       };
-  // | RaycastResultResponse
 
   type NpcCollisionResponse = Extract<MsgFromWorker, { type: "npc-collisions" }>;
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromWorker, { type: "tiled-navmesh-response" }>;
+  type RaycastResultResponse = Extract<MsgFromWorker, { type: "raycast-result" }>;
 
   /**
    * Geomorph geometry for navigation mesh generation.
@@ -120,6 +135,7 @@ declare namespace WW {
     worldBounds: Geom.RectJson;
     gridRect: Geom.RectJson;
     inverseMat3: Geom.AffineTransform;
+    mat3: Geom.AffineTransform;
     mat4Array: number[]; // 16 numbers, column-major
   };
 
@@ -173,4 +189,12 @@ declare namespace WW {
     | `nearby ${Geomorph.GmDoorKey}` // door neighbourhood
     | `inside ${Geomorph.GmDoorKey}` // inside door sensor
     | `rect ${string}`; // custom cuboid collider (possibly angled)
+
+  type RaycastSetupData = {
+    [gmKey: string]: {
+      key: Geomorph.StarShipGeomorphKey;
+      doors: Geom.GeoJsonPolygon[];
+      walls: Geom.GeoJsonPolygon[];
+    };
+  };
 }

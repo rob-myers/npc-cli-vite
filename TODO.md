@@ -78,6 +78,9 @@
 - ✅ scale from center while lie
 
 - 🚧 migrate basic raycast
+  - ✅ worker is not starting
+  - ✅ can do `ray from:$( pick 1 ) to:$( pick 1 )`
+  - 🚧 can we refine by door open amount?
 
 - on kill `move` npc should not slide back
 - small-map-0 -> 301-only
