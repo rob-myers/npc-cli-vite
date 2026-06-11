@@ -299,7 +299,7 @@ export async function* pick(ct) {
  * ray from:kate to:will
  * ray point from:kate to:will
  * ray detail from:kate to:will
- * ray from:rob to:rob
+ * ray detail src:rob dst:$( pick 1 )
  * ```
  * @param {JshCli.RunArg} ct
  * @param {object} [opts]
