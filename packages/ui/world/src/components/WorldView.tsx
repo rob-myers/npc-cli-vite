@@ -42,6 +42,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
       },
+      initial: {
+        azimuthal: Math.PI / 4,
+        polar: Math.PI / 5,
+        position: { x: 4, y: 10, z: 4 },
+      },
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
@@ -368,7 +373,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as any)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, postProcessing: true } },
+    { reset: { ctrlOpts: true, postProcessing: true, initial: false } },
   );
 
   w.view = state;
@@ -430,8 +435,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         <CameraControls
           ref={state.ref("controls")}
           domElement={state.canvas}
-          initialAngle={{ azimuthal: Math.PI / 4, polar: Math.PI / 5 }}
-          initialPosition={{ x: 4, y: 10, z: 4 }}
+          initialAzimuthal={state.initial.azimuthal}
+          initialPolar={state.initial.polar}
+          initialPosition={state.initial.position}
           minPanDistance={0}
           // onChange={state.onChangeControls}
           // onEnd={state.onControlsEnd}
@@ -455,6 +461,7 @@ export type State = {
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps & { extraZoom?: number };
+  initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
