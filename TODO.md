@@ -34,11 +34,11 @@
   - ✅ by default offset is 0, 0, 0
   - ✅ fix hmr i.e. preserve label height
   - ✅ fix label whilst moving
-  - 🚧 set height on spawn
-  - fix bubble while scale
-  - hide label when bubble exists
-  - slight height adjustments for idle/stand too
-  - clean
+  - ❌ set height on respawn
+  - ✅ fix bubble while scale
+  - ✅ hide label when bubble exists
+  - ❌ slight height adjustments for idle/stand too
+  - clarify implementation
 
 - ✅ can fade to/from black
   - ✅ npc has `colorScale` and `opacityScale` uniforms
