@@ -86,7 +86,7 @@
   - `label npc:rob color:#33f`
   - `label npc:rob` to reset
 
-- on kill `move` npc should not slide back
+- ✅ on kill `move` npc should not slide back
 - small-map-0 -> 301-only
   - also clean up other map names
 - fix npc moves through door

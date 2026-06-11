@@ -362,9 +362,15 @@ export class Npc {
       agent.separationWeight = idleSeparationWeight;
       agent.maxSpeed = idleAgentMaxSpeed;
       agent.maxAcceleration = idleMaxAcceleration;
-      this.pinTo(this.w.npc.getClosestPoly(this.position));
 
       const [vx, , vz] = agent.velocity;
+      const speed = Math.hypot(vx, vz);
+      // pin ahead by stopping distance v²/2a so agent decelerates without reversing
+      const pinAhead = speed ** 2 / (2 * idleMaxAcceleration);
+      const pinX = this.position.x + (vx / (speed || 1)) * pinAhead;
+      const pinZ = this.position.z + (vz / (speed || 1)) * pinAhead;
+      this.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
+
       this.lookAtPoint = parseGroundPoint({
         x: this.position.x + vx,
         y: this.position.z + vz,
