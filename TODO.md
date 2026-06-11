@@ -34,6 +34,8 @@
   - ✅ by default offset is 0, 0, 0
   - ✅ fix hmr i.e. preserve label height
   - ✅ fix label whilst moving
+  - 🚧 set height on spawn
+  - fix bubble while scale
   - hide label when bubble exists
   - slight height adjustments for idle/stand too
   - clean
@@ -72,6 +74,11 @@
   - seems during failed spawn npc still exists!
 - ✅ on kill `pick | move npc:rob along` with two picks it should stop 
   - can force idle overriding
+
+- ✅ scale from center while lie
+
+- 🚧 migrate basic raycast
+
 - on kill `move` npc should not slide back
 - small-map-0 -> 301-only
   - also clean up other map names
