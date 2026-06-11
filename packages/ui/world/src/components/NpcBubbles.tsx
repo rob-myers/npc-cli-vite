@@ -11,7 +11,6 @@ export default function NpcBubbles() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
-      lastFront: "",
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
           state.byKey[npcKey]?.dispose();
@@ -28,24 +27,6 @@ export default function NpcBubbles() {
           state.update();
         }
         return bubble;
-      },
-      async ensureMounted(npcKey) {
-        const bubble = state.ensure(npcKey);
-        if (!bubble.isMounted()) {
-          await new Promise<void>((resolve) => {
-            bubble.resolveOnMount = resolve;
-            bubble.epochMs = Date.now();
-            state.update();
-          });
-        }
-        return bubble;
-      },
-      toFront(npcKey) {
-        const prevBubbleDiv = state.byKey[state.lastFront]?.html3d.rootDiv;
-        if (prevBubbleDiv) prevBubbleDiv.style.zIndex = "";
-        const bubbleDiv = state.byKey[npcKey].html3d.rootDiv;
-        bubbleDiv.style.zIndex = `20`;
-        state.lastFront = npcKey;
       },
     }),
   );
@@ -71,11 +52,8 @@ export default function NpcBubbles() {
 
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
-  lastFront: string;
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string): SpeechBubbleApi;
-  ensureMounted(npcKey: string): Promise<SpeechBubbleApi>;
-  toFront(npcKey: string): void;
 };
 
 interface SpeechBubbleProps {
