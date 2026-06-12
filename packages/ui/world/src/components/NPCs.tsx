@@ -317,11 +317,16 @@ export default function NPCs() {
         const groundPoint = parseGroundPoint(override ?? closePolyResult.position);
 
         if (closePolyResult.success) {
-          // always remove agent so can teleport without issues
           if (npc.agentId !== null) {
-            crowdApi.removeAgent(state.crowd, npc.agentId);
-            npc.agentId = null;
+            // must remove agent so can teleport without issues
+            w.e.removeAgents([npc], { keepPhysics: true });
+          } else {
+            w.worker.worker.postMessage({
+              type: "add-physics-npcs",
+              npcs: [{ npcKey: npc.key, position: groundPointToVector3(groundPoint) }],
+            } satisfies WW.MsgToWorker);
           }
+
           npc.agentId = crowdApi.addAgent(
             state.crowd,
             w.nav.navMesh,
@@ -338,33 +343,10 @@ export default function NPCs() {
           //   throw Error("not placable");
         } else {
           // do not throw in case of hot reload with changing geometry
-          if (npc.agentId !== null) {
-            crowdApi.removeAgent(state.crowd, npc.agentId);
-            npc.agentId = null;
-          }
+          w.e.removeAgents([npc]);
           npc.position.x = groundPoint.x;
           npc.position.z = groundPoint.y;
         }
-      },
-      remove(...npcKeys) {
-        for (const npcKey of npcKeys) {
-          const npc = state.npc[npcKey];
-          if (!npc) continue;
-          npc.mixer.stopAllAction();
-          if (npc.agentId) crowdApi.removeAgent(state.crowd, npc.agentId);
-          npc.material.dispose();
-          npc.labelMaterial.dispose();
-          npc.geometry.dispose();
-          delete state.byPickId[npc.pickId];
-          delete state.npc[npcKey];
-          w.e.setNpcDo(npcKey, null);
-          npc.rejectAll(new Error("removed npc"));
-        }
-        if (Object.keys(state.npc).length === 0) {
-          state.nextPickId = 0;
-        }
-        state.update();
-        w.events.next({ key: "removed-npcs", npcKeys });
       },
       async spawn({ npcKey, at, as, angle, facing }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
@@ -615,7 +597,6 @@ export type State = {
   getSkinIndex(skinKey: string): number;
   move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;
-  remove(...npcKeys: string[]): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
 

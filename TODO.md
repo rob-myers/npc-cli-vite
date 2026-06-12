@@ -87,9 +87,17 @@
   - `label npc:rob` to reset
 
 - ✅ on kill `move` npc should not slide back
+
+- ✅ fix npc moves through door
+  - ✅ faster door open/close
+  - ✅ exit-collider not firing when `spawn` or `fadeSpawn` from doorway to non-navigable
+    - ✅ should remove physics body from worker
+    - ✅ removal of body should trigger exit
+    - ✅ `w.npc.remove` --> `w.e.removeNpcs`
+    - ✅ `w.npc.removeAgents`
+
 - small-map-0 -> 301-only
   - also clean up other map names
-- fix npc moves through door
 - remove all suffices e.g. --0.25x0.25 from all symbols
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle

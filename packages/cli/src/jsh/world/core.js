@@ -25,7 +25,7 @@ export async function cfg({ w, args, api }) {
 
   switch (command) {
     case "clear":
-      w.npc.remove(...Object.keys(w.npc.npc));
+      w.e.removeNpcs(...Object.keys(w.n));
       w.view.forceUpdate();
       break;
     case "pick-walls": {

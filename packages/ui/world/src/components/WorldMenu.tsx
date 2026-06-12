@@ -262,7 +262,10 @@ export function WorldMenu() {
                       onClick={() => {
                         w.view.fov = defaultFov;
                         const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                        if (cam?.isPerspectiveCamera) { cam.fov = defaultFov; cam.updateProjectionMatrix(); }
+                        if (cam?.isPerspectiveCamera) {
+                          cam.fov = defaultFov;
+                          cam.updateProjectionMatrix();
+                        }
                         w.r3f?.invalidate();
                         tryLocalStorageSet(fovStorageKey, String(defaultFov));
                         w.update();
@@ -278,7 +281,10 @@ export function WorldMenu() {
                         const fov = Number(e.target.value);
                         w.view.fov = fov;
                         const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                        if (cam?.isPerspectiveCamera) { cam.fov = fov; cam.updateProjectionMatrix(); }
+                        if (cam?.isPerspectiveCamera) {
+                          cam.fov = fov;
+                          cam.updateProjectionMatrix();
+                        }
                         w.r3f?.invalidate();
                         tryLocalStorageSet(fovStorageKey, String(fov));
                         w.update();
@@ -430,7 +436,7 @@ export function WorldMenu() {
                       w.npc.spawn({ npcKey: key, at: [x, y, z] });
                       w.update();
                     } else if (action === "Clear NPCs") {
-                      w.npc.remove(...Object.keys(w.npc.npc));
+                      w.e.removeNpcs(...Object.keys(w.npc.npc));
                       w.view.forceUpdate();
                     } else if (action === "Wall Lights") {
                       w.wall?.toggleLights();
