@@ -142,9 +142,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "removed-npcs": {
             w.worker.worker.postMessage({
-              type: "remove-bodies",
+              type: "remove-physics-bodies",
               bodyKeys: e.npcKeys.map(npcToBodyKey),
-            });
+            } satisfies WW.MsgToWorker);
 
             for (const npcKey of e.npcKeys) {
               const gmRoomId = state.npcToRoom.get(npcKey);
@@ -155,7 +155,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
                 state.externalNpcs.delete(npcKey);
               }
 
-              state.removeFromSensors(...e.npcKeys);
+              state.removeFromSensors(...e.npcKeys); // 🚧 currently noop
             }
 
             w.bubble.delete(...e.npcKeys);
@@ -201,6 +201,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // try close door under conditions
           const door = w.door.byKey[e.gdKey];
           if (door.open === true) {
+            if (door.auto === true && state.doorToNpcs[e.gdKey]?.nearby.size === 0) {
+              state.tryCloseDoor(e.gdKey);
+            }
             return;
           } else if (door.locked === true) {
             state.tryCloseDoor(e.gdKey);
