@@ -141,11 +141,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.doorOpen[e.gdKey] = false;
             break;
           case "removed-npcs": {
-            w.worker.worker.postMessage({
-              type: "remove-physics-bodies",
-              bodyKeys: e.npcKeys.map(npcToBodyKey),
-            } satisfies WW.MsgToWorker);
-
             for (const npcKey of e.npcKeys) {
               const gmRoomId = state.npcToRoom.get(npcKey);
               if (gmRoomId !== undefined) {
@@ -154,8 +149,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               } else {
                 state.externalNpcs.delete(npcKey);
               }
-
-              state.removeFromSensors(...e.npcKeys); // 🚧 currently noop
             }
 
             w.bubble.delete(...e.npcKeys);
@@ -401,8 +394,43 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryPutNpcIntoRoom(npc);
         }
       },
-      removeFromSensors(..._npcKeys) {
-        // 🚧 needed on removed-npcs?
+      removeAgents(npcs, { keepPhysics = false } = {}) {
+        for (const npc of npcs) {
+          if (npc.agentId === null) continue;
+          crowdApi.removeAgent(w.npc.crowd, npc.agentId);
+          npc.agentId = null;
+        }
+
+        if (keepPhysics === true) return;
+
+        // physics worker will fire exit colliders
+        w.worker.worker.postMessage({
+          type: "remove-physics-bodies",
+          bodyKeys: npcs.map((npc) => npcToBodyKey(npc.key)),
+        } satisfies WW.MsgToWorker);
+      },
+      removeNpcs(...npcKeys) {
+        const npcs = npcKeys.flatMap((npcKey) => w.n[npcKey] ?? []);
+
+        state.removeAgents(npcs);
+
+        for (const npc of npcs) {
+          npc.mixer.stopAllAction();
+          npc.material.dispose();
+          npc.labelMaterial.dispose();
+          npc.geometry.dispose();
+          delete w.npc.byPickId[npc.pickId];
+          delete w.n[npc.key];
+          w.e.setNpcDo(npc.key, null);
+          npc.rejectAll(new Error("removed npc"));
+        }
+
+        if (Object.keys(w.n).length === 0) {
+          w.npc.nextPickId = 0;
+        }
+
+        state.update();
+        w.events.next({ key: "removed-npcs", npcKeys });
       },
       setNpcDo(npcKey, decorKey) {
         const currentDecorKey = w.e.npcToDoable[npcKey];
@@ -530,7 +558,8 @@ export type State = {
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
   raycast(src: MaybeMeta<JshCli.PointAnyFormat>, dst: MaybeMeta<JshCli.PointAnyFormat>): Promise<JshCli.RaycastResult>;
-  removeFromSensors(...npcKeys: string[]): void;
+  removeAgents(npcs: Npc[], opts?: { keepPhysics?: boolean }): void;
+  removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   toggleDoor(gdKey: Geomorph.GmDoorKey, opts?: { npcKey?: string } & Geomorph.ToggleDoorOpts): boolean;
   toggleLock(

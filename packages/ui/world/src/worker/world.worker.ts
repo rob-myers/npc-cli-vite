@@ -90,11 +90,28 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     }
     case "remove-physics-bodies":
     case "remove-physics-colliders": {
-      const bodyKeys =
-        msg.type === "remove-physics-bodies"
-          ? msg.bodyKeys
-          : msg.colliders.map((c) => `${c.type} ${c.colliderKey}` as const);
-      for (const bodyKey of bodyKeys) {
+      if (msg.type === "remove-physics-colliders") {
+        for (const bodyKey of msg.colliders.map((c) => `${c.type} ${c.colliderKey}` as const)) {
+          const body = state.bodyKeyToBody.get(bodyKey);
+          if (body !== undefined) {
+            state.bodyHandleToKey.delete(body.handle);
+            state.bodyKeyToBody.delete(bodyKey);
+            state.bodyKeyToCollider.delete(bodyKey);
+            state.world.removeRigidBody(body);
+          }
+        }
+        return;
+      }
+
+      for (const bodyKey of msg.bodyKeys) {
+        const body = state.bodyKeyToBody.get(bodyKey);
+        (body as RAPIER.RigidBody)?.setTranslation({ x: 0, y: -1000, z: 0 }, true);
+      }
+
+      // trigger exit colliders
+      stepWorld(state);
+
+      for (const bodyKey of msg.bodyKeys) {
         const body = state.bodyKeyToBody.get(bodyKey);
         if (body !== undefined) {
           state.bodyHandleToKey.delete(body.handle);
@@ -103,6 +120,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
           state.world.removeRigidBody(body);
         }
       }
+
       break;
     }
     case "send-npc-positions": {
