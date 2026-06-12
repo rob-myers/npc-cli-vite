@@ -443,7 +443,7 @@ export type State = {
 };
 
 const doorHeight = wallHeight - 0.001;
-const doorSpeed = 2;
+const doorSpeed = 4;
 const doorOpenTarget = 0.9;
 const doorOpenTest = 0.8;
 const panelDepth = 0.08;
