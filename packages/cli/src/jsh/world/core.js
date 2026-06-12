@@ -16,24 +16,12 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
- * - `cfg pick-walls` picks walls
- * - `cfg pick-walls false` won't pick walls
+ * Clear all npcs
  * @param {JshCli.RunArg} ct
  */
-export async function cfg({ w, args, api }) {
-  const [command, ...rest] = args;
-
-  switch (command) {
-    case "clear":
-      w.e.removeNpcs(...Object.keys(w.n));
-      w.view.forceUpdate();
-      break;
-    case "pick-walls": {
-      const [truthy] = rest.map(api.parseJsArg);
-      w.view.objectPickScale = truthy === undefined || !!truthy ? 1 : 0.5;
-      break;
-    }
-  }
+export async function clear({ w }) {
+  w.e.removeNpcs(...Object.keys(w.n));
+  w.view.forceUpdate();
 }
 
 /**
