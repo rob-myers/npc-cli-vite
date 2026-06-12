@@ -149,12 +149,14 @@ export default function Doors() {
         return { gmId, doorId, gdKey, seg, hull, roomIds, ...meta };
       },
       forceDoor(gmId, doorId, open) {
-        const isOpen = state.isOpen(gmId, doorId);
+        const instanceId = state.encodeGmDoorId(gmId, doorId);
+        const animTarget = state.animTargets.get(instanceId);
+        // use animation target when in progress so reversals aren't suppressed by the mid-animation ratio
+        const isOpen = animTarget !== undefined ? animTarget > doorOpenTest : state.isOpen(gmId, doorId);
         if (typeof open === "boolean" && open === isOpen) {
           return;
         }
         const shouldOpen = open === undefined ? !isOpen : open;
-        const instanceId = state.encodeGmDoorId(gmId, doorId);
         state.animTargets.set(instanceId, shouldOpen ? doorOpenTarget : 0);
         w.events.next({
           key: shouldOpen ? "door-opening" : "door-closing",
@@ -289,6 +291,7 @@ export default function Doors() {
         if (door.open === true) {
           // was open
           if (opts.open === true) {
+            state.forceDoor(door.gmId, door.doorId, true); // reverses any in-progress close animation
             door.auto === true &&
               w.events.next({
                 key: "try-close-door",
