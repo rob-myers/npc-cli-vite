@@ -152,7 +152,7 @@ export default function NPCs() {
 
           npc.colorScale.value = oldNpc.colorScale.value;
           npc.opacityScale.value = oldNpc.opacityScale.value;
-          npc.scaleState = { ...oldNpc.scaleState };
+          npc.fadeState = { ...oldNpc.fadeState };
           npc.material.depthWrite = oldNpc.material.depthWrite;
           npc.labelMaterial.visible = oldNpc.labelMaterial.visible;
 
@@ -230,7 +230,7 @@ export default function NPCs() {
         const doMeta = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
         if (doMeta) {
           // doable overrides navigable
-          await npc.scaleSpawn(to);
+          await npc.fadeSpawn(to);
           return;
         }
 
@@ -241,7 +241,7 @@ export default function NPCs() {
         if (npc.agentId === null) {
           // fade spawn from doable to nav
           // 🚧 facing `prev --> next`
-          await npc.scaleSpawn(result.position);
+          await npc.fadeSpawn(result.position);
           return;
         }
 
@@ -267,7 +267,7 @@ export default function NPCs() {
 
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
-          npc.scaleTick(delta);
+          npc.fadeTick(delta);
           npc.lookAtTick(delta);
 
           if (npc.agentId === null) continue;

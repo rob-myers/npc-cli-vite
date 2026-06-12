@@ -51,7 +51,7 @@ export class Npc {
   arrive = true;
   agentId: string | null = null;
   bubbleOffset = new THREE.Vector3(0, 0, 0);
-  scaleState = { delta: 0, target: 1, baseY: 0, baseX: 0, baseZ: 0 };
+  fadeState = { delta: 0, target: 1 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
   last = {
@@ -200,36 +200,24 @@ export class Npc {
     this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
   }
 
-  async scaleDown(speed = 4) {
+  async fadeOut(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.scale = resolve;
       this.reject.scale = reject;
-      this.scaleState.baseX = this.position.x;
-      this.scaleState.baseY = this.position.y;
-      this.scaleState.baseZ = this.position.z;
-      this.scaleState.target = 0;
-      this.scaleState.delta = -Math.abs(speed);
+      this.fadeState.target = 0;
+      this.fadeState.delta = -Math.abs(speed);
     });
   }
 
-  async scaleSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
-    let spawnY = this.position.y;
+  async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
     const labelVisible = this.labelMaterial.visible;
     try {
-      await this.scaleDown();
+      await this.fadeOut();
       await this.w.npc.spawn({ npcKey: this.key, at });
-      spawnY = this.position.y;
-      this.scaleState.baseX = this.position.x;
-      this.scaleState.baseY = spawnY;
-      this.scaleState.baseZ = this.position.z;
-      await this.scaleUp();
+      await this.fadeIn();
     } finally {
-      if (this.scaleState.delta === 0) {
-        this.skinnedMesh.scale.setScalar(npcScale);
-        this.position.x = this.scaleState.baseX;
-        this.position.y = spawnY;
-        this.position.z = this.scaleState.baseZ;
+      if (this.fadeState.delta === 0) {
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
         this.material.alphaTest = 0.9;
@@ -240,24 +228,12 @@ export class Npc {
     }
   }
 
-  scaleTick(delta: number) {
-    if (this.scaleState.delta === 0) return;
-    const current = this.skinnedMesh.scale.x / npcScale;
-    const next = current + this.scaleState.delta * delta;
-    const done = this.scaleState.delta > 0 ? next >= this.scaleState.target : next <= this.scaleState.target;
-    const s = Math.max(0, done ? this.scaleState.target : next);
-
-    if (this.idleClip.name === "lie") {
-      // Root bone is at head; stomach is half the standing height along the facing direction
-      const ry = this.skinnedMesh.rotation.y;
-      const halfH = 0.4;
-      this.skinnedMesh.scale.setScalar(npcScale * s);
-      this.position.x = this.scaleState.baseX + -Math.sin(ry) * halfH * (1 - s);
-      this.position.z = this.scaleState.baseZ + -Math.cos(ry) * halfH * (1 - s);
-    } else {
-      this.skinnedMesh.scale.setScalar(npcScale * s);
-      this.position.y = this.scaleState.baseY + scaleCenterY(this.idleClip.name) * (1 - s);
-    }
+  fadeTick(delta: number) {
+    if (this.fadeState.delta === 0) return;
+    const current = this.opacityScale.value;
+    const next = current + this.fadeState.delta * delta;
+    const done = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
+    const s = Math.max(0, done ? this.fadeState.target : next);
 
     this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name) * s;
     this.labelMaterial.visible = s >= 1;
@@ -266,20 +242,22 @@ export class Npc {
     this.colorScale.value = next;
     this.opacityScale.value = next;
     this.material.alphaTest = next - 0.01;
+    this.material.depthWrite = next > 0.2;
 
     if (done) {
-      this.scaleState.delta = 0;
+      this.fadeState.delta = 0;
+      this.material.alphaTest = 0.9;
       this.resolve.scale("scale");
     }
   }
 
-  async scaleUp(speed = 4) {
+  async fadeIn(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.scale = resolve;
       this.reject.scale = reject;
-      this.scaleState.target = 1;
-      this.scaleState.delta = Math.abs(speed);
+      this.fadeState.target = 1;
+      this.fadeState.delta = Math.abs(speed);
     });
   }
 
@@ -333,7 +311,7 @@ export class Npc {
     const { reject } = this;
     this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, lookAt: rejectNoop };
     // synchronously stop scale or look
-    this.scaleState.delta = 0;
+    this.fadeState.delta = 0;
     this.lookAtState.active = false;
     reject.spawn(err);
     reject.move(err);
@@ -515,11 +493,6 @@ const separationSpeedThreshold = 0.005;
 const separationCooldown = 0.5;
 const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;
-
-function scaleCenterY(clipName: string): number {
-  if (clipName === "sit") return 0;
-  return npcBubbleHeightForClip(clipName) / 2;
-}
 
 export function npcBubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;
