@@ -95,6 +95,7 @@
     - ✅ removal of body should trigger exit
     - ✅ `w.npc.remove` --> `w.e.removeNpcs`
     - ✅ `w.npc.removeAgents`
+  - ✅ can still happen if enter just as being closed
 
 - small-map-0 -> 301-only
   - also clean up other map names

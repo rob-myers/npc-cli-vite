@@ -168,13 +168,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onEnterCollider(e, _npc) {
         if (e.type === "nearby" || e.type === "inside") {
           const door = w.d[e.gdKey];
-          if (door.open === true) {
-            return; // door already open
-          }
-
           if (door.auto === true && door.locked === false) {
-            // only auto-open doors which are auto and unlocked
+            // open (or reverse a closing animation) for auto unlocked doors
             state.toggleDoor(e.gdKey, { open: true, npcKey: e.npcKey });
+            return;
+          }
+          if (door.open === true) {
             return;
           }
         }
