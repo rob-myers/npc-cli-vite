@@ -367,7 +367,6 @@ export class Npc {
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
     if (!this.agentId) return;
-    console.log("startMoving", { groundPoint, result, arrive });
     const agent = this.w.npc.crowd.agents[this.agentId];
     // whilst walking, doors should block npcs
     agent.queryFilter = this.queryFilter;
