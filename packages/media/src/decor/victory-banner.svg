@@ -1,10 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 144 144" width="200" height="200">
-  <!-- Staff -->
-  <line x1="70" y1="50" x2="70" y2="155" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <!-- Banner Tiers -->
-  <path d="M 70,60 L 135,60 L 135,85 L 70,85" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <path d="M 70,85 L 125,85 L 125,110 L 70,110" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <path d="M 70,110 L 115,110 L 115,135 L 70,135" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <!-- Streamers -->
-  <path d="M 135,72 L 148,95 L 135,110" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+  <g style="fill: none; stroke: #ffffff; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round">
+    <!-- Staff -->
+    <line x1="100" y1="38" x2="100" y2="162" />
+    <!-- Top jewel -->
+    <circle cx="100" cy="42" r="8" style="fill: #ffffff" />
+    <!-- Tier 1 (widest) -->
+    <path d="M 64,50 L 136,50 L 136,80 L 64,80 Z" />
+    <!-- Tier 2 -->
+    <path d="M 69,80 L 131,80 L 131,108 L 69,108 Z" />
+    <!-- Tier 3 (narrowest) -->
+    <path d="M 74,108 L 126,108 L 126,132 L 74,132 Z" />
+    <!-- Tassels -->
+    <path d="M 82,132 C 80,142 78,148 76,155" />
+    <path d="M 100,132 L 100,155" />
+    <path d="M 118,132 C 120,142 122,148 124,155" />
+  </g>
 </svg>
