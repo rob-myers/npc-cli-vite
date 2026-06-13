@@ -288,7 +288,7 @@ export class Npc {
     const totalDiff = deltaAngle(startAngle, target);
     // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
     const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
-    const walking = Math.abs(totalDiff) > (5 / 180) * Math.PI;
+    const walking = Math.abs(totalDiff) > (30 / 180) * Math.PI;
 
     try {
       await new Promise<string>((resolve, reject) => {
@@ -297,10 +297,10 @@ export class Npc {
         this.reject.look = reject;
         Object.assign(this.lookAtState, { active: true, startAngle, totalDiff, duration, elapsed: 0, walking });
         if (walking) {
-          this.moveClip = this.clips.walk;
-          this.mixer.timeScale = 0.4;
+          this.moveClip = this.clips.shuffle;
           this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
           this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
+          this.mixer.timeScale = 0.75;
         }
       });
     } finally {
