@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 144 144" width="200" height="200">
+  <!-- Staff -->
+  <line x1="70" y1="50" x2="70" y2="155" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+  <!-- Banner Tiers -->
+  <path d="M 70,60 L 135,60 L 135,85 L 70,85" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+  <path d="M 70,85 L 125,85 L 125,110 L 70,110" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+  <path d="M 70,110 L 115,110 L 115,135 L 70,135" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+  <!-- Streamers -->
+  <path d="M 135,72 L 148,95 L 135,110" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+</svg>

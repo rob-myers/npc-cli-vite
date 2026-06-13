@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 144 144" width="200" height="200">
+  <g transform="translate(0, 15)">
+    <path d="M 100,50 L 135,85 L 100,120 L 65,85 Z" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+    <path d="M 100,75 L 120,95 L 100,115 L 80,95 Z" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+    <path d="M 100,50 L 65,85 L 100,120 L 135,85" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+    <!-- Interlacing loops -->
+    <path d="M 80,65 L 120,105 M 120,65 L 80,105" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+  </g>
+</svg>

@@ -19,6 +19,30 @@
       "width": 60,
       "height": 60
     },
+    "conch-shell": {
+      "key": "conch-shell",
+      "filename": "conch-shell.svg",
+      "width": 200,
+      "height": 200
+    },
+    "dharma-wheel": {
+      "key": "dharma-wheel",
+      "filename": "dharma-wheel.svg",
+      "width": 200,
+      "height": 200
+    },
+    "endless-knot": {
+      "key": "endless-knot",
+      "filename": "endless-knot.svg",
+      "width": 200,
+      "height": 200
+    },
+    "golden-fish": {
+      "key": "golden-fish",
+      "filename": "golden-fish.svg",
+      "width": 200,
+      "height": 200
+    },
     "icon--warn": {
       "key": "icon--warn",
       "filename": "icon--warn.svg",
@@ -37,6 +61,12 @@
       "width": 9,
       "height": 9
     },
+    "lotus": {
+      "key": "lotus",
+      "filename": "lotus.svg",
+      "width": 200,
+      "height": 200
+    },
     "number-one": {
       "key": "number-one",
       "filename": "number-one.svg",
@@ -48,6 +78,12 @@
       "filename": "number-zero.svg",
       "width": 60,
       "height": 60
+    },
+    "parasol": {
+      "key": "parasol",
+      "filename": "parasol.svg",
+      "width": 200,
+      "height": 200
     },
     "sit-circled": {
       "key": "sit-circled",
@@ -66,6 +102,18 @@
       "filename": "switch.svg",
       "width": 6,
       "height": 6
+    },
+    "treasure-vase": {
+      "key": "treasure-vase",
+      "filename": "treasure-vase.svg",
+      "width": 200,
+      "height": 200
+    },
+    "victory-banner": {
+      "key": "victory-banner",
+      "filename": "victory-banner.svg",
+      "width": 200,
+      "height": 200
     }
   }
 }
