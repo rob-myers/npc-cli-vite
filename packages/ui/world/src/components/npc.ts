@@ -227,7 +227,7 @@ export class Npc {
       }
 
       // 🔔 sporadic transparency issue right after 1st spawn
-      this.material.depthWrite = true;
+      // this.material.depthWrite = true;
       this.material.needsUpdate = true;
     }
   }
@@ -245,12 +245,13 @@ export class Npc {
     if (bubbleDiv) bubbleDiv.style.opacity = s < 1 ? "0" : "";
     this.colorScale.value = next;
     this.opacityScale.value = next;
-    this.material.alphaTest = next - 0.01;
+    this.material.alphaTest = Math.max(0, next - 0.2);
     this.material.depthWrite = next > 0.2;
 
     if (done) {
       this.fadeState.delta = 0;
       this.material.alphaTest = 0.9;
+      this.material.needsUpdate = true;
       this.resolve.scale("scale");
     }
   }
