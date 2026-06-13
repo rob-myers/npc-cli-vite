@@ -21,7 +21,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
  */
 export async function clear({ w }) {
   w.e.removeNpcs(...Object.keys(w.n));
-  w.view.forceUpdate();
+  setTimeout(() => w.view.forceUpdate());
 }
 
 /**
