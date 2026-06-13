@@ -44,7 +44,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       initial: {
         azimuthal: Math.PI / 4,
-        polar: Math.PI / 16,
+        polar: Math.PI / 4,
         position: { x: 4, y: 12, z: 4 },
       },
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
