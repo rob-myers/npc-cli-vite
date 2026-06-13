@@ -74,9 +74,10 @@ export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }
  * ```sh
  * look npc:rob at:$( pick 1 )
  * pick | look npc:rob
+ * look npc:rob at:kate
  * ```
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {{ npcKey: string; at: JshCli.PointAnyFormat }} [opts]
+ * @param {JshCli.RunArg<string | JshCli.PointAnyFormat>} ct
+ * @param {{ npcKey: string; at: string | JshCli.PointAnyFormat }} [opts]
  */
 export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey", to: "at", face: "at" })) {
   const npc = w.npc.get(opts.npcKey);
