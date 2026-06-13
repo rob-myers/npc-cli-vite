@@ -120,6 +120,7 @@ export default function NPCs() {
           geometry: opts.geometry,
           ...state.createMaterials(opts.pickId, opts.skinIndex),
         });
+        npc.init();
         npc.drawLabel();
         state.npc[opts.key] = npc;
         state.byPickId[npc.pickId] = npc;
