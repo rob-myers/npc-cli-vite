@@ -101,10 +101,10 @@
   - repro: on 1st spawn into doorway then `pick | move npc:rob` to chair 
   - fixed by saving NPCs i.e. hmr
 
-- 🚧 look
+- ✅ look
   - ✅ play animation once angle is over threshold
-  - 🚧 walk-on-spot animation
-  - can `look npc:rob at:kate`
+  - ✅ walk-on-spot animation
+  - ✅ can `look npc:rob at:kate`
 
 - ✅ preserve npc reference across hmr
   - ✅ move code out of constructor into `npc.init`

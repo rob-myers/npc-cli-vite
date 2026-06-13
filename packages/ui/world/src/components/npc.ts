@@ -277,8 +277,11 @@ export class Npc {
     this.skinIndexUniform.value = skinIndex;
   }
 
-  async look(at: MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
-    const p = parseGroundPoint(at);
+  /**
+   * Can look at `npcKey` or point.
+   */
+  async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
+    const p = parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
     const target = geomService.getThreeRotationY(p.y - this.position.z, p.x - this.position.x);
     if (immediate) {
       this.skinnedMesh.rotation.y = target;
