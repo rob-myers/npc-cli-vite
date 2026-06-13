@@ -300,7 +300,7 @@ export class Npc {
         this.reject.look = reject;
         Object.assign(this.lookAtState, { active: true, startAngle, totalDiff, duration, elapsed: 0, walking });
         if (walking) {
-          this.moveClip = this.clips.shuffle;
+          this.moveClip = this.clips.stand;
           this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
           this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
           this.mixer.timeScale = 0.75;
@@ -430,6 +430,7 @@ export class Npc {
     if (!(speed > separationSpeedThreshold && worldSeconds - this.last.idleTime > separationCooldown)) {
       return;
     }
+
     const { clips } = this.w.npc;
     if (!this.separating) {
       this.separating = true;
