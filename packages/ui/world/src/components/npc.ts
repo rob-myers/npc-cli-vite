@@ -26,6 +26,7 @@ const rejectNoop = (_e: Error): void => {};
 
 export class Npc {
   key: string;
+  epochMs = 0;
 
   /** Physics body */
   bodyUid: number;

@@ -106,9 +106,11 @@
   - 🚧 walk-on-spot animation
   - can `look npc:rob at:kate`
 
-- 🚧 preserve npc reference across hmr
+- ✅ preserve npc reference across hmr
   - ✅ move code out of constructor into `npc.init`
-  - 🚧 `npc.devHotReloadNew` uses "old approach"
+  - ✅ `npc.devHotReload` uses "old approach"
+
+- ✅ on hmr `move` should continue
 
 - small-map-0 -> 301-only
   - also clean up other map names

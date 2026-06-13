@@ -23,4 +23,5 @@ function NpcInstance({ npc }: { npc: Npc }) {
   );
 }
 
-export const MemoNpcInstance = memo(NpcInstance);
+export const MemoNpcInstance: React.MemoExoticComponent<(props: { epochMs: number; npc: Npc }) => React.JSX.Element> =
+  memo(NpcInstance);
