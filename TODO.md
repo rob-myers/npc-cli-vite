@@ -97,6 +97,19 @@
     - ✅ `w.npc.removeAgents`
   - ✅ can still happen if enter just as being closed
 
+- ✅ BUG npc transparency issues
+  - repro: on 1st spawn into doorway then `pick | move npc:rob` to chair 
+  - fixed by saving NPCs i.e. hmr
+
+- 🚧 look
+  - ✅ play animation once angle is over threshold
+  - 🚧 walk-on-spot animation
+  - can `look npc:rob at:kate`
+
+- 🚧 preserve npc reference across hmr
+  - ✅ move code out of constructor into `npc.init`
+  - 🚧 `npc.devHotReloadNew` uses "old approach"
+
 - small-map-0 -> 301-only
   - also clean up other map names
 - remove all suffices e.g. --0.25x0.25 from all symbols

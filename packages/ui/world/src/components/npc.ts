@@ -70,7 +70,7 @@ export class Npc {
   position: THREE.Vector3;
   moveClip = emptyAnimationClip;
   moving = false;
-  queryFilter: QueryFilter;
+  queryFilter!: QueryFilter;
   /** while idle and due to separationWeight */
   separating = false;
   spawns = 0;
@@ -110,7 +110,6 @@ export class Npc {
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
     Object.assign(this, init);
-
     this.key = init.key;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
@@ -125,31 +124,9 @@ export class Npc {
     this.shadowMaterial = init.shadowMaterial;
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
-
-    // use case for lastBlockingArea?
-    this.queryFilter = {
-      ...createDefaultQueryFilter(),
-      passFilter: (nodeRef, navMesh) => {
-        const node = getNodeByRef(navMesh, nodeRef);
-
-        if (isDoorAreaId(node.area) === true) {
-          const decoded = decodeDoorAreaId(node.area);
-          if (!w.e.npcCanAccess(this.key, decoded.gdKey)) {
-            this.last.blockingArea = node.area;
-            return false;
-          }
-        }
-
-        return true;
-      },
-    };
-
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
-
     this.moveClip = this.clips.walk;
     this.idleClip = this.clips.idle;
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
-    this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
   }
 
   drawLabel(style?: { color?: string }) {
@@ -184,6 +161,29 @@ export class Npc {
     this.mixer.clipAction(this.idleClip).play();
     this.mixer.update(0);
   };
+
+  init() {
+    // use case for lastBlockingArea?
+    this.queryFilter = {
+      ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => {
+        const node = getNodeByRef(navMesh, nodeRef);
+
+        if (isDoorAreaId(node.area) === true) {
+          const decoded = decodeDoorAreaId(node.area);
+          if (!this.w.e.npcCanAccess(this.key, decoded.gdKey)) {
+            this.last.blockingArea = node.area;
+            return false;
+          }
+        }
+
+        return true;
+      },
+    };
+
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
+    this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
+  }
 
   pinTo(result: FindNearestPolyResult) {
     if (this.agentId === null || result.success === false) {
