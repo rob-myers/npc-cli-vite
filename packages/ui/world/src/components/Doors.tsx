@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { geomService, Mat, Vect } from "@npc-cli/util/geom";
+import { loadImage } from "@npc-cli/util/legacy/dom";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
 import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
@@ -8,7 +9,7 @@ import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { PICK_TYPE } from "../service/pick";
-import { drawDoorLabelLayer, type SelectAnyType } from "../service/texture";
+import { buddhistIconKeys, drawDoorIconLayer, drawDoorLabelLayer, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -64,32 +65,51 @@ export default function Doors() {
           }
         }
       },
-      buildDoorWithLabelTextures() {
+      async buildDoorWithLabelTextures() {
         const labelToLayer = new Map<string, number>();
         const frontArray = new Float32Array(w.gms.length << 8);
         const backArray = new Float32Array(w.gms.length << 8);
 
-        // door sans label
-        labelToLayer.set("", 0);
+        // layer 0: base door (no label)
         drawDoorLabelLayer(w.texDoorLabel, 0, "");
+        labelToLayer.set("", 0);
+
+        // layers 1–8: buddhist icons, one per key
+        const sheetMeta = buddhistIconKeys.map((key) => w.sheets.decor[key]);
+        const neededSheetIds = [...new Set(sheetMeta.map((e) => e.sheetId))];
+        const sheetImages = new Map<number, HTMLImageElement>(
+          await Promise.all(neededSheetIds.map(async (id) => [id, await loadImage(`/sheet/decor.${id}.png`)] as const)),
+        );
+        const iconBase = 1;
+        for (let i = 0; i < buddhistIconKeys.length; i++) {
+          const entry = sheetMeta[i];
+          const img = sheetImages.get(entry.sheetId);
+          if (img) drawDoorIconLayer(w.texDoorLabel, iconBase + i, img, entry);
+        }
+
+        let nextLabelIdx = iconBase + buddhistIconKeys.length;
 
         for (const { instanceId, connector } of Object.values(state.byKey)) {
           const label = (connector.meta.label as string | undefined) ?? "";
           if (!labelToLayer.has(label)) {
-            const idx = labelToLayer.size;
-            labelToLayer.set(label, idx);
-            drawDoorLabelLayer(w.texDoorLabel, idx, label);
+            labelToLayer.set(label, nextLabelIdx);
+            drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
           }
           frontArray[instanceId] = labelToLayer.get(label) ?? 0;
 
-          const backLabel = (connector.meta.backLabel as string | undefined) ?? "";
-          if (!labelToLayer.has(backLabel)) {
-            const idx = labelToLayer.size;
-            labelToLayer.set(backLabel, idx);
-            drawDoorLabelLayer(w.texDoorLabel, idx, backLabel);
+          if (connector.meta.backLabel !== undefined) {
+            const backLabel = connector.meta.backLabel as string;
+            if (!labelToLayer.has(backLabel)) {
+              labelToLayer.set(backLabel, nextLabelIdx);
+              drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, backLabel);
+            }
+            backArray[instanceId] = labelToLayer.get(backLabel) ?? 0;
+          } else {
+            const iconIdx = ((instanceId * 2654435761) >>> 0) % buddhistIconKeys.length;
+            backArray[instanceId] = iconBase + iconIdx;
           }
-          backArray[instanceId] = labelToLayer.get(backLabel) ?? 0;
         }
+
         state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(frontArray, 1));
         state.box.setAttribute("doorBackLabelLayer", new THREE.InstancedBufferAttribute(backArray, 1));
       },
@@ -422,7 +442,7 @@ export type State = {
   openRatioArray: Float32Array;
   animTargets: Map<number, number>;
   buildByKey: () => void;
-  buildDoorWithLabelTextures: () => void;
+  buildDoorWithLabelTextures: () => Promise<void>;
   cancelClose: (door: Geomorph.DoorState) => void;
   computeRayDoorIntersect: (src: Geom.VectJson, dst: Geom.VectJson, gdKey: Geomorph.GmDoorKey) => Geom.VectJson | null;
   checkRayDoorBlock: (

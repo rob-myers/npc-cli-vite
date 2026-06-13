@@ -112,6 +112,15 @@
 
 - ✅ on hmr `move` should continue
 
+- 🚧 draw buddhist icons on back of doors
+  - ✅ randomly
+  - clean buildDoorWithLabelTextures
+  - meaningfully
+
+- idle-left with left-leg forward
+- idle-right with right-leg forward
+- `npc.setMoveType` walk, run, shuffle
+
 - small-map-0 -> 301-only
   - also clean up other map names
 - remove all suffices e.g. --0.25x0.25 from all symbols
