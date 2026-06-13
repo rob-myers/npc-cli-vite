@@ -268,7 +268,7 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           npc.mixer.update(delta);
           npc.fadeTick(delta);
-          npc.lookAtTick(delta);
+          npc.lookTick(delta);
 
           if (npc.agentId === null) continue;
 
