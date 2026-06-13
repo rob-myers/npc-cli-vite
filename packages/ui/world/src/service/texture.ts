@@ -15,6 +15,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import type { DecorSheetEntry } from "../assets.schema";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
 
@@ -404,6 +405,40 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
     ct.fillText(label, 0, 0);
     ct.restore();
   }
+
+  texArray.updateIndex(layerIndex);
+}
+
+export const buddhistIconKeys = [
+  "conch-shell",
+  "dharma-wheel",
+  "endless-knot",
+  "golden-fish",
+  "lotus",
+  "parasol",
+  "treasure-vase",
+  "victory-banner",
+] as const;
+
+export function drawDoorIconLayer(
+  texArray: TexArray,
+  layerIndex: number,
+  sheetImage: HTMLImageElement,
+  entry: DecorSheetEntry,
+) {
+  const { ct } = texArray;
+  ct.clearRect(0, 0, texW, texH);
+  ct.drawImage((basePanelCanvas ??= drawDoorBasePanel()), 0, 0);
+
+  const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
+  const iconSize = 100;
+  const { rect } = entry;
+  ct.save();
+  ct.globalAlpha = 0.25;
+  ct.translate(texW / 2, logoY);
+  ct.scale(1, -1);
+  ct.drawImage(sheetImage, rect.x, rect.y, rect.width, rect.height, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+  ct.restore();
 
   texArray.updateIndex(layerIndex);
 }
