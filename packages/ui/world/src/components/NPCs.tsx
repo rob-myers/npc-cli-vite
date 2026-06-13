@@ -127,42 +127,45 @@ export default function NPCs() {
         return npc;
       },
       devHotReload() {
-        for (const oldNpc of Object.values(state.npc)) {
-          oldNpc.material.dispose();
-          oldNpc.labelMaterial.dispose();
-          oldNpc.shadowMaterial.dispose();
+        // Don't create -- mutate existing npcs, thereby avoiding stale references in ongoing code
 
-          const npc = state.createNpc({
-            key: oldNpc.key,
-            pickId: oldNpc.pickId,
-            position: oldNpc.position,
-            skinnedMesh: oldNpc.skinnedMesh,
-            graph: oldNpc.graph,
-            geometry: oldNpc.geometry,
-            skinIndex: oldNpc.skinIndex,
-          });
+        const npcs = Object.values(state.npc);
 
-          npc.agentId = oldNpc.agentId;
-          npc.doorKeys = oldNpc.doorKeys;
-          npc.last = oldNpc.last;
-          npc.bubbleOffset = oldNpc.bubbleOffset;
-          npc.moveClip = oldNpc.moveClip;
-          npc.idleClip = oldNpc.idleClip;
-          npc.spawns = oldNpc.spawns;
-          npc.labelYShiftUniform.value = npcLabelYShiftForClip(npc.idleClip.name);
+        let hmrKeys:
+          | undefined
+          | {
+              add: (keyof ClassSansMethods<Npc> | "groupRef")[];
+              del: (keyof Npc)[];
+            };
 
-          npc.colorScale.value = oldNpc.colorScale.value;
-          npc.opacityScale.value = oldNpc.opacityScale.value;
-          npc.fadeState = { ...oldNpc.fadeState };
-          npc.material.depthWrite = oldNpc.material.depthWrite;
-          npc.labelMaterial.visible = oldNpc.labelMaterial.visible;
+        for (const npc of npcs) {
+          const instance = new Npc(w, npc);
 
-          state.placeNpcAt(
-            npc,
-            state.getClosestPoly(npc.position),
-            // 🔔 try to preserve doable
-            w.e.npcToDoable[npc.key] ? npc.position : undefined,
-          );
+          // - copy in new from `base`, delete old from `npc`, also for `s`
+          // - we don't support type-change
+          // - compute keys to add/delete once for all npcs
+          if (hmrKeys === undefined) {
+            hmrKeys = {
+              add: keys({ ...instance }).filter((x) => !(x in npc) && Object.assign(npc, { [x]: instance[x] })),
+              del: keys(npc).filter((x) => !(x in instance) && delete npc[x]),
+            };
+          } else {
+            hmrKeys.add.forEach((x) => Object.assign(npc, { [x]: instance[x] }));
+            hmrKeys.del.forEach((x) => delete npc[x]);
+          }
+
+          Object.setPrototypeOf(npc, Object.getPrototypeOf(instance));
+
+          npc.epochMs = Date.now(); // invalidate React.Memo
+
+          npc.init();
+          npc.drawLabel();
+
+          // state.placeNpcAt(
+          //   npc,
+          //   state.getClosestPoly(npc.position),
+          //   w.e.npcToDoable[npc.key] ? npc.position : undefined,
+          // );
         }
         state.update();
       },
@@ -534,7 +537,10 @@ export default function NPCs() {
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
-  return state.gltf && Object.values(state.npc).map((npc) => <MemoNpcInstance key={npc.key} npc={npc} />);
+  return (
+    state.gltf &&
+    Object.values(state.npc).map((npc) => <MemoNpcInstance key={npc.key} npc={npc} epochMs={npc.epochMs} />)
+  );
 }
 
 export type AnimationClipKey = keyof typeof fromAnimationClipKey;
