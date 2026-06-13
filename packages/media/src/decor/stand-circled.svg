@@ -6,7 +6,7 @@
       <stop offset="100%" stop-color="#9ab0c8"/>
     </radialGradient>
   </defs>
-  <circle cx="45" cy="45" r="42" fill="#1a2038" stroke="white" stroke-width="2.5"/>
+  <circle cx="45" cy="45" r="42" stroke="white" stroke-width="2.5"/>
   <circle cx="45" cy="16" r="9" fill="url(#fig)"/>
   <path d="M 33,27 Q 45,24 57,27 L 54,57 Q 45,60 36,57 Z" fill="url(#fig)"/>
   <path d="M 33,30 L 19,54 L 24,57 L 37,34 Z" fill="url(#fig)"/>
