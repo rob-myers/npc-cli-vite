@@ -65,7 +65,7 @@ export class Npc {
     dstGrId: null as Geomorph.GmRoomId | null,
   };
   lookAtPoint: JshCli.GroundPoint | null = null;
-  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0 };
+  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
   /** Synced with crowd agent */
   position: THREE.Vector3;
   moveClip = emptyAnimationClip;
@@ -80,13 +80,13 @@ export class Npc {
     spawn: (_k: string): void => {},
     move: (_k: string): void => {},
     scale: (_k: string): void => {},
-    lookAt: (_k: string): void => {},
+    look: (_k: string): void => {},
   };
   reject = {
     spawn: rejectNoop,
     move: rejectNoop,
     scale: rejectNoop,
-    lookAt: rejectNoop,
+    look: rejectNoop,
   };
 
   w: UseStateRef<import("./World").State>;
@@ -278,33 +278,51 @@ export class Npc {
 
   async look(at: MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
     const p = parseGroundPoint(at);
-    const dx = p.x - this.position.x;
-    const dz = p.y - this.position.z;
-    const target = geomService.getThreeRotationY(dz, dx);
+    const target = geomService.getThreeRotationY(p.y - this.position.z, p.x - this.position.x);
     if (immediate) {
       this.skinnedMesh.rotation.y = target;
       return;
     }
-    await new Promise<string>((resolve, reject) => {
-      this.rejectAll(new Error("interrupted"));
-      this.resolve.lookAt = resolve;
-      this.reject.lookAt = reject;
-      const startAngle = this.skinnedMesh.rotation.y;
-      const totalDiff = deltaAngle(startAngle, target);
-      // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-      const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
-      Object.assign(this.lookAtState, { active: true, startAngle, totalDiff, duration, elapsed: 0 });
-    });
+    const startAngle = this.skinnedMesh.rotation.y;
+    const totalDiff = deltaAngle(startAngle, target);
+    // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
+    const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
+    const walking = Math.abs(totalDiff) > (5 / 180) * Math.PI;
+
+    try {
+      await new Promise<string>((resolve, reject) => {
+        this.rejectAll(new Error("interrupted"));
+        this.resolve.look = resolve;
+        this.reject.look = reject;
+        Object.assign(this.lookAtState, { active: true, startAngle, totalDiff, duration, elapsed: 0, walking });
+        if (walking) {
+          this.moveClip = this.clips.walk;
+          this.mixer.timeScale = 0.4;
+          this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
+          this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
+        }
+      });
+    } finally {
+      this.lookAtState.walking = false;
+      this.mixer.timeScale = 1;
+      this.moveClip = this.clips.walk;
+      // this.playIdleClip(0.3);
+    }
   }
 
-  lookAtTick(delta: number) {
+  lookTick(delta: number) {
     if (!this.lookAtState.active) return;
+
     const s = this.lookAtState;
     s.elapsed += delta;
     if (s.elapsed >= s.duration) {
       this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff;
       s.active = false;
-      this.resolve.lookAt("lookAt");
+      if (s.walking) {
+        s.walking = false;
+        this.playIdleClip(0.3);
+      }
+      this.resolve.look("lookAt");
     } else {
       const t = s.elapsed / s.duration;
       // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
@@ -314,14 +332,14 @@ export class Npc {
 
   rejectAll(err: Error) {
     const { reject } = this;
-    this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, lookAt: rejectNoop };
+    this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, look: rejectNoop };
     // synchronously stop scale or look
     this.fadeState.delta = 0;
     this.lookAtState.active = false;
     reject.spawn(err);
     reject.move(err);
     reject.scale(err);
-    reject.lookAt(err);
+    reject.look(err);
   }
 
   smoothRotateToward(vx: number, vz: number, delta: number) {

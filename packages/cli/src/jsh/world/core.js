@@ -80,12 +80,21 @@ export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }
  */
 export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey", to: "at", face: "at" })) {
   const npc = w.npc.get(opts.npcKey);
-  if (api.isTtyAt(0)) {
-    return await npc.look(opts.at);
-  }
 
-  while ((datum = await api.read()) !== api.eof) {
-    await npc.look(datum);
+  const { dispose } = api.handleStatus({
+    cleanups: (killed) => killed && npc.rejectAll(new Error("killed")),
+  });
+
+  try {
+    if (api.isTtyAt(0)) {
+      return await npc.look(opts.at);
+    }
+
+    while ((datum = await api.read()) !== api.eof) {
+      await npc.look(datum);
+    }
+  } finally {
+    dispose();
   }
 }
 
