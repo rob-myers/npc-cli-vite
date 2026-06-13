@@ -276,7 +276,7 @@ export class Npc {
     this.skinIndexUniform.value = skinIndex;
   }
 
-  async lookAt(at: MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
+  async look(at: MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
     const p = parseGroundPoint(at);
     const dx = p.x - this.position.x;
     const dz = p.y - this.position.z;
