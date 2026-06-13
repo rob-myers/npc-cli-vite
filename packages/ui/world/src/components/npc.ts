@@ -225,6 +225,10 @@ export class Npc {
         const bubbleDiv = this.w.b[this.key]?.html3d.rootDiv;
         if (bubbleDiv) bubbleDiv.style.opacity = "";
       }
+
+      // 🔔 sporadic transparency issue right after 1st spawn
+      this.material.depthWrite = true;
+      this.material.needsUpdate = true;
     }
   }
 
