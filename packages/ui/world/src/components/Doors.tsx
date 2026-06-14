@@ -21,6 +21,7 @@ export default function Doors() {
       box: createDoorBox(),
       byKey: {},
       inst: null,
+      labelToLayer: new Map(),
       openRatioArray: new Float32Array(0),
 
       buildByKey() {
@@ -65,55 +66,6 @@ export default function Doors() {
           }
         }
       },
-      async buildDoorWithLabelTextures() {
-        const labelToLayer = new Map<string, number>();
-        const frontArray = new Float32Array(w.gms.length << 8);
-        const backArray = new Float32Array(w.gms.length << 8);
-
-        // layer 0: base door (no label)
-        drawDoorLabelLayer(w.texDoorLabel, 0, "");
-        labelToLayer.set("", 0);
-
-        // 🚧
-        // layers 1–8: buddhist icons, one per key
-        const sheetMeta = doorIconKeys.map((key) => w.sheets.decor[key]);
-        const neededSheetIds = [...new Set(sheetMeta.map((e) => e.sheetId))];
-        const sheetImages = new Map<number, HTMLImageElement>(
-          await Promise.all(neededSheetIds.map(async (id) => [id, await loadImage(`/sheet/decor.${id}.png`)] as const)),
-        );
-        const iconBase = 1;
-        for (let i = 0; i < doorIconKeys.length; i++) {
-          const entry = sheetMeta[i];
-          const img = sheetImages.get(entry.sheetId);
-          if (img) drawDoorIconLayer(w.texDoorLabel, iconBase + i, img, entry);
-        }
-
-        let nextLabelIdx = iconBase + doorIconKeys.length;
-
-        for (const { instanceId, connector } of Object.values(state.byKey)) {
-          const label = (connector.meta.label as string | undefined) ?? "";
-          if (!labelToLayer.has(label)) {
-            labelToLayer.set(label, nextLabelIdx);
-            drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
-          }
-          frontArray[instanceId] = labelToLayer.get(label) ?? 0;
-
-          if (connector.meta.backLabel !== undefined) {
-            const backLabel = connector.meta.backLabel as string;
-            if (!labelToLayer.has(backLabel)) {
-              labelToLayer.set(backLabel, nextLabelIdx);
-              drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, backLabel);
-            }
-            backArray[instanceId] = labelToLayer.get(backLabel) ?? 0;
-          } else {
-            const iconIdx = ((instanceId * 2654435761) >>> 0) % doorIconKeys.length;
-            backArray[instanceId] = iconBase + iconIdx;
-          }
-        }
-
-        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(frontArray, 1));
-        state.box.setAttribute("doorBackLabelLayer", new THREE.InstancedBufferAttribute(backArray, 1));
-      },
       cancelClose(door) {
         window.clearTimeout(door.closeTimeoutId);
         delete door.closeTimeoutId;
@@ -156,6 +108,60 @@ export default function Doors() {
         const inGap = door.gapAtHighLambda ? doorLambda >= 1 - openRatio : doorLambda <= openRatio;
 
         return { blocked: !inGap, hit: inGap ? null : geomService.precision2d({ x: hitX, y: hitY }, 2) };
+      },
+      async drawBaseDoorTextures() {
+        // layer 0 (door without label)
+        drawDoorLabelLayer(w.texDoorLabel, 0, "");
+        state.labelToLayer.set("", 0);
+
+        // layers 1 ... doorIconKeys.length (doors with icons)
+        // - cannot assume w.texDecor loaded
+        const sheetMeta = doorIconKeys.map((key) => w.sheets.decor[key]);
+        const neededSheetIds = [...new Set(sheetMeta.map((e) => e.sheetId))];
+        const sheetImages = new Map<number, HTMLImageElement>(
+          await Promise.all(neededSheetIds.map(async (id) => [id, await loadImage(`/sheet/decor.${id}.png`)] as const)),
+        );
+
+        for (const [i, iconKey] of doorIconKeys.entries()) {
+          const entry = sheetMeta[i];
+          const img = sheetImages.get(entry.sheetId);
+          if (img) drawDoorIconLayer(w.texDoorLabel, 1 + i, img, entry);
+          // use iconKey as label
+          state.labelToLayer.set(iconKey, 1 + i);
+        }
+      },
+      async drawDoorTextures() {
+        state.labelToLayer.clear();
+
+        await state.drawBaseDoorTextures();
+
+        let nextLabelIdx = state.labelToLayer.size;
+        const frontArray = new Float32Array(w.gms.length << 8);
+        const backArray = new Float32Array(w.gms.length << 8);
+
+        for (const { instanceId, connector } of Object.values(state.byKey)) {
+          const label = (connector.meta.label as string | undefined) ?? "";
+          if (!state.labelToLayer.has(label)) {
+            state.labelToLayer.set(label, nextLabelIdx);
+            drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
+          }
+          frontArray[instanceId] = state.labelToLayer.get(label) ?? 0;
+
+          if (typeof connector.meta.backLabel === "string") {
+            const backLabel = connector.meta.backLabel as string;
+            if (!state.labelToLayer.has(backLabel)) {
+              state.labelToLayer.set(backLabel, nextLabelIdx);
+              drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, backLabel);
+            }
+            backArray[instanceId] = state.labelToLayer.get(backLabel) ?? 0;
+          } else {
+            // choose stable random icon
+            backArray[instanceId] = 1 + (((instanceId * 2654435761) >>> 0) % doorIconKeys.length);
+          }
+        }
+
+        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(frontArray, 1));
+        state.box.setAttribute("doorBackLabelLayer", new THREE.InstancedBufferAttribute(backArray, 1));
       },
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
@@ -383,7 +389,7 @@ export default function Doors() {
   useEffect(() => {
     state.buildByKey();
     state.positionInstances();
-    state.buildDoorWithLabelTextures();
+    state.drawDoorTextures();
   }, [w.mapKey, w.hash]);
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
@@ -437,13 +443,14 @@ export default function Doors() {
 }
 
 export type State = {
+  animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
   inst: null | THREE.InstancedMesh;
+  /** Label or iconKey. */
+  labelToLayer: Map<string, number>;
   openRatioArray: Float32Array;
-  animTargets: Map<number, number>;
   buildByKey: () => void;
-  buildDoorWithLabelTextures: () => Promise<void>;
   cancelClose: (door: Geomorph.DoorState) => void;
   computeRayDoorIntersect: (src: Geom.VectJson, dst: Geom.VectJson, gdKey: Geomorph.GmDoorKey) => Geom.VectJson | null;
   checkRayDoorBlock: (
@@ -451,6 +458,8 @@ export type State = {
     dst: Geom.VectJson,
     gdKey: Geomorph.GmDoorKey,
   ) => { blocked: boolean; hit: Geom.VectJson | null };
+  drawBaseDoorTextures: () => Promise<void>;
+  drawDoorTextures: () => Promise<void>;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
