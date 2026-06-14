@@ -119,6 +119,9 @@
 
 - 🚧 hull door opening/closing should trigger other
   - 🚧 hull doors in same geomorph should not intersect
+    - ✅ 101
+    - ✅ 301
+    - 🚧 302
 
 - ✅ small-map-0 -> 301-only
   - also clean up other map names
