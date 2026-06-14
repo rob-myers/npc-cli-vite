@@ -79,14 +79,14 @@ function drawDoorBasePanel() {
   }
 
   // horizontal dividers between panels
-  ct.lineWidth = 40;
+  ct.lineWidth = 20;
   for (const lineY of [texH * 0.24, texH * 0.5, texH * 0.74]) {
     ct.strokeStyle = "rgba(160,180,200,0.1)";
     ct.beginPath();
     ct.moveTo(4, lineY);
     ct.lineTo(w - 4, lineY);
     ct.stroke();
-    ct.strokeStyle = "rgba(0,0,0,0.4)";
+    ct.strokeStyle = "rgba(0,0,0,0.5)";
     ct.beginPath();
     ct.moveTo(4, lineY + 2);
     ct.lineTo(w - 4, lineY + 2);
@@ -425,7 +425,7 @@ export function drawDoorIconLayer(
   const iconSize = 100;
   const { rect } = entry;
   ct.save();
-  ct.globalAlpha = 0.25;
+  ct.globalAlpha = 0.2;
   ct.translate(texW / 2, logoY);
   ct.scale(1, -1);
   ct.drawImage(sheetImage, rect.x, rect.y, rect.width, rect.height, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
