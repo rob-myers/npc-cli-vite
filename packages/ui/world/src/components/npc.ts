@@ -212,11 +212,18 @@ export class Npc {
     });
   }
 
-  async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>) {
+  async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>, { facingTarget }: { facingTarget?: boolean } = {}) {
     const labelVisible = this.labelMaterial.visible;
     try {
       await this.fadeOut();
-      await this.w.npc.spawn({ npcKey: this.key, at });
+      const groundTarget = parseGroundPoint(at);
+      await this.w.npc.spawn({
+        npcKey: this.key,
+        at,
+        angle: facingTarget
+          ? geomService.getThreeRotationY(groundTarget.y - this.position.z, groundTarget.x - this.position.x)
+          : undefined,
+      });
       await this.fadeIn();
     } finally {
       if (this.fadeState.delta === 0) {
