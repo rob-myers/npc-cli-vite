@@ -9,7 +9,7 @@ import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { buddhistIconKeys, drawDoorIconLayer, drawDoorLabelLayer, type SelectAnyType } from "../service/texture";
+import { doorIconKeys, drawDoorIconLayer, drawDoorLabelLayer, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -74,20 +74,21 @@ export default function Doors() {
         drawDoorLabelLayer(w.texDoorLabel, 0, "");
         labelToLayer.set("", 0);
 
+        // 🚧
         // layers 1–8: buddhist icons, one per key
-        const sheetMeta = buddhistIconKeys.map((key) => w.sheets.decor[key]);
+        const sheetMeta = doorIconKeys.map((key) => w.sheets.decor[key]);
         const neededSheetIds = [...new Set(sheetMeta.map((e) => e.sheetId))];
         const sheetImages = new Map<number, HTMLImageElement>(
           await Promise.all(neededSheetIds.map(async (id) => [id, await loadImage(`/sheet/decor.${id}.png`)] as const)),
         );
         const iconBase = 1;
-        for (let i = 0; i < buddhistIconKeys.length; i++) {
+        for (let i = 0; i < doorIconKeys.length; i++) {
           const entry = sheetMeta[i];
           const img = sheetImages.get(entry.sheetId);
           if (img) drawDoorIconLayer(w.texDoorLabel, iconBase + i, img, entry);
         }
 
-        let nextLabelIdx = iconBase + buddhistIconKeys.length;
+        let nextLabelIdx = iconBase + doorIconKeys.length;
 
         for (const { instanceId, connector } of Object.values(state.byKey)) {
           const label = (connector.meta.label as string | undefined) ?? "";
@@ -105,7 +106,7 @@ export default function Doors() {
             }
             backArray[instanceId] = labelToLayer.get(backLabel) ?? 0;
           } else {
-            const iconIdx = ((instanceId * 2654435761) >>> 0) % buddhistIconKeys.length;
+            const iconIdx = ((instanceId * 2654435761) >>> 0) % doorIconKeys.length;
             backArray[instanceId] = iconBase + iconIdx;
           }
         }
