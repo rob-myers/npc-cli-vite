@@ -95,25 +95,46 @@ export class SpeechBubbleApi {
     this.isDragging = false;
   }
 
-  onResizeStart(e: PointerEvent) {
+  onPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    this.onDragStart(e.nativeEvent);
+  };
+
+  onPointerMove = (e: React.PointerEvent) => {
+    if (!this.isDragging) return;
+    e.stopPropagation();
+    this.onDragMove(e.nativeEvent);
+  };
+
+  onPointerUp = (e: React.PointerEvent) => {
+    if (!this.isDragging) return;
+    e.stopPropagation();
+    this.onDragEnd(e.nativeEvent);
+  };
+
+  onWheel = (e: React.WheelEvent) => {
+    this.forwardWheelEvents(e);
+  };
+
+  onResizeStart = (e: React.PointerEvent) => {
     this.isResizing = true;
     this.resizeStartClient = { x: e.clientX, y: e.clientY };
     this.resizeScaleAtStart = this.scale;
     (e.target as Element).setPointerCapture(e.pointerId);
-  }
+  };
 
-  onResizeMove(e: PointerEvent) {
+  onResizeMove = (e: React.PointerEvent) => {
     if (!this.isResizing || !this.bubbleDiv) return;
     const dx = e.clientX - this.resizeStartClient.x;
     const dy = e.clientY - this.resizeStartClient.y;
     this.scale = Math.min(Math.max(this.resizeScaleAtStart * Math.exp((dx + dy) * 0.005), 0.4), 4);
     this.bubbleDiv.style.transform = `translateX(-50%) scale(${this.scale})`;
     this.html3d?.onFrame();
-  }
+  };
 
-  onResizeEnd(_e: PointerEvent) {
+  onResizeEnd = (_e: React.PointerEvent) => {
     this.isResizing = false;
-  }
+  };
 
   setTracked(tracked: TrackedObject3D) {
     this.tracked = tracked;

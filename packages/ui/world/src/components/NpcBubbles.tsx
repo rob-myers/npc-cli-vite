@@ -93,21 +93,10 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
           b.bubbleDiv = el;
         }}
         className="relative transform-[translate(-50%)] pointer-events-auto cursor-grab active:cursor-grabbing"
-        onPointerDown={(e) => {
-          e.stopPropagation();
-          b.onDragStart(e.nativeEvent);
-        }}
-        onPointerMove={(e) => {
-          if (!b.isDragging) return;
-          e.stopPropagation();
-          b.onDragMove(e.nativeEvent);
-        }}
-        onPointerUp={(e) => {
-          if (!b.isDragging) return;
-          e.stopPropagation();
-          b.onDragEnd(e.nativeEvent);
-        }}
-        onWheel={b.forwardWheelEvents.bind(b)}
+        onPointerDown={b.onPointerDown}
+        onPointerMove={b.onPointerMove}
+        onPointerUp={b.onPointerUp}
+        onWheel={b.onWheel}
       >
         <div className="text-[2.5rem]">{b.key}</div>
         <div className="text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2] text-center select-none">
@@ -115,20 +104,9 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         </div>
         <div
           className="absolute -bottom-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            b.onResizeStart(e.nativeEvent);
-          }}
-          onPointerMove={(e) => {
-            if (!b.isResizing) return;
-            e.stopPropagation();
-            b.onResizeMove(e.nativeEvent);
-          }}
-          onPointerUp={(e) => {
-            if (!b.isResizing) return;
-            e.stopPropagation();
-            b.onResizeEnd(e.nativeEvent);
-          }}
+          onPointerDown={b.onResizeStart}
+          onPointerMove={b.onResizeMove}
+          onPointerUp={b.onResizeEnd}
         >
           <ArrowsOutSimpleIcon className="size-3" />
         </div>
