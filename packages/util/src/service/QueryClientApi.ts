@@ -9,7 +9,8 @@ export class QueryClientApi {
       defaultOptions: {
         queries: {
           refetchOnReconnect: import.meta.env.DEV ? false : undefined,
-          refetchOnWindowFocus: import.meta.env.DEV ? false : undefined,
+          // prod refetch on switch tabs caused observable lag
+          refetchOnWindowFocus: false,
           gcTime: Infinity,
         },
       },
