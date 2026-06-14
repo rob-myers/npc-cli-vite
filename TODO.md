@@ -117,6 +117,8 @@
   - ✅ clean buildDoorWithLabelTextures
   - ❌ meaningfully
 
+- 🚧 hull door opening/closing should trigger other
+  - 🚧 hull doors in same geomorph should not intersect
 
 - ✅ small-map-0 -> 301-only
   - also clean up other map names
@@ -131,6 +133,7 @@
 
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
+
 - idle-left with left-leg forward
 - idle-right with right-leg forward
 - `npc.setMoveType` walk, run, shuffle

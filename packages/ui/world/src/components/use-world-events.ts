@@ -138,9 +138,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-open":
             state.doorOpen[e.gdKey] = true;
             break;
+          case "door-opening": {
+            const door = w.d[e.gdKey];
+            if (door.hull === true) {
+              const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
+              adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
+            }
+            break;
+          }
           case "door-closed":
             state.doorOpen[e.gdKey] = false;
             break;
+          case "door-closing": {
+            const door = w.d[e.gdKey];
+            if (door.hull === true) {
+              const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
+              adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: false, access: true });
+            }
+            break;
+          }
           case "removed-npcs": {
             for (const npcKey of e.npcKeys) {
               const gmRoomId = state.npcToRoom.get(npcKey);
