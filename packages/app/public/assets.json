@@ -5303,43 +5303,12 @@
     }
   },
   "map": {
-    "demo-map-0": {
-      "key": "demo-map-0",
+    "301-only": {
+      "key": "301-only",
       "gms": [
         {
           "gmKey": "g-301--bridge",
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
-        },
-        {
-          "gmKey": "g-101--multipurpose",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 15}
-        },
-        {
-          "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 60}
-        }
-      ]
-    },
-    "empty-map": {"key": "empty-map", "gms": []},
-    "small-map-0": {
-      "key": "small-map-0",
-      "gms": [
-        {
-          "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
-        }
-      ]
-    },
-    "larger-map": {
-      "key": "larger-map",
-      "gms": [
-        {
-          "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
-        },
-        {
-          "gmKey": "g-302--xboat-repair-bay",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 29.975}
         }
       ]
     },
@@ -5358,7 +5327,38 @@
           }
         }
       ]
-    }
+    },
+    "301-101-301": {
+      "key": "301-101-301",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        },
+        {
+          "gmKey": "g-101--multipurpose",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 15}
+        },
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 60}
+        }
+      ]
+    },
+    "301-302": {
+      "key": "301-302",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        },
+        {
+          "gmKey": "g-302--xboat-repair-bay",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 29.975}
+        }
+      ]
+    },
+    "empty-map": {"key": "empty-map", "gms": []}
   },
   "flattened": {
     "bed--003--1x1.6": {

@@ -57,7 +57,7 @@ export const roomHitTextureScaleDown = Math.ceil(geomorphPngRectWidth * worldToS
 export const emptyMapKey = "empty-map";
 
 /** Assumed to exist inside `assets.json` `map` lookup */
-export const defaultMapKey = "small-map-0";
+export const defaultMapKey = "301-only";
 
 /** The value of @see {emptyMapKey} */
 export const emptyMapDef: import("./assets.schema").AssetsMapDef = {
