@@ -186,12 +186,17 @@ export class Npc {
     this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
   }
 
-  pinTo(result: FindNearestPolyResult) {
+  pinTo(result: FindNearestPolyResult, overrideGroundPoint?: JshCli.GroundPoint): boolean {
     if (this.agentId === null || result.success === false) {
       return false;
     }
     this.last.pinTime = this.w.timer.getElapsedTime();
-    return crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, result.position);
+    return crowdApi.requestMoveTarget(
+      this.w.npc.crowd,
+      this.agentId,
+      result.nodeRef,
+      overrideGroundPoint ? groundPointToTuple(overrideGroundPoint) : result.position,
+    );
   }
 
   playIdleClip(duration = 0.1) {
