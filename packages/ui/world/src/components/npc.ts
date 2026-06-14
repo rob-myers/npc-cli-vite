@@ -208,6 +208,7 @@ export class Npc {
       this.reject.scale = reject;
       this.fadeState.target = 0;
       this.fadeState.delta = -Math.abs(speed);
+      this.w.bubble.setShownIfExists(this.key, false);
     });
   }
 
@@ -223,12 +224,10 @@ export class Npc {
         this.colorScale.value = 1;
         this.material.alphaTest = 0.9;
         this.labelMaterial.visible = labelVisible;
-        const bubbleDiv = this.w.b[this.key]?.html3d.rootDiv;
-        if (bubbleDiv) bubbleDiv.style.opacity = "";
+        this.w.bubble.setShownIfExists(this.key, true);
       }
 
       // 🔔 sporadic transparency issue right after 1st spawn
-      // this.material.depthWrite = true;
       this.material.needsUpdate = true;
     }
   }
@@ -242,8 +241,6 @@ export class Npc {
 
     this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name) * s;
     this.labelMaterial.visible = s >= 1;
-    const bubbleDiv = this.w.b[this.key]?.html3d.rootDiv;
-    if (bubbleDiv) bubbleDiv.style.opacity = s < 1 ? "0" : "";
     this.colorScale.value = next;
     this.opacityScale.value = next;
     this.material.alphaTest = Math.max(0, next - 0.2);

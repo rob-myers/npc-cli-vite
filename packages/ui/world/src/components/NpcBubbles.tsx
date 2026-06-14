@@ -30,6 +30,10 @@ export default function NpcBubbles() {
         w.view.forceUpdate();
         return bubble;
       },
+      setShownIfExists(npcKey: string, shown: boolean) {
+        const bubbleDiv = this.byKey[npcKey]?.html3d.rootDiv;
+        if (bubbleDiv) bubbleDiv.style.opacity = shown ? "" : "0";
+      },
     }),
   );
 
@@ -56,6 +60,7 @@ export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string): SpeechBubbleApi;
+  setShownIfExists(npcKey: string, shown: boolean): void;
 };
 
 interface SpeechBubbleProps {
