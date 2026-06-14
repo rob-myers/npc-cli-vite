@@ -8,7 +8,7 @@ import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { buddhistIconKeys, drawDoorIconLayer, drawDoorLabelLayer, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -401,7 +401,7 @@ export default function Doors() {
 
     for (const mat of [edge, top, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
-      mat.outputNode = w.view.withPickOutput(PICK_TYPE.door);
+      mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
     }
 
     const texLayer = attribute<"float">("doorLabelLayer", "float").toInt();

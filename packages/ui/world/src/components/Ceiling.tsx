@@ -8,7 +8,7 @@ import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Ceiling() {
@@ -145,7 +145,7 @@ export default function Ceiling() {
 
     return {
       texNode: texNode.depth(uvTexIds),
-      pickNode: w.view.withPickOutput(PICK_TYPE.ceiling),
+      pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
       opacityNode,
       uid: generateUUID(),
     };

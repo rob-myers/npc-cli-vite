@@ -80,8 +80,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       findRoomContaining(input, includeDoors = false) {
         if (helper.isGmRoomId(input.meta) === true) {
-          // 🔔 existing input.meta overrides includeDoors `false`
-          return { ...input.meta };
+          // existing input.meta overrides includeDoors `false`
+          // return { ...input.meta };
+          return { gmId: input.meta.gmId, roomId: input.meta.roomId, grKey: input.meta.grKey };
         }
         const gmId = state.findGmIdContaining(input);
         if (typeof gmId === "number") {
