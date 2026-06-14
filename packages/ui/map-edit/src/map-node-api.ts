@@ -92,6 +92,7 @@ export const labelledImageOffsetValue = {
   eastAlignTable004: -4.4,
   halfLineWidth: -0.7,
   northAlignTable004: -14.4,
+  foo: -4,
   zero: 0,
 } as const;
 
