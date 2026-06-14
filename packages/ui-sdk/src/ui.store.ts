@@ -5,6 +5,7 @@ import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import "polyfill-crypto-methods"; // support non-https local dev on mobile
 
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { HtmlPortalWrapper } from "./HtmlPortalsWrapper";
 import type { UiInstanceMeta } from "./schema";
 import type { WithImmer } from "./with-immer-type.d.ts";
@@ -164,7 +165,7 @@ export function getDefaultPanes(): PersistedPanesLayout {
     root: {
       type: "split",
       id: 0,
-      vertical: true, // better for mobile
+      vertical: isTouchDevice(), // better for mobile
       children: tabs.map((meta, i) => ({ type: "leaf", id: i + 1, uiId: meta.id })),
       sizes: [100, 100],
     },
