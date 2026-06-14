@@ -90,7 +90,7 @@ export default function Floor() {
 
         // door shadow
         for (const door of layout.doors) {
-          ct.lineWidth = 0.125;
+          ct.lineWidth = door.meta.hull ? 0.225 : 0.125;
           tmpPoly.outline = door.seg;
           ct.lineJoin = "miter";
           drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000a" });
