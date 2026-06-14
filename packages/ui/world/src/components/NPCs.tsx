@@ -337,7 +337,7 @@ export default function NPCs() {
             getAgentParams(),
           );
 
-          npc.pinTo(closePolyResult);
+          npc.pinTo(closePolyResult, groundPoint);
 
           // might have spawned into a sensor
           state.physics.positions.push(npc.bodyUid, ...groundPointToTuple(groundPoint));
@@ -406,13 +406,15 @@ export default function NPCs() {
         }
 
         if (doMeta !== null) {
-          state.placeNpcAt(npc, closePolyResult, doMeta.groundPoint);
+          const overrideGroundPoint = doMeta.groundPoint;
+          state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
           npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
           w.e.setNpcDo(npcKey, doMeta.key);
         } else {
-          state.placeNpcAt(npc, closePolyResult);
+          const overrideGroundPoint = at.meta?.npcKey === npcKey ? parseGroundPoint(npc.position) : undefined;
+          state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.idleClip = state.clips.idle;
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
           npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
@@ -581,6 +583,11 @@ export type State = {
     geometry: THREE.BufferGeometry;
     skinIndex: number;
   }): Npc;
+  /**
+   * We override when:
+   * - placing npc off-mesh at decor point
+   * - when respawning into self
+   */
   placeNpcAt(npc: Npc, closePolyResult: FindNearestPolyResult, override?: JshCli.GroundPoint): void;
   devHotReload(): void;
   /**
