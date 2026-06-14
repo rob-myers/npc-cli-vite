@@ -139,7 +139,7 @@ export default function Doors() {
         const frontArray = new Float32Array(w.gms.length << 8);
         const backArray = new Float32Array(w.gms.length << 8);
 
-        for (const { instanceId, connector } of Object.values(state.byKey)) {
+        for (const { instanceId, connector, hull } of Object.values(state.byKey)) {
           const label = (connector.meta.label as string | undefined) ?? "";
           if (!state.labelToLayer.has(label)) {
             state.labelToLayer.set(label, nextLabelIdx);
@@ -147,7 +147,9 @@ export default function Doors() {
           }
           frontArray[instanceId] = state.labelToLayer.get(label) ?? 0;
 
-          if (typeof connector.meta.backLabel === "string") {
+          if (hull) {
+            backArray[instanceId] = 0;
+          } else if (typeof connector.meta.backLabel === "string") {
             const backLabel = connector.meta.backLabel as string;
             if (!state.labelToLayer.has(backLabel)) {
               state.labelToLayer.set(backLabel, nextLabelIdx);
