@@ -235,6 +235,7 @@ export class Npc {
       }
 
       // 🔔 sporadic transparency issue right after 1st spawn
+      this.material.depthWrite = true;
       this.material.needsUpdate = true;
     }
   }
