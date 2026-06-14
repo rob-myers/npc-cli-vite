@@ -109,8 +109,8 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         }}
         onWheel={b.forwardWheelEvents.bind(b)}
       >
-        <div className="text-[2rem]">{b.key}</div>
-        <div className="text-[#ff9] p-4 text-[2.5rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2] text-center select-none">
+        <div className="text-[2.5rem]">{b.key}</div>
+        <div className="text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2] text-center select-none">
           {b.words}
         </div>
         <div
