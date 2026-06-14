@@ -1,5 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
-import { ArrowsOutSimpleIcon } from "@phosphor-icons/react";
+import { ArrowDownRightIcon } from "@phosphor-icons/react";
 import React from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -99,16 +99,17 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         onWheel={b.onWheel}
       >
         <div className="text-[2.5rem]">{b.key}</div>
-        <div className="text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-2 border-white/30 leading-[1.2] text-center select-none">
+
+        <div className="text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
           {b.words}
         </div>
         <div
-          className="absolute -bottom-2 -right-2 size-5 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
+          className="absolute -bottom-2 -right-2 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
           onPointerDown={b.onResizeStart}
           onPointerMove={b.onResizeMove}
           onPointerUp={b.onResizeEnd}
         >
-          <ArrowsOutSimpleIcon className="size-3" />
+          <ArrowDownRightIcon className="size-8" />
         </div>
       </div>
     </Html3d>
