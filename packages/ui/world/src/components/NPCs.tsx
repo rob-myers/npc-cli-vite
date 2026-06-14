@@ -244,8 +244,7 @@ export default function NPCs() {
 
         if (npc.agentId === null) {
           // fade spawn from doable to nav
-          // 🚧 facing `prev --> next`
-          await npc.fadeSpawn(result.position);
+          await npc.fadeSpawn(result.position, { facingTarget: true });
           return;
         }
 
