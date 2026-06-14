@@ -409,16 +409,7 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   texArray.updateIndex(layerIndex);
 }
 
-export const buddhistIconKeys = [
-  "conch-shell",
-  "dharma-wheel",
-  "endless-knot",
-  "golden-fish",
-  "lotus",
-  "parasol",
-  "treasure-vase",
-  "victory-banner",
-] as const;
+export const doorIconKeys = ["dharma-wheel", "endless-knot"] as const;
 
 export function drawDoorIconLayer(
   texArray: TexArray,
