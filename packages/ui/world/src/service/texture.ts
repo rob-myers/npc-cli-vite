@@ -79,7 +79,7 @@ function drawDoorBasePanel() {
   }
 
   // horizontal dividers between panels
-  ct.lineWidth = 2;
+  ct.lineWidth = 40;
   for (const lineY of [texH * 0.24, texH * 0.5, texH * 0.74]) {
     ct.strokeStyle = "rgba(160,180,200,0.1)";
     ct.beginPath();
