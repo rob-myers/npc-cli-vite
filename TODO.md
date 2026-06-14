@@ -30,7 +30,7 @@
   - ✅ improve position
   - ✅ can change text
 
-- 🚧 improve label/bubble position for sit, lie
+- ✅ improve label/bubble position for sit, lie
   - ✅ by default offset is 0, 0, 0
   - ✅ fix hmr i.e. preserve label height
   - ✅ fix label whilst moving
@@ -38,7 +38,7 @@
   - ✅ fix bubble while scale
   - ✅ hide label when bubble exists
   - ❌ slight height adjustments for idle/stand too
-  - clarify implementation
+  - ❌ clarify implementation
 
 - ✅ can fade to/from black
   - ✅ npc has `colorScale` and `opacityScale` uniforms
@@ -112,16 +112,13 @@
 
 - ✅ on hmr `move` should continue
 
-- 🚧 draw buddhist icons on back of doors
+- ✅ draw buddhist icons on back of doors
   - ✅ randomly
-  - clean buildDoorWithLabelTextures
-  - meaningfully
+  - ✅ clean buildDoorWithLabelTextures
+  - ❌ meaningfully
 
-- idle-left with left-leg forward
-- idle-right with right-leg forward
-- `npc.setMoveType` walk, run, shuffle
 
-- small-map-0 -> 301-only
+- ✅ small-map-0 -> 301-only
   - also clean up other map names
 - remove all suffices e.g. --0.25x0.25 from all symbols
 - track runtime decor so preserve on hmr
@@ -134,6 +131,9 @@
 
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
+- idle-left with left-leg forward
+- idle-right with right-leg forward
+- `npc.setMoveType` walk, run, shuffle
 - fetch gltf json so can cache-bust
 - labels as decor point
   - add some labels to 301

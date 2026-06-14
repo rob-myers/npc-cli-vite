@@ -1,5 +1,5 @@
 {
-  "filename": "larger-map.json",
+  "filename": "301-302.json",
   "width": 1200,
   "height": 2400,
   "nodes": [
@@ -8,11 +8,11 @@
       "name": "g-301--bridge",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "symbol",
       "srcKey": "g-301--bridge",
-      "baseRect": {"width": 1200, "height": 600},
-      "offset": {"x": -5.5, "y": -22},
+      "baseRect": { "width": 1200, "height": 600 },
+      "offset": { "x": -5.5, "y": -22 },
       "cssTransform": "matrix(1, 0, 0, 1, -5.5, -22)"
     },
     {
@@ -20,15 +20,15 @@
       "name": "g-302--xboat-repair-bay",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 1199},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 1199 },
       "type": "symbol",
       "srcKey": "g-302--xboat-repair-bay",
-      "baseRect": {"width": 1200, "height": 600},
-      "offset": {"x": -4, "y": 62},
+      "baseRect": { "width": 1200, "height": 600 },
+      "offset": { "x": -4, "y": 62 },
       "cssTransform": "matrix(1, 0, 0, -1, -4, 1261)"
     }
   ],
-  "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 2422},
+  "bounds": { "x": -5.5, "y": -22, "width": 1205.5, "height": 2422 },
   "type": "map",
-  "key": "larger-map"
+  "key": "301-302"
 }
