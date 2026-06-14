@@ -6,7 +6,7 @@ import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createXyQuad } from "../service/geometry";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -110,7 +110,7 @@ export default function Walls() {
   const mat = useMemo(() => {
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
     const opacityUniform = uniform(0.5);
-    const outputNode = w.view.withPickOutput(PICK_TYPE.wall);
+    const outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.wall);
 
     const baseColorUniform = uniform(new THREE.Color());
     // Per wall: up to 2 nearest light world positions (sentinel y=-1000 → contributes 0)

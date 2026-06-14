@@ -41,7 +41,7 @@ import {
   mergeWithGroups,
   parseGroundPoint,
 } from "../service/geometry";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { createLabelMaterial, createShadowMaterial, fetchSkinOverlay } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
@@ -83,7 +83,7 @@ export default function NPCs() {
         const opacityScale = uniform(1);
         const rgb = texNode.rgb.mul(ndotv).mul(colorScale).clamp(0, 1);
         mainMaterial.colorNode = vec4(rgb, texNode.a.mul(opacityScale));
-        mainMaterial.outputNode = w.view.withPickOutputId(PICK_TYPE.npc, pickIdNode);
+        mainMaterial.outputNode = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
         const label = createLabelMaterial({
           texArray: w.texNpcLabel,
           layerIndex: pickId,
@@ -340,8 +340,7 @@ export default function NPCs() {
           npc.pinTo(closePolyResult);
 
           // might have spawned into a sensor
-          const agent = state.crowd.agents[npc.agentId];
-          state.physics.positions.push(npc.bodyUid, ...agent.position);
+          state.physics.positions.push(npc.bodyUid, ...groundPointToTuple(groundPoint));
           // } else if (type === "navigable") {
           //   throw Error("not placable");
         } else {
@@ -353,10 +352,10 @@ export default function NPCs() {
       },
       async spawn({ npcKey, at, as, angle, facing }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
-          throw Error(`npcKey must match: ${npcKeyPattern}`);
+          throw Error(`opts.npcKey must match: ${npcKeyPattern}`);
         }
         if (!at) {
-          throw Error("opts.at: must exist");
+          throw Error("opts.at must exist");
         }
 
         const groundAt = parseGroundPoint(at);

@@ -8,7 +8,7 @@ import * as THREE from "three/webgpu";
 import { MAX_GEOMORPH_INSTANCES } from "../const";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { drawLightsIntoTexture, drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -141,7 +141,7 @@ export default function Floor() {
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return {
       texNode: texNode.depth(instanceIndex),
-      pickNode: w.view.withPickOutput(PICK_TYPE.floor),
+      pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor),
       uid: generateUUID(),
     };
   }, [w.texFloor.hash]);

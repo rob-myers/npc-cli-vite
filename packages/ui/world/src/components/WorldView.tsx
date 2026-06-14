@@ -88,7 +88,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.update();
       },
       getPickedFromPixel([r, g, b, _a]) {
-        // console.log(`pixel @ (${x}, ${y}):`, { r, g, b, a });
+        // console.log(`pixel`, { r, g, b, a });
         const pick = decodePick(r, g, b);
 
         if (pick === null) {

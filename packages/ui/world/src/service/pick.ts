@@ -1,22 +1,34 @@
 import { ExhaustiveError } from "@npc-cli/util";
 import { gmFloorExtraScale, worldToSguScale } from "../const";
 
-/** Object type IDs — spaced out for visual debug */
-export const PICK_TYPE = { floor: 25, ceiling: 50, door: 75, wall: 100, obstacle: 125, npc: 150, decor: 175 } as const;
+/**
+ * - Object pick red amounts (0 ≤ r ≤ 255).
+ * - Spaced out for visual debug.
+ */
+export const OBJECT_PICK_KEY_TO_RED = {
+  floor: 25,
+  ceiling: 50,
+  door: 75,
+  wall: 100,
+  obstacle: 125,
+  npc: 150,
+  decor: 175,
+} as const;
 
-export type ObjectPickKey = keyof typeof PICK_TYPE;
+export type ObjectPickKey = keyof typeof OBJECT_PICK_KEY_TO_RED;
 
-type PickType = (typeof PICK_TYPE)[keyof typeof PICK_TYPE];
-const pickTypeToName = Object.fromEntries(Object.entries(PICK_TYPE).map(([k, v]) => [v, k])) as Record<
-  PickType,
-  keyof typeof PICK_TYPE
+type ObjectPickRedNumber = (typeof OBJECT_PICK_KEY_TO_RED)[keyof typeof OBJECT_PICK_KEY_TO_RED];
+
+const objectPickRedToKey = Object.fromEntries(Object.entries(OBJECT_PICK_KEY_TO_RED).map(([k, v]) => [v, k])) as Record<
+  ObjectPickRedNumber,
+  keyof typeof OBJECT_PICK_KEY_TO_RED
 >;
 
 /**
- * Decode RGBA pixel → { type, instanceId } or null
+ * Decode RGBA pixel to `{ type, instanceId }` or `null`.
  */
 export function decodePick(r: number, g: number, b: number) {
-  const type = pickTypeToName[r as PickType];
+  const type = objectPickRedToKey[r as ObjectPickRedNumber];
   if (!type) return null;
   const instanceId = (g << 8) | b;
   switch (type) {

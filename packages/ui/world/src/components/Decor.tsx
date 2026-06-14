@@ -21,7 +21,7 @@ import {
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
 import { addToDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { WorldContext } from "./world-context";
 
 export default function Decor() {
@@ -404,7 +404,7 @@ export default function Decor() {
 
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
       texMat.colorNode = texNode.mul(0.6);
-      texMat.outputNode = w.view.withPickOutput(PICK_TYPE.decor);
+      texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
 
       state.ready = true;
       w.setNextPending({ decor: false });

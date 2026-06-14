@@ -28,7 +28,7 @@ import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
-import { PICK_TYPE } from "../service/pick";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -202,7 +202,7 @@ export default function Obstacles(_props: Props) {
     const texNodeFinal = texNode.depth(uvTexIds);
     return {
       colorNode: texNodeFinal,
-      outputNode: w.view.withPickOutput(PICK_TYPE.obstacle),
+      outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),
     };
   }, [w.texObs.hash]);
