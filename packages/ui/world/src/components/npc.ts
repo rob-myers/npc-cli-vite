@@ -208,7 +208,6 @@ export class Npc {
       this.reject.scale = reject;
       this.fadeState.target = 0;
       this.fadeState.delta = -Math.abs(speed);
-      this.w.bubble.setShownIfExists(this.key, false);
     });
   }
 
@@ -216,6 +215,7 @@ export class Npc {
     const labelVisible = this.labelMaterial.visible;
     try {
       await this.fadeOut();
+      this.w.bubble.setShownIfExists(this.key, false);
       const groundTarget = parseGroundPoint(at);
       await this.w.npc.spawn({
         npcKey: this.key,
@@ -247,7 +247,6 @@ export class Npc {
     const done = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
     const s = Math.max(0, done ? this.fadeState.target : next);
 
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name) * s;
     this.labelMaterial.visible = s >= 1;
     this.colorScale.value = next;
     this.opacityScale.value = next;
