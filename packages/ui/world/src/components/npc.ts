@@ -286,6 +286,13 @@ export class Npc {
    */
   async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
     const p = parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
+
+    if (this.idleClip.name === "sit") {
+      throw Error("not while sitting");
+    } else if (this.idleClip.name === "lie") {
+      throw Error("not while lying");
+    }
+
     const target = geomService.getThreeRotationY(p.y - this.position.z, p.x - this.position.x);
     if (immediate) {
       this.skinnedMesh.rotation.y = target;
@@ -295,7 +302,8 @@ export class Npc {
     const totalDiff = deltaAngle(startAngle, target);
     // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
     const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
-    const walking = Math.abs(totalDiff) > (30 / 180) * Math.PI;
+    const thresholdDegrees = 30;
+    const walking = Math.abs(totalDiff) > thresholdDegrees * (Math.PI / 180);
 
     try {
       await new Promise<string>((resolve, reject) => {
