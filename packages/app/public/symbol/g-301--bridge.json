@@ -214,11 +214,11 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "f57866af-ef6d-498e-bc59-fc164f474979",
-          "name": "door hull edge=s slideDirection=[-1,0]",
+          "name": "door hull edge=s slide=[-1,0]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 250, "f": 594},
@@ -241,7 +241,7 @@
         },
         {
           "id": "33a253de-353e-45d6-a4c6-e684f2fb7bd3",
-          "name": "door hull edge=s slideDirection=[1,0]",
+          "name": "door hull edge=s slide=[1,0]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 302, "f": 594},
@@ -264,7 +264,7 @@
         },
         {
           "id": "773d28b8-504f-435c-9988-ed1123c8b2a5",
-          "name": "door hull edge=s slideDirection=[-1,0]",
+          "name": "door hull edge=s slide=[-1,0]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 850, "f": 594},
@@ -287,7 +287,7 @@
         },
         {
           "id": "9ee8e967-41ef-412b-ac20-b943beec73fa",
-          "name": "door hull edge=s slideDirection=[1,0]",
+          "name": "door hull edge=s slide=[1,0]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 902, "f": 594},
@@ -310,7 +310,7 @@
         },
         {
           "id": "1a4d93a0-62a7-45a3-8057-5128f2f79d76",
-          "name": "door hull edge=w slideDirection=[0,1]",
+          "name": "door hull edge=w slide=[0,1]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -6, "f": 302},
@@ -333,7 +333,7 @@
         },
         {
           "id": "2267cba7-1ce5-418b-ac19-e0d71468229e",
-          "name": "door hull edge=w slideDirection=[0,-1]",
+          "name": "door hull edge=w slide=[0,-1]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -6, "f": 250},
@@ -356,7 +356,7 @@
         },
         {
           "id": "a9566cad-d538-4a5d-9a42-abff16cf3870",
-          "name": "door hull edge=e slideDirection=[0,-1]",
+          "name": "door hull edge=e slide=[0,-1]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1194, "f": 250},
@@ -379,7 +379,7 @@
         },
         {
           "id": "1e5320ec-5545-4d87-bc38-f41b768a01db",
-          "name": "door hull edge=e slideDirection=[0,1]",
+          "name": "door hull edge=e slide=[0,1]",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1194, "f": 300},
