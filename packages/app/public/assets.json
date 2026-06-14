@@ -4495,7 +4495,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -6446,7 +6446,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6466,7 +6466,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6486,7 +6486,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6506,7 +6506,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6526,7 +6526,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6546,7 +6546,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6566,7 +6566,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -6586,7 +6586,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0,
             "y": 1.7,
@@ -17549,7 +17549,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19409,7 +19409,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19427,7 +19427,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19444,7 +19444,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19462,7 +19462,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19479,7 +19479,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19497,7 +19497,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19514,7 +19514,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19532,7 +19532,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19549,7 +19549,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19567,7 +19567,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19584,7 +19584,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19602,7 +19602,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19619,7 +19619,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19637,7 +19637,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -19654,7 +19654,7 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1,
+              "h": 1.7,
               "symKey": "fuel--010--2x4",
               "origObstacleId": 0
             }
@@ -19672,7 +19672,7 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1,
+            "h": 1.7,
             "symKey": "fuel--010--2x4",
             "origObstacleId": 0
           }
@@ -30525,7 +30525,7 @@
     "light-theme": {
       "background": "bg-[#333]",
       "ceiling": {
-        "hull": {"fill": "#000", "stroke": "#fff0"},
+        "hull": {"fill": "#000", "stroke": "#fff3"},
         "nonHull": {"fill": "#111", "stroke": "#000"}
       },
       "floor": {
@@ -30537,5 +30537,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -1882485805}
+  "hash": {"obstacles": -1917099300}
 }
