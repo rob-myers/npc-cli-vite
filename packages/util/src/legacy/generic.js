@@ -27,9 +27,7 @@ export function addToLookup(newItem, lookup) {
  */
 export function assertDefined(value, valueName) {
   if (value === undefined) {
-    throw new Error(
-      `Encountered unexpected undefined value${valueName ? ` for '${valueName}'` : ""}`,
-    );
+    throw new Error(`Encountered unexpected undefined value${valueName ? ` for '${valueName}'` : ""}`);
   }
   return /** @type {*} */ (value);
 }
@@ -236,12 +234,10 @@ export function generateSelector(selector, extraArgs, strict = false) {
   if (typeof selector === "string") {
     /** @param {any} x @param {any[]} _xs */
     return function selectByStr(x, ..._xs) {
-      const selected = /** @type {string} */ (selector)
-        .split(".")
-        .reduce(
-          (agg, part) => (x = agg)[part], // x is parent of possible function
-          /** @type {*} */ (x),
-        );
+      const selected = /** @type {string} */ (selector).split(".").reduce(
+        (agg, part) => (x = agg)[part], // x is parent of possible function
+        /** @type {*} */ (x),
+      );
       if (strict === true && typeof selected === "undefined") {
         throw Error(`selector not found: ${selector}`);
       }
@@ -621,10 +617,7 @@ export function takeFirst(set) {
  * @returns {string}
  */
 export function testNever(x, opts) {
-  return (
-    opts?.override ??
-    `testNever: ${jsStringify(x)} not implemented${opts?.suffix ? ` (${opts.suffix})` : ""}`
-  );
+  return opts?.override ?? `testNever: ${jsStringify(x)} not implemented${opts?.suffix ? ` (${opts.suffix})` : ""}`;
 }
 
 /**
@@ -707,12 +700,12 @@ export function tryLocalStorageSet(key, value) {
  */
 export function visibleUnicodeLength(input) {
   const split = input.split("\u{200D}");
-  return (
-    split.reduce(
-      (sum, item) => sum + Array.from(item.split(/[\ufe00-\ufe0f]/).join("")).length,
-      0,
-    ) / split.length
-  );
+  return split.reduce((sum, item) => sum + Array.from(item.split(/[\ufe00-\ufe0f]/).join("")).length, 0) / split.length;
+}
+
+/** @param {string} input */
+export function zealousTrim(input) {
+  return input.trim().replace(/\s\s+/g, " ").trim();
 }
 
 //#region logging
@@ -721,8 +714,7 @@ export function visibleUnicodeLength(input) {
  * https://stackoverflow.com/a/26078207/2917822
  * @type {(...args: any[]) => void}
  */
-export const debug = (() =>
-  Function.prototype.bind.call(console.debug, console, "\x1b[36mDEBUG\x1b[0m"))();
+export const debug = (() => Function.prototype.bind.call(console.debug, console, "\x1b[36mDEBUG\x1b[0m"))();
 
 /** @param {string} text */
 export function yellow(text) {
@@ -733,22 +725,19 @@ export function yellow(text) {
  * https://stackoverflow.com/a/26078207/2917822
  * @type {(...args: any[]) => void}
  */
-export const error = (() =>
-  Function.prototype.bind.call(console.error, console, "\x1b[31mERROR\x1b[0m"))();
+export const error = (() => Function.prototype.bind.call(console.error, console, "\x1b[31mERROR\x1b[0m"))();
 
 /**
  * https://stackoverflow.com/a/26078207/2917822
  * @type {(...args: any[]) => void}
  */
-export const info = (() =>
-  Function.prototype.bind.call(console.info, console, "\x1b[34mINFO\x1b[0m"))();
+export const info = (() => Function.prototype.bind.call(console.info, console, "\x1b[34mINFO\x1b[0m"))();
 
 /**
  * https://stackoverflow.com/a/26078207/2917822
  * @type {(...args: any[]) => void}
  */
-export const warn = (() =>
-  Function.prototype.bind.call(console.warn, console, "\x1b[33mWARN\x1b[0m"))();
+export const warn = (() => Function.prototype.bind.call(console.warn, console, "\x1b[33mWARN\x1b[0m"))();
 
 //#endregion
 

@@ -1,3 +1,5 @@
+import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
+import * as profiles from "@npc-cli/cli/jsh/profiles";
 import { useEffectNonStrict, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { error, jsStringify, keys, testNever, warn } from "@npc-cli/util/legacy/generic";
@@ -250,12 +252,19 @@ export function Tty(props: Props) {
   // useEffectNonStrict so it occurs after BaseTty's
   // sync ~/PROFILE so ready for useEffectNonStrict
   useEffectNonStrict(() => {
-    if (baseRef.current?.session) {
-      baseRef.current.session.var.PROFILE = props.profile;
+    const session = baseRef.current?.session;
+
+    if (session) {
+      const profileKey: ProfileKey = isProfileKey(session.var.PROFILE_KEY)
+        ? session.var.PROFILE_KEY
+        : "default_profile";
+      session.var.PROFILE_KEY = profileKey;
+      session.var.PROFILE = profilesLookup[profileKey];
     }
+
     // Boot profile (possibly while disabled)
-    if (baseRef.current?.session && !state.booted) {
-      const { xterm, session } = baseRef.current;
+    if (session && !state.booted) {
+      const { xterm, session } = baseRef.current as BaseTtyState;
       xterm.initialise();
       state.booted = true;
 
@@ -271,7 +280,7 @@ export function Tty(props: Props) {
         await session.ttyShell.runProfile();
       });
     }
-  }, [baseRef.current?.session, props.disabled, props.profile]);
+  }, [baseRef.current?.session, props.disabled]);
 
   return (
     <div
@@ -301,7 +310,6 @@ export interface Props extends BaseTabProps {
   /** Can initialize variables */
   env: Partial<Session["var"]>;
   /**
-   * 🚧
    * All js functions which induce shell functions.
    * They are partitioned by "fileKey".
    */
@@ -312,13 +320,11 @@ export interface Props extends BaseTabProps {
    * They are spread into `/etc`.
    */
   shFiles: Record<string, string>;
-  /** Synced with e.g. profile-1.sh */
-  profile: string;
+
   onKey?(e: KeyboardEvent): void;
 }
 
 export interface BaseTabProps {
-  tabKey: string;
   /**
    * A Tab is disabled if either:
    * - Tabs disabled (all tabs disabled)
@@ -351,4 +357,9 @@ interface TabStoreTabMeta {
    */
   ttyWorldKey?: string;
   ttyBootedAt?: number;
+}
+
+const profilesLookup = { ...profiles };
+function isProfileKey(key: any): key is ProfileKey {
+  return key && key in profilesLookup;
 }

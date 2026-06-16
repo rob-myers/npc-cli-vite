@@ -479,6 +479,9 @@ importers:
 
   packages/ui-registry:
     dependencies:
+      '@npc-cli/cli':
+        specifier: workspace:^
+        version: link:../cli
       '@npc-cli/ui__blog':
         specifier: workspace:^
         version: link:../ui/blog
