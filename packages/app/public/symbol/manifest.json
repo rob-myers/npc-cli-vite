@@ -108,14 +108,14 @@
       "type": "symbol",
       "key": "console--019--2x2"
     },
-    "bridge--042--8x9": {
-      "filename": "bridge--042--8x9.json",
-      "thumbnailFilename": "bridge--042--8x9.thumbnail.png",
+    "bridge--042": {
+      "filename": "bridge--042.json",
+      "thumbnailFilename": "bridge--042.thumbnail.png",
       "width": 480,
       "height": 540,
       "bounds": { "x": -4.5, "y": -13, "width": 489.2, "height": 558 },
       "type": "symbol",
-      "key": "bridge--042--8x9"
+      "key": "bridge--042"
     },
     "office--001--2x2": {
       "filename": "office--001--2x2.json",
