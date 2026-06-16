@@ -117,15 +117,38 @@
   - ✅ clean buildDoorWithLabelTextures
   - ❌ meaningfully
 
-- 🚧 hull door opening/closing should trigger other
-  - 🚧 hull doors in same geomorph should not intersect
+- ✅ hull door opening/closing should trigger other
+  - ✅ hull doors in same geomorph should not intersect
     - ✅ 101
     - ✅ 301
-    - 🚧 302
+    - ✅ 302
 
 - ✅ small-map-0 -> 301-only
   - also clean up other map names
-- remove all suffices e.g. --0.25x0.25 from all symbols
+
+- better approach to default tty profile
+  - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
+
+- 🚧 remove all suffices e.g. --0.25x0.25 from all symbols
+  - ✅ remove suffix from generating script `extract-starship-pngs`
+  - 🚧 remove suffices from extant files
+    - pngs
+    - assets.json
+    - sheets.json
+    - starship-symbol/manifest.json
+    - mask/{symbol}.svg
+    - {symbol}.json
+    - {other_symbol}.json
+    - symbol/manifest.json
+    - const.ts
+      - `symbolByGroup`
+      - `extraSymbols`
+  - ✅ migrate starship-symbol/fuel 1st
+    - ✅ please rename files with basename `fuel--\d{3}--\d+x\d+` with basename `fuel--\d{3}`
+    - ✅ find replace `fuel--(\d{3})--\d+x\d+` with `fuel--$1`
+
+- new todos i.e. current go into technical and start new section
+
 - track runtime decor so preserve on hmr
 - can remove decor rect/circle
   - ❌ track gaps
@@ -144,8 +167,6 @@
 - labels as decor point
   - add some labels to 301
   - Decor renders them
-- better approach to default tty profile
-  - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
 - onchange map sealed doors are staying sealed
@@ -157,7 +178,7 @@
 - world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
-- 🚧 check glsl fallback e.g. incognito or force
+- ❌ check glsl fallback e.g. incognito or force
   - Walls and Doors don't draw i.e. too many
 - fix precision in `assets.json`
 - start generating documentation in README.md

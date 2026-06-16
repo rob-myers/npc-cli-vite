@@ -1842,7 +1842,7 @@
       ],
       "symbols": [
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1853,10 +1853,10 @@
             "e": -0.0075,
             "f": 0.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1867,10 +1867,10 @@
             "e": 8.9925,
             "f": 0.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1881,10 +1881,10 @@
             "e": 15.0425,
             "f": 0.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1895,10 +1895,10 @@
             "e": 23.9925,
             "f": 0.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1909,10 +1909,10 @@
             "e": -0.0075,
             "f": 27.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1923,10 +1923,10 @@
             "e": 8.9925,
             "f": 27.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1937,10 +1937,10 @@
             "e": 14.9925,
             "f": 27.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "width": 6,
           "height": 3,
           "transform": {
@@ -1951,7 +1951,7 @@
             "e": 23.9925,
             "f": 27.0425
           },
-          "meta": {"fuel--010--2x4": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.7}
         },
         {
           "symbolKey": "stateroom--020--2x3",
@@ -4551,8 +4551,8 @@
       "hullWalls": [],
       "symbols": []
     },
-    "fuel--010--2x4": {
-      "key": "fuel--010--2x4",
+    "fuel--010": {
+      "key": "fuel--010",
       "isHull": false,
       "width": 6,
       "height": 3,
@@ -4567,7 +4567,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         }
@@ -6596,7 +6596,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, -0.0075, 0.0425]
@@ -6616,7 +6616,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 8.9925, 0.0425]
@@ -6636,7 +6636,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 15.0425, 0.0425]
@@ -6656,7 +6656,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 23.9925, 0.0425]
@@ -6676,7 +6676,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, -0.0075, 27.0425]
@@ -6696,7 +6696,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 8.9925, 27.0425]
@@ -6716,7 +6716,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 14.9925, 27.0425]
@@ -6736,7 +6736,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 23.9925, 27.0425]
@@ -17673,8 +17673,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "fuel--010--2x4": {
-      "key": "fuel--010--2x4",
+    "fuel--010": {
+      "key": "fuel--010",
       "isHull": false,
       "width": 6,
       "height": 3,
@@ -17689,7 +17689,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         }
@@ -18609,7 +18609,7 @@
       {"id": "extra--001--fresher--0.5x0.5"},
       {"id": "extra--002--fresher--0.5x0.5"},
       {"id": "extra--021--shower"},
-      {"id": "fuel--010--2x4"},
+      {"id": "fuel--010"},
       {"id": "couch-and-chairs--006--0.4x2"}
     ],
     [
@@ -19636,7 +19636,7 @@
       ],
       "obstacles": [
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19648,7 +19648,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19666,12 +19666,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19683,7 +19683,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19701,12 +19701,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19718,7 +19718,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19736,12 +19736,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19753,7 +19753,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19771,12 +19771,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19788,7 +19788,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19806,12 +19806,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19823,7 +19823,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19841,12 +19841,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19858,7 +19858,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19876,12 +19876,12 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "fuel--010--2x4",
+          "symbolKey": "fuel--010",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -19893,7 +19893,7 @@
               "obstacle": true,
               "fuel": true,
               "h": 1.7,
-              "symKey": "fuel--010--2x4",
+              "symKey": "fuel--010",
               "origObstacleId": 0
             }
           },
@@ -19911,7 +19911,7 @@
             "obstacle": true,
             "fuel": true,
             "h": 1.7,
-            "symKey": "fuel--010--2x4",
+            "symKey": "fuel--010",
             "origObstacleId": 0
           }
         },
@@ -31112,5 +31112,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -1917099300}
+  "hash": {"obstacles": -1378549866}
 }

@@ -480,8 +480,8 @@
       "width": 1220,
       "height": 633
     },
-    "fuel--010--2x4": {
-      "key": "fuel--010--2x4",
+    "fuel--010": {
+      "key": "fuel--010",
       "group": "symbol-fuel",
       "width": 1238,
       "height": 639
