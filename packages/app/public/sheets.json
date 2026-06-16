@@ -5,8 +5,8 @@
       "rect": {"x": 2, "y": 2, "width": 2446, "height": 2790},
       "sheetId": 0
     },
-    "fuel--010--2x4": {
-      "key": "fuel--010--2x4",
+    "fuel--010": {
+      "key": "fuel--010",
       "rect": {"x": 2450, "y": 2, "width": 1238, "height": 639},
       "sheetId": 0
     },

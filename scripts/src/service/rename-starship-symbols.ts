@@ -81,7 +81,7 @@ export function metaFromSymbolFilename(matched: RegExpMatchArray): FileMeta {
   }
   return {
     srcName: matched[0],
-    dstName: `${category}--${matched[2]}--${gridDim[0]}x${gridDim[1]}.png`,
+    dstName: `${category}--${matched[2]}.png`,
     id,
     gridDim,
     is,
@@ -100,7 +100,7 @@ export function metaFromAltSymbolFilename(matched: RegExpMatchArray): FileMeta {
   const gridDim = matched[2].split("x").map((x) => Number(x) / 5) as [number, number];
   return {
     srcName: matched[0],
-    dstName: `${category}--${gridDim[0]}x${gridDim[1]}.png`,
+    dstName: `${category}.png`,
     id: -1,
     gridDim,
     is: [],

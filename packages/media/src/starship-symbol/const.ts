@@ -166,7 +166,7 @@ export const symbolByGroup = {
   },
 
   "symbol-fuel": {
-    "fuel--010--2x4": true,
+    "fuel--010": true,
   },
 
   "symbol-lounge": {
