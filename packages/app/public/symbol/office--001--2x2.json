@@ -8,12 +8,12 @@
       "name": "office--001--2x2 1",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "image",
       "srcType": "symbol",
       "srcKey": "office--001--2x2",
-      "baseRect": {"width": 126.60000000000001, "height": 124},
-      "offset": {"x": -2, "y": -2},
+      "baseRect": { "width": 126.60000000000001, "height": 124 },
+      "offset": { "x": -2, "y": -2 },
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     },
     {
@@ -21,12 +21,12 @@
       "name": "decor point label=office",
       "locked": true,
       "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 61, "f": 91.5},
+      "transform": { "a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 61, "f": 91.5 },
       "type": "image",
       "srcType": "decor",
       "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
+      "baseRect": { "width": 40, "height": 15 },
+      "offset": { "x": 0, "y": 0 },
       "cssTransform": "matrix(0.5, 0, 0, 0.5, 61, 91.5)"
     },
     {
@@ -34,7 +34,7 @@
       "name": "doors",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": true,
       "children": [
@@ -43,9 +43,9 @@
           "name": "door e optional slide=[0,-1]",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116.5, "f": 67.5},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 116.5, "f": 67.5 },
           "type": "rect",
-          "baseRect": {"width": 6.5, "height": 45},
+          "baseRect": { "width": 6.5, "height": 45 },
           "cssTransform": "matrix(1, 0, 0, 1, 116.5, 67.5)"
         },
         {
@@ -53,12 +53,12 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 56},
+          "transform": { "a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 56 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0, 1, -1, 0, 118, 56)"
         },
         {
@@ -66,12 +66,12 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 56},
+          "transform": { "a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 56 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0, 1, 1, 0, 122, 56)"
         },
         {
@@ -79,9 +79,9 @@
           "name": "door s slide=[1,0]",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 70, "f": 116},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 70, "f": 116 },
           "type": "rect",
-          "baseRect": {"width": 45, "height": 8},
+          "baseRect": { "width": 45, "height": 8 },
           "cssTransform": "matrix(1, 0, 0, 1, 70, 116)"
         },
         {
@@ -89,12 +89,12 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 68, "f": 122},
+          "transform": { "a": -1, "b": 0, "c": 0, "d": 1, "e": 68, "f": 122 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(-1, 0, 0, 1, 68, 122)"
         },
         {
@@ -102,12 +102,12 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 68, "f": 118},
+          "transform": { "a": -1, "b": 0, "c": 0, "d": -1, "e": 68, "f": 118 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(-1, 0, 0, -1, 68, 118)"
         }
       ]
@@ -117,20 +117,20 @@
       "name": "symbols",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": false,
       "children": [
         {
           "id": "365b8f25-b0ec-47f0-a6ec-a013a4b3552c",
-          "name": "console--019--2x2",
+          "name": "console--019",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
           "type": "symbol",
-          "srcKey": "console--019--2x2",
-          "baseRect": {"width": 120, "height": 120},
-          "offset": {"x": -0.7, "y": -0.7},
+          "srcKey": "console--019",
+          "baseRect": { "width": 120, "height": 120 },
+          "offset": { "x": -0.7, "y": -0.7 },
           "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
         }
       ]
@@ -140,7 +140,7 @@
       "name": "walls",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": false,
       "children": [
@@ -149,9 +149,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 4, "height": 122},
+          "baseRect": { "width": 4, "height": 122 },
           "cssTransform": "matrix(1, 0, 0, 1, 118, -2)"
         },
         {
@@ -159,9 +159,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 4, "height": 124},
+          "baseRect": { "width": 4, "height": 124 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
@@ -169,9 +169,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118 },
           "type": "rect",
-          "baseRect": {"width": 124, "height": 4},
+          "baseRect": { "width": 124, "height": 4 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
         },
         {
@@ -179,15 +179,15 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 124, "height": 4},
+          "baseRect": { "width": 124, "height": 4 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         }
       ]
     }
   ],
-  "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+  "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 124 },
   "type": "symbol",
   "key": "office--001--2x2"
 }

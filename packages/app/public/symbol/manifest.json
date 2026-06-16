@@ -18,23 +18,23 @@
       "type": "symbol",
       "key": "stateroom--019--2x3"
     },
-    "console--051--0.4x0.6": {
-      "filename": "console--051--0.4x0.6.json",
-      "thumbnailFilename": "console--051--0.4x0.6.thumbnail.png",
+    "console--051": {
+      "filename": "console--051.json",
+      "thumbnailFilename": "console--051.thumbnail.png",
       "width": 30,
       "height": 30,
       "bounds": { "x": 1.3, "y": -0.5, "width": 27.4, "height": 31 },
       "type": "symbol",
-      "key": "console--051--0.4x0.6"
+      "key": "console--051"
     },
-    "bed--003--1x1.6": {
-      "filename": "bed--003--1x1.6.json",
-      "thumbnailFilename": "bed--003--1x1.6.thumbnail.png",
+    "bed--003": {
+      "filename": "bed--003.json",
+      "thumbnailFilename": "bed--003.thumbnail.png",
       "width": 100,
       "height": 60,
       "bounds": { "x": -0.7, "y": -0.7, "width": 100.4, "height": 61.4 },
       "type": "symbol",
-      "key": "bed--003--1x1.6"
+      "key": "bed--003"
     },
     "extra--004--desk--0.5x1": {
       "filename": "extra--004--desk--0.5x1.json",
@@ -45,14 +45,14 @@
       "type": "symbol",
       "key": "extra--004--desk--0.5x1"
     },
-    "console--033--0.4x0.6": {
-      "filename": "console--033--0.4x0.6.json",
-      "thumbnailFilename": "console--033--0.4x0.6.thumbnail.png",
+    "console--033": {
+      "filename": "console--033.json",
+      "thumbnailFilename": "console--033.thumbnail.png",
       "width": 30,
       "height": 30,
       "bounds": { "x": 1.6, "y": -1.1, "width": 26.8, "height": 32.2 },
       "type": "symbol",
-      "key": "console--033--0.4x0.6"
+      "key": "console--033"
     },
     "extra--003--chair--0.25x0.25": {
       "filename": "extra--003--chair--0.25x0.25.json",
@@ -99,14 +99,14 @@
       "type": "symbol",
       "key": "iris-valves--005--1x1"
     },
-    "console--019--2x2": {
-      "filename": "console--019--2x2.json",
-      "thumbnailFilename": "console--019--2x2.thumbnail.png",
+    "console--019": {
+      "filename": "console--019.json",
+      "thumbnailFilename": "console--019.thumbnail.png",
       "width": 120,
       "height": 120,
       "bounds": { "x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4 },
       "type": "symbol",
-      "key": "console--019--2x2"
+      "key": "console--019"
     },
     "bridge--042": {
       "filename": "bridge--042.json",
@@ -135,32 +135,32 @@
       "type": "symbol",
       "key": "g-101--multipurpose"
     },
-    "bed--004--0.8x1.4": {
-      "filename": "bed--004--0.8x1.4.json",
-      "thumbnailFilename": "bed--004--0.8x1.4.thumbnail.png",
+    "bed--004": {
+      "filename": "bed--004.json",
+      "thumbnailFilename": "bed--004.thumbnail.png",
       "width": 76,
       "height": 40,
       "bounds": { "x": 0, "y": 0, "width": 84.4, "height": 52.4 },
       "type": "symbol",
-      "key": "bed--004--0.8x1.4"
+      "key": "bed--004"
     },
-    "bed--005--0.6x1.2": {
-      "filename": "bed--005--0.6x1.2.json",
-      "thumbnailFilename": "bed--005--0.6x1.2.thumbnail.png",
+    "bed--005": {
+      "filename": "bed--005.json",
+      "thumbnailFilename": "bed--005.thumbnail.png",
       "width": 76,
       "height": 40,
       "bounds": { "x": 0, "y": 0, "width": 76.4, "height": 40.4 },
       "type": "symbol",
-      "key": "bed--005--0.6x1.2"
+      "key": "bed--005"
     },
-    "console--031--1x1.2": {
-      "filename": "console--031--1x1.2.json",
-      "thumbnailFilename": "console--031--1x1.2.thumbnail.png",
+    "console--031": {
+      "filename": "console--031.json",
+      "thumbnailFilename": "console--031.thumbnail.png",
       "width": 60,
       "height": 60,
       "bounds": { "x": 0, "y": 0, "width": 75.4, "height": 61.4 },
       "type": "symbol",
-      "key": "console--031--1x1.2"
+      "key": "console--031"
     },
     "misc-stellar-cartography--023--4x4": {
       "filename": "misc-stellar-cartography--023--4x4.json",
@@ -180,14 +180,14 @@
       "type": "symbol",
       "key": "window--007--0x2.4"
     },
-    "table--004--1.2x2.4": {
-      "filename": "table--004--1.2x2.4.json",
-      "thumbnailFilename": "table--004--1.2x2.4.thumbnail.png",
+    "table--004": {
+      "filename": "table--004.json",
+      "thumbnailFilename": "table--004.thumbnail.png",
       "width": 60,
       "height": 120,
       "bounds": { "x": -2, "y": -12, "width": 68.8, "height": 144.8 },
       "type": "symbol",
-      "key": "table--004--1.2x2.4"
+      "key": "table--004"
     },
     "extra--005--chair-0.25x0.25": {
       "filename": "extra--005--chair-0.25x0.25.json",
@@ -252,14 +252,14 @@
       "type": "symbol",
       "key": "g-302--xboat-repair-bay"
     },
-    "couch-and-chairs--006--0.4x2": {
-      "filename": "couch-and-chairs--006--0.4x2.json",
-      "thumbnailFilename": "couch-and-chairs--006--0.4x2.thumbnail.png",
+    "couch-and-chairs--006": {
+      "filename": "couch-and-chairs--006.json",
+      "thumbnailFilename": "couch-and-chairs--006.thumbnail.png",
       "width": 30,
       "height": 120,
       "bounds": { "x": 1.3, "y": 2.5, "width": 27.4, "height": 115 },
       "type": "symbol",
-      "key": "couch-and-chairs--006--0.4x2"
+      "key": "couch-and-chairs--006"
     }
   }
 }

@@ -8,12 +8,12 @@
       "name": "stateroom--014--2x2 1",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "image",
       "srcType": "symbol",
       "srcKey": "stateroom--014--2x2",
-      "baseRect": {"width": 124, "height": 126.80000000000001},
-      "offset": {"x": -2, "y": -2},
+      "baseRect": { "width": 124, "height": 126.80000000000001 },
+      "offset": { "x": -2, "y": -2 },
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     },
     {
@@ -21,20 +21,20 @@
       "name": "symbols",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": true,
       "children": [
         {
           "id": "cf35bd35-052f-4488-a1bc-b679cf25699b",
-          "name": "bed--003--1x1.6 y=0.5",
+          "name": "bed--003 y=0.5",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 0},
+          "transform": { "a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 0 },
           "type": "symbol",
-          "srcKey": "bed--003--1x1.6",
-          "baseRect": {"width": 100, "height": 60},
-          "offset": {"x": 0, "y": 0},
+          "srcKey": "bed--003",
+          "baseRect": { "width": 100, "height": 60 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0, 1, 1, 0, 0, 0)"
         }
       ]
@@ -44,12 +44,12 @@
       "name": "decor point label=stateroom",
       "locked": true,
       "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 80, "f": 86},
+      "transform": { "a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 80, "f": 86 },
       "type": "image",
       "srcType": "decor",
       "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
+      "baseRect": { "width": 40, "height": 15 },
+      "offset": { "x": 0, "y": 0 },
       "cssTransform": "matrix(0.5, 0, 0, 0.5, 80, 86)"
     },
     {
@@ -57,7 +57,7 @@
       "name": "doors",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": true,
       "children": [
@@ -66,9 +66,9 @@
           "name": "door slide=[1,0]",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 67, "f": 115},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 67, "f": 115 },
           "type": "rect",
-          "baseRect": {"width": 46, "height": 10},
+          "baseRect": { "width": 46, "height": 10 },
           "cssTransform": "matrix(1, 0, 0, 1, 67, 115)"
         },
         {
@@ -76,12 +76,12 @@
           "name": "decor quad key=switch",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 122},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 122 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(1, 0, 0, 1, 58, 122)"
         },
         {
@@ -89,12 +89,12 @@
           "name": "decor quad key=switch",
           "locked": false,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 64, "f": 118},
+          "transform": { "a": -1, "b": 0, "c": 0, "d": -1, "e": 64, "f": 118 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(-1, 0, 0, -1, 64, 118)"
         },
         {
@@ -102,12 +102,12 @@
           "name": "decor point label=fresher",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 80, "f": 40},
+          "transform": { "a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 80, "f": 40 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "label",
-          "baseRect": {"width": 40, "height": 15},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 40, "height": 15 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0.5, 0, 0, 0.5, 80, 40)"
         },
         {
@@ -115,9 +115,9 @@
           "name": "door slide=[1,0]",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 66.5, "f": 55},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 66.5, "f": 55 },
           "type": "rect",
-          "baseRect": {"width": 46, "height": 10},
+          "baseRect": { "width": 46, "height": 10 },
           "cssTransform": "matrix(1, 0, 0, 1, 66.5, 55)"
         },
         {
@@ -125,12 +125,12 @@
           "name": "decor quad key=switch",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 48},
+          "transform": { "a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 48 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0, 1, -1, 0, 118, 48)"
         },
         {
@@ -138,12 +138,12 @@
           "name": "decor quad key=switch",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 66},
+          "transform": { "a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 66 },
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0, 1, -1, 0, 118, 66)"
         }
       ]
@@ -153,7 +153,7 @@
       "name": "walls",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": false,
       "children": [
@@ -162,9 +162,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 124, "height": 4},
+          "baseRect": { "width": 124, "height": 4 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
@@ -172,9 +172,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 4, "height": 124},
+          "baseRect": { "width": 4, "height": 124 },
           "cssTransform": "matrix(1, 0, 0, 1, 118, -2)"
         },
         {
@@ -182,9 +182,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 4, "height": 124},
+          "baseRect": { "width": 4, "height": 124 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
@@ -192,9 +192,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118 },
           "type": "rect",
-          "baseRect": {"width": 124, "height": 4},
+          "baseRect": { "width": 124, "height": 4 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
         },
         {
@@ -202,9 +202,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 58},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 58 },
           "type": "rect",
-          "baseRect": {"width": 60, "height": 4},
+          "baseRect": { "width": 60, "height": 4 },
           "cssTransform": "matrix(1, 0, 0, 1, 60, 58)"
         },
         {
@@ -212,15 +212,15 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 0},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 0 },
           "type": "rect",
-          "baseRect": {"width": 4, "height": 62},
+          "baseRect": { "width": 4, "height": 62 },
           "cssTransform": "matrix(1, 0, 0, 1, 58, 0)"
         }
       ]
     }
   ],
-  "bounds": {"x": -2, "y": -2, "width": 124, "height": 126.8},
+  "bounds": { "x": -2, "y": -2, "width": 124, "height": 126.8 },
   "type": "symbol",
   "key": "stateroom--014--2x2"
 }

@@ -58,41 +58,41 @@ export const symbolByGroup = {
   },
 
   "symbol-furniture-consoles-equipment": {
-    "bed--003--1x1.6": true,
-    "bed--004--0.8x1.4": true,
-    "bed--005--0.6x1.2": true,
+    "bed--003": true,
+    "bed--004": true,
+    "bed--005": true,
 
-    "console--005--1.2x4": true,
-    "console--006--1.2x3": true,
-    "console--010--1.2x2": true,
-    "console--011--1.2x2": true,
-    "console--018--1x1": true,
-    "console--019--2x2": true,
-    "console--022--1x2": true,
-    "console--031--1x1.2": true,
-    "console--033--0.4x0.6": true,
-    "console--051--0.4x0.6": true,
+    "console--005": true,
+    "console--006": true,
+    "console--010": true,
+    "console--011": true,
+    "console--018": true,
+    "console--019": true,
+    "console--022": true,
+    "console--031": true,
+    "console--033": true,
+    "console--051": true,
 
-    "couch-and-chairs--006--0.4x2": true,
-    "couch-and-chairs--007--0.6x1.4": true,
+    "couch-and-chairs--006": true,
+    "couch-and-chairs--007": true,
 
-    "counter--006--0.4x2": true,
-    "counter--007--0.4x1": true,
-    "counter--009--0.4x0.4": true,
-    "counter--010--0.4x0.4": true,
+    "counter--006": true,
+    "counter--007": true,
+    "counter--009": true,
+    "counter--010": true,
 
-    "medical-bed--005--0.6x1.2": true,
-    "medical-bed--006--1.6x3.6": true,
+    "medical-bed--005": true,
+    "medical-bed--006": true,
 
-    "table--004--1.2x2.4": true,
-    "table--009--0.8x0.8": true,
-    "table--012--0.8x0.8": true,
+    "table--004": true,
+    "table--009": true,
+    "table--012": true,
   },
 
   "symbol-lab": {
-    "lab--012--3x4": true,
-    "lab--018--4x4": true,
-    "lab--023--4x4": true,
+    "lab--012": true,
+    "lab--018": true,
+    "lab--023": true,
   },
 
   "symbol-machinery": {
@@ -153,16 +153,16 @@ export const symbolByGroup = {
   },
 
   "symbol-engineering": {
-    "engineering--045--4x6": true,
-    "engineering--047--4x7": true,
+    "engineering--045": true,
+    "engineering--047": true,
   },
 
   "symbol-fresher": {
-    "fresher--002--1x1": true,
-    "fresher--015--1x2": true,
-    "fresher--020--2x2": true,
-    "fresher--025--2x3": true,
-    "fresher--036--2x4": true,
+    "fresher--002": true,
+    "fresher--015": true,
+    "fresher--020": true,
+    "fresher--025": true,
+    "fresher--036": true,
   },
 
   "symbol-fuel": {

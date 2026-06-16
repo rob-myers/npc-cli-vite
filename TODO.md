@@ -149,7 +149,14 @@
   - ✅ migrate batch
     - ✅ please rename files with basename `{x}--\d{3}--\S+x\S+` with basename `{x}--\d{3}` where `x` in `battery|bridge|cargo|empty-room`
     - ✅ find replace `(battery|bridge|cargo|empty-room)--(\d{3})--[\d\.]+x[\d\.]*\d` with `$1--$2`
-  - migrate next batch
+  - ✅ migrate next batch
+    - ✅ furniture-consoles-equipment has many different prefixes
+      - delete folder
+      - `pnpm extract-starship-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment`
+    - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `engineering|fresher|furniture-consoles-equipment|bed|console|couch-and-chairs|counter|desk|fresher|medical-bed|table`
+    - ✅ find replace `"(engineering|fresher|furniture-consoles-equipment|bed|console|couch-and-chairs|counter|desk|fresher|medical-bed|table)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
+      - want to exclude cases `-fresher--`
+    - ✅ `pnpm gen-starship-sheets` before dev server
 
 - new todos i.e. current go into technical and start new section
 

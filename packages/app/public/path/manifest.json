@@ -63,9 +63,9 @@
       "width": 240,
       "height": 240
     },
-    "table--004--1.2x2.4": {
-      "key": "table--004--1.2x2.4",
-      "filename": "table--004--1.2x2.4.svg",
+    "table--004": {
+      "key": "table--004",
+      "filename": "table--004.svg",
       "pathCount": 1,
       "width": 43,
       "height": 120
