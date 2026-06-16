@@ -1,16 +1,18 @@
+import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
 import Tabs from "@npc-cli/ui__tabs";
 import World from "@npc-cli/ui__world";
 
 /**
- * We provide `toUi` for panes.
+ * We also provide `toUi` for panes.
  */
 export function getDefaultTabs() {
   const uid = () => `ui-${crypto.randomUUID()}`;
 
   const ttyKey = "tty-0";
   const worldKey = "world-0";
+  const profileKey: ProfileKey = "world_profile_v0_0";
 
   const jshMeta = Jsh.schema.decode({
     id: uid(),
@@ -18,10 +20,11 @@ export function getDefaultTabs() {
     uiKey: "Jsh",
     sessionKey: ttyKey,
     env: {
-      WORLD_KEY: worldKey,
+      PROFILE_KEY: profileKey,
       CACHE_SHORTCUTS: {
         w: "WORLD_KEY",
       },
+      WORLD_KEY: worldKey,
     },
   });
 

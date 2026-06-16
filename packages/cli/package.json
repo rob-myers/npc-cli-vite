@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./jsh/modules": "./src/jsh/modules.js",
+    "./jsh/profiles": "./src/jsh/profiles.js",
     "./jsh/scripts": "./src/jsh/scripts.js",
     "./shell/const": "./src/shell/const.ts",
     "./shell/query-client": "./src/shell/query-client.ts",

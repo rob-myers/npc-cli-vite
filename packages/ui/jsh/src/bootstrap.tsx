@@ -1,6 +1,8 @@
+import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import { zealousTrim } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
 import type { JshUiMeta } from "./schema";
@@ -12,7 +14,10 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
     invalid: false,
     envInvalid: false,
     sessionKey: uiStoreApi.getDefaultTitle("Jsh", "tty"), // e.g. tty-0
-    env: "WORLD_KEY=world-0",
+    env: zealousTrim(`
+      WORLD_KEY=world-0
+      PROFILE_KEY=${"default_profile" satisfies ProfileKey}
+    `),
     onClickCreate() {
       if (state.invalid || state.envInvalid) return;
 
@@ -29,7 +34,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
             // uppercase variable name, lowercase value e.g. world-0
             w: "WORLD_KEY",
           },
-          ...parseEnvString(state.env),
+          ...parseBasicEnvString(state.env),
         },
         title: state.sessionKey,
       } satisfies Partial<JshUiMeta>);
@@ -56,7 +61,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
           type="text"
           autoCorrect="off"
           className={cn(
-            "w-full p-1 border border-black/30 invalid:bg-red-200 outline-black font-mono text-green-600 text-sm",
+            "w-full p-1 border border-black/30 invalid:bg-red-500/30 outline-black font-mono text-green-600 text-sm",
           )}
           placeholder="ENV_VAR=value ..."
           onChange={(e) => state.set({ env: e.currentTarget.value })}
@@ -82,7 +87,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
   );
 }
 
-function parseEnvString(env: string): Record<string, string> {
+function parseBasicEnvString(env: string): Record<string, string> {
   const result: Record<string, string> = {};
   for (const part of env.trim().split(/\s+/)) {
     const eqIndex = part.indexOf("=");

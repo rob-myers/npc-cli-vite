@@ -17,6 +17,7 @@
     "@npc-cli/ui__tabs": "workspace:^",
     "@npc-cli/ui__template": "workspace:^",
     "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/cli": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "react": "catalog:",
     "react-reverse-portal": "catalog:",

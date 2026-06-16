@@ -126,12 +126,22 @@
 - ✅ small-map-0 -> 301-only
   - also clean up other map names
 
-- better approach to default tty profile
-  - e.g. currently won't update onchange profiles.ts without remaking `tty-{n}`
+- 🚧 better approach to default tty profile
+  - currently does not update onchange profiles.ts without remaking `tty-{n}`
+  - ✅ terminals have PROFILE_KEY
+  - ✅ PROFILE set via PROFILE_KEY
+  - ✅ PROFILE_KEY can be persisted
+  - ✅ hot-reload PROFILE via PROFILE_KEY onchange profiles.ts
+    - we don't rerun the profile but we change the value
 
-- 🚧 remove all suffices e.g. --0.25x0.25 from all symbols
+- clean tty
+  - type modules in packages/cli/src/tty/Tty.tsx
+    - `call 'x => Object.keys(x.lib)''
+  - clean Jsh props
+
+- ✅ remove all suffices e.g. --0.25x0.25 from all symbols
   - ✅ remove suffix from generating script `extract-starship-pngs`
-  - 🚧 remove suffices from extant files
+  - ✅ remove suffices from extant files
     - output/symbol-{foo} pngs except symbol-root, symbol-small-craft
     - assets.json
     - sheets.json

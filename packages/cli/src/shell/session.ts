@@ -91,8 +91,13 @@ export const sessionApi = {
           var: {
             PWD: "/home",
             OLDPWD: "",
-            ...persisted.var,
+            /**
+             * `env` can contain original bootstrapped env vars e.g.
+             * `{ PROFILE: 'default_profile' }` persisted inside the UI's meta,
+             * so we must spread `persisted.var` afterwards.
+             */
             ...deepClone(env),
+            ...persisted.var,
           },
           modules: {} as any,
           nextPid: 0,
