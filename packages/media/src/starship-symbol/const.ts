@@ -54,7 +54,7 @@ export const symbolByGroup = {
   },
 
   "symbol-bridge": {
-    "bridge--042--8x9": true,
+    "bridge--042": true,
   },
 
   "symbol-furniture-consoles-equipment": {
@@ -138,18 +138,18 @@ export const symbolByGroup = {
   },
 
   "symbol-cargo": {
-    "cargo--002--2x2": true,
-    "cargo--010--2x4": true,
-    "cargo--003--2x4": true,
+    "cargo--002": true,
+    "cargo--010": true,
+    "cargo--003": true,
   },
 
   "symbol-empty-room": {
-    "empty-room--006--2x2": true,
-    "empty-room--013--2x3": true,
-    "empty-room--019--2x4": true,
-    "empty-room--020--2x4": true,
-    "empty-room--039--3x4": true,
-    "empty-room--060--4x4": true,
+    "empty-room--006": true,
+    "empty-room--013": true,
+    "empty-room--019": true,
+    "empty-room--020": true,
+    "empty-room--039": true,
+    "empty-room--060": true,
   },
 
   "symbol-engineering": {

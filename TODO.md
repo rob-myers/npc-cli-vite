@@ -132,7 +132,7 @@
 - 🚧 remove all suffices e.g. --0.25x0.25 from all symbols
   - ✅ remove suffix from generating script `extract-starship-pngs`
   - 🚧 remove suffices from extant files
-    - pngs
+    - output/symbol-{foo} pngs but not symbol-root
     - assets.json
     - sheets.json
     - starship-symbol/manifest.json
@@ -146,6 +146,10 @@
   - ✅ migrate starship-symbol/fuel 1st
     - ✅ please rename files with basename `fuel--\d{3}--\d+x\d+` with basename `fuel--\d{3}`
     - ✅ find replace `fuel--(\d{3})--\d+x\d+` with `fuel--$1`
+  - ✅ migrate batch
+    - ✅ please rename files with basename `{x}--\d{3}--\S+x\S+` with basename `{x}--\d{3}` where `x` in `battery|bridge|cargo|empty-room`
+    - ✅ find replace `(battery|bridge|cargo|empty-room)--(\d{3})--[\d\.]+x[\d\.]*\d` with `$1--$2`
+  - migrate next batch
 
 - new todos i.e. current go into technical and start new section
 

@@ -72,8 +72,8 @@
       "width": 1212,
       "height": 613
     },
-    "bridge--042--8x9": {
-      "key": "bridge--042--8x9",
+    "bridge--042": {
+      "key": "bridge--042",
       "group": "symbol-bridge",
       "width": 2446,
       "height": 2790
@@ -384,56 +384,56 @@
       "width": 920,
       "height": 633
     },
-    "cargo--002--2x2": {
-      "key": "cargo--002--2x2",
+    "cargo--002": {
+      "key": "cargo--002",
       "group": "symbol-cargo",
       "width": 607,
       "height": 607
     },
-    "cargo--010--2x4": {
-      "key": "cargo--010--2x4",
+    "cargo--010": {
+      "key": "cargo--010",
       "group": "symbol-cargo",
       "width": 620,
       "height": 1234
     },
-    "cargo--003--2x4": {
-      "key": "cargo--003--2x4",
+    "cargo--003": {
+      "key": "cargo--003",
       "group": "symbol-cargo",
       "width": 607,
       "height": 1207
     },
-    "empty-room--006--2x2": {
-      "key": "empty-room--006--2x2",
+    "empty-room--006": {
+      "key": "empty-room--006",
       "group": "symbol-empty-room",
       "width": 633,
       "height": 620
     },
-    "empty-room--013--2x3": {
-      "key": "empty-room--013--2x3",
+    "empty-room--013": {
+      "key": "empty-room--013",
       "group": "symbol-empty-room",
       "width": 620,
       "height": 933
     },
-    "empty-room--019--2x4": {
-      "key": "empty-room--019--2x4",
+    "empty-room--019": {
+      "key": "empty-room--019",
       "group": "symbol-empty-room",
       "width": 633,
       "height": 1220
     },
-    "empty-room--020--2x4": {
-      "key": "empty-room--020--2x4",
+    "empty-room--020": {
+      "key": "empty-room--020",
       "group": "symbol-empty-room",
       "width": 620,
       "height": 1233
     },
-    "empty-room--039--3x4": {
-      "key": "empty-room--039--3x4",
+    "empty-room--039": {
+      "key": "empty-room--039",
       "group": "symbol-empty-room",
       "width": 934,
       "height": 1220
     },
-    "empty-room--060--4x4": {
-      "key": "empty-room--060--4x4",
+    "empty-room--060": {
+      "key": "empty-room--060",
       "group": "symbol-empty-room",
       "width": 1220,
       "height": 1220

@@ -61,8 +61,8 @@
       "hullWalls": [],
       "symbols": []
     },
-    "bridge--042--8x9": {
-      "key": "bridge--042--8x9",
+    "bridge--042": {
+      "key": "bridge--042",
       "isHull": false,
       "width": 12,
       "height": 13.5,
@@ -557,7 +557,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 0
           }
         },
@@ -579,7 +579,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 1
           }
         },
@@ -631,7 +631,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 2
           }
         },
@@ -683,7 +683,7 @@
             "obstacle": true,
             "y": 0.8,
             "window-base": true,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 3
           }
         },
@@ -716,7 +716,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 4
           }
         }
@@ -2813,7 +2813,7 @@
           "meta": {"stateroom--036--2x4": true}
         },
         {
-          "symbolKey": "bridge--042--8x9",
+          "symbolKey": "bridge--042",
           "width": 12,
           "height": 13.5,
           "transform": {
@@ -2824,7 +2824,7 @@
             "e": 9.0125,
             "f": 1.525
           },
-          "meta": {"bridge--042--8x9": true}
+          "meta": {"bridge--042": true}
         },
         {
           "symbolKey": "console--031--1x1.2",
@@ -7702,8 +7702,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "bridge--042--8x9": {
-      "key": "bridge--042--8x9",
+    "bridge--042": {
+      "key": "bridge--042",
       "isHull": false,
       "width": 12,
       "height": 13.5,
@@ -8548,7 +8548,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 0
           }
         },
@@ -8570,7 +8570,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 1
           }
         },
@@ -8622,7 +8622,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 2
           }
         },
@@ -8674,7 +8674,7 @@
             "obstacle": true,
             "y": 0.8,
             "window-base": true,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 3
           }
         },
@@ -8707,7 +8707,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 4
           }
         },
@@ -14189,7 +14189,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 0,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
@@ -14212,7 +14212,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 1,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
@@ -14265,7 +14265,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 2,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
@@ -14318,7 +14318,7 @@
             "obstacle": true,
             "y": 0.8,
             "window-base": true,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 3,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
@@ -14352,7 +14352,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 4,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
           }
@@ -18625,7 +18625,7 @@
       {"id": "g-302--xboat-repair-bay"}
     ],
     [
-      {"id": "bridge--042--8x9"},
+      {"id": "bridge--042"},
       {"id": "g-101--multipurpose"},
       {"id": "office--001--2x2"},
       {"id": "stateroom--036--2x4"}
@@ -18818,7 +18818,7 @@
           "type": "point",
           "x": 12.7438,
           "y": 5.0875,
-          "orient": 90
+          "orient": 0
         },
         {
           "key": "",
@@ -18880,7 +18880,7 @@
           "type": "point",
           "x": 10.9228,
           "y": 5.5586,
-          "orient": -110
+          "orient": 0
         },
         {
           "key": "",
@@ -18900,7 +18900,7 @@
           "type": "point",
           "x": 9.7023,
           "y": 5.5711,
-          "orient": -70
+          "orient": 0
         },
         {
           "key": "",
@@ -18940,7 +18940,7 @@
           "type": "point",
           "x": 12.775,
           "y": 4.1125,
-          "orient": -90
+          "orient": 0
         },
         {
           "key": "",
@@ -18958,7 +18958,7 @@
           "type": "point",
           "x": 12.7439,
           "y": 11.4048,
-          "orient": -90
+          "orient": 0
         },
         {
           "key": "",
@@ -19020,7 +19020,7 @@
           "type": "point",
           "x": 10.9229,
           "y": 10.9337,
-          "orient": 110
+          "orient": 0
         },
         {
           "key": "",
@@ -19040,7 +19040,7 @@
           "type": "point",
           "x": 9.7024,
           "y": 10.9212,
-          "orient": 70
+          "orient": 0
         },
         {
           "key": "",
@@ -19080,7 +19080,7 @@
           "type": "point",
           "x": 12.7752,
           "y": 12.3798,
-          "orient": 90
+          "orient": 0
         },
         {
           "key": "",
@@ -19098,7 +19098,7 @@
           "type": "point",
           "x": 17.256,
           "y": 11.4048,
-          "orient": -90
+          "orient": 0
         },
         {
           "key": "",
@@ -19160,7 +19160,7 @@
           "type": "point",
           "x": 19.077,
           "y": 10.9337,
-          "orient": 70
+          "orient": 0
         },
         {
           "key": "",
@@ -19180,7 +19180,7 @@
           "type": "point",
           "x": 20.2976,
           "y": 10.9212,
-          "orient": 110
+          "orient": 0
         },
         {
           "key": "",
@@ -19200,7 +19200,7 @@
           "type": "point",
           "x": 19.8623,
           "y": 12.7548,
-          "orient": 180
+          "orient": 0
         },
         {
           "key": "",
@@ -19220,7 +19220,7 @@
           "type": "point",
           "x": 17.2248,
           "y": 12.3798,
-          "orient": 90
+          "orient": 0
         }
       ],
       "doors": [
@@ -23232,7 +23232,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.775,
-          "orient": -180
+          "orient": 180
         },
         {
           "key": "",
@@ -25546,7 +25546,7 @@
           }
         },
         {
-          "symbolKey": "bridge--042--8x9",
+          "symbolKey": "bridge--042",
           "obstacleId": 0,
           "height": 1,
           "origPoly": {
@@ -25567,7 +25567,7 @@
               "cpu": true,
               "y": 1,
               "tint": "#666",
-              "symKey": "bridge--042--8x9",
+              "symKey": "bridge--042",
               "origObstacleId": 0
             }
           },
@@ -25586,12 +25586,12 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "bridge--042--8x9",
+          "symbolKey": "bridge--042",
           "obstacleId": 1,
           "height": 1,
           "origPoly": {
@@ -25612,7 +25612,7 @@
               "cpu": true,
               "y": 1,
               "tint": "#666",
-              "symKey": "bridge--042--8x9",
+              "symKey": "bridge--042",
               "origObstacleId": 1
             }
           },
@@ -25631,12 +25631,12 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 1
           }
         },
         {
-          "symbolKey": "bridge--042--8x9",
+          "symbolKey": "bridge--042",
           "obstacleId": 2,
           "height": 0.81,
           "origPoly": {
@@ -25687,7 +25687,7 @@
               "obstacle": true,
               "table": true,
               "y": 0.81,
-              "symKey": "bridge--042--8x9",
+              "symKey": "bridge--042",
               "origObstacleId": 2
             }
           },
@@ -25705,12 +25705,12 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 2
           }
         },
         {
-          "symbolKey": "bridge--042--8x9",
+          "symbolKey": "bridge--042",
           "obstacleId": 3,
           "height": 0.8,
           "origPoly": {
@@ -25761,7 +25761,7 @@
               "obstacle": true,
               "y": 0.8,
               "window-base": true,
-              "symKey": "bridge--042--8x9",
+              "symKey": "bridge--042",
               "origObstacleId": 3
             }
           },
@@ -25779,12 +25779,12 @@
             "obstacle": true,
             "y": 0.8,
             "window-base": true,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 3
           }
         },
         {
-          "symbolKey": "bridge--042--8x9",
+          "symbolKey": "bridge--042",
           "obstacleId": 4,
           "height": 0.6,
           "origPoly": {
@@ -25816,7 +25816,7 @@
               "obstacle": true,
               "table": true,
               "y": 0.6,
-              "symKey": "bridge--042--8x9",
+              "symKey": "bridge--042",
               "origObstacleId": 4
             }
           },
@@ -25834,7 +25834,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
-            "symKey": "bridge--042--8x9",
+            "symKey": "bridge--042",
             "origObstacleId": 4
           }
         },
@@ -31112,5 +31112,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -1378549866}
+  "hash": {"obstacles": -683009219}
 }
