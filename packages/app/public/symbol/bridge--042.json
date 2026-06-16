@@ -99,19 +99,19 @@
         },
         {
           "id": "9863bc34-64f8-4213-9c11-0a9c261ac2f9",
-          "name": "extra--003--chair--0.25x0.25 y=0.4",
+          "name": "extra--003--chair y=0.4",
           "locked": false,
           "visible": true,
           "transform": { "a": 0, "b": -1, "c": 1, "d": 0, "e": 38.5, "f": 328 },
           "type": "symbol",
-          "srcKey": "extra--003--chair--0.25x0.25",
+          "srcKey": "extra--003--chair",
           "baseRect": { "width": 20, "height": 20 },
           "offset": { "x": -0.37608205866850614, "y": -0.19637282181518473 },
           "cssTransform": "matrix(0, -1, 1, 0, 38.1239, 327.8036)"
         },
         {
           "id": "5625849d-fc95-4cf6-9b04-adfb11a437f4",
-          "name": "extra--003--chair--0.25x0.25 y=0.4",
+          "name": "extra--003--chair y=0.4",
           "locked": false,
           "visible": true,
           "transform": {
@@ -123,19 +123,19 @@
             "f": 368
           },
           "type": "symbol",
-          "srcKey": "extra--003--chair--0.25x0.25",
+          "srcKey": "extra--003--chair",
           "baseRect": { "width": 20, "height": 20 },
           "offset": { "x": -0.2708470951723305, "y": -0.32659764395462265 },
           "cssTransform": "matrix(0.25881904510252074, 0.9659258262890683, 0.9659258262890683, -0.25881904510252074, 50.2292, 367.6734)"
         },
         {
           "id": "c499ad48-1e2d-491f-968a-517b008a8af4",
-          "name": "extra--004--desk--0.5x1 y=0.6",
+          "name": "extra--004--desk y=0.6",
           "locked": false,
           "visible": true,
           "transform": { "a": 0, "b": -1, "c": 1, "d": 0, "e": 18.5, "f": 361 },
           "type": "symbol",
-          "srcKey": "extra--004--desk--0.5x1",
+          "srcKey": "extra--004--desk",
           "baseRect": { "width": 30, "height": 60 },
           "offset": { "x": -0.4582032509020978, "y": 0.8775248035598476 },
           "cssTransform": "matrix(0, -1, 1, 0, 18.0418, 361.8775)"
@@ -154,36 +154,36 @@
         },
         {
           "id": "6fc6aa86-72a9-4098-b504-ce1b9f8d15d9",
-          "name": "extra--001--fresher--0.5x0.5 y=0.65",
+          "name": "extra--001--fresher y=0.65",
           "locked": false,
           "visible": true,
           "transform": { "a": 1, "b": 0, "c": 0, "d": -1, "e": 370, "f": 301 },
           "type": "symbol",
-          "srcKey": "extra--001--fresher--0.5x0.5",
+          "srcKey": "extra--001--fresher",
           "baseRect": { "width": 28, "height": 23 },
           "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(1, 0, 0, -1, 370, 301)"
         },
         {
           "id": "080d514a-10e6-4de6-a1e2-e33185dd1378",
-          "name": "extra--002--fresher--0.5x0.5 y=0.6",
+          "name": "extra--002--fresher y=0.6",
           "locked": false,
           "visible": true,
           "transform": { "a": 1, "b": 0, "c": 0, "d": -1, "e": 409, "f": 302 },
           "type": "symbol",
-          "srcKey": "extra--002--fresher--0.5x0.5",
+          "srcKey": "extra--002--fresher",
           "baseRect": { "width": 24, "height": 32 },
           "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(1, 0, 0, -1, 409, 302)"
         },
         {
           "id": "579f608d-0665-4fcf-bde7-a597ce859e50",
-          "name": "extra--002--fresher--0.5x0.5 y=0.6",
+          "name": "extra--002--fresher y=0.6",
           "locked": false,
           "visible": true,
           "transform": { "a": 1, "b": 0, "c": 0, "d": -1, "e": 444, "f": 302 },
           "type": "symbol",
-          "srcKey": "extra--002--fresher--0.5x0.5",
+          "srcKey": "extra--002--fresher",
           "baseRect": { "width": 24, "height": 32 },
           "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(1, 0, 0, -1, 444, 302)"

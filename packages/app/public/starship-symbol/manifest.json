@@ -1,31 +1,31 @@
 {
   "byKey": {
-    "extra--001--fresher--0.5x0.5": {
-      "key": "extra--001--fresher--0.5x0.5",
+    "extra--001--fresher": {
+      "key": "extra--001--fresher",
       "group": "extra",
       "width": 137,
       "height": 117
     },
-    "extra--002--fresher--0.5x0.5": {
-      "key": "extra--002--fresher--0.5x0.5",
+    "extra--002--fresher": {
+      "key": "extra--002--fresher",
       "group": "extra",
       "width": 114,
       "height": 156
     },
-    "extra--003--chair--0.25x0.25": {
-      "key": "extra--003--chair--0.25x0.25",
+    "extra--003--chair": {
+      "key": "extra--003--chair",
       "group": "extra",
       "width": 97,
       "height": 103
     },
-    "extra--004--desk--0.5x1": {
-      "key": "extra--004--desk--0.5x1",
+    "extra--004--desk": {
+      "key": "extra--004--desk",
       "group": "extra",
       "width": 157,
       "height": 307
     },
-    "extra--005--chair-0.25x0.25": {
-      "key": "extra--005--chair-0.25x0.25",
+    "extra--005--chair": {
+      "key": "extra--005--chair",
       "group": "extra",
       "width": 95,
       "height": 95
@@ -282,14 +282,14 @@
       "width": 221,
       "height": 220
     },
-    "misc-stellar-cartography--020--10x10": {
-      "key": "misc-stellar-cartography--020--10x10",
+    "misc-stellar-cartography--020": {
+      "key": "misc-stellar-cartography--020",
       "group": "symbol-misc",
       "width": 3020,
       "height": 3020
     },
-    "misc-stellar-cartography--023--4x4": {
-      "key": "misc-stellar-cartography--023--4x4",
+    "misc-stellar-cartography--023": {
+      "key": "misc-stellar-cartography--023",
       "group": "symbol-misc",
       "width": 1220,
       "height": 1220
@@ -366,8 +366,8 @@
       "width": 1194,
       "height": 1195
     },
-    "galley-and-mess-halls--006--2x4": {
-      "key": "galley-and-mess-halls--006--2x4",
+    "galley-and-mess-halls--006": {
+      "key": "galley-and-mess-halls--006",
       "group": "symbol-galley-and-mess",
       "width": 1220,
       "height": 643
@@ -528,38 +528,38 @@
       "width": 620,
       "height": 634
     },
-    "shop--027--0.4x1.6": {
-      "key": "shop--027--0.4x1.6",
+    "shop--027": {
+      "key": "shop--027",
       "group": "symbol-shop-repair-area",
       "width": 487,
       "height": 128
     },
-    "shop--028--0.8x1.6": {
-      "key": "shop--028--0.8x1.6",
+    "shop--028": {
+      "key": "shop--028",
       "group": "symbol-shop-repair-area",
       "width": 485,
       "height": 234
     },
-    "shop--031--0.4x0.8": {
-      "key": "shop--031--0.4x0.8",
+    "shop--031": {
+      "key": "shop--031",
       "group": "symbol-shop-repair-area",
       "width": 268,
       "height": 146
     },
-    "shop--033--0.6x1.6": {
-      "key": "shop--033--0.6x1.6",
+    "shop--033": {
+      "key": "shop--033",
       "group": "symbol-shop-repair-area",
       "width": 506,
       "height": 194
     },
-    "shop--035--0.4x0.8": {
-      "key": "shop--035--0.4x0.8",
+    "shop--035": {
+      "key": "shop--035",
       "group": "symbol-shop-repair-area",
       "width": 268,
       "height": 146
     },
-    "shop--037--0.4x0.8": {
-      "key": "shop--037--0.4x0.8",
+    "shop--037": {
+      "key": "shop--037",
       "group": "symbol-shop-repair-area",
       "width": 268,
       "height": 146

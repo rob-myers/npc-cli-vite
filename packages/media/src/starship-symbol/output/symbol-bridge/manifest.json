@@ -562,7 +562,7 @@
     },
     {
       "srcName": "Bridge 063 Lightning Class Cruiser [80x85].png",
-      "dstName": "bridge-lightning-class-cruiser--063--16x17.png",
+      "dstName": "bridge-lightning-class-cruiser--063.png",
       "id": 63,
       "gridDim": [16, 17],
       "is": [],

@@ -77,24 +77,24 @@
         },
         {
           "id": "b5e98aac-869a-4e53-901d-30b624a8bc04",
-          "name": "extra--004--desk--0.5x1 y=0.9",
+          "name": "extra--004--desk y=0.9",
           "locked": true,
           "visible": true,
           "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 120.5 },
           "type": "symbol",
-          "srcKey": "extra--004--desk--0.5x1",
+          "srcKey": "extra--004--desk",
           "baseRect": { "width": 30, "height": 60 },
           "offset": { "x": -0.7, "y": -0.7 },
           "cssTransform": "matrix(1, 0, 0, 1, -0.2, 119.8)"
         },
         {
           "id": "b4867e3f-a9b2-4bda-a435-eb9151dd590c",
-          "name": "extra--003--chair--0.25x0.25 y=0.7",
+          "name": "extra--003--chair y=0.7",
           "locked": true,
           "visible": true,
           "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 33.5, "f": 140.5 },
           "type": "symbol",
-          "srcKey": "extra--003--chair--0.25x0.25",
+          "srcKey": "extra--003--chair",
           "baseRect": { "width": 20, "height": 20 },
           "offset": { "x": 0.3, "y": -0.3 },
           "cssTransform": "matrix(1, 0, 0, 1, 33.8, 140.2)"
