@@ -4,7 +4,7 @@
   "fileMetas": [
     {
       "srcName": "Food Service 001 [10x20] (3).png",
-      "dstName": "food-service--001--2x4.png",
+      "dstName": "food-service--001.png",
       "id": 1,
       "gridDim": [2, 4],
       "is": ["3"],
@@ -13,7 +13,7 @@
     },
     {
       "srcName": "Food Service 001 [10x20].png",
-      "dstName": "food-service--001--2x4.png",
+      "dstName": "food-service--001.png",
       "id": 1,
       "gridDim": [2, 4],
       "is": [],
@@ -22,7 +22,7 @@
     },
     {
       "srcName": "Food Service 002 [20x20].png",
-      "dstName": "food-service--002--4x4.png",
+      "dstName": "food-service--002.png",
       "id": 2,
       "gridDim": [4, 4],
       "is": [],
@@ -31,7 +31,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 001 [10x10].png",
-      "dstName": "galley-and-mess-halls--001--2x2.png",
+      "dstName": "galley-and-mess-halls--001.png",
       "id": 1,
       "gridDim": [2, 2],
       "is": [],
@@ -40,7 +40,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 002 [10x10].png",
-      "dstName": "galley-and-mess-halls--002--2x2.png",
+      "dstName": "galley-and-mess-halls--002.png",
       "id": 2,
       "gridDim": [2, 2],
       "is": [],
@@ -49,7 +49,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 003 [10x15].png",
-      "dstName": "galley-and-mess-halls--003--2x3.png",
+      "dstName": "galley-and-mess-halls--003.png",
       "id": 3,
       "gridDim": [2, 3],
       "is": [],
@@ -58,7 +58,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 004 [10x20].png",
-      "dstName": "galley-and-mess-halls--004--2x4.png",
+      "dstName": "galley-and-mess-halls--004.png",
       "id": 4,
       "gridDim": [2, 4],
       "is": [],
@@ -67,7 +67,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 005 [10x15].png",
-      "dstName": "galley-and-mess-halls--005--2x3.png",
+      "dstName": "galley-and-mess-halls--005.png",
       "id": 5,
       "gridDim": [2, 3],
       "is": [],
@@ -76,7 +76,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 006 [10x20].png",
-      "dstName": "galley-and-mess-halls--006--2x4.png",
+      "dstName": "galley-and-mess-halls--006.png",
       "id": 6,
       "gridDim": [2, 4],
       "is": [],
@@ -85,7 +85,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 007 [10x20].png",
-      "dstName": "galley-and-mess-halls--007--2x4.png",
+      "dstName": "galley-and-mess-halls--007.png",
       "id": 7,
       "gridDim": [2, 4],
       "is": [],
@@ -94,7 +94,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 008 [10x20].png",
-      "dstName": "galley-and-mess-halls--008--2x4.png",
+      "dstName": "galley-and-mess-halls--008.png",
       "id": 8,
       "gridDim": [2, 4],
       "is": [],
@@ -103,7 +103,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 009 [10x25].png",
-      "dstName": "galley-and-mess-halls--009--2x5.png",
+      "dstName": "galley-and-mess-halls--009.png",
       "id": 9,
       "gridDim": [2, 5],
       "is": [],
@@ -112,7 +112,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 010 [10x40].png",
-      "dstName": "galley-and-mess-halls--010--2x8.png",
+      "dstName": "galley-and-mess-halls--010.png",
       "id": 10,
       "gridDim": [2, 8],
       "is": [],
@@ -121,7 +121,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 011 [10x10].png",
-      "dstName": "galley-and-mess-halls--011--2x2.png",
+      "dstName": "galley-and-mess-halls--011.png",
       "id": 11,
       "gridDim": [2, 2],
       "is": [],
@@ -130,7 +130,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 012 [20x40].png",
-      "dstName": "galley-and-mess-halls--012--4x8.png",
+      "dstName": "galley-and-mess-halls--012.png",
       "id": 12,
       "gridDim": [4, 8],
       "is": [],
@@ -139,7 +139,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 013 [20x20].png",
-      "dstName": "galley-and-mess-halls--013--4x4.png",
+      "dstName": "galley-and-mess-halls--013.png",
       "id": 13,
       "gridDim": [4, 4],
       "is": [],
@@ -148,7 +148,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 014 [20x20].png",
-      "dstName": "galley-and-mess-halls--014--4x4.png",
+      "dstName": "galley-and-mess-halls--014.png",
       "id": 14,
       "gridDim": [4, 4],
       "is": [],
@@ -157,7 +157,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 015 [5x15].png",
-      "dstName": "galley-and-mess-halls--015--1x3.png",
+      "dstName": "galley-and-mess-halls--015.png",
       "id": 15,
       "gridDim": [1, 3],
       "is": [],
@@ -166,7 +166,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 016 [20x20].png",
-      "dstName": "galley-and-mess-halls--016--4x4.png",
+      "dstName": "galley-and-mess-halls--016.png",
       "id": 16,
       "gridDim": [4, 4],
       "is": [],
@@ -175,7 +175,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 017 [20x20].png",
-      "dstName": "galley-and-mess-halls--017--4x4.png",
+      "dstName": "galley-and-mess-halls--017.png",
       "id": 17,
       "gridDim": [4, 4],
       "is": [],
@@ -184,7 +184,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 018 [5x20].png",
-      "dstName": "galley-and-mess-halls--018--1x4.png",
+      "dstName": "galley-and-mess-halls--018.png",
       "id": 18,
       "gridDim": [1, 4],
       "is": [],
@@ -193,7 +193,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 019 [30x40].png",
-      "dstName": "galley-and-mess-halls--019--6x8.png",
+      "dstName": "galley-and-mess-halls--019.png",
       "id": 19,
       "gridDim": [6, 8],
       "is": [],
@@ -202,7 +202,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 020 [40x40].png",
-      "dstName": "galley-and-mess-halls--020--8x8.png",
+      "dstName": "galley-and-mess-halls--020.png",
       "id": 20,
       "gridDim": [8, 8],
       "is": [],
@@ -211,7 +211,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 021 [40x40].png",
-      "dstName": "galley-and-mess-halls--021--8x8.png",
+      "dstName": "galley-and-mess-halls--021.png",
       "id": 21,
       "gridDim": [8, 8],
       "is": [],
@@ -220,7 +220,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 022 [10x40].png",
-      "dstName": "galley-and-mess-halls--022--2x8.png",
+      "dstName": "galley-and-mess-halls--022.png",
       "id": 22,
       "gridDim": [2, 8],
       "is": [],
@@ -229,7 +229,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 023 [30x40].png",
-      "dstName": "galley-and-mess-halls--023--6x8.png",
+      "dstName": "galley-and-mess-halls--023.png",
       "id": 23,
       "gridDim": [6, 8],
       "is": [],
@@ -238,7 +238,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 024 [20x40].png",
-      "dstName": "galley-and-mess-halls--024--4x8.png",
+      "dstName": "galley-and-mess-halls--024.png",
       "id": 24,
       "gridDim": [4, 8],
       "is": [],
@@ -247,7 +247,7 @@
     },
     {
       "srcName": "Galley & Mess Halls 025 [10x15].png",
-      "dstName": "galley-and-mess-halls--025--2x3.png",
+      "dstName": "galley-and-mess-halls--025.png",
       "id": 25,
       "gridDim": [2, 3],
       "is": [],

@@ -132,7 +132,7 @@
 - 🚧 remove all suffices e.g. --0.25x0.25 from all symbols
   - ✅ remove suffix from generating script `extract-starship-pngs`
   - 🚧 remove suffices from extant files
-    - output/symbol-{foo} pngs but not symbol-root
+    - output/symbol-{foo} pngs except symbol-root, symbol-small-craft
     - assets.json
     - sheets.json
     - starship-symbol/manifest.json
@@ -157,6 +157,15 @@
     - ✅ find replace `"(engineering|fresher|furniture-consoles-equipment|bed|console|couch-and-chairs|counter|desk|fresher|medical-bed|table)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
       - want to exclude cases `-fresher--`
     - ✅ `pnpm gen-starship-sheets` before dev server
+  - ✅ migrate finalish batch
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Galley & Mess' symbol-galley-and-mess`
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Misc' symbol-misc`
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Staterooms' symbol-stateroom`
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area`
+    - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `lab|lounge|low-berth|machinery|medical|iris-valves|window|office|ships-locker|shop-repair-area|stateroom`
+    - ✅ find replace `"(lab|lounge|low-berth|machinery|medical|iris-valves|window|office|ships-locker|shop-repair-area|stateroom)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
+    - ✅ `pnpm gen-starship-sheets` before dev server
+  - 🚧 leftovers
 
 - new todos i.e. current go into technical and start new section
 

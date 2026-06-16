@@ -966,7 +966,7 @@
           "meta": { "console--051": true, "y": 0.5 }
         },
         {
-          "symbolKey": "window--007--0x2.4",
+          "symbolKey": "window--007",
           "width": 4.5,
           "height": 0.3,
           "transform": {
@@ -977,7 +977,7 @@
             "e": 4.5125,
             "f": 7.5125
           },
-          "meta": { "window--007--0x2.4": true, "y": 1.7 }
+          "meta": { "window--007": true, "y": 1.7 }
         },
         {
           "symbolKey": "table--004",
@@ -1738,7 +1738,7 @@
           "meta": { "fuel--010": true, "y": 1.7 }
         },
         {
-          "symbolKey": "stateroom--020--2x3",
+          "symbolKey": "stateroom--020",
           "width": 3,
           "height": 4.5,
           "transform": {
@@ -1749,10 +1749,10 @@
             "e": 9.0125,
             "f": 2.975
           },
-          "meta": { "stateroom--020--2x3": true }
+          "meta": { "stateroom--020": true }
         },
         {
-          "symbolKey": "stateroom--020--2x3",
+          "symbolKey": "stateroom--020",
           "width": 3,
           "height": 4.5,
           "transform": {
@@ -1763,10 +1763,10 @@
             "e": 9.01268,
             "f": 13.51727
           },
-          "meta": { "stateroom--020--2x3": true }
+          "meta": { "stateroom--020": true }
         },
         {
-          "symbolKey": "stateroom--020--2x3",
+          "symbolKey": "stateroom--020",
           "width": 3,
           "height": 4.5,
           "transform": {
@@ -1777,7 +1777,7 @@
             "e": 20.98732,
             "f": 13.51727
           },
-          "meta": { "stateroom--020--2x3": true }
+          "meta": { "stateroom--020": true }
         }
       ]
     },
@@ -2473,21 +2473,21 @@
       ],
       "symbols": [
         {
-          "symbolKey": "iris-valves--005--1x1",
+          "symbolKey": "iris-valves--005",
           "width": 1.5,
           "height": 1.5,
           "transform": { "a": 0, "b": -1, "c": 1, "d": 0, "e": 0.25, "f": 9 },
-          "meta": { "iris-valves--005--1x1": true }
+          "meta": { "iris-valves--005": true }
         },
         {
-          "symbolKey": "iris-valves--005--1x1",
+          "symbolKey": "iris-valves--005",
           "width": 1.5,
           "height": 1.5,
           "transform": { "a": -1, "b": 0, "c": 0, "d": -1, "e": 9, "f": 14.8125 },
-          "meta": { "iris-valves--005--1x1": true }
+          "meta": { "iris-valves--005": true }
         },
         {
-          "symbolKey": "iris-valves--005--1x1",
+          "symbolKey": "iris-valves--005",
           "width": 1.5,
           "height": 1.5,
           "transform": {
@@ -2498,28 +2498,28 @@
             "e": 24,
             "f": 14.8125
           },
-          "meta": { "iris-valves--005--1x1": true }
+          "meta": { "iris-valves--005": true }
         },
         {
-          "symbolKey": "iris-valves--005--1x1",
+          "symbolKey": "iris-valves--005",
           "width": 1.5,
           "height": 1.5,
           "transform": { "a": 0, "b": 1, "c": -1, "d": 0, "e": 29.8125, "f": 6 },
-          "meta": { "iris-valves--005--1x1": true }
+          "meta": { "iris-valves--005": true }
         },
         {
-          "symbolKey": "office--001--2x2",
+          "symbolKey": "office--001",
           "width": 3,
           "height": 3,
           "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 24, "f": 3 },
-          "meta": { "office--001--2x2": true }
+          "meta": { "office--001": true }
         },
         {
-          "symbolKey": "stateroom--036--2x4",
+          "symbolKey": "stateroom--036",
           "width": 3,
           "height": 6,
           "transform": { "a": -1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 0 },
-          "meta": { "stateroom--036--2x4": true }
+          "meta": { "stateroom--036": true }
         },
         {
           "symbolKey": "bridge--042",
@@ -2564,44 +2564,44 @@
           "meta": { "misc-stellar-cartography--023--4x4": true }
         },
         {
-          "symbolKey": "stateroom--036--2x4",
+          "symbolKey": "stateroom--036",
           "width": 3,
           "height": 6,
           "transform": { "a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 15 },
-          "meta": { "stateroom--036--2x4": true }
+          "meta": { "stateroom--036": true }
         },
         {
-          "symbolKey": "stateroom--014--2x2",
+          "symbolKey": "stateroom--014",
           "width": 3,
           "height": 3,
           "transform": { "a": 1, "b": 0, "c": 0, "d": -1, "e": 3, "f": 12 },
-          "meta": { "stateroom--014--2x2": true }
+          "meta": { "stateroom--014": true }
         },
         {
-          "symbolKey": "stateroom--014--2x2",
+          "symbolKey": "stateroom--014",
           "width": 3,
           "height": 3,
           "transform": { "a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 12 },
-          "meta": { "stateroom--014--2x2": true }
+          "meta": { "stateroom--014": true }
         },
         {
-          "symbolKey": "stateroom--036--2x4",
+          "symbolKey": "stateroom--036",
           "width": 3,
           "height": 6,
           "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
-          "meta": { "stateroom--036--2x4": true }
+          "meta": { "stateroom--036": true }
         },
         {
-          "symbolKey": "office--001--2x2",
+          "symbolKey": "office--001",
           "width": 3,
           "height": 3,
           "transform": { "a": -1, "b": 0, "c": 0, "d": 1, "e": 6, "f": 3 },
-          "meta": { "office--001--2x2": true, "doors": ["s"] }
+          "meta": { "office--001": true, "doors": ["s"] }
         }
       ]
     },
-    "iris-valves--005--1x1": {
-      "key": "iris-valves--005--1x1",
+    "iris-valves--005": {
+      "key": "iris-valves--005",
       "isHull": false,
       "width": 1.5,
       "height": 1.5,
@@ -2617,8 +2617,8 @@
       "hullWalls": [],
       "symbols": []
     },
-    "office--001--2x2": {
-      "key": "office--001--2x2",
+    "office--001": {
+      "key": "office--001",
       "isHull": false,
       "width": 3,
       "height": 3,
@@ -2761,8 +2761,8 @@
         }
       ]
     },
-    "stateroom--012--2x2": {
-      "key": "stateroom--012--2x2",
+    "stateroom--012": {
+      "key": "stateroom--012",
       "isHull": false,
       "width": 3,
       "height": 3,
@@ -2870,8 +2870,8 @@
         }
       ]
     },
-    "stateroom--014--2x2": {
-      "key": "stateroom--014--2x2",
+    "stateroom--014": {
+      "key": "stateroom--014",
       "isHull": false,
       "width": 3,
       "height": 3,
@@ -3020,8 +3020,8 @@
         }
       ]
     },
-    "stateroom--019--2x3": {
-      "key": "stateroom--019--2x3",
+    "stateroom--019": {
+      "key": "stateroom--019",
       "isHull": false,
       "width": 3,
       "height": 4.5,
@@ -3100,8 +3100,8 @@
         }
       ]
     },
-    "stateroom--036--2x4": {
-      "key": "stateroom--036--2x4",
+    "stateroom--036": {
+      "key": "stateroom--036",
       "isHull": false,
       "width": 3,
       "height": 6,
@@ -3612,8 +3612,8 @@
         }
       ]
     },
-    "window--007--0x2.4": {
-      "key": "window--007--0x2.4",
+    "window--007": {
+      "key": "window--007",
       "isHull": false,
       "width": 4.5,
       "height": 0.3,
@@ -3627,7 +3627,7 @@
           "meta": {
             "obstacle": true,
             "h": 0.2,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 0
           }
         },
@@ -3637,7 +3637,7 @@
           "meta": {
             "obstacle": true,
             "force-y": 0.4,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 1
           }
         }
@@ -4125,8 +4125,8 @@
       "hullWalls": [],
       "symbols": []
     },
-    "stateroom--020--2x3": {
-      "key": "stateroom--020--2x3",
+    "stateroom--020": {
+      "key": "stateroom--020",
       "isHull": false,
       "width": 3,
       "height": 4.5,
@@ -6338,8 +6338,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "iris-valves--005--1x1": {
-      "key": "iris-valves--005--1x1",
+    "iris-valves--005": {
+      "key": "iris-valves--005",
       "isHull": false,
       "width": 1.5,
       "height": 1.5,
@@ -7299,7 +7299,7 @@
           "meta": {
             "obstacle": true,
             "h": 0.2,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 4.5125, 7.5125]
@@ -7311,7 +7311,7 @@
           "meta": {
             "obstacle": true,
             "force-y": 0.4,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 1,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 4.5125, 7.5125]
@@ -8080,8 +8080,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "stateroom--012--2x2": {
-      "key": "stateroom--012--2x2",
+    "stateroom--012": {
+      "key": "stateroom--012",
       "isHull": false,
       "width": 3,
       "height": 3,
@@ -8231,8 +8231,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "stateroom--014--2x2": {
-      "key": "stateroom--014--2x2",
+    "stateroom--014": {
+      "key": "stateroom--014",
       "isHull": false,
       "width": 3,
       "height": 3,
@@ -8411,8 +8411,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "stateroom--019--2x3": {
-      "key": "stateroom--019--2x3",
+    "stateroom--019": {
+      "key": "stateroom--019",
       "isHull": false,
       "width": 3,
       "height": 4.5,
@@ -8533,8 +8533,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "stateroom--036--2x4": {
-      "key": "stateroom--036--2x4",
+    "stateroom--036": {
+      "key": "stateroom--036",
       "isHull": false,
       "width": 3,
       "height": 6,
@@ -8885,8 +8885,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "office--001--2x2": {
-      "key": "office--001--2x2",
+    "office--001": {
+      "key": "office--001",
       "isHull": false,
       "width": 3,
       "height": 3,
@@ -11964,7 +11964,7 @@
           "meta": {
             "obstacle": true,
             "h": 0.2,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 13.524999999999999, 9.0375]
@@ -11976,7 +11976,7 @@
           "meta": {
             "obstacle": true,
             "force-y": 0.4,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 1,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 13.524999999999999, 9.0375]
@@ -14025,8 +14025,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "window--007--0x2.4": {
-      "key": "window--007--0x2.4",
+    "window--007": {
+      "key": "window--007",
       "isHull": false,
       "width": 4.5,
       "height": 0.3,
@@ -14040,7 +14040,7 @@
           "meta": {
             "obstacle": true,
             "h": 0.2,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 0
           }
         },
@@ -14050,7 +14050,7 @@
           "meta": {
             "obstacle": true,
             "force-y": 0.4,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 1
           }
         }
@@ -14774,8 +14774,8 @@
       "removableDoors": [],
       "addableWalls": []
     },
-    "stateroom--020--2x3": {
-      "key": "stateroom--020--2x3",
+    "stateroom--020": {
+      "key": "stateroom--020",
       "isHull": false,
       "width": 3,
       "height": 4.5,
@@ -15511,9 +15511,9 @@
       { "id": "console--051" },
       { "id": "extra--003--chair--0.25x0.25" },
       { "id": "extra--004--desk--0.5x1" },
-      { "id": "iris-valves--005--1x1" },
+      { "id": "iris-valves--005" },
       { "id": "bed--005" },
-      { "id": "window--007--0x2.4" },
+      { "id": "window--007" },
       { "id": "extra--005--chair-0.25x0.25" },
       { "id": "extra--001--fresher--0.5x0.5" },
       { "id": "extra--002--fresher--0.5x0.5" },
@@ -15523,22 +15523,17 @@
     ],
     [
       { "id": "console--019" },
-      { "id": "stateroom--012--2x2" },
-      { "id": "stateroom--014--2x2" },
-      { "id": "stateroom--019--2x3" },
+      { "id": "stateroom--012" },
+      { "id": "stateroom--014" },
+      { "id": "stateroom--019" },
       { "id": "bed--004" },
       { "id": "console--031" },
       { "id": "misc-stellar-cartography--023--4x4" },
       { "id": "table--004" },
-      { "id": "stateroom--020--2x3" },
+      { "id": "stateroom--020" },
       { "id": "g-302--xboat-repair-bay" }
     ],
-    [
-      { "id": "bridge--042" },
-      { "id": "g-101--multipurpose" },
-      { "id": "office--001--2x2" },
-      { "id": "stateroom--036--2x4" }
-    ],
+    [{ "id": "bridge--042" }, { "id": "g-101--multipurpose" }, { "id": "office--001" }, { "id": "stateroom--036" }],
     [{ "id": "g-301--bridge" }]
   ],
   "layout": {
@@ -22222,7 +22217,7 @@
           }
         },
         {
-          "symbolKey": "window--007--0x2.4",
+          "symbolKey": "window--007",
           "obstacleId": 0,
           "height": 1.7,
           "origPoly": {
@@ -22231,7 +22226,7 @@
             "meta": {
               "obstacle": true,
               "h": 0.2,
-              "symKey": "window--007--0x2.4",
+              "symKey": "window--007",
               "origObstacleId": 0
             }
           },
@@ -22248,12 +22243,12 @@
           "meta": {
             "obstacle": true,
             "h": 0.2,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "window--007--0x2.4",
+          "symbolKey": "window--007",
           "obstacleId": 1,
           "height": 0.4,
           "origPoly": {
@@ -22262,7 +22257,7 @@
             "meta": {
               "obstacle": true,
               "force-y": 0.4,
-              "symKey": "window--007--0x2.4",
+              "symKey": "window--007",
               "origObstacleId": 1
             }
           },
@@ -22279,7 +22274,7 @@
           "meta": {
             "obstacle": true,
             "force-y": 0.4,
-            "symKey": "window--007--0x2.4",
+            "symKey": "window--007",
             "origObstacleId": 1
           }
         },

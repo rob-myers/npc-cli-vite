@@ -105,7 +105,7 @@ export const ALLOWED_MAP_EDIT_FOLDERS = ["symbol", "map"] as const;
 export const LOCAL_STORAGE_PREFIX = "map-edit:";
 export const LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER = "map-edit-to-current-file";
 
-export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012--2x2";
+export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012";
 
 export const devMessageFromServer = {
   recomputedPathManifest: "map-edit:recompute-path-manifest",

@@ -1,22 +1,22 @@
 {
   "byKey": {
-    "stateroom--012--2x2": {
-      "filename": "stateroom--012--2x2.json",
-      "thumbnailFilename": "stateroom--012--2x2.thumbnail.png",
+    "stateroom--012": {
+      "filename": "stateroom--012.json",
+      "thumbnailFilename": "stateroom--012.thumbnail.png",
       "width": 120,
       "height": 120,
       "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 124 },
       "type": "symbol",
-      "key": "stateroom--012--2x2"
+      "key": "stateroom--012"
     },
-    "stateroom--019--2x3": {
-      "filename": "stateroom--019--2x3.json",
-      "thumbnailFilename": "stateroom--019--2x3.thumbnail.png",
+    "stateroom--019": {
+      "filename": "stateroom--019.json",
+      "thumbnailFilename": "stateroom--019.thumbnail.png",
       "width": 120,
       "height": 180,
       "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 184 },
       "type": "symbol",
-      "key": "stateroom--019--2x3"
+      "key": "stateroom--019"
     },
     "console--051": {
       "filename": "console--051.json",
@@ -72,32 +72,32 @@
       "type": "symbol",
       "key": "g-301--bridge"
     },
-    "stateroom--014--2x2": {
-      "filename": "stateroom--014--2x2.json",
-      "thumbnailFilename": "stateroom--014--2x2.thumbnail.png",
+    "stateroom--014": {
+      "filename": "stateroom--014.json",
+      "thumbnailFilename": "stateroom--014.thumbnail.png",
       "width": 120,
       "height": 120,
       "bounds": { "x": -2, "y": -2, "width": 124, "height": 126.8 },
       "type": "symbol",
-      "key": "stateroom--014--2x2"
+      "key": "stateroom--014"
     },
-    "stateroom--036--2x4": {
-      "filename": "stateroom--036--2x4.json",
-      "thumbnailFilename": "stateroom--036--2x4.thumbnail.png",
+    "stateroom--036": {
+      "filename": "stateroom--036.json",
+      "thumbnailFilename": "stateroom--036.thumbnail.png",
       "width": 120,
       "height": 240,
       "bounds": { "x": -2, "y": -2, "width": 124, "height": 246.8 },
       "type": "symbol",
-      "key": "stateroom--036--2x4"
+      "key": "stateroom--036"
     },
-    "iris-valves--005--1x1": {
-      "filename": "iris-valves--005--1x1.json",
-      "thumbnailFilename": "iris-valves--005--1x1.thumbnail.png",
+    "iris-valves--005": {
+      "filename": "iris-valves--005.json",
+      "thumbnailFilename": "iris-valves--005.thumbnail.png",
       "width": 60,
       "height": 60,
       "bounds": { "x": 0.7, "y": 9, "width": 44.2, "height": 44 },
       "type": "symbol",
-      "key": "iris-valves--005--1x1"
+      "key": "iris-valves--005"
     },
     "console--019": {
       "filename": "console--019.json",
@@ -117,14 +117,14 @@
       "type": "symbol",
       "key": "bridge--042"
     },
-    "office--001--2x2": {
-      "filename": "office--001--2x2.json",
-      "thumbnailFilename": "office--001--2x2.thumbnail.png",
+    "office--001": {
+      "filename": "office--001.json",
+      "thumbnailFilename": "office--001.thumbnail.png",
       "width": 120,
       "height": 120,
       "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 124 },
       "type": "symbol",
-      "key": "office--001--2x2"
+      "key": "office--001"
     },
     "g-101--multipurpose": {
       "filename": "g-101--multipurpose.json",
@@ -171,14 +171,14 @@
       "type": "symbol",
       "key": "misc-stellar-cartography--023--4x4"
     },
-    "window--007--0x2.4": {
-      "filename": "window--007--0x2.4.json",
-      "thumbnailFilename": "window--007--0x2.4.thumbnail.png",
+    "window--007": {
+      "filename": "window--007.json",
+      "thumbnailFilename": "window--007.thumbnail.png",
       "width": 180,
       "height": 12,
       "bounds": { "x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4 },
       "type": "symbol",
-      "key": "window--007--0x2.4"
+      "key": "window--007"
     },
     "table--004": {
       "filename": "table--004.json",
@@ -234,14 +234,14 @@
       "type": "symbol",
       "key": "fuel--010"
     },
-    "stateroom--020--2x3": {
-      "filename": "stateroom--020--2x3.json",
-      "thumbnailFilename": "stateroom--020--2x3.thumbnail.png",
+    "stateroom--020": {
+      "filename": "stateroom--020.json",
+      "thumbnailFilename": "stateroom--020.thumbnail.png",
       "width": 120,
       "height": 180,
       "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 184 },
       "type": "symbol",
-      "key": "stateroom--020--2x3"
+      "key": "stateroom--020"
     },
     "g-302--xboat-repair-bay": {
       "filename": "g-302--xboat-repair-bay.json",

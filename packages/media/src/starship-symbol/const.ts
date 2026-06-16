@@ -96,10 +96,10 @@ export const symbolByGroup = {
   },
 
   "symbol-machinery": {
-    "machinery--155--1.8x3.6": true,
-    "machinery--156--1.8x3.6": true,
-    "machinery--158--1.8x3.6": true,
-    "machinery--357--2.2x4": true,
+    "machinery--155": true,
+    "machinery--156": true,
+    "machinery--158": true,
+    "machinery--357": true,
   },
 
   "symbol-small-craft": {
@@ -107,25 +107,25 @@ export const symbolByGroup = {
   },
 
   "symbol-misc": {
-    "iris-valves--005--1x1": true,
-    "iris-valves--006--1x1": true,
+    "iris-valves--005": true,
+    "iris-valves--006": true,
     "misc-stellar-cartography--020--10x10": true,
     "misc-stellar-cartography--023--4x4": true,
-    "window--001--0x1": true,
-    "window--005--0x2": true,
-    "window--007--0x2.4": true,
+    "window--001": true,
+    "window--005": true,
+    "window--007": true,
   },
 
   "symbol-office": {
-    "office--001--2x2": true,
-    "office--004--2x2": true,
-    "office--006--2x2": true,
-    "office--026--2x3": true,
-    "office--020--2x3": true,
-    "office--023--2x3": true,
-    "office--061--3x4": true,
-    "office--074--4x4": true,
-    "office--089--4x4": true,
+    "office--001": true,
+    "office--004": true,
+    "office--006": true,
+    "office--026": true,
+    "office--020": true,
+    "office--023": true,
+    "office--061": true,
+    "office--074": true,
+    "office--089": true,
   },
 
   "symbol-galley-and-mess": {
@@ -133,8 +133,8 @@ export const symbolByGroup = {
   },
 
   "symbol-medical": {
-    "medical--007--2x3": true,
-    "medical--008--2x3": true,
+    "medical--007": true,
+    "medical--008": true,
   },
 
   "symbol-cargo": {
@@ -170,19 +170,19 @@ export const symbolByGroup = {
   },
 
   "symbol-lounge": {
-    "lounge--015--2x4": true,
-    "lounge--017--2x4": true,
+    "lounge--015": true,
+    "lounge--017": true,
   },
 
   "symbol-low-berth": {
-    "low-berth--003--1x1": true,
+    "low-berth--003": true,
   },
 
   "symbol-ships-locker": {
-    "ships-locker--003--1x1": true,
-    "ships-locker--007--1x2": true,
-    "ships-locker--011--1x2": true,
-    "ships-locker--020--2x2": true,
+    "ships-locker--003": true,
+    "ships-locker--007": true,
+    "ships-locker--011": true,
+    "ships-locker--020": true,
   },
 
   "symbol-shop-repair-area": {
@@ -195,13 +195,13 @@ export const symbolByGroup = {
   },
 
   "symbol-stateroom": {
-    "stateroom--012--2x2": true,
-    "stateroom--014--2x2": true,
-    "stateroom--018--2x3": true,
-    "stateroom--019--2x3": true,
-    "stateroom--020--2x3": true,
-    "stateroom--035--2x3": true,
-    "stateroom--036--2x4": true,
+    "stateroom--012": true,
+    "stateroom--014": true,
+    "stateroom--018": true,
+    "stateroom--019": true,
+    "stateroom--020": true,
+    "stateroom--035": true,
+    "stateroom--036": true,
   },
 } as const;
 

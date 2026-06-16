@@ -240,26 +240,26 @@
       "width": 1220,
       "height": 1233
     },
-    "machinery--155--1.8x3.6": {
-      "key": "machinery--155--1.8x3.6",
+    "machinery--155": {
+      "key": "machinery--155",
       "group": "symbol-machinery",
       "width": 520,
       "height": 1100
     },
-    "machinery--156--1.8x3.6": {
-      "key": "machinery--156--1.8x3.6",
+    "machinery--156": {
+      "key": "machinery--156",
       "group": "symbol-machinery",
       "width": 560,
       "height": 1100
     },
-    "machinery--158--1.8x3.6": {
-      "key": "machinery--158--1.8x3.6",
+    "machinery--158": {
+      "key": "machinery--158",
       "group": "symbol-machinery",
       "width": 560,
       "height": 1100
     },
-    "machinery--357--2.2x4": {
-      "key": "machinery--357--2.2x4",
+    "machinery--357": {
+      "key": "machinery--357",
       "group": "symbol-machinery",
       "width": 1220,
       "height": 683
@@ -270,14 +270,14 @@
       "width": 643,
       "height": 1238
     },
-    "iris-valves--005--1x1": {
-      "key": "iris-valves--005--1x1",
+    "iris-valves--005": {
+      "key": "iris-valves--005",
       "group": "symbol-misc",
       "width": 221,
       "height": 220
     },
-    "iris-valves--006--1x1": {
-      "key": "iris-valves--006--1x1",
+    "iris-valves--006": {
+      "key": "iris-valves--006",
       "group": "symbol-misc",
       "width": 221,
       "height": 220
@@ -294,74 +294,74 @@
       "width": 1220,
       "height": 1220
     },
-    "window--001--0x1": {
-      "key": "window--001--0x1",
+    "window--001": {
+      "key": "window--001",
       "group": "symbol-misc",
       "width": 307,
       "height": 67
     },
-    "window--005--0x2": {
-      "key": "window--005--0x2",
+    "window--005": {
+      "key": "window--005",
       "group": "symbol-misc",
       "width": 607,
       "height": 67
     },
-    "window--007--0x2.4": {
-      "key": "window--007--0x2.4",
+    "window--007": {
+      "key": "window--007",
       "group": "symbol-misc",
       "width": 907,
       "height": 67
     },
-    "office--001--2x2": {
-      "key": "office--001--2x2",
+    "office--001": {
+      "key": "office--001",
       "group": "symbol-office",
       "width": 633,
       "height": 620
     },
-    "office--004--2x2": {
-      "key": "office--004--2x2",
+    "office--004": {
+      "key": "office--004",
       "group": "symbol-office",
       "width": 633,
       "height": 620
     },
-    "office--006--2x2": {
-      "key": "office--006--2x2",
+    "office--006": {
+      "key": "office--006",
       "group": "symbol-office",
       "width": 633,
       "height": 620
     },
-    "office--026--2x3": {
-      "key": "office--026--2x3",
+    "office--026": {
+      "key": "office--026",
       "group": "symbol-office",
       "width": 657,
       "height": 920
     },
-    "office--020--2x3": {
-      "key": "office--020--2x3",
+    "office--020": {
+      "key": "office--020",
       "group": "symbol-office",
       "width": 633,
       "height": 920
     },
-    "office--023--2x3": {
-      "key": "office--023--2x3",
+    "office--023": {
+      "key": "office--023",
       "group": "symbol-office",
       "width": 620,
       "height": 934
     },
-    "office--061--3x4": {
-      "key": "office--061--3x4",
+    "office--061": {
+      "key": "office--061",
       "group": "symbol-office",
       "width": 934,
       "height": 1220
     },
-    "office--074--4x4": {
-      "key": "office--074--4x4",
+    "office--074": {
+      "key": "office--074",
       "group": "symbol-office",
       "width": 1233,
       "height": 1220
     },
-    "office--089--4x4": {
-      "key": "office--089--4x4",
+    "office--089": {
+      "key": "office--089",
       "group": "symbol-office",
       "width": 1194,
       "height": 1195
@@ -372,14 +372,14 @@
       "width": 1220,
       "height": 643
     },
-    "medical--007--2x3": {
-      "key": "medical--007--2x3",
+    "medical--007": {
+      "key": "medical--007",
       "group": "symbol-medical",
       "width": 920,
       "height": 633
     },
-    "medical--008--2x3": {
-      "key": "medical--008--2x3",
+    "medical--008": {
+      "key": "medical--008",
       "group": "symbol-medical",
       "width": 920,
       "height": 633
@@ -486,44 +486,44 @@
       "width": 1238,
       "height": 639
     },
-    "lounge--015--2x4": {
-      "key": "lounge--015--2x4",
+    "lounge--015": {
+      "key": "lounge--015",
       "group": "symbol-lounge",
       "width": 1220,
       "height": 620
     },
-    "lounge--017--2x4": {
-      "key": "lounge--017--2x4",
+    "lounge--017": {
+      "key": "lounge--017",
       "group": "symbol-lounge",
       "width": 1220,
       "height": 620
     },
-    "low-berth--003--1x1": {
-      "key": "low-berth--003--1x1",
+    "low-berth--003": {
+      "key": "low-berth--003",
       "group": "symbol-low-berth",
       "width": 307,
       "height": 356
     },
-    "ships-locker--003--1x1": {
-      "key": "ships-locker--003--1x1",
+    "ships-locker--003": {
+      "key": "ships-locker--003",
       "group": "symbol-ships-locker",
       "width": 320,
       "height": 334
     },
-    "ships-locker--007--1x2": {
-      "key": "ships-locker--007--1x2",
+    "ships-locker--007": {
+      "key": "ships-locker--007",
       "group": "symbol-ships-locker",
       "width": 620,
       "height": 334
     },
-    "ships-locker--011--1x2": {
-      "key": "ships-locker--011--1x2",
+    "ships-locker--011": {
+      "key": "ships-locker--011",
       "group": "symbol-ships-locker",
       "width": 620,
       "height": 334
     },
-    "ships-locker--020--2x2": {
-      "key": "ships-locker--020--2x2",
+    "ships-locker--020": {
+      "key": "ships-locker--020",
       "group": "symbol-ships-locker",
       "width": 620,
       "height": 634
@@ -564,44 +564,44 @@
       "width": 268,
       "height": 146
     },
-    "stateroom--012--2x2": {
-      "key": "stateroom--012--2x2",
+    "stateroom--012": {
+      "key": "stateroom--012",
       "group": "symbol-stateroom",
       "width": 633,
       "height": 620
     },
-    "stateroom--014--2x2": {
-      "key": "stateroom--014--2x2",
+    "stateroom--014": {
+      "key": "stateroom--014",
       "group": "symbol-stateroom",
       "width": 620,
       "height": 634
     },
-    "stateroom--018--2x3": {
-      "key": "stateroom--018--2x3",
+    "stateroom--018": {
+      "key": "stateroom--018",
       "group": "symbol-stateroom",
       "width": 633,
       "height": 920
     },
-    "stateroom--019--2x3": {
-      "key": "stateroom--019--2x3",
+    "stateroom--019": {
+      "key": "stateroom--019",
       "group": "symbol-stateroom",
       "width": 633,
       "height": 920
     },
-    "stateroom--020--2x3": {
-      "key": "stateroom--020--2x3",
+    "stateroom--020": {
+      "key": "stateroom--020",
       "group": "symbol-stateroom",
       "width": 633,
       "height": 920
     },
-    "stateroom--035--2x3": {
-      "key": "stateroom--035--2x3",
+    "stateroom--035": {
+      "key": "stateroom--035",
       "group": "symbol-stateroom",
       "width": 620,
       "height": 934
     },
-    "stateroom--036--2x4": {
-      "key": "stateroom--036--2x4",
+    "stateroom--036": {
+      "key": "stateroom--036",
       "group": "symbol-stateroom",
       "width": 620,
       "height": 1234
