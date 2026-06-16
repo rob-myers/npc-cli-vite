@@ -27,7 +27,7 @@
       "children": [
         {
           "id": "3438177f-d484-491b-9743-9753f4036870",
-          "name": "console--051--0.4x0.6 y=0.5",
+          "name": "console--051 y=0.5",
           "locked": true,
           "visible": true,
           "transform": {
@@ -39,14 +39,14 @@
             "f": 91.1288
           },
           "type": "symbol",
-          "srcKey": "console--051--0.4x0.6",
+          "srcKey": "console--051",
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 0.7612990604522881, "y": 1.166372042083684},
           "cssTransform": "matrix(0.9659258262890683, 0.25881904510252074, -0.25881904510252074, 0.9659258262890683, 73.6547, 92.2952)"
         },
         {
           "id": "ee454569-9a0f-4212-83c7-c0bb1174313e",
-          "name": "console--051--0.4x0.6 y=0.5",
+          "name": "console--051 y=0.5",
           "locked": true,
           "visible": true,
           "transform": {
@@ -58,7 +58,7 @@
             "f": 174.5
           },
           "type": "symbol",
-          "srcKey": "console--051--0.4x0.6",
+          "srcKey": "console--051",
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": -1.2479258845760297, "y": 0.6186660137789479},
           "cssTransform": "matrix(-0.25881904510252074, -0.9659258262890683, 0.9659258262890683, -0.25881904510252074, 118.2521, 175.1187)"
