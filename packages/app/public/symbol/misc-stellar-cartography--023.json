@@ -1,19 +1,19 @@
 {
-  "filename": "misc-stellar-cartography--023--4x4.json",
+  "filename": "misc-stellar-cartography--023.json",
   "width": 240,
   "height": 240,
   "nodes": [
     {
       "id": "bbdd4010-1817-45d4-9d98-a74bbfdfb8d1",
-      "name": "misc-stellar-cartography--023--4x4 1",
+      "name": "misc-stellar-cartography--023 1",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0.5},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0.5 },
       "type": "image",
       "srcType": "symbol",
-      "srcKey": "misc-stellar-cartography--023--4x4",
-      "baseRect": {"width": 244, "height": 244},
-      "offset": {"x": -2, "y": -2},
+      "srcKey": "misc-stellar-cartography--023",
+      "baseRect": { "width": 244, "height": 244 },
+      "offset": { "x": -2, "y": -2 },
       "cssTransform": "matrix(1, 0, 0, 1, -2, -1.5)"
     },
     {
@@ -21,7 +21,7 @@
       "name": "symbols",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": false,
       "children": [
@@ -40,8 +40,8 @@
           },
           "type": "symbol",
           "srcKey": "console--051",
-          "baseRect": {"width": 30, "height": 30},
-          "offset": {"x": 0.7612990604522881, "y": 1.166372042083684},
+          "baseRect": { "width": 30, "height": 30 },
+          "offset": { "x": 0.7612990604522881, "y": 1.166372042083684 },
           "cssTransform": "matrix(0.9659258262890683, 0.25881904510252074, -0.25881904510252074, 0.9659258262890683, 73.6547, 92.2952)"
         },
         {
@@ -59,8 +59,8 @@
           },
           "type": "symbol",
           "srcKey": "console--051",
-          "baseRect": {"width": 30, "height": 30},
-          "offset": {"x": -1.2479258845760297, "y": 0.6186660137789479},
+          "baseRect": { "width": 30, "height": 30 },
+          "offset": { "x": -1.2479258845760297, "y": 0.6186660137789479 },
           "cssTransform": "matrix(-0.25881904510252074, -0.9659258262890683, 0.9659258262890683, -0.25881904510252074, 118.2521, 175.1187)"
         }
       ]
@@ -70,7 +70,7 @@
       "name": "walls",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": false,
       "children": [
@@ -79,9 +79,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2 },
           "type": "rect",
-          "baseRect": {"width": 4, "height": 244},
+          "baseRect": { "width": 4, "height": 244 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
         },
         {
@@ -89,9 +89,9 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 238},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 238 },
           "type": "rect",
-          "baseRect": {"width": 244, "height": 4},
+          "baseRect": { "width": 244, "height": 4 },
           "cssTransform": "matrix(1, 0, 0, 1, -2, 238)"
         },
         {
@@ -99,10 +99,10 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
           "type": "path",
           "d": "M 242 59 L 242 239 L 238 239 L 238 60.58 L 179.441 2 L 0 2 L 0 -2 L 181.061 -2 L 242 59 Z",
-          "baseRect": {"width": 240, "height": 240},
+          "baseRect": { "width": 240, "height": 240 },
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }
       ]
@@ -112,12 +112,12 @@
       "name": "decor point label=cartography",
       "locked": true,
       "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 124.5, "f": 97.5},
+      "transform": { "a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 124.5, "f": 97.5 },
       "type": "image",
       "srcType": "decor",
       "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
+      "baseRect": { "width": 40, "height": 15 },
+      "offset": { "x": 0, "y": 0 },
       "cssTransform": "matrix(0.5, 0, 0, 0.5, 124.5, 97.5)"
     },
     {
@@ -125,7 +125,7 @@
       "name": "doors",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "group",
       "expanded": true,
       "children": [
@@ -144,7 +144,7 @@
           },
           "type": "path",
           "d": "M0,0 L52.5,0 L52.5,9.5 L0,9.5 L0,0 Z",
-          "baseRect": {"width": 53, "height": 10},
+          "baseRect": { "width": 53, "height": 10 },
           "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, -0.7071067811865475, 0.7071067811865476, 194, 8)"
         },
         {
@@ -163,8 +163,8 @@
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, -0.7071067811865475, 0.7071067811865476, 184, 6)"
         },
         {
@@ -183,8 +183,8 @@
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, 0.7071067811865475, -0.7071067811865476, 186, 4)"
         },
         {
@@ -203,8 +203,8 @@
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, -0.7071067811865475, 0.7071067811865476, 230, 52)"
         },
         {
@@ -223,8 +223,8 @@
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
+          "baseRect": { "width": 6, "height": 6 },
+          "offset": { "x": 0, "y": 0 },
           "cssTransform": "matrix(0.7071067811865476, 0.7071067811865475, 0.7071067811865475, -0.7071067811865476, 232, 50)"
         }
       ]
@@ -234,14 +234,14 @@
       "name": "obstacle table y=0.7",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
       "type": "path",
       "d": "M 111.362 61.81 L 84.844 72.75 L 66.342 95.471 L 61.049 122.068 L 67.158 146.017 L 86.62 168.386 L 111.383 178.371 L 139.762 175.624 L 164.755 158.693 L 175.458 140.066 L 178.065 112.345 L 177.039 104.043 L 229.922 52.711 L 239.908 63.002 L 240 240.042 L 0 240.022 L 0 0.02599 L 180.088 0 L 187.309 10.774 L 135.081 63.348 L 111.362 61.81 Z",
-      "baseRect": {"width": 240, "height": 240},
+      "baseRect": { "width": 240, "height": 240 },
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
+  "bounds": { "x": -2, "y": -1.5, "width": 244, "height": 244 },
   "type": "symbol",
-  "key": "misc-stellar-cartography--023--4x4"
+  "key": "misc-stellar-cartography--023"
 }

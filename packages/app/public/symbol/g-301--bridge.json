@@ -135,12 +135,12 @@
         },
         {
           "id": "64ce3e7e-f524-40ca-bf04-990d68bea076",
-          "name": "misc-stellar-cartography--023--4x4",
+          "name": "misc-stellar-cartography--023",
           "locked": false,
           "visible": true,
           "transform": { "a": -1, "b": 0, "c": 0, "d": 1, "e": 1198, "f": 359.5 },
           "type": "symbol",
-          "srcKey": "misc-stellar-cartography--023--4x4",
+          "srcKey": "misc-stellar-cartography--023",
           "baseRect": { "width": 240, "height": 240 },
           "offset": { "x": 2, "y": -1.5 },
           "cssTransform": "matrix(-1, 0, 0, 1, 1200, 358)"

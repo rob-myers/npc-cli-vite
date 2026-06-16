@@ -165,7 +165,11 @@
     - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `lab|lounge|low-berth|machinery|medical|iris-valves|window|office|ships-locker|shop-repair-area|stateroom`
     - ✅ find replace `"(lab|lounge|low-berth|machinery|medical|iris-valves|window|office|ships-locker|shop-repair-area|stateroom)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
     - ✅ `pnpm gen-starship-sheets` before dev server
-  - 🚧 leftovers
+  - ✅ leftovers
+    - ✅ please rename files with basename `extra--\d{3}--{x}--[\d\.]+x[\d\.]*\d` with basename `extra--\d{3}--{x}`
+    - ✅ find replace `"extra--(\d{3})--(\S+)--[\d\.]+x[\d\.]*\d` with `"extra--$1--$2`
+    - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `table|misc-stellar-cartography|shop`
+    - ✅ find replace `"(table|misc-stellar-cartography|shop)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
 
 - new todos i.e. current go into technical and start new section
 

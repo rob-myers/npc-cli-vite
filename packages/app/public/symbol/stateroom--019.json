@@ -46,12 +46,12 @@
       "children": [
         {
           "id": "54f768e2-5984-429d-881b-60ecf5a478cc",
-          "name": "extra--004--desk--0.5x1",
+          "name": "extra--004--desk",
           "locked": false,
           "visible": true,
           "transform": { "a": 0, "b": -1, "c": 1, "d": 0, "e": 2.5, "f": 32.5 },
           "type": "symbol",
-          "srcKey": "extra--004--desk--0.5x1",
+          "srcKey": "extra--004--desk",
           "baseRect": { "width": 30, "height": 60 },
           "offset": { "x": -2, "y": -0.7 },
           "cssTransform": "matrix(0, -1, 1, 0, 0.5, 31.8)"

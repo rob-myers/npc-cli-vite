@@ -8,7 +8,7 @@
  * USAGE:
  * ```sh
  * pnpm gen-assets-json
- * pnpm gen-assets-json --changedFiles='["/path/to/.../public/symbol/console--051--0.4x0.6.json"]'
+ * pnpm gen-assets-json --changedFiles='["/path/to/.../public/symbol/console--051.json"]'
  * ```
  */
 import fs, { writeFileSync } from "node:fs";

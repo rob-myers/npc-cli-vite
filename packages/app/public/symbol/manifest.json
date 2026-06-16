@@ -36,14 +36,14 @@
       "type": "symbol",
       "key": "bed--003"
     },
-    "extra--004--desk--0.5x1": {
-      "filename": "extra--004--desk--0.5x1.json",
-      "thumbnailFilename": "extra--004--desk--0.5x1.thumbnail.png",
+    "extra--004--desk": {
+      "filename": "extra--004--desk.json",
+      "thumbnailFilename": "extra--004--desk.thumbnail.png",
       "width": 30,
       "height": 60,
       "bounds": { "x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4 },
       "type": "symbol",
-      "key": "extra--004--desk--0.5x1"
+      "key": "extra--004--desk"
     },
     "console--033": {
       "filename": "console--033.json",
@@ -54,14 +54,14 @@
       "type": "symbol",
       "key": "console--033"
     },
-    "extra--003--chair--0.25x0.25": {
-      "filename": "extra--003--chair--0.25x0.25.json",
-      "thumbnailFilename": "extra--003--chair--0.25x0.25.thumbnail.png",
+    "extra--003--chair": {
+      "filename": "extra--003--chair.json",
+      "thumbnailFilename": "extra--003--chair.thumbnail.png",
       "width": 20,
       "height": 20,
       "bounds": { "x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6 },
       "type": "symbol",
-      "key": "extra--003--chair--0.25x0.25"
+      "key": "extra--003--chair"
     },
     "g-301--bridge": {
       "filename": "g-301--bridge.json",
@@ -162,14 +162,14 @@
       "type": "symbol",
       "key": "console--031"
     },
-    "misc-stellar-cartography--023--4x4": {
-      "filename": "misc-stellar-cartography--023--4x4.json",
-      "thumbnailFilename": "misc-stellar-cartography--023--4x4.thumbnail.png",
+    "misc-stellar-cartography--023": {
+      "filename": "misc-stellar-cartography--023.json",
+      "thumbnailFilename": "misc-stellar-cartography--023.thumbnail.png",
       "width": 240,
       "height": 240,
       "bounds": { "x": -2, "y": -1.5, "width": 244, "height": 244 },
       "type": "symbol",
-      "key": "misc-stellar-cartography--023--4x4"
+      "key": "misc-stellar-cartography--023"
     },
     "window--007": {
       "filename": "window--007.json",
@@ -189,32 +189,32 @@
       "type": "symbol",
       "key": "table--004"
     },
-    "extra--005--chair-0.25x0.25": {
-      "filename": "extra--005--chair-0.25x0.25.json",
-      "thumbnailFilename": "extra--005--chair-0.25x0.25.thumbnail.png",
+    "extra--005--chair": {
+      "filename": "extra--005--chair.json",
+      "thumbnailFilename": "extra--005--chair.thumbnail.png",
       "width": 20,
       "height": 20,
       "bounds": { "x": 0.5, "y": 0.5, "width": 19, "height": 19 },
       "type": "symbol",
-      "key": "extra--005--chair-0.25x0.25"
+      "key": "extra--005--chair"
     },
-    "extra--001--fresher--0.5x0.5": {
-      "filename": "extra--001--fresher--0.5x0.5.json",
-      "thumbnailFilename": "extra--001--fresher--0.5x0.5.thumbnail.png",
+    "extra--001--fresher": {
+      "filename": "extra--001--fresher.json",
+      "thumbnailFilename": "extra--001--fresher.thumbnail.png",
       "width": 28,
       "height": 23,
       "bounds": { "x": 0, "y": 0, "width": 27.4, "height": 23.4 },
       "type": "symbol",
-      "key": "extra--001--fresher--0.5x0.5"
+      "key": "extra--001--fresher"
     },
-    "extra--002--fresher--0.5x0.5": {
-      "filename": "extra--002--fresher--0.5x0.5.json",
-      "thumbnailFilename": "extra--002--fresher--0.5x0.5.thumbnail.png",
+    "extra--002--fresher": {
+      "filename": "extra--002--fresher.json",
+      "thumbnailFilename": "extra--002--fresher.thumbnail.png",
       "width": 24,
       "height": 32,
       "bounds": { "x": 0, "y": 0, "width": 22.8, "height": 31.2 },
       "type": "symbol",
-      "key": "extra--002--fresher--0.5x0.5"
+      "key": "extra--002--fresher"
     },
     "extra--021--shower": {
       "filename": "extra--021--shower.json",
