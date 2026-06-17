@@ -187,10 +187,10 @@
     - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `table|misc-stellar-cartography|shop`
     - ✅ find replace `"(table|misc-stellar-cartography|shop)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
 
-- 🚧 clean tty
-  - type modules in packages/cli/src/tty/Tty.tsx
+- ✅ clean tty
+  - ✅ type modules in packages/cli/src/tty/Tty.tsx
     - `call 'x => Object.keys(x.lib)''
-  - clean Jsh props
+  - ✅ clean Jsh props
 
 - new todos i.e. current go into technical and start new section
 

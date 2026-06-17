@@ -24,21 +24,15 @@ export default function Jsh(props: { meta: JshUiMeta }) {
   return (
     <Tty
       sessionKey={props.meta.sessionKey}
+      disabled={props.meta.disabled}
+      env={props.meta.env}
+      modules={modules} // actual JS
       originalProfileKey={
         typeof props.meta.env.PROFILE_KEY === "string"
           ? props.meta.env.PROFILE_KEY
           : ("default_profile" satisfies ProfileKey)
       }
-      disabled={props.meta.disabled}
-      env={props.meta.env}
-      // actual JS
-      modules={modules}
-      // JS wrapped as shell functions
-      shFiles={shellFunctionFiles}
-      // 🚧
-      onKey={() => {}}
-      setTabsEnabled={() => {}}
-      updateTabMeta={() => {}}
+      shFiles={shellFunctionFiles} // JS wrapped as shell functions
     />
   );
 }

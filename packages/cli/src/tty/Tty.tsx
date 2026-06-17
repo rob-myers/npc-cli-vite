@@ -211,9 +211,9 @@ export function Tty(props: Props) {
     xterm.attachCustomKeyEventHandler((e) => {
       // xterm.js should not handle shift/ctrl + enter,
       // so we can unpause Tabs from Tty
-      if (e.type === "keyup") {
-        props.onKey?.(e); // handle shift/ctrl + enter
-      }
+      // if (e.type === "keyup") {
+      //   props.onKey?.(e); // handle shift/ctrl + enter
+      // }
       if (e.key === "Enter" && (e.shiftKey === true || e.ctrlKey === true)) {
         return false;
       } else {
@@ -230,11 +230,6 @@ export function Tty(props: Props) {
       cleanupExternalMsgs();
     };
   }, [baseRef.current?.session]);
-
-  React.useEffect(() => {
-    const onKeyDispose = baseRef.current?.xterm?.xterm.onKey((e) => props.onKey?.(e.domEvent));
-    return () => onKeyDispose?.dispose();
-  }, [props.onKey]);
 
   React.useEffect(() => {
     // Handle resize
@@ -270,11 +265,11 @@ export function Tty(props: Props) {
       xterm.initialise();
       state.booted = true;
 
-      // distinguish this instance of sessionKey from hot reloads
-      props.updateTabMeta({
-        key: /** @type {Key.TabId} */ (props.sessionKey),
-        ttyBootedAt: Date.now(),
-      });
+      // // distinguish this instance of sessionKey from hot reloads
+      // props.updateTabMeta({
+      //   key: /** @type {Key.TabId} */ (props.sessionKey),
+      //   ttyBootedAt: Date.now(),
+      // });
 
       session.ttyShell.initialise(xterm).then(async () => {
         await state.storeAndSourceFuncs();
@@ -300,7 +295,6 @@ export function Tty(props: Props) {
           constraintsRef={containerRef}
           disabled={props.disabled}
           session={baseRef.current.session}
-          setTabsEnabled={props.setTabsEnabled}
         />
       )}
     </div>
@@ -321,15 +315,12 @@ export interface Props extends BaseTabProps {
    * All js functions which induce shell functions.
    * They are partitioned by "fileKey".
    */
-  // modules: import("./TtyWithFunctions").TtyJsModules;
-  modules: any;
+  modules: typeof import("../jsh/modules");
   /**
    * All shell files (*.sh and *.js.sh).
    * They are spread into `/etc`.
    */
   shFiles: Record<string, string>;
-
-  onKey?(e: KeyboardEvent): void;
 }
 
 export interface BaseTabProps {
@@ -341,31 +332,25 @@ export interface BaseTabProps {
    * In the future we may permit disabling a visible Tab whilst Tabs enabled.
    */
   disabled?: boolean;
-  /**
-   * For example, can enable all tabs:
-   * - onclick anywhere in a single tab (World)
-   * - onclick a link (Tty)
-   */
-  setTabsEnabled(next: boolean): void;
-  /**
-   * Components can update their meta in tabs.store.
-   * For example, Tty can update ttyBootedAt to distinguish
-   * hot-reloaded sessions.
-   */
-  updateTabMeta(meta: TabStoreTabMeta): void;
+  // /**
+  //  * Components can update their meta in tabs.store.
+  //  * For example, Tty can update ttyBootedAt to distinguish
+  //  * hot-reloaded sessions.
+  //  */
+  // updateTabMeta(meta: TabStoreTabMeta): void;
 }
 
-interface TabStoreTabMeta {
-  key: string;
-  disabled?: boolean;
+// interface TabStoreTabMeta {
+//   key: string;
+//   disabled?: boolean;
 
-  /**
-   * TTY tab only: last recorded value of home.WORLD_KEY,
-   * either via `awaitWorld` or clicking it in `Manage`.
-   */
-  ttyWorldKey?: string;
-  ttyBootedAt?: number;
-}
+//   /**
+//    * TTY tab only: last recorded value of home.WORLD_KEY,
+//    * either via `awaitWorld` or clicking it in `Manage`.
+//    */
+//   ttyWorldKey?: string;
+//   ttyBootedAt?: number;
+// }
 
 const profilesLookup = { ...profiles };
 function isProfileKey(key: any): key is ProfileKey {

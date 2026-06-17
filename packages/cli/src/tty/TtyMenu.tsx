@@ -232,7 +232,6 @@ interface Props {
   constraintsRef: React.RefObject<HTMLDivElement | null>;
   disabled?: boolean;
   session: Session;
-  setTabsEnabled(next: boolean): void;
 }
 
 export type State = {
