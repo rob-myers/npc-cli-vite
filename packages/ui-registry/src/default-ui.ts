@@ -12,7 +12,7 @@ export function getDefaultTabs() {
 
   const ttyKey = "tty-0";
   const worldKey = "world-0";
-  const profileKey: ProfileKey = "world_profile_v0_0";
+  const profileKey: ProfileKey = "world_profile_v0";
 
   const jshMeta = Jsh.schema.decode({
     id: uid(),
