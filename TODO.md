@@ -126,7 +126,7 @@
 - ✅ small-map-0 -> 301-only
   - also clean up other map names
 
-- 🚧 better approach to default tty profile
+- ✅ better approach to default tty profile
   - currently does not update onchange profiles.ts without remaking `tty-{n}`
   - ✅ terminals have PROFILE_KEY
   - ✅ PROFILE set via PROFILE_KEY
@@ -144,11 +144,6 @@
 
 - ✅ BUG on closePane in pane-service we're not removing tabs
   - similarly for directly remove tab
-
-- clean tty
-  - type modules in packages/cli/src/tty/Tty.tsx
-    - `call 'x => Object.keys(x.lib)''
-  - clean Jsh props
 
 - ✅ remove all suffices e.g. --0.25x0.25 from all symbols
   - ✅ remove suffix from generating script `extract-starship-pngs`
@@ -191,6 +186,11 @@
     - ✅ find replace `"extra--(\d{3})--(\S+)--[\d\.]+x[\d\.]*\d` with `"extra--$1--$2`
     - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `table|misc-stellar-cartography|shop`
     - ✅ find replace `"(table|misc-stellar-cartography|shop)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
+
+- 🚧 clean tty
+  - type modules in packages/cli/src/tty/Tty.tsx
+    - `call 'x => Object.keys(x.lib)''
+  - clean Jsh props
 
 - new todos i.e. current go into technical and start new section
 
