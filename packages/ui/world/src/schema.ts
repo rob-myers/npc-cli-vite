@@ -8,6 +8,7 @@ const defaultThemeKey: typeof import("./const").defaultThemeKey = "light-theme";
 
 export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
+  uiKey: z.literal("World"),
   disabled: z.boolean().default(true),
   worldKey: z.templateLiteral(["world-", z.number()]),
   mapKey: z.string().default(defaultMapKey),
