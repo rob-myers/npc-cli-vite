@@ -317,6 +317,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       .clone()
       .translate(-(transform[2] * baseRect.height) / 2, -(transform[3] * baseRect.height) / 2)
       .precision(3);
+    const [a, b, c, d] = transform;
 
     return {
       type: "quad",
@@ -326,6 +327,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       transform,
       center,
       topCenter,
+      det: Math.sign(a * d - b * c),
     };
   } else if (meta.circle === true) {
     const polyRect = poly.rect.precision(precision);
@@ -443,7 +445,7 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
     meta.tilt = true; // 90° around "top"
   }
 
-  if (meta.cuboid === true || meta.quad === true) {
+  if (meta.quad === true) {
     // - preserve transform for shader later, so can transform quad from the spritesheet
     // - physical coords provided by `poly` e.g. for collision detection
     // - during symbol flattening `transformDecorMeta` expects tuple

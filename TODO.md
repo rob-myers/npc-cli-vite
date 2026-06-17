@@ -15,8 +15,13 @@ w decor.byKey.test-decor-point
 # w: selector not found: decor.byKey.test-decor-point
 ```
 
-- 🚧 can remove decor rect/circle
-  - ❌ track gaps
+- 🚧 custom decor quads
+  - ✅ fix custom decor quad
+    - no issue we need to use respective decor image
+  - ✅ fix flipped decor
+  - 🚧 render custom decor quads as separate instancedMesh
+  - can remove custom decor
+    - ❌ track gaps
 - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad
