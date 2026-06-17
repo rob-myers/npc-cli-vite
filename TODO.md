@@ -2,8 +2,20 @@
 
 - new todos i.e. current go into technical and start new section
 
-- track runtime decor so preserve on hmr
-- can remove decor rect/circle
+- ✅ custom decor preserved on hmr
+
+```sh
+# repro
+source /etc/demo.js.sh
+demo_add_decor
+w decor.byKey | keys | split
+w decor.byKey.test-decor-point
+# save Decor.tsx
+w decor.byKey.test-decor-point
+# w: selector not found: decor.byKey.test-decor-point
+```
+
+- 🚧 can remove decor rect/circle
   - ❌ track gaps
 - can create colliders from decor rect/circle
 

@@ -29,16 +29,14 @@ export default function Decor() {
     (): State => ({
       box: createUnitBox(),
       byKey: {},
+      customByKey: {},
       inst: null as any,
-      // door related
-      gdKeyToInstanceId: {},
+      gdKeyToInstanceId: {}, // door related
       grid: {},
-      // decor needn't have an instance
-      instanceIdToDecorId: [],
+      instanceIdToDecorId: [], // decor needn't have an instance
       lastHmr: 0,
       materials: [],
-      // also changes on hmr while meta lacks roomId
-      ready: false,
+      ready: false, // also false on hmr while decor meta lacks roomId
 
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
@@ -163,6 +161,7 @@ export default function Decor() {
         }
 
         state.byKey[d.key] = d;
+        state.customByKey[d.key] = d;
 
         return d;
       },
@@ -350,11 +349,20 @@ export default function Decor() {
 
       await pause(100);
 
-      // 5. enrich decor.meta and build decor grid
-      // applies to all decor not only those with an instancedMesh instance
-      const metaPoint = { x: 0, y: 0, meta: {} as Meta };
+      // 5. build state.byKey, grid, enrich decor.meta
+      // - applies to all decor not only those with an instancedMesh instance
+      // - preserve custom decor across HMR
+      state.byKey = { ...state.customByKey };
       state.clearGrid();
-      state.byKey = {};
+
+      for (const customDecor of Object.values(state.customByKey)) {
+        customDecor.meta.roomId = -1; // force recompute
+        if (state.ensureGmRoomId(customDecor) !== null) {
+          addToDecorGrid(customDecor, state.grid);
+        }
+      }
+
+      const metaPoint = { x: 0, y: 0, meta: {} as Meta };
 
       for (const [gmId, gm] of w.gms.entries()) {
         for (const decor of gm.decor) {
@@ -448,6 +456,7 @@ export type State = {
 
   box: THREE.BufferGeometry;
   byKey: Record<string, Geomorph.Decor>;
+  customByKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
