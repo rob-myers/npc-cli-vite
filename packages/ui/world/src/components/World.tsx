@@ -3,7 +3,7 @@ import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
 import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import type { RootState } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
@@ -136,6 +136,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       isReady(_connectionKey) {
         return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
+      },
+      async loadDecorImages() {
+        return await Promise.all(
+          Array.from({ length: state.sheets?.decorSheetDims.length ?? 0 }, (_, i) =>
+            loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`),
+          ),
+        );
       },
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
@@ -415,6 +422,7 @@ export type State = {
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
   isReady(connectionKey?: string): boolean;
+  loadDecorImages(): Promise<HTMLImageElement[]>;
   onTick(): void;
   setupProdHullAssetsSync(): void;
   stopTick(): void;
