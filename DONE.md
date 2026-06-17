@@ -1,5 +1,200 @@
 # DONE
 
+# By Jun 17th 2026
+
+- ✅ door normals determined by slide direction
+  - ✅ debug draw normals
+  - ✅ createLayout connector has normal derived from `meta.slide`
+    - weirdly the angled-rect convention "works" most of the time
+    - normal should point "from larger to smaller" if possible
+    - ✅ hull door normal should point outwards
+    - ✅ account for flipping of symbol instances
+      - ✅ `door.meta.det` in -1, +1
+  - ✅ migrate doors
+
+- ✅ can specify per-side door labels
+  - ✅ Doors applies `label` to "front" of door only
+  - support `door.meta.backLabel`
+    - ✅ attribute `doorBackLabelLayer`
+    - ✅ literals e.g. for non-hull doors in hull symbols
+    - ❌ `$leftDoorLabel` e.g. for bridge--046 and can specify `leftDoorLabel='sector-b'`
+
+- ✅ speech bubble improvements
+  - ✅ exists i.e. `w bubble.ensure rob`
+  - ✅ draggable
+  - ✅ connector from npc to bubble
+  - ✅ consider intersection with npc label
+  - ✅ clean
+
+- ✅ on canvas resize speech bubbles updated
+
+- ✅ improve speech bubble
+  - ✅ improve position
+  - ✅ can change text
+
+- ✅ improve label/bubble position for sit, lie
+  - ✅ by default offset is 0, 0, 0
+  - ✅ fix hmr i.e. preserve label height
+  - ✅ fix label whilst moving
+  - ❌ set height on respawn
+  - ✅ fix bubble while scale
+  - ✅ hide label when bubble exists
+  - ❌ slight height adjustments for idle/stand too
+  - ❌ clarify implementation
+
+- ✅ can fade to/from black
+  - ✅ npc has `colorScale` and `opacityScale` uniforms
+- ✅ can fade in/out
+  - fade out: fade to black, depthWrite false, fade opacity to 0
+  - fade in: fade opacity to 1, depthWrite true, fade from black
+
+- ✅ overload `move` to fade spawn
+  - no need for nav then spawn
+  - ✅ `npc.fadeSpawn`
+  - ✅ change `w.npc.move`
+    - can move to doable
+    - can move from doable
+
+- ✅ cli syntax to set value directly?
+  - currently can `w n.rob.colorScale | assign '{ value: 0.5 }'`
+  - ✅ would like `expr 0.5 > w/n/rob/colorScale/value`
+    - this uses the existing cli deep set functionality
+
+- ✅ strategy for `move` to doable whilst moving
+
+- ✅ can `spawn npc:rob at:$( pick 1 )` and pick self whilst sitting down
+- ✅ clean up animated spawn attempts
+- ✅ relax `move` close poly half extents
+  - ✅ to doable should override navigable
+  - ✅ spawn to navigable should use result.position
+
+- ✅ `npc.lookAt`
+- ✅ BUG: doable -> navigable then re-nav quickly -> walk animation doesn't play
+
+- ✅ BUG if 1st spawn failed while paused then next valid spawn is at failed position
+  - on play position is updated
+  - seems during failed spawn npc still exists!
+- ✅ on kill `pick | move npc:rob along` with two picks it should stop 
+  - can force idle overriding
+
+- ✅ scale from center while lie
+
+- ✅ migrate basic raycast
+  - ✅ worker is not starting
+  - ✅ can do `ray from:$( pick 1 ) to:$( pick 1 )`
+  - ✅ can we refine by door open amount?
+
+- ✅ change tint npc label e.g. for selection
+  - `label npc:rob color:#33f`
+  - `label npc:rob` to reset
+
+- ✅ on kill `move` npc should not slide back
+
+- ✅ fix npc moves through door
+  - ✅ faster door open/close
+  - ✅ exit-collider not firing when `spawn` or `fadeSpawn` from doorway to non-navigable
+    - ✅ should remove physics body from worker
+    - ✅ removal of body should trigger exit
+    - ✅ `w.npc.remove` --> `w.e.removeNpcs`
+    - ✅ `w.npc.removeAgents`
+  - ✅ can still happen if enter just as being closed
+
+- ✅ BUG npc transparency issues
+  - repro: on 1st spawn into doorway then `pick | move npc:rob` to chair 
+  - fixed by saving NPCs i.e. hmr
+
+- ✅ look
+  - ✅ play animation once angle is over threshold
+  - ✅ walk-on-spot animation
+  - ✅ can `look npc:rob at:kate`
+
+- ✅ preserve npc reference across hmr
+  - ✅ move code out of constructor into `npc.init`
+  - ✅ `npc.devHotReload` uses "old approach"
+
+- ✅ on hmr `move` should continue
+
+- ✅ draw buddhist icons on back of doors
+  - ✅ randomly
+  - ✅ clean buildDoorWithLabelTextures
+  - ❌ meaningfully
+
+- ✅ hull door opening/closing should trigger other
+  - ✅ hull doors in same geomorph should not intersect
+    - ✅ 101
+    - ✅ 301
+    - ✅ 302
+
+- ✅ small-map-0 -> 301-only
+  - also clean up other map names
+
+- ✅ better approach to default tty profile
+  - currently does not update onchange profiles.ts without remaking `tty-{n}`
+  - ✅ terminals have PROFILE_KEY
+  - ✅ PROFILE set via PROFILE_KEY
+  - ✅ PROFILE_KEY can be persisted
+  - ✅ hot-reload PROFILE via PROFILE_KEY onchange profiles.ts
+    - we don't rerun the profile but we change the value
+  - ✅ World bootstrap has selects for WORLD_KEY and PROFILE_KEY
+    - currently, persisted PROFILE_KEY overrides the one provided in ui meta
+      - desired when user manually changes value (so doesn't switch back)
+      - but removing and re-adding the ui meta via bootstrap ignores chosen PROFILE_KEY
+    - ✅ ui schema admits optional onRemoveUi function
+    - ✅ on remove ui we try to invoke the method
+    - ✅ Jsh adds method which removes PROFILE_KEY from persisted session
+    - ✅ change onRemoveUi to onCreateUi to avoid persist race-conditon
+
+- ✅ BUG on closePane in pane-service we're not removing tabs
+  - similarly for directly remove tab
+
+- ✅ remove all suffices e.g. --0.25x0.25 from all symbols
+  - ✅ remove suffix from generating script `extract-starship-pngs`
+  - ✅ remove suffices from extant files
+    - output/symbol-{foo} pngs except symbol-root, symbol-small-craft
+    - assets.json
+    - sheets.json
+    - starship-symbol/manifest.json
+    - mask/{symbol}.svg
+    - {symbol}.json
+    - {other_symbol}.json
+    - symbol/manifest.json
+    - const.ts
+      - `symbolByGroup`
+      - `extraSymbols`
+  - ✅ migrate starship-symbol/fuel 1st
+    - ✅ please rename files with basename `fuel--\d{3}--\d+x\d+` with basename `fuel--\d{3}`
+    - ✅ find replace `fuel--(\d{3})--\d+x\d+` with `fuel--$1`
+  - ✅ migrate batch
+    - ✅ please rename files with basename `{x}--\d{3}--\S+x\S+` with basename `{x}--\d{3}` where `x` in `battery|bridge|cargo|empty-room`
+    - ✅ find replace `(battery|bridge|cargo|empty-room)--(\d{3})--[\d\.]+x[\d\.]*\d` with `$1--$2`
+  - ✅ migrate next batch
+    - ✅ furniture-consoles-equipment has many different prefixes
+      - delete folder
+      - `pnpm extract-starship-pngs symbol 'Symbols/Furniture, Consoles, & Equipment' symbol-furniture-consoles-equipment`
+    - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `engineering|fresher|furniture-consoles-equipment|bed|console|couch-and-chairs|counter|desk|fresher|medical-bed|table`
+    - ✅ find replace `"(engineering|fresher|furniture-consoles-equipment|bed|console|couch-and-chairs|counter|desk|fresher|medical-bed|table)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
+      - want to exclude cases `-fresher--`
+    - ✅ `pnpm gen-starship-sheets` before dev server
+  - ✅ migrate finalish batch
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Galley & Mess' symbol-galley-and-mess`
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Misc' symbol-misc`
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Staterooms' symbol-stateroom`
+    - ✅ delete then `pnpm extract-starship-pngs symbol 'Symbols/Shop & Repair Area' symbol-shop-repair-area`
+    - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `lab|lounge|low-berth|machinery|medical|iris-valves|window|office|ships-locker|shop-repair-area|stateroom`
+    - ✅ find replace `"(lab|lounge|low-berth|machinery|medical|iris-valves|window|office|ships-locker|shop-repair-area|stateroom)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
+    - ✅ `pnpm gen-starship-sheets` before dev server
+  - ✅ leftovers
+    - ✅ please rename files with basename `extra--\d{3}--{x}--[\d\.]+x[\d\.]*\d` with basename `extra--\d{3}--{x}`
+    - ✅ find replace `"extra--(\d{3})--(\S+)--[\d\.]+x[\d\.]*\d` with `"extra--$1--$2`
+    - ✅ please rename files with basename `{x}--\d{3}--[\d\.]+x[\d\.]*\d` with basename `{x}--\d{3}` where `x` in `table|misc-stellar-cartography|shop`
+    - ✅ find replace `"(table|misc-stellar-cartography|shop)--(\d{3})--[\d\.]+x[\d\.]*\d` with `"$1--$2`
+
+- ✅ clean tty
+  - ✅ type modules in packages/cli/src/tty/Tty.tsx
+    - `call 'x => Object.keys(x.lib)''
+  - ✅ clean Jsh props
+
+
 # By Jun 6th 2026
 
 - ✅ simplify decor
