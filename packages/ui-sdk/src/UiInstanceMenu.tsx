@@ -69,6 +69,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
     >
       {meta.uiKey === "Tabs" && (
         <div className="flex flex-col border-b border-white/20 py-1">
+          {/* 🗑️ */}
           <button
             type="button"
             className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"

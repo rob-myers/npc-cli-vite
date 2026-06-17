@@ -1,7 +1,7 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Popover } from "@base-ui/react/popover";
 import { type UiRegistryKey, uiRegistry, uiRegistryKeys } from "@npc-cli/ui-registry";
-import type { OverrideContextMenuOpts, UiBootstrapProps } from "@npc-cli/ui-sdk";
+import type { OverrideContextMenuOpts, UiBootstrapProps, UiInstanceMeta } from "@npc-cli/ui-sdk";
 import type { LayoutApi } from "@npc-cli/ui-sdk/UiContext";
 import { uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { useStateRef } from "@npc-cli/util";
@@ -111,17 +111,16 @@ export function PaneTreeWrapper({
               {state.contextMenuPopoverUi && (
                 <state.contextMenuPopoverUi.ui
                   addInstance={(partialUiMeta) => {
-                    if (!state.contextMenuPopoverUi) return;
-                    const itemId = `ui-${crypto.randomUUID()}`;
-                    const uiMeta = {
+                    if (!state.contextMenuPopoverUi) {
+                      return;
+                    }
+                    const uiMeta: UiInstanceMeta = {
                       title: uiStoreApi.getDefaultTitle(state.contextMenuPopoverUi.uiKey),
                       ...partialUiMeta,
-                      id: itemId,
+                      id: `ui-${crypto.randomUUID()}`,
                       uiKey: state.contextMenuPopoverUi.uiKey,
                     };
-                    if (state.overrideContextMenuOpts?.addItem) {
-                      state.overrideContextMenuOpts.addItem({ uiMeta });
-                    }
+                    state.overrideContextMenuOpts?.addItem?.({ uiMeta });
                     state.closeContextMenu();
                   }}
                 />
