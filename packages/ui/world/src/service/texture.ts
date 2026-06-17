@@ -390,12 +390,12 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
 
     const measured = ct.measureText(label);
     const padX = 12;
-    const padY = 8;
+    const padY = 12;
     const rw = measured.width + padX * 2;
     const rh = 36 + padY * 2;
-    ct.fillStyle = "rgba(30, 30, 30, 0.92)";
+    ct.fillStyle = "rgba(30, 30, 30, 0)";
     ct.strokeStyle = "rgba(220, 220, 220, 0.92)";
-    ct.lineWidth = 2;
+    ct.lineWidth = 1;
     ct.beginPath();
     ct.roundRect(-rw / 2, -rh / 2, rw, rh, 6);
     ct.fill();
