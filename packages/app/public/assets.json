@@ -31084,7 +31084,7 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-zinc-900",
+      "background": "bg-gray-700",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#6666"},
         "nonHull": {"fill": "#5555", "stroke": "#0005"}

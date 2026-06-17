@@ -16,8 +16,8 @@ export const empty_profile = `
 
 `.trim();
 
-export const world_profile_v0_0 = `
-# world profile v0.0
+export const world_profile_v0 = `
+# world profile v0
 source /etc/util.sh
 source /etc/util.js.sh
 source /etc/core.js.sh
