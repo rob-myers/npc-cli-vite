@@ -55,6 +55,7 @@ export const DecorQuadSchema = BaseDecorSchema.extend({
   center: pointCodec,
   topCenter: pointCodec,
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string() })),
+  det: z.number().default(1),
 });
 
 export const DecorQuadDefSchema = BaseDecorDefSchema.extend({

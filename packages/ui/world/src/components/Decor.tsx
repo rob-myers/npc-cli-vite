@@ -107,6 +107,7 @@ export default function Decor() {
               transform,
               center,
               topCenter,
+              det: Math.sign(matrix.a * matrix.d - matrix.b * matrix.c),
             };
             break;
           }
@@ -268,8 +269,18 @@ export default function Decor() {
           }
           const dims = w.sheets.decorSheetDims[entry.sheetId];
           if (!dims) continue;
-          state.uvOffsets.set([entry.rect.x / dims.width, entry.rect.y / dims.height], uvIdx * 2);
-          state.uvDimensions.set([entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
+
+          // fix flipped decor
+          if (item.type === "quad" && item.det === -1) {
+            state.uvOffsets.set(
+              [(entry.rect.x + entry.rect.width) / dims.width, entry.rect.y / dims.height],
+              uvIdx * 2,
+            );
+            state.uvDimensions.set([-entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
+          } else {
+            state.uvOffsets.set([entry.rect.x / dims.width, entry.rect.y / dims.height], uvIdx * 2);
+            state.uvDimensions.set([entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
+          }
           state.uvTextureIds[uvIdx] = entry.sheetId;
           uvIdx++;
         }
@@ -308,7 +319,7 @@ export default function Decor() {
             }
 
             // biome-ignore format: preserve newlines
-            tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0,]);
+            tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
             const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
             if (shouldTilt) mat4.premultiply(tiltMat4);
 
@@ -468,6 +479,7 @@ export type State = {
   getDecorPointImgKey(decor: Geomorph.Decor): string;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   hasInstance(decor: Geomorph.Decor): boolean;
+  /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
 };
