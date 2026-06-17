@@ -133,6 +133,17 @@
   - ✅ PROFILE_KEY can be persisted
   - ✅ hot-reload PROFILE via PROFILE_KEY onchange profiles.ts
     - we don't rerun the profile but we change the value
+  - 🚧 World bootstrap has selects for WORLD_KEY and PROFILE_KEY
+    - currently, persisted PROFILE_KEY overrides the one provided in ui meta
+      - desired when user manually changes value (so doesn't switch back)
+      - but removing and re-adding the ui meta via bootstrap ignores chosen PROFILE_KEY
+    - ✅ ui schema admits optional onRemoveUi function
+    - ✅ on remove ui we try to invoke the method
+    - ✅ Jsh adds method which removes PROFILE_KEY from persisted session
+    - 🚧 change onRemoveUi to onCreateUi to avoid persist race-conditon
+
+- ✅ BUG on closePane in pane-service we're not removing tabs
+  - similarly for directly remove tab
 
 - clean tty
   - type modules in packages/cli/src/tty/Tty.tsx

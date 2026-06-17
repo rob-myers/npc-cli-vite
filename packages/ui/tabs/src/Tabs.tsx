@@ -92,7 +92,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           },
         });
       },
-      onDeleteTab(tab: UiInstanceMeta, { preservePortal }: { preservePortal: boolean }) {
+      onDeleteTab(tab: UiInstanceMeta) {
         uiStore.setState((draft) => {
           const rootMeta = draft.byId[meta.id].meta as TabsUiMeta;
           const prevIndex = rootMeta.items.indexOf(tab.id);
@@ -100,10 +100,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           if (rootMeta.currentTabId === tab.id) {
             rootMeta.currentTabId = rootMeta.items[prevIndex - 1] ?? rootMeta.items[0];
           }
-          if (!preservePortal) {
-            delete draft.byId[tab.id];
-          }
         });
+        uiStoreApi.removeItem(tab.id);
       },
     }),
     { deps: [meta, layoutApi] },
@@ -175,7 +173,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
               tab={tab}
               isCurrentTab={meta.currentTabId === tab.id}
               onClickTab={() => state.onClickTab(tab)}
-              onDeleteTab={() => state.onDeleteTab(tab, { preservePortal: false })}
+              onDeleteTab={() => state.onDeleteTab(tab)}
               tabsMetaId={meta.id}
               uiStore={uiStore}
               uiStoreApi={uiStoreApi}
@@ -185,6 +183,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             <PlusCircleIcon className="size-6 text-on-background/60" weight="duotone" />
           </button>
         </div>
+        {/* 🗑️ ... */}
         <UiInstanceMenu meta={meta} className="self-end" />
       </div>
 
@@ -397,6 +396,8 @@ function TabHeaderItem({
                     </Select.Portal>
                   </Select.Root>
                 )}
+
+                {/* 🗑️ */}
                 <button
                   type="button"
                   className="cursor-pointer text-white/80 hover:text-white"

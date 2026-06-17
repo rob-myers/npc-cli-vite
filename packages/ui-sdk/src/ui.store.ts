@@ -68,11 +68,18 @@ export const uiStoreApi = {
     return uiStore.getState().byId[id] ?? null;
   },
   removeItem(itemId: string) {
+    const ui = uiStore.getState().byId[itemId];
+    if (!ui) return;
+
+    for (const subItemId of ui.meta.items ?? []) {
+      uiStoreApi.removeItem(subItemId);
+    }
+
     uiStore.setState((draft) => {
-      if (!draft.byId[itemId]) return;
-      draft.byId[itemId].meta.items?.forEach((subId) => delete draft.byId[subId]);
       delete draft.byId[itemId];
     });
+
+    ui.meta.onRemoveUi?.(ui.meta);
   },
   resetLayout() {
     uiStoreApi.clearUis();

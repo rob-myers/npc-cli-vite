@@ -257,7 +257,9 @@ export function Tty(props: Props) {
     if (session) {
       const profileKey: ProfileKey = isProfileKey(session.var.PROFILE_KEY)
         ? session.var.PROFILE_KEY
-        : "default_profile";
+        : isProfileKey(props.originalProfileKey)
+          ? props.originalProfileKey
+          : "default_profile";
       session.var.PROFILE_KEY = profileKey;
       session.var.PROFILE = profilesLookup[profileKey];
     }
@@ -307,6 +309,12 @@ export function Tty(props: Props) {
 
 export interface Props extends BaseTabProps {
   sessionKey: `tty-${number}`;
+  /**
+   * Provided during Jsh bootstrap.
+   * May subsequently be ignored via PROFILE_KEY=foo in terminal.
+   */
+  originalProfileKey: string;
+
   /** Can initialize variables */
   env: Partial<Session["var"]>;
   /**

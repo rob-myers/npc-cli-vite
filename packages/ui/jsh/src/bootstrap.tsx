@@ -1,25 +1,24 @@
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
+import * as profiles from "@npc-cli/cli/jsh/profiles";
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import { zealousTrim } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
 import type { JshUiMeta } from "./schema";
+
+const profileKeys = Object.keys(profiles) as ProfileKey[];
 
 export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
   const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     invalid: false,
-    envInvalid: false,
     sessionKey: uiStoreApi.getDefaultTitle("Jsh", "tty"), // e.g. tty-0
-    env: zealousTrim(`
-      WORLD_KEY=world-0
-      PROFILE_KEY=${"default_profile" satisfies ProfileKey}
-    `),
+    worldKey: "world-0",
+    profileKey: "default_profile" as ProfileKey,
     onClickCreate() {
-      if (state.invalid || state.envInvalid) return;
+      if (state.invalid) return;
 
       for (const [_, { meta }] of Object.entries(uiStore.getState().byId)) {
         if (meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey) {
@@ -31,15 +30,25 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
         sessionKey: state.sessionKey as `tty-${number}`,
         env: {
           CACHE_SHORTCUTS: {
-            // uppercase variable name, lowercase value e.g. world-0
             w: "WORLD_KEY",
           },
-          ...parseBasicEnvString(state.env),
+          WORLD_KEY: state.worldKey,
+          PROFILE_KEY: state.profileKey,
         },
         title: state.sessionKey,
       } satisfies Partial<JshUiMeta>);
     },
   }));
+
+  const byId = uiStore.getState().byId;
+  const worldKeys = [
+    "world-0",
+    ...Object.values(byId)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter(({ meta }) => meta.uiKey === "World" && (meta as any).worldKey !== "world-0")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map(({ meta }) => (meta as any).worldKey as string),
+  ];
 
   return (
     <div className="border flex w-full bg-black text-white">
@@ -56,25 +65,32 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
           onKeyDown={(e) => e.key === "Enter" && state.onClickCreate()}
         />
       </label>
-      <label className="flex border p-0.5 flex-1">
-        <input
-          type="text"
-          autoCorrect="off"
-          className={cn(
-            "w-full p-1 border border-black/30 invalid:bg-red-500/30 outline-black font-mono text-green-600 text-sm",
-          )}
-          placeholder="ENV_VAR=value ..."
-          onChange={(e) => state.set({ env: e.currentTarget.value })}
-          onInput={(e) => state.set({ envInvalid: !e.currentTarget.checkValidity() })}
-          pattern="([A-Za-z_][A-Za-z0-9_]*=[^\s]*)(\s+[A-Za-z_][A-Za-z0-9_]*=[^\s]*)*\s*"
-          value={state.env}
-          onKeyDown={(e) => e.key === "Enter" && state.onClickCreate()}
-        />
-      </label>
+      <select
+        className="border p-0.5 bg-black text-green-600 font-mono text-sm"
+        value={state.worldKey}
+        onChange={(e) => state.set({ worldKey: e.currentTarget.value })}
+      >
+        {worldKeys.map((key) => (
+          <option key={key} value={key}>
+            {key}
+          </option>
+        ))}
+      </select>
+      <select
+        className="border p-0.5 bg-black text-green-600 font-mono text-sm flex-1"
+        value={state.profileKey}
+        onChange={(e) => state.set({ profileKey: e.currentTarget.value as ProfileKey })}
+      >
+        {profileKeys.map((key) => (
+          <option key={key} value={key}>
+            {key}
+          </option>
+        ))}
+      </select>
       <button
         type="button"
         className="p-2 text-sm cursor-pointer disabled:cursor-not-allowed"
-        disabled={state.invalid || state.envInvalid}
+        disabled={state.invalid}
         onClick={state.onClickCreate}
       >
         {state.invalid ? (
@@ -85,15 +101,4 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
       </button>
     </div>
   );
-}
-
-function parseBasicEnvString(env: string): Record<string, string> {
-  const result: Record<string, string> = {};
-  for (const part of env.trim().split(/\s+/)) {
-    const eqIndex = part.indexOf("=");
-    if (eqIndex > 0) {
-      result[part.slice(0, eqIndex)] = part.slice(eqIndex + 1);
-    }
-  }
-  return result;
 }
