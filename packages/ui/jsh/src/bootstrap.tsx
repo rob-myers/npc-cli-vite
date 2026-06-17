@@ -67,7 +67,9 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
   const worldKeys = uiStore(
     useShallow(({ byId }) => [
       "world-0",
-      ...Object.values(byId).flatMap((ui) => (isWorldUiMeta(ui.meta) ? ui.meta.worldKey : [])),
+      ...Object.values(byId).flatMap((ui) =>
+        isWorldUiMeta(ui.meta) && ui.meta.worldKey !== "world-0" ? ui.meta.worldKey : [],
+      ),
     ]),
   );
 
