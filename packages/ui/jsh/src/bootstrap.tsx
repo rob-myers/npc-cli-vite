@@ -1,10 +1,19 @@
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import * as profiles from "@npc-cli/cli/jsh/profiles";
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
+import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import {
+  jsStringify,
+  restoreFromPersistedJsStringify,
+  tryLocalStorageGet,
+  tryLocalStorageSet,
+  warn,
+} from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { JshUiMeta } from "./schema";
 
 const profileKeys = Object.keys(profiles) as ProfileKey[];
@@ -20,11 +29,15 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
     onClickCreate() {
       if (state.invalid) return;
 
-      for (const [_, { meta }] of Object.entries(uiStore.getState().byId)) {
-        if (meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey) {
-          return alert(`${"Jsh"}: sessionKey ${state.sessionKey} already exists.`);
-        }
+      if (
+        Object.entries(uiStore.getState().byId).find(
+          ([_, { meta }]) => meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey,
+        )
+      ) {
+        return alert(`${state.sessionKey} already exists.`);
       }
+
+      state.prepareExtantPersistedSession(state.sessionKey);
 
       props.addInstance({
         sessionKey: state.sessionKey as `tty-${number}`,
@@ -38,17 +51,25 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
         title: state.sessionKey,
       } satisfies Partial<JshUiMeta>);
     },
+    prepareExtantPersistedSession(sessionKey: string) {
+      try {
+        const localStorageKey = `var@session-${sessionKey}`;
+        const persistedSessionHome = restoreFromPersistedJsStringify(tryLocalStorageGet(localStorageKey) || "null");
+        // Remove PROFILE_KEY from persisted session, so we can overwrite it.
+        delete persistedSessionHome.PROFILE_KEY;
+        tryLocalStorageSet(localStorageKey, jsStringify(persistedSessionHome, false, true));
+      } catch {
+        warn(`Failed to mutate persisted session ${sessionKey}`);
+      }
+    },
   }));
 
-  const byId = uiStore.getState().byId;
-  const worldKeys = [
-    "world-0",
-    ...Object.values(byId)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter(({ meta }) => meta.uiKey === "World" && (meta as any).worldKey !== "world-0")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map(({ meta }) => (meta as any).worldKey as string),
-  ];
+  const worldKeys = uiStore(
+    useShallow(({ byId }) => [
+      "world-0",
+      ...Object.values(byId).flatMap((ui) => (isWorldUiMeta(ui.meta) ? ui.meta.worldKey : [])),
+    ]),
+  );
 
   return (
     <div className="border flex w-full bg-black text-white">

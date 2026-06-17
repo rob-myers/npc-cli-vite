@@ -6,6 +6,7 @@
     ".": "./src/index.ts",
     "./ui.store": "./src/ui.store.ts",
     "./schema": "./src/schema.ts",
+    "./discriminator": "./src/discriminator.ts",
     "./with-immer-type.d.ts": "./src/with-immer-type.d.ts",
     "./UiInstanceMenu": "./src/UiInstanceMenu.tsx",
     "./UiContext": "./src/UiContext.tsx",

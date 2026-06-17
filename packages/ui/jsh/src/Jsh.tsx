@@ -1,23 +1,10 @@
-import { Tty } from "@npc-cli/cli";
 /**
  * Each keyed module contains JS generators and functions.
  * - They will be converted into shell functions.
  * - We also store them directly in session.
  * - Example usage `import util`
  */
-import * as modules from "@npc-cli/cli/jsh/modules";
-import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
-import { uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import {
-  jsStringify,
-  pause,
-  restoreFromPersistedJsStringify,
-  tryLocalStorageGet,
-  tryLocalStorageSet,
-  warn,
-} from "@npc-cli/util/legacy/generic";
-import { useEffect } from "react";
-import type { JshUiMeta } from "./schema";
+
 /**
  * Ways to import JS as shell functions:
  * ```sh
@@ -27,30 +14,13 @@ import type { JshUiMeta } from "./schema";
  * import call expr from util
  * ```
  */
+import { Tty } from "@npc-cli/cli";
+import * as modules from "@npc-cli/cli/jsh/modules";
+import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
+import type { JshUiMeta } from "./schema";
 import { shellFunctionFiles } from "./sources";
 
 export default function Jsh(props: { meta: JshUiMeta }) {
-  useEffect(() => {
-    /**
-     * Remove PROFILE_KEY from persisted session, so that next
-     * time it is bootstrapped it won't override chosen profile.
-     */
-    uiStoreApi.setUiMeta(props.meta.id, (draft) => {
-      draft.onRemoveUi = async () => {
-        const { sessionKey } = props.meta;
-        const localStorageKey = `var@session-${sessionKey}`;
-        await pause(300); // wait for session persist on unmount
-        try {
-          const persistedSessionHome = restoreFromPersistedJsStringify(tryLocalStorageGet(localStorageKey) || "null");
-          delete persistedSessionHome.PROFILE_KEY;
-          tryLocalStorageSet(localStorageKey, jsStringify(persistedSessionHome, false, true));
-        } catch {
-          warn(`Failed to mutate persisted session ${sessionKey}`);
-        }
-      };
-    });
-  }, []);
-
   return (
     <Tty
       sessionKey={props.meta.sessionKey}
