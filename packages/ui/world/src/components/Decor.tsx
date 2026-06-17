@@ -1,7 +1,5 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
-import { loadImage } from "@npc-cli/util/legacy/dom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
@@ -235,11 +233,7 @@ export default function Decor() {
       w.setNextPending({ decor: true });
 
       // 1. load sheet images
-      const images = await Promise.all(
-        Array.from({ length: w.sheets.decorSheetDims.length }, (_, i) =>
-          loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`),
-        ),
-      );
+      const images = await w.loadDecorImages();
 
       // 2. draw sheets into texture array
       const { ct } = w.texDecor;

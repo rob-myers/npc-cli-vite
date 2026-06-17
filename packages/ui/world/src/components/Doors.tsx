@@ -1,6 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
 import { geomService, Mat, Vect } from "@npc-cli/util/geom";
-import { loadImage } from "@npc-cli/util/legacy/dom";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
 import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
@@ -115,16 +114,13 @@ export default function Doors() {
         state.labelToLayer.set("", 0);
 
         // layers 1 ... doorIconKeys.length (doors with icons)
-        // - cannot assume w.texDecor loaded
+        // 🔔 cannot assume w.texDecor loaded
         const sheetMeta = doorIconKeys.map((key) => w.sheets.decor[key]);
-        const neededSheetIds = [...new Set(sheetMeta.map((e) => e.sheetId))];
-        const sheetImages = new Map<number, HTMLImageElement>(
-          await Promise.all(neededSheetIds.map(async (id) => [id, await loadImage(`/sheet/decor.${id}.png`)] as const)),
-        );
+        const sheetImages = await w.loadDecorImages();
 
         for (const [i, iconKey] of doorIconKeys.entries()) {
           const entry = sheetMeta[i];
-          const img = sheetImages.get(entry.sheetId);
+          const img = sheetImages[entry.sheetId];
           if (img) drawDoorIconLayer(w.texDoorLabel, 1 + i, img, entry);
           // use iconKey as label
           state.labelToLayer.set(iconKey, 1 + i);
