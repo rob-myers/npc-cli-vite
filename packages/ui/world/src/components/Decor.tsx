@@ -266,7 +266,6 @@ export default function Decor() {
           if (!dims) continue;
 
           // fix flipped decor
-          // 🚧 points too
           if (item.det === -1) {
             state.uvOffsets.set(
               [(entry.rect.x + entry.rect.width) / dims.width, entry.rect.y / dims.height],
@@ -341,11 +340,10 @@ export default function Decor() {
 
           if (decor.type === "point") {
             // point: flat face-up quad centered at (decor.x, decor.y) in XZ plane
-            // 🚧
-            const [a, b, c, d] = decor.transform;
+            tmpMat.setMatrixValue(decor.transform);
             // biome-ignore format: preserve newlines
-            // tmpMat.feedFromArray([a, b, c, d, decor.x - (a + c) * 0.5, decor.y - (b + d) * 0.5]);
-            tmpMat.feedFromArray(decor.transform);
+            tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+
             const mat4 = embedXZMat4(tmpMat, {
               yScale: cuboidIconHeight,
               yHeight: (decor.meta.y ?? 0) + cuboidIconHeight,
