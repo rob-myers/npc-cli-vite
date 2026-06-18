@@ -150,51 +150,30 @@
       "originalWidth": 40,
       "originalHeight": 15
     },
-    "lie-circled": {
-      "key": "lie-circled",
-      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 9,
-      "originalHeight": 9
-    },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
-    "sit-circled": {
-      "key": "sit-circled",
-      "rect": {"x": 776, "y": 518, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 9,
-      "originalHeight": 9
-    },
-    "stand-circled": {
-      "key": "stand-circled",
-      "rect": {"x": 2, "y": 776, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 9,
-      "originalHeight": 9
-    },
     "switch": {
       "key": "switch",
-      "rect": {"x": 260, "y": 776, "width": 256, "height": 256},
+      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 1034, "height": 1034}],
-  "maxDecorSheetDim": {"width": 1034, "height": 1034},
+  "decorSheetDims": [{"width": 1034, "height": 776}],
+  "maxDecorSheetDim": {"width": 1034, "height": 776},
   "skin": {
     "general-0": {
       "key": "general-0",
