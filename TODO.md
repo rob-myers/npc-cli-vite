@@ -22,13 +22,14 @@ w decor.byKey.test-decor-point
   - ✅ can specify decor quad height via meta.h
   - ✅ can pick decor quad
     - 🔔 cuboid MUST not intersect other geometry else pick can be occluded
-  - 🚧 can render decor point via meta.shown
+  - ✅ can render decor point via meta.shown
     - ✅ can pick
     - ✅ fix rotation
     - ✅ decor point has transform
     - ✅ fix flip
-    - 🚧 scale/position now wrong
-      - presumably scaling from wrong origin
+    - ✅ scale/position now wrong
+  - ✅ icons should be "filled in" so we needn't rely on "cuboid" for pick
+    - for number-zero, number-one, arrow-boxed
   - 🚧 render custom decor quads as separate instancedMesh
     - need demo shell function
   - ✅ Debug points can be picked

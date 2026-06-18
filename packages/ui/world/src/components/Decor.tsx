@@ -3,7 +3,7 @@ import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { attribute, texture, uv, vec2 } from "three/tsl";
+import { attribute, select, texture, uv, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import {
@@ -41,6 +41,7 @@ export default function Decor() {
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
+      isPoint: new Float32Array(MAX_DECOR_QUAD_INSTANCES),
 
       clearGrid() {
         Object.values(state.grid).forEach((col) => col.clear());
@@ -353,6 +354,7 @@ export default function Decor() {
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
+          state.isPoint[instanceId] = decor.type === "point" ? 1 : 0;
           state.instanceIdToDecorId[instanceId] = { gmId, decorId };
           instanceId++;
         }
@@ -404,6 +406,7 @@ export default function Decor() {
       geo.getAttribute("uvOffsets").needsUpdate = true;
       geo.getAttribute("uvDimensions").needsUpdate = true;
       geo.getAttribute("uvTextureIds").needsUpdate = true;
+      geo.getAttribute("isPoint").needsUpdate = true;
       state.inst.instanceMatrix.needsUpdate = true;
       if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
 
@@ -418,12 +421,17 @@ export default function Decor() {
       texNode.depthNode = uvTexIds;
 
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
-      // texMat.colorNode = texNode.mul(0.6); // breaks picking when transparency true
-      texMat.colorNode = texNode;
-      texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor, 0.6);
+      texMat.colorNode = texNode.mul(vec4(0.4, 0.4, 0.4, 1)); // preserve alpha
+      texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
 
       // transparent icon can be hard to pick so permit pick any place on cuboid
-      plainBlackMaterial.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
+      // hide black faces for point instances (they're flat — sides add no value)
+      const isPointAttr = attribute<"float">("isPoint", "float");
+      plainBlackMaterial.outputNode = select(
+        isPointAttr.greaterThan(0.5),
+        vec4(0, 0, 0, 0),
+        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
+      );
 
       state.ready = true;
       w.setNextPending({ decor: false });
@@ -458,6 +466,7 @@ export default function Decor() {
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
         <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
         <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+        <instancedBufferAttribute attach="attributes-isPoint" args={[state.isPoint, 1]} />
       </bufferGeometry>
     </instancedMesh>
   );
@@ -476,6 +485,7 @@ export type State = {
   customByKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
+  isPoint: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
 
@@ -497,7 +507,11 @@ const tmpRect = new Rect();
 const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
-const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, color: "#000" });
+const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({
+  side: THREE.DoubleSide,
+  color: "#000",
+  transparent: true,
+});
 
 // used to ignore stale queryFn and trigger fresh one
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
