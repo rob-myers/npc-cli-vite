@@ -191,26 +191,26 @@
       "name": "decor quad tint=#ddf y=0.7 h=0.05",
       "locked": false,
       "visible": true,
-      "transform": {"a": 0.1667, "b": 0, "c": 0, "d": 0.1667, "e": 90, "f": 10},
+      "transform": {"a": 0.1667, "b": 0, "c": 0, "d": 0.1667, "e": 88, "f": 10},
       "type": "image",
       "srcType": "decor",
       "srcKey": "number-one",
       "baseRect": {"width": 60, "height": 60},
       "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.1667, 0, 0, 0.1667, 90, 10)"
+      "cssTransform": "matrix(0.1667, 0, 0, 0.1667, 88, 10)"
     },
     {
-      "id": "d72b27d5-327a-4689-9e44-7061916562ff",
+      "id": "417a1d8b-ec23-4d3a-8dc9-1d83f9a996ae",
       "name": "decor point shown",
       "locked": false,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 62, "f": 60},
+      "transform": {"a": 0.2, "b": 0, "c": 0, "d": 0.2, "e": 88, "f": 38},
       "type": "image",
       "srcType": "decor",
-      "srcKey": "number-one",
+      "srcKey": "number-zero",
       "baseRect": {"width": 60, "height": 60},
       "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, 62, 60)"
+      "cssTransform": "matrix(0.19999999999999998, 0, 0, 0.19999999999999998, 88, 38)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
