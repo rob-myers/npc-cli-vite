@@ -7,6 +7,7 @@ import { attribute, float, normalView, pow, texture, uv, vec2 } from "three/tsl"
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
+import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getLightMetas } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
@@ -15,7 +16,7 @@ export function Debug() {
   const w = useContext(WorldContext);
   const navPathRef = useRef<THREE.InstancedMesh>(null);
   const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
-  const decorPointsRef = useRef<THREE.InstancedMesh>(null);
+
   const doorNormalsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
   const decorPointsGeo = useMemo(() => {
@@ -41,6 +42,8 @@ export function Debug() {
   const state = useStateRef(
     (): State => ({
       arrowGeo: createArrowGeo(),
+      debugPointsInst: null as unknown as THREE.InstancedMesh,
+      debugPointInstanceIdToDecorId: [],
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
       doorNormalsShown: false,
@@ -54,6 +57,12 @@ export function Debug() {
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
       physicsCollidersShown: false,
 
+      decodeDebugPointInstanceId(instanceId) {
+        const entry = state.debugPointInstanceIdToDecorId[instanceId];
+        if (!entry) return null;
+        const item = w.gms[entry.gmId]?.decor[entry.decorId];
+        return item ? { ...item.meta } : null;
+      },
       computeDemoPath() {
         const [gm] = w.gms;
         if (!gm) return;
@@ -129,11 +138,14 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
       },
       updateDecorPoints() {
-        const inst = decorPointsRef.current;
+        const inst = state.debugPointsInst;
         if (!inst || !w.sheets || !w.decor) return;
+        state.debugPointInstanceIdToDecorId.length = 0;
         let count = 0;
-        for (const gm of w.gms) {
-          for (const decor of gm.decor) {
+        for (let gmId = 0; gmId < w.gms.length; gmId++) {
+          const gm = w.gms[gmId];
+          for (let decorId = 0; decorId < gm.decor.length; decorId++) {
+            const decor = gm.decor[decorId];
             if (decor.type !== "point" || decor.meta.on !== true) continue;
             const imgKey = w.decor.getDecorImgKey(decor);
             const entry = w.sheets.decor[imgKey];
@@ -169,6 +181,7 @@ export function Debug() {
               { yScale: onPointHeight, yHeight: (decor.meta.y ?? 0) + 0.01, mat4: tmpMat4 },
             );
             inst.setMatrixAt(count, tmpMat4);
+            state.debugPointInstanceIdToDecorId[count] = { gmId, decorId };
             if (++count >= maxDecorPoints) break;
           }
           if (count >= maxDecorPoints) break;
@@ -244,6 +257,7 @@ export function Debug() {
     texNode.depthNode = uvTexIds;
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
     mat.colorNode = texNode;
+    mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.debugPoint, 0.6);
     return { material: mat, uid: crypto.randomUUID() };
   }, [state.doPointsShown]);
 
@@ -301,7 +315,7 @@ export function Debug() {
 
       <instancedMesh
         key={decorPointsMaterial.uid}
-        ref={decorPointsRef}
+        ref={state.ref("debugPointsInst")}
         args={[decorPointsGeo, decorPointsMaterial.material, maxDecorPoints]}
         frustumCulled={false}
         visible={state.doPointsShown}
@@ -327,6 +341,8 @@ const tmpMat4 = new THREE.Matrix4();
 
 export type State = {
   arrowGeo: THREE.BufferGeometry;
+  debugPointsInst: THREE.InstancedMesh;
+  debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
   doorNormalsShown: boolean;
@@ -341,6 +357,7 @@ export type State = {
   })[];
   physicsCollidersShown: boolean;
   computeDemoPath(): void;
+  decodeDebugPointInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   updateDoorNormals(): void;
   updateDecorPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;

@@ -28,7 +28,7 @@ w decor.byKey.test-decor-point
     - fix flip
   - 🚧 render custom decor quads as separate instancedMesh
     - need demo shell function
-  - Debug points can be picked
+  - ✅ Debug points can be picked
   - can remove custom decor
     - ❌ track gaps
 - can create colliders from decor rect/circle

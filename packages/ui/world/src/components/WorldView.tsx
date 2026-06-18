@@ -126,6 +126,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             if (!decoded) return null;
             return { ...pick, decor: true, ...decoded };
           }
+          case "debugPoint": {
+            const decoded = w.debug.decodeDebugPointInstanceId(pick.instanceId);
+            if (!decoded) return null;
+            return { ...pick, debugPoint: true, ...decoded };
+          }
           case "npc": {
             const npc = w.npc.byPickId[pick.instanceId];
             if (npc) return { ...pick, npcKey: npc.key, ...w.e.npcToRoom.get(npc.key) };
@@ -169,6 +174,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             break;
           case "decor":
             mesh = getTempInstanceMesh(w.decor.inst as THREE.InstancedMesh, picked.instanceId);
+            break;
+          case "debugPoint":
+            mesh = getTempInstanceMesh(w.debug.debugPointsInst as THREE.InstancedMesh, picked.instanceId);
             break;
           default:
             throw testNever(picked);
@@ -513,6 +521,7 @@ export type Picked = {
   | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
   | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
   | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeInstanceId"]>)
+  | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
 );

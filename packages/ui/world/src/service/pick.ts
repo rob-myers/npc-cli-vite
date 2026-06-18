@@ -13,6 +13,8 @@ export const OBJECT_PICK_KEY_TO_RED = {
   obstacle: 125,
   npc: 150,
   decor: 175,
+  /** Decor point sans `meta.shown` optionally shown via <Debug> */
+  debugPoint: 200,
 } as const;
 
 export type ObjectPickKey = keyof typeof OBJECT_PICK_KEY_TO_RED;
@@ -45,6 +47,8 @@ export function decodePick(r: number, g: number, b: number) {
     case "npc":
       return { type, instanceId };
     case "decor":
+      return { type, instanceId };
+    case "debugPoint":
       return { type, instanceId };
     default:
       throw new ExhaustiveError(type);
