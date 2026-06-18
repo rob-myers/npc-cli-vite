@@ -3014,8 +3014,8 @@
           "meta": {
             "decor": true,
             "quad": true,
-            "y": 0.8,
-            "h": 0.15,
+            "y": 0.75,
+            "h": 0.1,
             "img": "number-one",
             "transform": [0.1667, 0, 0, 0.1667, 2.25, 0.25]
           }
@@ -10712,8 +10712,8 @@
           "meta": {
             "decor": true,
             "quad": true,
-            "y": 0.8,
-            "h": 0.15,
+            "y": 0.75,
+            "h": 0.1,
             "img": "number-one",
             "transform": [0.1667, 0, 0, 0.1667, 2.25, 0.25]
           }
@@ -11321,8 +11321,8 @@
           "meta": {
             "decor": true,
             "quad": true,
-            "y": 0.8,
-            "h": 0.15,
+            "y": 0.75,
+            "h": 0.1,
             "img": "number-one",
             "transform": [0.1667, 0, 0, 0.1667, 26.25, 3.25],
             "gmId": -1,
@@ -13610,8 +13610,8 @@
           "meta": {
             "decor": true,
             "quad": true,
-            "y": 0.8,
-            "h": 0.15,
+            "y": 0.75,
+            "h": 0.1,
             "img": "number-one",
             "transform": [-0.1667, 0, 0, 0.1667, 3.75, 3.25],
             "gmId": -1,
@@ -22314,8 +22314,8 @@
           "meta": {
             "decor": true,
             "quad": true,
-            "y": 0.8,
-            "h": 0.15,
+            "y": 0.75,
+            "h": 0.1,
             "img": "number-one",
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24644,8 +24644,8 @@
           "meta": {
             "decor": true,
             "quad": true,
-            "y": 0.8,
-            "h": 0.15,
+            "y": 0.75,
+            "h": 0.1,
             "img": "number-one",
             "gmId": -1,
             "grKey": "g-1r-1",

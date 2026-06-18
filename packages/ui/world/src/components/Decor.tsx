@@ -430,7 +430,10 @@ export default function Decor() {
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
       // texMat.colorNode = texNode.mul(0.6); // breaks picking when transparency true
       texMat.colorNode = texNode;
-      texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
+      texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor, 0.6);
+
+      // transparent icon can be hard to pick so permit pick any place on cuboid
+      plainBlackMaterial.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
 
       state.ready = true;
       w.setNextPending({ decor: false });

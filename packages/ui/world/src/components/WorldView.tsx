@@ -16,6 +16,7 @@ import { defaultFov, fovStorageKey } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
+import type { SelectAnyType } from "../service/texture";
 import { CameraControls } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -361,16 +362,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return "always";
         }
       },
-      withPickOutput(typeId) {
+      withPickOutput(typeId, colorScale = 1) {
         const idx = float(instanceIndex);
         const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-        // 🔔 any fixes horrible: Expression produces a union type that is too complex to represent.
-        return (select as any)(state.objectPick.notEqual(0), pickVec, output);
+        // 🔔 SelectAnyType fixes horrible: Expression produces a union type that is too complex to represent.
+        return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output.mul(colorScale));
       },
       withPickOutputId(typeId, idUniform) {
         const idx = float(idUniform);
         const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
-        return (select as any)(state.objectPick.notEqual(0), pickVec, output);
+        return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
     { reset: { ctrlOpts: true, postProcessing: true, initial: false } },
@@ -487,8 +488,11 @@ export type State = {
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
    * otherwise passes through the standard lit `output`.
+   *
+   * We include `colorScale` here because scaling colorNode on
+   * transparent material broke picking.
    */
-  withPickOutput(typeId: number): THREE.Node;
+  withPickOutput(typeId: number, colorScale?: number): THREE.Node;
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setupPostProcessing(): () => void;
