@@ -188,7 +188,7 @@
     },
     {
       "id": "e193c35d-86c2-4155-9f95-524de661285a",
-      "name": "decor quad y=0.6+0.1 h=0.5",
+      "name": "decor quad y=0.6+0.2 h=0.15",
       "locked": false,
       "visible": true,
       "transform": {"a": 0.1667, "b": 0, "c": 0, "d": 0.1667, "e": 90, "f": 10},
