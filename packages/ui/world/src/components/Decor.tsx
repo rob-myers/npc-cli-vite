@@ -320,7 +320,13 @@ export default function Decor() {
 
             // biome-ignore format: preserve newlines
             tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
-            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
+            const yScale = decor.meta.h ?? cuboidHeight;
+            const mat4 = embedXZMat4(tmpMat, {
+              yScale,
+              // meta.y is top and meta.h is height (unsupported for tilt)
+              yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale),
+              mat4: tmpMat4,
+            });
             if (shouldTilt) mat4.premultiply(tiltMat4);
 
             state.inst.setMatrixAt(instanceId, mat4);
@@ -415,7 +421,7 @@ export default function Decor() {
       const texNode = texture(w.texDecor.tex, transformedUv);
       texNode.depthNode = uvTexIds;
 
-      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
+      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.2 });
       texMat.colorNode = texNode.mul(0.6);
       texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
 
