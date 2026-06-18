@@ -183,7 +183,7 @@ export default function Decor() {
         }
       },
       getDecorPointImgKey(d) {
-        if (d.type === "quad") return d.meta.img ?? decorKeyFallback;
+        if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
 
         const meta = d.meta;
         if (meta.do === "sit") return "sit-circled";
@@ -271,6 +271,7 @@ export default function Decor() {
           if (!dims) continue;
 
           // fix flipped decor
+          // 🚧 points too
           if (item.type === "quad" && item.det === -1) {
             state.uvOffsets.set(
               [(entry.rect.x + entry.rect.width) / dims.width, entry.rect.y / dims.height],
@@ -345,6 +346,7 @@ export default function Decor() {
 
           if (decor.type === "point") {
             // point: flat face-up quad centered at (decor.x, decor.y) in XZ plane
+            // 🔔 fixed width/height independent of scale in MapEdit
             const pw = entry.originalWidth * sguToWorldScale;
             const ph = entry.originalHeight * sguToWorldScale;
             const angle = (decor.orient - 90) * (Math.PI / 180);
@@ -352,7 +354,11 @@ export default function Decor() {
             const [a, b, c, d] = [cos * pw, sin * pw, -sin * ph, cos * ph];
             // biome-ignore format: preserve newlines
             tmpMat.feedFromArray([a, b, c, d, decor.x - (a + c) * 0.5, decor.y - (b + d) * 0.5]);
-            const mat4 = embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: decor.meta.y ?? 0, mat4: tmpMat4 });
+            const mat4 = embedXZMat4(tmpMat, {
+              yScale: cuboidIconHeight,
+              yHeight: (decor.meta.y ?? 0) + cuboidIconHeight,
+              mat4: tmpMat4,
+            });
             state.inst.setMatrixAt(instanceId, mat4);
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
@@ -421,8 +427,9 @@ export default function Decor() {
       const texNode = texture(w.texDecor.tex, transformedUv);
       texNode.depthNode = uvTexIds;
 
-      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.2 });
-      texMat.colorNode = texNode.mul(0.6);
+      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
+      // texMat.colorNode = texNode.mul(0.6); // breaks picking when transparency true
+      texMat.colorNode = texNode;
       texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
 
       state.ready = true;
