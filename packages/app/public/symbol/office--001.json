@@ -191,13 +191,20 @@
       "name": "decor quad y=0.65 key=number-one",
       "locked": false,
       "visible": true,
-      "transform": {"a": 0.4, "b": 0, "c": 0, "d": 0.4, "e": 80, "f": 4.5},
+      "transform": {
+        "a": 0.1667,
+        "b": 0,
+        "c": 0,
+        "d": 0.1667,
+        "e": 87,
+        "f": 11.5
+      },
       "type": "image",
       "srcType": "decor",
       "srcKey": "number-one",
       "baseRect": {"width": 60, "height": 60},
       "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.4, 0, 0, 0.4, 80, 4.5)"
+      "cssTransform": "matrix(0.16666666666666669, 0, 0, 0.16666666666666669, 87, 11.5)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
