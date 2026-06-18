@@ -182,13 +182,8 @@ export default function Decor() {
           return decor.meta;
         }
       },
-      getDecorPointImgKey(d) {
+      getDecorImgKey(d) {
         if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
-
-        const meta = d.meta;
-        if (meta.do === "sit") return "sit-circled";
-        if (meta.do === "stand") return "stand-circled";
-        if (meta.do === "lie") return "lie-circled";
         return decorKeyFallback;
       },
       hasInstance(decor) {
@@ -260,7 +255,7 @@ export default function Decor() {
           if (!state.hasInstance(item)) {
             continue;
           }
-          const imgKey = state.getDecorPointImgKey(item);
+          const imgKey = state.getDecorImgKey(item);
           const entry = w.sheets.decor[imgKey] as DecorSheetEntry | undefined;
           if (!entry) {
             warn(`decor "${imgKey}" not found in sheets.json`);
@@ -301,7 +296,7 @@ export default function Decor() {
             continue;
           }
 
-          const imgKey = state.getDecorPointImgKey(decor);
+          const imgKey = state.getDecorImgKey(decor);
           const entry = w.sheets.decor[imgKey];
           if (!entry) {
             instanceId++;
@@ -349,7 +344,7 @@ export default function Decor() {
             // 🔔 fixed width/height independent of scale in MapEdit
             const pw = entry.originalWidth * sguToWorldScale;
             const ph = entry.originalHeight * sguToWorldScale;
-            const angle = (decor.orient - 90) * (Math.PI / 180);
+            const angle = decor.orient * (Math.PI / 180);
             const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
             const [a, b, c, d] = [cos * pw, sin * pw, -sin * ph, cos * ph];
             // biome-ignore format: preserve newlines
@@ -492,7 +487,7 @@ export type State = {
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
-  getDecorPointImgKey(decor: Geomorph.Decor): string;
+  getDecorImgKey(decor: Geomorph.Decor): string;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   hasInstance(decor: Geomorph.Decor): boolean;
   /** Can only remove custom decor */

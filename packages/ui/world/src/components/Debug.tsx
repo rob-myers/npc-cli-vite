@@ -135,7 +135,7 @@ export function Debug() {
         for (const gm of w.gms) {
           for (const decor of gm.decor) {
             if (decor.type !== "point" || decor.meta.on !== true) continue;
-            const imgKey = w.decor.getDecorPointImgKey(decor);
+            const imgKey = w.decor.getDecorImgKey(decor);
             const entry = w.sheets.decor[imgKey];
             if (!entry) {
               count++;
@@ -157,7 +157,7 @@ export function Debug() {
             (decorPointsGeo.getAttribute("uvTextureIds").array as Uint32Array)[count] = entry.sheetId;
             const pw = entry.originalWidth * sguToWorldScale;
             const ph = entry.originalHeight * sguToWorldScale;
-            const angle = (decor.orient - 90) * (Math.PI / 180);
+            const angle = decor.orient * (Math.PI / 180);
             const cos = Math.cos(angle),
               sin = Math.sin(angle);
             const a = cos * pw,

@@ -19,7 +19,16 @@ w decor.byKey.test-decor-point
   - ✅ fix custom decor quad
     - no issue we need to use respective decor image
   - ✅ fix flipped decor
+  - ✅ can specify decor quad height via meta.h
+  - ✅ can pick decor quad
+    - 🔔 cuboid MUST not intersect other geometry else pick can be occluded
+  - 🚧 can render decor point via meta.shown
+    - ✅ can pick
+    - ✅ fix rotation
+    - fix flip
   - 🚧 render custom decor quads as separate instancedMesh
+    - need demo shell function
+  - Debug points can be picked
   - can remove custom decor
     - ❌ track gaps
 - can create colliders from decor rect/circle

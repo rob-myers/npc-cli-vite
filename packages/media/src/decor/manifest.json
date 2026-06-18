@@ -43,12 +43,6 @@
       "width": 40,
       "height": 15
     },
-    "lie-circled": {
-      "key": "lie-circled",
-      "filename": "lie-circled.svg",
-      "width": 9,
-      "height": 9
-    },
     "number-one": {
       "key": "number-one",
       "filename": "number-one.svg",
@@ -60,18 +54,6 @@
       "filename": "number-zero.svg",
       "width": 60,
       "height": 60
-    },
-    "sit-circled": {
-      "key": "sit-circled",
-      "filename": "sit-circled.svg",
-      "width": 9,
-      "height": 9
-    },
-    "stand-circled": {
-      "key": "stand-circled",
-      "filename": "stand-circled.svg",
-      "width": 9,
-      "height": 9
     },
     "switch": {
       "key": "switch",
