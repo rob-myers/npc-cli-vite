@@ -317,7 +317,6 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       .clone()
       .translate(-(transform[2] * baseRect.height) / 2, -(transform[3] * baseRect.height) / 2)
       .precision(3);
-    const [a, b, c, d] = transform;
 
     return {
       type: "quad",
@@ -327,7 +326,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       transform,
       center,
       topCenter,
-      det: Math.sign(a * d - b * c),
+      det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
     };
   } else if (meta.circle === true) {
     const polyRect = poly.rect.precision(precision);
@@ -349,7 +348,18 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     delete meta.direction;
     const orient = toPrecision((180 / Math.PI) * Math.atan2(direction.y, direction.x));
 
-    return { type: "point", ...base, bounds: bounds2d, x: center.x, y: center.y, orient };
+    const transform: Geom.SixTuple = meta.transform ?? [1, 0, 0, 1, 0, 0];
+
+    return {
+      type: "point",
+      ...base,
+      bounds: bounds2d,
+      x: center.x,
+      y: center.y,
+      orient,
+      transform,
+      det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
+    };
   }
 }
 
@@ -445,16 +455,18 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
     meta.tilt = true; // 90° around "top"
   }
 
-  if (meta.quad === true) {
+  if (meta.quad === true || meta.point === true) {
     // - preserve transform for shader later, so can transform quad from the spritesheet
     // - physical coords provided by `poly` e.g. for collision detection
     // - during symbol flattening `transformDecorMeta` expects tuple
     // - convert to world coords, matching later `poly` scale
     poly.meta.transform = mat.toArray();
-    poly.meta.transform[4] *= sguToWorldScale;
-    poly.meta.transform[5] *= sguToWorldScale;
-  } else {
-    // fallback to decor point
+    poly.meta.transform[4] = toPrecision(poly.meta.transform[4] * sguToWorldScale, 4);
+    poly.meta.transform[5] = toPrecision(poly.meta.transform[5] * sguToWorldScale, 4);
+  }
+
+  if (meta.quad !== true) {
+    // 🔔 fallback to point
     meta.point = true;
     meta.direction = tmpVect1.set(mat.a, mat.b).normalize().json;
   }

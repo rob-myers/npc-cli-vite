@@ -136,6 +136,8 @@ export default function Decor() {
               def.img = decorKeyFallback;
             }
 
+            const transform: Geom.SixTuple = def.transform ?? [1, 0, 0, 1, 0, 0];
+
             d = {
               type: "point",
               key: def.key,
@@ -149,6 +151,8 @@ export default function Decor() {
               x: center.x,
               y: center.y,
               orient: def.orient ?? 0,
+              transform,
+              det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
             };
             break;
           }
@@ -186,12 +190,8 @@ export default function Decor() {
         if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
         return decorKeyFallback;
       },
-      hasInstance(decor) {
-        return (
-          decor.type === "quad" ||
-          // 🚧 e.g. to illustrate behaviours
-          (decor.type === "point" && decor.meta.shown === true)
-        );
+      hasInstance(decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad {
+        return decor.type === "quad" || (decor.type === "point" && decor.meta.shown === true);
       },
       remove(..._decorKeys) {
         // 🚧 free up instances?
@@ -267,7 +267,7 @@ export default function Decor() {
 
           // fix flipped decor
           // 🚧 points too
-          if (item.type === "quad" && item.det === -1) {
+          if (item.det === -1) {
             state.uvOffsets.set(
               [(entry.rect.x + entry.rect.width) / dims.width, entry.rect.y / dims.height],
               uvIdx * 2,
@@ -341,14 +341,11 @@ export default function Decor() {
 
           if (decor.type === "point") {
             // point: flat face-up quad centered at (decor.x, decor.y) in XZ plane
-            // 🔔 fixed width/height independent of scale in MapEdit
-            const pw = entry.originalWidth * sguToWorldScale;
-            const ph = entry.originalHeight * sguToWorldScale;
-            const angle = decor.orient * (Math.PI / 180);
-            const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
-            const [a, b, c, d] = [cos * pw, sin * pw, -sin * ph, cos * ph];
+            // 🚧
+            const [a, b, c, d] = decor.transform;
             // biome-ignore format: preserve newlines
-            tmpMat.feedFromArray([a, b, c, d, decor.x - (a + c) * 0.5, decor.y - (b + d) * 0.5]);
+            // tmpMat.feedFromArray([a, b, c, d, decor.x - (a + c) * 0.5, decor.y - (b + d) * 0.5]);
+            tmpMat.feedFromArray(decor.transform);
             const mat4 = embedXZMat4(tmpMat, {
               yScale: cuboidIconHeight,
               yHeight: (decor.meta.y ?? 0) + cuboidIconHeight,
@@ -489,7 +486,7 @@ export type State = {
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   getDecorImgKey(decor: Geomorph.Decor): string;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
-  hasInstance(decor: Geomorph.Decor): boolean;
+  hasInstance(decor: Geomorph.Decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad;
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;

@@ -23,6 +23,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 1.0375, 0.6625],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0
           }
@@ -78,6 +79,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.6875, 2.9],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -94,7 +96,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 11.950000000000001, 5.8375],
+            "transform": [0, 1, -1, 0, 11.95, 5.8375],
             "doorId": 0
           }
         },
@@ -192,7 +194,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 5.15, 4.5375000000000005],
+            "transform": [1, 0, 0, 1, 5.15, 4.5375],
             "doorId": 1
           }
         },
@@ -226,7 +228,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.037500000000000006, 5.8500000000000005],
+            "transform": [0, 1, 1, 0, 0.0375, 5.85],
             "doorId": 2
           }
         },
@@ -243,7 +245,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, -0.0625, 5.8500000000000005],
+            "transform": [0, 1, -1, 0, -0.0625, 5.85],
             "doorId": 2
           }
         },
@@ -255,6 +257,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 3.5, 4.05],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -266,6 +269,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 8, 4.05],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -279,6 +283,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.75, 5.85],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -293,7 +298,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 6.050000000000001],
+            "transform": [0, 1, -1, 0, 2.95, 6.05],
             "doorId": 5
           }
         },
@@ -308,7 +313,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 3.0500000000000003, 6.050000000000001],
+            "transform": [0, 1, 1, 0, 3.05, 6.05],
             "doorId": 5
           }
         },
@@ -327,6 +332,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 10.1625, 6.275],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -340,6 +346,7 @@
             "point": true,
             "label": "briefing",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -393,7 +400,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 3.0500000000000003, 9],
+            "transform": [0, 1, 1, 0, 3.05, 9],
             "doorId": 8
           }
         },
@@ -422,6 +429,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -451,7 +459,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 8.950000000000001, 9],
+            "transform": [0, 1, -1, 0, 8.95, 9],
             "doorId": 9
           }
         }
@@ -1269,6 +1277,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.5, 0.3],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 0
           }
@@ -1322,6 +1331,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.375, 0.175],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 0
           }
@@ -1404,7 +1414,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 6.25, 0.15000000000000002],
+            "transform": [-1, 0, 0, -1, 6.25, 0.15],
             "doorId": 0
           }
         },
@@ -1421,7 +1431,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 8.887500000000001, 0.15000000000000002],
+            "transform": [-1, 0, 0, -1, 8.8875, 0.15],
             "doorId": 1
           }
         },
@@ -1436,7 +1446,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 21.25, 0.15000000000000002],
+            "transform": [-1, 0, 0, -1, 21.25, 0.15],
             "doorId": 2
           }
         },
@@ -1453,14 +1463,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [
-              -1,
-              0,
-              0,
-              -1,
-              23.887500000000003,
-              0.15000000000000002
-            ],
+            "transform": [-1, 0, 0, -1, 23.8875, 0.15],
             "doorId": 3
           }
         },
@@ -1474,6 +1477,7 @@
             "point": true,
             "label": "common",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.75, 10.1],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -2034,7 +2038,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 8.887500000000001, 14.9],
+            "transform": [-1, 0, 0, -1, 8.8875, 14.9],
             "doorId": 1
           }
         },
@@ -2073,7 +2077,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 23.887500000000003, 14.9],
+            "transform": [-1, 0, 0, -1, 23.8875, 14.9],
             "doorId": 3
           }
         },
@@ -2103,7 +2107,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.1, 6.1000000000000005],
+            "transform": [0, 1, 1, 0, 0.1, 6.1],
             "doorId": 5
           }
         },
@@ -2120,7 +2124,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 6.1000000000000005],
+            "transform": [0, 1, -1, 0, 29.9, 6.1],
             "doorId": 6
           }
         },
@@ -2137,7 +2141,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 8.75],
+            "transform": [0, 1, -1, 0, 29.9, 8.75],
             "doorId": 7
           }
         },
@@ -2258,18 +2262,14 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [8.700005, 6.7],
-              [8.700005, 6.950005],
-              [8.45, 6.950005],
-              [8.45, 6.7]
-            ]
+            [[8.6, 6.7875], [8.6, 6.9375], [8.45, 6.9375], [8.45, 6.7875]]
           ],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "arrow-boxed",
+            "transform": [1, 0, 0, 1, 8.45, 6.7875],
             "direction": {"x": 1, "y": 0}
           }
         }
@@ -2943,6 +2943,7 @@
             "point": true,
             "label": "office",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.525, 2.2875],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -2957,7 +2958,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 1.4000000000000001],
+            "transform": [0, 1, -1, 0, 2.95, 1.4],
             "doorId": 0
           }
         },
@@ -2972,7 +2973,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 3.0500000000000003, 1.4000000000000001],
+            "transform": [0, 1, 1, 0, 3.05, 1.4],
             "doorId": 0
           }
         },
@@ -2987,7 +2988,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, 1, 1.7000000000000002, 3.0500000000000003],
+            "transform": [-1, 0, 0, 1, 1.7, 3.05],
             "doorId": 1
           }
         },
@@ -3002,7 +3003,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.7000000000000002, 2.95],
+            "transform": [-1, 0, 0, -1, 1.7, 2.95],
             "doorId": 1
           }
         },
@@ -3023,19 +3024,13 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [
-            [
-              [2.57505, 2.275],
-              [2.57505, 2.67505],
-              [2.175, 2.67505],
-              [2.175, 2.275]
-            ]
-          ],
+          "coordinates": [[[3.05, 1.5], [3.05, 3], [1.55, 3], [1.55, 1.5]]],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-one",
+            "transform": [1, 0, 0, 1, 1.55, 1.5],
             "direction": {"x": 1, "y": 0}
           }
         }
@@ -3145,6 +3140,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.875, 2.2],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -3159,7 +3155,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, -1, 1, 0, 3.0500000000000003, 1.6],
+            "transform": [0, -1, 1, 0, 3.05, 1.6],
             "doorId": 0
           }
         },
@@ -3267,6 +3263,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2, 2.15],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -3281,7 +3278,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 1.4500000000000002, 3.0500000000000003],
+            "transform": [1, 0, 0, 1, 1.45, 3.05],
             "doorId": 0
           }
         },
@@ -3308,6 +3305,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2, 1],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -3322,7 +3320,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 1.2000000000000002],
+            "transform": [0, 1, -1, 0, 2.95, 1.2],
             "doorId": 1
           }
         },
@@ -3337,7 +3335,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 1.6500000000000001],
+            "transform": [0, 1, -1, 0, 2.95, 1.65],
             "doorId": 1
           }
         }
@@ -3531,6 +3529,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -3547,7 +3546,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.6500000000000001, 5.9750000000000005],
+            "transform": [-1, 0, 0, -1, 1.65, 5.975],
             "doorId": 0
           }
         },
@@ -3578,6 +3577,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -3611,7 +3611,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.625, 1.4625000000000001],
+            "transform": [-1, 0, 0, -1, 1.625, 1.4625],
             "doorId": 1
           }
         }
@@ -3789,6 +3789,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.55, 0.425],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0
           }
@@ -3888,6 +3889,7 @@
             "point": true,
             "label": "cartography",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 3.1125, 2.4375],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -3909,14 +3911,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [
-              0.7071,
-              0.7071,
-              -0.7071,
-              0.7071,
-              4.6000000000000005,
-              0.15000000000000002
-            ],
+            "transform": [0.7071, 0.7071, -0.7071, 0.7071, 4.6, 0.15],
             "doorId": 0
           }
         },
@@ -3982,14 +3977,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [
-              0.7071,
-              0.7071,
-              0.7071,
-              -0.7071,
-              5.800000000000001,
-              1.25
-            ],
+            "transform": [0.7071, 0.7071, 0.7071, -0.7071, 5.8, 1.25],
             "doorId": 0
           }
         }
@@ -4403,6 +4391,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.125, 0.175],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0
           }
@@ -4461,6 +4450,7 @@
             "on": true,
             "y": 0,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.2625, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 0
           }
@@ -4517,6 +4507,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.2, 0.3],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 0
           }
@@ -4574,6 +4565,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.3625, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 0
           }
@@ -4682,6 +4674,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.8625, 3.6375],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -4711,7 +4704,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, -1, 1, 0, 3.0500000000000003, 3.1500000000000004],
+            "transform": [0, -1, 1, 0, 3.05, 3.15],
             "doorId": 0
           }
         }
@@ -4897,7 +4890,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 23.900000000000002, 14.9],
+            "transform": [-1, 0, 0, -1, 23.9, 14.9],
             "doorId": 3
           }
         },
@@ -4927,7 +4920,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.1, 6.1000000000000005],
+            "transform": [0, 1, 1, 0, 0.1, 6.1],
             "doorId": 5
           }
         },
@@ -4944,7 +4937,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 6.1000000000000005],
+            "transform": [0, 1, -1, 0, 29.9, 6.1],
             "doorId": 6
           }
         },
@@ -4961,7 +4954,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 8.75],
+            "transform": [0, 1, -1, 0, 29.9, 8.75],
             "doorId": 7
           }
         }
@@ -5328,6 +5321,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.4, 0.7875],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 2
           }
@@ -5341,6 +5335,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.4, 1.4],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 2
           }
@@ -5356,6 +5351,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.4, 2.0125],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 2
           }
@@ -5491,6 +5487,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 1.0375, 0.6625],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0
           }
@@ -5576,6 +5573,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.5, 0.3],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 0
           }
@@ -5627,6 +5625,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.375, 0.175],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 0
           }
@@ -5705,7 +5704,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 6.25, 0.15000000000000002],
+            "transform": [-1, 0, 0, -1, 6.25, 0.15],
             "doorId": 0,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -5725,7 +5724,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 8.887500000000001, 0.15000000000000002],
+            "transform": [-1, 0, 0, -1, 8.8875, 0.15],
             "doorId": 1,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -5743,7 +5742,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 21.25, 0.15000000000000002],
+            "transform": [-1, 0, 0, -1, 21.25, 0.15],
             "doorId": 2,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -5763,14 +5762,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [
-              -1,
-              0,
-              0,
-              -1,
-              23.887500000000003,
-              0.15000000000000002
-            ],
+            "transform": [-1, 0, 0, -1, 23.8875, 0.15],
             "doorId": 3,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -5787,6 +5779,7 @@
             "point": true,
             "label": "common",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.75, 10.1],
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1,
@@ -5877,6 +5870,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, 0.5, 0.5, 0, 12.649999999999999, 4.8375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -5949,6 +5943,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.342, -0.9397, 0.9397, -0.342, 10.87791, 5.65475],
             "obstacleId": 8,
             "y": 0.51,
             "gmId": -1,
@@ -5972,6 +5967,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.342, -0.9397, -0.9397, -0.342, 9.74709, 5.66725],
             "obstacleId": 9,
             "y": 0.51,
             "gmId": -1,
@@ -5995,6 +5991,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 10.0625, 3.6625],
             "obstacleId": 10,
             "y": 1.01,
             "gmId": -1,
@@ -6013,6 +6010,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 12.7, 4.1875],
             "obstacleId": 13,
             "y": 0.71,
             "gmId": -1,
@@ -6035,6 +6033,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, -0.5, 0.5, 0, 12.650179999999999, 11.65477],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -6107,6 +6106,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.342, 0.9397, 0.9397, 0.342, 10.87809, 10.83752],
             "obstacleId": 14,
             "y": 0.51,
             "gmId": -1,
@@ -6130,6 +6130,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.342, 0.9397, -0.9397, 0.342, 9.74727, 10.82502],
             "obstacleId": 15,
             "y": 0.51,
             "gmId": -1,
@@ -6153,6 +6154,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 10.06268, 12.82977],
             "obstacleId": 16,
             "y": 1.01,
             "gmId": -1,
@@ -6176,6 +6178,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 12.70018, 12.30477],
             "obstacleId": 19,
             "y": 0.71,
             "gmId": -1,
@@ -6198,6 +6201,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, -0.5, -0.5, 0, 17.34982, 11.65477],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -6247,7 +6251,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, -1, 17.83732, 10.46727],
+            "transform": [1, 0, 0, -1, 17.837320000000002, 10.46727],
             "doorId": 20,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -6270,6 +6274,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.342, 0.9397, -0.9397, 0.342, 19.12191, 10.83752],
             "obstacleId": 20,
             "y": 0.51,
             "gmId": -1,
@@ -6293,6 +6298,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.342, 0.9397, 0.9397, 0.342, 20.25273, 10.82502],
             "obstacleId": 21,
             "y": 0.51,
             "gmId": -1,
@@ -6316,6 +6322,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 19.93732, 12.82977],
             "obstacleId": 22,
             "y": 1.01,
             "gmId": -1,
@@ -6339,6 +6346,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 17.29982, 12.30477],
             "obstacleId": 25,
             "y": 0.71,
             "gmId": -1,
@@ -7770,6 +7778,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.6875, 2.9],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -7786,7 +7795,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 11.950000000000001, 5.8375],
+            "transform": [0, 1, -1, 0, 11.95, 5.8375],
             "doorId": 0
           }
         },
@@ -7884,7 +7893,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 5.15, 4.5375000000000005],
+            "transform": [1, 0, 0, 1, 5.15, 4.5375],
             "doorId": 1
           }
         },
@@ -7918,7 +7927,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.037500000000000006, 5.8500000000000005],
+            "transform": [0, 1, 1, 0, 0.0375, 5.85],
             "doorId": 2
           }
         },
@@ -7935,7 +7944,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, -0.0625, 5.8500000000000005],
+            "transform": [0, 1, -1, 0, -0.0625, 5.85],
             "doorId": 2
           }
         },
@@ -7947,6 +7956,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 3.5, 4.05],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -7958,6 +7968,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 8, 4.05],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -7971,6 +7982,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.75, 5.85],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -7985,7 +7997,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 6.050000000000001],
+            "transform": [0, 1, -1, 0, 2.95, 6.05],
             "doorId": 5
           }
         },
@@ -8000,7 +8012,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 3.0500000000000003, 6.050000000000001],
+            "transform": [0, 1, 1, 0, 3.05, 6.05],
             "doorId": 5
           }
         },
@@ -8019,6 +8031,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 10.1625, 6.275],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -8032,6 +8045,7 @@
             "point": true,
             "label": "briefing",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -8085,7 +8099,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 3.0500000000000003, 9],
+            "transform": [0, 1, 1, 0, 3.05, 9],
             "doorId": 8
           }
         },
@@ -8114,6 +8128,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -8143,7 +8158,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 8.950000000000001, 9],
+            "transform": [0, 1, -1, 0, 8.95, 9],
             "doorId": 9
           }
         },
@@ -8163,6 +8178,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 3.8375000000000004, 2.1375],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 5,
             "y": 0.51
@@ -8179,6 +8195,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 6.8625, 2.125],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 6,
             "y": 0.51
@@ -8195,6 +8212,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 8.325, 2.125],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 7,
             "y": 0.51
@@ -8211,6 +8229,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 5.325, 2.125],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 8,
             "y": 0.51
@@ -8232,6 +8251,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 5.0375, 10.075],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 12,
             "y": 0.31
@@ -8253,6 +8273,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 5.637499999999999, 10.075],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 13,
             "y": 0.31
@@ -8274,6 +8295,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 6.8374999999999995, 10.075],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 14,
             "y": 0.31
@@ -8295,6 +8317,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 6.2375, 10.075],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 15,
             "y": 0.31
@@ -8311,6 +8334,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 6.8374999999999995, 8.375],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 16,
             "y": 0.31
@@ -8327,6 +8351,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 6.2375, 8.375],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 17,
             "y": 0.31
@@ -8343,6 +8368,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 5.637499999999999, 8.375],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 18,
             "y": 0.31
@@ -8359,6 +8385,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 5.0375, 8.375],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 19,
             "y": 0.31
@@ -8375,6 +8402,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 4.137499999999999, 9.174999999999999],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 20,
             "y": 0.31
@@ -8391,6 +8419,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 7.8374999999999995, 9.325],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 21,
             "y": 0.31
@@ -8407,6 +8436,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 1.1375, 7.824999999999999],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 22,
             "y": 0.41000000000000003
@@ -8428,6 +8458,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.2588,
+              -0.9659,
+              0.9659,
+              -0.2588,
+              1.5285825,
+              9.5169225
+            ],
             "direction": {"x": -0.2588, "y": -0.9659},
             "obstacleId": 23,
             "y": 0.41000000000000003
@@ -8444,6 +8482,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 9.75, 8.125],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 25,
             "y": 0.51
@@ -8461,6 +8500,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 9.5125, 6.7250000000000005],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 26
           }
@@ -8476,6 +8516,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 10.424999999999999, 7.25],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 27,
             "y": 0.61
@@ -8492,6 +8533,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 11.299999999999999, 7.25],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 28,
             "y": 0.61
@@ -9591,6 +9633,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.7071,
+              -0.7071,
+              -0.7071,
+              0.7071,
+              1.7164199999999998,
+              1.64068
+            ],
             "direction": {"x": -0.7071, "y": -0.7071},
             "obstacleId": 3,
             "y": 0.41000000000000003
@@ -9686,6 +9736,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.875, 2.2],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -9700,7 +9751,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, -1, 1, 0, 3.0500000000000003, 1.6],
+            "transform": [0, -1, 1, 0, 3.05, 1.6],
             "doorId": 0
           }
         },
@@ -9736,6 +9787,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.7071,
+              -0.7071,
+              -0.7071,
+              -0.7071,
+              0.4843200000000001,
+              2.6539200000000003
+            ],
             "direction": {"x": 0.7071, "y": -0.7071},
             "obstacleId": 0,
             "y": 0.01
@@ -9757,6 +9816,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 1.0375, 0.6375],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 1,
             "y": 0.01
@@ -9873,6 +9933,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2, 2.15],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -9887,7 +9948,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 1.4500000000000002, 3.0500000000000003],
+            "transform": [1, 0, 0, 1, 1.45, 3.05],
             "doorId": 0
           }
         },
@@ -9914,6 +9975,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2, 1],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -9928,7 +9990,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 1.2000000000000002],
+            "transform": [0, 1, -1, 0, 2.95, 1.2],
             "doorId": 1
           }
         },
@@ -9943,7 +10005,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 1.6500000000000001],
+            "transform": [0, 1, -1, 0, 2.95, 1.65],
             "doorId": 1
           }
         },
@@ -9963,6 +10025,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.6625, 1.0375],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 0,
             "y": 0.51
@@ -10080,6 +10143,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.7071, 0.7071, -0.7071, -0.7071, 2.57892, 0.52182],
             "direction": {"x": -0.7071, "y": 0.7071},
             "obstacleId": 1,
             "y": 0.01
@@ -10101,6 +10165,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 1.0375, 3.8375],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 2,
             "y": 0.01
@@ -10239,6 +10304,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -10255,7 +10321,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.6500000000000001, 5.9750000000000005],
+            "transform": [-1, 0, 0, -1, 1.65, 5.975],
             "doorId": 0
           }
         },
@@ -10286,6 +10352,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -10319,7 +10386,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.625, 1.4625000000000001],
+            "transform": [-1, 0, 0, -1, 1.625, 1.4625],
             "doorId": 1
           }
         },
@@ -10339,6 +10406,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.866,
+              0.5,
+              0.5,
+              -0.866,
+              0.4169999999999999,
+              4.465199999999999
+            ],
             "direction": {"x": 0.866, "y": 0.5},
             "obstacleId": 0,
             "y": 0.51
@@ -10360,6 +10435,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
             "direction": {"x": 0.866, "y": -0.5},
             "obstacleId": 1,
             "y": 0.51
@@ -10376,6 +10452,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 2.25],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 2,
             "y": 0.51
@@ -10392,6 +10469,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 2.25],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 3,
             "y": 1.51
@@ -10408,6 +10486,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 1.4124999999999999, 0.3],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 4,
             "y": 0.71
@@ -10425,6 +10504,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 2.3125, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 5
           }
@@ -10440,6 +10520,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.375, 0.8125],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 6,
             "y": 0.01
@@ -10660,6 +10741,7 @@
             "point": true,
             "label": "office",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.525, 2.2875],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -10674,7 +10756,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 2.95, 1.4000000000000001],
+            "transform": [0, 1, -1, 0, 2.95, 1.4],
             "doorId": 0
           }
         },
@@ -10689,7 +10771,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 3.0500000000000003, 1.4000000000000001],
+            "transform": [0, 1, 1, 0, 3.05, 1.4],
             "doorId": 0
           }
         },
@@ -10704,7 +10786,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, 1, 1.7000000000000002, 3.0500000000000003],
+            "transform": [-1, 0, 0, 1, 1.7, 3.05],
             "doorId": 1
           }
         },
@@ -10719,7 +10801,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.7000000000000002, 2.95],
+            "transform": [-1, 0, 0, -1, 1.7, 2.95],
             "doorId": 1
           }
         },
@@ -10740,19 +10822,13 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [
-            [
-              [2.57505, 2.275],
-              [2.57505, 2.67505],
-              [2.175, 2.67505],
-              [2.175, 2.275]
-            ]
-          ],
+          "coordinates": [[[3.05, 1.5], [3.05, 3], [1.55, 3], [1.55, 1.5]]],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-one",
+            "transform": [1, 0, 0, 1, 1.55, 1.5],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -10772,6 +10848,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.7071,
+              -0.7071,
+              -0.7071,
+              0.7071,
+              1.7164199999999998,
+              1.64068
+            ],
             "direction": {"x": -0.7071, "y": -0.7071},
             "obstacleId": 3,
             "y": 0.41000000000000003
@@ -10963,7 +11047,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 8.887500000000001, 14.9],
+            "transform": [-1, 0, 0, -1, 8.8875, 14.9],
             "doorId": 1,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11008,7 +11092,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 23.887500000000003, 14.9],
+            "transform": [-1, 0, 0, -1, 23.8875, 14.9],
             "doorId": 3,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11044,7 +11128,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.1, 6.1000000000000005],
+            "transform": [0, 1, 1, 0, 0.1, 6.1],
             "doorId": 5,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11064,7 +11148,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 6.1000000000000005],
+            "transform": [0, 1, -1, 0, 29.9, 6.1],
             "doorId": 6,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11084,7 +11168,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 8.75],
+            "transform": [0, 1, -1, 0, 29.9, 8.75],
             "doorId": 7,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11232,18 +11316,14 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [8.700005, 6.7],
-              [8.700005, 6.950005],
-              [8.45, 6.950005],
-              [8.45, 6.7]
-            ]
+            [[8.6, 6.7875], [8.6, 6.9375], [8.45, 6.9375], [8.45, 6.7875]]
           ],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "arrow-boxed",
+            "transform": [1, 0, 0, 1, 8.45, 6.7875],
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1,
@@ -11265,6 +11345,7 @@
             "point": true,
             "label": "office",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 25.525, 5.2875],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11324,7 +11405,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, 1, 25.7, 6.050000000000001],
+            "transform": [-1, 0, 0, 1, 25.7, 6.05],
             "doorId": 9,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11371,19 +11452,13 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [
-            [
-              [26.5751, 5.275],
-              [26.5751, 5.6751],
-              [26.175, 5.6751],
-              [26.175, 5.275]
-            ]
-          ],
+          "coordinates": [[[27.05, 4.5], [27.05, 6], [25.55, 6], [25.55, 4.5]]],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-one",
+            "transform": [1, 0, 0, 1, 25.55, 4.5],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11406,6 +11481,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 25.71642, 4.64068],
             "obstacleId": 3,
             "y": 0.41,
             "gmId": -1,
@@ -11423,6 +11499,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11442,7 +11519,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, -1, 28.35, 5.9750000000000005],
+            "transform": [1, 0, 0, -1, 28.35, 5.975],
             "doorId": 10,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11479,6 +11556,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11528,7 +11606,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, -1, 28.375, 1.4625000000000001],
+            "transform": [1, 0, 0, -1, 28.375, 1.4625],
             "doorId": 11,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11551,6 +11629,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.866, 0.5, -0.5, -0.866, 29.583, 4.465199999999999],
             "obstacleId": 4,
             "y": 0.51,
             "gmId": -1,
@@ -11574,6 +11653,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.866, -0.5, -0.5, 0.866, 29.583, 5.5223],
             "obstacleId": 5,
             "y": 0.51,
             "gmId": -1,
@@ -11592,6 +11672,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 29.375, 2.25],
             "obstacleId": 6,
             "y": 0.51,
             "gmId": -1,
@@ -11610,6 +11691,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 29.375, 2.25],
             "obstacleId": 7,
             "y": 1.51,
             "gmId": -1,
@@ -11628,6 +11710,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 28.5875, 0.3],
             "obstacleId": 8,
             "y": 0.71,
             "gmId": -1,
@@ -11647,6 +11730,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 27.6875, 0.8],
             "obstacleId": 9,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11669,6 +11753,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 29.625, 0.8125],
             "obstacleId": 10,
             "y": 0.01,
             "gmId": -1,
@@ -11686,6 +11771,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7, 4.425],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11947,6 +12033,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 12.5125, 5.574999999999999],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11968,6 +12055,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 17.0125, 5.574999999999999],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -11989,6 +12077,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7625, 7.375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12013,7 +12102,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 11.962499999999999, 7.575000000000001],
+            "transform": [0, 1, -1, 0, 11.962499999999999, 7.574999999999999],
             "doorId": 17,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12038,7 +12127,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 12.0625, 7.575000000000001],
+            "transform": [0, 1, 1, 0, 12.0625, 7.574999999999999],
             "doorId": 17,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12055,6 +12144,14 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [
+              0.5,
+              0,
+              0,
+              0.5,
+              19.174999999999997,
+              7.800000000000001
+            ],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12076,6 +12173,7 @@
             "point": true,
             "label": "briefing",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7625, 10.725],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12192,6 +12290,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7625, 10.725],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12259,6 +12358,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 12.85, 3.6625],
             "obstacleId": 16,
             "y": 0.51,
             "gmId": -1,
@@ -12277,6 +12377,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 15.875, 3.65],
             "obstacleId": 17,
             "y": 0.51,
             "gmId": -1,
@@ -12295,6 +12396,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 17.3375, 3.65],
             "obstacleId": 18,
             "y": 0.51,
             "gmId": -1,
@@ -12313,6 +12415,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 14.337499999999999, 3.65],
             "obstacleId": 19,
             "y": 0.51,
             "gmId": -1,
@@ -12331,6 +12434,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 14.049999999999999, 11.6],
             "obstacleId": 23,
             "y": 0.31,
             "gmId": -1,
@@ -12349,6 +12453,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 14.649999999999999, 11.6],
             "obstacleId": 24,
             "y": 0.31,
             "gmId": -1,
@@ -12367,6 +12472,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 15.849999999999998, 11.6],
             "obstacleId": 25,
             "y": 0.31,
             "gmId": -1,
@@ -12385,6 +12491,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 15.25, 11.6],
             "obstacleId": 26,
             "y": 0.31,
             "gmId": -1,
@@ -12403,6 +12510,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 15.849999999999998, 9.9],
             "obstacleId": 27,
             "y": 0.31,
             "gmId": -1,
@@ -12421,6 +12529,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 15.25, 9.9],
             "obstacleId": 28,
             "y": 0.31,
             "gmId": -1,
@@ -12439,6 +12548,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 14.649999999999999, 9.9],
             "obstacleId": 29,
             "y": 0.31,
             "gmId": -1,
@@ -12457,6 +12567,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 14.049999999999999, 9.9],
             "obstacleId": 30,
             "y": 0.31,
             "gmId": -1,
@@ -12475,6 +12586,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 13.149999999999999, 10.7],
             "obstacleId": 31,
             "y": 0.31,
             "gmId": -1,
@@ -12493,6 +12605,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 16.849999999999998, 10.85],
             "obstacleId": 32,
             "y": 0.31,
             "gmId": -1,
@@ -12511,6 +12624,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 10.149999999999999, 9.35],
             "obstacleId": 33,
             "y": 0.41,
             "gmId": -1,
@@ -12534,6 +12648,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.2588,
+              -0.9659,
+              0.9659,
+              -0.2588,
+              10.5410825,
+              11.0419225
+            ],
             "obstacleId": 34,
             "y": 0.41,
             "gmId": -1,
@@ -12552,6 +12674,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 18.7625, 9.65],
             "obstacleId": 36,
             "y": 0.51,
             "gmId": -1,
@@ -12571,6 +12694,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 18.525, 8.25],
             "obstacleId": 37,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12593,6 +12717,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 19.4375, 8.775],
             "obstacleId": 38,
             "y": 0.61,
             "gmId": -1,
@@ -12616,6 +12741,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 20.3125, 8.775],
             "obstacleId": 39,
             "y": 0.61,
             "gmId": -1,
@@ -12634,6 +12760,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
             "obstacleId": 41,
             "y": 0.61,
             "gmId": -1,
@@ -12652,6 +12779,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 7.325, 2.1375],
             "obstacleId": 43,
             "y": 0.61,
             "gmId": -1,
@@ -12674,6 +12802,7 @@
             "point": true,
             "label": "cartography",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 26.8375, 11.425],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12703,7 +12832,7 @@
               0.7071,
               0.7071,
               0.7071,
-              25.349999999999998,
+              25.35,
               9.137500000000001
             ],
             "doorId": 22,
@@ -12817,6 +12946,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.9659,
+              -0.2588,
+              0.2588,
+              0.9659,
+              27.722355,
+              11.684890000000001
+            ],
             "obstacleId": 45,
             "y": 0.51,
             "gmId": -1,
@@ -12840,6 +12977,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.2588,
+              0.9659,
+              -0.9659,
+              -0.2588,
+              26.80213,
+              12.78941
+            ],
             "obstacleId": 46,
             "y": 0.51,
             "gmId": -1,
@@ -12857,6 +13002,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12876,7 +13022,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 5.9750000000000005, 13.35],
+            "transform": [0, 1, -1, 0, 5.975, 13.35],
             "doorId": 23,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12913,6 +13059,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12962,7 +13109,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 1.4625000000000001, 13.375],
+            "transform": [0, 1, -1, 0, 1.4625, 13.375],
             "doorId": 24,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -12985,6 +13132,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
             "obstacleId": 47,
             "y": 0.51,
             "gmId": -1,
@@ -13008,6 +13156,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
             "obstacleId": 48,
             "y": 0.51,
             "gmId": -1,
@@ -13026,6 +13175,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 2.25, 14.375],
             "obstacleId": 49,
             "y": 0.51,
             "gmId": -1,
@@ -13044,6 +13194,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 2.25, 14.375],
             "obstacleId": 50,
             "y": 1.51,
             "gmId": -1,
@@ -13062,6 +13213,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 0.3, 13.5875],
             "obstacleId": 51,
             "y": 0.71,
             "gmId": -1,
@@ -13081,6 +13233,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 0.8, 12.6875],
             "obstacleId": 52,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13103,6 +13256,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 0.8125, 14.625],
             "obstacleId": 53,
             "y": 0.01,
             "gmId": -1,
@@ -13118,6 +13272,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 5, 9.85],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13168,6 +13323,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 5, 11],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13230,6 +13386,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 3.6625, 10.9625],
             "obstacleId": 54,
             "y": 0.51,
             "gmId": -1,
@@ -13245,6 +13402,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 2, 9.85],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13262,7 +13420,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, -1, 1.4500000000000002, 8.95],
+            "transform": [1, 0, 0, -1, 1.45, 8.95],
             "doorId": 27,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13295,6 +13453,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 2, 11],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13357,6 +13516,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.6625, 10.9625],
             "obstacleId": 56,
             "y": 0.51,
             "gmId": -1,
@@ -13374,6 +13534,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13393,7 +13554,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.6500000000000001, 5.9750000000000005],
+            "transform": [-1, 0, 0, -1, 1.65, 5.975],
             "doorId": 29,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13430,6 +13591,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13469,7 +13631,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 1.625, 1.4625000000000001],
+            "transform": [-1, 0, 0, -1, 1.625, 1.4625],
             "doorId": 30,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13492,6 +13654,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.866,
+              0.5,
+              0.5,
+              -0.866,
+              0.4169999999999999,
+              4.465199999999999
+            ],
             "obstacleId": 58,
             "y": 0.51,
             "gmId": -1,
@@ -13515,6 +13685,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
             "obstacleId": 59,
             "y": 0.51,
             "gmId": -1,
@@ -13533,6 +13704,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 2.25],
             "obstacleId": 60,
             "y": 0.51,
             "gmId": -1,
@@ -13551,6 +13723,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 2.25],
             "obstacleId": 61,
             "y": 1.51,
             "gmId": -1,
@@ -13569,6 +13742,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 1.4124999999999999, 0.3],
             "obstacleId": 62,
             "y": 0.71,
             "gmId": -1,
@@ -13588,6 +13762,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 2.3125, 0.8],
             "obstacleId": 63,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13605,6 +13780,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.375, 0.8125],
             "obstacleId": 64,
             "y": 0.01,
             "gmId": -1,
@@ -13622,6 +13798,7 @@
             "point": true,
             "label": "office",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 4.475, 5.2875],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13639,7 +13816,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 4.3, 6.050000000000001],
+            "transform": [1, 0, 0, 1, 4.3, 6.05],
             "doorId": 31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13682,14 +13859,13 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [
-            [[3.825, 5.275], [3.825, 5.6751], [3.4249, 5.6751], [3.4249, 5.275]]
-          ],
+          "coordinates": [[[4.45, 4.5], [4.45, 6], [2.95, 6], [2.95, 4.5]]],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-one",
+            "transform": [-1, 0, 0, 1, 4.45, 4.5],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -13712,6 +13888,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.7071,
+              -0.7071,
+              0.7071,
+              0.7071,
+              4.283580000000001,
+              4.64068
+            ],
             "obstacleId": 68,
             "y": 0.41,
             "gmId": -1,
@@ -16580,6 +16764,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.55, 0.425],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0,
             "y": 0.01
@@ -16596,6 +16781,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.55, 0.425],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 1,
             "y": 1.01
@@ -16654,6 +16840,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.55, 0.425],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0
           }
@@ -16697,6 +16884,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.675, 0.7],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 1,
             "y": 0.61
@@ -16774,6 +16962,7 @@
             "point": true,
             "label": "cartography",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 3.1125, 2.4375],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -16795,14 +16984,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [
-              0.7071,
-              0.7071,
-              -0.7071,
-              0.7071,
-              4.6000000000000005,
-              0.15000000000000002
-            ],
+            "transform": [0.7071, 0.7071, -0.7071, 0.7071, 4.6, 0.15],
             "doorId": 0
           }
         },
@@ -16868,14 +17050,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [
-              0.7071,
-              0.7071,
-              0.7071,
-              -0.7071,
-              5.800000000000001,
-              1.25
-            ],
+            "transform": [0.7071, 0.7071, 0.7071, -0.7071, 5.8, 1.25],
             "doorId": 0
           }
         },
@@ -16895,6 +17070,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.9659, -0.2588, -0.2588, 0.9659, 2.227645, 2.69739],
             "direction": {"x": -0.9659, "y": -0.2588},
             "obstacleId": 1,
             "y": 0.51
@@ -16916,6 +17092,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.2588,
+              0.9659,
+              0.9659,
+              -0.2588,
+              3.1478699999999997,
+              3.80191
+            ],
             "direction": {"x": 0.2588, "y": 0.9659},
             "obstacleId": 2,
             "y": 0.51
@@ -17137,6 +17321,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, -0.037500000000000006, 0.5625],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 1,
             "y": 0.31
@@ -17158,6 +17343,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, -0.037500000000000006, 1.1625],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 2,
             "y": 0.31
@@ -17179,6 +17365,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, -0.037500000000000006, 2.3625],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 3,
             "y": 0.31
@@ -17200,6 +17387,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, -0.037500000000000006, 1.7625],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 4,
             "y": 0.31
@@ -17221,6 +17409,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.6625, 2.3625],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 5,
             "y": 0.31
@@ -17242,6 +17431,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.6625, 1.7625],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 6,
             "y": 0.31
@@ -17263,6 +17453,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.6625, 1.1625],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 7,
             "y": 0.31
@@ -17284,6 +17475,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.6625, 0.5625],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 8,
             "y": 0.31
@@ -17305,6 +17497,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 0.8625, -0.3375],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 9,
             "y": 0.31
@@ -17326,6 +17519,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.7124999999999999, 3.3625],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 10,
             "y": 0.31
@@ -17658,6 +17852,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.125, 0.175],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0
           }
@@ -17714,6 +17909,7 @@
             "on": true,
             "y": 0,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.2625, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 0
           }
@@ -17768,6 +17964,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.2, 0.3],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 0
           }
@@ -17823,6 +18020,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.3625, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 0
           }
@@ -17927,6 +18125,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.8625, 3.6375],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -17956,7 +18155,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, -1, 1, 0, 3.0500000000000003, 3.1500000000000004],
+            "transform": [0, -1, 1, 0, 3.05, 3.15],
             "doorId": 0
           }
         },
@@ -17976,6 +18175,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.9397,
+              -0.342,
+              -0.342,
+              0.9397,
+              2.67975,
+              1.8654100000000002
+            ],
             "direction": {"x": -0.9397, "y": -0.342},
             "obstacleId": 0,
             "y": 0.51
@@ -17992,6 +18199,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.9397, 0.342, -0.342, -0.9397, 2.69225, 0.73459],
             "direction": {"x": -0.9397, "y": 0.342},
             "obstacleId": 1,
             "y": 0.51
@@ -18008,6 +18216,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.6875, 1.05],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 2,
             "y": 1.01
@@ -18029,6 +18238,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.2125, 3.6875],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 5,
             "y": 0.71
@@ -18248,7 +18458,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 23.900000000000002, 14.9],
+            "transform": [-1, 0, 0, -1, 23.9, 14.9],
             "doorId": 3,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -18284,7 +18494,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.1, 6.1000000000000005],
+            "transform": [0, 1, 1, 0, 0.1, 6.1],
             "doorId": 5,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -18304,7 +18514,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 6.1000000000000005],
+            "transform": [0, 1, -1, 0, 29.9, 6.1],
             "doorId": 6,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -18324,7 +18534,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, 29.900000000000002, 8.75],
+            "transform": [0, 1, -1, 0, 29.9, 8.75],
             "doorId": 7,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -18347,6 +18557,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 6.4825, 11.275],
             "obstacleId": 2,
             "y": 0.41,
             "gmId": -1,
@@ -18370,6 +18581,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 6.4825, 11.887500000000001],
             "obstacleId": 2,
             "y": 0.41,
             "gmId": -1,
@@ -18388,6 +18600,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 6.4825, 12.5],
             "obstacleId": 2,
             "y": 0.41,
             "gmId": -1,
@@ -18692,6 +18905,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.4, 0.7875],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 2
           }
@@ -18705,6 +18919,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.4, 1.4],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 2
           }
@@ -18720,6 +18935,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 0.4, 2.0125],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 2
           }
@@ -18831,7 +19047,7 @@
           },
           "bounds": {"x": 6.1, "y": 0, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 6.25, 0.15000000000000002],
+          "transform": [-1, 0, 0, -1, 6.25, 0.15],
           "center": {"x": 6.175, "y": 0.075},
           "topCenter": {"x": 6.175, "y": 0.15},
           "det": 1
@@ -18853,7 +19069,7 @@
           },
           "bounds": {"x": 8.7375, "y": 0, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 8.887500000000001, 0.15000000000000002],
+          "transform": [-1, 0, 0, -1, 8.8875, 0.15],
           "center": {"x": 8.813, "y": 0.075},
           "topCenter": {"x": 8.813, "y": 0.15},
           "det": 1
@@ -18875,7 +19091,7 @@
           },
           "bounds": {"x": 21.1, "y": 0, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 21.25, 0.15000000000000002],
+          "transform": [-1, 0, 0, -1, 21.25, 0.15],
           "center": {"x": 21.175, "y": 0.075},
           "topCenter": {"x": 21.175, "y": 0.15},
           "det": 1
@@ -18897,7 +19113,7 @@
           },
           "bounds": {"x": 23.7375, "y": 0, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 23.887500000000003, 0.15000000000000002],
+          "transform": [-1, 0, 0, -1, 23.8875, 0.15],
           "center": {"x": 23.813, "y": 0.075},
           "topCenter": {"x": 23.813, "y": 0.15},
           "det": 1
@@ -18909,6 +19125,7 @@
             "point": true,
             "label": "common",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.75, 10.1],
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1,
@@ -18918,7 +19135,9 @@
           "type": "point",
           "x": 15,
           "y": 10.1937,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 14.75, 10.1],
+          "det": 1
         },
         {
           "key": "",
@@ -18989,6 +19208,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, 0.5, 0.5, 0, 12.649999999999999, 4.8375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -18998,7 +19218,9 @@
           "type": "point",
           "x": 12.7438,
           "y": 5.0875,
-          "orient": 0
+          "orient": 90,
+          "transform": [0, 0.5, 0.5, 0, 12.649999999999999, 4.8375],
+          "det": -1
         },
         {
           "key": "",
@@ -19052,6 +19274,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.342, -0.9397, 0.9397, -0.342, 10.87791, 5.65475],
             "obstacleId": 8,
             "y": 0.51,
             "gmId": -1,
@@ -19062,7 +19285,9 @@
           "type": "point",
           "x": 10.9228,
           "y": 5.5586,
-          "orient": 0
+          "orient": -110,
+          "transform": [-0.342, -0.9397, 0.9397, -0.342, 10.87791, 5.65475],
+          "det": 1
         },
         {
           "key": "",
@@ -19072,6 +19297,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.342, -0.9397, -0.9397, -0.342, 9.74709, 5.66725],
             "obstacleId": 9,
             "y": 0.51,
             "gmId": -1,
@@ -19082,7 +19308,9 @@
           "type": "point",
           "x": 9.7023,
           "y": 5.5711,
-          "orient": 0
+          "orient": -70,
+          "transform": [0.342, -0.9397, -0.9397, -0.342, 9.74709, 5.66725],
+          "det": -1
         },
         {
           "key": "",
@@ -19092,6 +19320,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 10.0625, 3.6625],
             "obstacleId": 10,
             "y": 1.01,
             "gmId": -1,
@@ -19102,7 +19331,9 @@
           "type": "point",
           "x": 10.1375,
           "y": 3.7375,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 10.0625, 3.6625],
+          "det": 1
         },
         {
           "key": "",
@@ -19112,6 +19343,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 12.7, 4.1875],
             "obstacleId": 13,
             "y": 0.71,
             "gmId": -1,
@@ -19122,7 +19354,9 @@
           "type": "point",
           "x": 12.775,
           "y": 4.1125,
-          "orient": 0
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 12.7, 4.1875],
+          "det": 1
         },
         {
           "key": "",
@@ -19131,6 +19365,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, -0.5, 0.5, 0, 12.650179999999999, 11.65477],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -19140,7 +19375,9 @@
           "type": "point",
           "x": 12.7439,
           "y": 11.4048,
-          "orient": 0
+          "orient": -90,
+          "transform": [0, -0.5, 0.5, 0, 12.650179999999999, 11.65477],
+          "det": 1
         },
         {
           "key": "",
@@ -19194,6 +19431,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.342, 0.9397, 0.9397, 0.342, 10.87809, 10.83752],
             "obstacleId": 14,
             "y": 0.51,
             "gmId": -1,
@@ -19204,7 +19442,9 @@
           "type": "point",
           "x": 10.9229,
           "y": 10.9337,
-          "orient": 0
+          "orient": 110,
+          "transform": [-0.342, 0.9397, 0.9397, 0.342, 10.87809, 10.83752],
+          "det": -1
         },
         {
           "key": "",
@@ -19214,6 +19454,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.342, 0.9397, -0.9397, 0.342, 9.74727, 10.82502],
             "obstacleId": 15,
             "y": 0.51,
             "gmId": -1,
@@ -19224,7 +19465,9 @@
           "type": "point",
           "x": 9.7024,
           "y": 10.9212,
-          "orient": 0
+          "orient": 70,
+          "transform": [0.342, 0.9397, -0.9397, 0.342, 9.74727, 10.82502],
+          "det": 1
         },
         {
           "key": "",
@@ -19234,6 +19477,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 10.06268, 12.82977],
             "obstacleId": 16,
             "y": 1.01,
             "gmId": -1,
@@ -19244,7 +19488,9 @@
           "type": "point",
           "x": 10.1377,
           "y": 12.7548,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, -1, 10.06268, 12.82977],
+          "det": -1
         },
         {
           "key": "",
@@ -19254,6 +19500,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 12.70018, 12.30477],
             "obstacleId": 19,
             "y": 0.71,
             "gmId": -1,
@@ -19264,7 +19511,9 @@
           "type": "point",
           "x": 12.7752,
           "y": 12.3798,
-          "orient": 0
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 12.70018, 12.30477],
+          "det": -1
         },
         {
           "key": "",
@@ -19273,6 +19522,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, -0.5, -0.5, 0, 17.34982, 11.65477],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -19282,7 +19532,9 @@
           "type": "point",
           "x": 17.256,
           "y": 11.4048,
-          "orient": 0
+          "orient": -90,
+          "transform": [0, -0.5, -0.5, 0, 17.34982, 11.65477],
+          "det": -1
         },
         {
           "key": "",
@@ -19323,7 +19575,7 @@
           },
           "bounds": {"x": 17.8373, "y": 10.3173, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, -1, 17.83732, 10.46727],
+          "transform": [1, 0, 0, -1, 17.837320000000002, 10.46727],
           "center": {"x": 17.912, "y": 10.392},
           "topCenter": {"x": 17.912, "y": 10.467},
           "det": -1
@@ -19336,6 +19588,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.342, 0.9397, -0.9397, 0.342, 19.12191, 10.83752],
             "obstacleId": 20,
             "y": 0.51,
             "gmId": -1,
@@ -19346,7 +19599,9 @@
           "type": "point",
           "x": 19.077,
           "y": 10.9337,
-          "orient": 0
+          "orient": 70,
+          "transform": [0.342, 0.9397, -0.9397, 0.342, 19.12191, 10.83752],
+          "det": 1
         },
         {
           "key": "",
@@ -19356,6 +19611,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.342, 0.9397, 0.9397, 0.342, 20.25273, 10.82502],
             "obstacleId": 21,
             "y": 0.51,
             "gmId": -1,
@@ -19366,7 +19622,9 @@
           "type": "point",
           "x": 20.2976,
           "y": 10.9212,
-          "orient": 0
+          "orient": 110,
+          "transform": [-0.342, 0.9397, 0.9397, 0.342, 20.25273, 10.82502],
+          "det": -1
         },
         {
           "key": "",
@@ -19376,6 +19634,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 19.93732, 12.82977],
             "obstacleId": 22,
             "y": 1.01,
             "gmId": -1,
@@ -19386,7 +19645,9 @@
           "type": "point",
           "x": 19.8623,
           "y": 12.7548,
-          "orient": 0
+          "orient": 180,
+          "transform": [-1, 0, 0, -1, 19.93732, 12.82977],
+          "det": 1
         },
         {
           "key": "",
@@ -19396,6 +19657,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 17.29982, 12.30477],
             "obstacleId": 25,
             "y": 0.71,
             "gmId": -1,
@@ -19406,7 +19668,9 @@
           "type": "point",
           "x": 17.2248,
           "y": 12.3798,
-          "orient": 0
+          "orient": 90,
+          "transform": [0, 1, -1, 0, 17.29982, 12.30477],
+          "det": 1
         }
       ],
       "doors": [
@@ -22011,7 +22275,7 @@
           },
           "bounds": {"x": 8.7375, "y": 14.75, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 8.887500000000001, 14.9],
+          "transform": [-1, 0, 0, -1, 8.8875, 14.9],
           "center": {"x": 8.813, "y": 14.825},
           "topCenter": {"x": 8.813, "y": 14.9},
           "det": 1
@@ -22055,7 +22319,7 @@
           },
           "bounds": {"x": 23.7375, "y": 14.75, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 23.887500000000003, 14.9],
+          "transform": [-1, 0, 0, -1, 23.8875, 14.9],
           "center": {"x": 23.813, "y": 14.825},
           "topCenter": {"x": 23.813, "y": 14.9},
           "det": 1
@@ -22099,7 +22363,7 @@
           },
           "bounds": {"x": 0.1, "y": 6.1, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, 1, 0, 0.1, 6.1000000000000005],
+          "transform": [0, 1, 1, 0, 0.1, 6.1],
           "center": {"x": 0.175, "y": 6.175},
           "topCenter": {"x": 0.1, "y": 6.175},
           "det": -1
@@ -22121,7 +22385,7 @@
           },
           "bounds": {"x": 29.75, "y": 6.1, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 29.900000000000002, 6.1000000000000005],
+          "transform": [0, 1, -1, 0, 29.9, 6.1],
           "center": {"x": 29.825, "y": 6.175},
           "topCenter": {"x": 29.9, "y": 6.175},
           "det": 1
@@ -22143,7 +22407,7 @@
           },
           "bounds": {"x": 29.75, "y": 8.75, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 29.900000000000002, 8.75],
+          "transform": [0, 1, -1, 0, 29.9, 8.75],
           "center": {"x": 29.825, "y": 8.825},
           "topCenter": {"x": 29.9, "y": 8.825},
           "det": 1
@@ -22269,16 +22533,19 @@
             "point": true,
             "shown": true,
             "img": "arrow-boxed",
+            "transform": [1, 0, 0, 1, 8.45, 6.7875],
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1,
             "y": 0
           },
-          "bounds": {"x": 8.4, "y": 6.65, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 8.35, "y": 6.6875, "width": 0.35, "height": 0.35},
           "type": "point",
-          "x": 8.575,
-          "y": 6.825,
-          "orient": 0
+          "x": 8.525,
+          "y": 6.8625,
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 8.45, 6.7875],
+          "det": 1
         },
         {
           "key": "",
@@ -22287,6 +22554,7 @@
             "point": true,
             "label": "office",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 25.525, 5.2875],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22296,7 +22564,9 @@
           "type": "point",
           "x": 25.775,
           "y": 5.3812,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 25.525, 5.2875],
+          "det": 1
         },
         {
           "key": "",
@@ -22359,7 +22629,7 @@
           },
           "bounds": {"x": 25.55, "y": 6.05, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, 1, 25.7, 6.050000000000001],
+          "transform": [-1, 0, 0, 1, 25.7, 6.05],
           "center": {"x": 25.625, "y": 6.125},
           "topCenter": {"x": 25.625, "y": 6.05},
           "det": -1
@@ -22413,16 +22683,19 @@
             "point": true,
             "shown": true,
             "img": "number-one",
+            "transform": [1, 0, 0, 1, 25.55, 4.5],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 26.2, "y": 5.3, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 26.125, "y": 5.075, "width": 0.35, "height": 0.35},
           "type": "point",
-          "x": 26.375,
-          "y": 5.475,
-          "orient": 0
+          "x": 26.3,
+          "y": 5.25,
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 25.55, 4.5],
+          "det": 1
         },
         {
           "key": "",
@@ -22432,6 +22705,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 25.71642, 4.64068],
             "obstacleId": 3,
             "y": 0.41,
             "gmId": -1,
@@ -22442,7 +22716,9 @@
           "type": "point",
           "x": 25.6104,
           "y": 4.6407,
-          "orient": -135
+          "orient": -135,
+          "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 25.71642, 4.64068],
+          "det": -1
         },
         {
           "key": "",
@@ -22451,6 +22727,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22460,7 +22737,9 @@
           "type": "point",
           "x": 27.85,
           "y": 4.2562,
-          "orient": 180
+          "orient": 180,
+          "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
+          "det": -1
         },
         {
           "key": "",
@@ -22479,7 +22758,7 @@
           },
           "bounds": {"x": 28.35, "y": 5.825, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, -1, 28.35, 5.9750000000000005],
+          "transform": [1, 0, 0, -1, 28.35, 5.975],
           "center": {"x": 28.425, "y": 5.9},
           "topCenter": {"x": 28.425, "y": 5.975},
           "det": -1
@@ -22513,6 +22792,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22522,7 +22802,9 @@
           "type": "point",
           "x": 27.85,
           "y": 4.2562,
-          "orient": 180
+          "orient": 180,
+          "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
+          "det": -1
         },
         {
           "key": "",
@@ -22563,7 +22845,7 @@
           },
           "bounds": {"x": 28.375, "y": 1.3125, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, -1, 28.375, 1.4625000000000001],
+          "transform": [1, 0, 0, -1, 28.375, 1.4625],
           "center": {"x": 28.45, "y": 1.388},
           "topCenter": {"x": 28.45, "y": 1.463},
           "det": -1
@@ -22576,6 +22858,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.866, 0.5, -0.5, -0.866, 29.583, 4.465199999999999],
             "obstacleId": 4,
             "y": 0.51,
             "gmId": -1,
@@ -22586,7 +22869,9 @@
           "type": "point",
           "x": 29.4805,
           "y": 4.4378,
-          "orient": 150
+          "orient": 150,
+          "transform": [-0.866, 0.5, -0.5, -0.866, 29.583, 4.465199999999999],
+          "det": 1
         },
         {
           "key": "",
@@ -22596,6 +22881,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.866, -0.5, -0.5, 0.866, 29.583, 5.5223],
             "obstacleId": 5,
             "y": 0.51,
             "gmId": -1,
@@ -22606,7 +22892,9 @@
           "type": "point",
           "x": 29.4806,
           "y": 5.5497,
-          "orient": -150
+          "orient": -150,
+          "transform": [-0.866, -0.5, -0.5, 0.866, 29.583, 5.5223],
+          "det": -1
         },
         {
           "key": "",
@@ -22616,6 +22904,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 29.375, 2.25],
             "obstacleId": 6,
             "y": 0.51,
             "gmId": -1,
@@ -22626,7 +22915,9 @@
           "type": "point",
           "x": 29.3,
           "y": 2.325,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, -1, 0, 29.375, 2.25],
+          "det": 1
         },
         {
           "key": "",
@@ -22636,6 +22927,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 29.375, 2.25],
             "obstacleId": 7,
             "y": 1.51,
             "gmId": -1,
@@ -22646,7 +22938,9 @@
           "type": "point",
           "x": 29.3,
           "y": 2.325,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, -1, 0, 29.375, 2.25],
+          "det": 1
         },
         {
           "key": "",
@@ -22656,6 +22950,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, -1, 0, 28.5875, 0.3],
             "obstacleId": 8,
             "y": 0.71,
             "gmId": -1,
@@ -22666,7 +22961,9 @@
           "type": "point",
           "x": 28.5125,
           "y": 0.375,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, -1, 0, 28.5875, 0.3],
+          "det": 1
         },
         {
           "key": "",
@@ -22677,6 +22974,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 27.6875, 0.8],
             "obstacleId": 9,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22686,7 +22984,9 @@
           "type": "point",
           "x": 27.6125,
           "y": 0.725,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, -1, 0, 27.6875, 0.8],
+          "det": -1
         },
         {
           "key": "",
@@ -22696,6 +22996,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 29.625, 0.8125],
             "obstacleId": 10,
             "y": 0.01,
             "gmId": -1,
@@ -22706,7 +23007,9 @@
           "type": "point",
           "x": 29.55,
           "y": 0.7375,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, -1, 0, 29.625, 0.8125],
+          "det": -1
         },
         {
           "key": "",
@@ -22715,6 +23018,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7, 4.425],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22724,7 +23028,9 @@
           "type": "point",
           "x": 14.95,
           "y": 4.5187,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 14.7, 4.425],
+          "det": 1
         },
         {
           "key": "",
@@ -22953,6 +23259,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 12.5125, 5.574999999999999],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22962,7 +23269,9 @@
           "type": "point",
           "x": 12.7625,
           "y": 5.6688,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 12.5125, 5.574999999999999],
+          "det": 1
         },
         {
           "key": "",
@@ -22971,6 +23280,7 @@
             "point": true,
             "label": "locker",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 17.0125, 5.574999999999999],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22980,7 +23290,9 @@
           "type": "point",
           "x": 17.2625,
           "y": 5.6688,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 17.0125, 5.574999999999999],
+          "det": 1
         },
         {
           "key": "",
@@ -22989,6 +23301,7 @@
             "point": true,
             "label": "bridge",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7625, 7.375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -22998,7 +23311,9 @@
           "type": "point",
           "x": 15.0125,
           "y": 7.4688,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 14.7625, 7.375],
+          "det": 1
         },
         {
           "key": "",
@@ -23017,7 +23332,7 @@
           },
           "bounds": {"x": 11.8125, "y": 7.575, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 11.962499999999999, 7.575000000000001],
+          "transform": [0, 1, -1, 0, 11.962499999999999, 7.574999999999999],
           "center": {"x": 11.887, "y": 7.65},
           "topCenter": {"x": 11.962, "y": 7.65},
           "det": 1
@@ -23039,7 +23354,7 @@
           },
           "bounds": {"x": 12.0625, "y": 7.575, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, 1, 0, 12.0625, 7.575000000000001],
+          "transform": [0, 1, 1, 0, 12.0625, 7.574999999999999],
           "center": {"x": 12.137, "y": 7.65},
           "topCenter": {"x": 12.062, "y": 7.65},
           "det": -1
@@ -23051,6 +23366,14 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [
+              0.5,
+              0,
+              0,
+              0.5,
+              19.174999999999997,
+              7.800000000000001
+            ],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23060,7 +23383,9 @@
           "type": "point",
           "x": 19.425,
           "y": 7.8937,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 19.174999999999997, 7.800000000000001],
+          "det": 1
         },
         {
           "key": "",
@@ -23069,6 +23394,7 @@
             "point": true,
             "label": "briefing",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7625, 10.725],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23078,7 +23404,9 @@
           "type": "point",
           "x": 15.0125,
           "y": 10.8187,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 14.7625, 10.725],
+          "det": 1
         },
         {
           "key": "",
@@ -23175,6 +23503,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 14.7625, 10.725],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23184,7 +23513,9 @@
           "type": "point",
           "x": 15.0125,
           "y": 10.8187,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 14.7625, 10.725],
+          "det": 1
         },
         {
           "key": "",
@@ -23238,6 +23569,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 12.85, 3.6625],
             "obstacleId": 16,
             "y": 0.51,
             "gmId": -1,
@@ -23248,7 +23580,9 @@
           "type": "point",
           "x": 12.775,
           "y": 3.5875,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, -1, 0, 12.85, 3.6625],
+          "det": -1
         },
         {
           "key": "",
@@ -23258,6 +23592,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 15.875, 3.65],
             "obstacleId": 17,
             "y": 0.51,
             "gmId": -1,
@@ -23268,7 +23603,9 @@
           "type": "point",
           "x": 15.8,
           "y": 3.575,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, -1, 0, 15.875, 3.65],
+          "det": -1
         },
         {
           "key": "",
@@ -23278,6 +23615,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 17.3375, 3.65],
             "obstacleId": 18,
             "y": 0.51,
             "gmId": -1,
@@ -23288,7 +23626,9 @@
           "type": "point",
           "x": 17.2625,
           "y": 3.575,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, -1, 0, 17.3375, 3.65],
+          "det": -1
         },
         {
           "key": "",
@@ -23298,6 +23638,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, -1, 0, 14.337499999999999, 3.65],
             "obstacleId": 19,
             "y": 0.51,
             "gmId": -1,
@@ -23308,7 +23649,9 @@
           "type": "point",
           "x": 14.2625,
           "y": 3.575,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, -1, 0, 14.337499999999999, 3.65],
+          "det": -1
         },
         {
           "key": "",
@@ -23318,6 +23661,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 14.049999999999999, 11.6],
             "obstacleId": 23,
             "y": 0.31,
             "gmId": -1,
@@ -23328,7 +23672,9 @@
           "type": "point",
           "x": 14.125,
           "y": 11.525,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 14.049999999999999, 11.6],
+          "det": 1
         },
         {
           "key": "",
@@ -23338,6 +23684,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 14.649999999999999, 11.6],
             "obstacleId": 24,
             "y": 0.31,
             "gmId": -1,
@@ -23348,7 +23695,9 @@
           "type": "point",
           "x": 14.725,
           "y": 11.525,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 14.649999999999999, 11.6],
+          "det": 1
         },
         {
           "key": "",
@@ -23358,6 +23707,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 15.849999999999998, 11.6],
             "obstacleId": 25,
             "y": 0.31,
             "gmId": -1,
@@ -23368,7 +23718,9 @@
           "type": "point",
           "x": 15.925,
           "y": 11.525,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 15.849999999999998, 11.6],
+          "det": 1
         },
         {
           "key": "",
@@ -23378,6 +23730,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 15.25, 11.6],
             "obstacleId": 26,
             "y": 0.31,
             "gmId": -1,
@@ -23388,7 +23741,9 @@
           "type": "point",
           "x": 15.325,
           "y": 11.525,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 15.25, 11.6],
+          "det": 1
         },
         {
           "key": "",
@@ -23398,6 +23753,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 15.849999999999998, 9.9],
             "obstacleId": 27,
             "y": 0.31,
             "gmId": -1,
@@ -23408,7 +23764,9 @@
           "type": "point",
           "x": 15.925,
           "y": 9.975,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 15.849999999999998, 9.9],
+          "det": -1
         },
         {
           "key": "",
@@ -23418,6 +23776,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 15.25, 9.9],
             "obstacleId": 28,
             "y": 0.31,
             "gmId": -1,
@@ -23428,7 +23787,9 @@
           "type": "point",
           "x": 15.325,
           "y": 9.975,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 15.25, 9.9],
+          "det": -1
         },
         {
           "key": "",
@@ -23438,6 +23799,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 14.649999999999999, 9.9],
             "obstacleId": 29,
             "y": 0.31,
             "gmId": -1,
@@ -23448,7 +23810,9 @@
           "type": "point",
           "x": 14.725,
           "y": 9.975,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 14.649999999999999, 9.9],
+          "det": -1
         },
         {
           "key": "",
@@ -23458,6 +23822,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 14.049999999999999, 9.9],
             "obstacleId": 30,
             "y": 0.31,
             "gmId": -1,
@@ -23468,7 +23833,9 @@
           "type": "point",
           "x": 14.125,
           "y": 9.975,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 14.049999999999999, 9.9],
+          "det": -1
         },
         {
           "key": "",
@@ -23478,6 +23845,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 13.149999999999999, 10.7],
             "obstacleId": 31,
             "y": 0.31,
             "gmId": -1,
@@ -23488,7 +23856,9 @@
           "type": "point",
           "x": 13.225,
           "y": 10.775,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 13.149999999999999, 10.7],
+          "det": 1
         },
         {
           "key": "",
@@ -23498,6 +23868,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 16.849999999999998, 10.85],
             "obstacleId": 32,
             "y": 0.31,
             "gmId": -1,
@@ -23508,7 +23879,9 @@
           "type": "point",
           "x": 16.775,
           "y": 10.775,
-          "orient": 180
+          "orient": -180,
+          "transform": [-1, 0, 0, -1, 16.849999999999998, 10.85],
+          "det": 1
         },
         {
           "key": "",
@@ -23518,6 +23891,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 10.149999999999999, 9.35],
             "obstacleId": 33,
             "y": 0.41,
             "gmId": -1,
@@ -23528,7 +23902,9 @@
           "type": "point",
           "x": 10.225,
           "y": 9.425,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 10.149999999999999, 9.35],
+          "det": -1
         },
         {
           "key": "",
@@ -23538,6 +23914,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.2588,
+              -0.9659,
+              0.9659,
+              -0.2588,
+              10.5410825,
+              11.0419225
+            ],
             "obstacleId": 34,
             "y": 0.41,
             "gmId": -1,
@@ -23548,7 +23932,16 @@
           "type": "point",
           "x": 10.5941,
           "y": 10.9501,
-          "orient": -105
+          "orient": -105,
+          "transform": [
+            -0.2588,
+            -0.9659,
+            0.9659,
+            -0.2588,
+            10.5410825,
+            11.0419225
+          ],
+          "det": 1
         },
         {
           "key": "",
@@ -23558,6 +23951,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 18.7625, 9.65],
             "obstacleId": 36,
             "y": 0.51,
             "gmId": -1,
@@ -23568,7 +23962,9 @@
           "type": "point",
           "x": 18.8375,
           "y": 9.725,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 18.7625, 9.65],
+          "det": 1
         },
         {
           "key": "",
@@ -23579,6 +23975,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 18.525, 8.25],
             "obstacleId": 37,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23588,7 +23985,9 @@
           "type": "point",
           "x": 18.6,
           "y": 8.325,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 18.525, 8.25],
+          "det": -1
         },
         {
           "key": "",
@@ -23598,6 +23997,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 19.4375, 8.775],
             "obstacleId": 38,
             "y": 0.61,
             "gmId": -1,
@@ -23608,7 +24008,9 @@
           "type": "point",
           "x": 19.5125,
           "y": 8.7,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 19.4375, 8.775],
+          "det": 1
         },
         {
           "key": "",
@@ -23618,6 +24020,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 20.3125, 8.775],
             "obstacleId": 39,
             "y": 0.61,
             "gmId": -1,
@@ -23628,7 +24031,9 @@
           "type": "point",
           "x": 20.3875,
           "y": 8.7,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 20.3125, 8.775],
+          "det": 1
         },
         {
           "key": "",
@@ -23638,6 +24043,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
             "obstacleId": 41,
             "y": 0.61,
             "gmId": -1,
@@ -23648,7 +24054,9 @@
           "type": "point",
           "x": 22.7,
           "y": 2.175,
-          "orient": 180
+          "orient": 180,
+          "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
+          "det": -1
         },
         {
           "key": "",
@@ -23658,6 +24066,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 7.325, 2.1375],
             "obstacleId": 43,
             "y": 0.61,
             "gmId": -1,
@@ -23668,7 +24077,9 @@
           "type": "point",
           "x": 7.4,
           "y": 2.2125,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 7.325, 2.1375],
+          "det": 1
         },
         {
           "key": "",
@@ -23677,6 +24088,7 @@
             "point": true,
             "label": "cartography",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 26.8375, 11.425],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23686,7 +24098,9 @@
           "type": "point",
           "x": 26.5875,
           "y": 11.5188,
-          "orient": 180
+          "orient": 180,
+          "transform": [-0.5, 0, 0, 0.5, 26.8375, 11.425],
+          "det": -1
         },
         {
           "key": "",
@@ -23715,7 +24129,7 @@
             0.7071,
             0.7071,
             0.7071,
-            25.349999999999998,
+            25.35,
             9.137500000000001
           ],
           "center": {"x": 25.35, "y": 9.244},
@@ -23825,6 +24239,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.9659,
+              -0.2588,
+              0.2588,
+              0.9659,
+              27.722355,
+              11.684890000000001
+            ],
             "obstacleId": 45,
             "y": 0.51,
             "gmId": -1,
@@ -23835,7 +24257,16 @@
           "type": "point",
           "x": 27.8142,
           "y": 11.7379,
-          "orient": -15
+          "orient": -15,
+          "transform": [
+            0.9659,
+            -0.2588,
+            0.2588,
+            0.9659,
+            27.722355,
+            11.684890000000001
+          ],
+          "det": 1
         },
         {
           "key": "",
@@ -23845,6 +24276,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              -0.2588,
+              0.9659,
+              -0.9659,
+              -0.2588,
+              26.80213,
+              12.78941
+            ],
             "obstacleId": 46,
             "y": 0.51,
             "gmId": -1,
@@ -23855,7 +24294,9 @@
           "type": "point",
           "x": 26.7102,
           "y": 12.8424,
-          "orient": 105
+          "orient": 105,
+          "transform": [-0.2588, 0.9659, -0.9659, -0.2588, 26.80213, 12.78941],
+          "det": 1
         },
         {
           "key": "",
@@ -23864,6 +24305,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23873,7 +24315,9 @@
           "type": "point",
           "x": 4.2562,
           "y": 12.85,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
+          "det": 1
         },
         {
           "key": "",
@@ -23892,7 +24336,7 @@
           },
           "bounds": {"x": 5.825, "y": 13.35, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 5.9750000000000005, 13.35],
+          "transform": [0, 1, -1, 0, 5.975, 13.35],
           "center": {"x": 5.9, "y": 13.425},
           "topCenter": {"x": 5.975, "y": 13.425},
           "det": 1
@@ -23926,6 +24370,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -23935,7 +24380,9 @@
           "type": "point",
           "x": 4.2562,
           "y": 12.85,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
+          "det": 1
         },
         {
           "key": "",
@@ -23976,7 +24423,7 @@
           },
           "bounds": {"x": 1.3125, "y": 13.375, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 1.4625000000000001, 13.375],
+          "transform": [0, 1, -1, 0, 1.4625, 13.375],
           "center": {"x": 1.388, "y": 13.45},
           "topCenter": {"x": 1.463, "y": 13.45},
           "det": 1
@@ -23989,6 +24436,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
             "obstacleId": 47,
             "y": 0.51,
             "gmId": -1,
@@ -23999,7 +24447,9 @@
           "type": "point",
           "x": 4.4377,
           "y": 14.4805,
-          "orient": -60
+          "orient": -60,
+          "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
+          "det": -1
         },
         {
           "key": "",
@@ -24009,6 +24459,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
             "obstacleId": 48,
             "y": 0.51,
             "gmId": -1,
@@ -24019,7 +24470,9 @@
           "type": "point",
           "x": 5.5498,
           "y": 14.4805,
-          "orient": -120
+          "orient": -120,
+          "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
+          "det": 1
         },
         {
           "key": "",
@@ -24029,6 +24482,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 2.25, 14.375],
             "obstacleId": 49,
             "y": 0.51,
             "gmId": -1,
@@ -24039,7 +24493,9 @@
           "type": "point",
           "x": 2.325,
           "y": 14.3,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, -1, 2.25, 14.375],
+          "det": -1
         },
         {
           "key": "",
@@ -24049,6 +24505,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 2.25, 14.375],
             "obstacleId": 50,
             "y": 1.51,
             "gmId": -1,
@@ -24059,7 +24516,9 @@
           "type": "point",
           "x": 2.325,
           "y": 14.3,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, -1, 2.25, 14.375],
+          "det": -1
         },
         {
           "key": "",
@@ -24069,6 +24528,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, -1, 0.3, 13.5875],
             "obstacleId": 51,
             "y": 0.71,
             "gmId": -1,
@@ -24079,7 +24539,9 @@
           "type": "point",
           "x": 0.375,
           "y": 13.5125,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, -1, 0.3, 13.5875],
+          "det": -1
         },
         {
           "key": "",
@@ -24090,6 +24552,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 0.8, 12.6875],
             "obstacleId": 52,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24099,7 +24562,9 @@
           "type": "point",
           "x": 0.725,
           "y": 12.6125,
-          "orient": -180
+          "orient": -180,
+          "transform": [-1, 0, 0, -1, 0.8, 12.6875],
+          "det": 1
         },
         {
           "key": "",
@@ -24109,6 +24574,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [-1, 0, 0, -1, 0.8125, 14.625],
             "obstacleId": 53,
             "y": 0.01,
             "gmId": -1,
@@ -24119,7 +24585,9 @@
           "type": "point",
           "x": 0.7375,
           "y": 14.55,
-          "orient": -180
+          "orient": -180,
+          "transform": [-1, 0, 0, -1, 0.8125, 14.625],
+          "det": 1
         },
         {
           "key": "",
@@ -24128,6 +24596,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 5, 9.85],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24137,7 +24606,9 @@
           "type": "point",
           "x": 5.25,
           "y": 9.7562,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, -0.5, 5, 9.85],
+          "det": -1
         },
         {
           "key": "",
@@ -24190,6 +24661,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 5, 11],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24199,7 +24671,9 @@
           "type": "point",
           "x": 5.25,
           "y": 10.9063,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, -0.5, 5, 11],
+          "det": -1
         },
         {
           "key": "",
@@ -24253,6 +24727,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 3.6625, 10.9625],
             "obstacleId": 54,
             "y": 0.51,
             "gmId": -1,
@@ -24263,7 +24738,9 @@
           "type": "point",
           "x": 3.7375,
           "y": 10.8875,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 3.6625, 10.9625],
+          "det": 1
         },
         {
           "key": "",
@@ -24272,6 +24749,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 2, 9.85],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24281,7 +24759,9 @@
           "type": "point",
           "x": 2.25,
           "y": 9.7562,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, -0.5, 2, 9.85],
+          "det": -1
         },
         {
           "key": "",
@@ -24300,7 +24780,7 @@
           },
           "bounds": {"x": 1.45, "y": 8.8, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, -1, 1.4500000000000002, 8.95],
+          "transform": [1, 0, 0, -1, 1.45, 8.95],
           "center": {"x": 1.525, "y": 8.875},
           "topCenter": {"x": 1.525, "y": 8.95},
           "det": -1
@@ -24334,6 +24814,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, -0.5, 2, 11],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24343,7 +24824,9 @@
           "type": "point",
           "x": 2.25,
           "y": 10.9063,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, -0.5, 2, 11],
+          "det": -1
         },
         {
           "key": "",
@@ -24397,6 +24880,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.6625, 10.9625],
             "obstacleId": 56,
             "y": 0.51,
             "gmId": -1,
@@ -24407,7 +24891,9 @@
           "type": "point",
           "x": 0.7375,
           "y": 10.8875,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 0.6625, 10.9625],
+          "det": 1
         },
         {
           "key": "",
@@ -24416,6 +24902,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24425,7 +24912,9 @@
           "type": "point",
           "x": 2.15,
           "y": 4.2562,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
+          "det": 1
         },
         {
           "key": "",
@@ -24444,7 +24933,7 @@
           },
           "bounds": {"x": 1.5, "y": 5.825, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 1.6500000000000001, 5.9750000000000005],
+          "transform": [-1, 0, 0, -1, 1.65, 5.975],
           "center": {"x": 1.575, "y": 5.9},
           "topCenter": {"x": 1.575, "y": 5.975},
           "det": 1
@@ -24478,6 +24967,7 @@
             "point": true,
             "label": "fresher",
             "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24487,7 +24977,9 @@
           "type": "point",
           "x": 2.15,
           "y": 4.2562,
-          "orient": 0
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
+          "det": 1
         },
         {
           "key": "",
@@ -24528,7 +25020,7 @@
           },
           "bounds": {"x": 1.475, "y": 1.3125, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 1.625, 1.4625000000000001],
+          "transform": [-1, 0, 0, -1, 1.625, 1.4625],
           "center": {"x": 1.55, "y": 1.388},
           "topCenter": {"x": 1.55, "y": 1.463},
           "det": 1
@@ -24541,6 +25033,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.866,
+              0.5,
+              0.5,
+              -0.866,
+              0.4169999999999999,
+              4.465199999999999
+            ],
             "obstacleId": 58,
             "y": 0.51,
             "gmId": -1,
@@ -24551,7 +25051,16 @@
           "type": "point",
           "x": 0.5194,
           "y": 4.4377,
-          "orient": 30
+          "orient": 30,
+          "transform": [
+            0.866,
+            0.5,
+            0.5,
+            -0.866,
+            0.4169999999999999,
+            4.465199999999999
+          ],
+          "det": -1
         },
         {
           "key": "",
@@ -24561,6 +25070,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
             "obstacleId": 59,
             "y": 0.51,
             "gmId": -1,
@@ -24571,7 +25081,9 @@
           "type": "point",
           "x": 0.5194,
           "y": 5.5498,
-          "orient": -30
+          "orient": -30,
+          "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
+          "det": 1
         },
         {
           "key": "",
@@ -24581,6 +25093,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 2.25],
             "obstacleId": 60,
             "y": 0.51,
             "gmId": -1,
@@ -24591,7 +25104,9 @@
           "type": "point",
           "x": 0.7,
           "y": 2.325,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 0.625, 2.25],
+          "det": -1
         },
         {
           "key": "",
@@ -24601,6 +25116,7 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 2.25],
             "obstacleId": 61,
             "y": 1.51,
             "gmId": -1,
@@ -24611,7 +25127,9 @@
           "type": "point",
           "x": 0.7,
           "y": 2.325,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 0.625, 2.25],
+          "det": -1
         },
         {
           "key": "",
@@ -24621,6 +25139,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [0, 1, 1, 0, 1.4124999999999999, 0.3],
             "obstacleId": 62,
             "y": 0.71,
             "gmId": -1,
@@ -24631,7 +25150,9 @@
           "type": "point",
           "x": 1.4875,
           "y": 0.375,
-          "orient": 90
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 1.4124999999999999, 0.3],
+          "det": -1
         },
         {
           "key": "",
@@ -24642,6 +25163,7 @@
             "on": true,
             "y": 0.01,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 2.3125, 0.8],
             "obstacleId": 63,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24651,7 +25173,9 @@
           "type": "point",
           "x": 2.3875,
           "y": 0.725,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 2.3125, 0.8],
+          "det": 1
         },
         {
           "key": "",
@@ -24661,6 +25185,7 @@
             "do": "stand",
             "on": true,
             "img": "arrow",
+            "transform": [0, -1, 1, 0, 0.375, 0.8125],
             "obstacleId": 64,
             "y": 0.01,
             "gmId": -1,
@@ -24671,7 +25196,9 @@
           "type": "point",
           "x": 0.45,
           "y": 0.7375,
-          "orient": -90
+          "orient": -90,
+          "transform": [0, -1, 1, 0, 0.375, 0.8125],
+          "det": 1
         },
         {
           "key": "",
@@ -24680,6 +25207,7 @@
             "point": true,
             "label": "office",
             "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 4.475, 5.2875],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -24689,7 +25217,9 @@
           "type": "point",
           "x": 4.225,
           "y": 5.3812,
-          "orient": 180
+          "orient": 180,
+          "transform": [-0.5, 0, 0, 0.5, 4.475, 5.2875],
+          "det": -1
         },
         {
           "key": "",
@@ -24708,7 +25238,7 @@
           },
           "bounds": {"x": 4.3, "y": 6.05, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, 1, 4.3, 6.050000000000001],
+          "transform": [1, 0, 0, 1, 4.3, 6.05],
           "center": {"x": 4.375, "y": 6.125},
           "topCenter": {"x": 4.375, "y": 6.05},
           "det": 1
@@ -24762,16 +25292,19 @@
             "point": true,
             "shown": true,
             "img": "number-one",
+            "transform": [-1, 0, 0, 1, 4.45, 4.5],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 3.45, "y": 5.3, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 3.525, "y": 5.075, "width": 0.35, "height": 0.35},
           "type": "point",
-          "x": 3.625,
-          "y": 5.475,
-          "orient": 180
+          "x": 3.7,
+          "y": 5.25,
+          "orient": 180,
+          "transform": [-1, 0, 0, 1, 4.45, 4.5],
+          "det": -1
         },
         {
           "key": "",
@@ -24781,6 +25314,14 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [
+              0.7071,
+              -0.7071,
+              0.7071,
+              0.7071,
+              4.283580000000001,
+              4.64068
+            ],
             "obstacleId": 68,
             "y": 0.41,
             "gmId": -1,
@@ -24791,7 +25332,16 @@
           "type": "point",
           "x": 4.3896,
           "y": 4.6407,
-          "orient": -45
+          "orient": -45,
+          "transform": [
+            0.7071,
+            -0.7071,
+            0.7071,
+            0.7071,
+            4.283580000000001,
+            4.64068
+          ],
+          "det": 1
         }
       ],
       "doors": [
@@ -30653,7 +31203,7 @@
           },
           "bounds": {"x": 23.75, "y": 14.75, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 23.900000000000002, 14.9],
+          "transform": [-1, 0, 0, -1, 23.9, 14.9],
           "center": {"x": 23.825, "y": 14.825},
           "topCenter": {"x": 23.825, "y": 14.9},
           "det": 1
@@ -30697,7 +31247,7 @@
           },
           "bounds": {"x": 0.1, "y": 6.1, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, 1, 0, 0.1, 6.1000000000000005],
+          "transform": [0, 1, 1, 0, 0.1, 6.1],
           "center": {"x": 0.175, "y": 6.175},
           "topCenter": {"x": 0.1, "y": 6.175},
           "det": -1
@@ -30719,7 +31269,7 @@
           },
           "bounds": {"x": 29.75, "y": 6.1, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 29.900000000000002, 6.1000000000000005],
+          "transform": [0, 1, -1, 0, 29.9, 6.1],
           "center": {"x": 29.825, "y": 6.175},
           "topCenter": {"x": 29.9, "y": 6.175},
           "det": 1
@@ -30741,7 +31291,7 @@
           },
           "bounds": {"x": 29.75, "y": 8.75, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [0, 1, -1, 0, 29.900000000000002, 8.75],
+          "transform": [0, 1, -1, 0, 29.9, 8.75],
           "center": {"x": 29.825, "y": 8.825},
           "topCenter": {"x": 29.9, "y": 8.825},
           "det": 1
@@ -30754,6 +31304,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 6.4825, 11.275],
             "obstacleId": 2,
             "y": 0.41,
             "gmId": -1,
@@ -30764,7 +31315,9 @@
           "type": "point",
           "x": 6.5575,
           "y": 11.35,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 6.4825, 11.275],
+          "det": 1
         },
         {
           "key": "",
@@ -30774,6 +31327,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 6.4825, 11.887500000000001],
             "obstacleId": 2,
             "y": 0.41,
             "gmId": -1,
@@ -30784,7 +31338,9 @@
           "type": "point",
           "x": 6.5575,
           "y": 11.9625,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 6.4825, 11.887500000000001],
+          "det": 1
         },
         {
           "key": "",
@@ -30794,6 +31350,7 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
+            "transform": [1, 0, 0, 1, 6.4825, 12.5],
             "obstacleId": 2,
             "y": 0.41,
             "gmId": -1,
@@ -30804,7 +31361,9 @@
           "type": "point",
           "x": 6.5575,
           "y": 12.575,
-          "orient": 0
+          "orient": 0,
+          "transform": [1, 0, 0, 1, 6.4825, 12.5],
+          "det": 1
         }
       ],
       "doors": [

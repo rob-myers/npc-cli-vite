@@ -25,7 +25,10 @@ w decor.byKey.test-decor-point
   - 🚧 can render decor point via meta.shown
     - ✅ can pick
     - ✅ fix rotation
-    - fix flip
+    - ✅ decor point has transform
+    - ✅ fix flip
+    - 🚧 scale/position now wrong
+      - presumably scaling from wrong origin
   - 🚧 render custom decor quads as separate instancedMesh
     - need demo shell function
   - ✅ Debug points can be picked

@@ -37,7 +37,9 @@ export const DecorPointSchema = BaseDecorSchema.extend({
   x: z.number(),
   y: z.number(),
   orient: z.number(),
+  transform: SixTupleSchema.default([1, 0, 0, 1, 0, 0]),
   meta: MetaSchema.and(GmRoomIdSchema).and(z.object({ img: z.string().optional() })),
+  det: z.number().default(1),
 });
 
 export const DecorPointDefSchema = BaseDecorDefSchema.extend({
@@ -46,6 +48,7 @@ export const DecorPointDefSchema = BaseDecorDefSchema.extend({
   y: z.number(),
   img: z.string().optional(),
   orient: z.number().optional(),
+  transform: SixTupleSchema.optional(),
   y3d: z.number().optional(),
 });
 
