@@ -153,8 +153,17 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       datum = next;
       pendingRead = api.read();
       const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum }).catch((e) => {
-        // ignore non-navigable stdin
-        if (e instanceof Error && e.message === "not navigable") return;
+        if (e instanceof Error && e.message === "not navigable") {
+          // ignore non-navigable stdin
+          return;
+        }
+        if (e instanceof Error && e.message === "stuck") {
+          // ignore all pending reads
+          api.writeError(`move: ${e.message}`);
+          api.flush();
+          pendingRead = api.read();
+          return;
+        }
         throw e;
       });
 
