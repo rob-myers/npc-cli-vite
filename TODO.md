@@ -15,7 +15,7 @@ w decor.byKey.test-decor-point
 # w: selector not found: decor.byKey.test-decor-point
 ```
 
-- 🚧 custom decor quads
+- ✅ decor fixes
   - ✅ fix custom decor quad
     - no issue we need to use respective decor image
   - ✅ fix flipped decor
@@ -30,12 +30,18 @@ w decor.byKey.test-decor-point
     - ✅ scale/position now wrong
   - ✅ icons should be "filled in" so we needn't rely on "cuboid" for pick
     - for number-zero, number-one, arrow-boxed
-  - 🚧 render custom decor quads as separate instancedMesh
-    - need demo shell function
   - ✅ Debug points can be picked
   - can remove custom decor
     - ❌ track gaps
-- can create colliders from decor rect/circle
+
+- 🚧 runtime decor
+  - render runtime decor as separate instancedMesh
+  - static decor vs runtime decor
+  - new useQuery `runtime-decor` handles hmr e.g. recompute gmRoomId
+  - remove instance via swap with last
+  - demo shell function
+  - show static/runtime decor rect/circle when meta.shown
+  - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad
   - restyle label instead
