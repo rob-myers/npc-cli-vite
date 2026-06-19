@@ -67,6 +67,13 @@ export default function Walls() {
             );
             ti.setColorAt(id++, color);
           }
+          for (const { seg } of w.gmsData.byKey[gmKey].doorSegs) {
+            ti.setMatrixAt(
+              id,
+              state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
+            );
+            ti.setColorAt(id++, color);
+          }
         }
         ti.computeBoundingSphere();
         ti.instanceMatrix.needsUpdate = true;
@@ -106,6 +113,7 @@ export default function Walls() {
   w.wall = state;
 
   const wallCount = w.gmsData.count.wall;
+  const trimCount = wallCount + w.gmsData.count.door;
 
   const mat = useMemo(() => {
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
@@ -234,7 +242,7 @@ export default function Walls() {
         ref={state.ref("instTrim", (mesh) => {
           mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
         })}
-        args={[state.quad, trimMat, wallCount]}
+        args={[state.quad, trimMat, trimCount]}
         renderOrder={4}
       />
     </>
@@ -276,3 +284,4 @@ const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
 const ceilTrimHeight = 0.2;
+const ceilDoorTrimHeight = 0.1;
