@@ -16,15 +16,6 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
- * Clear all npcs
- * @param {JshCli.RunArg} ct
- */
-export async function clear({ w }) {
-  w.e.removeNpcs(...Object.keys(w.n));
-  setTimeout(() => w.view.forceUpdate());
-}
-
-/**
  * Examples:
  * ```sh
  * events
@@ -359,6 +350,30 @@ export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src"
   } else {
     return result.hit === null;
   }
+}
+
+/**
+ * remove npc(s) or runtime decor, assuming no name collisions
+ * ```sh
+ * # remove all npcs
+ * remove
+ * # remove specified npcs
+ * remove rob kate
+ * # remove runtime decor and an npc
+ * remove test-decor-point will
+ * ```
+ * @param {JshCli.RunArg} ct
+ */
+export async function remove({ w, args }) {
+  if (args.length === 0) {
+    w.e.removeNpcs(...Object.keys(w.n));
+  } else {
+    const npcKeys = args.filter((arg) => arg in w.n);
+    const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
+    npcKeys.length && w.e.removeNpcs(...npcKeys);
+    runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
+  }
+  setTimeout(() => w.view.forceUpdate());
 }
 
 /**
