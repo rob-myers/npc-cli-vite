@@ -42,8 +42,9 @@ w decor.byKey.test-decor-point
     - ✅ can pick
   - ✅ remove instance via swap with last
   - ✅ more explicit hmr i.e. recompute gmRoomId
-  - 🚧 shell function for removing runtime decor
-  - show static/runtime decor rect/circle when meta.shown
+  - ✅ shell function for removing runtime decor
+    - `remove` also replaces `clear`
+  - 🚧 show static/runtime decor rect/circle when meta.shown
   - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad
