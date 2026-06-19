@@ -243,6 +243,11 @@ class CmdService {
 
     eof: EOF,
 
+    flush() {
+      const device = sessionApi.resolve(0, this.meta);
+      device.flush();
+    },
+
     generateSelector,
 
     get(args: string[]) {
