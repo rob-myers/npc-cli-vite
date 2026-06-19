@@ -72,6 +72,7 @@ export interface Device {
   finishedWriting: (query?: boolean) => void | undefined | boolean;
   /** Query/Inform device we have finished all reads. */
   finishedReading: (query?: boolean) => void | undefined | boolean;
+  flush: () => void;
 }
 
 /**
@@ -96,7 +97,7 @@ export class FifoDevice implements Device {
     this.buffer = [];
   }
 
-  public async readData(exactlyOnce?: boolean, chunks?: boolean): Promise<ReadResult> {
+  async readData(exactlyOnce?: boolean, chunks?: boolean): Promise<ReadResult> {
     this.readerStatus = this.readerStatus || "Connected";
 
     if (this.buffer.length) {
@@ -134,7 +135,7 @@ export class FifoDevice implements Device {
     );
   }
 
-  public async writeData(data: any) {
+  async writeData(data: any) {
     this.writerStatus = "Connected";
     if (this.readerStatus === "Disconnected") {
       this.buffer.length = 0;
@@ -151,7 +152,7 @@ export class FifoDevice implements Device {
     }
   }
 
-  public finishedReading(query?: boolean) {
+  finishedReading(query?: boolean) {
     if (query === true) {
       return this.readerStatus === "Disconnected";
     }
@@ -160,7 +161,7 @@ export class FifoDevice implements Device {
     this.writerResolver = null;
   }
 
-  public finishedWriting(query?: boolean) {
+  finishedWriting(query?: boolean) {
     if (query === true) {
       return this.writerStatus === "Disconnected";
     }
@@ -169,7 +170,11 @@ export class FifoDevice implements Device {
     this.readerResolver = null;
   }
 
-  public readAll() {
+  flush() {
+    this.buffer.length = 0;
+  }
+
+  readAll() {
     const contents = [] as any[];
     this.buffer.forEach((x) => {
       if (x === undefined) {
@@ -194,16 +199,19 @@ export class NullDevice implements Device {
     this.key = key;
   }
 
-  public async writeData(_data: any) {
+  async writeData(_data: any) {
     // NOOP
   }
-  public async readData(): Promise<ReadResult> {
+  async readData(): Promise<ReadResult> {
     return { eof: true };
   }
-  public finishedReading() {
+  finishedReading() {
     // NOOP
   }
-  public finishedWriting() {
+  finishedWriting() {
+    // NOOP
+  }
+  flush() {
     // NOOP
   }
 }
@@ -230,7 +238,7 @@ export class VarDevice implements Device {
     this.mode = mode;
   }
 
-  public async writeData(data: any) {
+  async writeData(data: any) {
     if (this.mode === "array" || this.mode === "fresh-array") {
       if (!this.buffer) {
         if (this.mode === "array") {
@@ -261,14 +269,17 @@ export class VarDevice implements Device {
     }
   }
 
-  public async readData(): Promise<ReadResult> {
+  async readData(): Promise<ReadResult> {
     return { eof: true };
   }
 
-  public finishedReading() {
+  finishedReading() {
     // NOOP
   }
-  public finishedWriting() {
+  finishedWriting() {
+    // NOOP
+  }
+  flush() {
     // NOOP
   }
 }
@@ -300,17 +311,20 @@ export class VoiceDevice implements Device {
     }, 100);
   }
 
-  public finishedReading() {
+  finishedReading() {
     // NOOP
   }
-  public finishedWriting() {
+  finishedWriting() {
     // NOOP
+  }
+  flush() {
+    this.pending.length = 0;
   }
 
   /**
    * Nothing to read. Behaves like /dev/null.
    */
-  public async readData(): Promise<ReadResult> {
+  async readData(): Promise<ReadResult> {
     return { eof: true };
   }
 
