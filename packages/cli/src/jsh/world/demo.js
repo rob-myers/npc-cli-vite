@@ -12,11 +12,12 @@ export function demo_add_decor(ct) {
   const _decorPoint = ct.w.decor.create({
     type: "point",
     key: "test-decor-point",
-    x: 3,
+    x: 4.5,
     y: 7.5,
     img: "icon--warn",
     orient: 0,
     y3d: 0.01,
+    meta: { shown: true },
   });
 
   const _decorRect = ct.w.decor.create({

@@ -2,7 +2,7 @@ import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
+import React, { useEffect } from "react";
 import { attribute, select, texture, uv, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
@@ -20,6 +20,7 @@ import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } 
 import { addToDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import type { SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Decor() {
@@ -29,19 +30,31 @@ export default function Decor() {
     (): State => ({
       box: createUnitBox(),
       byKey: {},
-      runtimeByKey: {},
-      inst: null as any,
       gdKeyToInstanceId: {}, // door related
       grid: {},
       instanceIdToDecorId: [], // static decor needn't have an instance
       lastHmr: 0,
-      materials: [],
       ready: false, // also false briefly after hmr
 
+      inst: null as any,
+      materials: [],
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
       isPoint: new Float32Array(MAX_DECOR_QUAD_INSTANCES),
+
+      instRuntime: null as any,
+      runtime: {
+        box: createUnitBox(),
+        byKey: {},
+        uvOffsets: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2),
+        uvDimensions: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2),
+        uvTextureIds: new Uint32Array(MAX_RUNTIME_DECOR_INSTANCES),
+        isPoint: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES),
+        decorKeyToId: {} as Record<string, number>,
+        idToDecorKey: [] as string[],
+        count: 0,
+      },
 
       clearGrid() {
         Object.values(state.grid).forEach((col) => col.clear());
@@ -126,18 +139,20 @@ export default function Decor() {
             break;
           }
           case "point": {
+            if (typeof def.img === "string" && !(def.img in w.sheets.decor)) {
+              warn(`def.img: "${def.img}" not in w.sheets.decor: using ${decorKeyFallback}`);
+              def.img = decorKeyFallback;
+            }
+
             const center = tmpVect.copy(def).precision(precision);
-            const radius = decorIconRadius + decorIconRadiusOutset;
+            const radius = def.img
+              ? (w.sheets.decor[def.img].originalWidth * sguToWorldScale) / 2
+              : decorIconRadius + decorIconRadiusOutset;
             const bounds = tmpRect
               .set(center.x - radius, center.y - radius, 2 * radius, 2 * radius)
               .precision(precision);
 
-            if (typeof def.img === "string" && !(def.img in w.sheets.decor)) {
-              warn(`def.img "${def.img}" not in w.sheets.decor: using ${decorKeyFallback}`);
-              def.img = decorKeyFallback;
-            }
-
-            const transform: Geom.SixTuple = def.transform ?? [1, 0, 0, 1, 0, 0];
+            const transform: Geom.SixTuple = def.transform ?? [1, 0, 0, 1, bounds.x, bounds.y];
 
             d = {
               type: "point",
@@ -167,9 +182,102 @@ export default function Decor() {
         }
 
         state.byKey[d.key] = d;
-        state.runtimeByKey[d.key] = d;
+        state.runtime.byKey[d.key] = d;
+        if (state.hasInstance(d)) state.addRuntimeInstance(d);
 
         return d;
+      },
+      writeRuntimeSlot(id, decor) {
+        const imgKey = state.getDecorImgKey(decor);
+        const entry = w.sheets?.decor[imgKey];
+        const dims = w.sheets?.decorSheetDims[entry.sheetId];
+        if (!entry || !dims) return false;
+
+        const k = typeof decor.meta.inset === "number" ? decor.meta.inset : 0;
+        if (decor.det === -1) {
+          const dimX = -entry.rect.width / dims.width;
+          const dimY = entry.rect.height / dims.height;
+          const offX = (entry.rect.x + entry.rect.width) / dims.width;
+          const offY = entry.rect.y / dims.height;
+          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
+          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
+        } else {
+          const dimX = entry.rect.width / dims.width;
+          const dimY = entry.rect.height / dims.height;
+          const offX = entry.rect.x / dims.width;
+          const offY = entry.rect.y / dims.height;
+          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
+          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
+        }
+        state.runtime.uvTextureIds[id] = entry.sheetId;
+
+        const inst = state.instRuntime;
+
+        if (decor.type === "quad") {
+          tmpMat.setMatrixValue(decor.transform);
+          const shouldTilt = decor.meta.tilt === true;
+          let tiltMat4: THREE.Matrix4 | null = null;
+          if (shouldTilt) {
+            const { a, b, c, d } = tmpMat;
+            tiltMat4 = getRotAxisMatrix(a, 0, b, (a * d - b * c > 0 ? 1 : -1) * 90);
+            setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
+          }
+          //biome-ignore format: preserve newlines
+          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          const yScale = decor.meta.h ?? cuboidHeight;
+          //biome-ignore format: preserve newlines
+          const mat4 = embedXZMat4(tmpMat, { yScale, yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale), mat4: tmpMat4 });
+          if (tiltMat4) mat4.premultiply(tiltMat4);
+          inst.setMatrixAt(id, mat4);
+        } else {
+          tmpMat.setMatrixValue(decor.transform);
+          //biome-ignore format: preserve newlines
+          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          //biome-ignore format: preserve newlines
+          inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
+        }
+        inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
+        state.runtime.isPoint[id] = decor.type === "point" ? 1 : 0;
+        return true;
+      },
+      addRuntimeInstance(decor) {
+        const inst = state.instRuntime;
+        if (!inst || !w.sheets || state.materials.length === 0) return;
+        const id = state.runtime.count;
+        if (id >= MAX_RUNTIME_DECOR_INSTANCES || !state.writeRuntimeSlot(id, decor)) return;
+        state.runtime.decorKeyToId[decor.key] = id;
+        state.runtime.idToDecorKey[id] = decor.key;
+        state.runtime.count++;
+        inst.count = state.runtime.count;
+        inst.instanceMatrix.needsUpdate = true;
+        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
+        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
+        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+      },
+      updateRuntimeInstances() {
+        const inst = state.instRuntime;
+        if (!inst || !w.sheets || state.materials.length === 0) return;
+        state.runtime.decorKeyToId = {};
+        state.runtime.idToDecorKey = [];
+        let id = 0;
+        for (const decor of Object.values(state.runtime.byKey)) {
+          if (!state.hasInstance(decor) || id >= MAX_RUNTIME_DECOR_INSTANCES) continue;
+          if (state.writeRuntimeSlot(id, decor)) {
+            state.runtime.decorKeyToId[decor.key] = id;
+            state.runtime.idToDecorKey[id] = decor.key;
+            id++;
+          }
+        }
+        state.runtime.count = id;
+        inst.count = id;
+        inst.instanceMatrix.needsUpdate = true;
+        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
+        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
+        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
       },
       decodeInstanceId(instanceId) {
         const entry = state.instanceIdToDecorId[instanceId];
@@ -194,8 +302,36 @@ export default function Decor() {
       hasInstance(decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad {
         return decor.type === "quad" || (decor.type === "point" && decor.meta.shown === true);
       },
-      remove(..._decorKeys) {
-        // 🚧 free up instances?
+      remove(...decorKeys) {
+        for (const decorKey of decorKeys) {
+          delete state.byKey[decorKey];
+          const id = state.runtime.decorKeyToId[decorKey];
+          if (id === undefined) {
+            delete state.runtime.byKey[decorKey];
+            continue;
+          }
+          const lastId = state.runtime.count - 1;
+          if (id !== lastId) {
+            const lastKey = state.runtime.idToDecorKey[lastId];
+            const lastDecor = state.runtime.byKey[lastKey] as Geomorph.DecorPoint | Geomorph.DecorQuad;
+            state.writeRuntimeSlot(id, lastDecor);
+            state.runtime.decorKeyToId[lastKey] = id;
+            state.runtime.idToDecorKey[id] = lastKey;
+          }
+          delete state.runtime.decorKeyToId[decorKey];
+          delete state.runtime.byKey[decorKey];
+          state.runtime.count--;
+          const inst = state.instRuntime;
+          if (inst) {
+            inst.count = state.runtime.count;
+            inst.instanceMatrix.needsUpdate = true;
+            if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+            state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
+            state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
+            state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+            state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+          }
+        }
       },
       tintInstances(colorRep, ...instanceIds) {
         if (!state.inst.instanceColor) return;
@@ -367,11 +503,11 @@ export default function Decor() {
       // 5. build state.byKey, grid, enrich decor.meta
       // - applies to all decor not only those with an instancedMesh instance
       // - preserve runtime decor across HMR
-      state.byKey = { ...state.runtimeByKey };
+      state.byKey = { ...state.runtime.byKey };
       state.clearGrid();
 
       // 🚧 move to separate query
-      for (const runtimeDecor of Object.values(state.runtimeByKey)) {
+      for (const runtimeDecor of Object.values(state.runtime.byKey)) {
         runtimeDecor.meta.roomId = -1; // force recompute
         if (state.ensureGmRoomId(runtimeDecor) !== null) {
           addToDecorGrid(runtimeDecor, state.grid);
@@ -428,7 +564,7 @@ export default function Decor() {
       // transparent icon can be hard to pick so permit pick any place on cuboid
       // hide black faces for point instances (they're flat — sides add no value)
       const isPointAttr = attribute<"float">("isPoint", "float");
-      plainBlackMaterial.outputNode = select(
+      plainBlackMaterial.outputNode = (select as SelectAnyType)(
         isPointAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
         w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
@@ -453,23 +589,49 @@ export default function Decor() {
 
   state.materials = materials ?? state.materials;
 
+  useEffect(() => {
+    state.updateRuntimeInstances();
+  }, [materials]);
+
   return (
-    <instancedMesh
-      name="decor"
-      ref={state.ref("inst")}
-      args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
-      frustumCulled={false}
-      renderOrder={-2}
-      material={state.materials}
-      visible={state.materials.length > 0}
-    >
-      <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
-        <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
-        <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
-        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
-        <instancedBufferAttribute attach="attributes-isPoint" args={[state.isPoint, 1]} />
-      </bufferGeometry>
-    </instancedMesh>
+    <>
+      <instancedMesh
+        name="decor"
+        ref={state.ref("inst")}
+        args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
+        frustumCulled={false}
+        renderOrder={-2}
+        material={state.materials}
+        visible={state.materials.length > 0}
+      >
+        <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
+          <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
+          <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
+          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+          <instancedBufferAttribute attach="attributes-isPoint" args={[state.isPoint, 1]} />
+        </bufferGeometry>
+      </instancedMesh>
+      <instancedMesh
+        name="runtime-decor"
+        ref={state.ref("instRuntime")}
+        args={[undefined, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
+        frustumCulled={false}
+        renderOrder={-2}
+        material={state.materials}
+        visible={state.materials.length > 0}
+      >
+        <bufferGeometry
+          attributes={state.runtime.box.attributes}
+          index={state.runtime.box.index}
+          groups={state.runtime.box.groups}
+        >
+          <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.runtime.uvOffsets, 2]} />
+          <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.runtime.uvDimensions, 2]} />
+          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.runtime.uvTextureIds, 1]} />
+          <instancedBufferAttribute attach="attributes-isPoint" args={[state.runtime.isPoint, 1]} />
+        </bufferGeometry>
+      </instancedMesh>
+    </>
   );
 }
 
@@ -483,12 +645,24 @@ export type State = {
 
   box: THREE.BufferGeometry;
   byKey: Record<string, Geomorph.Decor>;
-  runtimeByKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
-  isPoint: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
+  isPoint: Float32Array;
+
+  instRuntime: THREE.InstancedMesh;
+  runtime: {
+    byKey: Record<string, Geomorph.Decor>;
+    box: THREE.BufferGeometry;
+    uvOffsets: Float32Array;
+    uvDimensions: Float32Array;
+    uvTextureIds: Uint32Array;
+    isPoint: Float32Array;
+    decorKeyToId: Record<string, number>;
+    idToDecorKey: string[];
+    count: number;
+  };
 
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
@@ -499,8 +673,12 @@ export type State = {
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
+  writeRuntimeSlot(id: number, decor: Geomorph.DecorPoint | Geomorph.DecorQuad): boolean;
+  addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad): void;
+  updateRuntimeInstances(): void;
 };
 
+const MAX_RUNTIME_DECOR_INSTANCES = 1024;
 const cuboidHeight = 0.05;
 const cuboidIconHeight = 0.005;
 const tmpVect = new Vect();
