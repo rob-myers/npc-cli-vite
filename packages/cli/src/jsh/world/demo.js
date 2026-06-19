@@ -7,6 +7,7 @@ export function demo_add_decor(ct) {
     key: "test-decor-circle",
     center: { x: 2.5, y: 2.5 },
     radius: 1.5,
+    meta: { shown: true },
   });
 
   const _decorPoint = ct.w.decor.create({
@@ -27,7 +28,7 @@ export function demo_add_decor(ct) {
     y: 7.5,
     width: 2 * 1.5,
     height: 1 * 1.5,
-    meta: { foo: "bar" },
+    meta: { foo: "bar", shown: true },
   });
 
   ct.w.view.forceUpdate();

@@ -45,6 +45,9 @@ w decor.byKey.test-decor-point
   - ✅ shell function for removing runtime decor
     - `remove` also replaces `clear`
   - 🚧 show static/runtime decor rect/circle when meta.shown
+    - 🚧 fix initially white runtime decor rect/circle (saving Decor changes to green)
+    - remove bug when add decor twice i.e. `demo_add_decor` twice
+    - simplify Decor
   - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad
@@ -53,6 +56,7 @@ w decor.byKey.test-decor-point
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
 
+- abstract npc animation logic into class
 - BUG on save shell.ts terminal profile does not run
 - idle-left with left-leg forward
 - idle-right with right-leg forward

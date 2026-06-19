@@ -3,7 +3,21 @@ import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
-import { attribute, select, texture, uv, vec2, vec4 } from "three/tsl";
+import {
+  atan,
+  attribute,
+  float,
+  fract,
+  instanceIndex,
+  output,
+  select,
+  texture,
+  min as tslMin,
+  uniform,
+  uv,
+  vec2,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import {
@@ -41,7 +55,7 @@ export default function Decor() {
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
-      isPoint: new Float32Array(MAX_DECOR_QUAD_INSTANCES),
+      shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
 
       instRuntime: null as any,
       runtime: {
@@ -50,7 +64,7 @@ export default function Decor() {
         uvOffsets: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2),
         uvDimensions: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2),
         uvTextureIds: new Uint32Array(MAX_RUNTIME_DECOR_INSTANCES),
-        isPoint: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES),
+        shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
         decorKeyToId: {} as Record<string, number>,
         idToDecorKey: [] as string[],
         count: 0,
@@ -78,7 +92,7 @@ export default function Decor() {
         state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
         state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
         state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
-        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+        state.runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
       clearGrid() {
         Object.values(state.grid).forEach((col) => col.clear());
@@ -250,8 +264,15 @@ export default function Decor() {
         if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
         return decorKeyFallback;
       },
-      hasInstance(decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad {
-        return decor.type === "quad" || (decor.type === "point" && decor.meta.shown === true);
+      hasInstance(
+        decor,
+      ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle {
+        return (
+          decor.type === "quad" ||
+          (decor.type === "point" && decor.meta.shown === true) ||
+          (decor.type === "rect" && decor.meta.shown === true) ||
+          (decor.type === "circle" && decor.meta.shown === true)
+        );
       },
       remove(...decorKeys) {
         const runtime = state.runtime;
@@ -291,7 +312,7 @@ export default function Decor() {
           runtime.box.getAttribute("uvOffsets").needsUpdate = true;
           runtime.box.getAttribute("uvDimensions").needsUpdate = true;
           runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
-          runtime.box.getAttribute("isPoint").needsUpdate = true;
+          runtime.box.getAttribute("shapeParams").needsUpdate = true;
         }
 
         w.view.forceUpdate();
@@ -317,7 +338,7 @@ export default function Decor() {
         state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
         state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
         state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
-        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+        state.runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
       tintInstances(colorRep, ...instanceIds) {
         if (!state.inst.instanceColor) return;
@@ -333,6 +354,33 @@ export default function Decor() {
         if (w.disabled) w.view.forceUpdate();
       },
       writeRuntimeSlot(id, decor) {
+        if (decor.type === "rect") {
+          const w0 = decor.points[0].distanceTo(decor.points[1]);
+          const h0 = decor.points[1].distanceTo(decor.points[2]);
+          const cos = Math.cos(decor.angle),
+            sin = Math.sin(decor.angle);
+          //biome-ignore format: preserve newlines
+          state.instRuntime.setMatrixAt(id, embedXZMat4(
+            { a: w0*cos, b: w0*sin, c: -h0*sin, d: h0*cos,
+              e: decor.center.x - w0/2*cos + h0/2*sin,
+              f: decor.center.y - w0/2*sin - h0/2*cos },
+            { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
+          ));
+          state.instRuntime.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
+          state.runtime.shapeParams.set([2, w0, h0], id * 3);
+          return true;
+        }
+        if (decor.type === "circle") {
+          const r = decor.radius;
+          //biome-ignore format: preserve newlines
+          state.instRuntime.setMatrixAt(id, embedXZMat4(
+            { a: 2*r, b: 0, c: 0, d: 2*r, e: decor.center.x - r, f: decor.center.y - r },
+            { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
+          ));
+          state.instRuntime.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
+          state.runtime.shapeParams.set([3, r, r], id * 3);
+          return true;
+        }
         const imgKey = state.getDecorImgKey(decor);
         const entry = w.sheets?.decor[imgKey];
         const dims = w.sheets?.decorSheetDims[entry.sheetId];
@@ -382,7 +430,7 @@ export default function Decor() {
           inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }
         inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-        state.runtime.isPoint[id] = decor.type === "point" ? 1 : 0;
+        state.runtime.shapeParams[id * 3] = decor.type === "point" ? 1 : 0;
         return true;
       },
     }),
@@ -431,6 +479,10 @@ export default function Decor() {
           if (!state.hasInstance(item)) {
             continue;
           }
+          if (item.type === "rect" || item.type === "circle") {
+            uvIdx++; // shapes don't use UV atlas — leave zeros
+            continue;
+          }
           const imgKey = state.getDecorImgKey(item);
           const entry = w.sheets.decor[imgKey] as DecorSheetEntry | undefined;
           if (!entry) {
@@ -468,6 +520,39 @@ export default function Decor() {
       for (const [gmId, gm] of w.gms.entries()) {
         for (const [decorId, decor] of gm.decor.entries()) {
           if (!state.hasInstance(decor)) {
+            continue;
+          }
+
+          if (decor.type === "rect") {
+            const w0 = decor.points[0].distanceTo(decor.points[1]);
+            const h0 = decor.points[1].distanceTo(decor.points[2]);
+            const cos = Math.cos(decor.angle),
+              sin = Math.sin(decor.angle);
+            // biome-ignore format: preserve newlines
+            state.inst.setMatrixAt(instanceId, embedXZMat4(
+              { a: w0*cos, b: w0*sin, c: -h0*sin, d: h0*cos,
+                e: decor.center.x - w0/2*cos + h0/2*sin,
+                f: decor.center.y - w0/2*sin - h0/2*cos },
+              { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
+            ));
+            state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
+            state.shapeParams.set([2, w0, h0], instanceId * 3);
+            state.instanceIdToDecorId[instanceId] = { gmId, decorId };
+            instanceId++;
+            continue;
+          }
+
+          if (decor.type === "circle") {
+            const r = decor.radius;
+            // biome-ignore format: preserve newlines
+            state.inst.setMatrixAt(instanceId, embedXZMat4(
+              { a: 2*r, b: 0, c: 0, d: 2*r, e: decor.center.x - r, f: decor.center.y - r },
+              { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
+            ));
+            state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
+            state.shapeParams.set([3, r, r], instanceId * 3);
+            state.instanceIdToDecorId[instanceId] = { gmId, decorId };
+            instanceId++;
             continue;
           }
 
@@ -529,7 +614,7 @@ export default function Decor() {
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
-          state.isPoint[instanceId] = decor.type === "point" ? 1 : 0;
+          state.shapeParams[instanceId * 3] = decor.type === "point" ? 1 : 0;
           state.instanceIdToDecorId[instanceId] = { gmId, decorId };
           instanceId++;
         }
@@ -575,7 +660,7 @@ export default function Decor() {
       geo.getAttribute("uvOffsets").needsUpdate = true;
       geo.getAttribute("uvDimensions").needsUpdate = true;
       geo.getAttribute("uvTextureIds").needsUpdate = true;
-      geo.getAttribute("isPoint").needsUpdate = true;
+      geo.getAttribute("shapeParams").needsUpdate = true;
       state.inst.instanceMatrix.needsUpdate = true;
       if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
 
@@ -589,22 +674,41 @@ export default function Decor() {
       const texNode = texture(w.texDecor.tex, transformedUv);
       texNode.depthNode = uvTexIds;
 
+      // Shapes (shapeParams.x >= 2): colorNode=white so `output` carries instanceColor (set via setColorAt).
+      // Quads/points: colorNode=atlas texture (unchanged behavior).
+      const shapeKindAttr = attribute<"vec3">("shapeParams", "vec3").x;
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
-      texMat.colorNode = texNode.mul(vec4(0.4, 0.4, 0.4, 1)); // preserve alpha
-      texMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor);
+      texMat.colorNode = (select as SelectAnyType)(
+        shapeKindAttr.greaterThan(1.5),
+        vec4(1, 1, 1, 1),
+        texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+      ) as THREE.Node<"vec4">;
 
       // transparent icon can be hard to pick so permit pick any place on cuboid
-      // hide black faces for point instances (they're flat — sides add no value)
-      const isPointAttr = attribute<"float">("isPoint", "float");
+      // hide non-top faces for flat instances (points, rects, circles)
       plainBlackMaterial.outputNode = (select as SelectAnyType)(
-        isPointAttr.greaterThan(0.5),
+        shapeKindAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
         w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
       );
 
+      texMat.outputNode = buildShapeOutputNode(
+        OBJECT_PICK_KEY_TO_RED.decor,
+        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
+        w.view.objectPick,
+      );
+
       const runtimeTexMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
-      runtimeTexMat.colorNode = texNode.mul(vec4(0.4, 0.4, 0.4, 1));
-      runtimeTexMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor);
+      runtimeTexMat.colorNode = (select as SelectAnyType)(
+        shapeKindAttr.greaterThan(1.5),
+        vec4(1, 1, 1, 1),
+        texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+      ) as THREE.Node<"vec4">;
+      runtimeTexMat.outputNode = buildShapeOutputNode(
+        OBJECT_PICK_KEY_TO_RED.runtimeDecor,
+        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+        w.view.objectPick,
+      );
 
       const runtimeBlackMat = new THREE.MeshStandardNodeMaterial({
         side: THREE.DoubleSide,
@@ -612,7 +716,7 @@ export default function Decor() {
         transparent: true,
       });
       runtimeBlackMat.outputNode = (select as SelectAnyType)(
-        isPointAttr.greaterThan(0.5),
+        shapeKindAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
         w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
       );
@@ -647,7 +751,7 @@ export default function Decor() {
   return (
     <>
       <instancedMesh
-        name="decor"
+        name="static-decor"
         ref={state.ref("inst")}
         args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
         frustumCulled={false}
@@ -659,7 +763,7 @@ export default function Decor() {
           <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
           <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
           <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
-          <instancedBufferAttribute attach="attributes-isPoint" args={[state.isPoint, 1]} />
+          <instancedBufferAttribute attach="attributes-shapeParams" args={[state.shapeParams, 3]} />
         </bufferGeometry>
       </instancedMesh>
 
@@ -680,7 +784,7 @@ export default function Decor() {
           <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.runtime.uvOffsets, 2]} />
           <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.runtime.uvDimensions, 2]} />
           <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.runtime.uvTextureIds, 1]} />
-          <instancedBufferAttribute attach="attributes-isPoint" args={[state.runtime.isPoint, 1]} />
+          <instancedBufferAttribute attach="attributes-shapeParams" args={[state.runtime.shapeParams, 3]} />
         </bufferGeometry>
       </instancedMesh>
     </>
@@ -702,7 +806,7 @@ export type State = {
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
-  isPoint: Float32Array;
+  shapeParams: Float32Array;
 
   instRuntime: THREE.InstancedMesh;
   runtime: {
@@ -711,31 +815,37 @@ export type State = {
     uvOffsets: Float32Array;
     uvDimensions: Float32Array;
     uvTextureIds: Uint32Array;
-    isPoint: Float32Array;
+    shapeParams: Float32Array;
     decorKeyToId: Record<string, number>;
     idToDecorKey: string[];
     count: number;
   };
 
   addRuntimeDecorToGrid(): void;
-  addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad): void;
+  addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle): void;
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   getDecorImgKey(decor: Geomorph.Decor): string;
-  hasInstance(decor: Geomorph.Decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad;
+  hasInstance(
+    decor: Geomorph.Decor,
+  ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
   setupRuntimeInstances(): void;
-  /** 🚧 support Geomorph.DecorCircle, Geomorph.DecorRect */
-  writeRuntimeSlot(id: number, decor: Geomorph.DecorPoint | Geomorph.DecorQuad): boolean;
+  writeRuntimeSlot(
+    id: number,
+    decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle,
+  ): boolean;
 };
 
 const MAX_RUNTIME_DECOR_INSTANCES = 1024;
 const cuboidHeight = 0.05;
+const shapeYScale = 0.001;
+const shapeYHeight = 0.002;
 const cuboidIconHeight = 0.005;
 const tmpVect = new Vect();
 const tmpRect = new Rect();
@@ -743,6 +853,77 @@ const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4().set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 const tmpColor = new THREE.Color();
+/**
+ * TSL outputNode for the top face of the box geometry.
+ * - Shapes (rect/circle): dashed outline in beauty; solid fill in pick.
+ * - Quads/points: use existing withPickOutput node.
+ */
+function buildShapeOutputNode(
+  typeId: number,
+  texPickOutput: THREE.Node,
+  objectPick: THREE.UniformNode<"float", number>,
+) {
+  const shapeParamsAttr = attribute<"vec3">("shapeParams", "vec3");
+  const flatKindAttr = shapeParamsAttr.x;
+  const shapeDimsAttr = vec2(shapeParamsAttr.y, shapeParamsAttr.z);
+
+  const isShape = flatKindAttr.greaterThan(1.5);
+  const isCircle = flatKindAttr.greaterThan(2.5);
+  const uvCoord = uv();
+
+  // border detection
+  const BORDER_W = uniform(0.02);
+  const borderFracX = BORDER_W.div(shapeDimsAttr.x);
+  const borderFracY = BORDER_W.div(shapeDimsAttr.y);
+  const edgeDistX = tslMin(uvCoord.x, uvCoord.x.oneMinus());
+  const edgeDistY = tslMin(uvCoord.y, uvCoord.y.oneMinus());
+  const inRectBorder = edgeDistX.lessThan(borderFracX).or(edgeDistY.lessThan(borderFracY));
+  // manual dist to avoid tslLength return-type ambiguity
+  const dx = uvCoord.x.sub(0.5);
+  const dy = uvCoord.y.sub(0.5);
+  const dist = dx.mul(dx).add(dy.mul(dy)).sqrt();
+  const borderInset = float(0.5).sub(BORDER_W.div(shapeDimsAttr.x.mul(2)));
+  const inCircleBorder = dist.lessThan(float(0.5)).and(dist.greaterThan(borderInset));
+  const inBorder = (select as SelectAnyType)(isCircle, inCircleBorder, inRectBorder) as THREE.Node<"bool">;
+
+  // dashes — world-space parameterisation
+  const DASH_PERIOD = uniform(0.25);
+  const DASH_DUTY = uniform(0.5);
+  const nearHoriz = edgeDistY.greaterThan(edgeDistX);
+  const worldParam = (select as SelectAnyType)(
+    nearHoriz,
+    uvCoord.y.mul(shapeDimsAttr.y),
+    uvCoord.x.mul(shapeDimsAttr.x),
+  ) as THREE.Node<"float">;
+  const rectDash = fract(worldParam.div(DASH_PERIOD)).lessThan(DASH_DUTY);
+  const t = atan(uvCoord.y.sub(0.5), uvCoord.x.sub(0.5))
+    .add(Math.PI)
+    .div(Math.PI * 2);
+  const circDash = fract(t.mul(shapeDimsAttr.x.mul(Math.PI * 2).div(DASH_PERIOD))).lessThan(DASH_DUTY);
+  const inDash = (select as SelectAnyType)(isCircle, circDash, rectDash) as THREE.Node<"bool">;
+
+  // solid fill for pick hit area: circle=disk, rect=always true
+  const inCircleFill = dist.lessThan(float(0.5));
+  const alwaysTrue = float(1).greaterThan(float(0));
+  const inFill = (select as SelectAnyType)(isCircle, inCircleFill, alwaysTrue) as THREE.Node<"bool">;
+
+  // pick color encoding (typeId in R, instanceIndex in G+B)
+  const typeR = float(typeId / 255);
+  const instG = instanceIndex.shiftRight(8).bitAnd(0xff).toFloat().div(255);
+  const instB = instanceIndex.bitAnd(0xff).toFloat().div(255);
+  const pickCol = vec4(typeR, instG, instB, 1);
+  // colorNode=white for shapes → output ≈ instanceColor (set via setColorAt, applied by Three.js pipeline)
+  const instCol = output;
+
+  const isPicking = objectPick.notEqual(0);
+  const dashedBorder = inBorder.and(inDash);
+  const showPixel = (select as SelectAnyType)(isPicking, inFill, dashedBorder) as THREE.Node<"bool">;
+  const colorOut = (select as SelectAnyType)(isPicking, pickCol, instCol) as THREE.Node<"vec4">;
+  const shapeOutput = (select as SelectAnyType)(showPixel, colorOut, vec4(0, 0, 0, 0));
+
+  return (select as SelectAnyType)(isShape, shapeOutput, texPickOutput);
+}
+
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({
   side: THREE.DoubleSide,
   color: "#000",
