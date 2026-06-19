@@ -35,13 +35,13 @@ w decor.byKey.test-decor-point
     - ❌ track gaps
 
 - 🚧 runtime decor
-  - 🚧 render runtime decor as separate instancedMesh
+  - ✅ render runtime decor as separate instancedMesh
     - ✅ can remove `w decor.remove test-decor-point`
     - ❌ remove def.{x,y} and only use def.transform
       - instead def.transform overrides
-    - 🚧 can pick
-  - handle hmr e.g. recompute gmRoomId
+    - ✅ can pick
   - ✅ remove instance via swap with last
+  - handle hmr e.g. recompute gmRoomId
   - demo shell function
   - show static/runtime decor rect/circle when meta.shown
   - can create colliders from decor rect/circle

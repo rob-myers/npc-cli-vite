@@ -126,6 +126,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             if (!decoded) return null;
             return { ...pick, decor: true, ...decoded };
           }
+          case "runtimeDecor": {
+            const decoded = w.decor.decodeRuntimeInstanceId(pick.instanceId);
+            if (!decoded) return null;
+            return { ...pick, type: "decor", decor: true, runtime: true, ...decoded };
+          }
           case "debugPoint": {
             const decoded = w.debug.decodeDebugPointInstanceId(pick.instanceId);
             if (!decoded) return null;
@@ -173,7 +178,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
             break;
           case "decor":
-            mesh = getTempInstanceMesh(w.decor.inst as THREE.InstancedMesh, picked.instanceId);
+            if (picked.runtime) {
+              mesh = getTempInstanceMesh(w.decor.instRuntime as THREE.InstancedMesh, picked.instanceId);
+            } else {
+              mesh = getTempInstanceMesh(w.decor.inst as THREE.InstancedMesh, picked.instanceId);
+            }
             break;
           case "debugPoint":
             mesh = getTempInstanceMesh(w.debug.debugPointsInst as THREE.InstancedMesh, picked.instanceId);

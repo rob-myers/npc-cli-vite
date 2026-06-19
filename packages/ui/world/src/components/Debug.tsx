@@ -146,6 +146,7 @@ export function Debug() {
           const gm = w.gms[gmId];
           for (let decorId = 0; decorId < gm.decor.length; decorId++) {
             const decor = gm.decor[decorId];
+            // 🔔 only showing decor points with meta.on
             if (decor.type !== "point" || decor.meta.on !== true) continue;
             const imgKey = w.decor.getDecorImgKey(decor);
             const entry = w.sheets.decor[imgKey];
