@@ -55,6 +55,22 @@ export default function Decor() {
         count: 0,
       },
 
+      addRuntimeInstance(decor) {
+        const inst = state.instRuntime;
+        if (!inst || !w.sheets || state.materials.length === 0) return;
+        const id = state.runtime.count;
+        if (id >= MAX_RUNTIME_DECOR_INSTANCES || !state.writeRuntimeSlot(id, decor)) return;
+        state.runtime.decorKeyToId[decor.key] = id;
+        state.runtime.idToDecorKey[id] = decor.key;
+        state.runtime.count++;
+        inst.count = state.runtime.count;
+        inst.instanceMatrix.needsUpdate = true;
+        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
+        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
+        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+      },
       clearGrid() {
         Object.values(state.grid).forEach((col) => col.clear());
       },
@@ -199,98 +215,6 @@ export default function Decor() {
 
         return d;
       },
-      writeRuntimeSlot(id, decor) {
-        const imgKey = state.getDecorImgKey(decor);
-        const entry = w.sheets?.decor[imgKey];
-        const dims = w.sheets?.decorSheetDims[entry.sheetId];
-        if (!entry || !dims) return false;
-
-        const k = typeof decor.meta.inset === "number" ? decor.meta.inset : 0;
-        if (decor.det === -1) {
-          const dimX = -entry.rect.width / dims.width;
-          const dimY = entry.rect.height / dims.height;
-          const offX = (entry.rect.x + entry.rect.width) / dims.width;
-          const offY = entry.rect.y / dims.height;
-          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
-          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
-        } else {
-          const dimX = entry.rect.width / dims.width;
-          const dimY = entry.rect.height / dims.height;
-          const offX = entry.rect.x / dims.width;
-          const offY = entry.rect.y / dims.height;
-          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
-          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
-        }
-        state.runtime.uvTextureIds[id] = entry.sheetId;
-
-        const inst = state.instRuntime;
-
-        if (decor.type === "quad") {
-          tmpMat.setMatrixValue(decor.transform);
-          const shouldTilt = decor.meta.tilt === true;
-          let tiltMat4: THREE.Matrix4 | null = null;
-          if (shouldTilt) {
-            const { a, b, c, d } = tmpMat;
-            tiltMat4 = getRotAxisMatrix(a, 0, b, (a * d - b * c > 0 ? 1 : -1) * 90);
-            setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
-          }
-          //biome-ignore format: preserve newlines
-          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
-          const yScale = decor.meta.h ?? cuboidHeight;
-          //biome-ignore format: preserve newlines
-          const mat4 = embedXZMat4(tmpMat, { yScale, yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale), mat4: tmpMat4 });
-          if (tiltMat4) mat4.premultiply(tiltMat4);
-          inst.setMatrixAt(id, mat4);
-        } else {
-          tmpMat.setMatrixValue(decor.transform);
-          //biome-ignore format: preserve newlines
-          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
-          //biome-ignore format: preserve newlines
-          inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
-        }
-        inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-        state.runtime.isPoint[id] = decor.type === "point" ? 1 : 0;
-        return true;
-      },
-      addRuntimeInstance(decor) {
-        const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.materials.length === 0) return;
-        const id = state.runtime.count;
-        if (id >= MAX_RUNTIME_DECOR_INSTANCES || !state.writeRuntimeSlot(id, decor)) return;
-        state.runtime.decorKeyToId[decor.key] = id;
-        state.runtime.idToDecorKey[id] = decor.key;
-        state.runtime.count++;
-        inst.count = state.runtime.count;
-        inst.instanceMatrix.needsUpdate = true;
-        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
-        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
-        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
-        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
-      },
-      updateRuntimeInstances() {
-        const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.materials.length === 0) return;
-        state.runtime.decorKeyToId = {};
-        state.runtime.idToDecorKey = [];
-        let id = 0;
-        for (const decor of Object.values(state.runtime.byKey)) {
-          if (!state.hasInstance(decor) || id >= MAX_RUNTIME_DECOR_INSTANCES) continue;
-          if (state.writeRuntimeSlot(id, decor)) {
-            state.runtime.decorKeyToId[decor.key] = id;
-            state.runtime.idToDecorKey[id] = decor.key;
-            id++;
-          }
-        }
-        state.runtime.count = id;
-        inst.count = id;
-        inst.instanceMatrix.needsUpdate = true;
-        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
-        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
-        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
-        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
-      },
       decodeInstanceId(instanceId) {
         const entry = state.instanceIdToDecorId[instanceId];
         if (!entry) return null;
@@ -369,6 +293,82 @@ export default function Decor() {
 
         state.inst.instanceColor.needsUpdate = true;
         if (w.disabled) w.view.forceUpdate();
+      },
+      updateRuntimeInstances() {
+        const inst = state.instRuntime;
+        if (!inst || !w.sheets || state.materials.length === 0) return;
+        state.runtime.decorKeyToId = {};
+        state.runtime.idToDecorKey = [];
+        let id = 0;
+        for (const decor of Object.values(state.runtime.byKey)) {
+          if (!state.hasInstance(decor) || id >= MAX_RUNTIME_DECOR_INSTANCES) continue;
+          if (state.writeRuntimeSlot(id, decor)) {
+            state.runtime.decorKeyToId[decor.key] = id;
+            state.runtime.idToDecorKey[id] = decor.key;
+            id++;
+          }
+        }
+        state.runtime.count = id;
+        inst.count = id;
+        inst.instanceMatrix.needsUpdate = true;
+        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
+        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
+        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+        state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+      },
+      writeRuntimeSlot(id, decor) {
+        const imgKey = state.getDecorImgKey(decor);
+        const entry = w.sheets?.decor[imgKey];
+        const dims = w.sheets?.decorSheetDims[entry.sheetId];
+        if (!entry || !dims) return false;
+
+        const k = typeof decor.meta.inset === "number" ? decor.meta.inset : 0;
+        if (decor.det === -1) {
+          const dimX = -entry.rect.width / dims.width;
+          const dimY = entry.rect.height / dims.height;
+          const offX = (entry.rect.x + entry.rect.width) / dims.width;
+          const offY = entry.rect.y / dims.height;
+          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
+          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
+        } else {
+          const dimX = entry.rect.width / dims.width;
+          const dimY = entry.rect.height / dims.height;
+          const offX = entry.rect.x / dims.width;
+          const offY = entry.rect.y / dims.height;
+          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
+          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
+        }
+        state.runtime.uvTextureIds[id] = entry.sheetId;
+
+        const inst = state.instRuntime;
+
+        if (decor.type === "quad") {
+          tmpMat.setMatrixValue(decor.transform);
+          const shouldTilt = decor.meta.tilt === true;
+          let tiltMat4: THREE.Matrix4 | null = null;
+          if (shouldTilt) {
+            const { a, b, c, d } = tmpMat;
+            tiltMat4 = getRotAxisMatrix(a, 0, b, (a * d - b * c > 0 ? 1 : -1) * 90);
+            setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
+          }
+          //biome-ignore format: preserve newlines
+          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          const yScale = decor.meta.h ?? cuboidHeight;
+          //biome-ignore format: preserve newlines
+          const mat4 = embedXZMat4(tmpMat, { yScale, yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale), mat4: tmpMat4 });
+          if (tiltMat4) mat4.premultiply(tiltMat4);
+          inst.setMatrixAt(id, mat4);
+        } else {
+          tmpMat.setMatrixValue(decor.transform);
+          //biome-ignore format: preserve newlines
+          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          //biome-ignore format: preserve newlines
+          inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
+        }
+        inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
+        state.runtime.isPoint[id] = decor.type === "point" ? 1 : 0;
+        return true;
       },
     }),
   );
