@@ -36,11 +36,11 @@ w decor.byKey.test-decor-point
 
 - 🚧 runtime decor
   - 🚧 render runtime decor as separate instancedMesh
+    - ✅ can remove `w decor.remove test-decor-point`
     - 🚧 remove def.{x,y} and only use def.transform
     - 🚧 can pick
-  - static decor vs runtime decor
-  - new useQuery `runtime-decor` handles hmr e.g. recompute gmRoomId
-  - remove instance via swap with last
+  - handle hmr e.g. recompute gmRoomId
+  - ✅ remove instance via swap with last
   - demo shell function
   - show static/runtime decor rect/circle when meta.shown
   - can create colliders from decor rect/circle
@@ -51,6 +51,7 @@ w decor.byKey.test-decor-point
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
 
+- BUG on save shell.ts terminal profile does not run
 - idle-left with left-leg forward
 - idle-right with right-leg forward
 - `npc.setMoveType` walk, run, shuffle

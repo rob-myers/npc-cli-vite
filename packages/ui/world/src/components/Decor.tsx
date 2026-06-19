@@ -303,35 +303,47 @@ export default function Decor() {
         return decor.type === "quad" || (decor.type === "point" && decor.meta.shown === true);
       },
       remove(...decorKeys) {
+        const runtime = state.runtime;
+        const inst = state.instRuntime;
+        if (!inst) return;
+
         for (const decorKey of decorKeys) {
-          delete state.byKey[decorKey];
-          const id = state.runtime.decorKeyToId[decorKey];
-          if (id === undefined) {
-            delete state.runtime.byKey[decorKey];
+          if (!runtime.byKey[decorKey]) {
+            if (decorKey in state.byKey) warn(`cannot remove static decor: ${decorKey}`);
             continue;
           }
-          const lastId = state.runtime.count - 1;
+
+          delete runtime.byKey[decorKey];
+          delete state.byKey[decorKey];
+          const id = runtime.decorKeyToId[decorKey];
+          delete runtime.decorKeyToId[decorKey];
+          if (id === undefined) {
+            continue;
+          }
+
+          const lastId = runtime.count - 1;
           if (id !== lastId) {
-            const lastKey = state.runtime.idToDecorKey[lastId];
-            const lastDecor = state.runtime.byKey[lastKey] as Geomorph.DecorPoint | Geomorph.DecorQuad;
+            // swap last decor into removed slot
+            const lastKey = runtime.idToDecorKey[lastId];
+            const lastDecor = runtime.byKey[lastKey] as Geomorph.DecorPoint | Geomorph.DecorQuad;
             state.writeRuntimeSlot(id, lastDecor);
-            state.runtime.decorKeyToId[lastKey] = id;
-            state.runtime.idToDecorKey[id] = lastKey;
+            runtime.decorKeyToId[lastKey] = id;
+            runtime.idToDecorKey[id] = lastKey;
           }
-          delete state.runtime.decorKeyToId[decorKey];
-          delete state.runtime.byKey[decorKey];
-          state.runtime.count--;
-          const inst = state.instRuntime;
-          if (inst) {
-            inst.count = state.runtime.count;
-            inst.instanceMatrix.needsUpdate = true;
-            if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-            state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
-            state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
-            state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
-            state.runtime.box.getAttribute("isPoint").needsUpdate = true;
-          }
+
+          runtime.count--;
+          // inst.count = runtime.count;
+          inst.setMatrixAt(lastId, zeroMat4);
+
+          inst.instanceMatrix.needsUpdate = true;
+          if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+          runtime.box.getAttribute("uvOffsets").needsUpdate = true;
+          runtime.box.getAttribute("uvDimensions").needsUpdate = true;
+          runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+          runtime.box.getAttribute("isPoint").needsUpdate = true;
         }
+
+        w.view.forceUpdate();
       },
       tintInstances(colorRep, ...instanceIds) {
         if (!state.inst.instanceColor) return;
@@ -673,6 +685,7 @@ export type State = {
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
+  /** 🚧 support Geomorph.DecorCircle, Geomorph.DecorRect */
   writeRuntimeSlot(id: number, decor: Geomorph.DecorPoint | Geomorph.DecorQuad): boolean;
   addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad): void;
   updateRuntimeInstances(): void;
@@ -685,6 +698,7 @@ const tmpVect = new Vect();
 const tmpRect = new Rect();
 const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
+const zeroMat4 = new THREE.Matrix4().set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 const tmpColor = new THREE.Color();
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({
   side: THREE.DoubleSide,
