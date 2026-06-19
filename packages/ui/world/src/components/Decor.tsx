@@ -7,9 +7,8 @@ import { attribute, select, texture, uv, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import {
-  decorIconRadius,
-  decorIconRadiusOutset,
   decorKeyFallback,
+  decorPointDefaultRadius,
   lockedDoorTint,
   MAX_DECOR_QUAD_INSTANCES,
   precision,
@@ -140,18 +139,31 @@ export default function Decor() {
           }
           case "point": {
             if (typeof def.img === "string" && !(def.img in w.sheets.decor)) {
-              warn(`def.img: "${def.img}" not in w.sheets.decor: using ${decorKeyFallback}`);
+              warn(`w.sheets.decor lacks def.img: ${def.img}`);
               def.img = decorKeyFallback;
             }
 
-            const center = tmpVect.copy(def).precision(precision);
-            const radius = def.img
-              ? (w.sheets.decor[def.img].originalWidth * sguToWorldScale) / 2
-              : decorIconRadius + decorIconRadiusOutset;
+            const entry = def.img ? w.sheets.decor[def.img] : null;
+            const radius = entry
+              ? (Math.max(entry.originalWidth, entry.originalHeight) * sguToWorldScale) / 2
+              : decorPointDefaultRadius;
+            const half = radius / 2;
+
+            // def.transform overrides def.{x,y}
+            const center = def.transform
+              ? tmpVect
+                  .set(
+                    def.transform[0] * half + def.transform[2] * half + def.transform[4],
+                    def.transform[1] * half + def.transform[3] * half + def.transform[5],
+                  )
+                  .precision(precision)
+              : tmpVect.copy(def).precision(precision);
+
             const bounds = tmpRect
               .set(center.x - radius, center.y - radius, 2 * radius, 2 * radius)
               .precision(precision);
 
+            // fallback transform is pure translation
             const transform: Geom.SixTuple = def.transform ?? [1, 0, 0, 1, bounds.x, bounds.y];
 
             d = {
