@@ -37,6 +37,7 @@ export default function Decor() {
 
       inst: null as any,
       materials: [],
+      runtimeMaterials: [],
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
@@ -220,6 +221,12 @@ export default function Decor() {
         if (!entry) return null;
         const item = w.gms[entry.gmId]?.decor[entry.decorId];
         return item ? { ...item.meta } : null;
+      },
+      decodeRuntimeInstanceId(instanceId) {
+        const key = state.runtime.idToDecorKey[instanceId];
+        if (key === undefined) return null;
+        const decor = state.runtime.byKey[key];
+        return decor ? { ...decor.meta, decorKey: key } : null;
       },
       ensureGmRoomId(decor) {
         if (!(decor.meta.gmId >= 0 && decor.meta.roomId >= 0)) {
@@ -594,24 +601,43 @@ export default function Decor() {
         w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
       );
 
+      const runtimeTexMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
+      runtimeTexMat.colorNode = texNode.mul(vec4(0.4, 0.4, 0.4, 1));
+      runtimeTexMat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor);
+
+      const runtimeBlackMat = new THREE.MeshStandardNodeMaterial({
+        side: THREE.DoubleSide,
+        color: "#000",
+        transparent: true,
+      });
+      runtimeBlackMat.outputNode = (select as SelectAnyType)(
+        isPointAttr.greaterThan(0.5),
+        vec4(0, 0, 0, 0),
+        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+      );
+
       state.ready = true;
       w.setNextPending({ decor: false });
 
-      return [
-        plainBlackMaterial,
-        plainBlackMaterial,
-        texMat,
-        plainBlackMaterial,
-        plainBlackMaterial,
-        plainBlackMaterial,
-      ];
+      return {
+        static: [
+          plainBlackMaterial,
+          plainBlackMaterial,
+          texMat,
+          plainBlackMaterial,
+          plainBlackMaterial,
+          plainBlackMaterial,
+        ],
+        runtime: [runtimeBlackMat, runtimeBlackMat, runtimeTexMat, runtimeBlackMat, runtimeBlackMat, runtimeBlackMat],
+      };
     },
     enabled: !!w.hash && !!w.sheets && !w.pending.nav && w.gms.length > 0,
     staleTime: 0,
     gcTime: 0,
   });
 
-  state.materials = materials ?? state.materials;
+  state.materials = materials?.static ?? state.materials;
+  state.runtimeMaterials = materials?.runtime ?? state.runtimeMaterials;
 
   useEffect(() => {
     state.updateRuntimeInstances();
@@ -635,14 +661,15 @@ export default function Decor() {
           <instancedBufferAttribute attach="attributes-isPoint" args={[state.isPoint, 1]} />
         </bufferGeometry>
       </instancedMesh>
+
       <instancedMesh
         name="runtime-decor"
         ref={state.ref("instRuntime")}
         args={[undefined, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
-        material={state.materials}
-        visible={state.materials.length > 0}
+        material={state.runtimeMaterials}
+        visible={state.runtimeMaterials.length > 0}
       >
         <bufferGeometry
           attributes={state.runtime.box.attributes}
@@ -670,6 +697,7 @@ export type State = {
   box: THREE.BufferGeometry;
   byKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
+  runtimeMaterials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
@@ -691,6 +719,7 @@ export type State = {
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   getDecorImgKey(decor: Geomorph.Decor): string;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   hasInstance(decor: Geomorph.Decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad;
