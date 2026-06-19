@@ -565,6 +565,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05625,
             "symKey": "bridge--042",
             "origObstacleId": 0
           }
@@ -587,6 +588,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05,
             "symKey": "bridge--042",
             "origObstacleId": 1
           }
@@ -8646,6 +8648,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05625,
             "symKey": "bridge--042",
             "origObstacleId": 0
           }
@@ -8668,6 +8671,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05,
             "symKey": "bridge--042",
             "origObstacleId": 1
           }
@@ -14563,6 +14567,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05625,
             "symKey": "bridge--042",
             "origObstacleId": 0,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
@@ -14586,6 +14591,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05,
             "symKey": "bridge--042",
             "origObstacleId": 1,
             "transform": [1, 0, 0, 1, 9.0125, 1.525]
@@ -26467,6 +26473,7 @@
               "cpu": true,
               "y": 1,
               "tint": "#666",
+              "inset": 0.05625,
               "symKey": "bridge--042",
               "origObstacleId": 0
             }
@@ -26486,6 +26493,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05625,
             "symKey": "bridge--042",
             "origObstacleId": 0
           }
@@ -26512,6 +26520,7 @@
               "cpu": true,
               "y": 1,
               "tint": "#666",
+              "inset": 0.05,
               "symKey": "bridge--042",
               "origObstacleId": 1
             }
@@ -26531,6 +26540,7 @@
             "cpu": true,
             "y": 1,
             "tint": "#666",
+            "inset": 0.05,
             "symKey": "bridge--042",
             "origObstacleId": 1
           }
@@ -32029,5 +32039,5 @@
       "walls": {"color": "#000", "opacity": 0.3}
     }
   },
-  "hash": {"obstacles": -1891128992}
+  "hash": {"obstacles": -777758929}
 }
