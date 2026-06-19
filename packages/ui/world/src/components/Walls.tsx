@@ -16,12 +16,13 @@ export default function Walls() {
   const state = useStateRef(
     (): State => ({
       inst: null,
+      instTrim: null,
       lightsShown: true,
-      mat: {} as any,
+      light: {} as State["light"],
       quad: createXyQuad(),
 
       toggleLights(next = !state.lightsShown) {
-        state.mat.wallLightsNode.value = next ? 1 : 0;
+        state.light.wallLightsNode.value = next ? 1 : 0;
         state.set({ lightsShown: next });
         w.view.forceUpdate();
       },
@@ -51,9 +52,8 @@ export default function Walls() {
         const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
         return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
       },
-      trimInst: null as null | THREE.InstancedMesh,
       positionTrimInstances() {
-        const { trimInst: ti } = state;
+        const { instTrim: ti } = state;
         if (!ti) return;
         const color = new THREE.Color(w.getTheme().walls.color);
         let id = 0;
@@ -158,7 +158,7 @@ export default function Walls() {
     };
   }, [wallCount]);
 
-  state.mat = mat;
+  state.light = mat;
 
   const trimMat = useMemo(() => {
     const m = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
@@ -231,7 +231,7 @@ export default function Walls() {
       <instancedMesh
         key={`${mat.uuid}-trim`}
         name="wall-ceil-trim"
-        ref={state.ref("trimInst", (mesh) => {
+        ref={state.ref("instTrim", (mesh) => {
           mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
         })}
         args={[state.quad, trimMat, wallCount]}
@@ -243,9 +243,9 @@ export default function Walls() {
 
 export type State = {
   inst: null | THREE.InstancedMesh;
-  trimInst: null | THREE.InstancedMesh;
+  instTrim: null | THREE.InstancedMesh;
   lightsShown: boolean;
-  mat: {
+  light: {
     opacityUniform: THREE.UniformNode<"float", number>;
     opacityNode: THREE.Node<"float">;
     colorNode: THREE.Node<"vec3">;
