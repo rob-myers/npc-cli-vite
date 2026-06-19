@@ -75,7 +75,11 @@ export default function NPCs() {
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
-        const mainMaterial = new THREE.MeshStandardNodeMaterial({ alphaTest: 0.9, transparent: true });
+        const mainMaterial = new THREE.MeshStandardNodeMaterial({
+          alphaTest: 0.9,
+          side: THREE.DoubleSide,
+          transparent: true,
+        });
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const viewDir = cameraPosition.sub(positionWorld).normalize();
         const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(npcBrightness);
