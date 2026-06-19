@@ -159,7 +159,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
         }
         if (e instanceof Error && e.message === "stuck") {
           // ignore all pending reads
-          api.writeError(`move: ${e.message}`);
+          // api.writeError(`move: ${e.message}`);
           api.flush();
           pendingRead = api.read();
           return;
