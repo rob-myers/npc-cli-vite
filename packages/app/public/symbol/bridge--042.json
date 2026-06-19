@@ -640,7 +640,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "521acaa7-0ee2-4731-9d08-26982a7961b6",
@@ -840,7 +840,7 @@
     {
       "id": "4fef2e98-5a1c-4b69-82d1-c51c85455adb",
       "name": "machines",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -849,7 +849,7 @@
         {
           "id": "ae340bb5-68e2-48b7-953f-766ee413d811",
           "name": "obstacle cpu y=1 tint=#666 inset=2.25",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 14, "f": 79.5},
           "type": "path",
@@ -860,7 +860,7 @@
         {
           "id": "cb7b3549-4920-4b63-91f2-2e58cba60ffb",
           "name": "obstacle cpu y=1 tint=#666 inset=2",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 466, "f": 80},
           "type": "path",
