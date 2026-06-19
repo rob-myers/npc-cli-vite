@@ -35,7 +35,9 @@ w decor.byKey.test-decor-point
     - ❌ track gaps
 
 - 🚧 runtime decor
-  - render runtime decor as separate instancedMesh
+  - 🚧 render runtime decor as separate instancedMesh
+    - 🚧 remove def.{x,y} and only use def.transform
+    - 🚧 can pick
   - static decor vs runtime decor
   - new useQuery `runtime-decor` handles hmr e.g. recompute gmRoomId
   - remove instance via swap with last
