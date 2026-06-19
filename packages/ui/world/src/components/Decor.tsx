@@ -56,6 +56,14 @@ export default function Decor() {
         count: 0,
       },
 
+      addRuntimeDecorToGrid() {
+        for (const runtimeDecor of Object.values(state.runtime.byKey)) {
+          runtimeDecor.meta.roomId = -1; // force recompute
+          if (state.ensureGmRoomId(runtimeDecor) !== null) {
+            addToDecorGrid(runtimeDecor, state.grid);
+          }
+        }
+      },
       addRuntimeInstance(decor) {
         const inst = state.instRuntime;
         if (!inst || !w.sheets || state.materials.length === 0) return;
@@ -275,7 +283,7 @@ export default function Decor() {
           }
 
           runtime.count--;
-          // inst.count = runtime.count;
+          inst.count = runtime.count;
           inst.setMatrixAt(lastId, zeroMat4);
 
           inst.instanceMatrix.needsUpdate = true;
@@ -288,22 +296,9 @@ export default function Decor() {
 
         w.view.forceUpdate();
       },
-      tintInstances(colorRep, ...instanceIds) {
-        if (!state.inst.instanceColor) return;
-
-        for (const instanceId of instanceIds) {
-          const entry = state.instanceIdToDecorId[instanceId];
-          if (!entry) continue;
-          state.inst.setColorAt(instanceId, tmpColor.set(colorRep));
-          w.gms[entry.gmId].decor[entry.decorId].meta.tint = colorRep;
-        }
-
-        state.inst.instanceColor.needsUpdate = true;
-        if (w.disabled) w.view.forceUpdate();
-      },
-      updateRuntimeInstances() {
+      setupRuntimeInstances() {
         const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.materials.length === 0) return;
+        if (!inst || !w.sheets || state.runtimeMaterials.length === 0) return;
         state.runtime.decorKeyToId = {};
         state.runtime.idToDecorKey = [];
         let id = 0;
@@ -323,6 +318,19 @@ export default function Decor() {
         state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
         state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
         state.runtime.box.getAttribute("isPoint").needsUpdate = true;
+      },
+      tintInstances(colorRep, ...instanceIds) {
+        if (!state.inst.instanceColor) return;
+
+        for (const instanceId of instanceIds) {
+          const entry = state.instanceIdToDecorId[instanceId];
+          if (!entry) continue;
+          state.inst.setColorAt(instanceId, tmpColor.set(colorRep));
+          w.gms[entry.gmId].decor[entry.decorId].meta.tint = colorRep;
+        }
+
+        state.inst.instanceColor.needsUpdate = true;
+        if (w.disabled) w.view.forceUpdate();
       },
       writeRuntimeSlot(id, decor) {
         const imgKey = state.getDecorImgKey(decor);
@@ -536,14 +544,7 @@ export default function Decor() {
       // - preserve runtime decor across HMR
       state.byKey = { ...state.runtime.byKey };
       state.clearGrid();
-
-      // 🚧 move to separate query
-      for (const runtimeDecor of Object.values(state.runtime.byKey)) {
-        runtimeDecor.meta.roomId = -1; // force recompute
-        if (state.ensureGmRoomId(runtimeDecor) !== null) {
-          addToDecorGrid(runtimeDecor, state.grid);
-        }
-      }
+      state.addRuntimeDecorToGrid();
 
       const metaPoint = { x: 0, y: 0, meta: {} as Meta };
 
@@ -640,7 +641,7 @@ export default function Decor() {
   state.runtimeMaterials = materials?.runtime ?? state.runtimeMaterials;
 
   useEffect(() => {
-    state.updateRuntimeInstances();
+    state.setupRuntimeInstances();
   }, [materials]);
 
   return (
@@ -716,20 +717,21 @@ export type State = {
     count: number;
   };
 
+  addRuntimeDecorToGrid(): void;
+  addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad): void;
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
-  getDecorImgKey(decor: Geomorph.Decor): string;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
+  getDecorImgKey(decor: Geomorph.Decor): string;
   hasInstance(decor: Geomorph.Decor): decor is Geomorph.DecorPoint | Geomorph.DecorQuad;
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintInstances(colorRep: string, ...instanceIds: number[]): void;
+  setupRuntimeInstances(): void;
   /** 🚧 support Geomorph.DecorCircle, Geomorph.DecorRect */
   writeRuntimeSlot(id: number, decor: Geomorph.DecorPoint | Geomorph.DecorQuad): boolean;
-  addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad): void;
-  updateRuntimeInstances(): void;
 };
 
 const MAX_RUNTIME_DECOR_INSTANCES = 1024;

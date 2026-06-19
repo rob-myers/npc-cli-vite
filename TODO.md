@@ -41,8 +41,8 @@ w decor.byKey.test-decor-point
       - instead def.transform overrides
     - ✅ can pick
   - ✅ remove instance via swap with last
-  - handle hmr e.g. recompute gmRoomId
-  - demo shell function
+  - ✅ more explicit hmr i.e. recompute gmRoomId
+  - 🚧 shell function for removing runtime decor
   - show static/runtime decor rect/circle when meta.shown
   - can create colliders from decor rect/circle
 
