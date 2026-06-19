@@ -2,14 +2,14 @@ import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { debug, error, warn } from "@npc-cli/util/legacy/generic";
 import { ansi, ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
-import type { MessageFromShell, MessageFromXterm, ReadResult, ShellIo } from "./io";
+import type { Device, MessageFromShell, MessageFromXterm, ReadResult, ShellIo } from "./io";
 import { parseService } from "./parse";
 import { jShSemantics } from "./semantics";
 import { type ProcessMeta, type Ptags, sessionApi } from "./session";
 import { applyPtagUpdates, killError, ShError, SigKillError } from "./util";
 import type { TtyXterm } from "./xterm";
 
-export class TtyShell {
+export class TtyShell implements Device {
   key: string;
   sessionKey: string;
   io: ShellIo<MessageFromXterm, MessageFromShell>;
@@ -60,12 +60,15 @@ export class TtyShell {
       this.input = null;
     });
   }
+
   async writeData(data: any) {
     this.io.write(data);
   }
+
   finishedWriting() {
     // NOOP
   }
+
   /**
    * Background processes are not allowed to read from TTY.
    * We further assume there is at most one interactive process reading it.
@@ -75,6 +78,10 @@ export class TtyShell {
     // this.oneTimeReaders.forEach(({ reject }) => reject());
     this.oneTimeReaders.forEach(({ resolve }) => void resolve(undefined));
     this.oneTimeReaders.length = 0;
+  }
+
+  flush() {
+    // NNOP
   }
   //#endregion
 
