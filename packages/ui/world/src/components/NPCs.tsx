@@ -295,6 +295,7 @@ export default function NPCs() {
 
           const stuck = npc.updateStuck(delta, worldSeconds);
           if (stuck === true) {
+            npc.rejectAll(new Error("stuck"));
             npc.startIdle({ force: true });
           } else if (
             crowdApi.isAgentAtTarget(
