@@ -37,7 +37,8 @@ w decor.byKey.test-decor-point
 - 🚧 runtime decor
   - 🚧 render runtime decor as separate instancedMesh
     - ✅ can remove `w decor.remove test-decor-point`
-    - 🚧 remove def.{x,y} and only use def.transform
+    - ❌ remove def.{x,y} and only use def.transform
+      - instead def.transform overrides
     - 🚧 can pick
   - handle hmr e.g. recompute gmRoomId
   - ✅ remove instance via swap with last

@@ -19,8 +19,7 @@ import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schem
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 import {
-  decorIconRadius,
-  decorIconRadiusOutset,
+  decorPointDefaultRadius,
   doorSwitchHeight,
   obstacleOutset,
   precision,
@@ -337,7 +336,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   } else {
     // 🔔 fallback to decor point
     const center = poly.center.precision(precision);
-    const radius = decorIconRadius + decorIconRadiusOutset;
+    const radius = decorPointDefaultRadius;
     const bounds2d = new Rect(center.x - radius, center.y - radius, 2 * radius, 2 * radius).precision(precision);
     /**
      * meta.direction:
