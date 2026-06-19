@@ -29,14 +29,14 @@ export default function Decor() {
     (): State => ({
       box: createUnitBox(),
       byKey: {},
-      customByKey: {},
+      runtimeByKey: {},
       inst: null as any,
       gdKeyToInstanceId: {}, // door related
       grid: {},
-      instanceIdToDecorId: [], // decor needn't have an instance
+      instanceIdToDecorId: [], // static decor needn't have an instance
       lastHmr: 0,
       materials: [],
-      ready: false, // also false on hmr while decor meta lacks roomId
+      ready: false, // also false briefly after hmr
 
       uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
@@ -167,7 +167,7 @@ export default function Decor() {
         }
 
         state.byKey[d.key] = d;
-        state.customByKey[d.key] = d;
+        state.runtimeByKey[d.key] = d;
 
         return d;
       },
@@ -366,14 +366,15 @@ export default function Decor() {
 
       // 5. build state.byKey, grid, enrich decor.meta
       // - applies to all decor not only those with an instancedMesh instance
-      // - preserve custom decor across HMR
-      state.byKey = { ...state.customByKey };
+      // - preserve runtime decor across HMR
+      state.byKey = { ...state.runtimeByKey };
       state.clearGrid();
 
-      for (const customDecor of Object.values(state.customByKey)) {
-        customDecor.meta.roomId = -1; // force recompute
-        if (state.ensureGmRoomId(customDecor) !== null) {
-          addToDecorGrid(customDecor, state.grid);
+      // 🚧 move to separate query
+      for (const runtimeDecor of Object.values(state.runtimeByKey)) {
+        runtimeDecor.meta.roomId = -1; // force recompute
+        if (state.ensureGmRoomId(runtimeDecor) !== null) {
+          addToDecorGrid(runtimeDecor, state.grid);
         }
       }
 
@@ -482,7 +483,7 @@ export type State = {
 
   box: THREE.BufferGeometry;
   byKey: Record<string, Geomorph.Decor>;
-  customByKey: Record<string, Geomorph.Decor>;
+  runtimeByKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
   uvOffsets: Float32Array;
   isPoint: Float32Array;
