@@ -29,4 +29,6 @@ export function demo_add_decor(ct) {
     height: 1 * 1.5,
     meta: { foo: "bar" },
   });
+
+  ct.w.view.forceUpdate();
 }
