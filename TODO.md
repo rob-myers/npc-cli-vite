@@ -56,7 +56,15 @@ w decor.byKey.test-decor-point
       - ✅ simplify shader code
         - could pre-render circle/rects but won't like as good
         - for the moment we'll accept the complexity
-  - can create colliders from decor rect/circle
+  - 🚧 can create colliders from decor rect/circle
+    - can manually create a collider
+    - hook into `w.decor.create`
+    - verify
+
+- ✅ can log draw calls from WorldMenu
+- 🚧 reduce draw calls
+  - avoid multiple materials where possible
+  - avoid THREE.DoubleSide where possible
 
 - ❌ npc has selector quad
   - restyle label instead

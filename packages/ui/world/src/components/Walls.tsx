@@ -5,7 +5,7 @@ import { Fn, float, If, instanceIndex, mix, positionWorld, uniform, uniformArray
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
-import { createXyQuad } from "../service/geometry";
+import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -19,7 +19,7 @@ export default function Walls() {
       instTrim: null,
       lightsShown: true,
       light: {} as State["light"],
-      quad: createXyQuad(),
+      quad: createTwoSidedXyQuad(),
 
       toggleLights(next = !state.lightsShown) {
         state.light.wallLightsNode.value = next ? 1 : 0;
@@ -168,8 +168,12 @@ export default function Walls() {
 
   state.light = mat;
 
-  const trimMat = useMemo(() => {
-    const m = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
+  const trimMaterial = useMemo(() => {
+    const m = new THREE.MeshBasicNodeMaterial({
+      side: THREE.FrontSide, // 1 draw call
+      transparent: true,
+      depthWrite: false,
+    });
     m.opacityNode = w.view.objectPick.equal(0).select(float(0.75), float(0));
     return m;
   }, []);
@@ -226,7 +230,7 @@ export default function Walls() {
       >
         <meshStandardNodeMaterial
           key={mat.uuid}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide} // 1 draw call
           transparent
           depthWrite={false}
           colorNode={mat.colorNode}
@@ -239,7 +243,7 @@ export default function Walls() {
         key={`${mat.uuid}-trim`}
         name="wall-ceil-trim"
         ref={state.ref("instTrim", bootstrapInstanceColor)}
-        args={[state.quad, trimMat, trimCount]}
+        args={[state.quad, trimMaterial, trimCount]}
         renderOrder={4}
       />
     </>
