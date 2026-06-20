@@ -425,7 +425,7 @@ export function computeIntersectionNormal(mesh: THREE.Mesh, intersection: THREE.
   return output;
 }
 
-export const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
+export const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 16, 1);
 
 export const boxGeometry = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1).toNonIndexed();
 

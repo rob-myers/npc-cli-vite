@@ -20,25 +20,26 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       for (const { colliderKey, x, y: z, angle, userData, ...geomDef } of msg.colliders) {
         const bodyKey: WW.PhysicsBodyKey = `${geomDef.type} ${colliderKey}`;
 
-        if (!(bodyKey in state.bodyKeyToBody)) {
-          const _body = createRigidBody({
-            type: RAPIER.RigidBodyType.Fixed,
-            geomDef,
-            // place static collider on floor with height `wallHeight`
-            position: { x, y: wallHeight / 2, z },
-            angle,
-            userData: {
-              ...(geomDef.type === "circle"
-                ? { type: "cylinder", radius: geomDef.radius }
-                : { type: "cuboid", width: geomDef.width, depth: geomDef.height, angle: angle ?? 0 }),
-              bodyKey,
-              bodyUid: addBodyKeyUidRelation(bodyKey, state),
-              custom: userData,
-            },
-          });
-        } else {
+        if (bodyKey in state.bodyKeyToBody) {
           warn(`🤖 worker: ${msg.type}: cannot re-add body: ${bodyKey}`);
+          break;
         }
+
+        const _body = createRigidBody({
+          type: RAPIER.RigidBodyType.Fixed,
+          geomDef,
+          // place static collider on floor with height `wallHeight`
+          position: { x, y: wallHeight / 2, z },
+          angle,
+          userData: {
+            ...(geomDef.type === "circle"
+              ? { type: "cylinder", radius: geomDef.radius }
+              : { type: "cuboid", width: geomDef.width, depth: geomDef.height, angle: angle ?? 0 }),
+            bodyKey,
+            bodyUid: addBodyKeyUidRelation(bodyKey, state),
+            custom: userData,
+          },
+        });
       }
       break;
     }

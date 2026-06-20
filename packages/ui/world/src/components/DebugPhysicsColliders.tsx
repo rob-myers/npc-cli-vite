@@ -22,9 +22,14 @@ export function DebugPhysicsColliders({
           geometry={cylinderGeometry}
           position={[position.x, colliderHeight / 2, position.z]}
           scale={[userData.radius, colliderHeight, userData.radius]}
-          renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
+          renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 6}
         >
-          <meshBasicMaterial color={toColliderMeta[parsedKey[0]]?.color ?? "blue"} transparent />
+          <meshBasicMaterial
+            color={toColliderMeta[parsedKey[0]]?.color ?? "white"}
+            transparent
+            opacityNode={w.view.objectPick.greaterThan(0).select(0, 0.025)}
+            depthWrite={false}
+          />
         </mesh>
       );
     }
@@ -42,10 +47,11 @@ export function DebugPhysicsColliders({
           <meshStandardNodeMaterial
             key={uid}
             map={tex}
-            color={toColliderMeta[parsedKey[0]]?.color ?? "blue"}
+            color={toColliderMeta[parsedKey[0]]?.color ?? "red"}
             transparent
-            alphaTest={0.1}
-            opacityNode={w.view.objectPick.greaterThan(0).select(0, collidersOpacity)}
+            alphaTest={0}
+            opacityNode={w.view.objectPick.greaterThan(0).select(0, 0.5)}
+            depthWrite={false}
           />
         </mesh>
       );
@@ -91,5 +97,3 @@ function createEdgeTexture() {
   tex.needsUpdate = true;
   return { tex, uid: crypto.randomUUID() };
 }
-
-const collidersOpacity = 0.25;

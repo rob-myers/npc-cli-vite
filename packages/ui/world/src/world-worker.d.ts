@@ -15,15 +15,7 @@ declare namespace WW {
       }
     | {
         type: "add-physics-colliders";
-        /** Colliders always on ground hence 2D position suffices */
-        colliders: (Geom.VectJson &
-          PhysicsBodyGeom & {
-            /** For gm decor this is a `decorKey`. */
-            colliderKey: string;
-            /** Only applicable when `type` is `"rect"` */
-            angle?: number;
-            userData?: Record<string, any>;
-          })[];
+        colliders: PhysicsColliderDef[];
       }
     | {
         type: "get-physics-debug-data";
@@ -64,6 +56,16 @@ declare namespace WW {
   type SendNpcPhysicsPositions = Extract<PhysicsMsgToWorker, { type: "send-npc-positions" }>;
   type SetupPhysicsWorld = Extract<PhysicsMsgToWorker, { type: "setup-physics" }>;
   type GetRaycast = Extract<PhysicsMsgToWorker, { type: "get-raycast" }>;
+
+  /** Colliders always on ground hence 2D position suffices */
+  type PhysicsColliderDef = Geom.VectJson &
+    PhysicsBodyGeom & {
+      /** For gm decor this is a `decorKey`. */
+      colliderKey: string;
+      /** Only applicable when `type` is `"rect"` */
+      angle?: number;
+      userData?: Record<string, any>;
+    };
 
   type PhysicsBodyGeom =
     | {

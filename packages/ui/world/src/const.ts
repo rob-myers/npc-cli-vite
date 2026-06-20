@@ -110,7 +110,7 @@ export const decorKeyFallback = "icon--warn";
 
 export const gmIdGridDim = 600 * sguToWorldScale;
 
-export const colliderHeight = 1.8;
+export const colliderHeight = 0.025;
 
 export const idleMaxAcceleration = 4.0;
 export const idleSeparatingMaxAcceleration = 0.25;
