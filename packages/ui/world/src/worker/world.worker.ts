@@ -37,7 +37,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
             },
           });
         } else {
-          warn(`🤖 physics.worker: ${msg.type}: cannot re-add body (${bodyKey})`);
+          warn(`🤖 worker: ${msg.type}: cannot re-add body: ${bodyKey}`);
         }
       }
       break;

@@ -124,7 +124,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       obs: null as any,
       view: null as any,
       wall: null as any,
-      worker: null as any,
+      worker: { worker: { postMessage() {} } } as any,
 
       rootEl: null as any,
 
