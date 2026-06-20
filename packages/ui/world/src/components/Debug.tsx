@@ -126,7 +126,7 @@ export function Debug() {
         const inst = doorNormalsRef.current;
         if (!inst) return;
         let count = 0;
-        for (const door of Object.values(w.door.byKey)) {
+        for (const door of Object.values(w.door?.byKey ?? [])) {
           if (count >= maxDoorNormals) break;
           const mid = { x: (door.src.x + door.dst.x) / 2, y: (door.src.y + door.dst.y) / 2 };
           const n = door.normal;
@@ -141,7 +141,7 @@ export function Debug() {
       },
       updateDecorPoints() {
         const inst = state.debugPointsInst;
-        if (!inst || !w.sheets || !w.decor) return;
+        if (!inst || !w.sheets || !w.decor.ready) return;
         state.debugPointInstanceIdToDecorId.length = 0;
         let count = 0;
         for (let gmId = 0; gmId < w.gms.length; gmId++) {
