@@ -45,9 +45,9 @@ w decor.byKey.test-decor-point
   - ✅ shell function for removing runtime decor
     - `remove` also replaces `clear`
   - 🚧 show static/runtime decor rect/circle when meta.shown
-    - 🚧 fix initially white runtime decor rect/circle (saving Decor changes to green)
-    - remove bug when add decor twice i.e. `demo_add_decor` twice
-    - simplify Decor
+    - ✅ fix initially white runtime decor rect/circle (saving Decor changes to green)
+    - 🚧 remove bug when add decor twice i.e. `demo_add_decor` twice
+    - simplify code in Decor
   - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad

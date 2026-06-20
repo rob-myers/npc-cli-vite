@@ -34,7 +34,7 @@ import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } 
 import { addToDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import type { SelectAnyType } from "../service/texture";
+import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Decor() {
@@ -773,7 +773,7 @@ export default function Decor() {
 
       <instancedMesh
         name="runtime-decor"
-        ref={state.ref("instRuntime")}
+        ref={state.ref("instRuntime", bootstrapInstanceColor)}
         args={[undefined, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
