@@ -72,6 +72,8 @@ w decor.byKey.test-decor-point
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
 
+- remove shuffle-back animation
+- npc: unify with state.lookAtPoint and updateLookAt
 - BUG locked door opens when npc close enough to nearby sensor
   - `w e.toggleLock g0d31`
 - abstract npc animation logic into class

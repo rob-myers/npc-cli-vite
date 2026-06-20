@@ -315,7 +315,14 @@ export class Npc {
         this.rejectAll(new Error("interrupted"));
         this.resolve.look = resolve;
         this.reject.look = reject;
-        Object.assign(this.lookAtState, { active: true, startAngle, totalDiff, duration, elapsed: 0, walking });
+
+        this.lookAtState.active = true;
+        this.lookAtState.startAngle = startAngle;
+        this.lookAtState.totalDiff = totalDiff;
+        this.lookAtState.duration = duration;
+        this.lookAtState.elapsed = 0;
+        this.lookAtState.walking = walking;
+
         if (walking) {
           this.moveClip = this.clips.stand;
           this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
@@ -336,6 +343,7 @@ export class Npc {
 
     const s = this.lookAtState;
     s.elapsed += delta;
+
     if (s.elapsed >= s.duration) {
       this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff;
       s.active = false;
@@ -453,11 +461,11 @@ export class Npc {
       this.separating = true;
       agent.maxAcceleration = idleSeparatingMaxAcceleration;
       this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(clips["shuffle-back"]).reset().fadeIn(0.3).play();
+      this.mixer.clipAction(clips.shuffle).reset().fadeIn(0.3).play();
     }
 
     const timeScale = (1 / npcScale) * separationAnimScale * speed;
-    this.mixer.clipAction(clips["shuffle-back"]).timeScale = timeScale < 0.5 ? 0 : timeScale;
+    this.mixer.clipAction(clips.shuffle).timeScale = timeScale < 0.5 ? 0 : timeScale;
   }
 
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
@@ -481,7 +489,7 @@ export class Npc {
       }
     }
 
-    this.updateLookAt(delta / 4);
+    this.updateLookAt(delta / 2);
   }
 
   updateLookAt(delta: number) {
