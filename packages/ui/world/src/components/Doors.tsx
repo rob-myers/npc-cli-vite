@@ -393,7 +393,6 @@ export default function Doors() {
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
     const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
-    const top = new THREE.MeshStandardNodeMaterial({ color: "#000", metalness: 0.6, roughness: 0.3 });
 
     const panelOpts = { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide, transparent: false, depthWrite: true };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
@@ -404,7 +403,7 @@ export default function Doors() {
     const cs = float(1).sub(openRatio);
     const collapsedX = positionLocal.x.mul(cs).add(slideSign.mul(openRatio).mul(0.5));
 
-    for (const mat of [edge, top, front, back]) {
+    for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
       mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
     }
@@ -424,7 +423,7 @@ export default function Doors() {
       (select as SelectAnyType)(notFlipped, backTexLayer, texLayer),
     );
 
-    return [edge, edge, top, edge, front, back];
+    return [edge, front, back]; // only 3 groups in door box
   }, []);
 
   const instanceCount = w.gms.length << 8;
