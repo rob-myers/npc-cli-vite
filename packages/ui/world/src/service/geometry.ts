@@ -429,9 +429,25 @@ export const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
 
 export const boxGeometry = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1).toNonIndexed();
 
-/** Unit box from (0,0,0) to (1,1,1) with 6 material groups. */
-export function createUnitBox() {
+/** Unit box from (0,0,0) to (1,1,1) with 6 or 2 material groups. */
+export function createUnitBox(opts?: { singleFaceGroup?: boolean }) {
   const geo = new THREE.BoxGeometry(1, 1, 1);
   geo.translate(0.5, 0.5, 0.5);
+
+  if (opts?.singleFaceGroup) {
+    // Reorder index buffer: non-top faces first (materialIndex 0), +y top face last (materialIndex 1).
+    // BoxGeometry face order: +x(0-5) -x(6-11) +y(12-17) -y(18-23) +z(24-29) -z(30-35)
+    const src = (geo.index as THREE.BufferAttribute).array;
+    const dst = new Uint16Array(36);
+    dst.set(src.slice(0, 12), 0); // +x, -x
+    dst.set(src.slice(18, 36), 12); // -y, +z, -z
+    dst.set(src.slice(12, 18), 30); // +y (top)
+    geo.setIndex(new THREE.BufferAttribute(dst, 1));
+    geo.groups = [
+      { start: 0, count: 30, materialIndex: 0 },
+      { start: 30, count: 6, materialIndex: 1 },
+    ];
+  }
+
   return geo;
 }

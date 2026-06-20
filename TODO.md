@@ -62,7 +62,7 @@ w decor.byKey.test-decor-point
     - verify
 
 - ✅ can log draw calls from WorldMenu
-- 🚧 reduce draw calls
+- ✅ reduce draw calls
   - avoid multiple materials where possible
   - avoid THREE.DoubleSide where possible
 

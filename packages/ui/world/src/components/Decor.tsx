@@ -53,7 +53,7 @@ export default function Decor() {
         gdKeyToDecorKeys: {}, // door related
         idToDecorKey: [],
 
-        box: createUnitBox(),
+        box: createUnitBox({ singleFaceGroup: true }),
         materials: [],
         shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
         uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
@@ -65,7 +65,7 @@ export default function Decor() {
         decorKeyToId: {},
         idToDecorKey: [] as string[],
 
-        box: createUnitBox(),
+        box: createUnitBox({ singleFaceGroup: true }),
         materials: [],
         shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
         uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
@@ -754,15 +754,8 @@ export default function Decor() {
       w.setNextPending({ decor: false });
 
       return {
-        static: [
-          plainBlackMaterial,
-          plainBlackMaterial,
-          texMat,
-          plainBlackMaterial,
-          plainBlackMaterial,
-          plainBlackMaterial,
-        ],
-        runtime: [runtimeBlackMat, runtimeBlackMat, runtimeTexMat, runtimeBlackMat, runtimeBlackMat, runtimeBlackMat],
+        static: [plainBlackMaterial, texMat],
+        runtime: [runtimeBlackMat, runtimeTexMat],
       };
     },
     enabled: !!w.hash && !!w.sheets && !w.pending.nav && w.gms.length > 0,
