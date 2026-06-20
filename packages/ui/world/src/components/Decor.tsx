@@ -9,6 +9,7 @@ import {
   float,
   fract,
   instanceIndex,
+  int,
   output,
   select,
   texture,
@@ -52,18 +53,14 @@ export default function Decor() {
       inst: null as any,
       materials: [],
       runtimeMaterials: [],
-      uvOffsets: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
-      uvDimensions: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2),
-      uvTextureIds: new Uint32Array(MAX_DECOR_QUAD_INSTANCES),
+      uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
       shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
 
       instRuntime: null as any,
       runtime: {
         box: createUnitBox(),
         byKey: {},
-        uvOffsets: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2),
-        uvDimensions: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2),
-        uvTextureIds: new Uint32Array(MAX_RUNTIME_DECOR_INSTANCES),
+        uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
         shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
         decorKeyToId: {} as Record<string, number>,
         idToDecorKey: [] as string[],
@@ -89,9 +86,7 @@ export default function Decor() {
         inst.count = state.runtime.count;
         inst.instanceMatrix.needsUpdate = true;
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
-        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
-        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+        state.runtime.box.getAttribute("uvData").needsUpdate = true;
         state.runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
       clearGrid() {
@@ -309,9 +304,7 @@ export default function Decor() {
 
           inst.instanceMatrix.needsUpdate = true;
           if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-          runtime.box.getAttribute("uvOffsets").needsUpdate = true;
-          runtime.box.getAttribute("uvDimensions").needsUpdate = true;
-          runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+          runtime.box.getAttribute("uvData").needsUpdate = true;
           runtime.box.getAttribute("shapeParams").needsUpdate = true;
         }
 
@@ -335,9 +328,7 @@ export default function Decor() {
         inst.count = id;
         inst.instanceMatrix.needsUpdate = true;
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        state.runtime.box.getAttribute("uvOffsets").needsUpdate = true;
-        state.runtime.box.getAttribute("uvDimensions").needsUpdate = true;
-        state.runtime.box.getAttribute("uvTextureIds").needsUpdate = true;
+        state.runtime.box.getAttribute("uvData").needsUpdate = true;
         state.runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
       tintInstances(colorRep, ...instanceIds) {
@@ -392,17 +383,20 @@ export default function Decor() {
           const dimY = entry.rect.height / dims.height;
           const offX = (entry.rect.x + entry.rect.width) / dims.width;
           const offY = entry.rect.y / dims.height;
-          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
-          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
+          state.runtime.uvData.set(
+            [offX + dimX * k, offY + dimY * k + entry.sheetId, dimX * (1 - 2 * k), dimY * (1 - 2 * k)],
+            id * 4,
+          );
         } else {
           const dimX = entry.rect.width / dims.width;
           const dimY = entry.rect.height / dims.height;
           const offX = entry.rect.x / dims.width;
           const offY = entry.rect.y / dims.height;
-          state.runtime.uvOffsets.set([offX + dimX * k, offY + dimY * k], id * 2);
-          state.runtime.uvDimensions.set([dimX * (1 - 2 * k), dimY * (1 - 2 * k)], id * 2);
+          state.runtime.uvData.set(
+            [offX + dimX * k, offY + dimY * k + entry.sheetId, dimX * (1 - 2 * k), dimY * (1 - 2 * k)],
+            id * 4,
+          );
         }
-        state.runtime.uvTextureIds[id] = entry.sheetId;
 
         const inst = state.instRuntime;
 
@@ -469,9 +463,7 @@ export default function Decor() {
       }
 
       // 3. compute UVs
-      state.uvOffsets.fill(0);
-      state.uvDimensions.fill(0);
-      state.uvTextureIds.fill(0);
+      state.uvData.fill(0);
       state.instanceIdToDecorId.length = 0;
       let uvIdx = 0;
       for (const gm of w.gms) {
@@ -493,18 +485,28 @@ export default function Decor() {
           const dims = w.sheets.decorSheetDims[entry.sheetId];
           if (!dims) continue;
 
-          // fix flipped decor
+          // fix flipped decor; encode texId in integer part of offY
           if (item.det === -1) {
-            state.uvOffsets.set(
-              [(entry.rect.x + entry.rect.width) / dims.width, entry.rect.y / dims.height],
-              uvIdx * 2,
+            state.uvData.set(
+              [
+                (entry.rect.x + entry.rect.width) / dims.width,
+                entry.rect.y / dims.height + entry.sheetId,
+                -entry.rect.width / dims.width,
+                entry.rect.height / dims.height,
+              ],
+              uvIdx * 4,
             );
-            state.uvDimensions.set([-entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
           } else {
-            state.uvOffsets.set([entry.rect.x / dims.width, entry.rect.y / dims.height], uvIdx * 2);
-            state.uvDimensions.set([entry.rect.width / dims.width, entry.rect.height / dims.height], uvIdx * 2);
+            state.uvData.set(
+              [
+                entry.rect.x / dims.width,
+                entry.rect.y / dims.height + entry.sheetId,
+                entry.rect.width / dims.width,
+                entry.rect.height / dims.height,
+              ],
+              uvIdx * 4,
+            );
           }
-          state.uvTextureIds[uvIdx] = entry.sheetId;
           uvIdx++;
         }
       }
@@ -657,22 +659,20 @@ export default function Decor() {
 
       // 6. send to GPU
       const geo = state.inst.geometry;
-      geo.getAttribute("uvOffsets").needsUpdate = true;
-      geo.getAttribute("uvDimensions").needsUpdate = true;
-      geo.getAttribute("uvTextureIds").needsUpdate = true;
+      geo.getAttribute("uvData").needsUpdate = true;
       geo.getAttribute("shapeParams").needsUpdate = true;
       state.inst.instanceMatrix.needsUpdate = true;
       if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
 
       // 7. build materials
-      const uvDims = attribute<"vec2">("uvDimensions", "vec2");
-      const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
-      const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
+      const uvDataAttr = attribute<"vec4">("uvData", "vec4");
       // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
       const flippedUv = vec2(uv().x, uv().y.oneMinus());
-      const transformedUv = flippedUv.mul(uvDims).add(uvOffs);
+      const transformedUv = flippedUv
+        .mul(vec2(uvDataAttr.z, uvDataAttr.w))
+        .add(vec2(uvDataAttr.x, uvDataAttr.y.fract()));
       const texNode = texture(w.texDecor.tex, transformedUv);
-      texNode.depthNode = uvTexIds;
+      texNode.depthNode = int(uvDataAttr.y.floor()); // decode sheetId
 
       // Shapes (shapeParams.x >= 2): colorNode=white so `output` carries instanceColor (set via setColorAt).
       // Quads/points: colorNode=atlas texture (unchanged behavior).
@@ -760,9 +760,7 @@ export default function Decor() {
         visible={state.materials.length > 0}
       >
         <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
-          <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
-          <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
-          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
+          <instancedBufferAttribute attach="attributes-uvData" args={[state.uvData, 4]} />
           <instancedBufferAttribute attach="attributes-shapeParams" args={[state.shapeParams, 3]} />
         </bufferGeometry>
       </instancedMesh>
@@ -781,9 +779,7 @@ export default function Decor() {
           index={state.runtime.box.index}
           groups={state.runtime.box.groups}
         >
-          <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.runtime.uvOffsets, 2]} />
-          <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.runtime.uvDimensions, 2]} />
-          <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.runtime.uvTextureIds, 1]} />
+          <instancedBufferAttribute attach="attributes-uvData" args={[state.runtime.uvData, 4]} />
           <instancedBufferAttribute attach="attributes-shapeParams" args={[state.runtime.shapeParams, 3]} />
         </bufferGeometry>
       </instancedMesh>
@@ -803,18 +799,14 @@ export type State = {
   byKey: Record<string, Geomorph.Decor>;
   materials: THREE.MeshStandardNodeMaterial[];
   runtimeMaterials: THREE.MeshStandardNodeMaterial[];
-  uvOffsets: Float32Array;
-  uvDimensions: Float32Array;
-  uvTextureIds: Uint32Array;
+  uvData: Float32Array;
   shapeParams: Float32Array;
 
   instRuntime: THREE.InstancedMesh;
   runtime: {
     byKey: Record<string, Geomorph.Decor>;
     box: THREE.BufferGeometry;
-    uvOffsets: Float32Array;
-    uvDimensions: Float32Array;
-    uvTextureIds: Uint32Array;
+    uvData: Float32Array;
     shapeParams: Float32Array;
     decorKeyToId: Record<string, number>;
     idToDecorKey: string[];
