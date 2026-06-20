@@ -102,6 +102,12 @@ export function embedXZMat4(
 
 export function createDoorBox() {
   const g = new THREE.BoxGeometry(1, 1, 1);
+  // Merge the 4 edge faces (+x -x +y -y, indices 0–23) into one group → 3 draw calls instead of 6
+  g.groups = [
+    { start: 0, count: 24, materialIndex: 0 },  // edges
+    { start: 24, count: 6, materialIndex: 1 },  // +z front
+    { start: 30, count: 6, materialIndex: 2 },  // -z back
+  ];
   g.setAttribute("openRatio", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
   g.setAttribute("slideSign", new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));
   g.setAttribute("flipFrontBack", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
