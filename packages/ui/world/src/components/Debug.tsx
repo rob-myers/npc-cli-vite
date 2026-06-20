@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
+import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
@@ -39,13 +40,6 @@ export function Debug() {
     return mat;
   }, []);
 
-  // useFrame((root) => {
-  //   const gl = root.gl as unknown as THREE.WebGPURenderer;
-  //   gl.info.autoReset = false;
-  //   console.log(gl.info.render);
-  //   gl.info.reset();
-  // });
-
   const state = useStateRef(
     (): State => ({
       arrowGeo: createArrowGeo(),
@@ -55,6 +49,7 @@ export function Debug() {
       demoNavPathShown: false,
       doorNormalsShown: false,
       lightSpheresShown: false,
+      logGPUInfo: false,
       navMeshShown: false,
       doPointsShown: false,
       originShown: false,
@@ -229,6 +224,16 @@ export function Debug() {
 
   w.debug = state;
 
+  useFrame((root) => {
+    const gl = root.gl as unknown as THREE.WebGPURenderer;
+    gl.info.autoReset = false;
+    if (state.logGPUInfo) {
+      console.log(gl.info.render);
+      state.logGPUInfo = false;
+    }
+    gl.info.reset();
+  });
+
   useEffect(() => {
     state.computeDemoPath();
     state.updateNavPathInstances();
@@ -355,6 +360,7 @@ export type State = {
   demoNavPathShown: boolean;
   doorNormalsShown: boolean;
   lightSpheresShown: boolean;
+  logGPUInfo: boolean;
   navMeshShown: boolean;
   doPointsShown: boolean;
   originShown: boolean;
