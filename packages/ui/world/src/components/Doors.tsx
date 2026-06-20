@@ -364,10 +364,10 @@ export default function Doors() {
 
         // Actually lock/unlock door
         door.locked = !door.locked;
-        // 🚧 move to use-world-events
-        w.decor.tintInstances(
+
+        w.decor.tintDecor(
           door.locked ? lockedDoorTint : unlockedDoorTint,
-          ...w.decor.gdKeyToInstanceId[door.gdKey],
+          ...w.decor.static.gdKeyToDecorKeys[door.gdKey],
         );
 
         w.events.next({

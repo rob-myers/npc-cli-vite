@@ -43,28 +43,31 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
-      gdKeyToInstanceId: {}, // door related
       grid: {},
-      instanceIdToDecorId: [], // static decor needn't have an instance
       lastHmr: 0,
       ready: false, // also false briefly after hmr
 
       inst: null as any,
       static: {
+        decorKeyToId: {},
+        gdKeyToDecorKeys: {}, // door related
+        idToDecorKey: [],
+
         box: createUnitBox(),
         materials: [],
-        uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
         shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
+        uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
       },
 
       instRuntime: null as any,
       runtime: {
-        box: createUnitBox(),
         byKey: {},
+        decorKeyToId: {},
+        idToDecorKey: [] as string[],
+
+        box: createUnitBox(),
         materials: [],
         shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
-        decorKeyToId: {} as Record<string, number>,
-        idToDecorKey: [] as string[],
         uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
         count: 0,
       },
@@ -249,11 +252,11 @@ export default function Decor() {
 
         return d;
       },
-      decodeInstanceId(instanceId) {
-        const entry = state.instanceIdToDecorId[instanceId];
-        if (!entry) return null;
-        const item = w.gms[entry.gmId]?.decor[entry.decorId];
-        return item ? { ...item.meta } : null;
+      decodeStaticInstanceId(instanceId) {
+        const key = state.static.idToDecorKey[instanceId];
+        if (key === undefined) return null;
+        const decor = state.byKey[key];
+        return decor ? { ...decor.meta, decorKey: key } : null;
       },
       decodeRuntimeInstanceId(instanceId) {
         const key = state.runtime.idToDecorKey[instanceId];
@@ -311,7 +314,7 @@ export default function Decor() {
           if (id !== lastId) {
             // swap last decor into removed slot
             const lastKey = runtime.idToDecorKey[lastId];
-            const lastDecor = runtime.byKey[lastKey] as Geomorph.DecorPoint | Geomorph.DecorQuad;
+            const lastDecor = runtime.byKey[lastKey];
             state.writeRuntimeSlot(id, lastDecor);
             runtime.decorKeyToId[lastKey] = id;
             runtime.idToDecorKey[id] = lastKey;
@@ -331,36 +334,44 @@ export default function Decor() {
       },
       setupRuntimeInstances() {
         const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.runtime.materials.length === 0) return;
-        state.runtime.decorKeyToId = {};
-        state.runtime.idToDecorKey = [];
+        const { runtime } = state;
+        if (!inst || !w.sheets || runtime.materials.length === 0) {
+          return;
+        }
+
+        runtime.decorKeyToId = {};
+        runtime.idToDecorKey = [];
         let id = 0;
-        for (const decor of Object.values(state.runtime.byKey)) {
-          if (!state.hasInstance(decor) || id >= MAX_RUNTIME_DECOR_INSTANCES) continue;
+        for (const decor of Object.values(runtime.byKey)) {
+          if (!state.hasInstance(decor) || id >= MAX_RUNTIME_DECOR_INSTANCES) {
+            continue;
+          }
           if (state.writeRuntimeSlot(id, decor)) {
-            state.runtime.decorKeyToId[decor.key] = id;
-            state.runtime.idToDecorKey[id] = decor.key;
+            runtime.decorKeyToId[decor.key] = id;
+            runtime.idToDecorKey[id] = decor.key;
             id++;
           }
         }
-        state.runtime.count = id;
+        runtime.count = id;
         inst.count = id;
         inst.instanceMatrix.needsUpdate = true;
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        state.runtime.box.getAttribute("uvData").needsUpdate = true;
-        state.runtime.box.getAttribute("shapeParams").needsUpdate = true;
+        runtime.box.getAttribute("uvData").needsUpdate = true;
+        runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
-      tintInstances(colorRep, ...instanceIds) {
-        if (!state.inst.instanceColor) return;
-
-        for (const instanceId of instanceIds) {
-          const entry = state.instanceIdToDecorId[instanceId];
-          if (!entry) continue;
-          state.inst.setColorAt(instanceId, tmpColor.set(colorRep));
-          w.gms[entry.gmId].decor[entry.decorId].meta.tint = colorRep;
+      tintDecor(colorRep, ...decorKeys) {
+        for (const decorKey of decorKeys) {
+          if (decorKey in state.runtime.decorKeyToId) {
+            const id = state.runtime.decorKeyToId[decorKey];
+            state.instRuntime.setColorAt(id, tmpColor.set(colorRep));
+          } else if (decorKey in state.byKey) {
+            const id = state.static.decorKeyToId[decorKey];
+            state.inst.setColorAt(id, tmpColor.set(colorRep));
+          }
         }
 
-        state.inst.instanceColor.needsUpdate = true;
+        if (state.instRuntime.instanceColor) state.instRuntime.instanceColor.needsUpdate = true;
+        if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
         if (w.disabled) w.view.forceUpdate();
       },
       writeRuntimeSlot(id, decor) {
@@ -483,7 +494,6 @@ export default function Decor() {
 
       // 3. compute UVs
       state.static.uvData.fill(0);
-      state.instanceIdToDecorId.length = 0;
       let uvIdx = 0;
       for (const gm of w.gms) {
         for (const item of gm.decor) {
@@ -532,14 +542,46 @@ export default function Decor() {
 
       await pause(100);
 
-      // 4. transform instances
-      state.gdKeyToInstanceId = {};
+      // 4. build state.byKey, grid, enrich decor.meta
+      // - applies to all decor not only those with an instancedMesh instance
+      // - preserve runtime decor across HMR
+      state.byKey = { ...state.runtime.byKey };
+      state.clearGrid();
+      state.addRuntimeDecorToGrid();
+
+      const metaPoint = { x: 0, y: 0, meta: {} as Meta };
+
+      for (const [gmId, gm] of w.gms.entries()) {
+        for (const decor of gm.decor) {
+          metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
+          metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
+          metaPoint.meta = decor.meta;
+          const gmRoomId = w.e.findRoomContaining(metaPoint, true);
+          if (gmRoomId !== null) {
+            Object.assign(decor.meta, gmRoomId);
+          }
+
+          // we use periods for paths in CLI
+          const suffix = `${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_");
+          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
+          state.byKey[decor.key] = decor;
+          decor.meta.key = decor.key;
+
+          addToDecorGrid(decor, state.grid);
+        }
+      }
+
+      await pause(100);
+
+      // 5. transform instances
+      // state.static.gdKeyToInstanceIds = {};
+      state.static.gdKeyToDecorKeys = {};
       state.inst.instanceMatrix.array.fill(0);
       let instanceId = 0;
       let tiltMat4 = new THREE.Matrix4();
 
       for (const [gmId, gm] of w.gms.entries()) {
-        for (const [decorId, decor] of gm.decor.entries()) {
+        for (const [_decorId, decor] of gm.decor.entries()) {
           if (!state.hasInstance(decor)) {
             continue;
           }
@@ -558,7 +600,6 @@ export default function Decor() {
             ));
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
             state.static.shapeParams.set([2, w0, h0], instanceId * 3);
-            state.instanceIdToDecorId[instanceId] = { gmId, decorId };
             instanceId++;
             continue;
           }
@@ -572,7 +613,6 @@ export default function Decor() {
             ));
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
             state.static.shapeParams.set([3, r, r], instanceId * 3);
-            state.instanceIdToDecorId[instanceId] = { gmId, decorId };
             instanceId++;
             continue;
           }
@@ -613,8 +653,8 @@ export default function Decor() {
               const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
               const { locked } = w.door.byKey[gdKey];
               state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
-              // build gdKey -> instances
-              (state.gdKeyToInstanceId[gdKey] ??= []).push(instanceId);
+              // build gdKey -> decorKeys
+              (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);
             } else {
               state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
             }
@@ -635,44 +675,14 @@ export default function Decor() {
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
+          state.static.decorKeyToId[decor.key] = instanceId;
+          state.static.idToDecorKey[instanceId] = decor.key;
           state.static.shapeParams[instanceId * 3] = decor.type === "point" ? 1 : 0;
-          state.instanceIdToDecorId[instanceId] = { gmId, decorId };
           instanceId++;
         }
       }
       state.inst.count = instanceId;
       state.inst.computeBoundingSphere();
-
-      await pause(100);
-
-      // 5. build state.byKey, grid, enrich decor.meta
-      // - applies to all decor not only those with an instancedMesh instance
-      // - preserve runtime decor across HMR
-      state.byKey = { ...state.runtime.byKey };
-      state.clearGrid();
-      state.addRuntimeDecorToGrid();
-
-      const metaPoint = { x: 0, y: 0, meta: {} as Meta };
-
-      for (const [gmId, gm] of w.gms.entries()) {
-        for (const decor of gm.decor) {
-          metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
-          metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
-          metaPoint.meta = decor.meta;
-          const gmRoomId = w.e.findRoomContaining(metaPoint, true);
-          if (gmRoomId !== null) {
-            Object.assign(decor.meta, gmRoomId);
-          }
-
-          // we use periods for paths in CLI
-          const suffix = `${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_");
-          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
-          state.byKey[decor.key] = decor;
-          decor.meta.key = decor.key;
-
-          addToDecorGrid(decor, state.grid);
-        }
-      }
 
       await pause(100);
 
@@ -771,7 +781,7 @@ export default function Decor() {
     <>
       <instancedMesh
         name="static-decor"
-        ref={state.ref("inst")}
+        ref={state.ref("inst", bootstrapInstanceColor)}
         args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
@@ -812,14 +822,17 @@ export default function Decor() {
 
 export type State = {
   byKey: Record<string, Geomorph.Decor>;
-  gdKeyToInstanceId: { [gdKey: string]: number[] };
-  instanceIdToDecorId: { gmId: number; decorId: number }[];
   grid: Geomorph.DecorGrid;
   lastHmr: number;
   ready: boolean;
 
   inst: THREE.InstancedMesh;
   static: {
+    decorKeyToId: Record<string, number>;
+    idToDecorKey: string[];
+    /** Static decor related to a specific door e.g. switches */
+    gdKeyToDecorKeys: { [gdKey: string]: string[] };
+
     box: THREE.BufferGeometry;
     materials: THREE.MeshStandardNodeMaterial[];
     uvData: Float32Array;
@@ -829,12 +842,13 @@ export type State = {
   instRuntime: THREE.InstancedMesh;
   runtime: {
     byKey: Record<string, Geomorph.Decor>;
+    decorKeyToId: Record<string, number>;
+    idToDecorKey: string[];
+
     box: THREE.BufferGeometry;
     materials: THREE.MeshStandardNodeMaterial[];
     uvData: Float32Array;
     shapeParams: Float32Array;
-    decorKeyToId: Record<string, number>;
-    idToDecorKey: string[];
     count: number;
   };
 
@@ -842,7 +856,7 @@ export type State = {
   addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle): void;
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
-  decodeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  decodeStaticInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   getDecorImgKey(decor: Geomorph.Decor): string;
@@ -851,7 +865,7 @@ export type State = {
   ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
-  tintInstances(colorRep: string, ...instanceIds: number[]): void;
+  tintDecor(colorRep: string, ...decorKeys: string[]): void;
   setupRuntimeInstances(): void;
   writeRuntimeSlot(
     id: number,

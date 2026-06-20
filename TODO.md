@@ -50,6 +50,9 @@ w decor.byKey.test-decor-point
       - auto remove extant on create
       - remove decor also removes from grid
     - 🚧 simplify code in Decor
+      - ✅ can tint static or runtime decor
+        - `w e.toggleLock g0d23`
+        - `w decor.tintDecor blue test-decor-rect`
   - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad
@@ -58,6 +61,8 @@ w decor.byKey.test-decor-point
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
 
+- BUG locked door opens when npc close enough to nearby sensor
+  - `w e.toggleLock g0d31`
 - abstract npc animation logic into class
 - BUG on save shell.ts terminal profile does not run
 - idle-left with left-leg forward
