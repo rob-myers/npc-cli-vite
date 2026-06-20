@@ -31,7 +31,7 @@ import {
   unlockedDoorTint,
 } from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
-import { addToDecorGrid } from "../service/grid";
+import { addToDecorGrid, removeFromDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
@@ -79,22 +79,34 @@ export default function Decor() {
       },
       addRuntimeInstance(decor) {
         const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.runtime.materials.length === 0) return;
-        const id = state.runtime.count;
-        if (id >= MAX_RUNTIME_DECOR_INSTANCES || !state.writeRuntimeSlot(id, decor)) return;
-        state.runtime.decorKeyToId[decor.key] = id;
-        state.runtime.idToDecorKey[id] = decor.key;
-        state.runtime.count++;
-        inst.count = state.runtime.count;
+        const { runtime } = state;
+        if (!inst || !w.sheets || runtime.materials.length === 0) return;
+        const id = runtime.count;
+        if (id >= MAX_RUNTIME_DECOR_INSTANCES) {
+          warn(`cannot add runtime decor ${decor.key}: capacity exceeded`);
+          return;
+        }
+        if (!state.writeRuntimeSlot(id, decor)) {
+          warn(`failed to add runtime decor ${decor.key}`);
+          return;
+        }
+        runtime.decorKeyToId[decor.key] = id;
+        runtime.idToDecorKey[id] = decor.key;
+        runtime.count++;
+        inst.count = runtime.count;
         inst.instanceMatrix.needsUpdate = true;
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        state.runtime.box.getAttribute("uvData").needsUpdate = true;
-        state.runtime.box.getAttribute("shapeParams").needsUpdate = true;
+        runtime.box.getAttribute("uvData").needsUpdate = true;
+        runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
       clearGrid() {
         Object.values(state.grid).forEach((col) => col.clear());
       },
       create(def) {
+        if (state.runtime.byKey[def.key]) {
+          state.remove(def.key);
+        }
+
         const meta = (def.meta ?? {}) as Meta<Geomorph.GmRoomId>;
         meta.decor = true;
         meta.decorKey = def.key;
@@ -220,9 +232,8 @@ export default function Decor() {
             };
             break;
           }
-          default: {
+          default:
             throw new ExhaustiveError(def);
-          }
         }
 
         if (state.ensureGmRoomId(d) !== null) {
@@ -231,7 +242,10 @@ export default function Decor() {
 
         state.byKey[d.key] = d;
         state.runtime.byKey[d.key] = d;
-        if (state.hasInstance(d)) state.addRuntimeInstance(d);
+
+        if (state.hasInstance(d)) {
+          state.addRuntimeInstance(d);
+        }
 
         return d;
       },
@@ -277,18 +291,21 @@ export default function Decor() {
         if (!inst) return;
 
         for (const decorKey of decorKeys) {
-          if (!runtime.byKey[decorKey]) {
+          const d = runtime.byKey[decorKey];
+          if (!d) {
             if (decorKey in state.byKey) warn(`cannot remove static decor: ${decorKey}`);
             continue;
           }
 
+          removeFromDecorGrid(d, state.grid);
           delete runtime.byKey[decorKey];
           delete state.byKey[decorKey];
+
           const id = runtime.decorKeyToId[decorKey];
-          delete runtime.decorKeyToId[decorKey];
           if (id === undefined) {
             continue;
           }
+          delete runtime.decorKeyToId[decorKey];
 
           const lastId = runtime.count - 1;
           if (id !== lastId) {
