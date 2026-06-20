@@ -49,6 +49,16 @@ export function createXyQuad() {
   return unitXyQuad.clone();
 }
 
+/** Two-sided XZ quad: both face windings in one geometry, use with FrontSide material. */
+export function createTwoSidedXzQuad() {
+  return unitTwoSidedXzQuad.clone();
+}
+
+/** Two-sided XY quad: both face windings in one geometry, use with FrontSide material. */
+export function createTwoSidedXyQuad() {
+  return unitTwoSidedXyQuad.clone();
+}
+
 const unitXyQuad = new THREE.BufferGeometry();
 unitXyQuad.setAttribute(
   "position",
@@ -86,6 +96,54 @@ unitXyQuad.setIndex([
   0, 3, 2,
 ]);
 
+// Vertices 0-3: front (+Y normal). Vertices 4-7: back (-Y normal), same positions.
+// Back winding [4,5,6, 4,6,7] produces cross-product pointing -Y.
+const unitTwoSidedXzQuad = new THREE.BufferGeometry();
+// biome-ignore format: meaningful newlines
+unitTwoSidedXzQuad.setAttribute("position", new THREE.Float32BufferAttribute([
+  0,0,0, 1,0,0, 1,0,1, 0,0,1,
+  0,0,0, 1,0,0, 1,0,1, 0,0,1,
+], 3));
+// biome-ignore format: meaningful newlines
+unitTwoSidedXzQuad.setAttribute("normal", new THREE.Float32BufferAttribute([
+   0,1,0,  0,1,0,  0,1,0,  0,1,0,
+   0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0,
+], 3));
+// biome-ignore format: meaningful newlines
+unitTwoSidedXzQuad.setAttribute("uv", new THREE.Float32BufferAttribute([
+  0,0, 1,0, 1,1, 0,1,
+  0,0, 1,0, 1,1, 0,1,
+], 2));
+// biome-ignore format: meaningful newlines
+unitTwoSidedXzQuad.setIndex([
+  0,2,1, 0,3,2,  // front (CCW from +Y)
+  4,5,6, 4,6,7,  // back  (CW from +Y)
+]);
+
+// Vertices 0-3: front (+Z normal). Vertices 4-7: back (-Z normal), same positions.
+// Back winding [4,6,5, 4,7,6] produces cross-product pointing -Z.
+const unitTwoSidedXyQuad = new THREE.BufferGeometry();
+// biome-ignore format: meaningful newlines
+unitTwoSidedXyQuad.setAttribute("position", new THREE.Float32BufferAttribute([
+  0,0,0, 1,0,0, 1,1,0, 0,1,0,
+  0,0,0, 1,0,0, 1,1,0, 0,1,0,
+], 3));
+// biome-ignore format: meaningful newlines
+unitTwoSidedXyQuad.setAttribute("normal", new THREE.Float32BufferAttribute([
+  0,0,1,  0,0,1,  0,0,1,  0,0,1,
+  0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,
+], 3));
+// biome-ignore format: meaningful newlines
+unitTwoSidedXyQuad.setAttribute("uv", new THREE.Float32BufferAttribute([
+  0,0, 1,0, 1,1, 0,1,
+  0,0, 1,0, 1,1, 0,1,
+], 2));
+// biome-ignore format: meaningful newlines
+unitTwoSidedXyQuad.setIndex([
+  0,2,1, 0,3,2,  // front: geometric normal -Z (CCW from -Z)
+  4,5,6, 4,6,7,  // back:  geometric normal +Z (CCW from +Z)
+]);
+
 /** Embed a 2D affine transform into three.js XZ plane. */
 export function embedXZMat4(
   transform: Geom.AffineTransform,
@@ -93,10 +151,10 @@ export function embedXZMat4(
 ) {
   // biome-ignore format: meaningful newlines
   return (mat4 ?? new THREE.Matrix4()).set(
-    transform.a, 0,            transform.c, transform.e,
-    0,            yScale ?? 1,  0,            yHeight ?? 0,
-    transform.b, 0,            transform.d, transform.f,
-    0,            0,            0,             1
+    transform.a, 0,           transform.c, transform.e,
+    0,           yScale ?? 1, 0,           yHeight ?? 0,
+    transform.b, 0,           transform.d, transform.f,
+    0,           0,           0,           1
   );
 }
 
@@ -104,9 +162,9 @@ export function createDoorBox() {
   const g = new THREE.BoxGeometry(1, 1, 1);
   // Merge the 4 edge faces (+x -x +y -y, indices 0–23) into one group → 3 draw calls instead of 6
   g.groups = [
-    { start: 0, count: 24, materialIndex: 0 },  // edges
-    { start: 24, count: 6, materialIndex: 1 },  // +z front
-    { start: 30, count: 6, materialIndex: 2 },  // -z back
+    { start: 0, count: 24, materialIndex: 0 }, // edges
+    { start: 24, count: 6, materialIndex: 1 }, // +z front
+    { start: 30, count: 6, materialIndex: 2 }, // -z back
   ];
   g.setAttribute("openRatio", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
   g.setAttribute("slideSign", new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));

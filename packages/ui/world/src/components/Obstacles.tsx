@@ -27,7 +27,7 @@ import {
 import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
-import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
+import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -39,8 +39,8 @@ export default function Obstacles(_props: Props) {
     (): State => ({
       ...({} as Pick<State, "inst" | "skirtInst">),
 
-      quad: createXzQuad(),
-      skirtQuad: createXyQuad(),
+      quad: createTwoSidedXzQuad(), // 2-sided handles flipped obstacles
+      skirtQuad: createTwoSidedXyQuad(),
 
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
@@ -281,7 +281,9 @@ export default function Obstacles(_props: Props) {
   }, [w.mapKey, w.hash, skirtLightMeta, state.images, w.decor.ready]);
 
   const skirtMaterial = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
+    const mat = new THREE.MeshBasicNodeMaterial({
+      side: THREE.FrontSide, // 1 draw call
+    });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
@@ -307,7 +309,7 @@ export default function Obstacles(_props: Props) {
 
         <meshStandardNodeMaterial
           key={shaderMeta.uid}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide} // 1 draw call
           transparent
           alphaTest={0.5}
           colorNode={shaderMeta.colorNode}
