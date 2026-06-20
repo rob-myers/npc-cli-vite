@@ -122,7 +122,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             return { ...pick, door: true, ...decoded };
           }
           case "decor": {
-            const decoded = w.decor.decodeInstanceId(pick.instanceId);
+            const decoded = w.decor.decodeStaticInstanceId(pick.instanceId);
             if (!decoded) return null;
             return { ...pick, decor: true, ...decoded };
           }
@@ -529,7 +529,8 @@ export type Picked = {
   | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
   | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
   | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
-  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeInstanceId"]>)
+  // static and runtime decor have same decode format
+  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
