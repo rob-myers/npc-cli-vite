@@ -1,6 +1,29 @@
 /**
  * @param {JshCli.RunArg} ct
  */
+export function demo_add_colliders(ct) {
+  ct.w.e.addColliders(
+    {
+      colliderKey: "test-decor-circle",
+      type: "circle",
+      x: 2.5,
+      y: 2.5,
+      radius: 1.5,
+    },
+    {
+      colliderKey: "test-decor-rect",
+      type: "rect",
+      x: 3,
+      y: 7.5,
+      width: 2 * 1.5,
+      height: 1 * 1.5,
+    },
+  );
+}
+
+/**
+ * @param {JshCli.RunArg} ct
+ */
 export function demo_add_decor(ct) {
   const _decorCircle = ct.w.decor.create({
     type: "circle",

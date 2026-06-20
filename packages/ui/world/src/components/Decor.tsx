@@ -134,12 +134,10 @@ export default function Decor() {
             break;
           }
           case "quad": {
-            /**
-             * Decor quads MUST have a respective "entry" i.e. decor image,
-             * providing dimensions via decor manifest.json original{Width,Height} (sgu).
-             */
             const transform = def.transform ?? [1, 0, 0, 1, 0, 0];
 
+            // Decor quads MUST have a respective decor image providing original
+            // dimensions via decor manifest.json original{Width,Height} in sgu.
             let entry = w.sheets.decor[def.img];
             if (!entry) {
               // throw Error(`decor.img not in w.sheets.decor: "${def.img}"`);
@@ -189,6 +187,7 @@ export default function Decor() {
             break;
           }
           case "point": {
+            // points don't need an image
             if (typeof def.img === "string" && !(def.img in w.sheets.decor)) {
               warn(`w.sheets.decor lacks def.img: ${def.img}`);
               def.img = decorKeyFallback;

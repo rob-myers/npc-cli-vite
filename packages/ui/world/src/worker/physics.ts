@@ -191,11 +191,7 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
 
   restoreNpcs(msg.npcs);
 
-  // 🚧
   createGmRayCastSystems(msg.rayCast);
-
-  // 🚧
-  // createGmColliders();
 
   // // fire initial collisions
   // stepWorld();

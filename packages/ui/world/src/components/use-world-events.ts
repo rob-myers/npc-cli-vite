@@ -24,6 +24,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       pendingRaycast: {},
       roomToNpcs: [],
 
+      addColliders(...colliders) {
+        w.worker.worker.postMessage({
+          type: "add-physics-colliders",
+          colliders,
+        } satisfies WW.MsgToWorker);
+      },
       canCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
         if (closeNpcs === undefined) {
@@ -550,6 +556,7 @@ export type State = {
    */
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
+  addColliders(...colliders: WW.PhysicsColliderDef[]): void;
   canCloseDoor(door: Geomorph.DoorState): boolean;
   /**
    * - When an npc is moving its destination should be inside a room.

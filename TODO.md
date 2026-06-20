@@ -57,7 +57,10 @@ w decor.byKey.test-decor-point
         - could pre-render circle/rects but won't like as good
         - for the moment we'll accept the complexity
   - 🚧 can create colliders from decor rect/circle
-    - can manually create a collider
+    - ✅ can manually create a collider
+      - `demo_add_colliders`
+    - ✅ improve debug colliders
+    - 🚧 mismatch between decor/collider rect
     - hook into `w.decor.create`
     - verify
 
