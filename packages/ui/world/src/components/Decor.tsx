@@ -894,63 +894,60 @@ function buildShapeOutputNode(
   texPickOutput: THREE.Node,
   objectPick: THREE.UniformNode<"float", number>,
 ) {
-  const shapeParamsAttr = attribute<"vec3">("shapeParams", "vec3");
-  const flatKindAttr = shapeParamsAttr.x;
-  const shapeDimsAttr = vec2(shapeParamsAttr.y, shapeParamsAttr.z);
+  const sp = attribute<"vec3">("shapeParams", "vec3");
+  const isShape = sp.x.greaterThan(1.5);
+  const isCircle = sp.x.greaterThan(2.5);
+  const dims = vec2(sp.y, sp.z);
 
-  const isShape = flatKindAttr.greaterThan(1.5);
-  const isCircle = flatKindAttr.greaterThan(2.5);
   const uvCoord = uv();
-
-  // border detection
-  const BORDER_W = uniform(0.02);
-  const borderFracX = BORDER_W.div(shapeDimsAttr.x);
-  const borderFracY = BORDER_W.div(shapeDimsAttr.y);
-  const edgeDistX = tslMin(uvCoord.x, uvCoord.x.oneMinus());
-  const edgeDistY = tslMin(uvCoord.y, uvCoord.y.oneMinus());
-  const inRectBorder = edgeDistX.lessThan(borderFracX).or(edgeDistY.lessThan(borderFracY));
-  // manual dist to avoid tslLength return-type ambiguity
+  const edgeX = tslMin(uvCoord.x, uvCoord.x.oneMinus());
+  const edgeY = tslMin(uvCoord.y, uvCoord.y.oneMinus());
   const dx = uvCoord.x.sub(0.5);
   const dy = uvCoord.y.sub(0.5);
   const dist = dx.mul(dx).add(dy.mul(dy)).sqrt();
-  const borderInset = float(0.5).sub(BORDER_W.div(shapeDimsAttr.x.mul(2)));
-  const inCircleBorder = dist.lessThan(float(0.5)).and(dist.greaterThan(borderInset));
-  const inBorder = (select as SelectAnyType)(isCircle, inCircleBorder, inRectBorder) as THREE.Node<"bool">;
 
-  // dashes — world-space parameterisation
+  const BORDER_W = uniform(0.02);
   const DASH_PERIOD = uniform(0.25);
-  const DASH_DUTY = uniform(0.5);
-  const nearHoriz = edgeDistY.greaterThan(edgeDistX);
-  const worldParam = (select as SelectAnyType)(
-    nearHoriz,
-    uvCoord.y.mul(shapeDimsAttr.y),
-    uvCoord.x.mul(shapeDimsAttr.x),
+
+  const inBorder = (select as SelectAnyType)(
+    isCircle,
+    dist.greaterThan(float(0.5).sub(BORDER_W.div(dims.x.mul(2)))).and(dist.lessThan(float(0.5))),
+    edgeX.lessThan(BORDER_W.div(dims.x)).or(edgeY.lessThan(BORDER_W.div(dims.y))),
+  ) as THREE.Node<"bool">;
+
+  const rectParam = (select as SelectAnyType)(
+    edgeY.greaterThan(edgeX),
+    uvCoord.y.mul(dims.y),
+    uvCoord.x.mul(dims.x),
   ) as THREE.Node<"float">;
-  const rectDash = fract(worldParam.div(DASH_PERIOD)).lessThan(DASH_DUTY);
-  const t = atan(uvCoord.y.sub(0.5), uvCoord.x.sub(0.5))
-    .add(Math.PI)
-    .div(Math.PI * 2);
-  const circDash = fract(t.mul(shapeDimsAttr.x.mul(Math.PI * 2).div(DASH_PERIOD))).lessThan(DASH_DUTY);
-  const inDash = (select as SelectAnyType)(isCircle, circDash, rectDash) as THREE.Node<"bool">;
-
-  // solid fill for pick hit area: circle=disk, rect=always true
-  const inCircleFill = dist.lessThan(float(0.5));
-  const alwaysTrue = float(1).greaterThan(float(0));
-  const inFill = (select as SelectAnyType)(isCircle, inCircleFill, alwaysTrue) as THREE.Node<"bool">;
-
-  // pick color encoding (typeId in R, instanceIndex in G+B)
-  const typeR = float(typeId / 255);
-  const instG = instanceIndex.shiftRight(8).bitAnd(0xff).toFloat().div(255);
-  const instB = instanceIndex.bitAnd(0xff).toFloat().div(255);
-  const pickCol = vec4(typeR, instG, instB, 1);
-  // colorNode=white for shapes → output ≈ instanceColor (set via setColorAt, applied by Three.js pipeline)
-  const instCol = output;
+  const inDash = (select as SelectAnyType)(
+    isCircle,
+    fract(
+      atan(dy, dx)
+        .add(Math.PI)
+        .div(Math.PI * 2)
+        .mul(dims.x.mul(Math.PI * 2).div(DASH_PERIOD)),
+    ).lessThan(0.5),
+    fract(rectParam.div(DASH_PERIOD)).lessThan(0.5),
+  ) as THREE.Node<"bool">;
 
   const isPicking = objectPick.notEqual(0);
-  const dashedBorder = inBorder.and(inDash);
-  const showPixel = (select as SelectAnyType)(isPicking, inFill, dashedBorder) as THREE.Node<"bool">;
-  const colorOut = (select as SelectAnyType)(isPicking, pickCol, instCol) as THREE.Node<"vec4">;
-  const shapeOutput = (select as SelectAnyType)(showPixel, colorOut, vec4(0, 0, 0, 0));
+  const inFill = (select as SelectAnyType)(
+    isCircle,
+    dist.lessThan(float(0.5)),
+    float(1).greaterThan(0),
+  ) as THREE.Node<"bool">;
+  const pickCol = vec4(
+    float(typeId / 255),
+    instanceIndex.shiftRight(8).bitAnd(0xff).toFloat().div(255),
+    instanceIndex.bitAnd(0xff).toFloat().div(255),
+    1,
+  );
+  const shapeOutput = (select as SelectAnyType)(
+    (select as SelectAnyType)(isPicking, inFill, inBorder.and(inDash)) as THREE.Node<"bool">,
+    (select as SelectAnyType)(isPicking, pickCol, output),
+    vec4(0, 0, 0, 0),
+  );
 
   return (select as SelectAnyType)(isShape, shapeOutput, texPickOutput);
 }
