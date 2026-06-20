@@ -7,7 +7,7 @@ import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { getLightMetas } from "../service/texture";
+import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -220,9 +220,7 @@ export default function Walls() {
       <instancedMesh
         key={mat.uuid}
         name="walls"
-        ref={state.ref("inst", (mesh) => {
-          mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
-        })}
+        ref={state.ref("inst", bootstrapInstanceColor)}
         args={[state.quad, undefined, wallCount]}
         renderOrder={4}
       >
@@ -236,12 +234,11 @@ export default function Walls() {
           outputNode={mat.outputNode}
         />
       </instancedMesh>
+
       <instancedMesh
         key={`${mat.uuid}-trim`}
         name="wall-ceil-trim"
-        ref={state.ref("instTrim", (mesh) => {
-          mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
-        })}
+        ref={state.ref("instTrim", bootstrapInstanceColor)}
         args={[state.quad, trimMat, trimCount]}
         renderOrder={4}
       />
