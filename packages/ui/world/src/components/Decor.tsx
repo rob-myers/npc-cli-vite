@@ -42,7 +42,6 @@ export default function Decor() {
 
   const state = useStateRef(
     (): State => ({
-      box: createUnitBox(),
       byKey: {},
       gdKeyToInstanceId: {}, // door related
       grid: {},
@@ -51,19 +50,22 @@ export default function Decor() {
       ready: false, // also false briefly after hmr
 
       inst: null as any,
-      materials: [],
-      runtimeMaterials: [],
-      uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
-      shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
+      static: {
+        box: createUnitBox(),
+        materials: [],
+        uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
+        shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
+      },
 
       instRuntime: null as any,
       runtime: {
         box: createUnitBox(),
         byKey: {},
-        uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
+        materials: [],
         shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
         decorKeyToId: {} as Record<string, number>,
         idToDecorKey: [] as string[],
+        uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
         count: 0,
       },
 
@@ -77,7 +79,7 @@ export default function Decor() {
       },
       addRuntimeInstance(decor) {
         const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.materials.length === 0) return;
+        if (!inst || !w.sheets || state.runtime.materials.length === 0) return;
         const id = state.runtime.count;
         if (id >= MAX_RUNTIME_DECOR_INSTANCES || !state.writeRuntimeSlot(id, decor)) return;
         state.runtime.decorKeyToId[decor.key] = id;
@@ -312,7 +314,7 @@ export default function Decor() {
       },
       setupRuntimeInstances() {
         const inst = state.instRuntime;
-        if (!inst || !w.sheets || state.runtimeMaterials.length === 0) return;
+        if (!inst || !w.sheets || state.runtime.materials.length === 0) return;
         state.runtime.decorKeyToId = {};
         state.runtime.idToDecorKey = [];
         let id = 0;
@@ -463,7 +465,7 @@ export default function Decor() {
       }
 
       // 3. compute UVs
-      state.uvData.fill(0);
+      state.static.uvData.fill(0);
       state.instanceIdToDecorId.length = 0;
       let uvIdx = 0;
       for (const gm of w.gms) {
@@ -487,7 +489,7 @@ export default function Decor() {
 
           // fix flipped decor; encode texId in integer part of offY
           if (item.det === -1) {
-            state.uvData.set(
+            state.static.uvData.set(
               [
                 (entry.rect.x + entry.rect.width) / dims.width,
                 entry.rect.y / dims.height + entry.sheetId,
@@ -497,7 +499,7 @@ export default function Decor() {
               uvIdx * 4,
             );
           } else {
-            state.uvData.set(
+            state.static.uvData.set(
               [
                 entry.rect.x / dims.width,
                 entry.rect.y / dims.height + entry.sheetId,
@@ -538,7 +540,7 @@ export default function Decor() {
               { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
             ));
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
-            state.shapeParams.set([2, w0, h0], instanceId * 3);
+            state.static.shapeParams.set([2, w0, h0], instanceId * 3);
             state.instanceIdToDecorId[instanceId] = { gmId, decorId };
             instanceId++;
             continue;
@@ -552,7 +554,7 @@ export default function Decor() {
               { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
             ));
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
-            state.shapeParams.set([3, r, r], instanceId * 3);
+            state.static.shapeParams.set([3, r, r], instanceId * 3);
             state.instanceIdToDecorId[instanceId] = { gmId, decorId };
             instanceId++;
             continue;
@@ -616,7 +618,7 @@ export default function Decor() {
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
-          state.shapeParams[instanceId * 3] = decor.type === "point" ? 1 : 0;
+          state.static.shapeParams[instanceId * 3] = decor.type === "point" ? 1 : 0;
           state.instanceIdToDecorId[instanceId] = { gmId, decorId };
           instanceId++;
         }
@@ -741,8 +743,8 @@ export default function Decor() {
     gcTime: 0,
   });
 
-  state.materials = materials?.static ?? state.materials;
-  state.runtimeMaterials = materials?.runtime ?? state.runtimeMaterials;
+  state.static.materials = materials?.static ?? state.static.materials;
+  state.runtime.materials = materials?.runtime ?? state.runtime.materials;
 
   useEffect(() => {
     state.setupRuntimeInstances();
@@ -756,12 +758,16 @@ export default function Decor() {
         args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
-        material={state.materials}
-        visible={state.materials.length > 0}
+        material={state.static.materials}
+        visible={state.static.materials.length > 0}
       >
-        <bufferGeometry attributes={state.box.attributes} index={state.box.index} groups={state.box.groups}>
-          <instancedBufferAttribute attach="attributes-uvData" args={[state.uvData, 4]} />
-          <instancedBufferAttribute attach="attributes-shapeParams" args={[state.shapeParams, 3]} />
+        <bufferGeometry
+          attributes={state.static.box.attributes}
+          index={state.static.box.index}
+          groups={state.static.box.groups}
+        >
+          <instancedBufferAttribute attach="attributes-uvData" args={[state.static.uvData, 4]} />
+          <instancedBufferAttribute attach="attributes-shapeParams" args={[state.static.shapeParams, 3]} />
         </bufferGeometry>
       </instancedMesh>
 
@@ -771,8 +777,8 @@ export default function Decor() {
         args={[undefined, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
-        material={state.runtimeMaterials}
-        visible={state.runtimeMaterials.length > 0}
+        material={state.runtime.materials}
+        visible={state.runtime.materials.length > 0}
       >
         <bufferGeometry
           attributes={state.runtime.box.attributes}
@@ -788,24 +794,26 @@ export default function Decor() {
 }
 
 export type State = {
-  inst: THREE.InstancedMesh;
+  byKey: Record<string, Geomorph.Decor>;
   gdKeyToInstanceId: { [gdKey: string]: number[] };
   instanceIdToDecorId: { gmId: number; decorId: number }[];
   grid: Geomorph.DecorGrid;
   lastHmr: number;
   ready: boolean;
 
-  box: THREE.BufferGeometry;
-  byKey: Record<string, Geomorph.Decor>;
-  materials: THREE.MeshStandardNodeMaterial[];
-  runtimeMaterials: THREE.MeshStandardNodeMaterial[];
-  uvData: Float32Array;
-  shapeParams: Float32Array;
+  inst: THREE.InstancedMesh;
+  static: {
+    box: THREE.BufferGeometry;
+    materials: THREE.MeshStandardNodeMaterial[];
+    uvData: Float32Array;
+    shapeParams: Float32Array;
+  };
 
   instRuntime: THREE.InstancedMesh;
   runtime: {
     byKey: Record<string, Geomorph.Decor>;
     box: THREE.BufferGeometry;
+    materials: THREE.MeshStandardNodeMaterial[];
     uvData: Float32Array;
     shapeParams: Float32Array;
     decorKeyToId: Record<string, number>;
