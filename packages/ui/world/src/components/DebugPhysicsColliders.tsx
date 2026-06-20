@@ -22,7 +22,7 @@ export function DebugPhysicsColliders({
           geometry={cylinderGeometry}
           position={[position.x, colliderHeight / 2, position.z]}
           scale={[userData.radius, colliderHeight, userData.radius]}
-          renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 6}
+          renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
           <meshBasicMaterial
             color={toColliderMeta[parsedKey[0]]?.color ?? "white"}
