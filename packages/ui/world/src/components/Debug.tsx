@@ -39,6 +39,13 @@ export function Debug() {
     return mat;
   }, []);
 
+  // useFrame((root) => {
+  //   const gl = root.gl as unknown as THREE.WebGPURenderer;
+  //   gl.info.autoReset = false;
+  //   console.log(gl.info.render);
+  //   gl.info.reset();
+  // });
+
   const state = useStateRef(
     (): State => ({
       arrowGeo: createArrowGeo(),

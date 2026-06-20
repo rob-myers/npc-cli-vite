@@ -49,10 +49,13 @@ w decor.byKey.test-decor-point
     - ✅ bug when `remove test-decor-rect` when `demo_add_decor` twice
       - auto remove extant on create
       - remove decor also removes from grid
-    - 🚧 simplify code in Decor
+    - ✅ simplify code in Decor
       - ✅ can tint static or runtime decor
         - `w e.toggleLock g0d23`
         - `w decor.tintDecor blue test-decor-rect`
+      - ✅ simplify shader code
+        - could pre-render circle/rects but won't like as good
+        - for the moment we'll accept the complexity
   - can create colliders from decor rect/circle
 
 - ❌ npc has selector quad
