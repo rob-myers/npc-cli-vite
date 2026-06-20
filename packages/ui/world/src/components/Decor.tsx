@@ -375,15 +375,15 @@ export default function Decor() {
       },
       writeRuntimeSlot(id, decor) {
         if (decor.type === "rect") {
-          const w0 = decor.points[0].distanceTo(decor.points[1]);
-          const h0 = decor.points[1].distanceTo(decor.points[2]);
+          const h0 = decor.points[0].distanceTo(decor.points[1]);
+          const w0 = decor.points[1].distanceTo(decor.points[2]);
           const cos = Math.cos(decor.angle),
             sin = Math.sin(decor.angle);
           //biome-ignore format: preserve newlines
           state.instRuntime.setMatrixAt(id, embedXZMat4(
             { a: w0*cos, b: w0*sin, c: -h0*sin, d: h0*cos,
-              e: decor.center.x - w0/2*cos + h0/2*sin,
-              f: decor.center.y - w0/2*sin - h0/2*cos },
+              e: decor.center.x - w0*cos + h0*sin,
+              f: decor.center.y - w0*sin - h0*cos },
             { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
           ));
           state.instRuntime.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
@@ -401,6 +401,7 @@ export default function Decor() {
           state.runtime.shapeParams.set([3, r, r], id * 3);
           return true;
         }
+
         const imgKey = state.getDecorImgKey(decor);
         const entry = w.sheets?.decor[imgKey];
         const dims = w.sheets?.decorSheetDims[entry.sheetId];
