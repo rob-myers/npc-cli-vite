@@ -495,3 +495,10 @@ export type SelectFloatType = (
  * >  error TS2590: Expression produces a union type that is too complex to represent.
  */
 export type SelectAnyType = (x: THREE.Node<"bool">, y: THREE.Node, z: THREE.Node) => THREE.Node;
+
+export function bootstrapInstanceColor(mesh: THREE.InstancedMesh | null) {
+  if (mesh) {
+    mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3);
+    mesh.instanceColor.needsUpdate = true;
+  }
+}

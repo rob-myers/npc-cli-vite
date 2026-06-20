@@ -29,7 +29,7 @@ import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
 import { createXyQuad, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { getLightMetas } from "../service/texture";
+import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -293,9 +293,7 @@ export default function Obstacles(_props: Props) {
     <>
       <instancedMesh
         name="obstacles"
-        ref={state.ref("inst", (mesh) => {
-          mesh && (mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3));
-        })}
+        ref={state.ref("inst", bootstrapInstanceColor)}
         args={[undefined, undefined, MAX_OBSTACLE_QUAD_INSTANCES]}
         frustumCulled={false}
         position={[0, 0.001, 0]}
