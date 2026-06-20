@@ -390,33 +390,47 @@ export function WorldMenu() {
                       </div>
                     )}
 
-                    <button
-                      type="button"
-                      className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        w.setNextPending({ obstacles: true });
-                        try {
-                          const res = await fetch("/api/gen-starship-sheets", {
-                            method: "POST",
-                          });
-                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                          await queryClientApi.queryClient.invalidateQueries({
-                            queryKey: [...w.worldQueryPrefix, "sheets"],
-                          });
-                          await queryClientApi.queryClient.invalidateQueries({
-                            queryKey: [...w.worldQueryPrefix, "obstacle-images"],
-                          });
-                        } catch (err) {
-                          console.error("Failed to update obstacles:", err);
-                        } finally {
-                          delete w.pending["obstacles"];
-                          w.update();
-                        }
-                      }}
-                    >
-                      update obstacles
-                    </button>
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          w.setNextPending({ obstacles: true });
+                          try {
+                            const res = await fetch("/api/gen-starship-sheets", {
+                              method: "POST",
+                            });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            await queryClientApi.queryClient.invalidateQueries({
+                              queryKey: [...w.worldQueryPrefix, "sheets"],
+                            });
+                            await queryClientApi.queryClient.invalidateQueries({
+                              queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+                            });
+                          } catch (err) {
+                            console.error("Failed to update obstacles:", err);
+                          } finally {
+                            delete w.pending["obstacles"];
+                            w.update();
+                          }
+                        }}
+                      >
+                        update obstacles
+                      </button>
+
+                      <button
+                        type="button"
+                        className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          w.debug.logGPUInfo = true;
+                          w.view.forceUpdate();
+                        }}
+                      >
+                        log gpu info
+                      </button>
+                    </div>
                   </>
                 )}
 
