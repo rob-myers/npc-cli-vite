@@ -45,7 +45,7 @@ export default function Decor() {
       byKey: {},
       grid: {},
       lastHmr: 0,
-      ready: false, // also false briefly after hmr
+      ready: false,
 
       inst: null as any,
       static: {
@@ -174,7 +174,8 @@ export default function Decor() {
             break;
           }
           case "rect": {
-            const poly = geomService.angledRectToPoly({ baseRect: tmpRect.setFromJson(def), angle: def.angle ?? 0 });
+            const baseRect = tmpRect.setFromJson(def);
+            const poly = geomService.angledRectToPoly({ baseRect, angle: def.angle ?? 0 });
             d = {
               type: "rect",
               key: def.key,
@@ -382,8 +383,8 @@ export default function Decor() {
           //biome-ignore format: preserve newlines
           state.instRuntime.setMatrixAt(id, embedXZMat4(
             { a: w0*cos, b: w0*sin, c: -h0*sin, d: h0*cos,
-              e: decor.center.x - w0*cos + h0*sin,
-              f: decor.center.y - w0*sin - h0*cos },
+              e: decor.center.x - w0/2*cos + h0/2*sin,
+              f: decor.center.y - w0/2*sin - h0/2*cos },
             { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
           ));
           state.instRuntime.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
@@ -817,6 +818,7 @@ export type State = {
   byKey: Record<string, Geomorph.Decor>;
   grid: Geomorph.DecorGrid;
   lastHmr: number;
+  /** Also false briefly after HMR */
   ready: boolean;
 
   inst: THREE.InstancedMesh;

@@ -60,9 +60,15 @@ w decor.byKey.test-decor-point
     - ✅ can manually create a collider
       - `demo_add_colliders`
     - ✅ improve debug colliders
-    - 🚧 mismatch between decor/collider rect
+    - ✅ decor rects are being rendered wrong
+    - 🚧 runtime colliders should survive rebuild world
+      - 🔔 saving physics.ts loses worker.store
+      - 🔔 hot reload store trick does not work maybe because worker "self" destroyed?
+      - 🚧 instead, send the runtime decor defs in "rebuild payload"
+        - ✅ aligned `demo_add_decor` and `demo_add_colliders` preserves colliders on hmr
+        - 🚧 align "colliders" with "decor" i.e. rect/circle collider created only via decor
+    - verify events
     - hook into `w.decor.create`
-    - verify
 
 - ✅ can log draw calls from WorldMenu
 - ✅ reduce draw calls

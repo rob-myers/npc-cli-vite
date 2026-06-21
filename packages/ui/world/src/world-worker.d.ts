@@ -39,6 +39,7 @@ declare namespace WW {
         npcs: NpcDef[];
         doors: PhysicsDoorDef[];
         rayCast: RaycastSetupData;
+        runtimeColliderDefs: WW.PhysicsColliderDef[];
       }
     | {
         type: "get-raycast";

@@ -3,7 +3,12 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import { helper } from "../service/helper";
 import { parsePhysicsBodyKey } from "../service/physics-bijection";
-import { getNavmeshPayload, getPhysicsDoorData, getRaycastPayload } from "../service/worker-data";
+import {
+  getNavmeshPayload,
+  getPhysicsDoorsPayload,
+  getRaycastPayload,
+  getRuntimeCollidersPayload,
+} from "../service/worker-data";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -127,8 +132,9 @@ export default function WorldWorker() {
         npcKey: npc.key,
         position: npc.position,
       })),
-      doors: getPhysicsDoorData(w.gms),
+      doors: getPhysicsDoorsPayload(w.gms),
       rayCast: getRaycastPayload(w.gms),
+      runtimeColliderDefs: getRuntimeCollidersPayload(w.decor.runtime?.byKey ?? {}),
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
