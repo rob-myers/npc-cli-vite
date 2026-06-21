@@ -61,7 +61,7 @@ w decor.byKey.test-decor-point
       - `demo_add_colliders`
     - ✅ improve debug colliders
     - ✅ decor rects are being rendered wrong
-    - 🚧 runtime colliders should survive rebuild world
+    - ✅ runtime colliders should survive rebuild world
       - 🔔 saving physics.ts loses worker.store
       - 🔔 hot reload store trick does not work maybe because worker "self" destroyed?
       - ✅ instead, send the runtime decor defs in "rebuild payload"
@@ -69,7 +69,7 @@ w decor.byKey.test-decor-point
         - ✅ align "colliders" with "decor" i.e. rect/circle collider created only via decor
           - w.decor.create
           - w.decor.remove
-      - 🚧 clean away old approach
+      - ✅ clean away old approach
     - ✅ hook into `w.decor.create`
     - verify events
 
@@ -85,6 +85,7 @@ w decor.byKey.test-decor-point
 - ✅ support `look`
 
 - go thru skins
+  - fix medic-0 foot texturing
   - improve general-0
   - add a couple more
 - remove shuffle-back animation

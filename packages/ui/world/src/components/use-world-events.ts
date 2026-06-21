@@ -24,12 +24,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       pendingRaycast: {},
       roomToNpcs: [],
 
-      addColliders(...colliders) {
-        w.worker.worker.postMessage({
-          type: "add-physics-colliders",
-          colliders,
-        } satisfies WW.MsgToWorker);
-      },
       canCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
         if (closeNpcs === undefined) {
@@ -65,6 +59,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return firstBadDoor ?? null;
       },
+      findGmIdContaining(input) {
+        if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
+          return input.meta.gmId;
+        }
+        return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
+      },
       findPath(srcGrKey, dstGrKey, { npcKey } = {}) {
         return w.gmRoomGraph.findPath(srcGrKey, dstGrKey, {
           setWeights: npcKey
@@ -77,12 +77,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               }
             : undefined,
         });
-      },
-      findGmIdContaining(input) {
-        if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
-          return input.meta.gmId;
-        }
-        return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
       },
       findRoomContaining(input, includeDoors = false) {
         if (helper.isGmRoomId(input.meta) === true) {
@@ -556,7 +550,6 @@ export type State = {
    */
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
-  addColliders(...colliders: WW.PhysicsColliderDef[]): void;
   canCloseDoor(door: Geomorph.DoorState): boolean;
   /**
    * - When an npc is moving its destination should be inside a room.
