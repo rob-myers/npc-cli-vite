@@ -11,6 +11,10 @@ const sguToWorldScale = (1 / 60) * geomorphGridMeters;
 const wallOutset = wallOutsetSgu * sguToWorldScale;
 const unitYAxis = { x: 0, y: 1, z: 0 } as const;
 
+export function getColliderDefBodyKey(def: Pick<WW.PhysicsColliderDef, "type" | "colliderKey">): WW.PhysicsBodyKey {
+  return `${def.type} ${def.colliderKey}`;
+}
+
 /**
  * - "nearby" door sensors: one per door.
  * - "inside" door sensors: one per door.
@@ -111,6 +115,35 @@ export function createRigidBody({
   return rigidBody as RAPIER.RigidBody & { userData: WW.PhysicsUserData };
 }
 
+export function createRuntimeCollider(def: WW.PhysicsColliderDef) {
+  const { colliderKey, x, y: z, angle, userData, ...geomDef } = def;
+  const bodyKey = getColliderDefBodyKey(def);
+
+  return createRigidBody({
+    type: RAPIER.RigidBodyType.Fixed,
+    geomDef,
+    // place static collider on floor with height `wallHeight`
+    position:
+      geomDef.type === "circle"
+        ? { x, y: wallHeight / 2, z }
+        : // convert rect top-left to center
+          {
+            x: x + (geomDef.width / 2) * Math.cos(angle ?? 0) - (geomDef.height / 2) * Math.sin(angle ?? 0),
+            y: wallHeight / 2,
+            z: z + (geomDef.width / 2) * Math.sin(angle ?? 0) + (geomDef.height / 2) * Math.cos(angle ?? 0),
+          },
+    angle,
+    userData: {
+      ...(geomDef.type === "circle"
+        ? { type: "cylinder", radius: geomDef.radius }
+        : { type: "cuboid", width: geomDef.width, depth: geomDef.height, angle: angle ?? 0 }),
+      bodyKey,
+      bodyUid: addBodyKeyUidRelation(bodyKey, workerStore.getState()),
+      custom: userData,
+    },
+  });
+}
+
 /**
  * Assumes axis is normalized
  * @source https://github.com/mrdoob/three.js/blob/c3f685f49d7a747397d44b8f9fedd4fcec792fa7/src/math/Quaternion.js#L275
@@ -147,6 +180,12 @@ function restoreNpcs(npcs: WW.NpcDef[]) {
         radius: state.agentRadius,
       },
     });
+  }
+}
+
+function restoreRuntimeColliders(defs: WW.PhysicsColliderDef[]) {
+  for (const runtimeColliderDef of defs) {
+    createRuntimeCollider(runtimeColliderDef);
   }
 }
 
@@ -193,7 +232,9 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
 
   createGmRayCastSystems(msg.rayCast);
 
-  // // fire initial collisions
+  restoreRuntimeColliders(msg.runtimeColliderDefs);
+
+  // fire initial collisions
   // stepWorld();
 }
 

@@ -4,7 +4,14 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
 import { navForFloorDraw } from "./nav-util";
-import { createRigidBody, sendPhysicsDebugData, setupOrRebuildWorld, stepWorld, wallHeight } from "./physics";
+import {
+  createRigidBody,
+  createRuntimeCollider,
+  getColliderDefBodyKey,
+  sendPhysicsDebugData,
+  setupOrRebuildWorld,
+  stepWorld,
+} from "./physics";
 import { sendRaycastResult } from "./ray-cast";
 import { workerStore } from "./worker.store";
 
@@ -17,30 +24,15 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
 
   switch (msg.type) {
     case "add-physics-colliders": {
-      for (const { colliderKey, x, y: z, angle, userData, ...geomDef } of msg.colliders) {
-        const bodyKey: WW.PhysicsBodyKey = `${geomDef.type} ${colliderKey}`;
-
+      for (const colliderDef of msg.colliders) {
+        const bodyKey = getColliderDefBodyKey(colliderDef);
         if (bodyKey in state.bodyKeyToBody) {
           warn(`🤖 worker: ${msg.type}: cannot re-add body: ${bodyKey}`);
           break;
         }
-
-        const _body = createRigidBody({
-          type: RAPIER.RigidBodyType.Fixed,
-          geomDef,
-          // place static collider on floor with height `wallHeight`
-          position: { x, y: wallHeight / 2, z },
-          angle,
-          userData: {
-            ...(geomDef.type === "circle"
-              ? { type: "cylinder", radius: geomDef.radius }
-              : { type: "cuboid", width: geomDef.width, depth: geomDef.height, angle: angle ?? 0 }),
-            bodyKey,
-            bodyUid: addBodyKeyUidRelation(bodyKey, state),
-            custom: userData,
-          },
-        });
+        const _body = createRuntimeCollider(colliderDef);
       }
+
       break;
     }
     case "add-physics-npcs": {
@@ -92,14 +84,15 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     case "remove-physics-bodies":
     case "remove-physics-colliders": {
       if (msg.type === "remove-physics-colliders") {
-        for (const bodyKey of msg.colliders.map((c) => `${c.type} ${c.colliderKey}` as const)) {
+        for (const bodyKey of msg.colliders.map((c) => getColliderDefBodyKey(c))) {
           const body = state.bodyKeyToBody.get(bodyKey);
-          if (body !== undefined) {
-            state.bodyHandleToKey.delete(body.handle);
-            state.bodyKeyToBody.delete(bodyKey);
-            state.bodyKeyToCollider.delete(bodyKey);
-            state.world.removeRigidBody(body);
+          if (body === undefined) {
+            continue;
           }
+          state.bodyHandleToKey.delete(body.handle);
+          state.bodyKeyToBody.delete(bodyKey);
+          state.bodyKeyToCollider.delete(bodyKey);
+          state.world.removeRigidBody(body);
         }
         return;
       }
@@ -153,7 +146,6 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     }
     case "setup-physics": {
       await setupOrRebuildWorld(msg);
-      // console.log(msg);
       self.postMessage({ type: "world-setup-response" } satisfies WW.MsgFromWorker);
       break;
     }

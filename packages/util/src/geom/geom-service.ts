@@ -14,7 +14,7 @@ class GeomService {
     poly.translate(-input.baseRect.x, -input.baseRect.y);
     poly.applyMatrix(new Mat().setRotation(input.angle));
     poly.translate(input.baseRect.x, input.baseRect.y);
-    return poly;
+    return poly.fixOrientation(); // for inverse polyToAngledRect
   }
 
   /**
