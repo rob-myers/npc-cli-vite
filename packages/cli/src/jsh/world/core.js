@@ -23,6 +23,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
  * events /picked/
  * events 'e => e.key === "picked"'
  * events where:'e => e.key === "picked"'
+ * events /-collider/ | map meta
  * ```
  * @template {JshCli.Event} [T=JshCli.Event]
  * @param {JshCli.RunArg} ct

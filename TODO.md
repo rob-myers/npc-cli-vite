@@ -34,7 +34,7 @@ w decor.byKey.test-decor-point
   - can remove custom decor
     - ❌ track gaps
 
-- 🚧 runtime decor
+- ✅ runtime decor
   - ✅ render runtime decor as separate instancedMesh
     - ✅ can remove `w decor.remove test-decor-point`
     - ❌ remove def.{x,y} and only use def.transform
@@ -44,7 +44,7 @@ w decor.byKey.test-decor-point
   - ✅ more explicit hmr i.e. recompute gmRoomId
   - ✅ shell function for removing runtime decor
     - `remove` also replaces `clear`
-  - 🚧 show static/runtime decor rect/circle when meta.shown
+  - ✅ show static/runtime decor rect/circle when meta.shown
     - ✅ fix initially white runtime decor rect/circle (saving Decor changes to green)
     - ✅ bug when `remove test-decor-rect` when `demo_add_decor` twice
       - auto remove extant on create
@@ -56,7 +56,7 @@ w decor.byKey.test-decor-point
       - ✅ simplify shader code
         - could pre-render circle/rects but won't like as good
         - for the moment we'll accept the complexity
-  - 🚧 can create colliders from decor rect/circle
+  - ✅ can create colliders from decor rect/circle
     - ✅ can manually create a collider
       - `demo_add_colliders`
     - ✅ improve debug colliders
@@ -71,7 +71,8 @@ w decor.byKey.test-decor-point
           - w.decor.remove
       - ✅ clean away old approach
     - ✅ hook into `w.decor.create`
-    - verify events
+    - ✅ verify events
+      - `events /-collider/ | map meta`
 
 - ✅ can log draw calls from WorldMenu
 - ✅ reduce draw calls

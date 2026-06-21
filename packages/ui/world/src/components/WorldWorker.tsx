@@ -23,16 +23,26 @@ export default function WorldWorker() {
       handlePhysicsCollision(npcKey, otherKey, isEnter) {
         const [type, subKey] = parsePhysicsBodyKey(otherKey);
 
-        if (type !== "npc") {
+        if (type === "npc") {
+          return warn(`${"handlePhysicsCollision"}: unexpected otherKey: "${otherKey}"`);
+        }
+
+        if (type === "nearby" || type === "inside") {
+          const door = w.door.byKey[subKey];
           w.events.next({
             key: isEnter === true ? "enter-collider" : "exit-collider",
             npcKey,
-            ...(type === "nearby" || type === "inside"
-              ? { type, ...helper.getGmDoorId(subKey) }
-              : { type, decorKey: subKey }),
+            type,
+            meta: { ...door.connector.meta, ...helper.getGmDoorId(subKey) },
           });
         } else {
-          warn(`${"handlePhysicsCollision"}: unexpected otherKey: "${otherKey}"`);
+          const decor = w.decor.byKey[subKey];
+          w.events.next({
+            key: isEnter === true ? "enter-collider" : "exit-collider",
+            npcKey,
+            type,
+            meta: decor.meta,
+          });
         }
       },
       onWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
