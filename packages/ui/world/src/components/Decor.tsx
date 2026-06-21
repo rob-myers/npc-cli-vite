@@ -72,6 +72,12 @@ export default function Decor() {
         count: 0,
       },
 
+      addDecorColliders(...decorDefs) {
+        w.worker.worker.postMessage({
+          type: "add-physics-colliders",
+          colliders: decorDefs.map(state.getColliderDefFromDecorDef),
+        } satisfies WW.MsgToWorker);
+      },
       addRuntimeDecorToGrid() {
         for (const runtimeDecor of Object.values(state.runtime.byKey)) {
           runtimeDecor.meta.roomId = -1; // force recompute
@@ -250,6 +256,10 @@ export default function Decor() {
           state.addRuntimeInstance(d);
         }
 
+        if (d.meta.collider === true && (def.type === "circle" || def.type === "rect")) {
+          state.addDecorColliders(def);
+        }
+
         return d;
       },
       decodeStaticInstanceId(instanceId) {
@@ -274,6 +284,32 @@ export default function Decor() {
           return decor.meta;
         }
       },
+      getColliderDefFromDecorDef(def) {
+        switch (def.type) {
+          case "circle":
+            return {
+              type: "circle",
+              colliderKey: def.key,
+              radius: def.radius,
+              x: def.center.x,
+              y: def.center.y,
+              userData: { ...def.meta, decorKey: def.key },
+            };
+          case "rect":
+            return {
+              type: "rect",
+              colliderKey: def.key,
+              width: def.width,
+              height: def.height,
+              x: def.x,
+              y: def.y,
+              angle: def.angle ?? 0,
+              userData: { ...def.meta, decorKey: def.key },
+            };
+          default:
+            throw new ExhaustiveError(def);
+        }
+      },
       getDecorImgKey(d) {
         if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
         return decorKeyFallback;
@@ -296,7 +332,7 @@ export default function Decor() {
         for (const decorKey of decorKeys) {
           const d = runtime.byKey[decorKey];
           if (!d) {
-            if (decorKey in state.byKey) warn(`cannot remove static decor: ${decorKey}`);
+            decorKey in state.byKey && warn(`cannot remove static decor: ${decorKey}`);
             continue;
           }
 
@@ -328,9 +364,19 @@ export default function Decor() {
           if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
           runtime.box.getAttribute("uvData").needsUpdate = true;
           runtime.box.getAttribute("shapeParams").needsUpdate = true;
+
+          if (d.meta.collider === true && (d.type === "circle" || d.type === "rect")) {
+            state.removeDecorColliders(d); // 🚧 prefer batch
+          }
         }
 
         w.view.forceUpdate();
+      },
+      removeDecorColliders(...decor) {
+        w.worker.worker.postMessage({
+          type: "remove-physics-colliders",
+          colliders: decor.map(({ key, type }) => ({ colliderKey: key, type })),
+        } satisfies WW.MsgToWorker);
       },
       setupRuntimeInstances() {
         const inst = state.instRuntime;
@@ -847,6 +893,7 @@ export type State = {
     count: number;
   };
 
+  addDecorColliders(...colliders: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>[]): void;
   addRuntimeDecorToGrid(): void;
   addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle): void;
   clearGrid(): void;
@@ -854,6 +901,7 @@ export type State = {
   decodeStaticInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
+  getColliderDefFromDecorDef(def: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>): WW.PhysicsColliderDef;
   getDecorImgKey(decor: Geomorph.Decor): string;
   hasInstance(
     decor: Geomorph.Decor,
@@ -861,6 +909,7 @@ export type State = {
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
+  removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
   setupRuntimeInstances(): void;
   writeRuntimeSlot(
     id: number,

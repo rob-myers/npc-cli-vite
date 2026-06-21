@@ -64,11 +64,14 @@ w decor.byKey.test-decor-point
     - 🚧 runtime colliders should survive rebuild world
       - 🔔 saving physics.ts loses worker.store
       - 🔔 hot reload store trick does not work maybe because worker "self" destroyed?
-      - 🚧 instead, send the runtime decor defs in "rebuild payload"
+      - ✅ instead, send the runtime decor defs in "rebuild payload"
         - ✅ aligned `demo_add_decor` and `demo_add_colliders` preserves colliders on hmr
-        - 🚧 align "colliders" with "decor" i.e. rect/circle collider created only via decor
+        - ✅ align "colliders" with "decor" i.e. rect/circle collider created only via decor
+          - w.decor.create
+          - w.decor.remove
+      - 🚧 clean away old approach
+    - ✅ hook into `w.decor.create`
     - verify events
-    - hook into `w.decor.create`
 
 - ✅ can log draw calls from WorldMenu
 - ✅ reduce draw calls
