@@ -198,14 +198,6 @@
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
-    },
-    "soldier-0": {
-      "key": "soldier-0",
-      "filename": "soldier-0--351d1a96305a63b9--soldier.png",
-      "rect": {"x": 68, "y": 68, "width": 64, "height": 64},
-      "sheetId": 0,
-      "originalWidth": 64,
-      "originalHeight": 64
     }
   },
   "skinSheetDims": [{"width": 134, "height": 134}],

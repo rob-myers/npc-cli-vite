@@ -23,14 +23,6 @@
       "tags": ["robot"],
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
-    },
-    "soldier-0": {
-      "key": "soldier-0",
-      "id": "351d1a96305a63b9",
-      "filename": "soldier-0--351d1a96305a63b9--soldier.png",
-      "tags": ["soldier"],
-      "url": "https://namemc.com/skin/351d1a96305a63b9",
-      "svgPath": null
     }
   }
 }
