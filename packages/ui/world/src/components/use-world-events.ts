@@ -184,10 +184,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onEnterCollider(e, _npc) {
         if (e.type === "nearby" || e.type === "inside") {
-          const door = w.d[e.gdKey];
+          const door = w.d[e.meta.gdKey];
           if (door.auto === true && door.locked === false) {
             // open (or reverse a closing animation) for auto unlocked doors
-            state.toggleDoor(e.gdKey, { open: true, npcKey: e.npcKey });
+            state.toggleDoor(e.meta.gdKey, { open: true, npcKey: e.npcKey });
             return;
           }
           if (door.open === true) {
@@ -208,17 +208,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (e.type === "nearby") {
           // try close door under conditions
-          const door = w.door.byKey[e.gdKey];
+          const door = w.door.byKey[e.meta.gdKey];
           if (door.open === true) {
-            if (door.auto === true && state.doorToNpcs[e.gdKey]?.nearby.size === 0) {
-              state.tryCloseDoor(e.gdKey);
+            if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
+              state.tryCloseDoor(e.meta.gdKey);
             }
             return;
           } else if (door.locked === true) {
-            state.tryCloseDoor(e.gdKey);
-          } else if (door.auto === true && state.doorToNpcs[e.gdKey]?.nearby.size === 0) {
+            state.tryCloseDoor(e.meta.gdKey);
+          } else if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
             // if auto and none nearby, try close
-            state.tryCloseDoor(e.gdKey);
+            state.tryCloseDoor(e.meta.gdKey);
           }
         }
       },
@@ -227,12 +227,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         switch (e.key) {
           case "enter-collider": {
             if (e.type === "nearby") {
-              (state.doorToNpcs[e.gdKey] ??= { inside: new Set(), nearby: new Set() }).nearby.add(npc.key);
-              (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).nearby.add(e.gdKey);
+              (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).nearby.add(npc.key);
+              (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).nearby.add(e.meta.gdKey);
             }
             if (e.type === "inside") {
-              (state.doorToNpcs[e.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
-              (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).inside = e.gdKey;
+              (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
+              (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).inside = e.meta.gdKey;
             }
 
             state.onEnterCollider(e, npc);
@@ -254,11 +254,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "exit-collider": {
             if (e.type === "nearby") {
-              state.doorToNpcs[e.gdKey].nearby?.delete(npc.key);
-              state.npcToDoors[e.npcKey].nearby?.delete(e.gdKey);
+              state.doorToNpcs[e.meta.gdKey].nearby?.delete(npc.key);
+              state.npcToDoors[e.npcKey].nearby?.delete(e.meta.gdKey);
             }
             if (e.type === "inside") {
-              state.doorToNpcs[e.gdKey].inside?.delete(npc.key);
+              state.doorToNpcs[e.meta.gdKey].inside?.delete(npc.key);
               state.npcToDoors[e.npcKey].inside = null;
             }
 

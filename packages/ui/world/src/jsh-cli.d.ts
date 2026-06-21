@@ -29,8 +29,8 @@ declare namespace JshCli {
   type PointAnyFormat = import("./service/geometry").PointAnyFormat;
 
   type BaseColliderEvent =
-    | { type: "circle" | "rect"; decorKey: string }
-    | ({ type: "nearby" | "inside" } & Geomorph.GmDoorId);
+    | { type: "circle" | "rect"; meta: Meta }
+    | { type: "nearby" | "inside"; meta: Meta<Geomorph.GmDoorId> };
 
   type PickEvent = {
     key: "picked";
