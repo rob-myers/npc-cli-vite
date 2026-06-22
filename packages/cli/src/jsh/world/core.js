@@ -54,7 +54,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * label npc:rob
  * ```
  * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; color?: string; speaking?: boolean }} [opts]
+ * @param {{ npcKey: string; } & Partial<JshCli.NpcLabelStyle>} [opts]
  */
 export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey);

@@ -72,7 +72,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
     return () => r3f.set({ controls: old });
   }, [controls]);
 
-  useFrame(() => controls.update(), -1);
+  useFrame(() => { controls.update(); props.onFrame?.(controls.spherical); }, -1);
 
   return (
     <primitive
@@ -109,6 +109,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
  * @property {number} [minPanDistance] // 🚧 implement in controls (from patch to make mobile touch more precise)
  * @property {(e?: import('three').Event) => void} [onChange]
  * @property {() => void} [onEnd]
+ * @property {(spherical: import('three').Spherical) => void} [onFrame]
  * @property {() => void} [onStart]
  * @property {number} [panSpeed]
  * @property {number} [zoomSpeed]
