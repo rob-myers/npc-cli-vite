@@ -15,11 +15,11 @@
       </feMerge>
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
-    <filter id="brightness-filter-0" bx:preset="brightness 1 0.48" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+    <filter id="brightness-filter-0" bx:preset="brightness 1 0.6" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
       <feComponentTransfer>
-        <feFuncR type="linear" slope="0.48"/>
-        <feFuncG type="linear" slope="0.48"/>
-        <feFuncB type="linear" slope="0.48"/>
+        <feFuncR type="linear" slope="0.6"/>
+        <feFuncG type="linear" slope="0.6"/>
+        <feFuncB type="linear" slope="0.6"/>
       </feComponentTransfer>
     </filter>
   </defs>

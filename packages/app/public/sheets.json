@@ -191,10 +191,18 @@
       "originalWidth": 64,
       "originalHeight": 64
     },
+    "dog-0": {
+      "key": "dog-0",
+      "filename": "dog-0--c2b1b1f65798dc3c--dog.png",
+      "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
     "medic-0": {
       "key": "medic-0",
       "filename": "medic-0--3573d1c9cad6c8fc--medic--doctor--mask.png",
-      "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
+      "rect": {"x": 68, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -202,12 +210,12 @@
     "robot-0": {
       "key": "robot-0",
       "filename": "robot-0--e91cc700154075b2--robot.png",
-      "rect": {"x": 68, "y": 68, "width": 64, "height": 64},
+      "rect": {"x": 134, "y": 2, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 134, "height": 134}],
-  "maxSkinSheetDim": {"width": 134, "height": 134}
+  "skinSheetDims": [{"width": 200, "height": 134}],
+  "maxSkinSheetDim": {"width": 200, "height": 134}
 }
