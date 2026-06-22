@@ -54,11 +54,13 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * label npc:rob
  * ```
  * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; color?: string }} [opts]
+ * @param {{ npcKey: string; color?: string; speaking?: boolean }} [opts]
  */
 export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey);
-  npc.drawLabel({ color: opts.color });
+  npc.labelStyle.color = opts.color ?? "#fff7";
+  npc.labelStyle.speaking = opts.speaking ?? false;
+  npc.drawLabel();
   w.view.forceUpdate();
 }
 

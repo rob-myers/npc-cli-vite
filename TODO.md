@@ -86,9 +86,10 @@ w decor.byKey.test-decor-point
 - ✅ support `look`
 
 - 🚧 hide speech bubbles whilst looking down from above
-  - two modes i.e. "looking down" and not based on camera polar angle
-  - whilst "looking down" hide speech bubble and show label instead
-  - we can indicate they're talking via speech bubble icon added to their unique label
+  - two modes: "looking down" and not, based on camera polar angle
+  - 🚧 whilst "looking down" hide speech bubble and show label instead
+  - ✅ can indicate they're talking via ellipsis added to their unique label
+    - `label npc:rob speaking`
   - we could also have a demo script which outputs speech in terminal
 
 - ai clean Html3d
