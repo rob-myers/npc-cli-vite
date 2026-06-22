@@ -335,8 +335,21 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.spherical.theta;
   }
 
+  getBasis() {
+    const x = new THREE.Vector3();
+    const y = new THREE.Vector3();
+    const z = new THREE.Vector3();
+    this.object.matrixWorld.extractBasis(x, y, z);
+    return { x: x.normalize(), y: y.normalize(), z: z.normalize() };
+  }
+
   getDistance() {
     return this.object.position.distanceTo(this.target);
+  }
+
+  getDirection() {
+    const dir = new THREE.Vector3();
+    return this.object.getWorldDirection(dir);
   }
 
   getPolarAngle() {
