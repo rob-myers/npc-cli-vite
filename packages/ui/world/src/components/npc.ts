@@ -217,7 +217,6 @@ export class Npc {
   }
 
   async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>, { facingTarget }: { facingTarget?: boolean } = {}) {
-    const labelVisible = this.labelMaterial.visible;
     try {
       await this.fadeOut();
       this.w.bubble.setShownIfExists(this.key, false);
@@ -235,8 +234,9 @@ export class Npc {
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
         this.material.alphaTest = 0.9;
-        this.labelMaterial.visible = labelVisible;
-        this.w.bubble.setShownIfExists(this.key, true);
+        if (!this.w.bubble.setShownIfExists(this.key, true)) {
+          this.labelMaterial.visible = true;
+        }
       }
 
       // 🔔 sporadic transparency issue right after 1st spawn
