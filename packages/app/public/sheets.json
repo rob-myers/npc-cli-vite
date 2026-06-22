@@ -175,9 +175,9 @@
   "decorSheetDims": [{"width": 1034, "height": 776}],
   "maxDecorSheetDim": {"width": 1034, "height": 776},
   "skin": {
-    "general-0": {
-      "key": "general-0",
-      "filename": "general-0--fe99881948399dca--general.png",
+    "civilian-0": {
+      "key": "civilian-0",
+      "filename": "civilian-0--23aa3d70ee53af87--civilian.png",
       "rect": {"x": 2, "y": 2, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,

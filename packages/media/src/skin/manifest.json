@@ -1,12 +1,12 @@
 {
   "byKey": {
-    "general-0": {
-      "key": "general-0",
-      "id": "fe99881948399dca",
-      "filename": "general-0--fe99881948399dca--general.png",
-      "tags": ["general"],
-      "url": "https://namemc.com/skin/fe99881948399dca",
-      "svgPath": "skin/general-0.svg"
+    "civilian-0": {
+      "key": "civilian-0",
+      "id": "23aa3d70ee53af87",
+      "filename": "civilian-0--23aa3d70ee53af87--civilian.png",
+      "tags": ["civilian"],
+      "url": "https://namemc.com/skin/23aa3d70ee53af87",
+      "svgPath": null
     },
     "medic-0": {
       "key": "medic-0",
