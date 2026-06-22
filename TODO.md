@@ -85,6 +85,13 @@ w decor.byKey.test-decor-point
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
 
+- 🚧 hide speech bubbles whilst looking down from above
+  - two modes i.e. "looking down" and not based on camera polar angle
+  - whilst "looking down" hide speech bubble and show label instead
+  - we can indicate they're talking via speech bubble icon added to their unique label
+  - we could also have a demo script which outputs speech in terminal
+
+- ai clean Html3d
 - go thru skins
   - fix medic-0 foot texturing
   - improve general-0

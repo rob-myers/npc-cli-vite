@@ -94,7 +94,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         ref={(el) => {
           b.bubbleDiv = el;
         }}
-        className="relative transform-[translate(-50%)] pointer-events-auto cursor-grab active:cursor-grabbing"
+        className="relative flex flex-col transform-[translate(-50%)] pointer-events-auto cursor-grab active:cursor-grabbing"
         onPointerDown={b.onPointerDown}
         onPointerMove={b.onPointerMove}
         onPointerUp={b.onPointerUp}
@@ -102,11 +102,12 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       >
         <div className="text-[2.5rem]">{b.key}</div>
 
-        <div className="text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
-          {b.words}
+        <div className="flex flex-1 overflow-hidden text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
+          <div className="my-auto w-full">{b.words}</div>
         </div>
+
         <div
-          className="absolute -bottom-2 -right-2 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
+          className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
           onPointerDown={b.onResizeStart}
           onPointerMove={b.onResizeMove}
           onPointerUp={b.onResizeEnd}
