@@ -55,6 +55,7 @@ export class Npc {
   fadeState = { delta: 0, target: 1 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
+  labelStyle = { color: "#fff7", speaking: false };
   last = {
     blockingArea: -1,
     /** Seconds elapsed */
@@ -130,20 +131,21 @@ export class Npc {
     this.idleClip = this.clips.idle;
   }
 
-  drawLabel(style?: { color?: string }) {
+  drawLabel() {
     const { ct } = this.w.texNpcLabel;
     const { width, height } = ct.canvas;
     ct.clearRect(0, 0, width, height);
     // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
     // ct.roundRect(0, 0, width, height, 8);
     // ct.fill();
-    ct.fillStyle = style?.color ?? "#fff7";
+    ct.fillStyle = this.labelStyle.color;
     ct.font = "400 36px sans-serif";
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
-    // the label is the npc's key
-    ct.fillText(this.key, width / 2, height / 2);
+
+    const labelText = this.labelStyle.speaking ? `${this.key}...` : this.key;
+    ct.fillText(labelText, width / 2, height / 2);
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
 
