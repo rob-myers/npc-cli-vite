@@ -55,7 +55,7 @@ export class Npc {
   fadeState = { delta: 0, target: 1 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
-  labelStyle = { color: "#fff7", speaking: false };
+  labelStyle: JshCli.NpcLabelStyle = { color: "#fff7", speaking: false };
   last = {
     blockingArea: -1,
     /** Seconds elapsed */
@@ -131,7 +131,9 @@ export class Npc {
     this.idleClip = this.clips.idle;
   }
 
-  drawLabel() {
+  drawLabel(partialStyle?: Partial<JshCli.NpcLabelStyle>) {
+    Object.assign(this.labelStyle, partialStyle);
+
     const { ct } = this.w.texNpcLabel;
     const { width, height } = ct.canvas;
     ct.clearRect(0, 0, width, height);

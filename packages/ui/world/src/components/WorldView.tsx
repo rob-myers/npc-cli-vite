@@ -31,6 +31,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       canvas: null as any,
       controls: null as any,
       clickIds: [],
+      topDown: false,
       ctrlOpts: {
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
@@ -308,6 +309,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ...point, // can provide as point with meta
         });
       },
+      onCameraChange(spherical: THREE.Spherical) {
+        const nowTopDown = spherical.phi <= 2 * (Math.PI / 18);
+        if (nowTopDown !== state.topDown) {
+          state.topDown = nowTopDown;
+          w.bubble?.onChangeTopDown(nowTopDown);
+        }
+      },
       setCameraMode(mode) {
         state.cameraMode = mode;
         const fixedPolar = mode !== "free";
@@ -457,7 +465,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           initialPolar={state.initial.polar}
           initialPosition={state.initial.position}
           minPanDistance={0}
-          // onChange={state.onChangeControls}
+          onFrame={state.onCameraChange}
           // onEnd={state.onControlsEnd}
           // onStart={state.onControlsStart}
           {...state.ctrlOpts}
@@ -478,6 +486,7 @@ export type State = {
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
+  topDown: boolean;
   ctrlOpts: MapControlsProps & { extraZoom?: number };
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
@@ -500,6 +509,7 @@ export type State = {
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
+  onCameraChange(spherical: THREE.Spherical): void;
   setCameraMode(mode: "free" | "azimuthal" | "cardinal"): void;
   syncRenderMode(): RootState["frameloop"];
   /**

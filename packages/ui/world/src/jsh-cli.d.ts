@@ -81,4 +81,9 @@ declare namespace JshCli {
     /** Alternated with `gdKeys` i.e. `firstGrKey -> firstGdKey ->  ... -> lastGrKey` */
     rooms: Geomorph.GmRoomKey[];
   };
+
+  type NpcLabelStyle = {
+    color: string;
+    speaking: boolean;
+  };
 }

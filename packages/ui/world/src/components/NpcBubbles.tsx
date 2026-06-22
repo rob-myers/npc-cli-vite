@@ -1,4 +1,4 @@
-import { useStateRef } from "@npc-cli/util";
+import { cn, useStateRef } from "@npc-cli/util";
 import { ArrowDownRightIcon } from "@phosphor-icons/react";
 import React from "react";
 import { Html3d } from "../components/Html3d";
@@ -11,6 +11,7 @@ export default function NpcBubbles() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
+      isTopDown: false,
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
           state.byKey[npcKey]?.dispose();
@@ -29,6 +30,10 @@ export default function NpcBubbles() {
         npc.labelMaterial.visible = false;
         w.view.forceUpdate();
         return bubble;
+      },
+      onChangeTopDown(topDown: boolean) {
+        state.isTopDown = topDown;
+        w.view.forceUpdate();
       },
       setShownIfExists(npcKey: string, shown: boolean) {
         const bubbleDiv = this.byKey[npcKey]?.html3d.rootDiv;
@@ -54,22 +59,25 @@ export default function NpcBubbles() {
   }
 
   return Object.values(state.byKey).map((bubble) => (
-    <MemoizedSpeechBubble key={bubble.key} bubble={bubble} epochMs={bubble.epochMs} />
+    <MemoizedSpeechBubble key={bubble.key} bubble={bubble} epochMs={bubble.epochMs} isTopDown={state.isTopDown} />
   ));
 }
 
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
+  isTopDown: boolean;
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string): SpeechBubbleApi;
+  onChangeTopDown(topDown: boolean): void;
   setShownIfExists(npcKey: string, shown: boolean): boolean;
 };
 
 interface SpeechBubbleProps {
   bubble: SpeechBubbleApi;
+  isTopDown: boolean;
 }
 
-function NpcBubble({ bubble: b }: SpeechBubbleProps) {
+function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
   React.useEffect(() => {
     setTimeout(() => {
       b.initializeOffset();
@@ -94,26 +102,38 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         ref={(el) => {
           b.bubbleDiv = el;
         }}
-        className="relative flex flex-col transform-[translate(-50%)] pointer-events-auto cursor-grab active:cursor-grabbing"
+        className={cn(
+          "transform-[translate(-50%)] pointer-events-auto overflow-hidden",
+          // "transition-[width,height,border-radius] duration-300",
+          isTopDown
+            ? "mt-12 max-w-24 max-h-12 rounded-full flex items-center justify-center bg-black/30"
+            : "relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing",
+        )}
         onPointerDown={b.onPointerDown}
         onPointerMove={b.onPointerMove}
         onPointerUp={b.onPointerUp}
         onWheel={b.onWheel}
       >
-        <div className="text-[2.5rem]">{b.key}</div>
+        {isTopDown ? (
+          <div className="text-[2rem] text-white/80">...</div>
+        ) : (
+          <>
+            <div className="text-[2.5rem]">{b.key}</div>
 
-        <div className="flex flex-1 overflow-hidden text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
-          <div className="my-auto w-full">{b.words}</div>
-        </div>
+            <div className="flex flex-1 overflow-hidden text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
+              <div className="my-auto w-full">{b.words}</div>
+            </div>
 
-        <div
-          className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
-          onPointerDown={b.onResizeStart}
-          onPointerMove={b.onResizeMove}
-          onPointerUp={b.onResizeEnd}
-        >
-          <ArrowDownRightIcon className="size-8" />
-        </div>
+            <div
+              className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
+              onPointerDown={b.onResizeStart}
+              onPointerMove={b.onResizeMove}
+              onPointerUp={b.onResizeEnd}
+            >
+              <ArrowDownRightIcon className="size-8" />
+            </div>
+          </>
+        )}
       </div>
     </Html3d>
   );
