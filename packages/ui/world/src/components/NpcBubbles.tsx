@@ -32,7 +32,9 @@ export default function NpcBubbles() {
       },
       setShownIfExists(npcKey: string, shown: boolean) {
         const bubbleDiv = this.byKey[npcKey]?.html3d.rootDiv;
-        if (bubbleDiv) bubbleDiv.style.opacity = shown ? "" : "0";
+        if (!bubbleDiv) return false;
+        bubbleDiv.style.opacity = shown ? "" : "0";
+        return true;
       },
     }),
   );
@@ -60,7 +62,7 @@ export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string): SpeechBubbleApi;
-  setShownIfExists(npcKey: string, shown: boolean): void;
+  setShownIfExists(npcKey: string, shown: boolean): boolean;
 };
 
 interface SpeechBubbleProps {
