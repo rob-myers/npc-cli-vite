@@ -25,10 +25,12 @@ export class SpeechBubbleApi {
   dragStartClient = { x: 0, y: 0 };
   dragWorldOffsetAtStart = { x: 0, y: 0, z: 0 };
 
-  scale = 1;
   isResizing = false;
   resizeStartClient = { x: 0, y: 0 };
-  resizeScaleAtStart = 1;
+  resizeWidthAtStart = 0;
+  resizeHeightAtStart = 0;
+  resizeHtmlScale = 1;
+
   bubbleDiv: HTMLElement | null = null;
 
   constructor(key: string, w: WorldState) {
@@ -117,18 +119,25 @@ export class SpeechBubbleApi {
   };
 
   onResizeStart = (e: React.PointerEvent) => {
+    e.stopPropagation(); // prevent bubbleDiv's onPointerDown from starting a drag simultaneously
     this.isResizing = true;
     this.resizeStartClient = { x: e.clientX, y: e.clientY };
-    this.resizeScaleAtStart = this.scale;
+    this.resizeWidthAtStart = this.bubbleDiv?.offsetWidth ?? 0;
+    this.resizeHeightAtStart = this.bubbleDiv?.offsetHeight ?? 0;
+    // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
+    const rect = this.bubbleDiv?.getBoundingClientRect();
+    this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
     (e.target as Element).setPointerCapture(e.pointerId);
   };
 
   onResizeMove = (e: React.PointerEvent) => {
     if (!this.isResizing || !this.bubbleDiv) return;
-    const dx = e.clientX - this.resizeStartClient.x;
-    const dy = e.clientY - this.resizeStartClient.y;
-    this.scale = Math.min(Math.max(this.resizeScaleAtStart * Math.exp((dx + dy) * 0.005), 0.4), 4);
-    this.bubbleDiv.style.transform = `translateX(-50%) scale(${this.scale})`;
+    const dx = (e.clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
+    const dy = (e.clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
+    // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
+    // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
+    this.bubbleDiv.style.width = `${Math.max(512, this.resizeWidthAtStart + dx * 2)}px`;
+    this.bubbleDiv.style.height = `${Math.max(256, this.resizeHeightAtStart + dy)}px`;
     this.html3d?.onFrame();
   };
 
