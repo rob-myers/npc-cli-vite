@@ -15,56 +15,25 @@
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
     <bx:grid x="0" y="0" width="16" height="16"/>
-    <filter id="inner-shadow-filter-0" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="filter-1" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="filter-2" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="filter-3" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="brightness-filter-0" bx:preset="brightness 1 0.54" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+    <filter id="brightness-filter-0" bx:preset="brightness 1 0.7" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
       <feComponentTransfer>
-        <feFuncR type="linear" slope="0.54"/>
-        <feFuncG type="linear" slope="0.54"/>
-        <feFuncB type="linear" slope="0.54"/>
+        <feFuncR type="linear" slope="0.7"/>
+        <feFuncG type="linear" slope="0.7"/>
+        <feFuncB type="linear" slope="0.7"/>
       </feComponentTransfer>
+    </filter>
+    <filter id="spot-light-filter-1" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 26 #ffffff 33 0.55 0.12 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.55" specularExponent="33">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="26" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.12">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="26" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
   </defs>
   <image href="data:image/png;base64,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" width="256" height="256" y="0.00001" style="image-rendering: pixelated; filter: url(&quot;#brightness-filter-0&quot;);">
@@ -120,16 +89,16 @@
   </g>
   <g style="pointer-events: none;">
     <title>left-leg</title>
-    <rect x="80" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="80" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;">
       <title>front</title>
     </rect>
-    <rect y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;" x="64">
+    <rect y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;" x="64">
       <title>right</title>
     </rect>
-    <rect x="96" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="96" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;">
       <title>left</title>
     </rect>
-    <rect x="112" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="112" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 4px;">
       <title>back</title>
     </rect>
   </g>
@@ -153,35 +122,56 @@
   </g>
   <g style="pointer-events: none;">
     <title>head</title>
-    <rect width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); fill: none; stroke-opacity: 0.5;" x="31.4486">
-      <title>top</title>
-    </rect>
-    <rect x="32" width="32" height="32" style="fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light;" y="32">
-      <title>front</title>
-    </rect>
-    <rect width="32" height="32" style="filter: none; opacity: 0.2;" y="32" x="96">
-      <title>back</title>
-    </rect>
-    <rect x="64" width="32" height="32" style="filter: none; pointer-events: auto; mix-blend-mode: hard-light; fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px; opacity: 0.5;" y="32">
-      <title>left</title>
-    </rect>
-    <rect width="32" height="32" style="pointer-events: auto; mix-blend-mode: hard-light; filter: none; fill: none; stroke: rgb(0, 0, 0); stroke-width: 2px; opacity: 0.5;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
-      <title>right</title>
-    </rect>
+    <g>
+      <title>lighting</title>
+      <rect width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); fill: none; stroke-opacity: 0.5;" x="31.4486">
+        <title>top</title>
+      </rect>
+      <rect x="32" width="32" height="32" style="fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light;" y="32">
+        <title>front</title>
+      </rect>
+      <rect width="32" height="32" style="opacity: 0.2; fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-1&quot;); mix-blend-mode: soft-light;" y="32" x="96">
+        <title>back</title>
+      </rect>
+      <rect x="64" width="32" height="32" style="stroke: rgb(0, 0, 0); stroke-width: 2px; opacity: 0.5; filter: url(&quot;#spot-light-filter-1&quot;); fill: rgb(255, 255, 255); mix-blend-mode: soft-light;" y="32">
+        <title>left</title>
+      </rect>
+      <rect width="32" height="32" style="stroke: rgb(0, 0, 0); stroke-width: 2px; opacity: 0.5; fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-1&quot;); mix-blend-mode: soft-light;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+        <title>right</title>
+      </rect>
+    </g>
   </g>
+  <rect width="32" height="8.00996" style="filter: none; stroke-width: 2; fill-opacity: 0.4;" y="-52" x="96" transform="matrix(1, 0, 0, -1, 0, 0)">
+    <title>dark-patch</title>
+  </rect>
+  <rect width="32" height="8.00996" style="filter: none; stroke-width: 2; fill-opacity: 0.4;" y="-56" x="96" transform="matrix(1, 0, 0, -1, 0, 0)">
+    <title>dark-patch</title>
+  </rect>
   <g style="">
     <title>body</title>
-    <rect width="32" height="48" style="fill: rgb(255, 255, 255); filter: url(&quot;#inner-shadow-filter-0&quot;); mix-blend-mode: darken; opacity: 0.67;" y="80" x="128">
+    <rect width="32" height="48" style="filter: none; fill: none; stroke-width: 2px; stroke: rgb(0, 0, 0);" y="80" x="128">
       <title>back</title>
     </rect>
-    <rect width="32" height="48" style="fill: rgb(255, 255, 255); mix-blend-mode: darken; opacity: 0.67; filter: url(&quot;#filter-1&quot;);" y="80" x="80">
+    <rect width="32" height="48" style="filter: none; fill: none; stroke-width: 2px; stroke: rgb(0, 0, 0);" y="80" x="80">
       <title>front</title>
     </rect>
-    <rect width="16" height="48" style="fill: rgb(255, 255, 255); mix-blend-mode: darken; opacity: 0.67; filter: url(&quot;#filter-2&quot;);" y="80" x="112">
+    <rect width="16" height="48" style="filter: none; fill: none; stroke-width: 2px; stroke: rgb(0, 0, 0);" y="80" x="112">
       <title>left</title>
     </rect>
-    <rect width="16" height="48" style="fill: rgb(255, 255, 255); mix-blend-mode: darken; opacity: 0.67; filter: url(&quot;#filter-3&quot;);" y="80" x="64">
+    <rect width="16" height="48" style="filter: none; fill: none; stroke-width: 2px; stroke: rgb(0, 0, 0);" y="80" x="64">
       <title>right</title>
+    </rect>
+    <rect width="10.9016" height="48" style="filter: none; stroke-width: 2px; fill-opacity: 0.4;" y="-128" x="80" transform="matrix(1, 0, 0, -1, 0, 0)">
+      <title>dark-patch</title>
+    </rect>
+    <rect width="7.3334" height="48" style="filter: none; stroke-width: 2; fill-opacity: 0.4;" y="-128" x="104.568" transform="matrix(1, 0, 0, -1, 0, 0)">
+      <title>dark-patch</title>
+    </rect>
+    <rect width="10.9016" height="48" style="filter: none; stroke-width: 2; fill-opacity: 0.4;" y="-128" x="128" transform="matrix(1, 0, 0, -1, 0, 0)">
+      <title>dark-patch</title>
+    </rect>
+    <rect width="32" height="7.79586" style="filter: none; stroke-width: 2; fill-opacity: 0.4;" y="-103.8" x="128" transform="matrix(1, 0, 0, -1, 0, 0)">
+      <title>dark-patch</title>
     </rect>
   </g>
   <g style="pointer-events: none;">
@@ -190,4 +180,10 @@
       <title>skin-layout-labels</title>
     </image>
   </g>
+  <rect x="36.0881" y="48" width="8.15649" height="8.39104" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 0.4px;">
+    <title>eye-outline</title>
+  </rect>
+  <rect x="52.0881" y="48" width="8.15649" height="8.39104" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 0.4px;">
+    <title>eye-outline</title>
+  </rect>
 </svg>
