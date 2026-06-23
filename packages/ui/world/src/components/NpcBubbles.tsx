@@ -1,4 +1,4 @@
-import { useStateRef } from "@npc-cli/util";
+import { cn, useStateRef } from "@npc-cli/util";
 import { ArrowDownRightIcon } from "@phosphor-icons/react";
 import React from "react";
 import { Html3d } from "../components/Html3d";
@@ -119,7 +119,10 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         ref={(el) => {
           b.bubbleDiv = el;
         }}
-        className="transform-[translate(-50%)] relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing pointer-events-auto overflow-hidden"
+        className={cn(
+          "transform-[translate(-50%)] relative flex flex-col rounded-none cursor-grab active:cursor-grabbing pointer-events-auto overflow-hidden",
+          "h-64 w-64",
+        )}
         onMouseDown={b.onMouseDown}
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}

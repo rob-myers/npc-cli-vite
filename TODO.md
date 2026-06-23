@@ -97,7 +97,8 @@ w decor.byKey.test-decor-point
     - icons should always be decor
     - ✅ `w.decor.imgForOtherText['speech-bubble']`
   - ✅ if top down and `say npc:foo bar` then see flicker
-  - demo_log_speech outputs speech in terminal
+  - ✅ demo_log_speech outputs speech in terminal
+  - 🚧 initial (sans resize) bubble width based on text length
 
 - reduce npc draw calls
   - multiple materials

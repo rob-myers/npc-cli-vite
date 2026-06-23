@@ -1,7 +1,6 @@
-/**
- * @param {JshCli.RunArg} ct
- */
-export function demo_add_decor(ct) {
+import { events } from "./core";
+
+export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
     type: "circle",
     key: "test-decor-circle",
@@ -32,4 +31,13 @@ export function demo_add_decor(ct) {
   });
 
   ct.w.view.forceUpdate();
+}
+
+export async function* demo_log_speech(ct: JshCli.RunArg) {
+  for await (const e of events(ct, {
+    where: (e) => e.key === "speech",
+  })) {
+    console.log({ e });
+    yield `${e.npcKey}: ${e.words}`;
+  }
 }

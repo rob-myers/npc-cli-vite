@@ -15,6 +15,7 @@ declare namespace JshCli {
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | { key: "speech"; npcKey: string; words: string; epochMs: number }
     | { key: "started-moving"; npcKey: string }
     | { key: "requested-physics" }
     | {

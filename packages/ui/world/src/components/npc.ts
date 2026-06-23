@@ -150,8 +150,8 @@ export class Npc {
     if (this.labelStyle.speaking) {
       const speechBubbleImg = this.w.decor.imgForOtherTex["speech-bubble"];
       const textWidth = ct.measureText(labelText).width;
-      ct.globalAlpha = 0.5;
-      ct.drawImage(speechBubbleImg, width / 2 + textWidth / 2 + 8, 0, 48, 48);
+      ct.globalAlpha = 0.6;
+      ct.drawImage(speechBubbleImg, width / 2 + textWidth / 2 + 8, 0, 32, 32);
       ct.globalAlpha = 1.0;
     }
 
