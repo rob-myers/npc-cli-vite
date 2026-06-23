@@ -575,7 +575,7 @@ export type State = {
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
-const nextCameraMode = { free: "azimuthal", azimuthal: "cardinal", cardinal: "free" } as const;
+const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
 const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
 const debugItems = [
   "Pick",
