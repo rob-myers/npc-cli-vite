@@ -33,6 +33,12 @@ export default function NpcBubbles() {
       },
       onChangeTopDown(topDown: boolean) {
         state.isTopDown = topDown;
+        for (const bubble of Object.values(state.byKey)) {
+          if (bubble.bubbleDiv) {
+            bubble.bubbleDiv.style.transition = "width 0.3s, height 0.3s, border-radius 0.3s";
+            setTimeout(() => { if (bubble.bubbleDiv) bubble.bubbleDiv.style.transition = ""; }, 300);
+          }
+        }
         w.view.forceUpdate();
       },
       setShownIfExists(npcKey: string, shown: boolean) {
@@ -104,9 +110,8 @@ function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
         }}
         className={cn(
           "transform-[translate(-50%)] pointer-events-auto overflow-hidden",
-          // "transition-[width,height,border-radius] duration-300",
           isTopDown
-            ? "mt-12 max-w-24 max-h-18 rounded-full flex items-center justify-center bg-black/30"
+            ? "w-12 h-6 rounded-full flex items-center justify-center bg-black/50"
             : "relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing",
         )}
         onPointerDown={b.onPointerDown}
