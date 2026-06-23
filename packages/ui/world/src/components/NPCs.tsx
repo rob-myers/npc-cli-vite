@@ -77,7 +77,7 @@ export default function NPCs() {
         const pickIdNode = uniform(pickId);
         const mainMaterial = new THREE.MeshStandardNodeMaterial({
           alphaTest: 0.9,
-          side: THREE.DoubleSide, // 2 draw calls
+          side: THREE.FrontSide, // overlay 1-sided
           transparent: true,
         });
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
