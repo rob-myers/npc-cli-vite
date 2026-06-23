@@ -482,7 +482,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 }
 
 export type State = {
-  cameraMode: "free" | "azimuthal" | "cardinal";
+  cameraMode: "free" | "cardinal";
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -510,7 +510,7 @@ export type State = {
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   onCameraChange(spherical: THREE.Spherical): void;
-  setCameraMode(mode: "free" | "azimuthal" | "cardinal"): void;
+  setCameraMode(mode: "free" | "cardinal"): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
