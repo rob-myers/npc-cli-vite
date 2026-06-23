@@ -1,4 +1,4 @@
-import { cn, useStateRef } from "@npc-cli/util";
+import { useStateRef } from "@npc-cli/util";
 import { ArrowDownRightIcon } from "@phosphor-icons/react";
 import React from "react";
 import { Html3d } from "../components/Html3d";
@@ -17,7 +17,9 @@ export default function NpcBubbles() {
           state.byKey[npcKey]?.dispose();
           delete state.byKey[npcKey];
           const npc = w.n[npcKey];
-          if (npc) npc.labelMaterial.visible = true;
+          if (!npc) continue;
+          npc.drawLabel({ speaking: false });
+          npc.labelMaterial.visible = true;
         }
         w.view.forceUpdate();
       },
@@ -27,26 +29,29 @@ export default function NpcBubbles() {
         const npc = w.npc.get(npcKey);
         const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, w));
         bubble.setTracked({ object: npc.skinnedMesh, offset: npc.bubbleOffset });
-        npc.labelMaterial.visible = false;
+        if (state.isTopDown) {
+          npc.drawLabel({ speaking: true });
+        } else {
+          npc.labelMaterial.visible = false;
+        }
         w.view.forceUpdate();
         return bubble;
       },
       onChangeTopDown(topDown: boolean) {
         state.isTopDown = topDown;
         for (const bubble of Object.values(state.byKey)) {
-          if (bubble.bubbleDiv) {
-            bubble.bubbleDiv.style.transition = "width 0.3s, height 0.3s, border-radius 0.3s";
-            setTimeout(() => {
-              if (bubble.bubbleDiv) bubble.bubbleDiv.style.transition = "";
-            }, 300);
-          }
+          const npc = w.n[bubble.key];
+          if (!npc) continue;
+          const rootDiv = bubble.html3d?.rootDiv;
+          if (rootDiv) rootDiv.style.opacity = topDown ? "0" : "";
+          npc.drawLabel({ speaking: topDown });
+          npc.labelMaterial.visible = topDown;
         }
-        w.view.forceUpdate();
       },
       setShownIfExists(npcKey: string, shown: boolean) {
-        const bubbleDiv = this.byKey[npcKey]?.html3d.rootDiv;
-        if (!bubbleDiv) return false;
-        bubbleDiv.style.opacity = shown ? "" : "0";
+        const rootDiv = this.byKey[npcKey]?.html3d?.rootDiv;
+        if (!rootDiv) return false;
+        rootDiv.style.opacity = shown && !state.isTopDown ? "" : "0";
         return true;
       },
     }),
@@ -67,7 +72,7 @@ export default function NpcBubbles() {
   }
 
   return Object.values(state.byKey).map((bubble) => (
-    <MemoizedSpeechBubble key={bubble.key} bubble={bubble} epochMs={bubble.epochMs} isTopDown={state.isTopDown} />
+    <MemoizedSpeechBubble key={bubble.key} bubble={bubble} epochMs={bubble.epochMs} />
   ));
 }
 
@@ -82,16 +87,18 @@ export type State = {
 
 interface SpeechBubbleProps {
   bubble: SpeechBubbleApi;
-  isTopDown: boolean;
 }
 
-function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
+function NpcBubble({ bubble: b }: SpeechBubbleProps) {
   React.useEffect(() => {
     setTimeout(() => {
       b.initializeOffset();
       b.update();
       b.resolveOnMount();
       b.html3d?.onFrame();
+      if (b.w.bubble.isTopDown && b.html3d?.rootDiv) {
+        b.html3d.rootDiv.style.opacity = "0";
+      }
     }, 30);
   }, []);
 
@@ -110,39 +117,24 @@ function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
         ref={(el) => {
           b.bubbleDiv = el;
         }}
-        className={cn(
-          "transform-[translate(-50%)] pointer-events-auto overflow-hidden",
-          isTopDown
-            ? "w-12 h-6 rounded-full flex items-center justify-center bg-black/50"
-            : "relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing",
-        )}
+        className="transform-[translate(-50%)] relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing pointer-events-auto overflow-hidden"
         onMouseDown={b.onMouseDown}
-        onMouseMove={b.onMouseMove}
-        onMouseUp={b.onMouseUp}
         onTouchStart={b.onTouchStart}
-        onTouchMove={b.onTouchMove}
-        onTouchEnd={b.onTouchEnd}
         onWheel={b.onWheel}
       >
-        {isTopDown ? (
-          <div className="text-[2rem] text-white/80">...</div>
-        ) : (
-          <>
-            <div className="text-[2.5rem]">{b.key}</div>
+        <div className="text-[2.5rem]">{b.key}</div>
 
-            <div className="flex flex-1 overflow-hidden text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
-              <div className="my-auto w-full">{b.words}</div>
-            </div>
+        <div className="flex flex-1 overflow-hidden text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
+          <div className="my-auto w-full">{b.words}</div>
+        </div>
 
-            <div
-              className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
-              onMouseDown={b.onResizeMouseDown}
-              onTouchStart={b.onResizeTouchStart}
-            >
-              <ArrowDownRightIcon className="size-8" />
-            </div>
-          </>
-        )}
+        <div
+          className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
+          onMouseDown={b.onResizeMouseDown}
+          onTouchStart={b.onResizeTouchStart}
+        >
+          <ArrowDownRightIcon className="size-8" />
+        </div>
       </div>
     </Html3d>
   );

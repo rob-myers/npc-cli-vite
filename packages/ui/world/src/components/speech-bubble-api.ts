@@ -112,16 +112,14 @@ export class SpeechBubbleApi {
   onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     this.onDragStart(e.clientX, e.clientY);
-  };
-  onMouseMove = (e: React.MouseEvent) => {
-    if (!this.isDragging) return;
-    e.stopPropagation();
-    this.onDragMove(e.clientX, e.clientY);
-  };
-  onMouseUp = (e: React.MouseEvent) => {
-    if (!this.isDragging) return;
-    e.stopPropagation();
-    this.onDragEnd();
+    const onMove = (ev: MouseEvent) => this.onDragMove(ev.clientX, ev.clientY);
+    const onUp = () => {
+      this.onDragEnd();
+      this.w.rootEl.removeEventListener("mousemove", onMove);
+      this.w.rootEl.removeEventListener("mouseup", onUp);
+    };
+    this.w.rootEl.addEventListener("mousemove", onMove);
+    this.w.rootEl.addEventListener("mouseup", onUp);
   };
 
   onWheel = (e: React.WheelEvent) => {
@@ -144,16 +142,19 @@ export class SpeechBubbleApi {
   onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
     const t = e.touches[0];
-    if (t) this.onDragStart(t.clientX, t.clientY);
-  };
-  onTouchMove = (e: React.TouchEvent) => {
-    const t = e.touches[0];
     if (!t) return;
-    e.stopPropagation();
-    this.onDragMove(t.clientX, t.clientY);
-  };
-  onTouchEnd = (_e: React.TouchEvent) => {
-    this.onDragEnd();
+    this.onDragStart(t.clientX, t.clientY);
+    const onMove = (ev: TouchEvent) => {
+      const t2 = ev.touches[0];
+      if (t2) this.onDragMove(t2.clientX, t2.clientY);
+    };
+    const onEnd = () => {
+      this.onDragEnd();
+      document.removeEventListener("touchmove", onMove, { capture: true });
+      document.removeEventListener("touchend", onEnd, { capture: true });
+    };
+    document.addEventListener("touchmove", onMove, { capture: true });
+    document.addEventListener("touchend", onEnd, { capture: true });
   };
 
   onResizeTouchStart = (e: React.TouchEvent) => {
@@ -161,7 +162,10 @@ export class SpeechBubbleApi {
     const t = e.touches[0];
     if (!t) return;
     this.resizeStart(t.clientX, t.clientY);
-    const onMove = (ev: TouchEvent) => { const t2 = ev.touches[0]; if (t2) this.resizeMove(t2.clientX, t2.clientY); };
+    const onMove = (ev: TouchEvent) => {
+      const t2 = ev.touches[0];
+      if (t2) this.resizeMove(t2.clientX, t2.clientY);
+    };
     const onEnd = () => {
       this.isResizing = false;
       document.removeEventListener("touchmove", onMove, { capture: true });
