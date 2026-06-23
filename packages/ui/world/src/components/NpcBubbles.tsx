@@ -26,9 +26,11 @@ export default function NpcBubbles() {
       ensure(npcKey) {
         const extant = state.byKey[npcKey];
         if (extant) return extant;
+
         const npc = w.npc.get(npcKey);
         const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, w));
         bubble.setTracked({ object: npc.skinnedMesh, offset: npc.bubbleOffset });
+
         if (state.isTopDown) {
           npc.drawLabel({ speaking: true });
         } else {
@@ -90,7 +92,7 @@ interface SpeechBubbleProps {
 }
 
 function NpcBubble({ bubble: b }: SpeechBubbleProps) {
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     setTimeout(() => {
       b.initializeOffset();
       b.update();
