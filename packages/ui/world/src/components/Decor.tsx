@@ -1,6 +1,8 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
-import { pause, warn } from "@npc-cli/util/legacy/generic";
+import { loadImage } from "@npc-cli/util/legacy/dom";
+import { keys, pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 import {
@@ -44,6 +46,7 @@ export default function Decor() {
     (): State => ({
       byKey: {},
       grid: {},
+      imgForOtherTex: decorImgForOtherTex,
       lastHmr: 0,
       ready: false,
 
@@ -522,8 +525,11 @@ export default function Decor() {
       if (!w.sheets) return null;
       w.setNextPending({ decor: true });
 
-      // 1. load sheet images
+      // 1. load sheet images + state.imgForOtherTex
       const images = await w.loadDecorImages();
+      for (const decorKey of keys(decorImgForOtherTex)) {
+        state.imgForOtherTex[decorKey] = await loadImage(`/decor/${decorKey}.svg${getDevCacheBustQueryParam()}`);
+      }
 
       // 2. draw sheets into texture array
       const { ct } = w.texDecor;
@@ -863,6 +869,8 @@ export default function Decor() {
 export type State = {
   byKey: Record<string, Geomorph.Decor>;
   grid: Geomorph.DecorGrid;
+  /** Other textures can include decor icons */
+  imgForOtherTex: { [decorKey in DecorImgForOtherTexKey]: HTMLImageElement };
   lastHmr: number;
   /** Also false briefly after HMR */
   ready: boolean;
@@ -928,6 +936,17 @@ const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4().set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 const tmpColor = new THREE.Color();
+
+/**
+ * Some decor images are used to build other textures.
+ * - available synchronously.
+ * - copy from THREE.DataArrayTexture less performant
+ */
+const decorImgForOtherTex = {
+  "speech-bubble": new Image(),
+} as const;
+type DecorImgForOtherTexKey = keyof typeof decorImgForOtherTex;
+
 /**
  * TSL outputNode for the top face of the box geometry.
  * - Shapes (rect/circle): dashed outline in beauty; solid fill in pick.
