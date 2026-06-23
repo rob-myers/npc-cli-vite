@@ -354,7 +354,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
               float(0.7), // Smoothness: Controls gradient falloff softness
               screenUV, // Coordinates mapping
             ),
-            uniform(0.002),
+            uniform(0.003),
           ),
           sceneColor.a,
         );
