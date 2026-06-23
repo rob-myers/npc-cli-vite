@@ -93,9 +93,9 @@ w decor.byKey.test-decor-point
   - ❌ whilst speech bubble contracted can temporarily view its contents
   - ✅ fix translate/resize on mobile
   - ✅ hide speech bubble whilst top down, after all
-  - 🚧 when `npc.labelStyle.speaking` show icon rather than ellipsis
+  - ✅ when `npc.labelStyle.speaking` show icon rather than ellipsis
     - icons should always be decor
-    - 🚧 `w.decor.drawIconInto(decorKey, ct, x, y, w, h)`
+    - ✅ `w.decor.imgForOtherText['speech-bubble']`
   - ✅ if top down and `say npc:foo bar` then see flicker
   - demo_log_speech outputs speech in terminal
 

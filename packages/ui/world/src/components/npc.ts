@@ -137,17 +137,24 @@ export class Npc {
     const { ct } = this.w.texNpcLabel;
     const { width, height } = ct.canvas;
     ct.clearRect(0, 0, width, height);
-    // ct.fillStyle = "rgba(0, 0, 0, 0.5)";
-    // ct.roundRect(0, 0, width, height, 8);
-    // ct.fill();
+
     ct.fillStyle = this.labelStyle.color;
     ct.font = "400 36px sans-serif";
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
 
-    const labelText = this.labelStyle.speaking ? `${this.key}...` : this.key;
+    const labelText = this.key;
     ct.fillText(labelText, width / 2, height / 2);
+
+    if (this.labelStyle.speaking) {
+      const speechBubbleImg = this.w.decor.imgForOtherTex["speech-bubble"];
+      const textWidth = ct.measureText(labelText).width;
+      ct.globalAlpha = 0.5;
+      ct.drawImage(speechBubbleImg, width / 2 + textWidth / 2 + 8, 0, 48, 48);
+      ct.globalAlpha = 1.0;
+    }
+
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
 
