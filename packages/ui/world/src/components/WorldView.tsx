@@ -84,8 +84,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         await renderer.init();
         return renderer;
       },
-      forceUpdate() {
-        w.npc.onTick(0.1); // enough to tick a frame
+      forceUpdate(delta = 0) {
+        w.npc.onTick(delta); // enough to tick a frame
         w.r3f?.invalidate();
         w.update();
       },
@@ -499,7 +499,7 @@ export type State = {
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
-  forceUpdate(): void;
+  forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
