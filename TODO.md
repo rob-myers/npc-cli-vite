@@ -91,6 +91,7 @@ w decor.byKey.test-decor-point
   - ✅ can indicate they're talking via ellipsis added to their unique label
     - `label npc:rob speaking`
   - ❌ whilst speech bubble contracted can temporarily view its contents
+  - ✅ fix translate/resize on mobile
   - hide speech bubble whilst top down, after all
   - when `npc.labelStyle.speaking` show icon rather than ellipsis
   - demo_log_speech outputs speech in terminal

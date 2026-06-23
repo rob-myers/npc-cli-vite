@@ -36,7 +36,9 @@ export default function NpcBubbles() {
         for (const bubble of Object.values(state.byKey)) {
           if (bubble.bubbleDiv) {
             bubble.bubbleDiv.style.transition = "width 0.3s, height 0.3s, border-radius 0.3s";
-            setTimeout(() => { if (bubble.bubbleDiv) bubble.bubbleDiv.style.transition = ""; }, 300);
+            setTimeout(() => {
+              if (bubble.bubbleDiv) bubble.bubbleDiv.style.transition = "";
+            }, 300);
           }
         }
         w.view.forceUpdate();
@@ -114,9 +116,12 @@ function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
             ? "w-12 h-6 rounded-full flex items-center justify-center bg-black/50"
             : "relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing",
         )}
-        onPointerDown={b.onPointerDown}
-        onPointerMove={b.onPointerMove}
-        onPointerUp={b.onPointerUp}
+        onMouseDown={b.onMouseDown}
+        onMouseMove={b.onMouseMove}
+        onMouseUp={b.onMouseUp}
+        onTouchStart={b.onTouchStart}
+        onTouchMove={b.onTouchMove}
+        onTouchEnd={b.onTouchEnd}
         onWheel={b.onWheel}
       >
         {isTopDown ? (
@@ -131,9 +136,8 @@ function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
 
             <div
               className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
-              onPointerDown={b.onResizeStart}
-              onPointerMove={b.onResizeMove}
-              onPointerUp={b.onResizeEnd}
+              onMouseDown={b.onResizeMouseDown}
+              onTouchStart={b.onResizeTouchStart}
             >
               <ArrowDownRightIcon className="size-8" />
             </div>
