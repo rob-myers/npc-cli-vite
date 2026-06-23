@@ -164,16 +164,9 @@
       "originalWidth": 60,
       "originalHeight": 60
     },
-    "speech-bubble": {
-      "key": "speech-bubble",
-      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 800,
-      "originalHeight": 800
-    },
     "switch": {
       "key": "switch",
-      "rect": {"x": 776, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
