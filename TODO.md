@@ -87,11 +87,17 @@ w decor.byKey.test-decor-point
 
 - 🚧 hide speech bubbles whilst looking down from above
   - two modes: "looking down" and not, based on camera polar angle
-  - 🚧 whilst "looking down" hide speech bubble and show label instead
+  - ✅ whilst "looking down" contract speech bubble
   - ✅ can indicate they're talking via ellipsis added to their unique label
     - `label npc:rob speaking`
-  - we could also have a demo script which outputs speech in terminal
+  - ❌ whilst speech bubble contracted can temporarily view its contents
+  - hide speech bubble whilst top down, after all
+  - when `npc.labelStyle.speaking` show icon rather than ellipsis
+  - demo_log_speech outputs speech in terminal
 
+- reduce npc draw calls
+  - multiple materials
+  - double-sided needed?
 - ai clean Html3d
 - go thru skins
   - fix medic-0 foot texturing

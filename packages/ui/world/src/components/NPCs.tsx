@@ -77,7 +77,7 @@ export default function NPCs() {
         const pickIdNode = uniform(pickId);
         const mainMaterial = new THREE.MeshStandardNodeMaterial({
           alphaTest: 0.9,
-          side: THREE.DoubleSide,
+          side: THREE.DoubleSide, // 2 draw calls
           transparent: true,
         });
         const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
@@ -165,11 +165,9 @@ export default function NPCs() {
           npc.init();
           npc.drawLabel();
 
-          // state.placeNpcAt(
-          //   npc,
-          //   state.getClosestPoly(npc.position),
-          //   w.e.npcToDoable[npc.key] ? npc.position : undefined,
-          // );
+          // // could overwrite materials while debugging
+          // const mat = state.createMaterials(npc.pickId, npc.skinIndex);
+          // npc.material = mat.material;
         }
         state.update();
       },
