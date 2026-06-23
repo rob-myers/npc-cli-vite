@@ -106,7 +106,7 @@ function NpcBubble({ bubble: b, isTopDown }: SpeechBubbleProps) {
           "transform-[translate(-50%)] pointer-events-auto overflow-hidden",
           // "transition-[width,height,border-radius] duration-300",
           isTopDown
-            ? "mt-12 max-w-24 max-h-12 rounded-full flex items-center justify-center bg-black/30"
+            ? "mt-12 max-w-24 max-h-18 rounded-full flex items-center justify-center bg-black/30"
             : "relative flex flex-col w-[512px] h-[256px] rounded-none cursor-grab active:cursor-grabbing",
         )}
         onPointerDown={b.onPointerDown}

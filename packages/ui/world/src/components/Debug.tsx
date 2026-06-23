@@ -100,7 +100,7 @@ export function Debug() {
           w.worker.worker.addEventListener("message", state.onPhysicsDebugData);
           w.worker.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
         } else {
-          pause().then(w.view.forceUpdate);
+          pause().then(() => w.view.forceUpdate());
         }
       },
       updateLightSpheres() {
