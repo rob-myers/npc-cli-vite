@@ -35,7 +35,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       ctrlOpts: {
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
-        minPolarAngle: 0,
+        minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 4,
         minDistance: w.touchDevice ? 5 : 5,
         maxDistance: 60,

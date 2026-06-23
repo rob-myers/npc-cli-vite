@@ -129,7 +129,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       >
         <div className="text-[2.5rem]">{b.key}</div>
 
-        <div className="flex flex-1 overflow-hidden text-[#ff9] p-4 text-[3rem] rounded-2xl bg-black/30 border-4 border-white/30 leading-[1.2] text-center select-none">
+        <div className="flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl border-6 border-white/10 leading-[1.2] text-center select-none">
           <div className="my-auto w-full">{b.words}</div>
         </div>
 

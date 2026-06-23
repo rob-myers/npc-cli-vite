@@ -113,13 +113,15 @@ export class SpeechBubbleApi {
     e.stopPropagation();
     this.onDragStart(e.clientX, e.clientY);
     const onMove = (ev: MouseEvent) => this.onDragMove(ev.clientX, ev.clientY);
-    const onUp = () => {
+    const cleanup = () => {
       this.onDragEnd();
       this.w.rootEl.removeEventListener("mousemove", onMove);
-      this.w.rootEl.removeEventListener("mouseup", onUp);
+      this.w.rootEl.removeEventListener("mouseup", cleanup);
+      this.w.rootEl.removeEventListener("mouseleave", cleanup);
     };
     this.w.rootEl.addEventListener("mousemove", onMove);
-    this.w.rootEl.addEventListener("mouseup", onUp);
+    this.w.rootEl.addEventListener("mouseup", cleanup);
+    this.w.rootEl.addEventListener("mouseleave", cleanup);
   };
 
   onWheel = (e: React.WheelEvent) => {
@@ -130,13 +132,15 @@ export class SpeechBubbleApi {
     e.stopPropagation();
     this.resizeStart(e.clientX, e.clientY);
     const onMove = (ev: MouseEvent) => this.resizeMove(ev.clientX, ev.clientY);
-    const onUp = () => {
+    const cleanup = () => {
       this.isResizing = false;
       this.w.rootEl.removeEventListener("mousemove", onMove);
-      this.w.rootEl.removeEventListener("mouseup", onUp);
+      this.w.rootEl.removeEventListener("mouseup", cleanup);
+      this.w.rootEl.removeEventListener("mouseleave", cleanup);
     };
     this.w.rootEl.addEventListener("mousemove", onMove);
-    this.w.rootEl.addEventListener("mouseup", onUp);
+    this.w.rootEl.addEventListener("mouseup", cleanup);
+    this.w.rootEl.addEventListener("mouseleave", cleanup);
   };
 
   onTouchStart = (e: React.TouchEvent) => {

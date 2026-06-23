@@ -55,7 +55,7 @@ export class Npc {
   fadeState = { delta: 0, target: 1 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
-  labelStyle: JshCli.NpcLabelStyle = { color: "#fff7", speaking: false };
+  labelStyle: JshCli.NpcLabelStyle = { color: "#fffa", speaking: false };
   last = {
     blockingArea: -1,
     /** Seconds elapsed */
@@ -144,16 +144,8 @@ export class Npc {
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
 
-    const labelText = this.key;
+    const labelText = this.labelStyle.speaking ? `[ ${this.key} ]` : this.key;
     ct.fillText(labelText, width / 2, height / 2);
-
-    if (this.labelStyle.speaking) {
-      const speechBubbleImg = this.w.decor.imgForOtherTex["speech-bubble"];
-      const textWidth = ct.measureText(labelText).width;
-      ct.globalAlpha = 0.6;
-      ct.drawImage(speechBubbleImg, width / 2 + textWidth / 2 + 8, 0, 32, 32);
-      ct.globalAlpha = 1.0;
-    }
 
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
