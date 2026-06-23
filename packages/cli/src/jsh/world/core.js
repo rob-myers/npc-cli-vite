@@ -30,7 +30,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
  * @param {{ where?(e: JshCli.Event): e is T }} [opts]
  */
 export async function* events({ api, args, w }, opts = api.jsArg(args)) {
-  const filter = !args[0] ? undefined : (opts.where ?? api.generateSelector(api.parseFnOrStr(args[0]), []));
+  const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
     cleanups() {

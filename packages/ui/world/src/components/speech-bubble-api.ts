@@ -104,8 +104,8 @@ export class SpeechBubbleApi {
     const dy = (clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
     // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
     // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
-    this.bubbleDiv.style.width = `${Math.max(512, this.resizeWidthAtStart + dx * 2)}px`;
-    this.bubbleDiv.style.height = `${Math.max(256, this.resizeHeightAtStart + dy)}px`;
+    this.bubbleDiv.style.width = `${Math.max(minBubbleWidth, this.resizeWidthAtStart + dx * 2)}px`;
+    this.bubbleDiv.style.height = `${Math.max(minBubbleHeight, this.resizeHeightAtStart + dy)}px`;
     this.html3d?.onFrame();
   }
 
@@ -183,12 +183,23 @@ export class SpeechBubbleApi {
     this.words = words;
     this.epochMs = Date.now();
     this.w.bubble.update();
+
+    if (words) {
+      this.w.events.next({
+        key: "speech",
+        npcKey: this.key,
+        words: this.words,
+        epochMs: this.epochMs,
+      });
+    }
   }
 
-  update: () => void = noop;
+  update = noop;
 }
 
 function noop() {}
 
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
+const minBubbleWidth = 256;
+const minBubbleHeight = 256;
