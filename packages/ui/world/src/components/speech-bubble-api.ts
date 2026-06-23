@@ -64,85 +64,111 @@ export class SpeechBubbleApi {
     return this.offsetInitialized;
   }
 
-  onDragStart(e: PointerEvent) {
+  onDragStart(clientX: number, clientY: number) {
     this.isDragging = true;
-    this.dragStartClient = { x: e.clientX, y: e.clientY };
+    this.dragStartClient = { x: clientX, y: clientY };
     this.dragWorldOffsetAtStart = { x: this.offset.x, y: this.offset.y, z: this.offset.z };
-    (e.target as Element).setPointerCapture(e.pointerId);
   }
 
-  onDragMove(e: PointerEvent) {
+  onDragMove(clientX: number, clientY: number) {
     if (!this.isDragging || !this.tracked) return;
     const { camera } = this.w.r3f;
     const { width, height } = this.w.r3f.get().size;
-
-    // NDC depth of tracked anchor
     tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).add(this.tracked.offset);
     const ndcZ = tmpVec2.copy(tmpVec).project(camera).z;
-
-    // Unproject drag-start and current pointer positions at anchor depth
     tmpVec
       .set((this.dragStartClient.x / width) * 2 - 1, -(this.dragStartClient.y / height) * 2 + 1, ndcZ)
       .unproject(camera);
-
-    tmpVec2.set((e.clientX / width) * 2 - 1, -(e.clientY / height) * 2 + 1, ndcZ).unproject(camera);
-
-    // Constrain to vertical only — bubble stays directly above NPC
+    tmpVec2.set((clientX / width) * 2 - 1, -(clientY / height) * 2 + 1, ndcZ).unproject(camera);
     this.offset.y = this.dragWorldOffsetAtStart.y + tmpVec2.y - tmpVec.y;
-
     this.html3d?.onFrame();
   }
 
-  onDragEnd(_e: PointerEvent) {
+  onDragEnd() {
     this.isDragging = false;
   }
 
-  onPointerDown = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    this.onDragStart(e.nativeEvent);
-  };
+  resizeStart(clientX: number, clientY: number) {
+    this.isResizing = true;
+    this.resizeStartClient = { x: clientX, y: clientY };
+    this.resizeWidthAtStart = this.bubbleDiv?.offsetWidth ?? 0;
+    this.resizeHeightAtStart = this.bubbleDiv?.offsetHeight ?? 0;
+    // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
+    const rect = this.bubbleDiv?.getBoundingClientRect();
+    this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
+  }
 
-  onPointerMove = (e: React.PointerEvent) => {
+  resizeMove(clientX: number, clientY: number) {
+    if (!this.isResizing || !this.bubbleDiv) return;
+    const dx = (clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
+    const dy = (clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
+    // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
+    // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
+    this.bubbleDiv.style.width = `${Math.max(512, this.resizeWidthAtStart + dx * 2)}px`;
+    this.bubbleDiv.style.height = `${Math.max(256, this.resizeHeightAtStart + dy)}px`;
+    this.html3d?.onFrame();
+  }
+
+  onMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    this.onDragStart(e.clientX, e.clientY);
+  };
+  onMouseMove = (e: React.MouseEvent) => {
     if (!this.isDragging) return;
     e.stopPropagation();
-    this.onDragMove(e.nativeEvent);
+    this.onDragMove(e.clientX, e.clientY);
   };
-
-  onPointerUp = (e: React.PointerEvent) => {
+  onMouseUp = (e: React.MouseEvent) => {
     if (!this.isDragging) return;
     e.stopPropagation();
-    this.onDragEnd(e.nativeEvent);
+    this.onDragEnd();
   };
 
   onWheel = (e: React.WheelEvent) => {
     this.forwardWheelEvents(e);
   };
 
-  onResizeStart = (e: React.PointerEvent) => {
-    e.stopPropagation(); // prevent bubbleDiv's onPointerDown from starting a drag simultaneously
-    this.isResizing = true;
-    this.resizeStartClient = { x: e.clientX, y: e.clientY };
-    this.resizeWidthAtStart = this.bubbleDiv?.offsetWidth ?? 0;
-    this.resizeHeightAtStart = this.bubbleDiv?.offsetHeight ?? 0;
-    // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
-    const rect = this.bubbleDiv?.getBoundingClientRect();
-    this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
-    (e.target as Element).setPointerCapture(e.pointerId);
+  onResizeMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    this.resizeStart(e.clientX, e.clientY);
+    const onMove = (ev: MouseEvent) => this.resizeMove(ev.clientX, ev.clientY);
+    const onUp = () => {
+      this.isResizing = false;
+      this.w.rootEl.removeEventListener("mousemove", onMove);
+      this.w.rootEl.removeEventListener("mouseup", onUp);
+    };
+    this.w.rootEl.addEventListener("mousemove", onMove);
+    this.w.rootEl.addEventListener("mouseup", onUp);
   };
 
-  onResizeMove = (e: React.PointerEvent) => {
-    if (!this.isResizing || !this.bubbleDiv) return;
-    const dx = (e.clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
-    const dy = (e.clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
-    // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
-    // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
-    this.bubbleDiv.style.width = `${Math.max(512, this.resizeWidthAtStart + dx * 2)}px`;
-    this.bubbleDiv.style.height = `${Math.max(256, this.resizeHeightAtStart + dy)}px`;
-    this.html3d?.onFrame();
+  onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    if (t) this.onDragStart(t.clientX, t.clientY);
+  };
+  onTouchMove = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    e.stopPropagation();
+    this.onDragMove(t.clientX, t.clientY);
+  };
+  onTouchEnd = (_e: React.TouchEvent) => {
+    this.onDragEnd();
   };
 
-  onResizeEnd = (_e: React.PointerEvent) => {
-    this.isResizing = false;
+  onResizeTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    if (!t) return;
+    this.resizeStart(t.clientX, t.clientY);
+    const onMove = (ev: TouchEvent) => { const t2 = ev.touches[0]; if (t2) this.resizeMove(t2.clientX, t2.clientY); };
+    const onEnd = () => {
+      this.isResizing = false;
+      document.removeEventListener("touchmove", onMove, { capture: true });
+      document.removeEventListener("touchend", onEnd, { capture: true });
+    };
+    document.addEventListener("touchmove", onMove, { capture: true });
+    document.addEventListener("touchend", onEnd, { capture: true });
   };
 
   setTracked(tracked: TrackedObject3D) {
