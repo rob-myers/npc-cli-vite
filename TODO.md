@@ -117,6 +117,12 @@ w decor.byKey.test-decor-point
 - ✅ remove w.bubble.topDown using w.view.topDown instead
 - ✅ speech bubble remembers offset after dispose and re-create
 
+- ✅ mobile camera changes
+  - isolate pinch-zoom from rotation
+  - pinch-zoom has more effect
+- 🚧 clean camera-controls
+- 🚧 camera-controls snapAzimuth shows rotation until half-way then snaps
+
 - BUG cannot change polar angle sometimes when polar minimal
 
 - speech bubble remembers resize after dispose and re-create

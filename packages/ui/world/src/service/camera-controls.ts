@@ -249,7 +249,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   touches = {
     ONE: THREE.TOUCH.PAN,
-    TWO: THREE.TOUCH.DOLLY_ROTATE,
+    TWO: THREE.TOUCH.ROTATE,
   };
   //#endregion
 
@@ -270,6 +270,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   /** Allow zooming in beyond minDistance by this factor; tweens back when released */
   extraZoom = 1;
   _ez: ExtraZoom;
+  twoFingerGesture: "undecided" | "rotate" | "zoom" = "undecided";
+  twoFingerGestureStartPositions: Record<number, { x: number; y: number }> = {};
 
   get extraZoomActive() {
     return this._ez.active;
@@ -445,9 +447,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   handleTouchMoveDolly(event: PointerEvent) {
     const position = this.getSecondPointerPosition(event);
-    const dx = event.pageX - position.x;
-    const dy = event.pageY - position.y;
-    const distance = Math.hypot(dx, dy);
+    const distance = Math.hypot(event.pageX - position.x, event.pageY - position.y);
 
     this.u.dollyEnd.set(0, distance);
     this.u.dollyDelta.set(0, (this.u.dollyEnd.y / this.u.dollyStart.y) ** this.zoomSpeed);
@@ -469,6 +469,63 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     if (this.enableRotate === true) this.handleTouchMoveRotate(event);
   }
 
+  handleTwoFingerMove(event: PointerEvent) {
+    const pos0 = this.pointerPositions[this.pointers[0].pointerId];
+    const pos1 = this.pointerPositions[this.pointers[1].pointerId];
+    if (!pos0 || !pos1) return;
+
+    const start0 = this.twoFingerGestureStartPositions[this.pointers[0].pointerId];
+    const start1 = this.twoFingerGestureStartPositions[this.pointers[1].pointerId];
+    if (!start0 || !start1) return;
+
+    const dx0 = pos0.x - start0.x, dy0 = pos0.y - start0.y;
+    const dx1 = pos1.x - start1.x, dy1 = pos1.y - start1.y;
+    const len0 = Math.hypot(dx0, dy0);
+    const len1 = Math.hypot(dx1, dy1);
+
+    const minMove = this.twoFingerGesture === "undecided" ? twoFingerMinMove : 1;
+    if (len0 < minMove || len1 < minMove) return;
+
+    const dot = (dx0 * dx1 + dy0 * dy1) / (len0 * len1);
+
+    if (this.twoFingerGesture === "undecided") {
+      if (dot > twoFingerSameDirThreshold) {
+        this.twoFingerGesture = "rotate";
+        this.handleTouchStartRotate();
+      } else if (dot < -twoFingerSameDirThreshold) {
+        this.twoFingerGesture = "zoom";
+        this.handleTouchStartDolly();
+      }
+      return;
+    }
+
+    const directionChanged =
+      (this.twoFingerGesture === "rotate" && dot < twoFingerStopThreshold) ||
+      (this.twoFingerGesture === "zoom" && dot > twoFingerZoomStopThreshold);
+
+    if (directionChanged) {
+      this.twoFingerGesture = "undecided";
+      for (const p of this.pointers) {
+        const pos = this.pointerPositions[p.pointerId];
+        if (pos) this.twoFingerGestureStartPositions[p.pointerId] = { x: pos.x, y: pos.y };
+      }
+      return;
+    }
+
+    if (this.twoFingerGesture === "rotate") {
+      this.handleTouchMoveRotate(event);
+    } else {
+      const other = this.getSecondPointerPosition(event)!;
+      const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
+      this.u.dollyEnd.set(0, dist);
+      const baseRatio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
+      const ratio = 1 + (baseRatio - 1) * twoFingerZoomBoost;
+      if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
+      this.dollyOut(ratio);
+      this.u.dollyStart.copy(this.u.dollyEnd);
+    }
+  }
+
   handleTouchMovePan(event: PointerEvent) {
     if (this._ez.active && this.pointers.length !== 1) return;
     if (this.pointers.length == 1) {
@@ -486,13 +543,18 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTouchMoveRotate(event: PointerEvent) {
-    if (this.pointers.length == 1) {
+    if (this.pointers.length === 1) {
       this.u.rotateEnd.set(event.pageX, event.pageY);
-    } else {
+    } else if (this.pointers.length === 2) {
       const position = this.getSecondPointerPosition(event);
       const x = 0.5 * (event.pageX + position.x);
       const y = 0.5 * (event.pageY + position.y);
       this.u.rotateEnd.set(x, y);
+    } else {
+      let cx = 0, cy = 0;
+      for (const pos of Object.values(this.pointerPositions)) { cx += pos.x; cy += pos.y; }
+      const n = Object.keys(this.pointerPositions).length;
+      this.u.rotateEnd.set(cx / n, cy / n);
     }
 
     this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
@@ -541,10 +603,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTouchStartDolly() {
-    const dx = this.pointers[0].pageX - this.pointers[1].pageX;
-    const dy = this.pointers[0].pageY - this.pointers[1].pageY;
-    const distance = Math.hypot(dx, dy);
-    this.u.dollyStart.set(0, distance);
+    const p0 = this.pointerPositions[this.pointers[0].pointerId];
+    const p1 = this.pointerPositions[this.pointers[1].pointerId];
+    const x0 = p0?.x ?? this.pointers[0].pageX;
+    const y0 = p0?.y ?? this.pointers[0].pageY;
+    const x1 = p1?.x ?? this.pointers[1].pageX;
+    const y1 = p1?.y ?? this.pointers[1].pageY;
+    this.u.dollyStart.set(0, Math.hypot(x0 - x1, y0 - y1));
   }
 
   handleTouchStartPan() {
@@ -558,12 +623,16 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTouchStartRotate() {
-    if (this.pointers.length == 1) {
+    if (this.pointers.length === 1) {
       this.u.rotateStart.set(this.pointers[0].pageX, this.pointers[0].pageY);
     } else {
-      const x = 0.5 * (this.pointers[0].pageX + this.pointers[1].pageX);
-      const y = 0.5 * (this.pointers[0].pageY + this.pointers[1].pageY);
-      this.u.rotateStart.set(x, y);
+      let cx = 0, cy = 0;
+      for (const p of this.pointers) {
+        const pos = this.pointerPositions[p.pointerId];
+        cx += pos?.x ?? p.pageX;
+        cy += pos?.y ?? p.pageY;
+      }
+      this.u.rotateStart.set(cx / this.pointers.length, cy / this.pointers.length);
     }
   }
 
@@ -776,8 +845,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         break;
 
       case this.STATE.TOUCH_DOLLY_ROTATE:
-        if (this.enableZoom === false && this.enableRotate === false) return;
-        this.handleTouchMoveDollyRotate(event);
+        this.handleTwoFingerMove(event);
         this.update();
         break;
 
@@ -806,20 +874,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
       this.dispatchEvent(startEvent);
     } else if (this.pointers.length === 2) {
-      switch (this.touches.TWO) {
-        case TOUCH.DOLLY_PAN:
-          if (this.enableZoom === false && this.enablePan === true) return;
-          this.handleTouchStartDollyPan();
-          this.state = this.STATE.TOUCH_DOLLY_PAN;
-          break;
-        case TOUCH.DOLLY_ROTATE:
-          if (this.enableZoom === false && this.enableRotate === false) return;
-          this.handleTouchStartDollyRotate();
-          this.state = this.STATE.TOUCH_DOLLY_ROTATE;
-          break;
-        default:
+      this.twoFingerGesture = "undecided";
+      this.twoFingerGestureStartPositions = {};
+      for (const p of this.pointers) {
+        const pos = this.pointerPositions[p.pointerId];
+        this.twoFingerGestureStartPositions[p.pointerId] = pos ? { x: pos.x, y: pos.y } : { x: p.pageX, y: p.pageY };
       }
-
+      this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
     } else {
       this.state = this.STATE.NONE;
@@ -1099,6 +1160,11 @@ const endEvent = { type: "end" } as const;
 const changeEvent = { type: "change" } as const;
 
 const defaultDampingFactor = 0.05;
+const twoFingerMinMove = 8;
+const twoFingerSameDirThreshold = 0.7;
+const twoFingerStopThreshold = 0.3;
+const twoFingerZoomStopThreshold = 0.5;
+const twoFingerZoomBoost = 3.0;
 
 const halfPi = Math.PI / 2;
 const twoPI = 2 * Math.PI;
