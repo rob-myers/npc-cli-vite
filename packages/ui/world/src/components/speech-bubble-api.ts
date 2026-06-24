@@ -19,6 +19,8 @@ export class SpeechBubbleApi {
   w: WorldState;
   words = "Hello, world!!";
 
+  isInteractive = false;
+
   offsetInitialized = false;
   isDragging = false;
   dragStartClient = { x: 0, y: 0 };
@@ -43,12 +45,15 @@ export class SpeechBubbleApi {
     this.w = w;
   }
 
+  bubbleDivRef(el: HTMLElement | null) {
+    this.bubbleDiv = el;
+  }
+
   dispose() {
     if (this.autoDeleteTimer !== null) {
       clearTimeout(this.autoDeleteTimer);
       this.autoDeleteTimer = null;
     }
-    this.update = noop;
     //@ts-expect-error
     this.w = null;
     //@ts-expect-error
@@ -60,6 +65,11 @@ export class SpeechBubbleApi {
   forwardWheelEvents(e: React.WheelEvent) {
     e.stopPropagation();
     this.w.view.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
+  }
+
+  forceRender() {
+    this.epochMs = Date.now();
+    this.w.bubble.update();
   }
 
   html3dRef(html3d: Html3dState | null) {
@@ -268,10 +278,14 @@ export class SpeechBubbleApi {
     }
   }
 
-  update = noop;
+  toggleInteractive(e: React.MouseEvent) {
+    if (!(Math.abs(this.resizeStartClient.x - e.clientX) < 1 && Math.abs(this.resizeStartClient.y - e.clientY) < 1)) {
+      return;
+    }
+    this.isInteractive = !this.isInteractive;
+    this.forceRender();
+  }
 }
-
-function noop() {}
 
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();

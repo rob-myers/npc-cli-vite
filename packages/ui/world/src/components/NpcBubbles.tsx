@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { ArrowDownRightIcon } from "@phosphor-icons/react";
+import { HandPointingIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
 import { type AutoDeleteOpts, defaultAutoDeleteOpts, SpeechBubbleApi } from "./speech-bubble-api";
@@ -111,7 +111,6 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     setTimeout(() => {
       b.html3d?.onFrame();
       b.initializeOpacity();
-      b.update();
     }, 30);
   }, []);
 
@@ -126,29 +125,33 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       visible
     >
       <div
-        ref={(el) => {
-          b.bubbleDiv = el;
-        }}
+        ref={b.bubbleDivRef.bind(b)}
         className={cn(
-          "transform-[translate(-50%)] relative flex flex-col rounded-none cursor-grab active:cursor-grabbing pointer-events-auto overflow-hidden",
+          "transform-[translate(-50%)] relative flex flex-col rounded-none cursor-grab active:cursor-grabbing overflow-hidden",
           "h-72 w-140",
+          b.isInteractive && "pointer-events-auto",
         )}
         onMouseDown={b.onMouseDown}
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        <div className="text-[2.5rem]">{b.key}</div>
+        <div className={cn("text-[2.5rem] truncate", !b.isInteractive && "select-none opacity-50")}>{b.key}</div>
 
         <div className="flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl border-6 border-white/10 leading-[1.2] text-center select-none">
           <div className="my-auto w-full">{b.words}</div>
         </div>
 
         <div
-          className="absolute bottom-0 right-0 border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-se-resize hover:bg-black/80"
+          className={cn(
+            "pointer-events-auto absolute bottom-0 right-0 flex gap-2",
+            "border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80",
+            b.isInteractive ? "cursor-se-resize" : "cursor-pointer opacity-25",
+          )}
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}
+          onPointerUp={b.toggleInteractive.bind(b)}
         >
-          <ArrowDownRightIcon className="size-8" />
+          <HandPointingIcon className="size-10" />
         </div>
       </div>
     </Html3d>
