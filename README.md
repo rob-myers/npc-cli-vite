@@ -200,3 +200,14 @@ pnpm gen-pkg
 
 pnpm gen-starship-sheets
 ```
+
+# Debug on mobile hotspot
+
+```sh
+pnpm dev-hotspot
+
+# get local ip address for mobile development
+ipconfig getifaddr en0
+
+# navigate to http://${ipAddress}:5173
+```
