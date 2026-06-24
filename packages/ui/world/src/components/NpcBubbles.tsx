@@ -12,7 +12,6 @@ export default function NpcBubbles() {
     (): State => ({
       byKey: {},
       lastBubbleData: {},
-      isTopDown: false, // 🚧 remove
 
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
@@ -21,12 +20,8 @@ export default function NpcBubbles() {
 
           state.lastBubbleData[npcKey] = {
             offset: { ...bubble.offset },
+            ...bubble.getBubbleDivResizeInfo(),
           };
-          // remember manually edited rootDiv.style.{width,height}
-          const rootDiv = bubble.html3d?.rootDiv;
-          const rootDivRect = rootDiv?.getBoundingClientRect();
-          if (rootDiv?.style.width) state.lastBubbleData[npcKey].width = rootDivRect.width;
-          if (rootDiv?.style.height) state.lastBubbleData[npcKey].height = rootDivRect.height;
 
           bubble.dispose();
           delete state.byKey[npcKey];
@@ -38,7 +33,6 @@ export default function NpcBubbles() {
         }
         w.view.forceUpdate();
       },
-
       ensure(npcKey, opts: Partial<AutoDeleteOpts> = {}) {
         const extant = state.byKey[npcKey];
         if (extant) return extant;
@@ -47,14 +41,20 @@ export default function NpcBubbles() {
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
         const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w));
 
+        // 🚧 remember resize somehow too
+        const prev = state.lastBubbleData[npcKey];
+        if (prev?.offset) bubble.offset = { ...prev.offset };
+        delete state.lastBubbleData[npcKey]
+
         bubble.autoDeleteOpts = { ...defaultAutoDeleteOpts, ...opts };
         bubble.scheduleAutoDelete();
 
-        if (state.isTopDown) {
+        if (w.view.topDown) {
           npc.drawLabel({ speaking: true });
         } else {
           npc.labelMaterial.visible = false;
         }
+
         w.view.forceUpdate();
         return bubble;
       },
@@ -66,7 +66,6 @@ export default function NpcBubbles() {
         }
       },
       onChangeTopDown(topDown: boolean) {
-        state.isTopDown = topDown;
         for (const bubble of Object.values(state.byKey)) {
           const npc = w.n[bubble.key];
           if (!npc) continue;
@@ -79,7 +78,7 @@ export default function NpcBubbles() {
       setShownIfExists(npcKey: string, shown: boolean) {
         const rootDiv = this.byKey[npcKey]?.html3d?.rootDiv;
         if (!rootDiv) return false;
-        rootDiv.style.opacity = shown && !state.isTopDown ? "" : "0";
+        rootDiv.style.opacity = shown && !w.view.topDown ? "" : "0";
         return true;
       },
     }),
@@ -116,8 +115,7 @@ export default function NpcBubbles() {
 
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
-  lastBubbleData: { [npcKey: string]: { offset?: { x: number; y: number }; width?: number; height?: number } };
-  isTopDown: boolean;
+  lastBubbleData: { [npcKey: string]: { offset?: { x: number; y: number; z: number }; width?: number; height?: number } };
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string, opts?: AutoDeleteOpts): SpeechBubbleApi;
   handleDevHotReload(): void;
