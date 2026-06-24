@@ -106,18 +106,20 @@ w decor.byKey.test-decor-point
   - ✅ clean Html3d
   - ✅ clean NpcBubbles
 
-- 🚧 speech bubble pointer events redo
+- ✅ speech bubble pointer events redo
   - ✅ by default pointer-events-none except interactive toggle
   - ✅ interactive toggle permits resize when interactive
   - ✅ after timeout become non-interactive
   - ❌ does not fade when translating or resizing
     - can pause and translate/resize
-  - 🚧 clean
+  - ✅ clean
 
-- 🚧 remove w.bubble.topDown using w.view.topDown instead
-- 🚧 speech bubble remembers resize/offset after dispose and re-create
+- ✅ remove w.bubble.topDown using w.view.topDown instead
+- ✅ speech bubble remembers offset after dispose and re-create
 
 - BUG cannot change polar angle sometimes when polar minimal
+
+- speech bubble remembers resize after dispose and re-create
 - 🚧 reduce npc draw calls
   - reduce multiple materials
   - ✅ front-sided

@@ -79,6 +79,16 @@ export class SpeechBubbleApi {
     this.w.bubble.update();
   }
 
+  /** remember manually edited bubbleDiv.style.{width,height} */
+  getBubbleDivResizeInfo(): { width?: number; height?: number } {
+    const bubbleDiv = this.bubbleDiv;
+    const bubbleDivRect = bubbleDiv?.getBoundingClientRect();
+    return {
+      width: bubbleDiv?.style.width ? (bubbleDivRect as DOMRect).width : undefined,
+      height: bubbleDiv?.style.height ? (bubbleDivRect as DOMRect).height : undefined,
+    };
+  }
+
   html3dRef(html3d: Html3dState | null) {
     if (!html3d) return;
 
@@ -90,10 +100,12 @@ export class SpeechBubbleApi {
     this.html3d = html3d;
   }
 
+  /** Fades in when appropriate */
   initializeOpacity() {
     const rootDiv = this.html3d.rootDiv;
     if (!rootDiv) return;
-    if (this.w.bubble.isTopDown) {
+
+    if (this.w.view.topDown) {
       // keep hidden (opacity already 0 from html3dRef)
     } else if (this.w.disabled) {
       // show immediately if paused
@@ -137,6 +149,7 @@ export class SpeechBubbleApi {
     this.resizeStartClient = { x: clientX, y: clientY };
     this.resizeWidthAtStart = this.bubbleDiv?.offsetWidth ?? 0;
     this.resizeHeightAtStart = this.bubbleDiv?.offsetHeight ?? 0;
+
     // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
     const rect = this.bubbleDiv?.getBoundingClientRect();
     this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
