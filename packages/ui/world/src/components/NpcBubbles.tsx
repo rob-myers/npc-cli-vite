@@ -121,7 +121,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         }}
         className={cn(
           "transform-[translate(-50%)] relative flex flex-col rounded-none cursor-grab active:cursor-grabbing pointer-events-auto overflow-hidden",
-          "h-64 w-64",
+          "h-72 w-140",
         )}
         onMouseDown={b.onMouseDown}
         onTouchStart={b.onTouchStart}
