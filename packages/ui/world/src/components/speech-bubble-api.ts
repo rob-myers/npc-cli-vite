@@ -11,10 +11,9 @@ export class SpeechBubbleApi {
 
   html3d: Html3dState = {} as Html3dState;
   position = new THREE.Vector3();
-  tracked: TrackedObject3D | null = null;
+  tracked: TrackedObject3D;
   /** 3D world-space offset from the tracked anchor — driven by drag. */
   offset = { x: 0, y: 0, z: 0 };
-  resolveOnMount: () => void = noop;
 
   key: string;
   w: WorldState;
@@ -31,18 +30,31 @@ export class SpeechBubbleApi {
   resizeHeightAtStart = 0;
   resizeHtmlScale = 1;
 
+  autoDeleteOpts: AutoDeleteOpts | null = null;
+  autoDeleteRemainingMs: number | null = null;
+  autoDeleteTimerStartedAt = 0;
+  autoDeleteTimer: ReturnType<typeof setTimeout> | null = null;
+
   bubbleDiv: HTMLElement | null = null;
 
-  constructor(key: string, w: WorldState) {
+  constructor(key: string, tracked: TrackedObject3D, w: WorldState) {
     this.key = key;
+    this.tracked = tracked;
     this.w = w;
   }
 
   dispose() {
-    this.tracked = null;
+    if (this.autoDeleteTimer !== null) {
+      clearTimeout(this.autoDeleteTimer);
+      this.autoDeleteTimer = null;
+    }
     this.update = noop;
-    this.w = null as any;
-    this.html3dRef(null);
+    //@ts-expect-error
+    this.w = null;
+    //@ts-expect-error
+    this.html3d = null;
+    //@ts-expect-error
+    this.tracked = null;
   }
 
   forwardWheelEvents(e: React.WheelEvent) {
@@ -51,17 +63,32 @@ export class SpeechBubbleApi {
   }
 
   html3dRef(html3d: Html3dState | null) {
-    this.html3d = html3d as Html3dState;
+    if (!html3d) return;
+
+    if (this.html3d !== html3d) {
+      // speech bubbles hidden on 1st ever mount
+      html3d.rootDiv.style.opacity = "0";
+    }
+
+    this.html3d = html3d;
   }
 
-  initializeOffset() {
-    if (this.offsetInitialized) return;
-    this.offsetInitialized = true;
-    this.offset.x = this.offset.y = this.offset.z = 0;
-  }
-
-  isMounted() {
-    return this.offsetInitialized;
+  initializeOpacity() {
+    const rootDiv = this.html3d.rootDiv;
+    if (!rootDiv) return;
+    if (this.w.bubble.isTopDown) {
+      // keep hidden (opacity already 0 from html3dRef)
+    } else if (this.w.disabled) {
+      // show immediately if paused
+      rootDiv.style.opacity = "";
+    } else {
+      // commence fade in
+      rootDiv.style.transition = "opacity 0.3s";
+      rootDiv.style.opacity = "";
+      setTimeout(() => {
+        rootDiv.style.transition = "";
+      }, 300);
+    }
   }
 
   onDragStart(clientX: number, clientY: number) {
@@ -179,14 +206,57 @@ export class SpeechBubbleApi {
     document.addEventListener("touchend", onEnd, { capture: true });
   };
 
-  setTracked(tracked: TrackedObject3D) {
-    this.tracked = tracked;
+  scheduleAutoDelete() {
+    if (this.autoDeleteTimer !== null) {
+      clearTimeout(this.autoDeleteTimer);
+      this.autoDeleteTimer = null;
+    }
+    if (!this.autoDeleteOpts) return;
+    const { baseSeconds, perWordSeconds } = this.autoDeleteOpts;
+    const wordCount = this.words.trim() ? this.words.trim().split(/\s+/).length : 0;
+    this.autoDeleteRemainingMs = (baseSeconds + perWordSeconds * wordCount) * 1000;
+    if (!this.w?.disabled) {
+      this.autoDeleteTimerStartedAt = Date.now();
+      this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
+    }
+  }
+
+  pauseAutoDelete() {
+    if (this.autoDeleteTimer === null) return;
+    clearTimeout(this.autoDeleteTimer);
+    this.autoDeleteTimer = null;
+    if (this.autoDeleteRemainingMs !== null) {
+      this.autoDeleteRemainingMs = Math.max(
+        0,
+        this.autoDeleteRemainingMs - (Date.now() - this.autoDeleteTimerStartedAt),
+      );
+    }
+  }
+
+  resumeAutoDelete() {
+    if (this.autoDeleteRemainingMs === null || this.autoDeleteTimer !== null) return;
+    this.autoDeleteTimerStartedAt = Date.now();
+    this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
+  }
+
+  fadeAndDelete() {
+    this.autoDeleteTimer = null;
+    this.autoDeleteRemainingMs = null;
+    if (this.html3d?.rootDiv) {
+      this.html3d.rootDiv.style.transition = "opacity 0.5s";
+      this.html3d.rootDiv.style.opacity = "0";
+    }
+    setTimeout(() => this.w?.bubble?.delete(this.key), 500);
   }
 
   setWords(words: string) {
     this.words = words;
     this.epochMs = Date.now();
     this.w.bubble.update();
+
+    if (this.autoDeleteOpts) {
+      this.scheduleAutoDelete(); // reschedule
+    }
 
     if (words) {
       this.w.events.next({
@@ -207,3 +277,6 @@ const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
 const minBubbleWidth = 256;
 const minBubbleHeight = 256;
+
+export type AutoDeleteOpts = { baseSeconds: number; perWordSeconds: number };
+export const defaultAutoDeleteOpts: AutoDeleteOpts = { baseSeconds: 2, perWordSeconds: 0.5 };

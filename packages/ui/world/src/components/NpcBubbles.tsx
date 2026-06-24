@@ -1,12 +1,12 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { ArrowDownRightIcon } from "@phosphor-icons/react";
-import React from "react";
+import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
-import { SpeechBubbleApi } from "./speech-bubble-api";
+import { type AutoDeleteOpts, defaultAutoDeleteOpts, SpeechBubbleApi } from "./speech-bubble-api";
 import { WorldContext } from "./world-context";
 
 export default function NpcBubbles() {
-  const w = React.useContext(WorldContext);
+  const w = useContext(WorldContext);
 
   const state = useStateRef(
     (): State => ({
@@ -23,13 +23,16 @@ export default function NpcBubbles() {
         }
         w.view.forceUpdate();
       },
-      ensure(npcKey) {
+      ensure(npcKey, opts: Partial<AutoDeleteOpts> = {}) {
         const extant = state.byKey[npcKey];
         if (extant) return extant;
 
         const npc = w.npc.get(npcKey);
-        const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, w));
-        bubble.setTracked({ object: npc.skinnedMesh, offset: npc.bubbleOffset });
+        const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
+        const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w));
+
+        bubble.autoDeleteOpts = { ...defaultAutoDeleteOpts, ...opts };
+        bubble.scheduleAutoDelete();
 
         if (state.isTopDown) {
           npc.drawLabel({ speaking: true });
@@ -38,6 +41,13 @@ export default function NpcBubbles() {
         }
         w.view.forceUpdate();
         return bubble;
+      },
+      handleDevHotReload() {
+        for (const bubble of Object.values(state.byKey)) {
+          const tempBubble = new SpeechBubbleApi(bubble.key, bubble.tracked, w);
+          Object.assign(bubble, { ...tempBubble }, { ...bubble });
+          Object.setPrototypeOf(bubble, Object.getPrototypeOf(tempBubble));
+        }
       },
       onChangeTopDown(topDown: boolean) {
         state.isTopDown = topDown;
@@ -62,16 +72,20 @@ export default function NpcBubbles() {
   w.bubble = state;
   w.b = state.byKey;
 
-  // On HMR, SpeechBubbleApi is a new class reference — refresh existing bubble prototypes.
-  const apiRef = React.useRef(SpeechBubbleApi);
-  if (import.meta.env.DEV && apiRef.current !== SpeechBubbleApi) {
-    apiRef.current = SpeechBubbleApi;
-    for (const bubble of Object.values(state.byKey)) {
-      const tempBubble = new SpeechBubbleApi(bubble.key, w);
-      Object.assign(bubble, { ...tempBubble }, { ...bubble });
-      Object.setPrototypeOf(bubble, Object.getPrototypeOf(tempBubble));
-    }
-  }
+  useEffect(() => {
+    import.meta.env.DEV && state.handleDevHotReload();
+
+    const sub = w.events.subscribe({
+      next(e) {
+        if (e.key === "disabled") {
+          for (const bubble of Object.values(state.byKey)) bubble.pauseAutoDelete();
+        } else if (e.key === "enabled") {
+          for (const bubble of Object.values(state.byKey)) bubble.resumeAutoDelete();
+        }
+      },
+    });
+    return () => sub.unsubscribe();
+  }, []);
 
   return Object.values(state.byKey).map((bubble) => (
     <MemoizedSpeechBubble key={bubble.key} bubble={bubble} epochMs={bubble.epochMs} />
@@ -82,25 +96,22 @@ export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
   isTopDown: boolean;
   delete(...npcKeys: string[]): void;
-  ensure(npcKey: string): SpeechBubbleApi;
+  ensure(npcKey: string, opts?: AutoDeleteOpts): SpeechBubbleApi;
+  handleDevHotReload(): void;
   onChangeTopDown(topDown: boolean): void;
   setShownIfExists(npcKey: string, shown: boolean): boolean;
 };
 
-interface SpeechBubbleProps {
+type SpeechBubbleProps = {
   bubble: SpeechBubbleApi;
-}
+};
 
 function NpcBubble({ bubble: b }: SpeechBubbleProps) {
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     setTimeout(() => {
-      b.initializeOffset();
-      b.update();
-      b.resolveOnMount();
       b.html3d?.onFrame();
-      if (b.w.bubble.isTopDown && b.html3d?.rootDiv) {
-        b.html3d.rootDiv.style.opacity = "0";
-      }
+      b.initializeOpacity();
+      b.update();
     }, 30);
   }, []);
 
@@ -108,7 +119,6 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     <Html3d
       ref={b.html3dRef.bind(b)}
       className="pointer-events-none absolute top-0 left-0"
-      baseScale={speechBubbleBaseScale}
       offset={b.offset}
       position={b.position}
       r3f={b.w.r3f}
@@ -144,6 +154,5 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     </Html3d>
   );
 }
-const speechBubbleBaseScale = 2;
 
-const MemoizedSpeechBubble = React.memo<SpeechBubbleProps & { epochMs: number }>(NpcBubble);
+const MemoizedSpeechBubble = memo<SpeechBubbleProps & { epochMs: number }>(NpcBubble);
