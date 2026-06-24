@@ -20,6 +20,9 @@ export class SpeechBubbleApi {
   words = "Hello, world!!";
 
   isInteractive = false;
+  interactiveRemainingMs: number | null = null;
+  interactiveTimerStartedAt = 0;
+  interactiveTimer: ReturnType<typeof setTimeout> | null = null;
 
   offsetInitialized = false;
   isDragging = false;
@@ -53,6 +56,10 @@ export class SpeechBubbleApi {
     if (this.autoDeleteTimer !== null) {
       clearTimeout(this.autoDeleteTimer);
       this.autoDeleteTimer = null;
+    }
+    if (this.interactiveTimer !== null) {
+      clearTimeout(this.interactiveTimer);
+      this.interactiveTimer = null;
     }
     //@ts-expect-error
     this.w = null;
@@ -224,7 +231,7 @@ export class SpeechBubbleApi {
     if (!this.autoDeleteOpts) return;
     const { baseSeconds, perWordSeconds } = this.autoDeleteOpts;
     const wordCount = this.words.trim() ? this.words.trim().split(/\s+/).length : 0;
-    this.autoDeleteRemainingMs = (baseSeconds + perWordSeconds * wordCount) * 1000;
+    this.autoDeleteRemainingMs = Math.min((baseSeconds + perWordSeconds * wordCount) * 1000, maxBubbleExtantMs);
     if (!this.w?.disabled) {
       this.autoDeleteTimerStartedAt = Date.now();
       this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
@@ -279,18 +286,69 @@ export class SpeechBubbleApi {
   }
 
   toggleInteractive(e: React.MouseEvent) {
-    if (!(Math.abs(this.resizeStartClient.x - e.clientX) < 1 && Math.abs(this.resizeStartClient.y - e.clientY) < 1)) {
+    if (!(Math.abs(this.resizeStartClient.x - e.clientX) < 2 && Math.abs(this.resizeStartClient.y - e.clientY) < 2)) {
       return;
     }
     this.isInteractive = !this.isInteractive;
+    if (this.isInteractive) {
+      this.startInteractiveTimer();
+    } else {
+      this.stopInteractiveTimer();
+    }
     this.forceRender();
+  }
+
+  startInteractiveTimer() {
+    if (this.interactiveTimer !== null) {
+      clearTimeout(this.interactiveTimer);
+    }
+    this.interactiveRemainingMs = interactiveDurationMs;
+    if (!this.w?.disabled) {
+      this.interactiveTimerStartedAt = Date.now();
+      this.interactiveTimer = setTimeout(() => this.deactivateInteractive(), this.interactiveRemainingMs);
+    }
+  }
+
+  stopInteractiveTimer() {
+    if (this.interactiveTimer !== null) {
+      clearTimeout(this.interactiveTimer);
+      this.interactiveTimer = null;
+    }
+    this.interactiveRemainingMs = null;
+  }
+
+  deactivateInteractive() {
+    this.interactiveTimer = null;
+    this.interactiveRemainingMs = null;
+    this.isInteractive = false;
+    this.forceRender();
+  }
+
+  pauseInteractiveTimer() {
+    if (this.interactiveTimer === null) return;
+    clearTimeout(this.interactiveTimer);
+    this.interactiveTimer = null;
+    if (this.interactiveRemainingMs !== null) {
+      this.interactiveRemainingMs = Math.max(
+        0,
+        this.interactiveRemainingMs - (Date.now() - this.interactiveTimerStartedAt),
+      );
+    }
+  }
+
+  resumeInteractiveTimer() {
+    if (!this.isInteractive || this.interactiveRemainingMs === null || this.interactiveTimer !== null) return;
+    this.interactiveTimerStartedAt = Date.now();
+    this.interactiveTimer = setTimeout(() => this.deactivateInteractive(), this.interactiveRemainingMs);
   }
 }
 
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
+const interactiveDurationMs = 5_000;
 const minBubbleWidth = 256;
 const minBubbleHeight = 256;
+const maxBubbleExtantMs = 10_000; // 10 seconds
 
 export type AutoDeleteOpts = { baseSeconds: number; perWordSeconds: number };
 export const defaultAutoDeleteOpts: AutoDeleteOpts = { baseSeconds: 2, perWordSeconds: 0.5 };

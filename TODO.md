@@ -107,9 +107,15 @@ w decor.byKey.test-decor-point
   - ✅ clean NpcBubbles
 
 - 🚧 speech bubble pointer events redo
-  - by default pointer-events-none except button
-  - button shows resize and permits translate
-  - after timeout returns to pointer-events-none
+  - ✅ by default pointer-events-none except interactive toggle
+  - ✅ interactive toggle permits resize when interactive
+  - ✅ after timeout become non-interactive
+  - ❌ does not fade when translating or resizing
+    - can pause and translate/resize
+  - 🚧 clean
+
+- 🚧 remove w.bubble.topDown using w.view.topDown instead
+- 🚧 speech bubble remembers resize/offset after dispose and re-create
 
 - BUG cannot change polar angle sometimes when polar minimal
 - 🚧 reduce npc draw calls

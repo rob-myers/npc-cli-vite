@@ -11,11 +11,26 @@ export default function NpcBubbles() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
-      isTopDown: false,
+      lastBubbleData: {},
+      isTopDown: false, // 🚧 remove
+
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
-          state.byKey[npcKey]?.dispose();
+          const bubble = state.byKey[npcKey];
+          if (!bubble) continue;
+
+          state.lastBubbleData[npcKey] = {
+            offset: { ...bubble.offset },
+          };
+          // remember manually edited rootDiv.style.{width,height}
+          const rootDiv = bubble.html3d?.rootDiv;
+          const rootDivRect = rootDiv?.getBoundingClientRect();
+          if (rootDiv?.style.width) state.lastBubbleData[npcKey].width = rootDivRect.width;
+          if (rootDiv?.style.height) state.lastBubbleData[npcKey].height = rootDivRect.height;
+
+          bubble.dispose();
           delete state.byKey[npcKey];
+
           const npc = w.n[npcKey];
           if (!npc) continue;
           npc.drawLabel({ speaking: false });
@@ -23,6 +38,7 @@ export default function NpcBubbles() {
         }
         w.view.forceUpdate();
       },
+
       ensure(npcKey, opts: Partial<AutoDeleteOpts> = {}) {
         const extant = state.byKey[npcKey];
         if (extant) return extant;
@@ -78,9 +94,15 @@ export default function NpcBubbles() {
     const sub = w.events.subscribe({
       next(e) {
         if (e.key === "disabled") {
-          for (const bubble of Object.values(state.byKey)) bubble.pauseAutoDelete();
+          for (const bubble of Object.values(state.byKey)) {
+            bubble.pauseAutoDelete();
+            bubble.pauseInteractiveTimer();
+          }
         } else if (e.key === "enabled") {
-          for (const bubble of Object.values(state.byKey)) bubble.resumeAutoDelete();
+          for (const bubble of Object.values(state.byKey)) {
+            bubble.resumeAutoDelete();
+            bubble.resumeInteractiveTimer();
+          }
         }
       },
     });
@@ -94,6 +116,7 @@ export default function NpcBubbles() {
 
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
+  lastBubbleData: { [npcKey: string]: { offset?: { x: number; y: number }; width?: number; height?: number } };
   isTopDown: boolean;
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string, opts?: AutoDeleteOpts): SpeechBubbleApi;
@@ -135,11 +158,13 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        <div className={cn("text-[2.5rem] truncate", !b.isInteractive && "select-none opacity-50")}>{b.key}</div>
+        <div className={cn("transition-opacity text-[2.5rem] truncate", !b.isInteractive && "select-none opacity-50")}>
+          {b.key}
+        </div>
 
         <div
           className={cn(
-            "flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl leading-[1.2] text-center select-none",
+            "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl leading-[1.2] text-center select-none",
             b.isInteractive ? "border-3 border-white/25" : "opacity-75 border-6 border-white/10",
           )}
         >
@@ -149,8 +174,8 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         <div
           className={cn(
             "pointer-events-auto absolute bottom-0 right-0 flex gap-2",
-            "border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer",
-            !b.isInteractive && "opacity-25",
+            "transition-opacity border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer",
+            !b.isInteractive && "opacity-50",
           )}
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}
