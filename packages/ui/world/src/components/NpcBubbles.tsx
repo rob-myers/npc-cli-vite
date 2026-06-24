@@ -127,8 +127,8 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       <div
         ref={b.bubbleDivRef.bind(b)}
         className={cn(
-          "transform-[translate(-50%)] relative flex flex-col rounded-none cursor-grab active:cursor-grabbing overflow-hidden",
-          "h-72 w-140",
+          "relative flex flex-col rounded-none cursor-grab active:cursor-grabbing overflow-hidden",
+          "transform-[translate(-50%)] h-72 w-140",
           b.isInteractive && "pointer-events-auto",
         )}
         onMouseDown={b.onMouseDown}
@@ -137,15 +137,20 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       >
         <div className={cn("text-[2.5rem] truncate", !b.isInteractive && "select-none opacity-50")}>{b.key}</div>
 
-        <div className="flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl border-6 border-white/10 leading-[1.2] text-center select-none">
+        <div
+          className={cn(
+            "flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl leading-[1.2] text-center select-none",
+            b.isInteractive ? "border-3 border-white/25" : "opacity-75 border-6 border-white/10",
+          )}
+        >
           <div className="my-auto w-full">{b.words}</div>
         </div>
 
         <div
           className={cn(
             "pointer-events-auto absolute bottom-0 right-0 flex gap-2",
-            "border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80",
-            b.isInteractive ? "cursor-se-resize" : "cursor-pointer opacity-25",
+            "border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer",
+            !b.isInteractive && "opacity-25",
           )}
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}
