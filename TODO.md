@@ -85,7 +85,7 @@ w decor.byKey.test-decor-point
 - ✅ npc labels should match animation e.g. sit, lie
 - ✅ support `look`
 
-- 🚧 hide speech bubbles whilst looking down from above
+- ✅ hide speech bubbles whilst looking down from above
   - two modes: "looking down" and not, based on camera polar angle
   - ✅ whilst "looking down" contract speech bubble
   - ✅ can indicate they're talking via ellipsis added to their unique label
@@ -98,12 +98,23 @@ w decor.byKey.test-decor-point
     - ✅ `w.decor.imgForOtherText['speech-bubble']`
   - ✅ if top down and `say npc:foo bar` then see flicker
   - ✅ demo_log_speech outputs speech in terminal
-  - 🚧 initial (sans resize) bubble width based on text length
+  - ❌ initial (sans resize) bubble width based on text length
 
-- reduce npc draw calls
-  - multiple materials
-  - double-sided needed?
-- ai clean Html3d
+- ✅ speech bubble extras
+  - ✅ fade in 
+  - ✅ fade out and auto-delete
+  - ✅ clean Html3d
+  - ✅ clean NpcBubbles
+
+- 🚧 speech bubble pointer events redo
+  - by default pointer-events-none except button
+  - button shows resize and permits translate
+  - after timeout returns to pointer-events-none
+
+- BUG cannot change polar angle sometimes when polar minimal
+- 🚧 reduce npc draw calls
+  - reduce multiple materials
+  - ✅ front-sided
 - go thru skins
   - fix medic-0 foot texturing
   - improve general-0
