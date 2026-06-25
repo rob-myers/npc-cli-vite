@@ -2,7 +2,12 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
-import { testNever, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import {
+  testNever,
+  tryLocalStorageGet,
+  tryLocalStorageGetParsed,
+  tryLocalStorageSet,
+} from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -12,12 +17,12 @@ import { useContext, useEffect } from "react";
 import { colorBleeding, vignette } from "three/addons/tsl/display/CRT.js";
 import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultFov, fovStorageKey } from "../const";
+import { cameraModeStorageKey, defaultCameraMode, defaultFov, fovStorageKey } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
-import { CameraControls } from "./CameraControls";
+import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
 
@@ -27,7 +32,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   const state = useStateRef(
     (): State => ({
-      cameraMode: "free",
+      cameraMode: tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ?? defaultCameraMode,
       canvas: null as any,
       controls: null as any,
       clickIds: [],
@@ -201,17 +206,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
-        if (state.cameraMode !== "free" && state.controls) {
-          state.controls.setParams({
-            fixedPolar: true,
-            snapAzimuth: state.cameraMode === "cardinal",
-          });
-          if (state.cameraMode === "cardinal") {
-            const halfPi = Math.PI / 2;
-            const current = state.controls.getAzimuthalAngle();
-            state.controls.snapAzimuth.target = Math.round(current / halfPi) * halfPi;
-          }
-        }
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
         w.texFloor.update();
         w.update(); // e.g. show stats
@@ -318,24 +312,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
-        const fixedPolar = mode !== "free";
-        const snapAzimuth = mode === "cardinal";
-        state.controls.setParams({ fixedPolar, snapAzimuth });
-        if (fixedPolar) {
-          state.controls.setPolarAngle(Math.PI / 8);
-        }
-        if (snapAzimuth) {
-          const halfPi = Math.PI / 2;
-          const current = state.controls.getAzimuthalAngle();
-          const nearest = Math.round(current / halfPi) * halfPi;
-          state.controls.snapAzimuth.target = nearest;
-          state.controls.setAzimuthalAngle(nearest);
-        }
-        state.ctrlOpts = {
-          ...state.ctrlOpts,
-          minPolarAngle: Math.PI / 8,
-          maxPolarAngle: Math.PI / 2.5,
-        };
+        tryLocalStorageSet(cameraModeStorageKey, mode);
         w.update();
       },
       setupPostProcessing() {
@@ -460,14 +437,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         <CameraControls
           ref={state.ref("controls")}
+          cameraMode={state.cameraMode}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
           initialPosition={state.initial.position}
           minPanDistance={0}
           onFrame={state.onCameraChange}
-          // onEnd={state.onControlsEnd}
-          // onStart={state.onControlsStart}
           {...state.ctrlOpts}
         />
 
@@ -482,7 +458,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 }
 
 export type State = {
-  cameraMode: "free" | "cardinal";
+  cameraMode: CameraModeType;
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -510,7 +486,7 @@ export type State = {
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   onCameraChange(spherical: THREE.Spherical): void;
-  setCameraMode(mode: "free" | "cardinal"): void;
+  setCameraMode(mode: CameraModeType): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;

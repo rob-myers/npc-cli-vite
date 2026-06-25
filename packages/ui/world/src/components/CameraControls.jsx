@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import React from "react";
+import { forwardRef, useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { shallow } from "zustand/shallow";
 import { CameraControls as MapControlsImpl } from "../service/camera-controls";
@@ -11,7 +11,7 @@ import { CameraControls as MapControlsImpl } from "../service/camera-controls";
  *   React.PropsWithChildren<Props> & React.RefAttributes<MapControlsImpl>
  * >}
  */
-export const CameraControls = React.forwardRef(function CameraControls(props, ref) {
+export const CameraControls = forwardRef(function CameraControls(props, ref) {
   const r3f = useThree(
     (s) => ({
       invalidate: s.invalidate,
@@ -26,7 +26,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
 
   const domEl = props.domElement ?? r3f.gl.domElement;
 
-  const controls = React.useMemo(() => {
+  const controls = useMemo(() => {
     const mc = new MapControlsImpl(r3f.camera, /** @type {*} */ ({}));
 
     // set initial angle
@@ -48,7 +48,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
     return mc;
   }, [r3f.camera, MapControlsImpl]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     controls.connect(domEl);
     const changeCallback = /** @param {import('three').Event} e */ (e) => {
       r3f.invalidate();
@@ -66,13 +66,17 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
     };
   }, [props.onChange, props.onStart, props.onEnd, domEl, controls, r3f.invalidate]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const old = r3f.get().controls;
     r3f.set({ controls });
+    controls.setParams({ fixedPolar: false, snapAzimuth: props.cameraMode === "cardinal" });
     return () => r3f.set({ controls: old });
-  }, [controls]);
+  }, [props.cameraMode, controls]);
 
-  useFrame(() => { controls.update(); props.onFrame?.(controls.spherical); }, -1);
+  useFrame(() => {
+    controls.update();
+    props.onFrame?.(controls.spherical);
+  }, -1);
 
   return (
     <primitive
@@ -95,6 +99,7 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
 
 /**
  * @typedef Props
+ * @property {CameraModeType} [cameraMode]
  * @property {HTMLElement} domElement
  * @property {number} [extraZoom]
  * @property {number} [initialAzimuthal]
@@ -122,4 +127,8 @@ export const CameraControls = React.forwardRef(function CameraControls(props, re
  *   change: import('three').Event;
  *   end: import('three').Event;
  * }>} ControlsImpl
+ */
+
+/**
+ * @typedef {"free" | "cardinal"} CameraModeType
  */

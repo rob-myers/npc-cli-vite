@@ -12,6 +12,7 @@ import {
   MagnifyingGlassIcon,
   SunIcon,
 } from "@phosphor-icons/react";
+import debounce from "debounce";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -21,7 +22,6 @@ import { brightnessStorageKey, contrastStorageKey, defaultFov, fovStorageKey } f
 import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
-import debounce from "debounce";
 
 export function WorldMenu() {
   const { uiStoreApi } = useContext(UiContext);
@@ -33,19 +33,16 @@ export function WorldMenu() {
   const state = useStateRef(
     (): State => ({
       debugHitOpen: false,
+      debugOpen: tryLocalStorageGetParsed(debugStorageKey) === true,
+      dragged: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
       suppressGrayscale: true,
-      dragged: false,
       menuOpen: false,
       minY: 40,
+      themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
       y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
-      persistY() {
-        tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
-      },
-      themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
-      debugOpen: tryLocalStorageGetParsed(debugStorageKey) === true,
 
       getMaxY() {
         return Math.max(state.minY, (w.rootEl?.clientHeight ?? Infinity) - 120);
@@ -56,6 +53,9 @@ export function WorldMenu() {
       onResize() {
         y.set(state.getClampedY(y.get()));
         state.update();
+      },
+      persistY() {
+        tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
       },
       async saveThemeDev() {
         const theme = w.assets?.theme?.[w.themeKey];

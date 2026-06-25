@@ -68,10 +68,14 @@ export const assetsJsonChangingEvent = "assets-json-changing";
 export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
+// 🚧 restrict by worldKey
 export const brightnessStorageKey = `world-brightness-value`;
+export const cameraModeStorageKey = `world-camera-mode`;
 export const contrastStorageKey = `world-contrast-value`;
 export const fovStorageKey = `world-fov-value`;
 export const defaultFov = 60;
+
+export const defaultCameraMode: import("./components/CameraControls").CameraModeType = "free";
 
 export const defaultThemeKey = "light-theme";
 
