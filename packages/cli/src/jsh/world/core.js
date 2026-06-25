@@ -50,6 +50,27 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 
 /**
  * ```sh
+ * grant npc:rob g0d29
+ * grant npc:rob g0d{0..5}
+ * grant npc:rob all
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
+ */
+export function grant({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const operands = api.getJsOperands(args, opts);
+  const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
+
+  const npc = w.npc.get(opts.npcKey);
+  const entry = (w.e.npcToAccess[npc.key] ??= {});
+  for (const gdKey of gdKeys) {
+    if (w.helper.isGmDoorKey(gdKey)) entry[gdKey] = true;
+    else throw Error(`invalid gdKey: ${gdKey}`);
+  }
+}
+
+/**
+ * ```sh
  * label npc:rob color:#33f
  * label npc:rob
  * ```
@@ -407,6 +428,27 @@ export async function remove({ w, args }) {
   npcKeys.length && w.e.removeNpcs(...npcKeys);
   runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
   setTimeout(() => w.view.forceUpdate());
+}
+
+/**
+ * ```sh
+ * revoke npc:rob g0d29
+ * revoke npc:rob g0d{0..5}
+ * revoke npc:rob all
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
+ */
+export function revoke({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const operands = api.getJsOperands(args, opts);
+  const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
+
+  const npc = w.npc.get(opts.npcKey);
+  const entry = (w.e.npcToAccess[npc.key] ??= {});
+  for (const gdKey of gdKeys) {
+    if (w.helper.isGmDoorKey(gdKey)) entry[gdKey] = false;
+    else throw Error(`invalid gdKey: ${gdKey}`);
+  }
 }
 
 /**

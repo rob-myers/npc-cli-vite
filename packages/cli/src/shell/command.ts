@@ -262,6 +262,8 @@ class CmdService {
 
     /**
      * Extract operands from output of `processApi.jsArg(opts, aliases)`.
+     * - e.g. excludes "npc:rob"
+     * - e.g. excludes "all:true" but not "all"
      */
     getJsOperands(args: string[], opts: Record<string, any>) {
       return args.filter((x) => x in opts);
