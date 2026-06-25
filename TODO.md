@@ -126,7 +126,7 @@ w decor.byKey.test-decor-point
 - 🚧 camera-controls snapAzimuth shows rotation until half-way then snaps
   - ✅ cameraMode is a CameraControls prop and persisted in WorldView
 
-- BUG camera cardinal desktop gets stuck zooming
+- ✅ BUG camera cardinal desktop got stuck on zoom on far and zoom back
 - BUG cannot change polar angle sometimes when polar minimal
 
 - speech bubble remembers resize after dispose and re-create

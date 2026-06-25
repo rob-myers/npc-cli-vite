@@ -82,19 +82,17 @@ class ExtraZoom {
     return true;
   }
 
-  /** Returns true if caller should return early (blocked by cooldown) */
-  handleWheelOut(): boolean {
+  handleWheelOut(): void {
     clearTimeout(this._normalZoomTimer);
     if (this.active) {
       clearTimeout(this._activeTimer);
       this._activeTimer = undefined;
     }
     if (this._cooldownTimer !== undefined) {
-      this.startCooldown(); // keep extending until events stop
-      return true;
+      this.startCooldown(); // keep extending — delay showing "ready" indicator
+    } else {
+      this.setReady(false);
     }
-    this.setReady(false);
-    return false;
   }
 
   handleTouchDolly(ratio: number) {
@@ -445,7 +443,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     if (event.deltaY < 0) {
       if (!this._ez.handleWheelIn(event, zoomScale)) return;
     } else if (event.deltaY > 0) {
-      if (this._ez.handleWheelOut()) return;
+      this._ez.handleWheelOut();
       this.updateMouseParameters(event);
       this.dollyOut(zoomScale);
     }
