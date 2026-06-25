@@ -419,11 +419,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     if (element) {
       if (this.params.snapAzimuth) {
-        if (event.shiftKey) {
-          this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
-        } else {
-          this.handleDirectionalSnap(event.clientX, event.clientY);
-        }
+        this.handleDirectionalSnap(event.clientX, event.clientY);
       } else {
         const isFree = !this.params.fixedPolar;
         if (isFree && this.rotateAxis === "none") {
@@ -444,6 +440,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleMouseWheel(event: WheelEvent) {
+    if (event.ctrlKey && this.params.snapAzimuth) {
+      this.rotateUp(shiftWheelPolarStep * Math.sign(event.deltaY));
+      this.update();
+      return;
+    }
     const zoomScale = this.getZoomScale();
     if (event.deltaY < 0) {
       if (!this._ez.handleWheelIn(event, zoomScale)) return;
@@ -1198,7 +1199,7 @@ const twoFingerSameDirThreshold = 0.7;
 const twoFingerStopThreshold = 0.3;
 const twoFingerZoomStopThreshold = 0.5;
 const twoFingerZoomBoost = 3.0;
-
+const shiftWheelPolarStep = Math.PI / 96;
 const threeFingerPolarSensitivity = 0.006;
 
 const halfPi = Math.PI / 2;
