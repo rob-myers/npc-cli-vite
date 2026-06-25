@@ -209,7 +209,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           if (state.cameraMode === "cardinal") {
             const halfPi = Math.PI / 2;
             const current = state.controls.getAzimuthalAngle();
-            state.controls.snapAzimuthTarget = Math.round(current / halfPi) * halfPi;
+            state.controls.snapAzimuth.target = Math.round(current / halfPi) * halfPi;
           }
         }
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
@@ -328,7 +328,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           const halfPi = Math.PI / 2;
           const current = state.controls.getAzimuthalAngle();
           const nearest = Math.round(current / halfPi) * halfPi;
-          state.controls.snapAzimuthTarget = nearest;
+          state.controls.snapAzimuth.target = nearest;
           state.controls.setAzimuthalAngle(nearest);
         }
         state.ctrlOpts = {

@@ -256,10 +256,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   //#region Custom
   params = { fixedPolar: false, fixedAzimuth: false, snapAzimuth: false };
   savedParams = { ...this.params };
-  snapAzimuthTarget = 0;
-  snapAzimuthAccum = 0;
-  snapAzimuthLastSign = 0;
-  snapAzimuthAnimating = false;
+
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
@@ -270,8 +267,18 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   /** Allow zooming in beyond minDistance by this factor; tweens back when released */
   extraZoom = 1;
   _ez: ExtraZoom;
-  twoFingerGesture: "undecided" | "rotate" | "zoom" = "undecided";
-  twoFingerGestureStartPositions: Record<number, { x: number; y: number }> = {};
+
+  snapAzimuth = {
+    target: 0,
+    accum: 0,
+    lastSign: 0,
+    animating: false,
+  }
+
+  twoFinger = {
+    gesture: "undecided" as "undecided" | "rotate" | "zoom",
+    start: {} as Record<number, { x: number; y: number }>,
+  }
 
   get extraZoomActive() {
     return this._ez.active;
@@ -474,8 +481,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const pos1 = this.pointerPositions[this.pointers[1].pointerId];
     if (!pos0 || !pos1) return;
 
-    const start0 = this.twoFingerGestureStartPositions[this.pointers[0].pointerId];
-    const start1 = this.twoFingerGestureStartPositions[this.pointers[1].pointerId];
+    const start0 = this.twoFinger.start[this.pointers[0].pointerId];
+    const start1 = this.twoFinger.start[this.pointers[1].pointerId];
     if (!start0 || !start1) return;
 
     const dx0 = pos0.x - start0.x, dy0 = pos0.y - start0.y;
@@ -483,36 +490,36 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const len0 = Math.hypot(dx0, dy0);
     const len1 = Math.hypot(dx1, dy1);
 
-    const minMove = this.twoFingerGesture === "undecided" ? twoFingerMinMove : 1;
+    const minMove = this.twoFinger.gesture === "undecided" ? twoFingerMinMove : 1;
     if (len0 < minMove || len1 < minMove) return;
 
     const dot = (dx0 * dx1 + dy0 * dy1) / (len0 * len1);
 
-    if (this.twoFingerGesture === "undecided") {
+    if (this.twoFinger.gesture === "undecided") {
       if (dot > twoFingerSameDirThreshold) {
-        this.twoFingerGesture = "rotate";
+        this.twoFinger.gesture = "rotate";
         this.handleTouchStartRotate();
       } else if (dot < -twoFingerSameDirThreshold) {
-        this.twoFingerGesture = "zoom";
+        this.twoFinger.gesture = "zoom";
         this.handleTouchStartDolly();
       }
       return;
     }
 
     const directionChanged =
-      (this.twoFingerGesture === "rotate" && dot < twoFingerStopThreshold) ||
-      (this.twoFingerGesture === "zoom" && dot > twoFingerZoomStopThreshold);
+      (this.twoFinger.gesture === "rotate" && dot < twoFingerStopThreshold) ||
+      (this.twoFinger.gesture === "zoom" && dot > twoFingerZoomStopThreshold);
 
     if (directionChanged) {
-      this.twoFingerGesture = "undecided";
+      this.twoFinger.gesture = "undecided";
       for (const p of this.pointers) {
         const pos = this.pointerPositions[p.pointerId];
-        if (pos) this.twoFingerGestureStartPositions[p.pointerId] = { x: pos.x, y: pos.y };
+        if (pos) this.twoFinger.start[p.pointerId] = { x: pos.x, y: pos.y };
       }
       return;
     }
 
-    if (this.twoFingerGesture === "rotate") {
+    if (this.twoFinger.gesture === "rotate") {
       this.handleTouchMoveRotate(event);
     } else {
       const other = this.getSecondPointerPosition(event)!;
@@ -811,8 +818,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     if (this.params.snapAzimuth) {
-      this.snapAzimuthAccum = 0;
-      this.snapAzimuthLastSign = 0;
+      this.snapAzimuth.accum = 0;
+      this.snapAzimuth.lastSign = 0;
     }
     this.rotateAxis = "none";
 
@@ -874,11 +881,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
       this.dispatchEvent(startEvent);
     } else if (this.pointers.length === 2) {
-      this.twoFingerGesture = "undecided";
-      this.twoFingerGestureStartPositions = {};
+      this.twoFinger.gesture = "undecided";
+      this.twoFinger.start = {};
       for (const p of this.pointers) {
         const pos = this.pointerPositions[p.pointerId];
-        this.twoFingerGestureStartPositions[p.pointerId] = pos ? { x: pos.x, y: pos.y } : { x: p.pageX, y: p.pageY };
+        this.twoFinger.start[p.pointerId] = pos ? { x: pos.x, y: pos.y } : { x: p.pageX, y: p.pageY };
       }
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
@@ -955,11 +962,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   snapAzimuthBy(delta: number) {
-    if (this.snapAzimuthAnimating || Math.abs(delta) < 0.01) return;
-    this.snapAzimuthTarget = normalizeAngle(this.snapAzimuthTarget + delta);
-    this.snapAzimuthAccum = 0;
-    this.snapAzimuthAnimating = true;
-    this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuthTarget);
+    if (this.snapAzimuth.animating || Math.abs(delta) < 0.01) return;
+    this.snapAzimuth.target = normalizeAngle(this.snapAzimuth.target + delta);
+    this.snapAzimuth.accum = 0;
+    this.snapAzimuth.animating = true;
+    this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
   }
 
   handleDirectionalSnap(clientX: number, clientY: number) {
@@ -979,11 +986,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   rotateLeft(angle: number) {
     if (this.params.snapAzimuth) {
       const sign = Math.sign(angle);
-      if (sign !== 0 && sign !== this.snapAzimuthLastSign) {
-        this.snapAzimuthAccum = 0;
-        this.snapAzimuthLastSign = sign;
+      if (sign !== 0 && sign !== this.snapAzimuth.lastSign) {
+        this.snapAzimuth.accum = 0;
+        this.snapAzimuth.lastSign = sign;
       }
-      this.snapAzimuthAccum += Math.abs(angle);
+      this.snapAzimuth.accum += Math.abs(angle);
       return;
     }
     this.sphericalDelta.theta -= angle;
@@ -1065,21 +1072,21 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     if (this.params.snapAzimuth) {
-      if (this.snapAzimuthAnimating) {
-        const remaining = deltaAngle(this.spherical.theta, this.snapAzimuthTarget);
+      if (this.snapAzimuth.animating) {
+        const remaining = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
         if (Math.abs(remaining) < 0.005) {
-          this.spherical.theta = this.snapAzimuthTarget;
+          this.spherical.theta = this.snapAzimuth.target;
           this.sphericalDelta.theta = 0;
-          this.snapAzimuthAnimating = false;
-          this.snapAzimuthAccum = 0;
+          this.snapAzimuth.animating = false;
+          this.snapAzimuth.accum = 0;
         } else {
           this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08);
         }
-      } else if (this.snapAzimuthAccum > Math.PI / 4) {
-        this.snapAzimuthBy(this.snapAzimuthLastSign * halfPi);
+      } else if (this.snapAzimuth.accum > Math.PI / 4) {
+        this.snapAzimuthBy(this.snapAzimuth.lastSign * halfPi);
       } else {
         this.sphericalDelta.theta = 0;
-        this.spherical.theta = this.snapAzimuthTarget;
+        this.spherical.theta = this.snapAzimuth.target;
       }
     }
 
