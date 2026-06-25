@@ -75,7 +75,8 @@ export const contrastStorageKey = `world-contrast-value`;
 export const fovStorageKey = `world-fov-value`;
 export const defaultFov = 60;
 
-export const defaultCameraMode: import("./components/CameraControls").CameraModeType = "free";
+export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 
 export const defaultThemeKey = "light-theme";
 

@@ -17,7 +17,13 @@ import { useContext, useEffect } from "react";
 import { colorBleeding, vignette } from "three/addons/tsl/display/CRT.js";
 import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { cameraModeStorageKey, defaultCameraMode, defaultFov, fovStorageKey } from "../const";
+import {
+  cameraModeStorageKey,
+  defaultCameraModeDesktop,
+  defaultCameraModeMobile,
+  defaultFov,
+  fovStorageKey,
+} from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
@@ -32,7 +38,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   const state = useStateRef(
     (): State => ({
-      cameraMode: tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ?? defaultCameraMode,
+      cameraMode:
+        tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
+        (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
       canvas: null as any,
       controls: null as any,
       clickIds: [],
