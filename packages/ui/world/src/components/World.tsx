@@ -30,6 +30,7 @@ import { emptyTiledNavmeshResponse } from "../service/empty-nav-response";
 import { createLayoutInstance } from "../service/geomorph";
 import { GmGraph } from "../service/gm-graph";
 import { GmRoomGraph } from "../service/gm-room-graph";
+import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
@@ -125,6 +126,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       view: null as any,
       wall: null as any,
       worker: { worker: { postMessage() {} } } as any,
+
+      helper,
 
       rootEl: null as any,
 
@@ -225,6 +228,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.reqAnimId = 0;
       },
     }),
+    { reset: { helper: true } },
   );
 
   state.disabled = meta.disabled;
@@ -364,7 +368,18 @@ export type State = {
   touchDevice: boolean;
 
   assets: AssetsType;
+  gms: Geomorph.LayoutInstance[];
+  gmsData: DerivedGmsData;
+  gmGraph: GmGraph;
+  gmRoomGraph: GmRoomGraph;
+  nav: WW.TiledNavMeshResponse;
+  /**
+   * Ordered by first time seen in `gms`.
+   * Thus `seenGmKeys.indexOf(gmKey)` provides `texId`.
+   */
+  seenGmKeys: StarShipGeomorphKey[];
   sheets: SheetsType;
+
   /** Hash of `w.assets` */
   hash: number;
   /** Hash of `w.gms` */
@@ -372,6 +387,12 @@ export type State = {
   lastHmr: number;
   /** Last time the world query succeeded */
   lastQuery: number;
+  /**
+   * Ideally `assets` -> `nav` -> `decor` -> `null`.
+   * However, nav/decor could be triggered by HMR.
+   */
+  pending: Partial<Record<PendingKey, true>>;
+
   texFloor: TexArray;
   texCeil: TexArray;
   texObs: TexArray;
@@ -380,40 +401,25 @@ export type State = {
   texNpcLabel: TexArray;
   texSkin: TexArray;
 
-  gms: Geomorph.LayoutInstance[];
-  /**
-   * Ordered by first time seen in `gms`.
-   * Thus `seenGmKeys.indexOf(gmKey)` provides `texId`.
-   */
-  seenGmKeys: StarShipGeomorphKey[];
-  gmsData: DerivedGmsData;
-  gmGraph: GmGraph;
-  gmRoomGraph: GmRoomGraph;
-
   b: UseStateRef<import("./NpcBubbles").State>["byKey"];
   bubble: UseStateRef<import("./NpcBubbles").State>;
   ceil: UseStateRef<import("./Ceiling").State>;
+  d: UseStateRef<import("./Doors").State>["byKey"];
+  debug: UseStateRef<import("./Debug").State>;
   decor: UseStateRef<import("./Decor").State>;
   door: UseStateRef<import("./Doors").State>;
-  d: UseStateRef<import("./Doors").State>["byKey"];
+  e: UseStateRef<import("./use-world-events").State>;
   floor: UseStateRef<import("./Floor").State>;
+  menu: UseStateRef<import("./WorldMenu").State>;
+  n: UseStateRef<import("./NPCs").State>["npc"];
+  npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   view: UseStateRef<import("./WorldView").State>;
   wall: UseStateRef<import("./Walls").State>;
-  menu: UseStateRef<import("./WorldMenu").State>;
-  npc: UseStateRef<import("./NPCs").State>;
-  n: UseStateRef<import("./NPCs").State>["npc"];
-  e: UseStateRef<import("./use-world-events").State>;
-  debug: UseStateRef<import("./Debug").State>;
-
   worker: UseStateRef<import("./WorldWorker").State>;
-  nav: WW.TiledNavMeshResponse;
 
-  /**
-   * Ideally `assets` -> `nav` -> `decor` -> `null`.
-   * However, nav/decor could be triggered by HMR.
-   */
-  pending: Partial<Record<PendingKey, true>>;
+  helper: typeof helper;
+
   rootEl: HTMLDivElement;
 
   setDisabled(nextDisabled?: boolean): void;

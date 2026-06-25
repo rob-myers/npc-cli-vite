@@ -365,10 +365,10 @@ export default function Doors() {
         // Actually lock/unlock door
         door.locked = !door.locked;
 
-        w.decor.tintDecor(
-          door.locked ? lockedDoorTint : unlockedDoorTint,
-          ...w.decor.static.gdKeyToDecorKeys[door.gdKey],
-        );
+        const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys[door.gdKey];
+        if (associatedDecorKeys) {
+          w.decor.tintDecor(door.locked ? lockedDoorTint : unlockedDoorTint, ...associatedDecorKeys);
+        } // e.g. lockers might not have switches
 
         w.events.next({
           key: door.locked ? "door-locked" : "door-unlocked",

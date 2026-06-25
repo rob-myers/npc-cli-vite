@@ -1,4 +1,4 @@
-import { isStringInt } from "@npc-cli/util/legacy/generic";
+import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
 /**
  * @param {JshCli.RunArg} ct
@@ -61,6 +61,23 @@ export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }
   npc.labelStyle.color = opts.color ?? "#fff7";
   npc.labelStyle.speaking = opts.speaking ?? false;
   npc.drawLabel();
+  w.view.forceUpdate();
+}
+
+/**
+ * ```sh
+ * lock g0d29 g0d30
+ * lock doors:['g0d29','g0d30']
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
+ */
+export async function lock({ api, args, w }, opts = api.jsArg(args)) {
+  const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
+  for (const gdKey of inputs) {
+    if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { lock: true });
+    else throw Error(`invalid gdKey: ${gdKey}`);
+  }
   w.view.forceUpdate();
 }
 
@@ -552,6 +569,23 @@ export async function* w(ct) {
       yield `${api.ansi.Cyan}${e}${api.ansi.Reset}`;
     }
   }
+}
+
+/**
+ * ```sh
+ * unlock g0d29 g0d30
+ * unlock doors:['g0d29','g0d30']
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
+ */
+export async function unlock({ api, args, w }, opts = api.jsArg(args)) {
+  const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
+  for (const gdKey of inputs) {
+    if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { unlock: true });
+    else throw Error(`invalid gdKey: ${gdKey}`);
+  }
+  w.view.forceUpdate();
 }
 
 /**
