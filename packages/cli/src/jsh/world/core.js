@@ -357,9 +357,18 @@ export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src"
 
 /**
  * remove npc(s) or runtime decor, assuming no name collisions
+ *
+ * This is an example of a function we wouldn't invoke via JS.
+ * Instead we would use `w.e.removeNpcs` or `w.decor.remove`.
+ *
+ * Implicitly we're assuming npcKeys and runtime decorKeys
+ * are disjoint, as are the literals "npcs" and "decor".
+ *
  * ```sh
  * # remove all npcs
- * remove
+ * remove npcs
+ * # remove all runtime decor
+ * remove decor
  * # remove specified npcs
  * remove rob kate
  * # remove runtime decor and an npc
@@ -368,14 +377,18 @@ export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src"
  * @param {JshCli.RunArg} ct
  */
 export async function remove({ w, args }) {
-  if (args.length === 0) {
-    w.e.removeNpcs(...Object.keys(w.n));
-  } else {
-    const npcKeys = args.filter((arg) => arg in w.n);
-    const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
-    npcKeys.length && w.e.removeNpcs(...npcKeys);
-    runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
+  if (args.length === 1) {
+    if (args[0] === "npcs") {
+      return w.e.removeNpcs(...Object.keys(w.n));
+    } else if (args[0] === "decor") {
+      return w.decor.remove(...Object.keys(w.decor.runtime.byKey));
+    }
   }
+
+  const npcKeys = args.filter((arg) => arg in w.n);
+  const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
+  npcKeys.length && w.e.removeNpcs(...npcKeys);
+  runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
   setTimeout(() => w.view.forceUpdate());
 }
 
