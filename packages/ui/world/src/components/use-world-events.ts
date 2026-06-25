@@ -18,6 +18,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       doorOpen: {},
       doorToNpcs: {},
       externalNpcs: new Set(),
+      npcToAccess: {},
       npcToDoable: {},
       npcToDoors: {},
       npcToRoom: new Map(),
@@ -120,7 +121,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         };
       },
       npcCanAccess(npcKey, gdKey) {
-        // 🚧 npc can have key
         const door = w.d[gdKey];
         if (door.locked === false) {
           return true;
@@ -128,7 +128,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (door.open === true && state.doorToNpcs[door.gdKey].nearby.has(npcKey)) {
           return true;
         }
-        return false;
+        // only if npc has been granted access
+        return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       onEvent(e) {
         if ("npcKey" in e) {
@@ -184,15 +185,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onEnterCollider(e, _npc) {
         if (e.type === "nearby" || e.type === "inside") {
-          const door = w.d[e.meta.gdKey];
-          if (door.auto === true && door.locked === false) {
-            // open (or reverse a closing animation) for auto unlocked doors
-            state.toggleDoor(e.meta.gdKey, { open: true, npcKey: e.npcKey });
-            return;
-          }
-          if (door.open === true) {
-            return;
-          }
+          state.toggleDoor(e.meta.gdKey, { open: true, npcKey: e.npcKey });
         }
       },
       onExitCollider(e, npc) {
@@ -287,6 +280,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "started-moving": {
             state.fixInaccessibleTarget(npc);
+            for (const gdKey of state.npcToDoors[e.npcKey]?.nearby ?? []) {
+              state.toggleDoor(gdKey, { open: true, npcKey: e.npcKey });
+            }
             break;
           }
         }
@@ -538,6 +534,7 @@ export type State = {
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };
   externalNpcs: Set<string>;
+  npcToAccess: { [npcKey: string]: { [gdKey: string]: boolean } };
   npcToDoable: { [npcKey: string]: string | null };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
   /**
