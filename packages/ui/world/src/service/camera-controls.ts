@@ -271,6 +271,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     accum: 0,
     lastSign: 0,
     animating: false,
+    fired: false,
   };
 
   twoFinger = {
@@ -787,6 +788,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.domElement?.ownerDocument.addEventListener("pointerup", this.onPointerUp);
       this.pointerFirstDown.x = event.clientX;
       this.pointerFirstDown.y = event.clientY;
+      this.snapAzimuth.fired = false;
     }
 
     this.addPointer(event);
@@ -993,10 +995,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.snapAzimuth.target = normalizeAngle(this.snapAzimuth.target + delta);
     this.snapAzimuth.accum = 0;
     this.snapAzimuth.animating = true;
+    this.snapAzimuth.fired = true;
     this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
   }
 
   handleDirectionalSnap(clientX: number, clientY: number) {
+    if (this.snapAzimuth.fired) return;
     const dx = clientX - this.pointerFirstDown.x;
     const dy = clientY - this.pointerFirstDown.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
