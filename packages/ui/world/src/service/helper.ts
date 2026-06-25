@@ -34,6 +34,10 @@ export const helper = {
     }
   },
 
+  isGmDoorKey(input: any): input is Geomorph.GmDoorKey {
+    return !!input && typeof input === "string" && gdKeyRegex.test(input);
+  },
+
   /**
    * 🔔 carefully chosen to be compatible
    * - assets.json decor meta has { gmId: -1, roomId: -1, grKey: "g-1r-1" }
@@ -43,5 +47,7 @@ export const helper = {
     return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
 };
+
+const gdKeyRegex = /^g\d+d\d+$/;
 
 export type Helper = typeof helper;
