@@ -128,6 +128,8 @@ w decor.byKey.test-decor-point
   - ✅ can change polar angle in cameraMode cardinal
   - ✅ cannot chain rotations in one gesture
   - 🚧 snapping shows initial azimuthal rotation until half way
+  - 🚧 desktop polar angle control still wrong
+  - 🚧 verify mobile too
 
 - ✅ BUG camera cardinal desktop got stuck on zoom on far and zoom back
 - BUG cannot change polar angle sometimes when polar minimal
@@ -167,7 +169,7 @@ w decor.byKey.test-decor-point
 - on idle should pin in front otherwise npc "slides back"
 - skin remapping
   - currently only have skinIndex
-- world context menu?
+- ❌ world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
 - ❌ check glsl fallback e.g. incognito or force

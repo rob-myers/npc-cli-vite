@@ -268,9 +268,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   snapAzimuth = {
     target: 0,
-    accum: 0,
-    lastSign: 0,
+    origin: 0,
     animating: false,
+    committed: false,
     fired: false,
   };
 
@@ -419,7 +419,17 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     if (element) {
       if (this.params.snapAzimuth) {
-        this.handleDirectionalSnap(event.clientX, event.clientY);
+        const hasModifier = event.shiftKey || event.ctrlKey || event.metaKey;
+        if (hasModifier && this.rotateAxis === "none") {
+          const ax = Math.abs(this.u.rotateDelta.x);
+          const ay = Math.abs(this.u.rotateDelta.y);
+          if (ax > 2 || ay > 2) this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+        }
+        if (this.rotateAxis === "vertical") {
+          this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+        } else if (!this.snapAzimuth.committed) {
+          this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+        }
       } else {
         const isFree = !this.params.fixedPolar;
         if (isFree && this.rotateAxis === "none") {
@@ -440,11 +450,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleMouseWheel(event: WheelEvent) {
-    if (event.ctrlKey && this.params.snapAzimuth) {
-      this.rotateUp(shiftWheelPolarStep * Math.sign(event.deltaY));
-      this.update();
-      return;
-    }
     const zoomScale = this.getZoomScale();
     if (event.deltaY < 0) {
       if (!this._ez.handleWheelIn(event, zoomScale)) return;
@@ -580,9 +585,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     if (element) {
       if (this.params.snapAzimuth) {
-        const cx = this.pointers.length === 1 ? event.pageX : this.u.rotateEnd.x;
-        const cy = this.pointers.length === 1 ? event.pageY : this.u.rotateEnd.y;
-        this.handleDirectionalSnap(cx, cy);
+        if (!this.snapAzimuth.committed) {
+          this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+        }
       } else {
         const isFree = !this.params.fixedPolar;
         if (isFree && this.rotateAxis === "none") {
@@ -651,6 +656,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         cy += pos?.y ?? p.pageY;
       }
       this.u.rotateStart.set(cx / this.pointers.length, cy / this.pointers.length);
+    }
+    if (this.params.snapAzimuth) {
+      this.snapAzimuth.origin = this.spherical.theta;
+      this.snapAzimuth.committed = false;
     }
   }
 
@@ -788,7 +797,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.domElement?.ownerDocument.addEventListener("pointerup", this.onPointerUp);
       this.pointerFirstDown.x = event.clientX;
       this.pointerFirstDown.y = event.clientY;
+      this.rotateAxis = "none";
       this.snapAzimuth.fired = false;
+      this.snapAzimuth.committed = false;
+      this.snapAzimuth.origin = this.snapAzimuth.target;
     }
 
     this.addPointer(event);
@@ -829,9 +841,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       );
     }
 
-    if (this.params.snapAzimuth) {
-      this.snapAzimuth.accum = 0;
-      this.snapAzimuth.lastSign = 0;
+    if (this.params.snapAzimuth && !this.snapAzimuth.committed && !this.snapAzimuth.animating) {
+      // Snap back to origin if finger/mouse released before crossing 45°
+      const remaining = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
+      if (Math.abs(remaining) > 0.005) {
+        this.snapAzimuth.animating = true;
+        this.sphericalDelta.theta = remaining;
+      }
     }
     this.rotateAxis = "none";
 
@@ -993,37 +1009,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   snapAzimuthBy(delta: number) {
     if (this.snapAzimuth.animating || Math.abs(delta) < 0.01) return;
     this.snapAzimuth.target = normalizeAngle(this.snapAzimuth.target + delta);
-    this.snapAzimuth.accum = 0;
     this.snapAzimuth.animating = true;
+    this.snapAzimuth.committed = true;
     this.snapAzimuth.fired = true;
     this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
   }
 
-  handleDirectionalSnap(clientX: number, clientY: number) {
-    if (this.snapAzimuth.fired) return;
-    const dx = clientX - this.pointerFirstDown.x;
-    const dy = clientY - this.pointerFirstDown.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const threshold = this.pointers.length > 1 ? 120 : 20;
-    if (dist < threshold) return;
-    const ax = Math.abs(dx);
-    const ay = Math.abs(dy);
-    // require dominant axis to be at least 2x the other
-    if (Math.min(ax, ay) * 2 > Math.max(ax, ay)) return;
-    const delta = ay > ax ? (dy > 0 ? Math.PI : 0) : dx > 0 ? -halfPi : halfPi;
-    this.snapAzimuthBy(delta);
-  }
-
   rotateLeft(angle: number) {
-    if (this.params.snapAzimuth) {
-      const sign = Math.sign(angle);
-      if (sign !== 0 && sign !== this.snapAzimuth.lastSign) {
-        this.snapAzimuth.accum = 0;
-        this.snapAzimuth.lastSign = sign;
-      }
-      this.snapAzimuth.accum += Math.abs(angle);
-      return;
-    }
     this.sphericalDelta.theta -= angle;
   }
 
@@ -1105,12 +1097,21 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
           this.spherical.theta = this.snapAzimuth.target;
           this.sphericalDelta.theta = 0;
           this.snapAzimuth.animating = false;
-          this.snapAzimuth.accum = 0;
+          this.snapAzimuth.committed = false;
         } else {
           this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08);
         }
-      } else if (this.snapAzimuth.accum > Math.PI / 4) {
-        this.snapAzimuthBy(this.snapAzimuth.lastSign * halfPi);
+      } else if (!this.snapAzimuth.committed) {
+        // Follow drag continuously; commit when 45° from origin (at most one snap per gesture)
+        const delta = deltaAngle(this.snapAzimuth.origin, this.spherical.theta);
+        if (!this.snapAzimuth.fired && Math.abs(delta) >= halfPi / 2) {
+          const newTarget = normalizeAngle(this.snapAzimuth.origin + Math.sign(delta) * halfPi);
+          this.snapAzimuth.target = newTarget;
+          this.snapAzimuth.committed = true;
+          this.snapAzimuth.animating = true;
+          this.snapAzimuth.fired = true;
+          this.sphericalDelta.theta = deltaAngle(this.spherical.theta, newTarget);
+        }
       } else {
         this.sphericalDelta.theta = 0;
         this.spherical.theta = this.snapAzimuth.target;
@@ -1199,7 +1200,7 @@ const twoFingerSameDirThreshold = 0.7;
 const twoFingerStopThreshold = 0.3;
 const twoFingerZoomStopThreshold = 0.5;
 const twoFingerZoomBoost = 3.0;
-const shiftWheelPolarStep = Math.PI / 96;
+
 const threeFingerPolarSensitivity = 0.006;
 
 const halfPi = Math.PI / 2;
