@@ -125,6 +125,9 @@ w decor.byKey.test-decor-point
 
 - 🚧 camera-controls snapAzimuth shows rotation until half-way then snaps
   - ✅ cameraMode is a CameraControls prop and persisted in WorldView
+  - ✅ can change polar angle in cameraMode cardinal
+  - 🚧 snapping shows initial azimuthal rotation until half way
+  - cannot chain rotations in one gesture
 
 - ✅ BUG camera cardinal desktop got stuck on zoom on far and zoom back
 - BUG cannot change polar angle sometimes when polar minimal
