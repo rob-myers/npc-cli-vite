@@ -31963,7 +31963,7 @@
       "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {
-      "background": "bg-[#333]",
+      "background": "bg-[#555]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#fff2"},
         "nonHull": {"fill": "#111", "stroke": "#000"}

@@ -21,6 +21,7 @@ import { brightnessStorageKey, contrastStorageKey, defaultFov, fovStorageKey } f
 import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
+import debounce from "debounce";
 
 export function WorldMenu() {
   const { uiStoreApi } = useContext(UiContext);
@@ -45,7 +46,6 @@ export function WorldMenu() {
       },
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       debugOpen: tryLocalStorageGetParsed(debugStorageKey) === true,
-      saveTimer: 0 as ReturnType<typeof setTimeout> | 0,
 
       getMaxY() {
         return Math.max(state.minY, (w.rootEl?.clientHeight ?? Infinity) - 120);
@@ -57,7 +57,7 @@ export function WorldMenu() {
         y.set(state.getClampedY(y.get()));
         state.update();
       },
-      async saveTheme() {
+      async saveThemeDev() {
         const theme = w.assets?.theme?.[w.themeKey];
         if (!theme) return;
         const res = await fetch(`/api/assets/theme/${encodeURIComponent(w.themeKey)}`, {
@@ -69,10 +69,7 @@ export function WorldMenu() {
           w.set({ hash: hashJson(w.assets) });
         }
       },
-      saveThemeDebounced() {
-        clearTimeout(state.saveTimer);
-        state.saveTimer = setTimeout(() => state.saveTheme(), 300);
-      },
+      saveThemeDevDebounced: debounce(() => state.saveThemeDev(), 300),
     }),
   );
 
@@ -359,11 +356,10 @@ export function WorldMenu() {
                             if (!parsed.success || !w.assets) return;
                             w.assets.theme ??= {};
                             w.assets.theme[w.themeKey] = parsed.data;
-                            state.saveThemeDebounced();
+                            state.saveThemeDevDebounced();
                           }}
                           onBlur={() => {
-                            clearTimeout(state.saveTimer);
-                            state.saveTheme();
+                            state.saveThemeDev();
                           }}
                         />
                         <button
@@ -562,14 +558,13 @@ export type State = {
   y: number;
   themeEditorOpen: boolean;
   debugOpen: boolean;
-  saveTimer: ReturnType<typeof setTimeout> | 0;
   minY: number;
   getMaxY(): number;
   getClampedY(y: number): number;
   onResize(): void;
   persistY(): void;
-  saveTheme(): Promise<void>;
-  saveThemeDebounced(): void;
+  saveThemeDev(): Promise<void>;
+  saveThemeDevDebounced(): void;
 };
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
