@@ -8,32 +8,32 @@
       "name": "window--007",
       "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "window--007",
-      "baseRect": { "width": 181.4, "height": 13.4 },
-      "offset": { "x": -0.7, "y": -0.7 },
+      "baseRect": {"width": 181.4, "height": 13.4},
+      "offset": {"x": -0.7, "y": -0.7},
       "cssTransform": "matrix(1, 0, 0, 1, -0.2, -0.7)"
     },
     {
       "id": "eafa2133-d37f-460a-a2af-b8b2daed1a39",
-      "name": "obstacle h=0.2",
+      "name": "obstacle apron h=0.2",
       "locked": false,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
       "type": "rect",
-      "baseRect": { "width": 181.5, "height": 13 },
+      "baseRect": {"width": 181.5, "height": 13},
       "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
     },
     {
       "id": "1491f830-aae6-471a-bfd6-ec1e93b58d25",
-      "name": "obstacle force-y=0.4",
+      "name": "obstacle lintel force-y=0.4",
       "locked": false,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
       "type": "rect",
-      "baseRect": { "width": 181.5, "height": 13 },
+      "baseRect": {"width": 181.5, "height": 13},
       "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
     },
     {
@@ -41,13 +41,13 @@
       "name": "window",
       "locked": false,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
       "type": "rect",
-      "baseRect": { "width": 181.5, "height": 13 },
+      "baseRect": {"width": 181.5, "height": 13},
       "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
     }
   ],
-  "bounds": { "x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4 },
+  "bounds": {"x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4},
   "type": "symbol",
   "key": "window--007"
 }

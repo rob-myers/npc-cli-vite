@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
@@ -88,7 +88,7 @@
         {
           "id": "d96f2083-134d-402f-a819-5551d0ee818d",
           "name": "stateroom--036",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
           "type": "symbol",
@@ -100,7 +100,7 @@
         {
           "id": "bfc41b9e-cc3f-4f6a-b4d0-2753af6f6ffd",
           "name": "bridge--042",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360.5, "f": 60},
           "type": "symbol",
@@ -112,7 +112,7 @@
         {
           "id": "50d051b3-998c-4a63-be15-6e213eb26b94",
           "name": "console--031",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 844, "f": 56},
           "type": "symbol",
@@ -124,7 +124,7 @@
         {
           "id": "97258f26-b3d2-4ab6-9781-a7a83c0dd2cc",
           "name": "console--031",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 57.5},
           "type": "symbol",
@@ -136,7 +136,7 @@
         {
           "id": "64ce3e7e-f524-40ca-bf04-990d68bea076",
           "name": "misc-stellar-cartography--023",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1198, "f": 359.5},
           "type": "symbol",
@@ -148,7 +148,7 @@
         {
           "id": "a1e64edb-ec3e-428a-aefb-f8b9ed87159a",
           "name": "stateroom--036",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 0, "f": 600},
           "type": "symbol",
@@ -160,7 +160,7 @@
         {
           "id": "dd9d12c0-9f66-4aa7-acf8-3cf59674dbe7",
           "name": "stateroom--014",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 120, "f": 480},
           "type": "symbol",
@@ -172,7 +172,7 @@
         {
           "id": "0e863ae2-65c2-48ce-ba3b-d807230052c7",
           "name": "stateroom--014",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 480},
           "type": "symbol",
@@ -184,7 +184,7 @@
         {
           "id": "5a7963e1-18b2-4278-91d8-52c60ce67ac7",
           "name": "stateroom--036",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "symbol",
@@ -196,7 +196,7 @@
         {
           "id": "6d777e3d-55dc-467a-aafd-c6cc70f25613",
           "name": "office--001 doors=['s']",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 120},
           "type": "symbol",
@@ -409,11 +409,11 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "5b1221cd-415e-4161-97c6-18bbb93ec7da",
-          "name": "wall hull _window",
+          "name": "wall hull",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
@@ -430,17 +430,6 @@
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M 424.654 118.297 L 437.817 106.761 L 455.502 93.227 L 474.309 81.559 L 493.501 71.36 L 513.75 62.68 L 534.512 56.544 L 556.935 51.623 L 578.318 49.318 L 600 47.792 L 621.663 48.831 L 643.493 51.496 L 664.725 56.77 L 686.007 63.076 L 705.997 70.934 L 726.186 81.594 L 744.291 93.328 L 761.565 106.644 L 774.546 118.304 L 777.819 122.371 L 769.343 130.446 L 766.5 127.449 L 754.325 115.944 L 737.618 103.329 L 720 92.138 L 701.217 82.48 L 681.811 74.219 L 661.384 68.065 L 641.622 63.696 L 621 61 L 600 60 L 579.133 61.085 L 557.974 63.7 L 537.834 68.462 L 518.03 74.494 L 498.515 82.532 L 480 92.259 L 462.375 103.775 L 445.383 116.172 L 429.21 132.33 L 420 123.43 L 424.654 118.297 Z",
-          "baseRect": {"width": 1200, "height": 600},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
-        },
-        {
-          "id": "641dc7ea-4182-4c87-a917-70512fa499af",
-          "name": "_window hull y=1.1 h=0.6",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-          "type": "path",
-          "d": "M 422.714 117.468 L 453.848 91.356 L 492.148 69.182 L 533.494 54.056 L 577.818 47.004 L 621.162 45.996 L 664.522 54.062 L 706.844 69.178 L 745.152 91.356 L 776.438 117.596 L 781.68 124.148 L 772.148 133.68 L 771.449 133.121 L 770.75 132.562 L 765.72 128.536 L 735.864 103.656 L 700.158 83.82 L 660.454 68.932 L 619.806 61 L 578.194 61 L 537.554 68.93 L 498.868 83.808 L 463.15 104.646 L 434.348 128.48 L 428.08 134.748 L 416.086 124.086 L 416.836 123.336 L 417.586 122.586 L 422.714 117.468 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
