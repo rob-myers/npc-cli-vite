@@ -18,6 +18,7 @@ export default class DerivedGmsData {
   count = {
     door: 0,
     wall: 0,
+    window: 0,
     obstacles: 0,
     obstacleSkirtEdges: 0,
     wallPolySegs: [] as number[],
@@ -34,6 +35,7 @@ export default class DerivedGmsData {
   computeRoot(gms: Geomorph.LayoutInstance[]) {
     this.count.door = gms.reduce((sum, { key }) => sum + this.byKey[key].doorSegs.length, 0);
     this.count.wall = gms.reduce((sum, { key }) => sum + this.byKey[key].wallSegs.length, 0);
+    this.count.window = gms.reduce((sum, { key }) => sum + this.byKey[key].windowSegs.length, 0);
     this.count.obstacles = gms.reduce((sum, { obstacles }) => sum + obstacles.length, 0);
     this.count.obstacleSkirtEdges = gms.reduce(
       (sum, { obstacles }) => sum + obstacles.reduce((s, o) => s + o.origPoly.outline.length, 0),
@@ -53,12 +55,14 @@ export default class DerivedGmsData {
     const gmData = this.byKey[gm.key];
 
     gmData.doorSegs = gm.doors.map(({ seg, meta }) => ({ seg, hull: meta.hull === true }));
+    /**
+     * 🔔 some windows are complex curved polygons, e.g.
+     * 301: hull bridge window, 303: inner engineering window.
+     * Inside `w.gmRoomGraph` they're modelled as a single segment.
+     */
+    gmData.windowSegs = gm.windows.flatMap(({ poly }) => poly.lineSegs.map((seg) => ({ seg })));
     gmData.polyDecals = gm.unsorted.filter((x) => x.meta.poly === true);
-    gmData.wallSegs = [
-      ...gm.walls.flatMap((x) => x.lineSegs.map((seg) => ({ seg, meta: x.meta }))),
-      // ...gm.doors.flatMap(connector => this.getLintelSegs(connector)),
-      // ...gm.windows.flatMap(connector => this.getWindowSegs(connector)),
-    ];
+    gmData.wallSegs = gm.walls.flatMap((x) => x.lineSegs.map((seg) => ({ seg, meta: x.meta })));
 
     gmData.wallPolyCount = gm.walls.length;
 
@@ -178,6 +182,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     wallSegs: [],
     wallPolyCount: 0,
     wallPolySegCounts: [],
+    windowSegs: [],
     polyDecals: [],
     tops: { broad: [], hullDoor: [], hullWall: [], nonHullDoor: [], nonHullWall: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),

@@ -24,6 +24,8 @@ declare namespace Geomorph {
     wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta }[];
     wallPolyCount: number;
     wallPolySegCounts: number[];
+    /** `poly.lineSegs` rather than `connector.seg`  */
+    windowSegs: { seg: [Geom.Vect, Geom.Vect] }[];
     roomHitCt: CanvasRenderingContext2D;
     /** Graph of rooms and doors within geomorph */
     roomGraph: import("./service/room-graph").RoomGraph;
