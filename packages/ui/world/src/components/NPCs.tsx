@@ -67,6 +67,7 @@ export default function NPCs() {
       nextPickId: 0,
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
+      postCrowdTickEvents: [],
 
       configureCrowd() {
         // improve initial path accuracy
@@ -253,7 +254,9 @@ export default function NPCs() {
         npc.rejectAll(new Error("move again"));
 
         npc.startMoving(groundPoint, result, arrive);
-        w.events.next({ key: "started-moving", npcKey });
+
+        // w.events.next({ key: "started-moving", npcKey });
+        state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
 
         try {
           await npc.waitUntilResolved();
@@ -318,6 +321,9 @@ export default function NPCs() {
         const positions64 = new Float64Array(positions);
         w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
         positions.length = 0;
+
+        for (const event of state.postCrowdTickEvents) w.events.next(event);
+        state.postCrowdTickEvents.length = 0;
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = parseGroundPoint(override ?? closePolyResult.position);
@@ -562,6 +568,7 @@ export type State = {
   nextPickId: number;
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
+  postCrowdTickEvents: JshCli.Event[];
 
   configureCrowd(): void;
   createMaterials(
