@@ -826,7 +826,7 @@ export default function Decor() {
         frustumCulled={false}
         renderOrder={-2}
         material={state.static.materials}
-        visible={state.static.materials.length > 0}
+        visible={state.ready}
       >
         <bufferGeometry
           attributes={state.static.box.attributes}

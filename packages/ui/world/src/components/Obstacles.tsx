@@ -3,7 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService, Mat, Vect } from "@npc-cli/util/geom";
 import { loadImage } from "@npc-cli/util/legacy/dom";
-import { pause, warn } from "@npc-cli/util/legacy/generic";
+import { warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
@@ -274,7 +274,7 @@ export default function Obstacles(_props: Props) {
     }
 
     state.draw().then(async () => {
-      await pause(60); // avoid mismatched instances/uvs
+      // await pause(60); // avoid mismatched instances/uvs
       state.sendDataToGpu();
       w.update();
     });
