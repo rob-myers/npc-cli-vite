@@ -1,5 +1,23 @@
 /// <reference lib="dom" />
 
+export function drawRoundedRect(
+  ct: CanvasRenderingContext2D,
+  opts: Geom.RectJson & {
+    radius?: number;
+    fillStyle?: string | CanvasPattern | null;
+    strokeStyle?: string | null;
+    lineWidth?: number | null;
+  },
+) {
+  ct.fillStyle = opts.fillStyle ?? ct.fillStyle;
+  ct.strokeStyle = opts.strokeStyle ?? ct.strokeStyle;
+  ct.lineWidth = opts.lineWidth ?? ct.lineWidth;
+  ct.beginPath();
+  ct.roundRect(opts.x, opts.y, opts.width, opts.height, opts.radius ?? 0);
+  if (opts.fillStyle !== null) ct.fill();
+  if (opts.strokeStyle !== null) ct.stroke();
+}
+
 export function drawPolygons(
   ct: CanvasRenderingContext2D,
   polys: Geom.Poly | Geom.Poly[],

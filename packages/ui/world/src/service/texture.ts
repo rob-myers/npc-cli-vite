@@ -1,5 +1,5 @@
 import { geomService } from "@npc-cli/util";
-import { drawPolygons } from "@npc-cli/util/service/canvas";
+import { drawPolygons, drawRoundedRect } from "@npc-cli/util/service/canvas";
 import {
   attribute,
   cameraProjectionMatrix,
@@ -34,43 +34,25 @@ function drawDoorBasePanel() {
   ct.fillStyle = "#000";
   ct.fillRect(0, 0, w, h);
 
-  // vertical sheen
-  // const grad = ct.createLinearGradient(0, 0, 0, h);
-  // grad.addColorStop(0, "rgba(120,150,180,0.15)");
-  // grad.addColorStop(0.5, "rgba(0,0,0,0)");
-  // grad.addColorStop(1, "rgba(0,0,0,0.2)");
-  // ct.fillStyle = grad;
-  // ct.fillRect(0, 0, w, h);
-
-  // // fine horizontal score lines
-  // ct.strokeStyle = "rgba(160,180,200,0.2)";
-  // ct.lineWidth = 1;
-  // for (let y = 8; y < h; y += 12) {
-  //   ct.beginPath();
-  //   ct.moveTo(8, y);
-  //   ct.lineTo(w - 8, y);
-  //   ct.stroke();
-  // }
-
   // 4 recessed panels with bevels
   for (const p of panels) {
     ct.fillStyle = "rgba(255,255,255,0.03)";
     ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
 
-    ct.strokeStyle = "rgba(160,180,200,0.35)";
-    ct.lineWidth = 1.5;
+    ct.strokeStyle = "rgba(160,180,200,0.15)";
+    ct.lineWidth = 5;
     ct.strokeRect(panelInset, p.y, w - panelInset * 2, p.h);
 
     ct.strokeStyle = "rgba(180,200,220,0.1)";
-    ct.lineWidth = 1.5;
+    ct.lineWidth = 5;
     ct.beginPath();
     ct.moveTo(panelInset + 1, p.y + p.h);
     ct.lineTo(panelInset + 1, p.y + 1);
     ct.lineTo(w - panelInset - 1, p.y + 1);
     ct.stroke();
 
-    ct.strokeStyle = "rgba(0,0,0,0.35)";
-    ct.lineWidth = 1.5;
+    ct.strokeStyle = "rgba(0,0,0,0.15)";
+    ct.lineWidth = 5;
     ct.beginPath();
     ct.moveTo(w - panelInset - 1, p.y + 1);
     ct.lineTo(w - panelInset - 1, p.y + p.h - 1);
@@ -78,34 +60,34 @@ function drawDoorBasePanel() {
     ct.stroke();
   }
 
-  // horizontal dividers between panels
-  ct.lineWidth = 20;
-  for (const lineY of [texH * 0.24, texH * 0.5, texH * 0.74]) {
-    ct.strokeStyle = "rgba(160,180,200,0.1)";
-    ct.beginPath();
-    ct.moveTo(4, lineY);
-    ct.lineTo(w - 4, lineY);
-    ct.stroke();
-    ct.strokeStyle = "rgba(0,0,0,0.5)";
-    ct.beginPath();
-    ct.moveTo(4, lineY + 2);
-    ct.lineTo(w - 4, lineY + 2);
-    ct.stroke();
-  }
+  // // horizontal dividers between panels
+  // ct.lineWidth = 20;
+  // for (const lineY of [texH * 0.24, texH * 0.5, texH * 0.74]) {
+  //   ct.strokeStyle = "rgba(160,180,200,0.1)";
+  //   ct.beginPath();
+  //   ct.moveTo(4, lineY);
+  //   ct.lineTo(w - 4, lineY);
+  //   ct.stroke();
+  //   ct.strokeStyle = "rgba(0,0,0,0.5)";
+  //   ct.beginPath();
+  //   ct.moveTo(4, lineY + 2);
+  //   ct.lineTo(w - 4, lineY + 2);
+  //   ct.stroke();
+  // }
 
-  // rivets along edges
-  for (const rx of [8, w - 8]) {
-    for (let ry = 16; ry < h; ry += 28) {
-      ct.fillStyle = "rgba(140,160,180,0.1)";
-      ct.beginPath();
-      ct.arc(rx, ry, 3, 0, Math.PI * 2);
-      ct.fill();
-      ct.fillStyle = "rgba(200,220,240,0.3)";
-      ct.beginPath();
-      ct.arc(rx - 0.5, ry - 0.5, 1.5, 0, Math.PI * 2);
-      ct.fill();
-    }
-  }
+  // // rivets along edges
+  // for (const rx of [8, w - 8]) {
+  //   for (let ry = 16; ry < h; ry += 28) {
+  //     ct.fillStyle = "rgba(140,160,180,0.1)";
+  //     ct.beginPath();
+  //     ct.arc(rx, ry, 3, 0, Math.PI * 2);
+  //     ct.fill();
+  //     ct.fillStyle = "rgba(200,220,240,0.3)";
+  //     ct.beginPath();
+  //     ct.arc(rx - 0.5, ry - 0.5, 1.5, 0, Math.PI * 2);
+  //     ct.fill();
+  //   }
+  // }
 
   // outer border
   ct.strokeStyle = "rgba(160,180,200,0.1)";
@@ -389,17 +371,19 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
     ct.textBaseline = "middle";
 
     const measured = ct.measureText(label);
-    const padX = 12;
-    const padY = 12;
-    const rw = measured.width + padX * 2;
-    const rh = 36 + padY * 2;
-    ct.fillStyle = "rgba(30, 30, 30, 0)";
-    ct.strokeStyle = "rgba(220, 220, 220, 0.92)";
-    ct.lineWidth = 3;
-    ct.beginPath();
-    ct.roundRect(-rw / 2, -rh / 2, rw, rh, 6);
-    ct.fill();
-    ct.stroke();
+    const padding = 12;
+    const rw = measured.width + padding * 2;
+    const rh = 36 + padding * 2;
+    drawRoundedRect(ct, {
+      x: -rw / 2,
+      y: -rh / 2,
+      width: rw,
+      height: rh,
+      radius: 6,
+      fillStyle: "rgba(30, 30, 30, 255)",
+      strokeStyle: "rgba(220, 220, 220, 0.22)",
+      lineWidth: 3,
+    });
 
     ct.fillStyle = "#fff";
     ct.fillText(label, 0, 0);
@@ -425,9 +409,21 @@ export function drawDoorIconLayer(
   const iconSize = 100;
   const { rect } = entry;
   ct.save();
-  ct.globalAlpha = 0.2;
   ct.translate(texW / 2, logoY);
   ct.scale(1, -1);
+
+  drawRoundedRect(ct, {
+    x: -iconSize / 2,
+    y: -iconSize / 2,
+    width: iconSize,
+    height: iconSize,
+    radius: 6,
+    fillStyle: "rgba(30, 30, 30, 0.5)",
+    strokeStyle: "rgba(220, 220, 220, 0.22)",
+    lineWidth: 3,
+  });
+
+  // ct.globalAlpha = 0.5;
   ct.drawImage(sheetImage, rect.x, rect.y, rect.width, rect.height, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
   ct.restore();
 
