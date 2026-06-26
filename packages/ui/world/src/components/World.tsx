@@ -129,6 +129,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       helper,
 
+      fadeEl: null,
       rootEl: null as any,
 
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {
@@ -153,6 +154,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const delta = state.timer.getDelta();
         state.door.onTick(delta);
         state.npc.onTick(delta);
+      },
+      setCanvasFade(on) {
+        if (!state.fadeEl) return;
+        state.fadeEl.style.transitionDuration = on ? "0.3s" : "0.5s";
+        state.fadeEl.style.opacity = on ? "1" : "0";
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -342,6 +348,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <Debug key="debug" />
           </WorldView>
         )}
+        <FadeOverlay ref={state.ref("fadeEl")} />
         <WorldWorker />
         <WorldMenu />
       </div>
@@ -421,7 +428,9 @@ export type State = {
   helper: typeof helper;
 
   rootEl: HTMLDivElement;
+  fadeEl: HTMLDivElement | null;
 
+  setCanvasFade(on: boolean): void;
   setDisabled(nextDisabled?: boolean): void;
   setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
   setupDevAssetsSync(): void;
@@ -457,3 +466,12 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
 });
 
 type PendingKey = "assets" | "decor" | "nav" | "obstacles" | "skins";
+
+function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
+  return (
+    <div
+      ref={props.ref}
+      className="absolute inset-0 z-5 bg-zinc-900 pointer-events-none transition-opacity opacity-0 duration-100"
+    />
+  );
+}
