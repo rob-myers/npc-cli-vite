@@ -90,7 +90,12 @@ export default function Ceiling() {
           strokeStyle: tc.hull.stroke,
           lineWidth: thickLineWidth,
         });
-        drawPolygons(ct, tops.broad, { fillStyle: tc.hull.fill, strokeStyle: grey90, lineWidth: thinLineWidth });
+
+        drawPolygons(ct, tops.broad, {
+          fillStyle: tc.hull.fill,
+          strokeStyle: "rgba(90, 90, 90, 0.5)",
+          lineWidth: thickerLineWidth,
+        });
 
         for (const decal of polyDecals) {
           if (decal.meta.ceil !== true) continue;
@@ -198,6 +203,6 @@ export type State = {
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 const wallsColor = "#333";
-const grey90 = "rgb(90, 90, 90)";
 const thinLineWidth = 0.04;
 const thickLineWidth = 0.06;
+const thickerLineWidth = 0.1;
