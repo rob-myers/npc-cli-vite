@@ -4073,8 +4073,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
+            "lintel": true,
             "h": 0.2,
+            "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0
           }
@@ -4091,7 +4092,7 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
+            "apron": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1
@@ -8831,8 +8832,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
+            "lintel": true,
             "h": 0.2,
+            "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0,
             "y": 1.7,
@@ -8846,7 +8848,7 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
+            "apron": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -14800,8 +14802,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
+            "lintel": true,
             "h": 0.2,
+            "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0,
             "y": 1.7,
@@ -14820,7 +14823,7 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
+            "apron": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -17269,8 +17272,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
+            "lintel": true,
             "h": 0.2,
+            "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0
           }
@@ -17287,7 +17291,7 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
+            "apron": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1
@@ -19233,7 +19237,7 @@
           "type": "point",
           "x": 12.7438,
           "y": 5.0875,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 0.5, 0.5, 0, 12.649999999999999, 4.8375],
           "det": -1
         },
@@ -19300,7 +19304,7 @@
           "type": "point",
           "x": 10.9228,
           "y": 5.5586,
-          "orient": 0,
+          "orient": -110,
           "transform": [-0.342, -0.9397, 0.9397, -0.342, 10.87791, 5.65475],
           "det": 1
         },
@@ -19323,7 +19327,7 @@
           "type": "point",
           "x": 9.7023,
           "y": 5.5711,
-          "orient": 0,
+          "orient": -70,
           "transform": [0.342, -0.9397, -0.9397, -0.342, 9.74709, 5.66725],
           "det": -1
         },
@@ -19369,7 +19373,7 @@
           "type": "point",
           "x": 12.775,
           "y": 4.1125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 12.7, 4.1875],
           "det": 1
         },
@@ -19390,7 +19394,7 @@
           "type": "point",
           "x": 12.7439,
           "y": 11.4048,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, 0.5, 0, 12.650179999999999, 11.65477],
           "det": 1
         },
@@ -19457,7 +19461,7 @@
           "type": "point",
           "x": 10.9229,
           "y": 10.9337,
-          "orient": 0,
+          "orient": 110,
           "transform": [-0.342, 0.9397, 0.9397, 0.342, 10.87809, 10.83752],
           "det": -1
         },
@@ -19480,7 +19484,7 @@
           "type": "point",
           "x": 9.7024,
           "y": 10.9212,
-          "orient": 0,
+          "orient": 70,
           "transform": [0.342, 0.9397, -0.9397, 0.342, 9.74727, 10.82502],
           "det": 1
         },
@@ -19526,7 +19530,7 @@
           "type": "point",
           "x": 12.7752,
           "y": 12.3798,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 12.70018, 12.30477],
           "det": -1
         },
@@ -19547,7 +19551,7 @@
           "type": "point",
           "x": 17.256,
           "y": 11.4048,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, -0.5, 0, 17.34982, 11.65477],
           "det": -1
         },
@@ -19614,7 +19618,7 @@
           "type": "point",
           "x": 19.077,
           "y": 10.9337,
-          "orient": 0,
+          "orient": 70,
           "transform": [0.342, 0.9397, -0.9397, 0.342, 19.12191, 10.83752],
           "det": 1
         },
@@ -19637,7 +19641,7 @@
           "type": "point",
           "x": 20.2976,
           "y": 10.9212,
-          "orient": 0,
+          "orient": 110,
           "transform": [-0.342, 0.9397, 0.9397, 0.342, 20.25273, 10.82502],
           "det": -1
         },
@@ -19660,7 +19664,7 @@
           "type": "point",
           "x": 19.8623,
           "y": 12.7548,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, -1, 19.93732, 12.82977],
           "det": 1
         },
@@ -19683,7 +19687,7 @@
           "type": "point",
           "x": 17.2248,
           "y": 12.3798,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, -1, 0, 17.29982, 12.30477],
           "det": 1
         }
@@ -23873,7 +23877,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -26915,8 +26919,9 @@
             ],
             "meta": {
               "obstacle": true,
-              "apron": true,
+              "lintel": true,
               "h": 0.2,
+              "inset": 0.05,
               "symKey": "window--007",
               "origObstacleId": 0
             }
@@ -26933,8 +26938,9 @@
           "center": {"x": 15.78, "y": 9.18},
           "meta": {
             "obstacle": true,
-            "apron": true,
+            "lintel": true,
             "h": 0.2,
+            "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0
           }
@@ -26955,7 +26961,7 @@
             ],
             "meta": {
               "obstacle": true,
-              "lintel": true,
+              "apron": true,
               "force-y": 0.4,
               "symKey": "window--007",
               "origObstacleId": 1
@@ -26973,7 +26979,7 @@
           "center": {"x": 15.78, "y": 9.18},
           "meta": {
             "obstacle": true,
-            "lintel": true,
+            "apron": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1
@@ -31989,5 +31995,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 1196451847}
+  "hash": {"obstacles": 589009615}
 }
