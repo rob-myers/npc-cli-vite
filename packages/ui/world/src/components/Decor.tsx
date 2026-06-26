@@ -827,7 +827,7 @@ export default function Decor() {
         frustumCulled={false}
         renderOrder={-2}
         material={state.static.materials}
-        visible={state.ready}
+        visible={state.static.materials.length > 0}
       >
         <bufferGeometry
           attributes={state.static.box.attributes}
@@ -929,16 +929,6 @@ const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4().set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 const tmpColor = new THREE.Color();
-
-/**
- * Some decor images are used to build other textures.
- * - available synchronously.
- * - copy from THREE.DataArrayTexture less performant
- */
-const decorImgForOtherTex = {
-  "speech-bubble": new Image(),
-} as const;
-type DecorImgForOtherTexKey = keyof typeof decorImgForOtherTex;
 
 /**
  * TSL outputNode for the top face of the box geometry.
