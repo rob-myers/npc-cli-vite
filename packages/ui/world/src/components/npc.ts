@@ -101,6 +101,10 @@ export class Npc {
     return this.w.npc.clips;
   }
 
+  get point() {
+    return { x: this.position.x, y: this.position.z };
+  }
+
   get running() {
     return this.moveClip.name === "run";
   }
@@ -277,6 +281,15 @@ export class Npc {
       this.fadeState.target = 1;
       this.fadeState.delta = Math.abs(speed);
     });
+  }
+
+  /**
+   * An npc with an agent and a target has corners.
+   * We provide: `[currentGroundPoint, ...cornerGroundPoints]`
+   */
+  getCornersPath(): Geom.VectJson[] | null {
+    const cornerGroundPoints = (this.agent?.corners ?? []).map(({ position }) => ({ x: position[0], y: position[2] }));
+    return cornerGroundPoints.length > 0 ? [this.point, ...cornerGroundPoints] : null;
   }
 
   setLabelYShift(shift: number) {

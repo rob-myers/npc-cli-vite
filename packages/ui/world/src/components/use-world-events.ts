@@ -183,9 +183,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
-      onEnterCollider(e, _npc) {
+      onEnterCollider(e, npc) {
         if (e.type === "nearby" || e.type === "inside") {
-          state.toggleDoor(e.meta.gdKey, { open: true, npcKey: e.npcKey });
+          state.toggleDoor(e.meta.gdKey, {
+            open: true,
+            npcKey: e.npcKey,
+            // don't toggle accessible locked door unless npc intends entry
+            npcIntention: npc.getCornersPath() ?? undefined,
+          });
         }
       },
       onExitCollider(e, npc) {
@@ -280,8 +285,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "started-moving": {
             state.fixInaccessibleTarget(npc);
-            for (const gdKey of state.npcToDoors[e.npcKey]?.nearby ?? []) {
-              state.toggleDoor(gdKey, { open: true, npcKey: e.npcKey });
+
+            const nearbyGdKeys = state.npcToDoors[e.npcKey]?.nearby ?? emptySet;
+            const npcIntention = nearbyGdKeys.size > 0 ? npc.getCornersPath() : null;
+            for (const gdKey of nearbyGdKeys) {
+              state.toggleDoor(gdKey, {
+                open: true,
+                npcKey: e.npcKey,
+                // don't toggle accessible locked door unless npc intends entry
+                npcIntention: npcIntention ?? undefined,
+              });
             }
             break;
           }
@@ -460,10 +473,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // clear if already closed and no npc colliding with "inside" collider
         opts.clear = door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
 
+        const path = opts.npcIntention ?? [];
+        const intersects = path.some(
+          (p, i) => i > 0 && geomService.getLineSegsIntersection(p, path[i - 1], door.src, door.dst) !== null,
+        );
+
         opts.access ??=
           opts.npcKey === undefined ||
           (door.auto === true && door.locked === false) ||
-          state.npcCanAccess(opts.npcKey, gdKey);
+          (state.npcCanAccess(opts.npcKey, gdKey) && (path.length === 0 || intersects === true));
 
         return w.door.toggleDoor(door, opts);
       },
@@ -574,7 +592,19 @@ export type State = {
   removeAgents(npcs: Npc[], opts?: { keepPhysics?: boolean }): void;
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
-  toggleDoor(gdKey: Geomorph.GmDoorKey, opts?: { npcKey?: string } & Geomorph.ToggleDoorOpts): boolean;
+  toggleDoor(
+    gdKey: Geomorph.GmDoorKey,
+    opts?: {
+      npcKey?: string;
+      /**
+       * Given `npcIntention` then locked accessible doors will only
+       * be opened if npc's intended path intersects the door.
+       *
+       * Intuitively the NPC flashed their authentication to enter.
+       */
+      npcIntention?: JshCli.GroundPoint[];
+    } & Geomorph.ToggleDoorOpts,
+  ): boolean;
   toggleLock(
     gdKey: Geomorph.GmDoorKey,
     opts: { npcKey?: string; point?: JshCli.PointAnyFormat } & Geomorph.ToggleLockOpts,
@@ -582,3 +612,5 @@ export type State = {
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };
+
+const emptySet = new Set();
