@@ -40,16 +40,12 @@ export class SpeechBubbleApi {
   autoDeleteTimerStartedAt = 0;
   autoDeleteTimer: ReturnType<typeof setTimeout> | null = null;
 
-  bubbleDiv: HTMLElement | null = null;
+  initialCssVars: Record<string, string> = {};
 
   constructor(key: string, tracked: TrackedObject3D, w: WorldState) {
     this.key = key;
     this.tracked = tracked;
     this.w = w;
-  }
-
-  bubbleDivRef(el: HTMLElement | null) {
-    this.bubbleDiv = el;
   }
 
   dispose() {
@@ -79,14 +75,13 @@ export class SpeechBubbleApi {
     this.w.bubble.update();
   }
 
-  /** remember manually edited bubbleDiv.style.{width,height} */
-  getBubbleDivResizeInfo(): { width?: number; height?: number } {
-    const bubbleDiv = this.bubbleDiv;
-    const bubbleDivRect = bubbleDiv?.getBoundingClientRect();
-    return {
-      width: bubbleDiv?.style.width ? (bubbleDivRect as DOMRect).width : undefined,
-      height: bubbleDiv?.style.height ? (bubbleDivRect as DOMRect).height : undefined,
-    };
+  getBubbleCssVars(): Record<string, string> {
+    const rootDiv = this.html3d?.rootDiv;
+    return Object.fromEntries(
+      ["--bubble-width", "--bubble-height"]
+        .map((varName) => [varName, rootDiv?.style.getPropertyValue(varName)] as const)
+        .filter(([, value]) => value),
+    );
   }
 
   html3dRef(html3d: Html3dState | null) {
@@ -147,22 +142,23 @@ export class SpeechBubbleApi {
   resizeStart(clientX: number, clientY: number) {
     this.isResizing = true;
     this.resizeStartClient = { x: clientX, y: clientY };
-    this.resizeWidthAtStart = this.bubbleDiv?.offsetWidth ?? 0;
-    this.resizeHeightAtStart = this.bubbleDiv?.offsetHeight ?? 0;
-
+    const innerDiv = this.html3d?.innerDiv;
+    this.resizeWidthAtStart = innerDiv?.offsetWidth ?? defaultBubbleWidth;
+    this.resizeHeightAtStart = innerDiv?.offsetHeight ?? defaultBubbleHeight;
     // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
-    const rect = this.bubbleDiv?.getBoundingClientRect();
+    const rect = innerDiv?.getBoundingClientRect();
     this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
   }
 
   resizeMove(clientX: number, clientY: number) {
-    if (!this.isResizing || !this.bubbleDiv) return;
+    if (!this.isResizing) return;
     const dx = (clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
     const dy = (clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
     // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
     // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
-    this.bubbleDiv.style.width = `${Math.max(minBubbleWidth, this.resizeWidthAtStart + dx * 2)}px`;
-    this.bubbleDiv.style.height = `${Math.max(minBubbleHeight, this.resizeHeightAtStart + dy)}px`;
+    const rootDiv = this.html3d?.rootDiv;
+    rootDiv?.style.setProperty("--bubble-width", `${Math.max(minBubbleWidth, this.resizeWidthAtStart + dx * 2)}px`);
+    rootDiv?.style.setProperty("--bubble-height", `${Math.max(minBubbleHeight, this.resizeHeightAtStart + dy)}px`);
     this.html3d?.onFrame();
   }
 
@@ -361,6 +357,8 @@ const tmpVec2 = new THREE.Vector3();
 const interactiveDurationMs = 5_000;
 const minBubbleWidth = 256;
 const minBubbleHeight = 256;
+const defaultBubbleWidth = 560; // w-140
+const defaultBubbleHeight = 288; // h-72
 const maxBubbleExtantMs = 10_000; // 10 seconds
 
 export type AutoDeleteOpts = { baseSeconds: number; perWordSeconds: number };

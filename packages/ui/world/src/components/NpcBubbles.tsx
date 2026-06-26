@@ -20,7 +20,7 @@ export default function NpcBubbles() {
 
           state.lastBubbleData[npcKey] = {
             offset: { ...bubble.offset },
-            ...bubble.getBubbleDivResizeInfo(),
+            cssVars: bubble.getBubbleCssVars(),
           };
 
           bubble.dispose();
@@ -41,10 +41,10 @@ export default function NpcBubbles() {
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
         const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w));
 
-        // 🚧 remember resize somehow too
         const prev = state.lastBubbleData[npcKey];
         if (prev?.offset) bubble.offset = { ...prev.offset };
-        delete state.lastBubbleData[npcKey]
+        if (prev?.cssVars) bubble.initialCssVars = { ...prev.cssVars };
+        delete state.lastBubbleData[npcKey];
 
         bubble.autoDeleteOpts = { ...defaultAutoDeleteOpts, ...opts };
         bubble.scheduleAutoDelete();
@@ -115,7 +115,10 @@ export default function NpcBubbles() {
 
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
-  lastBubbleData: { [npcKey: string]: { offset?: { x: number; y: number; z: number }; width?: number; height?: number } };
+  /** Persist bubble properties over remounts */
+  lastBubbleData: {
+    [npcKey: string]: { offset?: { x: number; y: number; z: number }; cssVars?: Record<string, string> };
+  };
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string, opts?: AutoDeleteOpts): SpeechBubbleApi;
   handleDevHotReload(): void;
@@ -139,6 +142,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     <Html3d
       ref={b.html3dRef.bind(b)}
       className="pointer-events-none absolute top-0 left-0"
+      initialCssVars={b.initialCssVars}
       offset={b.offset}
       position={b.position}
       r3f={b.w.r3f}
@@ -146,10 +150,9 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
       visible
     >
       <div
-        ref={b.bubbleDivRef.bind(b)}
         className={cn(
           "relative flex flex-col rounded-none cursor-grab active:cursor-grabbing overflow-hidden",
-          "transform-[translate(-50%)] h-72 w-140",
+          "transform-[translate(-50%)] w-(--bubble-width,35rem) h-(--bubble-height,18rem)",
           b.isInteractive && "pointer-events-auto",
         )}
         onMouseDown={b.onMouseDown}

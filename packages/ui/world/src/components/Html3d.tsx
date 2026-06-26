@@ -54,6 +54,9 @@ export const Html3d = forwardRef<State, Props>((props, ref) => {
   state.rootDiv.className = props.className;
 
   useLayoutEffect(() => {
+    if (props.initialCssVars) {
+      for (const [k, v] of Object.entries(props.initialCssVars)) state.rootDiv.style.setProperty(k, v);
+    }
     const currentRoot = (state.reactRoot = ReactDOM.createRoot(state.rootDiv));
     const vec = state.computePosition();
     state.rootDiv.style.transform = `translate3d(${vec.x}px,${vec.y}px,0)`;
@@ -119,6 +122,7 @@ export type TrackedObject3D = { object: THREE.Object3D; offset: THREE.Vector3 };
 
 type Props = Omit<React.HTMLAttributes<HTMLDivElement>, "ref"> & {
   className: string;
+  initialCssVars?: Record<string, string>;
   offset: THREE.Vector3Like;
   r3f: RootState;
   position: THREE.Vector3;

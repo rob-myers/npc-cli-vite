@@ -132,15 +132,16 @@ w decor.byKey.test-decor-point
   - ✅ verify mobile too
 
 - ✅ BUG camera cardinal desktop got stuck on zoom on far and zoom back
-- BUG cannot change polar angle sometimes when polar minimal
+- ❌ BUG cannot change polar angle sometimes when polar minimal
 
 - ✅ support `lock` and `unlock`
 - ✅ support `grant` and `revoke`
 - ✅ BUG trigger nearby door on npc start-moving
   - covers case where previously revoked npc is provided key and is already nearby
 
+- ✅ speech bubble remembers resize after dispose and re-create
+
 - BUG npc arms through locked door
-- speech bubble remembers resize after dispose and re-create
 - 🚧 reduce npc draw calls
   - reduce multiple materials
   - ✅ front-sided
