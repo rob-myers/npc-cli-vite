@@ -21,10 +21,14 @@ export default function Walls() {
       light: {} as State["light"],
       quad: createTwoSidedXyQuad(),
 
-      toggleLights(next = !state.lightsShown) {
-        state.light.wallLightsNode.value = next ? 1 : 0;
-        state.set({ lightsShown: next });
-        w.view.forceUpdate();
+      decodeInstanceId(instanceId: number) {
+        let id = instanceId;
+        const gmId = w.gms.findIndex(({ key }) => {
+          const count = w.gmsData.byKey[key].wallSegs.length;
+          return id < count || ((id -= count), false);
+        });
+        const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
+        return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
       },
       getWallMat([u, v], transform, determinant, height, baseHeight) {
         tmpMat1.setMatrixValue(transform);
@@ -43,15 +47,6 @@ export default function Walls() {
           { yScale: height ?? wallHeight, yHeight: baseHeight, mat4: tmpMatFour1 },
         );
       },
-      decodeInstanceId(instanceId: number) {
-        let id = instanceId;
-        const gmId = w.gms.findIndex(({ key }) => {
-          const count = w.gmsData.byKey[key].wallSegs.length;
-          return id < count || ((id -= count), false);
-        });
-        const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
-        return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
-      },
       positionTrimInstances() {
         const { instTrim: ti } = state;
         if (!ti) return;
@@ -68,6 +63,13 @@ export default function Walls() {
             ti.setColorAt(id++, color);
           }
           for (const { seg } of w.gmsData.byKey[gmKey].doorSegs) {
+            ti.setMatrixAt(
+              id,
+              state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
+            );
+            ti.setColorAt(id++, color);
+          }
+          for (const { seg } of w.gmsData.byKey[gmKey].windowSegs) {
             ti.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
@@ -107,13 +109,18 @@ export default function Walls() {
         ws.instanceMatrix.needsUpdate = true;
         if (ws.instanceColor) ws.instanceColor.needsUpdate = true;
       },
+      toggleLights(next = !state.lightsShown) {
+        state.light.wallLightsNode.value = next ? 1 : 0;
+        state.set({ lightsShown: next });
+        w.view.forceUpdate();
+      },
     }),
   );
 
   w.wall = state;
 
   const wallCount = w.gmsData.count.wall;
-  const trimCount = wallCount + w.gmsData.count.door;
+  const trimCount = wallCount + w.gmsData.count.door + w.gmsData.count.window;
 
   const mat = useMemo(() => {
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
