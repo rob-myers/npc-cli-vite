@@ -4,9 +4,9 @@ import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { attribute, instanceIndex, int, texture, uv } from "three/tsl";
-import type * as THREE from "three/webgpu";
+import * as THREE from "three/webgpu";
 import { MAX_GEOMORPH_INSTANCES } from "../const";
-import { createXzQuad, embedXZMat4 } from "../service/geometry";
+import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { drawLightsIntoTexture, drawRoomOutlines, worldToCanvas } from "../service/texture";
@@ -18,7 +18,7 @@ export default function Floor() {
   const state = useStateRef(
     (): State => ({
       inst: null,
-      quad: createXzQuad(),
+      quad: createTwoSidedXzQuad(),
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
 
@@ -167,7 +167,7 @@ export default function Floor() {
 
       <meshStandardNodeMaterial
         key={shaderMeta.uid}
-        // side={THREE.DoubleSide} // avoids draw-call
+        side={THREE.FrontSide} // one draw call
         transparent
         alphaTest={0.8}
         colorNode={shaderMeta.texNode}
