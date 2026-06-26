@@ -309,7 +309,11 @@ export function WorldMenu() {
                   label={w.mapKey}
                   value={w.mapKey}
                   items={mapKeys}
-                  onValueChange={(key) => key && uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key))}
+                  onValueChange={(key) => {
+                    if (!key) return;
+                    w.setCanvasFade(true);
+                    uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
+                  }}
                 />
 
                 <Menu.Item
