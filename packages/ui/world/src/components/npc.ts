@@ -237,6 +237,7 @@ export class Npc {
       });
       await this.fadeIn();
     } finally {
+      // guarded in case of re-fade midway
       if (this.fadeState.delta === 0) {
         this.alphaTestScale.value = 0.9;
         this.opacityScale.value = 1;
@@ -484,6 +485,7 @@ export class Npc {
 
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
     const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
+
     if (shouldSeparate) {
       const neiAgentId = agent.neis[0].agentId;
       const neiNpc = Object.values(this.w.n).find((n) => n.agentId === neiAgentId);
@@ -499,7 +501,7 @@ export class Npc {
     } else {
       this.lookAtPoint = null;
       if (this.separating) {
-        this.startIdle();
+        this.startIdle(); // sets this.separating false
       }
     }
 
