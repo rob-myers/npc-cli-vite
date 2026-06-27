@@ -355,6 +355,7 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
     ct.font = "36px sans-serif";
     ct.textAlign = "center";
     ct.textBaseline = "middle";
+    ct.globalAlpha = 0.5;
 
     const measured = ct.measureText(label);
     const padding = 12;
@@ -398,6 +399,7 @@ export function drawDoorIconLayer(
   ct.translate(texW / 2, logoY);
   ct.scale(1, -1);
 
+  ct.globalAlpha = 0.5;
   drawRoundedRect(ct, {
     x: -iconSize / 2,
     y: -iconSize / 2,
@@ -409,13 +411,12 @@ export function drawDoorIconLayer(
     lineWidth: 3,
   });
 
-  // ct.globalAlpha = 0.5;
+  ct.globalAlpha = 0.25;
   ct.drawImage(sheetImage, rect.x, rect.y, rect.width, rect.height, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
   ct.restore();
 
   texArray.updateIndex(layerIndex);
 }
-
 
 /**
  * TypeScript is having trouble:
