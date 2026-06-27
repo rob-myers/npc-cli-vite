@@ -442,7 +442,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         for (const npc of npcs) {
           npc.mixer.stopAllAction();
           npc.material.dispose();
-          npc.labelMaterial.dispose();
           npc.geometry.dispose();
           delete w.npc.byPickId[npc.pickId];
           delete w.n[npc.key];
@@ -454,6 +453,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.npc.nextPickId = 0;
         }
 
+        w.shadows?.onTick();
         state.update();
         w.events.next({ key: "removed-npcs", npcKeys });
       },

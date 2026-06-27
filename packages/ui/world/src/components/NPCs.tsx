@@ -19,7 +19,22 @@ import { useContext, useEffect, useMemo } from "react";
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { cameraPosition, normalWorld, positionWorld, texture as tslTexture, uniform, uv, vec4 } from "three/tsl";
+import {
+  attribute,
+  cameraPosition,
+  cameraProjectionMatrix,
+  cameraViewMatrix,
+  modelWorldMatrix,
+  normalWorld,
+  output,
+  positionLocal,
+  positionWorld,
+  select,
+  texture as tslTexture,
+  uniform,
+  uv,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import {
@@ -35,14 +50,13 @@ import {
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
-  createSkinnedXzQuad,
   groundPointToTuple,
   groundPointToVector3,
-  mergeWithGroups,
+  mergeWithGroupAttr,
   parseGroundPoint,
 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { createLabelMaterial, createShadowMaterial, fetchSkinOverlay } from "../service/texture";
+import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
@@ -76,34 +90,56 @@ export default function NPCs() {
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
-        const mainMaterial = new THREE.MeshStandardNodeMaterial({
-          alphaTest: 0.9,
-          side: THREE.FrontSide, // overlay 1-sided
-          transparent: true,
-        });
-        const texNode = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
-        const viewDir = cameraPosition.sub(positionWorld).normalize();
-        const ndotv = normalWorld.dot(viewDir).clamp(0, 1).mul(npcBrightness);
         const colorScale = uniform(1);
         const opacityScale = uniform(1);
-        const rgb = texNode.rgb.mul(ndotv).mul(colorScale).clamp(0, 1);
-        mainMaterial.colorNode = vec4(rgb, texNode.a.mul(opacityScale));
-        mainMaterial.outputNode = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
-        const label = createLabelMaterial({
-          texArray: w.texNpcLabel,
-          layerIndex: pickId,
-          halfWidth: labelHw,
-          halfHeight: labelHh,
-          opacityScale,
+        const labelVisible = uniform(1, "float");
+
+        // Per-vertex groupId: 0=body, 1=label
+        const groupIdAttr = attribute<"float">("groupId", "float");
+        const isLabel = groupIdAttr.greaterThan(0.5);
+        const isMain = groupIdAttr.lessThan(0.5);
+
+        // Vertex node: billboard expansion for label, standard skinned MVP otherwise
+        const sign = attribute<"vec2">("billboardOffset", "vec2");
+        const labelYShift = uniform(0, "float");
+        const anchor = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
+        const viewCtr = cameraViewMatrix.mul(modelWorldMatrix.mul(anchor));
+        const labelPos = cameraProjectionMatrix.mul(viewCtr.add(vec4(sign.x.mul(labelHw), sign.y.mul(labelHh), 0, 0)));
+        const stdPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(modelWorldMatrix.mul(vec4(positionLocal, 1))));
+
+        // Color node
+        const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
+        const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(npcBrightness);
+        const mainColor = vec4(skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1), skinTex.a.mul(opacityScale));
+
+        const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(uniform(pickId));
+        const labelColor = vec4(labelTex.rgb, labelTex.a.mul(opacityScale).mul(labelVisible));
+
+        // Output node: encode NPC pick ID for body; suppress label during picking
+        const isPickMode = w.view.objectPick.notEqual(0);
+        const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
+
+        const mat = new THREE.MeshStandardNodeMaterial({
+          transparent: true,
+          depthWrite: true,
+          alphaTest: Number.EPSILON,
+          side: THREE.FrontSide,
         });
+        mat.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
+        mat.colorNode = (select as any)(isLabel, labelColor, mainColor);
+        mat.outputNode = (select as SelectAnyType)(
+          isPickMode,
+          (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
+          output,
+        );
+
         return {
           colorScale,
           opacityScale,
-          labelMaterial: label.material,
-          labelYShiftUniform: label.labelYShift,
-          shadowMaterial: createShadowMaterial(w.view.objectPick, opacityScale),
+          labelVisible,
+          labelYShiftUniform: labelYShift,
           skinIndexUniform,
-          material: mainMaterial,
+          material: mat,
         };
       },
       createNpc(opts: {
@@ -324,6 +360,8 @@ export default function NPCs() {
 
         for (const event of state.postCrowdTickEvents) w.events.next(event);
         state.postCrowdTickEvents.length = 0;
+
+        w.shadows?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = parseGroundPoint(override ?? closePolyResult.position);
@@ -396,12 +434,9 @@ export default function NPCs() {
           const graph = buildGraph(clone);
           const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
 
-          const shadowQuad = createSkinnedXzQuad(1, 1);
-          // const headBoneIndex = clonedSkinnedMesh.skeleton.bones.findIndex((b) => b.name === "head");
           const labelQuad = createSkinnedLabelQuad(0, 0);
           addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
-          addEmptyBillboardOffset(shadowQuad);
-          const geometry = mergeWithGroups(clonedSkinnedMesh.geometry, shadowQuad, labelQuad);
+          const geometry = mergeWithGroupAttr(clonedSkinnedMesh.geometry, labelQuad);
 
           npc = state.createNpc({
             key: npcKey,
@@ -429,6 +464,8 @@ export default function NPCs() {
           npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
           w.e.setNpcDo(npcKey, null);
         }
+
+        w.shadows?.onTick(); // ensure shadow visible even when paused
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
@@ -576,13 +613,7 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    | "colorScale"
-    | "opacityScale"
-    | "labelMaterial"
-    | "labelYShiftUniform"
-    | "shadowMaterial"
-    | "skinIndexUniform"
-    | "material"
+    "colorScale" | "opacityScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
   >;
   createNpc(opts: {
     key: string;

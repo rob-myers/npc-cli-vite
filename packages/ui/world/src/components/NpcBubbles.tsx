@@ -29,7 +29,7 @@ export default function NpcBubbles() {
           const npc = w.n[npcKey];
           if (!npc) continue;
           npc.drawLabel({ speaking: false });
-          npc.labelMaterial.visible = true;
+          npc.labelVisible.value = 1;
         }
         w.view.forceUpdate();
       },
@@ -52,7 +52,7 @@ export default function NpcBubbles() {
         if (w.view.topDown) {
           npc.drawLabel({ speaking: true });
         } else {
-          npc.labelMaterial.visible = false;
+          npc.labelVisible.value = 0;
         }
 
         w.view.forceUpdate();
@@ -72,7 +72,7 @@ export default function NpcBubbles() {
           const rootDiv = bubble.html3d?.rootDiv;
           if (rootDiv) rootDiv.style.opacity = topDown ? "0" : "";
           npc.drawLabel({ speaking: topDown });
-          npc.labelMaterial.visible = topDown;
+          npc.labelVisible.value = topDown ? 1 : 0;
         }
       },
       setShownIfExists(npcKey: string, shown: boolean) {

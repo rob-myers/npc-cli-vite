@@ -1,19 +1,5 @@
 import { geomService } from "@npc-cli/util";
 import { drawPolygons, drawRoundedRect } from "@npc-cli/util/service/canvas";
-import {
-  attribute,
-  cameraProjectionMatrix,
-  cameraViewMatrix,
-  float,
-  modelWorldMatrix,
-  output,
-  positionLocal,
-  select,
-  texture as tslTexture,
-  uniform,
-  uv,
-  vec4,
-} from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
@@ -430,51 +416,6 @@ export function drawDoorIconLayer(
   texArray.updateIndex(layerIndex);
 }
 
-export function createLabelMaterial(opts: {
-  texArray: TexArray;
-  layerIndex: number;
-  halfWidth: number;
-  halfHeight: number;
-  opacityScale: THREE.UniformNode<"float", number>;
-}) {
-  const { texArray, layerIndex, halfWidth: hw, halfHeight: hh, opacityScale } = opts;
-  const texNode = tslTexture(texArray.tex);
-  const layerNode = texNode.depth(uniform(layerIndex));
-  const material = new THREE.MeshBasicNodeMaterial({
-    transparent: true,
-    depthWrite: true,
-    alphaTest: Number.EPSILON,
-    side: THREE.DoubleSide,
-  });
-  material.colorNode = layerNode;
-  material.opacityNode = layerNode.a.mul(opacityScale);
-
-  const halfWidthUniform = uniform(hw, "float");
-  const halfHeightUniform = uniform(hh, "float");
-  const labelYShift = uniform(0, "float");
-  const sign = attribute<"vec2">("billboardOffset", "vec2");
-  const anchorLocal = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
-  const viewCenter = cameraViewMatrix.mul(modelWorldMatrix.mul(anchorLocal));
-  const viewPos = viewCenter.add(vec4(sign.x.mul(halfWidthUniform), sign.y.mul(halfHeightUniform), 0, 0));
-  material.vertexNode = cameraProjectionMatrix.mul(viewPos);
-
-  return { material, labelYShift };
-}
-
-export function createShadowMaterial(
-  objectPick: THREE.UniformNode<"float", number>,
-  opacityScale: THREE.UniformNode<"float", number>,
-) {
-  const center = uv().sub(0.5);
-  const dist = center.dot(center).mul(4);
-  const alpha = float(1).sub(dist).clamp(0, 1);
-  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, opacity: 1, depthWrite: false });
-  mat.colorNode = vec4(0, 0, 0, 1);
-  mat.opacityNode = alpha.mul(0.6).mul(opacityScale);
-  // could also set a special colour preventing close clicks
-  mat.outputNode = (select as any)(objectPick.notEqual(0), vec4(0, 0, 0, 0), output);
-  return mat;
-}
 
 /**
  * TypeScript is having trouble:

@@ -37,14 +37,13 @@ export class Npc {
   group: THREE.Group | null = null;
   /** Points into ArrayTexture */
   labelLayerIndex: number;
-  labelMaterial: THREE.MeshBasicNodeMaterial;
+  labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   mixer: THREE.AnimationMixer = emptyAnimationMixer;
   opacityScale: THREE.UniformNode<"float", number>;
   /** Expect ≤ 200 npcs but technically ≤ 65535 */
   pickId: number;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
   skinnedMesh: THREE.SkinnedMesh;
   /** Skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
@@ -121,13 +120,12 @@ export class Npc {
     this.geometry = init.geometry;
     this.graph = init.graph;
     this.labelLayerIndex = init.labelLayerIndex;
-    this.labelMaterial = init.labelMaterial;
+    this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.material = init.material;
     this.opacityScale = init.opacityScale;
     this.pickId = init.pickId;
     this.position = init.position;
-    this.shadowMaterial = init.shadowMaterial;
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
@@ -240,13 +238,11 @@ export class Npc {
       if (this.fadeState.delta === 0) {
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
-        this.material.alphaTest = 0.9;
         if (!this.w.bubble.setShownIfExists(this.key, true)) {
-          this.labelMaterial.visible = true;
+          this.labelVisible.value = 1;
         }
       }
 
-      // 🔔 sporadic transparency issue right after 1st spawn
       this.material.depthWrite = true;
       this.material.needsUpdate = true;
     }
@@ -259,15 +255,13 @@ export class Npc {
     const done = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
     const s = Math.max(0, done ? this.fadeState.target : next);
 
-    this.labelMaterial.visible = s >= 1;
+    this.labelVisible.value = s >= 1 ? 1 : 0;
     this.colorScale.value = next;
     this.opacityScale.value = next;
-    this.material.alphaTest = Math.max(0, next - 0.2);
     this.material.depthWrite = next > 0.2;
 
     if (done) {
       this.fadeState.delta = 0;
-      this.material.alphaTest = 0.9;
       this.material.needsUpdate = true;
       this.resolve.scale("scale");
     }
@@ -547,12 +541,11 @@ export type NpcInit = {
   graph: ReturnType<typeof buildGraph>;
   pickId: number;
   labelLayerIndex: number;
-  labelMaterial: THREE.MeshBasicNodeMaterial;
+  labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   opacityScale: THREE.UniformNode<"float", number>;
   position: THREE.Vector3;
-  shadowMaterial: THREE.MeshBasicNodeMaterial;
   skinIndexUniform: THREE.UniformNode<"float", number>;
   skinnedMesh: THREE.SkinnedMesh;
 };
