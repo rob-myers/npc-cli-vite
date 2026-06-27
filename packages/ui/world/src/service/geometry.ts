@@ -259,8 +259,8 @@ export function createSkinnedLabelQuad(yOffset: number, jointIndex: number) {
   ], 2));
   // biome-ignore format: meaningful newlines
   geo.setIndex([
-    0, 2, 1,
-    0, 3, 2,
+    0, 1, 2,
+    0, 2, 3,
   ]);
 
   const skinIndices = new Uint16Array(16);
@@ -333,6 +333,25 @@ export function mergeWithGroups(base: THREE.BufferGeometry, ...extras: THREE.Buf
     merged.addGroup(offset, count, i);
     offset += count;
   }
+  return merged;
+}
+
+/** Merge geometries without Three.js groups (→ 1 draw call).
+ *  Adds float "groupId" attribute (0, 1, 2…) per vertex for shader branching. */
+export function mergeWithGroupAttr(base: THREE.BufferGeometry, ...extras: THREE.BufferGeometry[]) {
+  const geos = [base, ...extras];
+  const merged = mergeGeometries(geos);
+  if (!merged) throw new Error("mergeGeometries failed");
+  merged.clearGroups();
+  const counts = geos.map((g) => g.getAttribute("position").count);
+  const total = counts.reduce((a, b) => a + b, 0);
+  const groupIds = new Float32Array(total);
+  let off = 0;
+  for (let i = 0; i < geos.length; i++) {
+    groupIds.fill(i, off, off + counts[i]);
+    off += counts[i];
+  }
+  merged.setAttribute("groupId", new THREE.BufferAttribute(groupIds, 1));
   return merged;
 }
 

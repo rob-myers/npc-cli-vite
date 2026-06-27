@@ -40,6 +40,7 @@ import Decor from "./Decor";
 import Doors from "./Doors";
 import Floor from "./Floor";
 import NPCs from "./NPCs";
+import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import useWorldEvents from "./use-world-events";
 import Walls from "./Walls";
@@ -123,6 +124,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npc: null as any,
       n: null as any,
       obs: null as any,
+      shadows: null as any,
       view: null as any,
       wall: null as any,
       worker: { worker: { postMessage() {} } } as any,
@@ -344,6 +346,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <Doors key="doors" />
             <Obstacles key="obstacles" />
             <Decor key="decor" />
+            <NpcShadows key="npc-shadows" />
             <NPCs key="npcs" />
             <Debug key="debug" />
           </WorldView>
@@ -421,6 +424,7 @@ export type State = {
   n: UseStateRef<import("./NPCs").State>["npc"];
   npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
+  shadows: UseStateRef<import("./NpcShadows").State>;
   view: UseStateRef<import("./WorldView").State>;
   wall: UseStateRef<import("./Walls").State>;
   worker: UseStateRef<import("./WorldWorker").State>;

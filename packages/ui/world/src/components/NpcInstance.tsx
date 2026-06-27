@@ -11,7 +11,7 @@ function NpcInstance({ npc }: { npc: Npc }) {
     <group ref={npc.groupRef} position={[0, 0.01, 0]}>
       <skinnedMesh
         geometry={npc.geometry}
-        material={[npc.material, npc.shadowMaterial, npc.labelMaterial]}
+        material={npc.material}
         skeleton={npc.skinnedMesh.skeleton}
         scale={npcScale}
         position={npc.position}

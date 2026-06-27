@@ -140,11 +140,15 @@ w decor.byKey.test-decor-point
   - covers case where previously revoked npc is provided key and is already nearby
 
 - ✅ speech bubble remembers resize after dispose and re-create
-
-- BUG npc arms through locked door
-- 🚧 reduce npc draw calls
+- ✅ reduce npc draw calls
   - reduce multiple materials
   - ✅ front-sided
+  - ✅ issue with overlapping shadow quads (depthWrite true)
+
+- can say for longer e.g. `say npc:rob zZZzzZZZZZ` stops too early
+
+- BUG id lie on bed and say `zZZZzzZZZ` and click edit speech bubble then npc disappears
+- BUG npc arms through locked door
 - go thru skins
   - fix medic-0 foot texturing
   - improve general-0
