@@ -440,7 +440,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.removeAgents(npcs);
 
         for (const npc of npcs) {
-          npc.mixer.stopAllAction();
+          npc.anim.mixer.stopAllAction();
           npc.material.dispose();
           npc.geometry.dispose();
           delete w.npc.byPickId[npc.pickId];

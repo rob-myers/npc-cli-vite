@@ -156,7 +156,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     cleanups: (killed) => killed && npc.rejectAll(new Error("killed")),
   });
 
-  npc.moveClip = opts.fast ? npc.clips.run : npc.clips.walk;
+  npc.anim.moveClip = opts.fast ? npc.clips.run : npc.clips.walk;
 
   try {
     if (api.isTtyAt(0)) {
@@ -200,7 +200,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       });
 
       // biome-ignore format: avoid newlines
-      await Promise.race([movePromise, pendingRead.then(() => { npc.arrive = false; })]);
+      await Promise.race([movePromise, pendingRead.then(() => { npc.anim.arrive = false; })]);
       await movePromise;
     }
   } finally {
@@ -427,7 +427,7 @@ export async function remove({ w, args }) {
   const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
   npcKeys.length && w.e.removeNpcs(...npcKeys);
   runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
-  setTimeout(() => w.view.forceUpdate());
+  setTimeout(() => w.view.forceUpdate(0.001));
 }
 
 /**
