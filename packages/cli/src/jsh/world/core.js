@@ -453,20 +453,23 @@ export function revoke({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" 
 
 /**
  * ```sh
+ * # say something
  * say hi npc:rob
+ * say hi npc:rob secs:3
+ * # clear speech
  * say npc:rob
  * ```
  *
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {{ npcKey: string; words?: string }} [opts]
+ * @param {{ npcKey: string; words?: string; secs?: number }} [opts]
  */
-export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", for: "secs" })) {
   const npc = w.npc.get(opts.npcKey);
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
   if (words) {
     const bubble = w.bubble.ensure(npc.key);
-    bubble.setWords(words);
+    bubble.setWords(words, opts.secs);
   } else {
     w.bubble.delete(npc.key);
   }

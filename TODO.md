@@ -146,10 +146,16 @@ w decor.byKey.test-decor-point
   - ✅ issue with overlapping shadow quads (depthWrite true)
 - ✅ alphaTest looks better at 0.9 for robot-0
 
-- can say for longer e.g. `say npc:rob zZZzzZZZZZ` stops too early
+- ✅ avoid respawn when move to self or current doable
+- ✅ BUG lie on bed, `say npc:rob zZZZzzZZZ`, click edit speech bubble => npc disappears
+  - seems fixed
+- ✅ can say for longer e.g. `say npc:rob zZZzzZZZZZ` stops too early
+  - `say npc:rob zZZZzzZZZ secs:10`
+  - `say npc:rob zZZZzzZZZ for:Infinity`
 
 
-- BUG id lie on bed and say `zZZZzzZZZ` and click edit speech bubble then npc disappears
+- BUG `pick | move npc:rob along` walk animation not playing
+  - maybe related to move off-mesh then on-mesh
 - BUG npc arms through locked door
 - go thru skins
   - fix medic-0 foot texturing
