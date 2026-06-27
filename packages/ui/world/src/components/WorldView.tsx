@@ -87,7 +87,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           antialias: true,
           logarithmicDepthBuffer: true,
           powerPreference: "high-performance",
-          // forceWebGL: true,
         });
         renderer.onDeviceLost = (event) => {
           console.warn("WebGPU device lost", event);
@@ -332,14 +331,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const pipeline = new THREE.RenderPipeline(gl);
 
         pipeline.outputNode = vec4(
-          colorBleeding(
-            vignette(
-              sceneColor.rgb, // The input image color
-              float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
-              float(0.7), // Smoothness: Controls gradient falloff softness
-              screenUV, // Coordinates mapping
-            ),
-            uniform(0.004),
+          vignette(
+            // multiply by alpha avoids unnatural color bleeding onto transparent areas
+            colorBleeding(sceneColor, uniform(0.004)).mul(sceneColor.a),
+            float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
+            float(0.7), // Smoothness: Controls gradient falloff softness
+            screenUV, // Coordinates mapping
           ),
           sceneColor.a,
         );
