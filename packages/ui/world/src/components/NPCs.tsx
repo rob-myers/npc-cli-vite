@@ -62,6 +62,7 @@ import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-anim
 import type { PhysicsBijection } from "../worker/worker.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
+import { NpcAnimation } from "./npc-animation";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -172,34 +173,16 @@ export default function NPCs() {
         return npc;
       },
       devHotReload() {
-        // Don't create -- mutate existing npcs, thereby avoiding stale references in ongoing code
-
-        const npcs = Object.values(state.npc);
-
-        let hmrKeys:
-          | undefined
-          | {
-              add: (keyof ClassSansMethods<Npc> | "groupRef")[];
-              del: (keyof Npc)[];
-            };
-
-        for (const npc of npcs) {
-          const instance = new Npc(w, npc);
-
-          // - copy in new from `base`, delete old from `npc`, also for `s`
-          // - we don't support type-change
-          // - compute keys to add/delete once for all npcs
-          if (hmrKeys === undefined) {
-            hmrKeys = {
-              add: keys({ ...instance }).filter((x) => !(x in npc) && Object.assign(npc, { [x]: instance[x] })),
-              del: keys(npc).filter((x) => !(x in instance) && delete npc[x]),
-            };
-          } else {
-            hmrKeys.add.forEach((x) => Object.assign(npc, { [x]: instance[x] }));
-            hmrKeys.del.forEach((x) => delete npc[x]);
-          }
-
-          Object.setPrototypeOf(npc, Object.getPrototypeOf(instance));
+        /**
+         * Don't create but instead _mutate_ existing npcs, thereby avoiding stale references in ongoing code.
+         * - we update the prototypes
+         * - we update the materials
+         * - we update epochMs
+         * - BUT currently don't support add/remove/change other properties
+         */
+        for (const npc of Object.values(state.npc)) {
+          Object.setPrototypeOf(npc, Npc.prototype);
+          Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
 
           npc.epochMs = Date.now(); // invalidate React.Memo
 
@@ -210,6 +193,7 @@ export default function NPCs() {
           npc.init();
           npc.drawLabel();
         }
+
         state.update();
       },
       findFreeDoMeta(meta, npcKey) {

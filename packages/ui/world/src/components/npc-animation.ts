@@ -19,18 +19,19 @@ import type { Npc } from "./npc";
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
 export class NpcAnimation {
+  npc: Npc;
+
+  arrive = true;
+  idleClip: THREE.AnimationClip = emptyAnimationClip;
+  fadeState = { delta: 0, target: 1 };
+  lookAtPoint: JshCli.GroundPoint | null = null;
+  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
   mixer: THREE.AnimationMixer = emptyMixer;
   moveClip: THREE.AnimationClip = emptyAnimationClip;
-  idleClip: THREE.AnimationClip = emptyAnimationClip;
   moving = false;
   separating = false;
-  arrive = true;
   stuckAccum = 0;
-  lookAtPoint: JshCli.GroundPoint | null = null;
-  fadeState = { delta: 0, target: 1 };
-  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
 
-  npc: Npc;
   constructor(npc: Npc) {
     this.npc = npc;
   }
@@ -181,11 +182,11 @@ export class NpcAnimation {
       this.separating = true;
       agent.maxAcceleration = idleSeparatingMaxAcceleration;
       this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(clips.shuffle).reset().fadeIn(0.3).play();
+      this.mixer.clipAction(clips.stand).reset().fadeIn(0.3).play();
     }
 
     const timeScale = (1 / npcScale) * separationAnimScale * speed;
-    this.mixer.clipAction(clips.shuffle).timeScale = timeScale < 0.5 ? 0 : timeScale;
+    this.mixer.clipAction(clips.stand).timeScale = timeScale < 0.5 ? 0 : timeScale;
   }
 
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
