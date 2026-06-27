@@ -55,7 +55,7 @@ export class Npc {
   fadeState = { delta: 0, target: 1 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   idleClip = emptyAnimationClip;
-  labelStyle: JshCli.NpcLabelStyle = { color: "#fffa", speaking: false };
+  labelStyle: JshCli.NpcLabelStyle = { color: "#ff9a", speaking: false };
   last = {
     blockingArea: -1,
     /** Seconds elapsed */
