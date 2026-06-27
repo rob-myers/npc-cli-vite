@@ -30,6 +30,7 @@ export class Npc {
 
   /** Physics body */
   bodyUid: number;
+  alphaTestScale: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
 
   geometry: THREE.BufferGeometry;
@@ -116,6 +117,7 @@ export class Npc {
     this.w = w;
     Object.assign(this, init);
     this.key = init.key;
+    this.alphaTestScale = init.alphaTestScale;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
@@ -236,6 +238,7 @@ export class Npc {
       await this.fadeIn();
     } finally {
       if (this.fadeState.delta === 0) {
+        this.alphaTestScale.value = 0.9;
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
         if (!this.w.bubble.setShownIfExists(this.key, true)) {
@@ -258,6 +261,7 @@ export class Npc {
     this.labelVisible.value = s >= 1 ? 1 : 0;
     this.colorScale.value = next;
     this.opacityScale.value = next;
+    this.alphaTestScale.value = s >= 1 ? 0.9 : Math.max(0, s - 0.2);
     this.material.depthWrite = next > 0.2;
 
     if (done) {
@@ -536,6 +540,7 @@ export class Npc {
 
 export type NpcInit = {
   key: string;
+  alphaTestScale: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;

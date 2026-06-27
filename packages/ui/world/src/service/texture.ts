@@ -22,10 +22,10 @@ function drawDoorBasePanel() {
 
   // 4 recessed panels with bevels
   for (const p of panels) {
-    ct.fillStyle = "rgba(255,255,255,0.03)";
-    ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
+    // ct.fillStyle = "rgba(255,255,255,0.03)";
+    // ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
 
-    ct.strokeStyle = "rgba(160,180,200,0.15)";
+    ct.strokeStyle = "rgba(160,180,200,0.05)";
     ct.lineWidth = 5;
     ct.strokeRect(panelInset, p.y, w - panelInset * 2, p.h);
 
@@ -61,19 +61,19 @@ function drawDoorBasePanel() {
   //   ct.stroke();
   // }
 
-  // // rivets along edges
-  // for (const rx of [8, w - 8]) {
-  //   for (let ry = 16; ry < h; ry += 28) {
-  //     ct.fillStyle = "rgba(140,160,180,0.1)";
-  //     ct.beginPath();
-  //     ct.arc(rx, ry, 3, 0, Math.PI * 2);
-  //     ct.fill();
-  //     ct.fillStyle = "rgba(200,220,240,0.3)";
-  //     ct.beginPath();
-  //     ct.arc(rx - 0.5, ry - 0.5, 1.5, 0, Math.PI * 2);
-  //     ct.fill();
-  //   }
-  // }
+  // rivets along edges
+  for (const rx of [8, w - 8]) {
+    for (let ry = 16; ry < h; ry += 28) {
+      ct.fillStyle = "rgba(140,160,180,0.1)";
+      ct.beginPath();
+      ct.arc(rx, ry, 3, 0, Math.PI * 2);
+      ct.fill();
+      ct.fillStyle = "rgba(200,220,240,0.3)";
+      ct.beginPath();
+      ct.arc(rx - 0.5, ry - 0.5, 1.5, 0, Math.PI * 2);
+      ct.fill();
+    }
+  }
 
   // outer border
   ct.strokeStyle = "rgba(160,180,200,0.1)";

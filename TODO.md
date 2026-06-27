@@ -144,8 +144,10 @@ w decor.byKey.test-decor-point
   - reduce multiple materials
   - ✅ front-sided
   - ✅ issue with overlapping shadow quads (depthWrite true)
+- ✅ alphaTest looks better at 0.9 for robot-0
 
 - can say for longer e.g. `say npc:rob zZZzzZZZZZ` stops too early
+
 
 - BUG id lie on bed and say `zZZZzzZZZ` and click edit speech bubble then npc disappears
 - BUG npc arms through locked door
