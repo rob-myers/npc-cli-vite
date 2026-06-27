@@ -24,6 +24,7 @@ import {
   cameraPosition,
   cameraProjectionMatrix,
   cameraViewMatrix,
+  float,
   modelWorldMatrix,
   normalWorld,
   output,
@@ -119,12 +120,14 @@ export default function NPCs() {
         const isPickMode = w.view.objectPick.notEqual(0);
         const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
 
+        const alphaTestScale = uniform(0.9);
+
         const mat = new THREE.MeshStandardNodeMaterial({
           transparent: true,
           depthWrite: true,
-          alphaTest: Number.EPSILON,
           side: THREE.FrontSide,
         });
+        mat.alphaTestNode = (select as any)(isLabel, float(0), alphaTestScale);
         mat.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         mat.colorNode = (select as any)(isLabel, labelColor, mainColor);
         mat.outputNode = (select as SelectAnyType)(
@@ -134,6 +137,7 @@ export default function NPCs() {
         );
 
         return {
+          alphaTestScale,
           colorScale,
           opacityScale,
           labelVisible,
@@ -199,12 +203,12 @@ export default function NPCs() {
 
           npc.epochMs = Date.now(); // invalidate React.Memo
 
+          // can overwrite materials while debugging
+          const mat = state.createMaterials(npc.pickId, npc.skinIndex);
+          Object.assign(npc, mat);
+
           npc.init();
           npc.drawLabel();
-
-          // // could overwrite materials while debugging
-          // const mat = state.createMaterials(npc.pickId, npc.skinIndex);
-          // npc.material = mat.material;
         }
         state.update();
       },
@@ -613,7 +617,7 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "colorScale" | "opacityScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
+    "alphaTestScale" | "colorScale" | "opacityScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
   >;
   createNpc(opts: {
     key: string;
