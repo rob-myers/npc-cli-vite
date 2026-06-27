@@ -213,10 +213,12 @@ export default function NPCs() {
         state.update();
       },
       findFreeDoMeta(meta, npcKey) {
+        const currentDecorKey = w.e.npcToDoable[npcKey];
+
         if (typeof meta.do === "string") {
-          const otherNpcKey = w.e.doableToNpc[meta.key];
+          const otherNpcKey = w.e.doableToNpc[meta.decorKey];
           if (otherNpcKey && otherNpcKey !== npcKey) throw Error("not doable");
-          return meta;
+          return { type: meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta };
         }
 
         if (meta.obstacle === true && Array.isArray(meta.decorIds)) {
@@ -224,13 +226,12 @@ export default function NPCs() {
           const ds = (meta.decorIds as number[]).map((decorId) => gm.decor[decorId] as Geomorph.DecorPoint);
           const found = ds.find((d) => !w.e.doableToNpc[d.key] || w.e.doableToNpc[d.key] === npcKey) ?? null;
           if (!found) throw Error("not doable");
-          return found.meta;
+          return { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
         }
 
-        if (meta.npcKey === npcKey && w.n[npcKey] && w.e.npcToDoable[npcKey] !== null) {
-          const decorKey = w.e.npcToDoable[npcKey];
+        if (currentDecorKey && meta.npcKey === npcKey && w.e.npcToDoable[npcKey] !== null) {
           // can respawn onto self whilst doing
-          return w.decor.byKey[decorKey].meta;
+          return { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta };
         }
 
         // not doable
@@ -265,19 +266,18 @@ export default function NPCs() {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
       async move({ npcKey, to, arrive = true }) {
-        const npc = state.npc[npcKey];
-
-        if (typeof npcKey !== "string" || !npc) {
-          throw Error(`opts.npcKey must exist: saw ${npcKey}`);
-        }
-
+        const npc = state.get(npcKey);
         const groundPoint = parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint, "0.5");
 
-        const doMeta = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
-        if (doMeta) {
+        const doResult = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
+        if (doResult) {
           // doable overrides navigable
-          await npc.fadeSpawn(to);
+          if (doResult.type === "use-current") {
+            await state.spawn({ npcKey, at: to });
+          } else {
+            await npc.fadeSpawn(to);
+          }
           return;
         }
 
@@ -416,9 +416,9 @@ export default function NPCs() {
         // testing early avoids creating unspawnable npc
         // - throw if doable but occupied
         // - throw if not doable and not navigable
-        const doMeta = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
+        const doResult = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
         const closePolyResult = state.getClosestPoly(groundAt);
-        if (closePolyResult.success === false && doMeta === null) {
+        if (closePolyResult.success === false && doResult === null) {
           throw Error("not placable");
         }
 
@@ -453,13 +453,15 @@ export default function NPCs() {
           });
         }
 
-        if (doMeta !== null) {
-          const overrideGroundPoint = doMeta.groundPoint;
+        const prevIdleClip = npc.idleClip;
+
+        if (doResult !== null) {
+          const overrideGroundPoint = doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.idleClip = state.clips[metaToIdleAnimationClipKey(doMeta)];
+          npc.idleClip = state.clips[metaToIdleAnimationClipKey(doResult.meta)];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
           npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
-          w.e.setNpcDo(npcKey, doMeta.key);
+          w.e.setNpcDo(npcKey, doResult.meta.decorKey);
         } else {
           const overrideGroundPoint = at.meta?.npcKey === npcKey ? parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
@@ -479,13 +481,13 @@ export default function NPCs() {
           npc.playIdleClip(0); // after mount
         } else {
           if (as) npc.setSkin(as);
-          npc.playIdleClip(0); // before update
+          prevIdleClip !== npc.idleClip && npc.playIdleClip(0); // before update
           w.view.forceUpdate();
         }
 
-        npc.skinnedMesh.position.y = doMeta?.y ?? 0;
-        if (typeof doMeta?.orient === "number") {
-          angle = -(doMeta.orient + 90) * (Math.PI / 180);
+        npc.skinnedMesh.position.y = doResult?.meta.y ?? 0;
+        if (typeof doResult?.meta.orient === "number") {
+          angle = -(doResult.meta.orient + 90) * (Math.PI / 180);
         }
         if (typeof angle === "number") {
           npc.skinnedMesh.rotation.y = angle;
@@ -617,7 +619,13 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "alphaTestScale" | "colorScale" | "opacityScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
+    | "alphaTestScale"
+    | "colorScale"
+    | "opacityScale"
+    | "labelVisible"
+    | "labelYShiftUniform"
+    | "skinIndexUniform"
+    | "material"
   >;
   createNpc(opts: {
     key: string;
@@ -637,14 +645,17 @@ export type State = {
   devHotReload(): void;
   /**
    * - Instantiated decor point with meta.do has groundPoint, orient, y.
-   * - It is enriched with `decor.key` in <Decor>.
+   * - It is enriched with `decorKey` in <Decor>.
    * - Returns `null` if `meta` is not doable.
    * - Throws if `meta` is doable but not free.
    */
   findFreeDoMeta(
     meta: Meta,
     npcKey: string,
-  ): null | Meta<{ key: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
+  ): null | {
+    type: "use-current" | "next-free";
+    meta: Meta<{ decorKey: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
+  };
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
     accuracy?: "0.005" | "0.1" | "0.5",

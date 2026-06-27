@@ -612,7 +612,7 @@ export default function Decor() {
           const suffix = `${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_");
           decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
           state.byKey[decor.key] = decor;
-          decor.meta.key = decor.key;
+          decor.meta.decorKey = decor.key;
 
           addToDecorGrid(decor, state.grid);
         }
