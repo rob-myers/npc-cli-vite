@@ -279,7 +279,7 @@ export default function NPCs() {
             await npc.fadeSpawn(to);
           }
           // fix contiguous move (npc.arrive false prevents npc.moving := false)
-          npc.moving = false;
+          npc.anim.moving = false;
           return;
         }
 
@@ -295,7 +295,7 @@ export default function NPCs() {
 
         npc.rejectAll(new Error("move again"));
 
-        npc.startMoving(groundPoint, result, arrive);
+        npc.anim.startMoving(groundPoint, result, arrive);
 
         // w.events.next({ key: "started-moving", npcKey });
         state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
@@ -306,7 +306,7 @@ export default function NPCs() {
           if (e instanceof Error && e.message === "move again") {
             return;
           }
-          npc.startIdle({ force: true });
+          npc.anim.startIdle({ force: true });
           throw e;
         }
       },
@@ -316,9 +316,9 @@ export default function NPCs() {
         const worldSeconds = w.timer.getElapsedTime();
 
         for (const npc of Object.values(state.npc)) {
-          npc.mixer.update(delta);
-          npc.fadeTick(delta);
-          npc.lookTick(delta);
+          npc.anim.mixer.update(delta);
+          npc.anim.fadeTick(delta);
+          npc.anim.lookTick(delta);
 
           if (npc.agentId === null) continue;
 
@@ -326,33 +326,33 @@ export default function NPCs() {
           npc.position.x = agent.position[0];
           npc.position.z = agent.position[2];
 
-          if (npc.moving === false) {
-            npc.updateIdle(agent, delta, worldSeconds);
+          if (npc.anim.moving === false) {
+            npc.anim.updateIdle(agent, delta, worldSeconds);
             continue;
           }
 
           agent.maxSpeed = npc.running === true ? runAgentMaxSpeed : walkAgentMaxSpeed;
           const [vx, , vz] = agent.velocity;
           const speed = Math.hypot(vx, vz);
-          npc.syncAnimation(Math.max(speed, 0.5));
+          npc.anim.syncAnimation(Math.max(speed, 0.5));
 
           if (speed > 0.05) {
-            npc.smoothRotateToward(vx, vz, delta);
+            npc.anim.smoothRotateToward(vx, vz, delta);
           }
 
-          const stuck = npc.updateStuck(delta, worldSeconds);
+          const stuck = npc.anim.updateStuck(delta, worldSeconds);
           if (stuck === true) {
             npc.rejectAll(new Error("stuck"));
-            npc.startIdle({ force: true });
+            npc.anim.startIdle({ force: true });
           } else if (
             crowdApi.isAgentAtTarget(
               state.crowd,
               npc.agentId,
-              npc.arrive ? (npc.running ? 0.025 : 0.15) : npc.running ? 0.8 : 0.4,
+              npc.anim.arrive ? (npc.running ? 0.025 : 0.15) : npc.running ? 0.8 : 0.4,
             ) === true
           ) {
             // arrived
-            npc.startIdle();
+            npc.anim.startIdle();
           }
 
           const { x, y, z } = npc.position;
@@ -455,21 +455,21 @@ export default function NPCs() {
           });
         }
 
-        const prevIdleClip = npc.idleClip;
+        const prevIdleClip = npc.anim.idleClip;
 
         if (doResult !== null) {
           const overrideGroundPoint = doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.idleClip = state.clips[metaToIdleAnimationClipKey(doResult.meta)];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
+          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(doResult.meta)];
+          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
+          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(npcKey, doResult.meta.decorKey);
         } else {
           const overrideGroundPoint = at.meta?.npcKey === npcKey ? parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.idleClip = state.clips.idle;
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.idleClip.name));
+          npc.anim.idleClip = state.clips.idle;
+          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
+          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(npcKey, null);
         }
 
@@ -480,10 +480,10 @@ export default function NPCs() {
             npc.resolve.spawn = resolve;
             state.update();
           });
-          npc.playIdleClip(0); // after mount
+          npc.anim.playIdleClip(0); // after mount
         } else {
           if (as) npc.setSkin(as);
-          prevIdleClip !== npc.idleClip && npc.playIdleClip(0); // before update
+          prevIdleClip !== npc.anim.idleClip && npc.anim.playIdleClip(0); // before update
           w.view.forceUpdate();
         }
 
@@ -573,14 +573,14 @@ export default function NPCs() {
     );
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     for (const npc of Object.values(state.npc)) {
-      npc.moveClip = clips[npc.moveClip.name as AnimationClipKey] ?? clips.walk;
-      npc.idleClip = clips[npc.idleClip.name as AnimationClipKey] ?? clips.idle;
+      npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
+      npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips.idle;
       for (const [oldClip, clip] of pairedClips) {
-        const oldAct = npc.mixer.existingAction(oldClip);
+        const oldAct = npc.anim.mixer.existingAction(oldClip);
         if (!oldAct?.isRunning()) continue;
-        const act = npc.mixer.clipAction(clip);
+        const act = npc.anim.mixer.clipAction(clip);
         crossFadeSynchronized(oldAct, act);
-        // npc.mixer.uncacheAction(oldAct.getClip());
+        // npc.anim.mixer.uncacheAction(oldAct.getClip());
       }
     }
     Object.assign(state.clips, clips);

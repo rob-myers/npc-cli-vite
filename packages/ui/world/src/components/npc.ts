@@ -6,22 +6,11 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import {
-  idleAgentMaxSpeed,
-  idleMaxAcceleration,
-  idleSeparatingMaxAcceleration,
-  idleSeparationWeight,
-  npcScale,
-  walkAgentMaxSpeed,
-  walkMaxAcceleration,
-  walkSeparationWeight,
-} from "../const";
 import { groundPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
-import { emptyAnimationClip } from "../service/three-animation";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
+import { NpcAnimation } from "./npc-animation";
 
-const emptyAnimationMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 const rejectNoop = (_e: Error): void => {};
 
 export class Npc {
@@ -41,7 +30,6 @@ export class Npc {
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
-  mixer: THREE.AnimationMixer = emptyAnimationMixer;
   opacityScale: THREE.UniformNode<"float", number>;
   /** Expect ≤ 200 npcs but technically ≤ 65535 */
   pickId: number;
@@ -49,12 +37,10 @@ export class Npc {
   /** Skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
-  arrive = true;
   agentId: string | null = null;
+  anim = new NpcAnimation(this);
   bubbleOffset = new THREE.Vector3(0, 0, 0);
-  fadeState = { delta: 0, target: 1 };
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
-  idleClip = emptyAnimationClip;
   labelStyle: JshCli.NpcLabelStyle = { color: "#ff9a", speaking: false };
   last = {
     blockingArea: -1,
@@ -66,17 +52,10 @@ export class Npc {
     dst: { x: 0, y: 0 },
     dstGrId: null as Geomorph.GmRoomId | null,
   };
-  lookAtPoint: JshCli.GroundPoint | null = null;
-  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
   /** Synced with crowd agent */
   position: THREE.Vector3;
-  moveClip = emptyAnimationClip;
-  moving = false;
   queryFilter!: QueryFilter;
-  /** while idle and due to separationWeight */
-  separating = false;
   spawns = 0;
-  stuckAccum = 0;
 
   resolve = {
     spawn: (_k: string): void => {},
@@ -106,7 +85,7 @@ export class Npc {
   }
 
   get running() {
-    return this.moveClip.name === "run";
+    return this.anim.moveClip.name === "run";
   }
 
   get skinIndex() {
@@ -131,8 +110,8 @@ export class Npc {
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
-    this.moveClip = this.clips.walk;
-    this.idleClip = this.clips.idle;
+    this.anim.moveClip = this.clips.walk;
+    this.anim.idleClip = this.clips.idle;
   }
 
   drawLabel(partialStyle?: Partial<JshCli.NpcLabelStyle>) {
@@ -156,22 +135,21 @@ export class Npc {
 
   groupRef = (group: THREE.Group | null): void => {
     if (!group) {
-      this.mixer.stopAllAction();
+      this.anim.mixer.stopAllAction();
       return;
     }
     this.group = group;
     this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
     this.position = this.skinnedMesh.position;
-    this.mixer = new THREE.AnimationMixer(group);
+    this.anim.mixer = new THREE.AnimationMixer(group);
 
     this.resolve.spawn("spawned");
 
-    this.mixer.clipAction(this.idleClip).play();
-    this.mixer.update(0);
+    this.anim.mixer.clipAction(this.anim.idleClip).play();
+    this.anim.mixer.update(0);
   };
 
   init() {
-    // use case for lastBlockingArea?
     this.queryFilter = {
       ...createDefaultQueryFilter(),
       passFilter: (nodeRef, navMesh) => {
@@ -189,8 +167,8 @@ export class Npc {
       },
     };
 
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
-    this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.anim.idleClip.name);
+    this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
   }
 
   pinTo(result: FindNearestPolyResult, overrideGroundPoint?: JshCli.GroundPoint): boolean {
@@ -206,20 +184,13 @@ export class Npc {
     );
   }
 
-  playIdleClip(duration = 0.1) {
-    for (const clip of Object.values(this.clips)) {
-      this.mixer.existingAction(clip)?.fadeOut(duration);
-    }
-    this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
-  }
-
   async fadeOut(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.scale = resolve;
       this.reject.scale = reject;
-      this.fadeState.target = 0;
-      this.fadeState.delta = -Math.abs(speed);
+      this.anim.fadeState.target = 0;
+      this.anim.fadeState.delta = -Math.abs(speed);
     });
   }
 
@@ -238,7 +209,7 @@ export class Npc {
       await this.fadeIn();
     } finally {
       // guarded in case of re-fade midway
-      if (this.fadeState.delta === 0) {
+      if (this.anim.fadeState.delta === 0) {
         this.alphaTestScale.value = 0.9;
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
@@ -252,33 +223,13 @@ export class Npc {
     }
   }
 
-  fadeTick(delta: number) {
-    if (this.fadeState.delta === 0) return;
-    const current = this.opacityScale.value;
-    const next = current + this.fadeState.delta * delta;
-    const done = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
-    const s = Math.max(0, done ? this.fadeState.target : next);
-
-    this.labelVisible.value = s >= 1 ? 1 : 0;
-    this.colorScale.value = next;
-    this.opacityScale.value = next;
-    this.alphaTestScale.value = s >= 1 ? 0.9 : Math.max(0, s - 0.2);
-    this.material.depthWrite = next > 0.2;
-
-    if (done) {
-      this.fadeState.delta = 0;
-      this.material.needsUpdate = true;
-      this.resolve.scale("scale");
-    }
-  }
-
   async fadeIn(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.scale = resolve;
       this.reject.scale = reject;
-      this.fadeState.target = 1;
-      this.fadeState.delta = Math.abs(speed);
+      this.anim.fadeState.target = 1;
+      this.anim.fadeState.delta = Math.abs(speed);
     });
   }
 
@@ -307,9 +258,9 @@ export class Npc {
   async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
     const p = parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
 
-    if (this.idleClip.name === "sit") {
+    if (this.anim.idleClip.name === "sit") {
       throw Error("not while sitting");
-    } else if (this.idleClip.name === "lie") {
+    } else if (this.anim.idleClip.name === "lie") {
       throw Error("not while lying");
     }
 
@@ -331,46 +282,24 @@ export class Npc {
         this.resolve.look = resolve;
         this.reject.look = reject;
 
-        this.lookAtState.active = true;
-        this.lookAtState.startAngle = startAngle;
-        this.lookAtState.totalDiff = totalDiff;
-        this.lookAtState.duration = duration;
-        this.lookAtState.elapsed = 0;
-        this.lookAtState.walking = walking;
+        this.anim.lookAtState.active = true;
+        this.anim.lookAtState.startAngle = startAngle;
+        this.anim.lookAtState.totalDiff = totalDiff;
+        this.anim.lookAtState.duration = duration;
+        this.anim.lookAtState.elapsed = 0;
+        this.anim.lookAtState.walking = walking;
 
         if (walking) {
-          this.moveClip = this.clips.stand;
-          this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
-          this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
-          this.mixer.timeScale = 0.75;
+          this.anim.moveClip = this.clips.stand;
+          this.anim.mixer.existingAction(this.anim.idleClip)?.fadeOut(0.15);
+          this.anim.mixer.clipAction(this.anim.moveClip).reset().fadeIn(0.15).play();
+          this.anim.mixer.timeScale = 0.75;
         }
       });
     } finally {
-      this.lookAtState.walking = false;
-      this.mixer.timeScale = 1;
-      this.moveClip = this.clips.walk;
-      // this.playIdleClip(0.3);
-    }
-  }
-
-  lookTick(delta: number) {
-    if (!this.lookAtState.active) return;
-
-    const s = this.lookAtState;
-    s.elapsed += delta;
-
-    if (s.elapsed >= s.duration) {
-      this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff;
-      s.active = false;
-      if (s.walking) {
-        s.walking = false;
-        this.playIdleClip(0.3);
-      }
-      this.resolve.look("lookAt");
-    } else {
-      const t = s.elapsed / s.duration;
-      // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
-      this.skinnedMesh.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
+      this.anim.lookAtState.walking = false;
+      this.anim.mixer.timeScale = 1;
+      this.anim.moveClip = this.clips.walk;
     }
   }
 
@@ -378,157 +307,12 @@ export class Npc {
     const { reject } = this;
     this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, look: rejectNoop };
     // synchronously stop scale or look
-    this.fadeState.delta = 0;
-    this.lookAtState.active = false;
+    this.anim.fadeState.delta = 0;
+    this.anim.lookAtState.active = false;
     reject.spawn(err);
     reject.move(err);
     reject.scale(err);
     reject.look(err);
-  }
-
-  smoothRotateToward(vx: number, vz: number, delta: number) {
-    const target = Math.atan2(vx, vz) + Math.PI;
-    let diff = target - this.skinnedMesh.rotation.y;
-    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
-    if (diff < -Math.PI) diff += Math.PI * 2;
-    this.skinnedMesh.rotation.y += diff * (1 - Math.exp(-5 * delta));
-  }
-
-  startIdle({ force = false } = {}) {
-    this.resolve.move("idle");
-
-    if (!this.arrive && !force) {
-      this.arrive = true;
-      return;
-    }
-
-    if (this.agentId !== null) {
-      const agent = this.w.npc.crowd.agents[this.agentId];
-
-      agent.separationWeight = idleSeparationWeight;
-      agent.maxSpeed = idleAgentMaxSpeed;
-      agent.maxAcceleration = idleMaxAcceleration;
-
-      const [vx, , vz] = agent.velocity;
-      const speed = Math.hypot(vx, vz);
-      // pin ahead by stopping distance v²/2a so agent decelerates without reversing
-      const pinAhead = speed ** 2 / (2 * idleMaxAcceleration);
-      const pinX = this.position.x + (vx / (speed || 1)) * pinAhead;
-      const pinZ = this.position.z + (vz / (speed || 1)) * pinAhead;
-      this.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
-
-      this.lookAtPoint = parseGroundPoint({
-        x: this.position.x + vx,
-        y: this.position.z + vz,
-      });
-    }
-
-    this.playIdleClip(0.3);
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.idleClip.name);
-    this.setLabelYShift(npcLabelYShiftForClip(this.idleClip.name));
-
-    this.moving = false;
-    this.separating = false;
-    this.arrive = true;
-  }
-
-  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
-    if (!this.agentId) return;
-    const agent = this.w.npc.crowd.agents[this.agentId];
-    // whilst walking, doors should block npcs
-    agent.queryFilter = this.queryFilter;
-    agent.separationWeight = walkSeparationWeight;
-    agent.maxAcceleration = walkMaxAcceleration;
-    agent.maxSpeed = walkAgentMaxSpeed;
-    crowdApi.requestMoveTarget(this.w.npc.crowd, this.agentId, result.nodeRef, groundPointToTuple(groundPoint));
-
-    this.last.dst = groundPoint;
-    this.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
-
-    this.lookAtPoint = null;
-    this.last.blockingArea = -1;
-    this.stuckAccum = 0;
-    this.last.pos = { x: this.position.x, y: this.position.z };
-    this.arrive = arrive;
-
-    if (!this.moving) {
-      this.moving = true;
-      this.bubbleOffset.y = npcBubbleHeightForClip(this.moveClip.name);
-      this.setLabelYShift(npcLabelYShiftForClip(this.moveClip.name));
-      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
-    }
-  }
-
-  syncAnimation(speed: number) {
-    if (!this.moving) return;
-    const moveAction = this.mixer.clipAction(this.moveClip);
-    moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
-  }
-
-  syncSeparation(agent: crowdApi.Agent, speed: number, worldSeconds: number) {
-    if (!(speed > separationSpeedThreshold && worldSeconds - this.last.idleTime > separationCooldown)) {
-      return;
-    }
-
-    const { clips } = this.w.npc;
-    if (!this.separating) {
-      this.separating = true;
-      agent.maxAcceleration = idleSeparatingMaxAcceleration;
-      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(clips.shuffle).reset().fadeIn(0.3).play();
-    }
-
-    const timeScale = (1 / npcScale) * separationAnimScale * speed;
-    this.mixer.clipAction(clips.shuffle).timeScale = timeScale < 0.5 ? 0 : timeScale;
-  }
-
-  updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
-    const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
-
-    if (shouldSeparate) {
-      const neiAgentId = agent.neis[0].agentId;
-      const neiNpc = Object.values(this.w.n).find((n) => n.agentId === neiAgentId);
-      if (neiNpc?.moving === true) {
-        const neighbor = this.w.npc.crowd.agents[neiAgentId];
-        this.lookAtPoint = { x: neighbor.position[0], y: neighbor.position[2] };
-        const [vx, , vz] = agent.velocity;
-        const speed = Math.hypot(vx, vz);
-        this.syncSeparation(agent, speed, worldSeconds);
-      } else {
-        this.lookAtPoint = null;
-      }
-    } else {
-      this.lookAtPoint = null;
-      if (this.separating) {
-        this.startIdle(); // sets this.separating false
-      }
-    }
-
-    this.updateLookAt(delta / 2);
-  }
-
-  updateLookAt(delta: number) {
-    if (this.lookAtPoint === null) return;
-    const dx = this.lookAtPoint.x - this.position.x;
-    const dz = this.lookAtPoint.y - this.position.z;
-    if (dx * dx + dz * dz > 0.001) {
-      this.smoothRotateToward(dx, dz, delta);
-    }
-  }
-
-  updateStuck(delta: number, worldSeconds: number): boolean {
-    // delay stuck a bit
-    if (worldSeconds - this.last.pinTime < 2.5) {
-      return false;
-    }
-
-    const dx = this.position.x - this.last.pos.x;
-    const dz = this.position.z - this.last.pos.y;
-    const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < 0.008 ? delta : 0;
-    this.last.pos = { x: this.position.x, y: this.position.z };
-    return this.stuckAccum > 0.4;
   }
 
   async waitUntilResolved() {
@@ -556,11 +340,6 @@ export type NpcInit = {
   skinIndexUniform: THREE.UniformNode<"float", number>;
   skinnedMesh: THREE.SkinnedMesh;
 };
-
-const separationSpeedThreshold = 0.005;
-const separationCooldown = 0.5;
-const separationAnimScale = 1.5;
-const neighborLookAtDist = 0.25;
 
 export function npcBubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;

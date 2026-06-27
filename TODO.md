@@ -160,9 +160,10 @@ w decor.byKey.test-decor-point
   - we're setting `npc.arrive := false` as part of contiguous motion, however this prevents `startIdle` from reaching the assignment `npc.moving := false`
   - ✅ enforce `npc.moving = false` on `move` to doable
 
-- start cleaning animation logic
-  - clean invocations of `npc.startIdle`
-  - clean `this.separating` and associated methods
+- 🚧 clean animation logic using ai
+  - ✅ NpcAnimation class
+  - 🚧 reorg e.g.`npc.anim.startIdle`
+  - verify hmr
 
 - BUG npc arms through locked door
 - go thru skins
