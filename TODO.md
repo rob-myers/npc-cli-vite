@@ -154,15 +154,23 @@ w decor.byKey.test-decor-point
   - `say npc:rob zZZZzzZZZ for:Infinity`
 
 
-- BUG `pick | move npc:rob along` walk animation not playing
-  - maybe related to move off-mesh then on-mesh
+- ✅ BUG `pick | move npc:rob along` offmesh, onmesh, onmesh => walk animation not playing
+  - REPRO (while unpaused) click navigable, chair, navigable, navigable
+    - final navigation has no walk anim
+  - we're setting `npc.arrive := false` as part of contiguous motion, however this prevents `startIdle` from reaching the assignment `npc.moving := false`
+  - ✅ enforce `npc.moving = false` on `move` to doable
+
+- start cleaning animation logic
+  - clean invocations of `npc.startIdle`
+  - clean `this.separating` and associated methods
+
 - BUG npc arms through locked door
 - go thru skins
   - fix medic-0 foot texturing
   - improve general-0
   - add a couple more
-- remove shuffle-back animation
-- npc: unify with state.lookAtPoint and updateLookAt
+- ✅ remove shuffle-back animation
+- npc: unify state.lookAtPoint and updateLookAt
 - BUG locked door opens when npc close enough to nearby sensor
   - `w e.toggleLock g0d31`
 - abstract npc animation logic into class
