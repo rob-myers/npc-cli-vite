@@ -315,7 +315,7 @@ export default function NPCs() {
           npc.position.z = agent.position[2];
 
           if (!npc.isMoving()) {
-            npc.anim.updateIdle(agent, delta, worldSeconds);
+            npc.anim.updateIdle(agent, worldSeconds);
             continue;
           }
 
@@ -329,9 +329,10 @@ export default function NPCs() {
           }
 
           const stuck = npc.anim.updateStuck(delta, worldSeconds);
+
           if (stuck === true) {
             npc.rejectAll(new Error("stuck"));
-            npc.anim.startIdle({ force: true });
+            // npc.anim.startIdle({ force: true });
           } else if (
             crowdApi.isAgentAtTarget(
               state.crowd,
@@ -457,7 +458,7 @@ export default function NPCs() {
         } else {
           const overrideGroundPoint = at.meta?.npcKey === npcKey ? parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips.idle;
+          npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
           npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(npcKey, null);
@@ -567,7 +568,7 @@ export default function NPCs() {
     /** on new clips fade old ones, else hmr can break animations */
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
-      npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips.idle;
+      npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips[defaultIdleAnimationClipKey];
       for (const [oldClip, clip] of pairedClips) {
         if (oldClip === clip) continue;
         const oldAct = npc.anim.mixer.existingAction(oldClip);
