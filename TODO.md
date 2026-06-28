@@ -172,7 +172,12 @@ w decor.byKey.test-decor-point
 - ✅ hide shadows during pick so can spawn close
   - shame because it was preventing close moves
 
-- how to handle npc blocking one door of a double door
+- useful commands
+  - `pick meta.floor | move npc:rob`
+  - `pick meta.door as:meta.gdKey`
+
+- ✅ how to handle npc blocking one door of a double door
+  - lock the door (even with npc standing in it)
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
