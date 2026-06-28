@@ -11,8 +11,6 @@ import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijectio
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import { NpcAnimation } from "./npc-animation";
 
-const rejectNoop = (_e: Error): void => {};
-
 export class Npc {
   key: string;
   epochMs = 0;
@@ -311,6 +309,10 @@ export class Npc {
     reject.look(err);
   }
 
+  setBubbleHeight(y: number) {
+    this.bubbleOffset.y = y;
+  }
+
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
   }
@@ -358,3 +360,5 @@ export function npcLabelYShiftForClip(clipName: string): number {
   if (clipName === "lie") return 0.75;
   return 2.2;
 }
+
+function rejectNoop(_e: Error): void {}

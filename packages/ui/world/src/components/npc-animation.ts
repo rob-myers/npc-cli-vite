@@ -21,6 +21,7 @@ const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 export class NpcAnimation {
   npc: Npc;
 
+  /** Set via `move` or `preventArrive` during move */
   arrive = true;
   idleClip: THREE.AnimationClip = emptyAnimationClip;
   fadeState = { delta: 0, target: 1 };
@@ -103,21 +104,23 @@ export class NpcAnimation {
   startIdle({ force = false } = {}) {
     this.npc.resolve.move("idle");
 
-    if (!this.arrive && !force) {
-      this.arrive = true;
+    const skip = !this.arrive && !force;
+    this.arrive = true;
+
+    if (skip) {
       return;
     }
 
-    if (this.npc.agentId !== null) {
-      const agent = this.w.npc.crowd.agents[this.npc.agentId];
+    const agent = this.npc.agent;
 
+    if (agent) {
       agent.separationWeight = idleSeparationWeight;
-      agent.maxSpeed = idleAgentMaxSpeed;
       agent.maxAcceleration = idleMaxAcceleration;
-
+      agent.maxSpeed = idleAgentMaxSpeed;
       const [vx, , vz] = agent.velocity;
-      const speed = Math.hypot(vx, vz);
+
       // pin ahead by stopping distance v²/2a so agent decelerates without reversing
+      const speed = Math.hypot(vx, vz);
       const pinAhead = speed ** 2 / (2 * idleMaxAcceleration);
       const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
       const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
@@ -130,12 +133,11 @@ export class NpcAnimation {
     }
 
     this.playIdleClip(0.3);
-    this.npc.bubbleOffset.y = bubbleHeightForClip(this.idleClip.name);
+    this.npc.setBubbleHeight(bubbleHeightForClip(this.idleClip.name));
     this.npc.setLabelYShift(labelYShiftForClip(this.idleClip.name));
 
     this.moving = false;
     this.separating = false;
-    this.arrive = true;
   }
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
