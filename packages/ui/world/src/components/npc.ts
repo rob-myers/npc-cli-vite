@@ -230,6 +230,10 @@ export class Npc {
     this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
   }
 
+  isMoving() {
+    return this.anim.moving;
+  }
+
   /**
    * Can look at `npcKey` or point.
    */
@@ -295,7 +299,7 @@ export class Npc {
   }
 
   preventArrival() {
-    if (this.anim.moving) {
+    if (this.isMoving()) {
       this.anim.arrive = false;
     }
   }
