@@ -186,21 +186,19 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       pendingRead = api.read();
       const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum }).catch((e) => {
         if (e instanceof Error && e.message === "not navigable") {
-          // ignore non-navigable stdin
-          return;
+          return; // ignore non-navigable stdin
         }
         if (e instanceof Error && e.message === "stuck") {
           // ignore all pending reads when stuck
-          // api.writeError(`move: ${e.message}`);
           api.flush();
           pendingRead = api.read();
+          // api.writeError(`move: ${e.message}`);
           return;
         }
         throw e;
       });
 
-      // biome-ignore format: avoid newlines
-      await Promise.race([movePromise, pendingRead.then(() => { npc.anim.arrive = false; })]);
+      await Promise.race([movePromise, pendingRead.then(() => npc.preventArrival())]);
       await movePromise;
     }
   } finally {
