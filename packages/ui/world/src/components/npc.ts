@@ -52,6 +52,7 @@ export class Npc {
   };
   /** Synced with crowd agent */
   position: THREE.Vector3;
+  rotation: THREE.Euler;
   queryFilter!: QueryFilter;
   spawns = 0;
 
@@ -105,6 +106,7 @@ export class Npc {
     this.opacityScale = init.opacityScale;
     this.pickId = init.pickId;
     this.position = init.position;
+    this.rotation = init.skinnedMesh.rotation;
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
@@ -197,6 +199,7 @@ export class Npc {
     this.group = group;
     this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
     this.position = this.skinnedMesh.position;
+    this.rotation = this.skinnedMesh.rotation;
     this.anim.mixer = new THREE.AnimationMixer(group);
 
     this.resolve.spawn("spawned");
