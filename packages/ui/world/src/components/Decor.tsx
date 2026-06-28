@@ -899,7 +899,7 @@ export type State = {
   addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle): void;
   clearGrid(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
-  decodeStaticInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  decodeStaticInstanceId(instanceId: number): Meta<Geomorph.GmRoomId & { decorKey: string }> | null;
   decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   getColliderDefFromDecorDef(def: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>): WW.PhysicsColliderDef;

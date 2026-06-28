@@ -137,12 +137,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "decor": {
             const decoded = w.decor.decodeStaticInstanceId(pick.instanceId);
             if (!decoded) return null;
-            return { ...pick, decor: true, ...decoded };
+            return { ...pick, decor: true, ...decoded, decorKey: decoded.decorKey };
           }
           case "runtimeDecor": {
             const decoded = w.decor.decodeRuntimeInstanceId(pick.instanceId);
             if (!decoded) return null;
-            return { ...pick, type: "decor", decor: true, runtime: true, ...decoded };
+            return { ...pick, type: "decor", decor: true, runtime: true, ...decoded, decorKey: decoded.decorKey };
           }
           case "debugPoint": {
             const decoded = w.debug.decodeDebugPointInstanceId(pick.instanceId);
@@ -300,6 +300,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ...picked,
             ...gmRoomId,
             nav: picked.type === "floor" && w.npc.getClosestPoly(point).success,
+            do:
+              // picked decor with meta.do string
+              (picked.type === "decor" && !!w.decor.byKey[picked.decorKey]?.meta.do) ||
+              // picked obstacle with meta.decorIds array
+              (picked.type === "obstacle" && !!w.gms[picked.gmId].obstacles[picked.obstacleId].meta.decorIds),
           },
           gmRoomId,
 
