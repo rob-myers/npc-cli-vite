@@ -296,7 +296,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.events.next({
           key: "picked",
           ...(clickId && { clickId: clickId.id }),
-          meta: { ...picked, ...gmRoomId, nav: w.npc.getClosestPoly(point).success },
+          meta: {
+            ...picked,
+            ...gmRoomId,
+            nav: picked.type === "floor" && w.npc.getClosestPoly(point).success,
+          },
           gmRoomId,
 
           distance,
