@@ -242,6 +242,12 @@ export class Npc {
     return cornerGroundPoints.length > 0 ? [this.point, ...cornerGroundPoints] : null;
   }
 
+  preventArrival() {
+    if (this.anim.moving) {
+      this.anim.arrive = false;
+    }
+  }
+
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
   }
@@ -347,7 +353,6 @@ export function npcBubbleHeightForClip(clipName: string): number {
   return 2;
 }
 
-// 🚧 why don't these correspond to world meters?
 export function npcLabelYShiftForClip(clipName: string): number {
   if (clipName === "sit") return 1.6;
   if (clipName === "lie") return 0.75;
