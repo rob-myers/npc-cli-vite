@@ -48,19 +48,22 @@ export class NpcAnimation {
   }
 
   fadeTick(delta: number) {
-    if (this.fadeState.delta === 0) return;
+    if (this.fadeState.delta === 0) {
+      return;
+    }
+
     const current = this.npc.opacityScale.value;
     const next = current + this.fadeState.delta * delta;
-    const done = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
-    const s = Math.max(0, done ? this.fadeState.target : next);
+    const finished = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
+    const s = Math.max(0, finished ? this.fadeState.target : next);
 
     this.npc.labelVisible.value = s >= 1 ? 1 : 0;
+    this.npc.alphaTestScale.value = Math.min(0.9, Math.max(0, s - 0.2));
     this.npc.colorScale.value = next;
     this.npc.opacityScale.value = next;
-    this.npc.alphaTestScale.value = s >= 1 ? 0.9 : Math.max(0, s - 0.2);
     this.npc.material.depthWrite = next > 0.2;
 
-    if (done) {
+    if (finished === true) {
       this.fadeState.delta = 0;
       this.npc.material.needsUpdate = true;
       this.npc.resolve.scale("scale");
@@ -143,7 +146,7 @@ export class NpcAnimation {
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
     const agent = this.npc.agent;
     if (!agent) {
-      throw Error(`${this.npc.key} cannot move without agent`);
+      throw Error(`cannot move without agent: ${this.npc.key}`);
     }
 
     // whilst walking, doors should block npcs
@@ -200,12 +203,13 @@ export class NpcAnimation {
     this.mixer.clipAction(clips.stand).timeScale = timeScale < 0.5 ? 0 : timeScale;
   }
 
+  // 🚧 clean
   updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
     const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
 
     if (shouldSeparate) {
       const neiAgentId = agent.neis[0].agentId;
-      const neiNpc = Object.values(this.w.n).find((n) => n.agentId === neiAgentId);
+      const neiNpc = this.w.npc.byAgentId[neiAgentId];
       if (neiNpc?.anim.moving === true) {
         const neighbor = this.w.npc.crowd.agents[neiAgentId];
         this.lookAtPoint = { x: neighbor.position[0], y: neighbor.position[2] };

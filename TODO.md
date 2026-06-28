@@ -172,7 +172,7 @@ w decor.byKey.test-decor-point
 - ✅ hide shadows during pick so can spawn close
   - shame because it was preventing close moves
 
-- useful commands
+- 🔔 useful commands
   - `pick | move npc:rob`
     - but moves to doors and non-doable obstacles too
   - `pick as:meta.gdKey`

@@ -43,6 +43,7 @@ import {
   fromAnimationClipKey,
   idleAgentMaxSpeed,
   idleSeparationWeight,
+  maxAgentRadius,
   npcBrightness,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
@@ -71,7 +72,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
-      crowd: crowdApi.create(0.5),
+      crowd: crowdApi.create(maxAgentRadius),
       gltf: null,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
@@ -79,7 +80,8 @@ export default function NPCs() {
       },
       lastHmr: 0,
 
-      byPickId: {} as Record<number, Npc>,
+      byAgentId: {},
+      byPickId: {},
       nextPickId: 0,
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
@@ -174,7 +176,7 @@ export default function NPCs() {
       },
       devHotReload() {
         /**
-         * Don't create but instead _mutate_ existing npcs, thereby avoiding stale references in ongoing code.
+         * Don't create but instead mutate existing npcs, thereby avoiding stale references in ongoing code.
          * - we update the prototypes
          * - we update the materials
          * - we update epochMs
@@ -359,6 +361,7 @@ export default function NPCs() {
         if (closePolyResult.success) {
           if (npc.agentId !== null) {
             // must remove agent so can teleport without issues
+            // - re-adding changes the npc.agentId ATOW
             w.e.removeAgents([npc], { keepPhysics: true });
           } else {
             w.worker.worker.postMessage({
@@ -373,6 +376,7 @@ export default function NPCs() {
             groundPointToTuple(groundPoint),
             getAgentParams(),
           );
+          state.byAgentId[npc.agentId] = npc;
 
           npc.pinTo(closePolyResult, groundPoint);
 
@@ -595,6 +599,7 @@ export type State = {
   };
   lastHmr: number;
 
+  byAgentId: Record<string, Npc>;
   byPickId: Record<number, Npc>;
   nextPickId: number;
   npc: Record<string, Npc>;
