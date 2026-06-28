@@ -14,7 +14,6 @@ import {
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
-import { ANY_QUERY_FILTER, findRandomPoint } from "navcat";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
@@ -432,30 +431,6 @@ export function WorldMenu() {
                   log gpu info
                 </button>
 
-                <MenuMultiSelect
-                  label="actions"
-                  items={actionItems}
-                  isActive={(action) => {
-                    if (action === "Wall Lights") return w.wall?.lightsShown ?? true;
-                    return false;
-                  }}
-                  onToggle={(action) => {
-                    if (action === "Spawn NPC") {
-                      const result = findRandomPoint(w.nav.navMesh, ANY_QUERY_FILTER, Math.random);
-                      if (!result.success) return;
-                      const [x, y, z] = result.position;
-                      const key = `npc-${Date.now().toString(36)}`;
-                      w.npc.spawn({ npcKey: key, at: [x, y, z] });
-                      w.update();
-                    } else if (action === "Clear NPCs") {
-                      w.e.removeNpcs(...Object.keys(w.npc.npc));
-                      w.view.forceUpdate();
-                    } else if (action === "Wall Lights") {
-                      w.wall?.toggleLights();
-                    }
-                  }}
-                />
-
                 <div
                   className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
                   onClick={(e) => {
@@ -575,7 +550,6 @@ const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
-const actionItems = ["Spawn NPC", "Clear NPCs", "Wall Lights"] as const;
 const debugItems = [
   "Pick",
   "Post FX",
@@ -630,70 +604,6 @@ function MenuSelect({
             <Select.List>
               {items.map((item) => (
                 <Select.Item key={item} value={item} className={selectItemClass}>
-                  <Select.ItemText>{item}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
-    </Select.Root>
-  );
-}
-
-function MenuMultiSelect({
-  label,
-  items,
-  className,
-  isActive,
-  onToggle,
-}: {
-  label: string;
-  className?: string;
-  items: readonly string[];
-  isActive: (item: string) => boolean;
-  onToggle: (item: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Select.Root
-      open={open}
-      onOpenChange={(nextOpen, { reason }) => {
-        if (!nextOpen && reason === "item-press") return;
-        setOpen(nextOpen);
-      }}
-      value={null}
-    >
-      <Select.Trigger
-        className={cn(
-          "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full",
-          className,
-        )}
-      >
-        {label}
-      </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner
-          className="z-50"
-          sideOffset={4}
-          side="right"
-          align="start"
-          collisionPadding={0}
-          alignItemWithTrigger={false}
-        >
-          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1">
-            <Select.List>
-              {items.map((item) => (
-                <Select.Item
-                  key={item}
-                  value={item}
-                  className={cn(selectItemClass, isActive(item) && "text-green-400!")}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onToggle(item);
-                  }}
-                >
                   <Select.ItemText>{item}</Select.ItemText>
                 </Select.Item>
               ))}
