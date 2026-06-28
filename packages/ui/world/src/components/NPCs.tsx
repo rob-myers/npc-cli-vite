@@ -547,27 +547,29 @@ export default function NPCs() {
     state.configureCrowd();
 
     if (!queryData) return;
+
     state.gltf = queryData.gltf;
     const anims = queryData.gltf.animations;
 
-    /** 🔔 on new clips fade old ones, else hmr can break animations */
     const clips = mapValues(
       fromAnimationClipKey,
       (_, clipName) => anims.find((c) => c.name === clipName) ?? emptyAnimationClip,
     );
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
+    Object.assign(state.clips, clips);
+
+    /** on new clips fade old ones, else hmr can break animations */
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
       npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips.idle;
       for (const [oldClip, clip] of pairedClips) {
+        if (oldClip === clip) continue;
         const oldAct = npc.anim.mixer.existingAction(oldClip);
-        if (!oldAct?.isRunning()) continue;
+        if (!oldAct || !oldAct.isRunning()) continue;
         const act = npc.anim.mixer.clipAction(clip);
         crossFadeSynchronized(oldAct, act);
-        // npc.anim.mixer.uncacheAction(oldAct.getClip());
       }
     }
-    Object.assign(state.clips, clips);
 
     state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
     w.setNextPending({ skins: false });
