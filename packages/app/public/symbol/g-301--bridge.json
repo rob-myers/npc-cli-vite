@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "97c9bccd-24f1-4ccc-b1bf-1d1173f1ca05",
@@ -409,7 +409,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "5b1221cd-415e-4161-97c6-18bbb93ec7da",
@@ -653,16 +653,6 @@
           "cssTransform": "matrix(-1, 0, 0, 1, 902, 62)"
         }
       ]
-    },
-    {
-      "id": "eedf1c2a-4021-4587-8a92-43277c583517",
-      "name": "decor",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-      "type": "group",
-      "expanded": true,
-      "children": []
     }
   ],
   "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},

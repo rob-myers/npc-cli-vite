@@ -29,6 +29,7 @@ export class NpcAnimation {
   lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
   mixer: THREE.AnimationMixer = emptyMixer;
   moveClip: THREE.AnimationClip = emptyAnimationClip;
+  /** True iff moving via agent in navmesh */
   moving = false;
   separating = false;
   stuckAccum = 0;

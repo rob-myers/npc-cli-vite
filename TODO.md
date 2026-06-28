@@ -166,6 +166,10 @@ w decor.byKey.test-decor-point
   - ✅ clean `npc.anim.startIdle`
   - ✅ clean `npc.anim.startMoving`
   - reorg npc separation
+    - updateIdle
+
+- BUG assets.json decor orient changing for no apparent reason?
+  - mostly in 101 so maybe needs re-save?
 
 - BUG npc arms through locked door
 - go thru skins
