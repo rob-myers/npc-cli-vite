@@ -165,8 +165,14 @@ w decor.byKey.test-decor-point
   - ✅ verify hmr
   - ✅ clean `npc.anim.startIdle`
   - ✅ clean `npc.anim.startMoving`
-  - reorg npc separation
+  - 🚧 reorg npc separation
     - updateIdle
+    - should only rotate a small amount if at all
+
+- ✅ hide shadows during pick so can spawn close
+  - shame because it was preventing close moves
+
+- how to handle npc blocking one door of a double door
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
