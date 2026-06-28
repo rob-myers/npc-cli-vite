@@ -162,8 +162,10 @@ w decor.byKey.test-decor-point
 
 - 🚧 clean animation logic using ai
   - ✅ NpcAnimation class
-  - 🚧 reorg e.g.`npc.anim.startIdle`
-  - verify hmr
+  - ✅ verify hmr
+  - ✅ clean `npc.anim.startIdle`
+  - 🚧 clean `npc.anim.startMoving`
+  - reorg npc separation
 
 - BUG npc arms through locked door
 - go thru skins
