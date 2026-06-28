@@ -306,13 +306,15 @@ export default function NPCs() {
           npc.anim.fadeTick(delta);
           npc.anim.lookTick(delta);
 
-          if (npc.agentId === null) continue;
+          if (npc.agentId === null) {
+            continue;
+          }
 
           const agent = state.crowd.agents[npc.agentId];
           npc.position.x = agent.position[0];
           npc.position.z = agent.position[2];
 
-          if (npc.anim.moving === false) {
+          if (!npc.isMoving()) {
             npc.anim.updateIdle(agent, delta, worldSeconds);
             continue;
           }
@@ -323,7 +325,7 @@ export default function NPCs() {
           npc.anim.syncAnimation(Math.max(speed, 0.5));
 
           if (speed > 0.05) {
-            npc.anim.smoothRotateToward(vx, vz, delta);
+            npc.anim.rotateTowards(vx, vz, delta);
           }
 
           const stuck = npc.anim.updateStuck(delta, worldSeconds);

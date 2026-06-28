@@ -98,7 +98,7 @@ export class NpcAnimation {
     this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
   }
 
-  smoothRotateToward(vx: number, vz: number, delta: number) {
+  rotateTowards(vx: number, vz: number, delta: number) {
     const target = Math.atan2(vx, vz) + Math.PI;
     const diff = deltaAngle(this.npc.rotation.y, target);
     this.npc.rotation.y += diff * (1 - Math.exp(-5 * delta));
@@ -210,8 +210,8 @@ export class NpcAnimation {
     if (shouldSeparate) {
       const neiAgentId = agent.neis[0].agentId;
       const neiNpc = this.w.npc.byAgentId[neiAgentId];
-      if (neiNpc?.anim.moving === true) {
-        const neighbor = this.w.npc.crowd.agents[neiAgentId];
+      if (neiNpc?.isMoving()) {
+        const neighbor = neiNpc.agent as crowdApi.Agent;
         this.lookAtPoint = { x: neighbor.position[0], y: neighbor.position[2] };
         const [vx, , vz] = agent.velocity;
         const speed = Math.hypot(vx, vz);
@@ -234,7 +234,7 @@ export class NpcAnimation {
     const dx = this.lookAtPoint.x - this.npc.position.x;
     const dz = this.lookAtPoint.y - this.npc.position.z;
     if (dx * dx + dz * dz > 0.001) {
-      this.smoothRotateToward(dx, dz, delta);
+      this.rotateTowards(dx, dz, delta);
     }
   }
 
