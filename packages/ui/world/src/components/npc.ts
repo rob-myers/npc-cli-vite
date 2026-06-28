@@ -133,55 +133,14 @@ export class Npc {
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
 
-  groupRef = (group: THREE.Group | null): void => {
-    if (!group) {
-      this.anim.mixer.stopAllAction();
-      return;
-    }
-    this.group = group;
-    this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
-    this.position = this.skinnedMesh.position;
-    this.anim.mixer = new THREE.AnimationMixer(group);
-
-    this.resolve.spawn("spawned");
-
-    this.anim.mixer.clipAction(this.anim.idleClip).play();
-    this.anim.mixer.update(0);
-  };
-
-  init() {
-    this.queryFilter = {
-      ...createDefaultQueryFilter(),
-      passFilter: (nodeRef, navMesh) => {
-        const node = getNodeByRef(navMesh, nodeRef);
-
-        if (isDoorAreaId(node.area) === true) {
-          const decoded = decodeDoorAreaId(node.area);
-          if (!this.w.e.npcCanAccess(this.key, decoded.gdKey)) {
-            this.last.blockingArea = node.area;
-            return false;
-          }
-        }
-
-        return true;
-      },
-    };
-
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.anim.idleClip.name);
-    this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
-  }
-
-  pinTo(result: FindNearestPolyResult, overrideGroundPoint?: JshCli.GroundPoint): boolean {
-    if (this.agentId === null || result.success === false) {
-      return false;
-    }
-    this.last.pinTime = this.w.timer.getElapsedTime();
-    return crowdApi.requestMoveTarget(
-      this.w.npc.crowd,
-      this.agentId,
-      result.nodeRef,
-      overrideGroundPoint ? groundPointToTuple(overrideGroundPoint) : result.position,
-    );
+  async fadeIn(speed = 4) {
+    await new Promise<string>((resolve, reject) => {
+      this.rejectAll(new Error("interrupted"));
+      this.resolve.scale = resolve;
+      this.reject.scale = reject;
+      this.anim.fadeState.target = 1;
+      this.anim.fadeState.delta = Math.abs(speed);
+    });
   }
 
   async fadeOut(speed = 4) {
@@ -223,16 +182,6 @@ export class Npc {
     }
   }
 
-  async fadeIn(speed = 4) {
-    await new Promise<string>((resolve, reject) => {
-      this.rejectAll(new Error("interrupted"));
-      this.resolve.scale = resolve;
-      this.reject.scale = reject;
-      this.anim.fadeState.target = 1;
-      this.anim.fadeState.delta = Math.abs(speed);
-    });
-  }
-
   /**
    * An npc with an agent and a target has corners.
    * We provide: `[currentGroundPoint, ...cornerGroundPoints]`
@@ -242,20 +191,42 @@ export class Npc {
     return cornerGroundPoints.length > 0 ? [this.point, ...cornerGroundPoints] : null;
   }
 
-  preventArrival() {
-    if (this.anim.moving) {
-      this.anim.arrive = false;
+  groupRef = (group: THREE.Group | null): void => {
+    if (!group) {
+      this.anim.mixer.stopAllAction();
+      return;
     }
-  }
+    this.group = group;
+    this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
+    this.position = this.skinnedMesh.position;
+    this.anim.mixer = new THREE.AnimationMixer(group);
 
-  setLabelYShift(shift: number) {
-    this.labelYShiftUniform.value = shift;
-  }
+    this.resolve.spawn("spawned");
 
-  setSkin(skinKey?: string) {
-    const skinIndex = this.w.npc.getSkinIndex(skinKey ?? "medic-0");
-    console.warn(`${this.key}: skin "${skinKey}" not found`);
-    this.skinIndexUniform.value = skinIndex;
+    this.anim.mixer.clipAction(this.anim.idleClip).play();
+    this.anim.mixer.update(0);
+  };
+
+  init() {
+    this.queryFilter = {
+      ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => {
+        const node = getNodeByRef(navMesh, nodeRef);
+
+        if (isDoorAreaId(node.area) === true) {
+          const decoded = decodeDoorAreaId(node.area);
+          if (!this.w.e.npcCanAccess(this.key, decoded.gdKey)) {
+            this.last.blockingArea = node.area;
+            return false;
+          }
+        }
+
+        return true;
+      },
+    };
+
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.anim.idleClip.name);
+    this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
   }
 
   /**
@@ -309,6 +280,25 @@ export class Npc {
     }
   }
 
+  pinTo(result: FindNearestPolyResult, overrideGroundPoint?: JshCli.GroundPoint): boolean {
+    if (this.agentId === null || result.success === false) {
+      return false;
+    }
+    this.last.pinTime = this.w.timer.getElapsedTime();
+    return crowdApi.requestMoveTarget(
+      this.w.npc.crowd,
+      this.agentId,
+      result.nodeRef,
+      overrideGroundPoint ? groundPointToTuple(overrideGroundPoint) : result.position,
+    );
+  }
+
+  preventArrival() {
+    if (this.anim.moving) {
+      this.anim.arrive = false;
+    }
+  }
+
   rejectAll(err: Error) {
     const { reject } = this;
     this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, look: rejectNoop };
@@ -319,6 +309,16 @@ export class Npc {
     reject.move(err);
     reject.scale(err);
     reject.look(err);
+  }
+
+  setLabelYShift(shift: number) {
+    this.labelYShiftUniform.value = shift;
+  }
+
+  setSkin(skinKey?: string) {
+    const skinIndex = this.w.npc.getSkinIndex(skinKey ?? "medic-0");
+    console.warn(`${this.key}: skin "${skinKey}" not found`);
+    this.skinIndexUniform.value = skinIndex;
   }
 
   async waitUntilResolved() {
