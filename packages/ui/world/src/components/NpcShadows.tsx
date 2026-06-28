@@ -11,7 +11,7 @@ export default function NpcShadows() {
 
   const state = useStateRef(
     (): State => ({
-      ...createShadowResources(),
+      ...createShadowResources(w.view.objectPick),
       onTick() {
         let i = 0;
         for (const npc of Object.values(w.n)) {
@@ -46,7 +46,7 @@ export type State = {
   onTick(): void;
 };
 
-function createShadowResources() {
+function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
@@ -66,7 +66,8 @@ function createShadowResources() {
   const worldPos = vec4(positionLocal.x.add(xzo.x), 0.01, positionLocal.z.add(xzo.y), 1.0);
   const clipPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos));
   const center = uv().sub(0.5);
-  const alpha = float(1).sub(center.dot(center).mul(4)).clamp(0, 1).mul(0.6).mul(xzo.z);
+  const baseAlpha = float(1).sub(center.dot(center).mul(4)).clamp(0, 1).mul(0.6).mul(xzo.z);
+  const alpha = objectPick.notEqual(0).select(float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   mat.vertexNode = clipPos;
   mat.colorNode = vec4(0, 0, 0, alpha);
