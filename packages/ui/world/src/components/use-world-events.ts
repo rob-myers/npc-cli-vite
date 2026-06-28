@@ -423,6 +423,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         for (const npc of npcs) {
           if (npc.agentId === null) continue;
           crowdApi.removeAgent(w.npc.crowd, npc.agentId);
+          delete w.npc.byAgentId[npc.agentId];
           npc.agentId = null;
         }
 

@@ -126,6 +126,8 @@ export const runAgentMaxSpeed = 2.5;
 export const walkSeparationWeight = 0.5;
 export const idleSeparationWeight = 0.5;
 
+export const maxAgentRadius = 0.5;
+
 export const defaultDoorCloseMs = 3000;
 
 export const npcBrightness = 0.6;
