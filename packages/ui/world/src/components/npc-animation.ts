@@ -1,4 +1,5 @@
 import type { UseStateRef } from "@npc-cli/util";
+import { deltaAngle } from "maath/misc";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
@@ -96,10 +97,8 @@ export class NpcAnimation {
 
   smoothRotateToward(vx: number, vz: number, delta: number) {
     const target = Math.atan2(vx, vz) + Math.PI;
-    let diff = target - this.npc.skinnedMesh.rotation.y;
-    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
-    if (diff < -Math.PI) diff += Math.PI * 2;
-    this.npc.skinnedMesh.rotation.y += diff * (1 - Math.exp(-5 * delta));
+    const diff = deltaAngle(this.npc.rotation.y, target);
+    this.npc.rotation.y += diff * (1 - Math.exp(-5 * delta));
   }
 
   startIdle({ force = false } = {}) {
