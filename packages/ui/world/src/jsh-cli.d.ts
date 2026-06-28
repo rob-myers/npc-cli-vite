@@ -36,7 +36,7 @@ declare namespace JshCli {
   type PickEvent = {
     key: "picked";
     clickId?: string;
-    meta: import("./components/WorldView").Picked & { nav: boolean };
+    meta: import("./components/WorldView").Picked & { nav: boolean; do: boolean };
     gmRoomId: Geomorph.GmRoomId | null;
 
     /** Was previous pointerdown held down long? */

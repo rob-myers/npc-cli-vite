@@ -214,13 +214,6 @@ export function pause({ w }) {
 }
 
 /**
- * @param {JshCli.RunArg} ct
- */
-export function play({ w }) {
-  w.setDisabled(false);
-}
-
-/**
  * ```sh
  * pick
  * pick 1
@@ -233,6 +226,9 @@ export function play({ w }) {
  * pick as:point
  * w npc.spawn "{ npcKey: 'rob', at: $( pick 1 ) }"
  * spawn npc:rob at:$( pick 1 )
+ *
+ * # multiple filters act as OR
+ * pick meta.{nav,do}
  * ```
  *
  * Priority:
@@ -246,7 +242,7 @@ export function play({ w }) {
 export async function* pick(ct) {
   const { args, api, w } = ct;
 
-  let { opts, operands } = ct.api.getOpts(args, {
+  const { opts, operands } = ct.api.getOpts(args, {
     boolean: [
       "left", // left clicks only
       "right", // right clicks only
@@ -259,12 +255,16 @@ export async function* pick(ct) {
   if (opts.right === false && opts.any === false) {
     opts.left = true; // default to left clicks only
   }
-  if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
-    // support reverse order `pick meta.nav 2`
-    operands = [operands[1], operands[0]];
-  }
 
-  const explicitNumPicks = isStringInt(operands[0]) ? parseInt(operands[0], 10) : undefined;
+  // if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
+  //   // support reverse order `pick meta.nav 2`
+  //   operands = [operands[1], operands[0]];
+  // }
+  const lastNumericOperand = operands.findLast(isStringInt);
+  const hasNumericOperand = lastNumericOperand !== undefined;
+  // operands = operands.filter(x => !isStringInt(x));
+  // const explicitNumPicks = isStringInt(operands[0]) ? parseInt(operands[0], 10) : undefined;
+  const explicitNumPicks = hasNumericOperand ? parseInt(lastNumericOperand, 10) : undefined;
   const maxExplicitPicks = 1024;
 
   /** Number of picks remaining */
@@ -275,15 +275,13 @@ export async function* pick(ct) {
   }
 
   const lifo = opts.fifo !== true;
-  const clickId = isStringInt(operands[0]) ? api.getUid() : undefined;
+  const clickId = hasNumericOperand ? api.getUid() : undefined;
 
   // support `pick meta.floor`
   // support `pick '({ meta }, ct) => meta.type === "floor"'`
-  const filterDef = isStringInt(operands[0]) ? operands[1] : operands[0];
-  const filter =
-    filterDef !== undefined && !filterDef.startsWith("as:")
-      ? api.generateSelector(api.parseFnOrStr(filterDef), [ct])
-      : undefined;
+  const filters = operands
+    .filter((x) => !isStringInt(x) && !x.startsWith("as:"))
+    .map((filterDef) => api.generateSelector(api.parseFnOrStr(filterDef), [ct]));
 
   // support jsArg as:foo.bar.baz (apply selector)
   const jsOpts = /** @type {{ as?: string }} */ (api.jsArg(args));
@@ -341,7 +339,7 @@ export async function* pick(ct) {
         continue;
       }
 
-      if (filter === undefined || filter?.(output)) {
+      if (filters.length === 0 || filters.some((filter) => filter(output))) {
         numPicks--;
         yield selector ? selector(output) : output;
       } else if (clickId !== undefined && lifo === false) {
@@ -358,6 +356,13 @@ export async function* pick(ct) {
   } finally {
     handlers.dispose();
   }
+}
+
+/**
+ * @param {JshCli.RunArg} ct
+ */
+export function play({ w }) {
+  w.setDisabled(false);
 }
 
 /**

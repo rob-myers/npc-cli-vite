@@ -173,8 +173,16 @@ w decor.byKey.test-decor-point
   - shame because it was preventing close moves
 
 - useful commands
+  - `pick | move npc:rob`
+    - but moves to doors and non-doable obstacles too
+  - `pick as:meta.gdKey`
+    - get gdKey from door or switch
   - `pick meta.floor | move npc:rob`
-  - `pick meta.door as:meta.gdKey`
+    - but does not permit move to doable
+  - `pick meta.{nav,do} | move npc:rob`
+    - exactly the navigable or doables
+  - `pick meta.{floor,do} | move npc:rob`
+    - can pick floor points near nav
 
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
