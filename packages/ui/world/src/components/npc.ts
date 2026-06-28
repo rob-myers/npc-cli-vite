@@ -6,6 +6,7 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { defaultIdleAnimationClipKey } from "../const";
 import { groundPointToTuple, parseGroundPoint } from "../service/geometry";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -111,7 +112,7 @@ export class Npc {
     this.skinIndexUniform = init.skinIndexUniform;
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
-    this.anim.idleClip = this.clips.idle;
+    this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
   }
 
   drawLabel(partialStyle?: Partial<JshCli.NpcLabelStyle>) {
@@ -272,7 +273,7 @@ export class Npc {
         this.anim.lookAtState.walking = walking;
 
         if (walking) {
-          this.anim.moveClip = this.clips.stand;
+          this.anim.moveClip = this.clips[defaultIdleAnimationClipKey];
           this.anim.mixer.existingAction(this.anim.idleClip)?.fadeOut(0.15);
           this.anim.mixer.clipAction(this.anim.moveClip).reset().fadeIn(0.15).play();
           this.anim.mixer.timeScale = 0.75;

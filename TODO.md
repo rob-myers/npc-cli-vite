@@ -166,8 +166,13 @@ w decor.byKey.test-decor-point
   - ✅ clean `npc.anim.startIdle`
   - ✅ clean `npc.anim.startMoving`
   - 🚧 reorg npc separation
+    - ✅ do not bother rotating idle npc as default separation behaviour
+    - ✅ remove `updateLookAt` and `lookAtPoint`
     - updateIdle
-    - should only rotate a small amount if at all
+
+- ✅ jerky idle transition on stuck  
+  - `stand` seems better than `idle`
+  - `idle -> breathe` and `stand -> idle` 
 
 - ✅ hide shadows during pick so can spawn close
   - shame because it was preventing close moves

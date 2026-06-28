@@ -7,13 +7,14 @@ import {
   idleAgentMaxSpeed,
   idleMaxAcceleration,
   idleSeparatingMaxAcceleration,
+  idleSeparatingMaxSpeed,
   idleSeparationWeight,
   npcScale,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
   walkSeparationWeight,
 } from "../const";
-import { groundPointToTuple, parseGroundPoint } from "../service/geometry";
+import { groundPointToTuple } from "../service/geometry";
 import { emptyAnimationClip } from "../service/three-animation";
 import type { Npc } from "./npc";
 
@@ -26,7 +27,6 @@ export class NpcAnimation {
   arrive = true;
   idleClip: THREE.AnimationClip = emptyAnimationClip;
   fadeState = { delta: 0, target: 1 };
-  lookAtPoint: JshCli.GroundPoint | null = null;
   lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
   mixer: THREE.AnimationMixer = emptyMixer;
   moveClip: THREE.AnimationClip = emptyAnimationClip;
@@ -92,9 +92,16 @@ export class NpcAnimation {
   }
 
   playIdleClip(duration = 0.1) {
+    if (this.mixer.existingAction(this.idleClip)?.isRunning() === true) {
+      return;
+    }
+
+    // fading all clips prevents e.g. sit from continuing
     for (const clip of Object.values(this.w.npc.clips)) {
+      if (clip === this.idleClip) continue;
       this.mixer.existingAction(clip)?.fadeOut(duration);
     }
+
     this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
   }
 
@@ -128,11 +135,6 @@ export class NpcAnimation {
       const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
       const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
       this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
-
-      this.lookAtPoint = parseGroundPoint({
-        x: this.npc.position.x + vx,
-        y: this.npc.position.z + vz,
-      });
     }
 
     this.playIdleClip(0.3);
@@ -167,7 +169,6 @@ export class NpcAnimation {
     this.npc.last.blockingArea = -1;
     this.npc.last.pos = { x: this.npc.position.x, y: this.npc.position.z };
 
-    this.lookAtPoint = null;
     this.stuckAccum = 0;
     this.arrive = arrive;
 
@@ -195,46 +196,22 @@ export class NpcAnimation {
     if (!this.separating) {
       this.separating = true;
       agent.maxAcceleration = idleSeparatingMaxAcceleration;
+      agent.maxSpeed = idleSeparatingMaxSpeed;
       this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(clips.stand).reset().fadeIn(0.3).play();
+      // change from breathe, or reinitialize idle
+      this.mixer.clipAction(clips.idle).reset().fadeIn(0.3).play();
     }
-
-    const timeScale = (1 / npcScale) * separationAnimScale * speed;
-    this.mixer.clipAction(clips.stand).timeScale = timeScale < 0.5 ? 0 : timeScale;
   }
 
   // 🚧 clean
-  updateIdle(agent: crowdApi.Agent, delta: number, worldSeconds: number) {
+  updateIdle(agent: crowdApi.Agent, worldSeconds: number) {
     const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
 
     if (shouldSeparate) {
-      const neiAgentId = agent.neis[0].agentId;
-      const neiNpc = this.w.npc.byAgentId[neiAgentId];
-      if (neiNpc?.isMoving()) {
-        const neighbor = neiNpc.agent as crowdApi.Agent;
-        this.lookAtPoint = { x: neighbor.position[0], y: neighbor.position[2] };
-        const [vx, , vz] = agent.velocity;
-        const speed = Math.hypot(vx, vz);
-        this.syncSeparation(agent, speed, worldSeconds);
-      } else {
-        this.lookAtPoint = null;
-      }
-    } else {
-      this.lookAtPoint = null;
-      if (this.separating) {
-        this.startIdle();
-      }
-    }
-
-    this.updateLookAt(delta / 2);
-  }
-
-  updateLookAt(delta: number) {
-    if (this.lookAtPoint === null) return;
-    const dx = this.lookAtPoint.x - this.npc.position.x;
-    const dz = this.lookAtPoint.y - this.npc.position.z;
-    if (dx * dx + dz * dz > 0.001) {
-      this.rotateTowards(dx, dz, delta);
+      const speed = Math.hypot(agent.velocity[0], agent.velocity[2]);
+      this.syncSeparation(agent, speed, worldSeconds);
+    } else if (this.separating) {
+      this.startIdle();
     }
   }
 
@@ -247,7 +224,7 @@ export class NpcAnimation {
     const dx = this.npc.position.x - this.npc.last.pos.x;
     const dz = this.npc.position.z - this.npc.last.pos.y;
     const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < 0.008 ? delta : 0;
+    this.stuckAccum += dist < 0.002 ? delta : 0;
     this.npc.last.pos = { x: this.npc.position.x, y: this.npc.position.z };
     return this.stuckAccum > 0.4;
   }
@@ -255,7 +232,6 @@ export class NpcAnimation {
 
 const separationSpeedThreshold = 0.005;
 const separationCooldown = 0.5;
-const separationAnimScale = 1.5;
 const neighborLookAtDist = 0.25;
 
 function bubbleHeightForClip(clipName: string): number {

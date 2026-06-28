@@ -121,6 +121,8 @@ export const idleMaxAcceleration = 4.0;
 export const idleSeparatingMaxAcceleration = 0.25;
 export const walkMaxAcceleration = 8.0;
 export const idleAgentMaxSpeed = 0.5;
+/** Separating idle npcs should not move by default */
+export const idleSeparatingMaxSpeed = 0.005;
 export const walkAgentMaxSpeed = 1.5;
 export const runAgentMaxSpeed = 2.5;
 export const walkSeparationWeight = 0.5;
@@ -140,12 +142,12 @@ export const unlockedDoorTint = "#4b4";
 
 export const fromAnimationClipKey = {
   idle: true,
+  breathe: true,
   lie: true,
   run: true,
   shuffle: true,
   sit: true,
-  stand: true,
   walk: true,
 };
 
-export const defaultIdleAnimationClipKey = "idle";
+export const defaultIdleAnimationClipKey = "idle" satisfies import("./components/NPCs").AnimationClipKey;
