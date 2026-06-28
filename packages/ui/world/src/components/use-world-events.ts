@@ -51,7 +51,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return null;
         }
 
-        // when astar relative npc fails find a good prefix
+        // when astar fails find a good prefix
         const unblockedResult = state.findPath(grId.grKey, dstGrId.grKey);
         const firstBadDoor = unblockedResult.path.find(
           (node): node is Graph.GmRoomGraphNodeDoor =>
