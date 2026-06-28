@@ -164,7 +164,7 @@ w decor.byKey.test-decor-point
   - ✅ NpcAnimation class
   - ✅ verify hmr
   - ✅ clean `npc.anim.startIdle`
-  - 🚧 clean `npc.anim.startMoving`
+  - ✅ clean `npc.anim.startMoving`
   - reorg npc separation
 
 - BUG npc arms through locked door

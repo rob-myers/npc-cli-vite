@@ -141,27 +141,36 @@ export class NpcAnimation {
   }
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
-    if (!this.npc.agentId) return;
-    const agent = this.w.npc.crowd.agents[this.npc.agentId];
+    const agent = this.npc.agent;
+    if (!agent) {
+      throw Error(`${this.npc.key} cannot move without agent`);
+    }
+
     // whilst walking, doors should block npcs
     agent.queryFilter = this.npc.queryFilter;
     agent.separationWeight = walkSeparationWeight;
     agent.maxAcceleration = walkMaxAcceleration;
     agent.maxSpeed = walkAgentMaxSpeed;
-    crowdApi.requestMoveTarget(this.w.npc.crowd, this.npc.agentId, result.nodeRef, groundPointToTuple(groundPoint));
+    crowdApi.requestMoveTarget(
+      this.w.npc.crowd,
+      this.npc.agentId as string,
+      result.nodeRef,
+      groundPointToTuple(groundPoint),
+    );
 
+    // track destination for checkNpcTargetUnreachable
     this.npc.last.dst = groundPoint;
     this.npc.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
+    this.npc.last.blockingArea = -1;
+    this.npc.last.pos = { x: this.npc.position.x, y: this.npc.position.z };
 
     this.lookAtPoint = null;
-    this.npc.last.blockingArea = -1;
     this.stuckAccum = 0;
-    this.npc.last.pos = { x: this.npc.position.x, y: this.npc.position.z };
     this.arrive = arrive;
 
     if (!this.moving) {
       this.moving = true;
-      this.npc.bubbleOffset.y = bubbleHeightForClip(this.moveClip.name);
+      this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
       this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
       this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
       this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();

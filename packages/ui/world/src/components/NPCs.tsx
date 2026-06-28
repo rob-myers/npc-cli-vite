@@ -262,7 +262,7 @@ export default function NPCs() {
           } else {
             await npc.fadeSpawn(to);
           }
-          // fix contiguous move (npc.arrive false prevents npc.moving := false)
+          // fix contiguous move
           npc.anim.moving = false;
           return;
         }
