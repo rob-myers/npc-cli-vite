@@ -165,10 +165,10 @@ w decor.byKey.test-decor-point
   - ✅ verify hmr
   - ✅ clean `npc.anim.startIdle`
   - ✅ clean `npc.anim.startMoving`
-  - 🚧 reorg npc separation
+  - ✅ reorg npc separation
     - ✅ do not bother rotating idle npc as default separation behaviour
     - ✅ remove `updateLookAt` and `lookAtPoint`
-    - updateIdle
+    - ✅ updateIdle
 
 - ✅ jerky idle transition on stuck  
   - `stand` seems better than `idle`

@@ -187,31 +187,22 @@ export class NpcAnimation {
     moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
   }
 
-  syncSeparation(agent: crowdApi.Agent, speed: number, worldSeconds: number) {
-    if (!(speed > separationSpeedThreshold && worldSeconds - this.npc.last.idleTime > separationCooldown)) {
+  /**
+   * 🚧 separation events for custom handling
+   */
+  updateIdle(agent: crowdApi.Agent, worldSeconds: number) {
+    const closestNeiTooClose = agent.neis.length > 0 && agent.neis[0].dist < neighborShouldSeparateDist;
+
+    if (!closestNeiTooClose) {
+      if (this.separating) this.startIdle();
       return;
     }
 
-    const { clips } = this.w.npc;
-    if (!this.separating) {
+    if (!this.separating && worldSeconds - this.npc.last.idleTime > separationCooldown) {
+      // commence separation
       this.separating = true;
       agent.maxAcceleration = idleSeparatingMaxAcceleration;
       agent.maxSpeed = idleSeparatingMaxSpeed;
-      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      // change from breathe, or reinitialize idle
-      this.mixer.clipAction(clips.idle).reset().fadeIn(0.3).play();
-    }
-  }
-
-  // 🚧 clean
-  updateIdle(agent: crowdApi.Agent, worldSeconds: number) {
-    const shouldSeparate = agent.neis.length > 0 && agent.neis[0].dist < neighborLookAtDist;
-
-    if (shouldSeparate) {
-      const speed = Math.hypot(agent.velocity[0], agent.velocity[2]);
-      this.syncSeparation(agent, speed, worldSeconds);
-    } else if (this.separating) {
-      this.startIdle();
     }
   }
 
@@ -230,9 +221,8 @@ export class NpcAnimation {
   }
 }
 
-const separationSpeedThreshold = 0.005;
 const separationCooldown = 0.5;
-const neighborLookAtDist = 0.25;
+const neighborShouldSeparateDist = 0.25;
 
 function bubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;
