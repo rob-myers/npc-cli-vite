@@ -70,6 +70,47 @@ class GeomService {
     };
   }
 
+  /**
+   * Find point closest to @see {p} on line segment @see {a} -> @see {b}
+   * Source: https://github.com/martywallace/polyk/blob/90757dbd3d358f68c3a1a54e50710548a435ee7a/index.js#L450
+   */
+  getClosestOnSeg(p: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson): Geom.VectJson & { dst: number } {
+    const x = p.x;
+    const y = p.y;
+    const x1 = a.x;
+    const y1 = a.y;
+    const x2 = b.x;
+    const y2 = b.y;
+
+    const A = x - x1;
+    const B = y - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    const param = dot / lenSq;
+
+    let xx: number, yy: number;
+
+    if (param < 0 || (x1 === x2 && y1 === y2)) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+
+    const dx = x - xx;
+    const dy = y - yy;
+    const dst = Math.hypot(dx, dy);
+
+    return { dst, x: xx, y: yy };
+  }
+
   getDeltaDirection(direction: Geom.Direction, delta: 0 | 1 | 2 | 3): Geom.Direction {
     return ((direction + delta) % 4) as Geom.Direction;
   }

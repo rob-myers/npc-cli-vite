@@ -156,14 +156,12 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     cleanups: (killed) => killed && npc.rejectAll(new Error("killed")),
   });
 
-  npc.anim.moveClip = opts.fast ? npc.clips.run : npc.clips.walk;
-
   try {
     if (api.isTtyAt(0)) {
       // move to point or smoothly along points
       const points = expectArrayOfPoints(opts.to) ? opts.to : [opts.to];
       for (const [index, point] of points.entries()) {
-        await w.npc.move({ npcKey: opts.npcKey, to: point, arrive: index === points.length - 1 });
+        await w.npc.move({ npcKey: opts.npcKey, to: point, arrive: index === points.length - 1, fast: opts.fast });
       }
       return;
     }
@@ -171,7 +169,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     if (!opts.along) {
       // move immediately to lastest destination
       while ((datum = await api.read()) !== api.eof) {
-        w.npc.move({ npcKey: opts.npcKey, to: datum });
+        w.npc.move({ npcKey: opts.npcKey, to: datum, fast: opts.fast });
       }
       return;
     }
@@ -184,7 +182,7 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
 
       datum = next;
       pendingRead = api.read();
-      const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum }).catch((e) => {
+      const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum, fast: opts.fast }).catch((e) => {
         if (e instanceof Error && e.message === "not navigable") {
           return; // ignore non-navigable stdin
         }
@@ -636,6 +634,15 @@ export async function unlock({ api, args, w }, opts = api.jsArg(args)) {
     else throw Error(`invalid gdKey: ${gdKey}`);
   }
   w.view.forceUpdate();
+}
+
+/**
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; to: MaybeMeta<JshCli.PointAnyFormat> }} [opts]
+ */
+export async function warp({ w, api, args }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  await npc.fadeSpawn(opts.to);
 }
 
 /**

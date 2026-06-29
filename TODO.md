@@ -170,6 +170,21 @@ w decor.byKey.test-decor-point
     - ✅ remove `updateLookAt` and `lookAtPoint`
     - ✅ updateIdle
 
+- 🚧 separation refinement
+  - stuck example: idle npc on nav edge looking perp, other adjacent, target diametric
+    - resolves on 2nd attempt i.e. npc velocity direction changes
+  - stuck example: idle npc near (not on) nav edge looking along it, other behind and against nav edge
+    - stuck when small speed/acceleration
+    - if on nav edge resolves on 2nd attempt
+  - `agent.boundary.segments` of type `{ d: number; s: SixTuple<number> }`
+  - ✅ npc "moves out of way"
+
+- try face direction during slideToEdge
+- try shuffle animation with barely any arm motion
+
+- ✅ BUG move target too close to current position never arrives
+  - bug was in playIdleAnim
+
 - ✅ jerky idle transition on stuck  
   - `stand` seems better than `idle`
   - `idle -> breathe` and `stand -> idle` 

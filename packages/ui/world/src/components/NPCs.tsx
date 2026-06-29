@@ -42,6 +42,8 @@ import {
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
+  idleSeparatingMaxAcceleration,
+  idleSeparatingMaxSpeed,
   idleSeparationWeight,
   maxAgentRadius,
   npcBrightness,
@@ -86,6 +88,39 @@ export default function NPCs() {
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
       postCrowdTickEvents: [],
+
+      closeStrategy: {
+        freeze(_npc, agent) {
+          agent.maxAcceleration = idleSeparatingMaxAcceleration;
+          agent.maxSpeed = idleSeparatingMaxSpeed;
+        },
+        slideToEdge(npc, agent) {
+          const [seg] = agent.boundary.segments;
+
+          if (seg === undefined) {
+            return;
+          }
+          if (seg.d < 0.0005) {
+            state.closeStrategy.freeze(npc, agent);
+            return;
+          }
+
+          // prevent idle npc from being pushed by other
+          agent.maxAcceleration = idleSeparatingMaxAcceleration;
+          agent.separationWeight = 0.1; // prevents other's influence?
+
+          // reset cooldown
+          npc.last.idleTime = w.timer.getElapsedTime();
+
+          // assume 1st segment closest i.e. d minimal
+          const closest = geomService.getClosestOnSeg(
+            npc.point,
+            { x: seg.s[0 + 0], y: seg.s[0 + 2] },
+            { x: seg.s[3 + 0], y: seg.s[3 + 2] },
+          );
+          npc.pinTo(state.getClosestPoly(closest));
+        },
+      },
 
       configureCrowd() {
         // improve initial path accuracy
@@ -251,7 +286,7 @@ export default function NPCs() {
       getSkinIndex(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
-      async move({ npcKey, to, arrive = true }) {
+      async move({ npcKey, to, arrive = true, fast }) {
         const npc = state.get(npcKey);
         const groundPoint = parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint, "0.5");
@@ -280,6 +315,10 @@ export default function NPCs() {
         }
 
         npc.rejectAll(new Error("move again"));
+
+        // shuffle, walk or run
+        const closeTarget = Math.abs(groundPoint.x - npc.position.x) + Math.abs(groundPoint.y - npc.position.z) < 0.25;
+        npc.anim.moveClip = closeTarget ? state.clips.shuffle : fast ? state.clips.run : state.clips.walk;
 
         npc.anim.startMoving(groundPoint, result, arrive);
 
@@ -608,6 +647,11 @@ export type State = {
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
   postCrowdTickEvents: JshCli.Event[];
+
+  closeStrategy: {
+    freeze(npc: Npc, agent: crowdApi.Agent): void;
+    slideToEdge(npc: Npc, agent: crowdApi.Agent): void;
+  };
 
   configureCrowd(): void;
   createMaterials(
