@@ -30,7 +30,7 @@ export class NpcAnimation {
   arrive = true;
   idleClip: THREE.AnimationClip = emptyAnimationClip;
   fadeState = { delta: 0, target: 1 };
-  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
+  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, longLook: false };
   mixer: THREE.AnimationMixer = emptyMixer;
   moveClip: THREE.AnimationClip = emptyAnimationClip;
   /** true iff moving via agent in navmesh */
@@ -79,8 +79,8 @@ export class NpcAnimation {
     if (s.elapsed >= s.duration) {
       this.npc.rotation.y = s.startAngle + s.totalDiff;
       s.active = false;
-      if (s.walking) {
-        s.walking = false;
+      if (s.longLook) {
+        s.longLook = false;
         this.playIdleClip(0.3);
       }
       this.npc.resolve.look("lookAt");

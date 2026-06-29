@@ -270,7 +270,7 @@ export class Npc {
         this.anim.lookAtState.totalDiff = totalDiff;
         this.anim.lookAtState.duration = duration;
         this.anim.lookAtState.elapsed = 0;
-        this.anim.lookAtState.walking = walking;
+        this.anim.lookAtState.longLook = walking;
 
         if (walking) {
           this.anim.moveClip = this.clips.breathe; // breathe if look large angle
@@ -280,7 +280,7 @@ export class Npc {
         }
       });
     } finally {
-      this.anim.lookAtState.walking = false;
+      this.anim.lookAtState.longLook = false;
       this.anim.mixer.timeScale = 1;
       this.anim.moveClip = this.clips.walk;
     }
