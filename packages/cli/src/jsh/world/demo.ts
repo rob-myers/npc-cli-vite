@@ -1,6 +1,7 @@
+import { geomService } from "@npc-cli/util/geom";
 import { events } from "./core";
 
-export function demo_add_decor(ct: JshCli.RunArg) {
+export function add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
     type: "circle",
     key: "test-decor-circle",
@@ -33,7 +34,39 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
-export async function* demo_log_speech(ct: JshCli.RunArg) {
+/**
+ * Ask for help when stuck behind another npc e.g. sandwiched against nav edge
+ * ```sh
+ * excuse_me npc:kate
+ * ```
+ */
+export function excuse_me(ct: JshCli.RunArg, opts = ct.api.jsArg<{ npcKey: string }>(ct.args, { npc: "npcKey" })) {
+  const { w } = ct;
+  const npc = w.npc.get(opts.npcKey);
+  const agent = npc.agent;
+  if (!agent) throw Error("no agent");
+
+  // say(ct, { npcKey: npc.key, words: "Sorry!" });
+
+  const [seg] = agent.boundary.segments;
+  if (seg === undefined || seg.d < 0.0005) {
+    return;
+  }
+
+  // prevent idle npc from being pushed by other
+  agent.maxAcceleration = 0.25;
+  agent.separationWeight = 0.1; // ?
+
+  // assume 1st segment closest (seg.d minimal)
+  const closest = geomService.getClosestOnSeg(
+    npc.point,
+    { x: seg.s[0 + 0], y: seg.s[0 + 2] },
+    { x: seg.s[3 + 0], y: seg.s[3 + 2] },
+  );
+  npc.pinTo(w.npc.getClosestPoly(closest));
+}
+
+export async function* log_speech(ct: JshCli.RunArg) {
   for await (const e of events(ct, {
     where: (e) => e.key === "speech",
   })) {

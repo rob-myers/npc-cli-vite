@@ -8,6 +8,7 @@ import {
   idleMaxAcceleration,
   idleSeparationWeight,
   npcScale,
+  runAgentMaxSpeed,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
   walkSeparationWeight,
@@ -34,11 +35,7 @@ export class NpcAnimation {
   moveClip: THREE.AnimationClip = emptyAnimationClip;
   /** true iff moving via agent in navmesh */
   moving = false;
-  /** true iff idle and separating from moving agent */
-  separating = false;
   stuckAccum = 0;
-
-  closeStrategy = null as null | ((npc: Npc, agent: crowdApi.Agent) => void);
 
   constructor(npc: Npc) {
     this.npc = npc;
@@ -46,10 +43,6 @@ export class NpcAnimation {
 
   get w(): UseStateRef<import("./World").State> {
     return this.npc.w;
-  }
-
-  get running() {
-    return this.moveClip.name === "run";
   }
 
   fadeTick(delta: number) {
@@ -149,7 +142,6 @@ export class NpcAnimation {
     this.npc.setLabelYShift(labelYShiftForClip(this.idleClip.name));
 
     this.moving = false;
-    this.separating = false;
   }
 
   startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
@@ -162,7 +154,8 @@ export class NpcAnimation {
     agent.queryFilter = this.npc.queryFilter;
     agent.separationWeight = walkSeparationWeight;
     agent.maxAcceleration = walkMaxAcceleration;
-    agent.maxSpeed = walkAgentMaxSpeed;
+    agent.maxSpeed = this.moveClip.name === "run" ? runAgentMaxSpeed : walkAgentMaxSpeed;
+
     crowdApi.requestMoveTarget(
       this.w.npc.crowd,
       this.npc.agentId as string,
@@ -198,22 +191,6 @@ export class NpcAnimation {
     moveAction.timeScale = (moveClipKey === "run" ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
   }
 
-  updateIdle(agent: crowdApi.Agent, worldSeconds: number) {
-    const closestMovingNei = agent.neis.find((nei) => this.w.npc.byAgentId[nei.agentId]?.anim.moving === true);
-    const closestNeiTooClose = closestMovingNei !== undefined && closestMovingNei.dist < neighborShouldSeparateDist;
-
-    if (!closestNeiTooClose) {
-      if (this.separating) this.startIdle();
-      return;
-    }
-
-    if (!this.separating && worldSeconds - this.npc.last.idleTime > separationCooldown) {
-      // commence separation
-      this.separating = true;
-      (this.closeStrategy ?? this.w.npc.closeStrategy.slideToEdge)(this.npc, agent);
-    }
-  }
-
   updateStuck(delta: number, worldSeconds: number): boolean {
     // delay stuck a bit
     if (worldSeconds - this.npc.last.pinTime < 2.5) {
@@ -228,9 +205,6 @@ export class NpcAnimation {
     return this.stuckAccum > 0.4;
   }
 }
-
-const separationCooldown = 0.5;
-const neighborShouldSeparateDist = 0.25;
 
 function bubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;
