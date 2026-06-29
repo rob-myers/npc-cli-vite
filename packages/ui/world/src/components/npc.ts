@@ -273,7 +273,7 @@ export class Npc {
         this.anim.lookAtState.walking = walking;
 
         if (walking) {
-          this.anim.moveClip = this.clips[defaultIdleAnimationClipKey];
+          this.anim.moveClip = this.clips.breathe; // breathe if look large angle
           this.anim.mixer.existingAction(this.anim.idleClip)?.fadeOut(0.15);
           this.anim.mixer.clipAction(this.anim.moveClip).reset().fadeIn(0.15).play();
           this.anim.mixer.timeScale = 0.75;
