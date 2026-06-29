@@ -28,6 +28,7 @@
     "getopts": "catalog:",
     "lodash.clonedeep": "catalog:",
     "motion": "catalog:",
+    "navcat": "catalog:",
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
