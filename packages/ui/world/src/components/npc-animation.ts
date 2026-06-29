@@ -6,8 +6,6 @@ import * as THREE from "three/webgpu";
 import {
   idleAgentMaxSpeed,
   idleMaxAcceleration,
-  idleSeparatingMaxAcceleration,
-  idleSeparatingMaxSpeed,
   idleSeparationWeight,
   npcScale,
   walkAgentMaxSpeed,
@@ -16,6 +14,7 @@ import {
 } from "../const";
 import { groundPointToTuple } from "../service/geometry";
 import { emptyAnimationClip } from "../service/three-animation";
+import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -23,17 +22,23 @@ const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 export class NpcAnimation {
   npc: Npc;
 
-  /** Set via `move` or `preventArrive` during move */
+  /**
+   * - true iff when npc moving it should slow down before final destination
+   * - set via `move` or `preventArrive` during move
+   */
   arrive = true;
   idleClip: THREE.AnimationClip = emptyAnimationClip;
   fadeState = { delta: 0, target: 1 };
   lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, walking: false };
   mixer: THREE.AnimationMixer = emptyMixer;
   moveClip: THREE.AnimationClip = emptyAnimationClip;
-  /** True iff moving via agent in navmesh */
+  /** true iff moving via agent in navmesh */
   moving = false;
+  /** true iff idle and separating from moving agent */
   separating = false;
   stuckAccum = 0;
+
+  closeStrategy = null as null | ((npc: Npc, agent: crowdApi.Agent) => void);
 
   constructor(npc: Npc) {
     this.npc = npc;
@@ -94,14 +99,14 @@ export class NpcAnimation {
   }
 
   playIdleClip(duration = 0.1) {
-    if (this.mixer.existingAction(this.idleClip)?.isRunning() === true) {
-      return;
-    }
-
     // fading all clips prevents e.g. sit from continuing
-    for (const clip of Object.values(this.w.npc.clips)) {
+    for (const clip of Object.values(this.npc.clips)) {
       if (clip === this.idleClip) continue;
       this.mixer.existingAction(clip)?.fadeOut(duration);
+    }
+
+    if ((this.mixer.existingAction(this.idleClip)?.getEffectiveWeight() ?? 0) > 0) {
+      return;
     }
 
     this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
@@ -169,28 +174,33 @@ export class NpcAnimation {
     this.npc.last.dst = groundPoint;
     this.npc.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
     this.npc.last.blockingArea = -1;
-    this.npc.last.pos = { x: this.npc.position.x, y: this.npc.position.z };
+    this.npc.last.pos = this.npc.point;
 
     this.stuckAccum = 0;
     this.arrive = arrive;
 
-    if (!this.moving) {
-      this.moving = true;
-      this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
-      this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
-      this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-      this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
+    if (this.moving) {
+      return;
     }
+
+    this.moving = true;
+    this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
+    this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
+
+    this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
+    this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
   }
 
   syncAnimation(speed: number) {
     if (!this.moving) return;
     const moveAction = this.mixer.clipAction(this.moveClip);
-    moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
+    const moveClipKey = this.moveClip.name as AnimationClipKey;
+    moveAction.timeScale = (moveClipKey === "run" ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
   }
 
   updateIdle(agent: crowdApi.Agent, worldSeconds: number) {
-    const closestNeiTooClose = agent.neis.length > 0 && agent.neis[0].dist < neighborShouldSeparateDist;
+    const closestMovingNei = agent.neis.find((nei) => this.w.npc.byAgentId[nei.agentId]?.anim.moving === true);
+    const closestNeiTooClose = closestMovingNei !== undefined && closestMovingNei.dist < neighborShouldSeparateDist;
 
     if (!closestNeiTooClose) {
       if (this.separating) this.startIdle();
@@ -198,10 +208,9 @@ export class NpcAnimation {
     }
 
     if (!this.separating && worldSeconds - this.npc.last.idleTime > separationCooldown) {
-      // commence separation 🚧 events
+      // commence separation
       this.separating = true;
-      agent.maxAcceleration = idleSeparatingMaxAcceleration;
-      agent.maxSpeed = idleSeparatingMaxSpeed;
+      (this.closeStrategy ?? this.w.npc.closeStrategy.slideToEdge)(this.npc, agent);
     }
   }
 
