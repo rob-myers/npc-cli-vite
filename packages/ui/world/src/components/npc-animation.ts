@@ -71,13 +71,15 @@ export class NpcAnimation {
   }
 
   lookTick(delta: number) {
-    if (!this.lookAtState.active) return;
-
     const s = this.lookAtState;
+    if (!s.active) {
+      return;
+    }
+
     s.elapsed += delta;
 
     if (s.elapsed >= s.duration) {
-      this.npc.skinnedMesh.rotation.y = s.startAngle + s.totalDiff;
+      this.npc.rotation.y = s.startAngle + s.totalDiff;
       s.active = false;
       if (s.walking) {
         s.walking = false;
@@ -85,9 +87,9 @@ export class NpcAnimation {
       }
       this.npc.resolve.look("lookAt");
     } else {
-      const t = s.elapsed / s.duration;
       // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
-      this.npc.skinnedMesh.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
+      const t = s.elapsed / s.duration;
+      this.npc.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
     }
   }
 
@@ -187,9 +189,6 @@ export class NpcAnimation {
     moveAction.timeScale = (this.running ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
   }
 
-  /**
-   * 🚧 separation events for custom handling
-   */
   updateIdle(agent: crowdApi.Agent, worldSeconds: number) {
     const closestNeiTooClose = agent.neis.length > 0 && agent.neis[0].dist < neighborShouldSeparateDist;
 
@@ -199,7 +198,7 @@ export class NpcAnimation {
     }
 
     if (!this.separating && worldSeconds - this.npc.last.idleTime > separationCooldown) {
-      // commence separation
+      // commence separation 🚧 events
       this.separating = true;
       agent.maxAcceleration = idleSeparatingMaxAcceleration;
       agent.maxSpeed = idleSeparatingMaxSpeed;
