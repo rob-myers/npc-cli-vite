@@ -43,12 +43,9 @@ import {
   fromAnimationClipKey,
   idleAgentMaxSpeed,
   idleSeparatingMaxAcceleration,
-  idleSeparatingMaxSpeed,
   idleSeparationWeight,
   maxAgentRadius,
   npcBrightness,
-  runAgentMaxSpeed,
-  walkAgentMaxSpeed,
   walkMaxAcceleration,
 } from "../const";
 import {
@@ -88,39 +85,6 @@ export default function NPCs() {
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
       postCrowdTickEvents: [],
-
-      closeStrategy: {
-        freeze(_npc, agent) {
-          agent.maxAcceleration = idleSeparatingMaxAcceleration;
-          agent.maxSpeed = idleSeparatingMaxSpeed;
-        },
-        slideToEdge(npc, agent) {
-          const [seg] = agent.boundary.segments;
-
-          if (seg === undefined) {
-            return;
-          }
-          if (seg.d < 0.0005) {
-            state.closeStrategy.freeze(npc, agent);
-            return;
-          }
-
-          // prevent idle npc from being pushed by other
-          agent.maxAcceleration = idleSeparatingMaxAcceleration;
-          agent.separationWeight = 0.1; // prevents other's influence?
-
-          // reset cooldown
-          npc.last.idleTime = w.timer.getElapsedTime();
-
-          // assume 1st segment closest i.e. d minimal
-          const closest = geomService.getClosestOnSeg(
-            npc.point,
-            { x: seg.s[0 + 0], y: seg.s[0 + 2] },
-            { x: seg.s[3 + 0], y: seg.s[3 + 2] },
-          );
-          npc.pinTo(state.getClosestPoly(closest));
-        },
-      },
 
       configureCrowd() {
         // improve initial path accuracy
@@ -352,15 +316,17 @@ export default function NPCs() {
           const agent = state.crowd.agents[npc.agentId];
           npc.position.x = agent.position[0];
           npc.position.z = agent.position[2];
+          const [vx, , vz] = agent.velocity;
+          const speed = Math.hypot(vx, vz);
 
           if (!npc.isMoving()) {
-            npc.anim.updateIdle(agent, worldSeconds);
+            if (speed < 0.05) {
+              // cannot immediately else walk -> idle slides
+              agent.maxAcceleration = idleSeparatingMaxAcceleration;
+            }
             continue;
           }
 
-          agent.maxSpeed = npc.running === true ? runAgentMaxSpeed : walkAgentMaxSpeed;
-          const [vx, , vz] = agent.velocity;
-          const speed = Math.hypot(vx, vz);
           npc.anim.syncAnimation(Math.max(speed, 0.5));
 
           if (speed > 0.05) {
@@ -371,7 +337,6 @@ export default function NPCs() {
 
           if (stuck === true) {
             npc.rejectAll(new Error("stuck"));
-            // npc.anim.startIdle({ force: true });
           } else if (
             crowdApi.isAgentAtTarget(
               state.crowd,
@@ -400,38 +365,34 @@ export default function NPCs() {
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = parseGroundPoint(override ?? closePolyResult.position);
 
-        if (closePolyResult.success) {
-          if (npc.agentId !== null) {
-            // must remove agent so can teleport without issues
-            // - re-adding changes the npc.agentId ATOW
-            w.e.removeAgents([npc], { keepPhysics: true });
-          } else {
-            w.worker.worker.postMessage({
-              type: "add-physics-npcs",
-              npcs: [{ npcKey: npc.key, position: groundPointToVector3(groundPoint) }],
-            } satisfies WW.MsgToWorker);
-          }
-
-          npc.agentId = crowdApi.addAgent(
-            state.crowd,
-            w.nav.navMesh,
-            groundPointToTuple(groundPoint),
-            getAgentParams(),
-          );
-          state.byAgentId[npc.agentId] = npc;
-
-          npc.pinTo(closePolyResult, groundPoint);
-
-          // might have spawned into a sensor
-          state.physics.positions.push(npc.bodyUid, ...groundPointToTuple(groundPoint));
-          // } else if (type === "navigable") {
-          //   throw Error("not placable");
-        } else {
+        if (!closePolyResult.success) {
           // do not throw in case of hot reload with changing geometry
           w.e.removeAgents([npc]);
           npc.position.x = groundPoint.x;
           npc.position.z = groundPoint.y;
+          return;
         }
+
+        if (npc.agentId !== null) {
+          // - must remove agent so can teleport without issues
+          // - re-adding changes the npc.agentId ATOW
+          w.e.removeAgents([npc], { keepPhysics: true });
+        } else {
+          w.worker.worker.postMessage({
+            type: "add-physics-npcs",
+            npcs: [{ npcKey: npc.key, position: groundPointToVector3(groundPoint) }],
+          } satisfies WW.MsgToWorker);
+        }
+
+        npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groundPointToTuple(groundPoint), getAgentParams());
+        state.byAgentId[npc.agentId] = npc;
+
+        npc.pinTo(closePolyResult, groundPoint);
+
+        // might have spawned into a sensor
+        state.physics.positions.push(npc.bodyUid, ...groundPointToTuple(groundPoint));
+        // } else if (type === "navigable") {
+        //   throw Error("not placable");
       },
       async spawn({ npcKey, at, as, angle, facing }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
@@ -647,11 +608,6 @@ export type State = {
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
   postCrowdTickEvents: JshCli.Event[];
-
-  closeStrategy: {
-    freeze(npc: Npc, agent: crowdApi.Agent): void;
-    slideToEdge(npc: Npc, agent: crowdApi.Agent): void;
-  };
 
   configureCrowd(): void;
   createMaterials(
