@@ -160,7 +160,7 @@ w decor.byKey.test-decor-point
   - we're setting `npc.arrive := false` as part of contiguous motion, however this prevents `startIdle` from reaching the assignment `npc.moving := false`
   - ✅ enforce `npc.moving = false` on `move` to doable
 
-- 🚧 clean animation logic using ai
+- ✅ clean animation logic using ai
   - ✅ NpcAnimation class
   - ✅ verify hmr
   - ✅ clean `npc.anim.startIdle`
@@ -178,12 +178,12 @@ w decor.byKey.test-decor-point
   - `agent.boundary.segments` of type `{ d: number; s: SixTuple<number> }`
   - ✅ idle npc "moves to closest segment" by default when other close
 
-- 🚧 rethink separation
+- ✅ rethink separation
   - ✅ no separation detection
   - ✅ after walk -> idle slow down, set small maxAcceleration
   - ✅ can `excuse_me npc:kate` (demo.js)
     - e.g case where other sandwiched against nav border
-  - 🚧 multiple actions: slideToNavEdge, moveRandomly, ...
+  - ✅ can move randomly `excuse_me again npc:kate`
 
 - ✅ BUG move target too close to current position never arrives
   - bug was in playIdleAnim
