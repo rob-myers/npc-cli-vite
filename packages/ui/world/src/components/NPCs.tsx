@@ -673,7 +673,8 @@ function getAgentParams(): crowd.AgentParams {
     // collisionQueryRange: 1,
     // collisionQueryRange: 0.75,
     // cannot be smaller; maybe should be larger
-    collisionQueryRange: 0.5,
+    // collisionQueryRange: 0.5,
+    collisionQueryRange: 0.5 + 0.1,
     separationWeight: idleSeparationWeight,
     updateFlags:
       crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
