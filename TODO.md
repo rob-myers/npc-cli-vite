@@ -200,6 +200,9 @@ w decor.byKey.test-decor-point
   - `tweak npc:kate`
   - `park npc:kate`
 
+- ✅ `tweak npc:kate by:1` -> `pad npc:kate by:1`
+  - since we are providing "padding" relative to navmesh edge
+
 - parseGroundPoint -> helper.parseGroundPoint
 
 - stress test i.e. spawn many
