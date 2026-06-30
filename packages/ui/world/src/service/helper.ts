@@ -46,6 +46,15 @@ export const helper = {
   isGmRoomId(input: any): input is Geomorph.GmRoomId {
     return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
+
+  parseGroundPoint(input: MaybeMeta<JshCli.PointAnyFormat>): MaybeMeta<JshCli.GroundPoint> {
+    if (Array.isArray(input)) {
+      return input.length === 3 ? { x: input[0], y: input[2] } : { x: input[0], y: input[1] };
+    }
+    const output: MaybeMeta<JshCli.GroundPoint> = { x: input.x, y: "z" in input ? input.z : input.y };
+    if ("meta" in input) output.meta = input.meta;
+    return output;
+  },
 };
 
 const gdKeyRegex = /^g\d+d\d+$/;

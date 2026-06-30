@@ -1,3 +1,4 @@
+import { geomService, Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
 /**
@@ -202,6 +203,70 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
   } finally {
     dispose();
   }
+}
+
+/**
+ * ```sh
+ * nudge npc:kate
+ * nudge npc:kate src:rob
+ * nudge npc:kate src:$( pick 1 ) by:1
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; src?: string |JshCli.PointAnyFormat; by?: number }} opts
+ */
+export async function nudge(ct, opts = ct.api.jsArg(ct.args, { npc: "npcKey", from: "src" })) {
+  const { w } = ct;
+  const npc = w.npc.get(opts.npcKey);
+
+  opts.by ??= 0.5;
+
+  if (!opts.src) {
+    const angle = Math.random() * Math.PI * 2;
+    opts.src = { x: npc.point.x + opts.by * Math.cos(angle), y: npc.point.y + opts.by * Math.sin(angle) };
+  }
+
+  if (typeof opts.src === "string") {
+    opts.src = w.npc.get(opts.src).point;
+  }
+
+  const src = npc.point;
+  const delta = Vect.from(src).sub(w.helper.parseGroundPoint(opts.src)).normalize(opts.by);
+  await w.npc.move({
+    npcKey: npc.key,
+    to: { x: src.x + delta.x, y: src.y + delta.y },
+  });
+}
+
+/**
+ * ```sh
+ * park npc:kate
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string }} opts
+ */
+export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  const agent = npc.agent;
+  if (!agent) throw Error("no agent");
+
+  const [seg] = agent.boundary.segments;
+  if (seg === undefined) {
+    throw Error("boundary too far");
+  }
+
+  if (seg.d > 0.0005) {
+    // assume 1st segment closest (seg.d minimal)
+    const closest = geomService.getClosestOnSeg(
+      npc.point,
+      { x: seg.s[0 + 0], y: seg.s[0 + 2] },
+      { x: seg.s[3 + 0], y: seg.s[3 + 2] },
+    );
+
+    await npc.fadeSpawn(closest);
+  }
+
+  // seems to always face outwards
+  await npc.look({ x: npc.position.x + (seg.s[5] - seg.s[2]), y: npc.position.z + (seg.s[0] - seg.s[3]) });
 }
 
 /**
@@ -555,6 +620,39 @@ export async function spawn(
       })
       .catch(ignoreSpawnErrors);
   }
+}
+
+/**
+ * Adjust npc near boundary e.g. because blocking others.
+ * ```sh
+ * tweak npc:kate
+ * tweak npc:kate by:1
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string; by?: number }} opts
+ */
+export async function tweak({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  const agent = npc.agent;
+  if (!agent) throw Error("no agent");
+
+  const [seg] = agent.boundary.segments;
+  if (seg === undefined) {
+    throw Error("boundary too far");
+  }
+
+  // move away from 1st seg
+  const src = npc.point;
+  const delta = Vect.from(src)
+    .sub(w.helper.parseGroundPoint({ x: seg.s[0], y: seg.s[2] }))
+    .normalize(opts.by ?? 0.5);
+
+  await w.npc
+    .move({
+      npcKey: npc.key,
+      to: { x: src.x + delta.x, y: src.y + delta.y },
+    })
+    .catch(() => {}); // ignore stuck
 }
 
 /**
