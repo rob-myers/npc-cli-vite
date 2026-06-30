@@ -54,8 +54,8 @@ import {
   groundPointToTuple,
   groundPointToVector3,
   mergeWithGroupAttr,
-  parseGroundPoint,
 } from "../service/geometry";
+import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
@@ -231,7 +231,7 @@ export default function NPCs() {
         }
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
-        const targetTuple = groundPointToTuple(parseGroundPoint(targetPos));
+        const targetTuple = groundPointToTuple(helper.parseGroundPoint(targetPos));
         const { halfExtents, distance } = byAccuracy[accuracy];
         const result = findNearestPoly(
           createFindNearestPolyResult(),
@@ -252,7 +252,7 @@ export default function NPCs() {
       },
       async move({ npcKey, to, arrive = true, fast }) {
         const npc = state.get(npcKey);
-        const groundPoint = parseGroundPoint(to);
+        const groundPoint = helper.parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint, "0.5");
 
         const doResult = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
@@ -363,7 +363,7 @@ export default function NPCs() {
         w.shadows?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
-        const groundPoint = parseGroundPoint(override ?? closePolyResult.position);
+        const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
 
         if (!closePolyResult.success) {
           // do not throw in case of hot reload with changing geometry
@@ -402,7 +402,7 @@ export default function NPCs() {
           throw Error("opts.at must exist");
         }
 
-        const groundAt = parseGroundPoint(at);
+        const groundAt = helper.parseGroundPoint(at);
         const gmRoomId = w.e.findRoomContaining(at, true);
         if (gmRoomId === null) throw Error("must be in some room");
 
@@ -416,7 +416,7 @@ export default function NPCs() {
         }
 
         if (facing) {
-          facing = parseGroundPoint(facing);
+          facing = helper.parseGroundPoint(facing);
           angle = geomService.getThreeRotationY(facing.y - groundAt.y, facing.x - groundAt.x);
         } else if (angle !== undefined) {
           // absorb errors else npc disappears
@@ -456,7 +456,7 @@ export default function NPCs() {
           npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(npcKey, doResult.meta.decorKey);
         } else {
-          const overrideGroundPoint = at.meta?.npcKey === npcKey ? parseGroundPoint(npc.position) : undefined;
+          const overrideGroundPoint = at.meta?.npcKey === npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);

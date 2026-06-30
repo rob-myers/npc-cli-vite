@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { groundPointToTuple, groundPointToVector3, parseGroundPoint } from "../service/geometry";
+import { groundPointToTuple, groundPointToVector3 } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -64,7 +64,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
         }
-        return w.gmGraph.findGmIdContaining(parseGroundPoint(input));
+        return w.gmGraph.findGmIdContaining(helper.parseGroundPoint(input));
       },
       findPath(srcGrKey, dstGrKey, { npcKey } = {}) {
         return w.gmRoomGraph.findPath(srcGrKey, dstGrKey, {
@@ -87,7 +87,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         const gmId = state.findGmIdContaining(input);
         if (typeof gmId === "number") {
-          const point = parseGroundPoint(input);
+          const point = helper.parseGroundPoint(input);
           const gm = w.gms[gmId];
           const localPoint = gm.inverseMatrix.transformPoint({ x: point.x, y: point.y });
           const roomId = w.gmsData.findRoomIdContaining(gm, localPoint, includeDoors);
@@ -301,8 +301,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       async raycast(origSrc, origDst) {
-        let src = parseGroundPoint(origSrc);
-        const dst = parseGroundPoint(origDst);
+        let src = helper.parseGroundPoint(origSrc);
+        const dst = helper.parseGroundPoint(origDst);
 
         // Both points must reside in a room or doorway
         const srcGrId = state.findRoomContaining(src, true);
@@ -495,7 +495,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         const { position: npcPoint } = w.npc.npc[opts.npcKey];
-        if (npcPoint.distanceTo(groundPointToVector3(parseGroundPoint(opts.point))) > 1.5) {
+        if (npcPoint.distanceTo(groundPointToVector3(helper.parseGroundPoint(opts.point))) > 1.5) {
           return false; // e.g. button not close enough
         }
 
