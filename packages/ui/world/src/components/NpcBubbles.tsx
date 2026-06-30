@@ -15,15 +15,15 @@ export default function NpcBubbles() {
 
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
-          const bubble = state.get(npcKey);
-          if (!bubble) continue;
+          const b = state.get(npcKey);
+          if (!b) continue;
 
           state.lastData[npcKey] = {
-            offset: { ...bubble.offset },
-            cssVars: bubble.getBubbleCssVars(),
+            offset: { ...b.offset },
+            cssVars: b.getBubbleCssVars(),
           };
 
-          bubble.dispose();
+          b.dispose();
           delete state.byKey[npcKey];
 
           const npc = w.n[npcKey];
@@ -31,23 +31,24 @@ export default function NpcBubbles() {
           npc.drawLabel({ speaking: false });
           npc.labelVisible.value = 1;
         }
+
         w.view.forceUpdate();
       },
-      ensure(npcKey, opts: Partial<AutoDeleteOpts> = {}) {
-        const extant = state.get(npcKey);
-        if (extant) return extant;
+      ensure(npcKey, deleteOpts?: Partial<AutoDeleteOpts>) {
+        let b = state.get(npcKey);
+        if (b) return b;
 
         const npc = w.npc.get(npcKey);
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
-        const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w));
+        b = state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w);
 
         const prev = state.lastData[npcKey];
-        if (prev?.offset) bubble.offset = { ...prev.offset };
-        if (prev?.cssVars) bubble.initialCssVars = { ...prev.cssVars };
+        if (prev?.offset) b.offset = { ...prev.offset };
+        if (prev?.cssVars) b.initialCssVars = { ...prev.cssVars };
         delete state.lastData[npcKey];
 
-        bubble.autoDeleteOpts = { ...defaultAutoDeleteOpts, ...opts };
-        bubble.scheduleAutoDelete();
+        b.deletion.opts = deleteOpts ? { ...defaultAutoDeleteOpts, ...deleteOpts } : null;
+        b.scheduleAutoDelete();
 
         if (w.view.topDown) {
           npc.drawLabel({ speaking: true });
@@ -56,7 +57,7 @@ export default function NpcBubbles() {
         }
 
         w.view.forceUpdate();
-        return bubble;
+        return b;
       },
       handleDevHotReload() {
         for (const bubble of Object.values(state.byKey)) {
@@ -159,20 +160,22 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         className={cn(
           "relative flex flex-col rounded-none cursor-grab active:cursor-grabbing overflow-hidden",
           "transform-[translate(-50%)] w-(--bubble-width,35rem) h-(--bubble-height,18rem)",
-          b.isInteractive && "pointer-events-auto",
+          b.interact.active && "pointer-events-auto",
         )}
         onMouseDown={b.onMouseDown}
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        <div className={cn("transition-opacity text-[2.5rem] truncate", !b.isInteractive && "select-none opacity-50")}>
+        <div
+          className={cn("transition-opacity text-[2.5rem] truncate", !b.interact.active && "select-none opacity-50")}
+        >
           {b.key}
         </div>
 
         <div
           className={cn(
             "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl leading-[1.2] text-center select-none",
-            b.isInteractive ? "border-3 border-white/25" : "opacity-75 border-6 border-white/10",
+            b.interact.active ? "border-3 border-white/25" : "opacity-75 border-6 border-white/10",
           )}
         >
           <div className="my-auto w-full">{b.words}</div>
@@ -182,7 +185,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
           className={cn(
             "pointer-events-auto absolute bottom-0 right-0 flex gap-2",
             "transition-opacity border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer",
-            !b.isInteractive && "opacity-50",
+            !b.interact.active && "opacity-50",
           )}
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}

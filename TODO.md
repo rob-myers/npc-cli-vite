@@ -209,7 +209,10 @@ w decor.byKey.test-decor-point
   - ✅ events "enter-topdown" and "exit-topdown"
   - ✅ fade in/out while paused too but no timer
   - ✅ clean opacity setting code
-  - does not fade by default
+  - 🚧 does not fade by default
+    - can `say npc:rob foo bar secs:3`
+    - ✅ can `say npc:rob` to fade out
+  - separate resize ui from "active button"
 
 - stress test i.e. spawn many
 
@@ -240,7 +243,7 @@ w decor.byKey.test-decor-point
 - npc: unify state.lookAtPoint and updateLookAt
 - BUG locked door opens when npc close enough to nearby sensor
   - `w e.toggleLock g0d31`
-- abstract npc animation logic into class
+- ✅ abstract npc animation logic into class
 - BUG on save shell.ts terminal profile does not run
 - idle-left with left-leg forward
 - idle-right with right-leg forward
