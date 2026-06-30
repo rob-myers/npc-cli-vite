@@ -261,7 +261,7 @@ export class SpeechBubbleApi {
   resumeAutoDelete() {
     if (this.deletion.remainingMs === null || this.deletion.timer !== null) return;
     this.deletion.timerStartedAt = Date.now();
-    this.deletion.timer = setTimeout(() => this.fadeAndDelete(), this.deletion.remainingMs);
+    this.deletion.timer = setTimeout(() => this.fadeAndDelete(), Math.min(this.deletion.remainingMs, 2 ** 31 - 1));
   }
 
   resumeInteractiveTimer() {
@@ -270,27 +270,20 @@ export class SpeechBubbleApi {
     this.interact.timer = setTimeout(() => this.deactivateInteractive(), this.interact.remainingMs);
   }
 
-  scheduleAutoDelete(secs?: number) {
+  scheduleAutoDelete(secs = this.deletion.opts?.secs) {
     if (this.deletion.timer !== null) {
       clearTimeout(this.deletion.timer);
       this.deletion.timer = null;
     }
 
-    if (!this.deletion.opts) {
-      return;
+    this.deletion.remainingMs = typeof secs === "number" ? secs * 1000 : null;
+
+    if (this.deletion.remainingMs === null || this.w?.disabled === true) {
+      return; // if remainingMs and disabled will trigger on enabled
     }
 
-    const { baseSeconds, perWordSeconds } = this.deletion.opts;
-    const wordCount = this.words.trim() ? this.words.trim().split(/\s+/).length : 0;
-    this.deletion.remainingMs =
-      typeof secs === "number"
-        ? Math.min(secs * 1000, 2 ** 31 - 1)
-        : Math.min((baseSeconds + perWordSeconds * wordCount) * 1000, maxBubbleExtantMs);
-
-    if (!this.w?.disabled) {
-      this.deletion.timerStartedAt = Date.now();
-      this.deletion.timer = setTimeout(() => this.fadeAndDelete(), this.deletion.remainingMs);
-    }
+    this.deletion.timerStartedAt = Date.now();
+    this.deletion.timer = setTimeout(() => this.fadeAndDelete(), Math.min(this.deletion.remainingMs, 2 ** 31 - 1));
   }
 
   setOpacity(opacity: number) {
@@ -301,12 +294,12 @@ export class SpeechBubbleApi {
     }
   }
 
-  setWords(words: string, secs?: number) {
+  setWords(words: string, secs = this.deletion.opts?.secs) {
     this.words = words;
     this.epochMs = Date.now();
     this.w.bubble.update();
 
-    if (this.deletion.opts) {
+    if (typeof secs === "number") {
       this.scheduleAutoDelete(secs); // reschedule
     }
 
@@ -363,5 +356,4 @@ const defaultBubbleHeight = 288; // h-72
 const maxBubbleExtantMs = 10_000; // 10 seconds
 const fadeOutMs = 500;
 
-export type AutoDeleteOpts = { baseSeconds: number; perWordSeconds: number };
-export const defaultAutoDeleteOpts: AutoDeleteOpts = { baseSeconds: 2, perWordSeconds: 1 };
+export type AutoDeleteOpts = { secs: number };
