@@ -7,7 +7,8 @@ import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { defaultIdleAnimationClipKey } from "../const";
-import { groundPointToTuple, parseGroundPoint } from "../service/geometry";
+import { groundPointToTuple } from "../service/geometry";
+import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import { NpcAnimation } from "./npc-animation";
@@ -158,7 +159,7 @@ export class Npc {
     try {
       await this.fadeOut();
       this.w.bubble.setShownIfExists(this.key, false);
-      const groundTarget = parseGroundPoint(at);
+      const groundTarget = helper.parseGroundPoint(at);
       await this.w.npc.spawn({
         npcKey: this.key,
         at,
@@ -239,7 +240,7 @@ export class Npc {
    * Can look at `npcKey` or point.
    */
   async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
-    const p = parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
+    const p = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
 
     if (this.anim.idleClip.name === "sit") {
       throw Error("not while sitting");
