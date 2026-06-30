@@ -19,26 +19,34 @@ export class SpeechBubbleApi {
   w: WorldState;
   words = "Hello, world!!";
 
-  isInteractive = false;
-  interactiveRemainingMs: number | null = null;
-  interactiveTimerStartedAt = 0;
-  interactiveTimer: ReturnType<typeof setTimeout> | null = null;
+  deletion = {
+    opts: null as AutoDeleteOpts | null,
+    remainingMs: null as number | null,
+    timerStartedAt: 0,
+    timer: null as ReturnType<typeof setTimeout> | null,
+  };
 
-  offsetInitialized = false;
-  isDragging = false;
-  dragStartClient = { x: 0, y: 0 };
-  dragWorldOffsetAtStart = { x: 0, y: 0, z: 0 };
+  drag = {
+    active: false,
+    startClient: { x: 0, y: 0 },
+    worldOffsetAtStart: { x: 0, y: 0, z: 0 },
+  };
 
-  isResizing = false;
-  resizeStartClient = { x: 0, y: 0 };
-  resizeWidthAtStart = 0;
-  resizeHeightAtStart = 0;
-  resizeHtmlScale = 1;
+  interact = {
+    active: false,
+    remainingMs: null as number | null,
+    timerStartedAt: 0,
+    timer: null as ReturnType<typeof setTimeout> | null,
+  };
 
-  autoDeleteOpts: AutoDeleteOpts | null = null;
-  autoDeleteRemainingMs: number | null = null;
-  autoDeleteTimerStartedAt = 0;
-  autoDeleteTimer: ReturnType<typeof setTimeout> | null = null;
+  size = {
+    /** Resizing */
+    active: false,
+    startClient: { x: 0, y: 0 },
+    widthAtStart: 0,
+    heightAtStart: 0,
+    htmlScale: 1,
+  };
 
   initialCssVars: Record<string, string> = {};
 
@@ -49,20 +57,20 @@ export class SpeechBubbleApi {
   }
 
   deactivateInteractive() {
-    this.interactiveTimer = null;
-    this.interactiveRemainingMs = null;
-    this.isInteractive = false;
+    this.interact.timer = null;
+    this.interact.remainingMs = null;
+    this.interact.active = false;
     this.forceRender();
   }
 
   dispose() {
-    if (this.autoDeleteTimer !== null) {
-      clearTimeout(this.autoDeleteTimer);
-      this.autoDeleteTimer = null;
+    if (this.deletion.timer !== null) {
+      clearTimeout(this.deletion.timer);
+      this.deletion.timer = null;
     }
-    if (this.interactiveTimer !== null) {
-      clearTimeout(this.interactiveTimer);
-      this.interactiveTimer = null;
+    if (this.interact.timer !== null) {
+      clearTimeout(this.interact.timer);
+      this.interact.timer = null;
     }
     //@ts-expect-error
     this.w = null;
@@ -73,8 +81,8 @@ export class SpeechBubbleApi {
   }
 
   fadeAndDelete() {
-    this.autoDeleteTimer = null;
-    this.autoDeleteRemainingMs = null;
+    this.deletion.timer = null;
+    this.deletion.remainingMs = null;
     this.setOpacity(0);
     setTimeout(() => this.w?.bubble?.delete(this.key), fadeOutMs);
   }
@@ -116,27 +124,27 @@ export class SpeechBubbleApi {
   }
 
   onDragStart(clientX: number, clientY: number) {
-    this.isDragging = true;
-    this.dragStartClient = { x: clientX, y: clientY };
-    this.dragWorldOffsetAtStart = { x: this.offset.x, y: this.offset.y, z: this.offset.z };
+    this.drag.active = true;
+    this.drag.startClient = { x: clientX, y: clientY };
+    this.drag.worldOffsetAtStart = { x: this.offset.x, y: this.offset.y, z: this.offset.z };
   }
 
   onDragMove(clientX: number, clientY: number) {
-    if (!this.isDragging || !this.tracked) return;
+    if (!this.drag.active || !this.tracked) return;
     const { camera } = this.w.r3f;
     const { width, height } = this.w.r3f.get().size;
     tmpVec.setFromMatrixPosition(this.tracked.object.matrixWorld).add(this.tracked.offset);
     const ndcZ = tmpVec2.copy(tmpVec).project(camera).z;
     tmpVec
-      .set((this.dragStartClient.x / width) * 2 - 1, -(this.dragStartClient.y / height) * 2 + 1, ndcZ)
+      .set((this.drag.startClient.x / width) * 2 - 1, -(this.drag.startClient.y / height) * 2 + 1, ndcZ)
       .unproject(camera);
     tmpVec2.set((clientX / width) * 2 - 1, -(clientY / height) * 2 + 1, ndcZ).unproject(camera);
-    this.offset.y = this.dragWorldOffsetAtStart.y + tmpVec2.y - tmpVec.y;
+    this.offset.y = this.drag.worldOffsetAtStart.y + tmpVec2.y - tmpVec.y;
     this.html3d?.onFrame();
   }
 
   onDragEnd() {
-    this.isDragging = false;
+    this.drag.active = false;
   }
 
   onMouseDown = (e: React.MouseEvent) => {
@@ -159,7 +167,7 @@ export class SpeechBubbleApi {
     this.resizeStart(e.clientX, e.clientY);
     const onMove = (ev: MouseEvent) => this.resizeMove(ev.clientX, ev.clientY);
     const cleanup = () => {
-      this.isResizing = false;
+      this.size.active = false;
       this.w.rootEl.removeEventListener("mousemove", onMove);
       this.w.rootEl.removeEventListener("mouseup", cleanup);
       this.w.rootEl.removeEventListener("mouseleave", cleanup);
@@ -179,7 +187,7 @@ export class SpeechBubbleApi {
       if (t2) this.resizeMove(t2.clientX, t2.clientY);
     };
     const onEnd = () => {
-      this.isResizing = false;
+      this.size.active = false;
       document.removeEventListener("touchmove", onMove, { capture: true });
       document.removeEventListener("touchend", onEnd, { capture: true });
     };
@@ -210,84 +218,78 @@ export class SpeechBubbleApi {
   };
 
   pauseAutoDelete() {
-    if (this.autoDeleteTimer === null) return;
-    clearTimeout(this.autoDeleteTimer);
-    this.autoDeleteTimer = null;
-    if (this.autoDeleteRemainingMs !== null) {
-      this.autoDeleteRemainingMs = Math.max(
-        0,
-        this.autoDeleteRemainingMs - (Date.now() - this.autoDeleteTimerStartedAt),
-      );
+    if (this.deletion.timer === null) return;
+    clearTimeout(this.deletion.timer);
+    this.deletion.timer = null;
+    if (this.deletion.remainingMs !== null) {
+      this.deletion.remainingMs = Math.max(0, this.deletion.remainingMs - (Date.now() - this.deletion.timerStartedAt));
     }
   }
 
   pauseInteractiveTimer() {
-    if (this.interactiveTimer === null) return;
-    clearTimeout(this.interactiveTimer);
-    this.interactiveTimer = null;
-    if (this.interactiveRemainingMs !== null) {
-      this.interactiveRemainingMs = Math.max(
-        0,
-        this.interactiveRemainingMs - (Date.now() - this.interactiveTimerStartedAt),
-      );
+    if (this.interact.timer === null) return;
+    clearTimeout(this.interact.timer);
+    this.interact.timer = null;
+    if (this.interact.remainingMs !== null) {
+      this.interact.remainingMs = Math.max(0, this.interact.remainingMs - (Date.now() - this.interact.timerStartedAt));
     }
   }
 
   resizeMove(clientX: number, clientY: number) {
-    if (!this.isResizing) return;
-    const dx = (clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
-    const dy = (clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
+    if (!this.size.active) return;
+    const dx = (clientX - this.size.startClient.x) / this.size.htmlScale;
+    const dy = (clientY - this.size.startClient.y) / this.size.htmlScale;
     // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
     // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
     const rootDiv = this.html3d?.rootDiv;
-    rootDiv?.style.setProperty("--bubble-width", `${Math.max(minBubbleWidth, this.resizeWidthAtStart + dx * 2)}px`);
-    rootDiv?.style.setProperty("--bubble-height", `${Math.max(minBubbleHeight, this.resizeHeightAtStart + dy)}px`);
+    rootDiv?.style.setProperty("--bubble-width", `${Math.max(minBubbleWidth, this.size.widthAtStart + dx * 2)}px`);
+    rootDiv?.style.setProperty("--bubble-height", `${Math.max(minBubbleHeight, this.size.heightAtStart + dy)}px`);
     this.html3d?.onFrame();
   }
 
   resizeStart(clientX: number, clientY: number) {
-    this.isResizing = true;
-    this.resizeStartClient = { x: clientX, y: clientY };
+    this.size.active = true;
+    this.size.startClient = { x: clientX, y: clientY };
     const innerDiv = this.html3d?.innerDiv;
-    this.resizeWidthAtStart = innerDiv?.offsetWidth ?? defaultBubbleWidth;
-    this.resizeHeightAtStart = innerDiv?.offsetHeight ?? defaultBubbleHeight;
+    this.size.widthAtStart = innerDiv?.offsetWidth ?? defaultBubbleWidth;
+    this.size.heightAtStart = innerDiv?.offsetHeight ?? defaultBubbleHeight;
     // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
     const rect = innerDiv?.getBoundingClientRect();
-    this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
+    this.size.htmlScale = rect && this.size.widthAtStart > 0 ? rect.width / this.size.widthAtStart : 1;
   }
 
   resumeAutoDelete() {
-    if (this.autoDeleteRemainingMs === null || this.autoDeleteTimer !== null) return;
-    this.autoDeleteTimerStartedAt = Date.now();
-    this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
+    if (this.deletion.remainingMs === null || this.deletion.timer !== null) return;
+    this.deletion.timerStartedAt = Date.now();
+    this.deletion.timer = setTimeout(() => this.fadeAndDelete(), this.deletion.remainingMs);
   }
 
   resumeInteractiveTimer() {
-    if (!this.isInteractive || this.interactiveRemainingMs === null || this.interactiveTimer !== null) return;
-    this.interactiveTimerStartedAt = Date.now();
-    this.interactiveTimer = setTimeout(() => this.deactivateInteractive(), this.interactiveRemainingMs);
+    if (!this.interact.active || this.interact.remainingMs === null || this.interact.timer !== null) return;
+    this.interact.timerStartedAt = Date.now();
+    this.interact.timer = setTimeout(() => this.deactivateInteractive(), this.interact.remainingMs);
   }
 
   scheduleAutoDelete(secs?: number) {
-    if (this.autoDeleteTimer !== null) {
-      clearTimeout(this.autoDeleteTimer);
-      this.autoDeleteTimer = null;
+    if (this.deletion.timer !== null) {
+      clearTimeout(this.deletion.timer);
+      this.deletion.timer = null;
     }
 
-    if (!this.autoDeleteOpts) {
+    if (!this.deletion.opts) {
       return;
     }
 
-    const { baseSeconds, perWordSeconds } = this.autoDeleteOpts;
+    const { baseSeconds, perWordSeconds } = this.deletion.opts;
     const wordCount = this.words.trim() ? this.words.trim().split(/\s+/).length : 0;
-    this.autoDeleteRemainingMs =
+    this.deletion.remainingMs =
       typeof secs === "number"
         ? Math.min(secs * 1000, 2 ** 31 - 1)
         : Math.min((baseSeconds + perWordSeconds * wordCount) * 1000, maxBubbleExtantMs);
 
     if (!this.w?.disabled) {
-      this.autoDeleteTimerStartedAt = Date.now();
-      this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
+      this.deletion.timerStartedAt = Date.now();
+      this.deletion.timer = setTimeout(() => this.fadeAndDelete(), this.deletion.remainingMs);
     }
   }
 
@@ -304,7 +306,7 @@ export class SpeechBubbleApi {
     this.epochMs = Date.now();
     this.w.bubble.update();
 
-    if (this.autoDeleteOpts) {
+    if (this.deletion.opts) {
       this.scheduleAutoDelete(secs); // reschedule
     }
 
@@ -319,30 +321,30 @@ export class SpeechBubbleApi {
   }
 
   startInteractiveTimer() {
-    if (this.interactiveTimer !== null) {
-      clearTimeout(this.interactiveTimer);
+    if (this.interact.timer !== null) {
+      clearTimeout(this.interact.timer);
     }
-    this.interactiveRemainingMs = interactiveDurationMs;
+    this.interact.remainingMs = interactiveDurationMs;
     if (!this.w?.disabled) {
-      this.interactiveTimerStartedAt = Date.now();
-      this.interactiveTimer = setTimeout(() => this.deactivateInteractive(), this.interactiveRemainingMs);
+      this.interact.timerStartedAt = Date.now();
+      this.interact.timer = setTimeout(() => this.deactivateInteractive(), this.interact.remainingMs);
     }
   }
 
   stopInteractiveTimer() {
-    if (this.interactiveTimer !== null) {
-      clearTimeout(this.interactiveTimer);
-      this.interactiveTimer = null;
+    if (this.interact.timer !== null) {
+      clearTimeout(this.interact.timer);
+      this.interact.timer = null;
     }
-    this.interactiveRemainingMs = null;
+    this.interact.remainingMs = null;
   }
 
   toggleInteractive(e: React.MouseEvent) {
-    if (!(Math.abs(this.resizeStartClient.x - e.clientX) < 2 && Math.abs(this.resizeStartClient.y - e.clientY) < 2)) {
+    if (!(Math.abs(this.size.startClient.x - e.clientX) < 2 && Math.abs(this.size.startClient.y - e.clientY) < 2)) {
       return;
     }
-    this.isInteractive = !this.isInteractive;
-    if (this.isInteractive) {
+    this.interact.active = !this.interact.active;
+    if (this.interact.active) {
       this.startInteractiveTimer();
     } else {
       this.stopInteractiveTimer();
