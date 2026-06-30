@@ -11,14 +11,14 @@ export default function NpcBubbles() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
-      lastBubbleData: {},
+      lastData: {},
 
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
-          const bubble = state.byKey[npcKey];
+          const bubble = state.get(npcKey);
           if (!bubble) continue;
 
-          state.lastBubbleData[npcKey] = {
+          state.lastData[npcKey] = {
             offset: { ...bubble.offset },
             cssVars: bubble.getBubbleCssVars(),
           };
@@ -34,17 +34,17 @@ export default function NpcBubbles() {
         w.view.forceUpdate();
       },
       ensure(npcKey, opts: Partial<AutoDeleteOpts> = {}) {
-        const extant = state.byKey[npcKey];
+        const extant = state.get(npcKey);
         if (extant) return extant;
 
         const npc = w.npc.get(npcKey);
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
         const bubble = (state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w));
 
-        const prev = state.lastBubbleData[npcKey];
+        const prev = state.lastData[npcKey];
         if (prev?.offset) bubble.offset = { ...prev.offset };
         if (prev?.cssVars) bubble.initialCssVars = { ...prev.cssVars };
-        delete state.lastBubbleData[npcKey];
+        delete state.lastData[npcKey];
 
         bubble.autoDeleteOpts = { ...defaultAutoDeleteOpts, ...opts };
         bubble.scheduleAutoDelete();
@@ -65,21 +65,41 @@ export default function NpcBubbles() {
           Object.setPrototypeOf(bubble, Object.getPrototypeOf(tempBubble));
         }
       },
-      onChangeTopDown(topDown: boolean) {
-        for (const bubble of Object.values(state.byKey)) {
-          const npc = w.n[bubble.key];
-          if (!npc) continue;
-          const rootDiv = bubble.html3d?.rootDiv;
-          if (rootDiv) rootDiv.style.opacity = topDown ? "0" : "";
-          npc.drawLabel({ speaking: topDown });
-          npc.labelVisible.value = topDown ? 1 : 0;
+      get(npcKey: string) {
+        return state.byKey[npcKey] ?? null;
+      },
+      onEvent(e) {
+        switch (e.key) {
+          case "disabled":
+            for (const bubble of Object.values(state.byKey)) {
+              bubble.pauseAutoDelete();
+              bubble.pauseInteractiveTimer();
+            }
+            break;
+
+          case "enabled":
+            for (const bubble of Object.values(state.byKey)) {
+              bubble.resumeAutoDelete();
+              bubble.resumeInteractiveTimer();
+            }
+            break;
+
+          case "enter-topdown":
+          case "exit-topdown": {
+            const topDown = e.key === "enter-topdown";
+            for (const bubble of Object.values(state.byKey)) {
+              bubble.setOpacity(topDown ? 0 : 1);
+              const npc = w.n[bubble.key];
+              if (!npc) continue;
+              npc.drawLabel({ speaking: topDown });
+              npc.labelVisible.value = topDown ? 1 : 0;
+            }
+            break;
+          }
         }
       },
-      setShownIfExists(npcKey: string, shown: boolean) {
-        const rootDiv = this.byKey[npcKey]?.html3d?.rootDiv;
-        if (!rootDiv) return false;
-        rootDiv.style.opacity = shown && !w.view.topDown ? "" : "0";
-        return true;
+      setShown(npcKey: string, shown: boolean) {
+        this.get(npcKey)?.setOpacity(shown && !w.view.topDown ? 1 : 0);
       },
     }),
   );
@@ -89,22 +109,7 @@ export default function NpcBubbles() {
 
   useEffect(() => {
     import.meta.env.DEV && state.handleDevHotReload();
-
-    const sub = w.events.subscribe({
-      next(e) {
-        if (e.key === "disabled") {
-          for (const bubble of Object.values(state.byKey)) {
-            bubble.pauseAutoDelete();
-            bubble.pauseInteractiveTimer();
-          }
-        } else if (e.key === "enabled") {
-          for (const bubble of Object.values(state.byKey)) {
-            bubble.resumeAutoDelete();
-            bubble.resumeInteractiveTimer();
-          }
-        }
-      },
-    });
+    const sub = w.events.subscribe({ next: (e) => state.onEvent(e) });
     return () => sub.unsubscribe();
   }, []);
 
@@ -116,14 +121,15 @@ export default function NpcBubbles() {
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
   /** Persist bubble properties over remounts */
-  lastBubbleData: {
+  lastData: {
     [npcKey: string]: { offset?: { x: number; y: number; z: number }; cssVars?: Record<string, string> };
   };
   delete(...npcKeys: string[]): void;
   ensure(npcKey: string, opts?: AutoDeleteOpts): SpeechBubbleApi;
+  get(npcKey: string): null | SpeechBubbleApi;
   handleDevHotReload(): void;
-  onChangeTopDown(topDown: boolean): void;
-  setShownIfExists(npcKey: string, shown: boolean): boolean;
+  onEvent(e: JshCli.Event): void;
+  setShown(npcKey: string, shown: boolean): void;
 };
 
 type SpeechBubbleProps = {

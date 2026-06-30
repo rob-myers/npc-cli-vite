@@ -158,7 +158,7 @@ export class Npc {
   async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>, { facingTarget }: { facingTarget?: boolean } = {}) {
     try {
       await this.fadeOut();
-      this.w.bubble.setShownIfExists(this.key, false);
+      this.w.bubble.setShown(this.key, false);
       const groundTarget = helper.parseGroundPoint(at);
       await this.w.npc.spawn({
         npcKey: this.key,
@@ -174,7 +174,10 @@ export class Npc {
         this.alphaTestScale.value = 0.9;
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
-        if (!this.w.bubble.setShownIfExists(this.key, true)) {
+
+        if (this.w.bubble.get(this.key)) {
+          this.w.bubble.setShown(this.key, true);
+        } else {
           this.labelVisible.value = 1;
         }
       }

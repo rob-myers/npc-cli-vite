@@ -9,8 +9,9 @@ declare namespace JshCli {
       >)
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
-    | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
+    | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | { key: "enter-topdown" | "exit-topdown" }
     | { key: "nav-updated" }
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }

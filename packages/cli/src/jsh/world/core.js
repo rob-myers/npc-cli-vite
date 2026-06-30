@@ -567,10 +567,10 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", fo
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
   if (words) {
-    const bubble = w.bubble.ensure(npc.key);
-    bubble.setWords(words, opts.secs);
+    const b = w.bubble.ensure(npc.key);
+    b.setWords(words, opts.secs);
   } else {
-    w.bubble.delete(npc.key);
+    w.bubble.get(npc.key)?.fadeAndDelete();
   }
 }
 
