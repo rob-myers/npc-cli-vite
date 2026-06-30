@@ -320,10 +320,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
       },
       onCameraChange(spherical: THREE.Spherical) {
-        const nowTopDown = spherical.phi <= 2 * (Math.PI / 18);
-        if (nowTopDown !== state.topDown) {
-          state.topDown = nowTopDown;
-          w.bubble?.onChangeTopDown(nowTopDown);
+        const topDown = spherical.phi <= 2 * (Math.PI / 18);
+        if (topDown !== state.topDown) {
+          state.topDown = topDown;
+          w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
       },
       setCameraMode(mode) {

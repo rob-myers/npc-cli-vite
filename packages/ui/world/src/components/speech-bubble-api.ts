@@ -48,6 +48,13 @@ export class SpeechBubbleApi {
     this.w = w;
   }
 
+  deactivateInteractive() {
+    this.interactiveTimer = null;
+    this.interactiveRemainingMs = null;
+    this.isInteractive = false;
+    this.forceRender();
+  }
+
   dispose() {
     if (this.autoDeleteTimer !== null) {
       clearTimeout(this.autoDeleteTimer);
@@ -65,14 +72,21 @@ export class SpeechBubbleApi {
     this.tracked = null;
   }
 
-  forwardWheelEvents(e: React.WheelEvent) {
-    e.stopPropagation();
-    this.w.view.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
+  fadeAndDelete() {
+    this.autoDeleteTimer = null;
+    this.autoDeleteRemainingMs = null;
+    this.setOpacity(0);
+    setTimeout(() => this.w?.bubble?.delete(this.key), fadeOutMs);
   }
 
   forceRender() {
     this.epochMs = Date.now();
     this.w.bubble.update();
+  }
+
+  forwardWheelEvents(e: React.WheelEvent) {
+    e.stopPropagation();
+    this.w.view.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
   }
 
   getBubbleCssVars(): Record<string, string> {
@@ -95,23 +109,9 @@ export class SpeechBubbleApi {
     this.html3d = html3d;
   }
 
-  /** Fades in when appropriate */
   initializeOpacity() {
-    const rootDiv = this.html3d.rootDiv;
-    if (!rootDiv) return;
-
-    if (this.w.view.topDown) {
-      // keep hidden (opacity already 0 from html3dRef)
-    } else if (this.w.disabled) {
-      // show immediately if paused
-      rootDiv.style.opacity = "";
-    } else {
-      // commence fade in
-      rootDiv.style.transition = "opacity 0.3s";
-      rootDiv.style.opacity = "";
-      setTimeout(() => {
-        rootDiv.style.transition = "";
-      }, 300);
+    if (!this.w.view.topDown) {
+      this.setOpacity(1);
     }
   }
 
@@ -139,29 +139,6 @@ export class SpeechBubbleApi {
     this.isDragging = false;
   }
 
-  resizeStart(clientX: number, clientY: number) {
-    this.isResizing = true;
-    this.resizeStartClient = { x: clientX, y: clientY };
-    const innerDiv = this.html3d?.innerDiv;
-    this.resizeWidthAtStart = innerDiv?.offsetWidth ?? defaultBubbleWidth;
-    this.resizeHeightAtStart = innerDiv?.offsetHeight ?? defaultBubbleHeight;
-    // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
-    const rect = innerDiv?.getBoundingClientRect();
-    this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
-  }
-
-  resizeMove(clientX: number, clientY: number) {
-    if (!this.isResizing) return;
-    const dx = (clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
-    const dy = (clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
-    // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
-    // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
-    const rootDiv = this.html3d?.rootDiv;
-    rootDiv?.style.setProperty("--bubble-width", `${Math.max(minBubbleWidth, this.resizeWidthAtStart + dx * 2)}px`);
-    rootDiv?.style.setProperty("--bubble-height", `${Math.max(minBubbleHeight, this.resizeHeightAtStart + dy)}px`);
-    this.html3d?.onFrame();
-  }
-
   onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     this.onDragStart(e.clientX, e.clientY);
@@ -177,10 +154,6 @@ export class SpeechBubbleApi {
     this.w.rootEl.addEventListener("mouseleave", cleanup);
   };
 
-  onWheel = (e: React.WheelEvent) => {
-    this.forwardWheelEvents(e);
-  };
-
   onResizeMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     this.resizeStart(e.clientX, e.clientY);
@@ -194,24 +167,6 @@ export class SpeechBubbleApi {
     this.w.rootEl.addEventListener("mousemove", onMove);
     this.w.rootEl.addEventListener("mouseup", cleanup);
     this.w.rootEl.addEventListener("mouseleave", cleanup);
-  };
-
-  onTouchStart = (e: React.TouchEvent) => {
-    e.stopPropagation();
-    const t = e.touches[0];
-    if (!t) return;
-    this.onDragStart(t.clientX, t.clientY);
-    const onMove = (ev: TouchEvent) => {
-      const t2 = ev.touches[0];
-      if (t2) this.onDragMove(t2.clientX, t2.clientY);
-    };
-    const onEnd = () => {
-      this.onDragEnd();
-      document.removeEventListener("touchmove", onMove, { capture: true });
-      document.removeEventListener("touchend", onEnd, { capture: true });
-    };
-    document.addEventListener("touchmove", onMove, { capture: true });
-    document.addEventListener("touchend", onEnd, { capture: true });
   };
 
   onResizeTouchStart = (e: React.TouchEvent) => {
@@ -232,26 +187,27 @@ export class SpeechBubbleApi {
     document.addEventListener("touchend", onEnd, { capture: true });
   };
 
-  scheduleAutoDelete(secs?: number) {
-    if (this.autoDeleteTimer !== null) {
-      clearTimeout(this.autoDeleteTimer);
-      this.autoDeleteTimer = null;
-    }
-    if (!this.autoDeleteOpts) {
-      return;
-    }
-    const { baseSeconds, perWordSeconds } = this.autoDeleteOpts;
-    const wordCount = this.words.trim() ? this.words.trim().split(/\s+/).length : 0;
-    this.autoDeleteRemainingMs =
-      typeof secs === "number"
-        ? Math.min(secs * 1000, 2 ** 31 - 1)
-        : Math.min((baseSeconds + perWordSeconds * wordCount) * 1000, maxBubbleExtantMs);
+  onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    if (!t) return;
+    this.onDragStart(t.clientX, t.clientY);
+    const onMove = (ev: TouchEvent) => {
+      const t2 = ev.touches[0];
+      if (t2) this.onDragMove(t2.clientX, t2.clientY);
+    };
+    const onEnd = () => {
+      this.onDragEnd();
+      document.removeEventListener("touchmove", onMove, { capture: true });
+      document.removeEventListener("touchend", onEnd, { capture: true });
+    };
+    document.addEventListener("touchmove", onMove, { capture: true });
+    document.addEventListener("touchend", onEnd, { capture: true });
+  };
 
-    if (!this.w?.disabled) {
-      this.autoDeleteTimerStartedAt = Date.now();
-      this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
-    }
-  }
+  onWheel = (e: React.WheelEvent) => {
+    this.forwardWheelEvents(e);
+  };
 
   pauseAutoDelete() {
     if (this.autoDeleteTimer === null) return;
@@ -265,20 +221,82 @@ export class SpeechBubbleApi {
     }
   }
 
+  pauseInteractiveTimer() {
+    if (this.interactiveTimer === null) return;
+    clearTimeout(this.interactiveTimer);
+    this.interactiveTimer = null;
+    if (this.interactiveRemainingMs !== null) {
+      this.interactiveRemainingMs = Math.max(
+        0,
+        this.interactiveRemainingMs - (Date.now() - this.interactiveTimerStartedAt),
+      );
+    }
+  }
+
+  resizeMove(clientX: number, clientY: number) {
+    if (!this.isResizing) return;
+    const dx = (clientX - this.resizeStartClient.x) / this.resizeHtmlScale;
+    const dy = (clientY - this.resizeStartClient.y) / this.resizeHtmlScale;
+    // Width change is doubled: translateX(-50%) centres the bubble, so the right edge only
+    // moves by half the CSS width change — multiply by 2 to keep the handle under the pointer.
+    const rootDiv = this.html3d?.rootDiv;
+    rootDiv?.style.setProperty("--bubble-width", `${Math.max(minBubbleWidth, this.resizeWidthAtStart + dx * 2)}px`);
+    rootDiv?.style.setProperty("--bubble-height", `${Math.max(minBubbleHeight, this.resizeHeightAtStart + dy)}px`);
+    this.html3d?.onFrame();
+  }
+
+  resizeStart(clientX: number, clientY: number) {
+    this.isResizing = true;
+    this.resizeStartClient = { x: clientX, y: clientY };
+    const innerDiv = this.html3d?.innerDiv;
+    this.resizeWidthAtStart = innerDiv?.offsetWidth ?? defaultBubbleWidth;
+    this.resizeHeightAtStart = innerDiv?.offsetHeight ?? defaultBubbleHeight;
+    // getBoundingClientRect gives screen pixels; offsetWidth gives CSS pixels — ratio is Html3d scale
+    const rect = innerDiv?.getBoundingClientRect();
+    this.resizeHtmlScale = rect && this.resizeWidthAtStart > 0 ? rect.width / this.resizeWidthAtStart : 1;
+  }
+
   resumeAutoDelete() {
     if (this.autoDeleteRemainingMs === null || this.autoDeleteTimer !== null) return;
     this.autoDeleteTimerStartedAt = Date.now();
     this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
   }
 
-  fadeAndDelete() {
-    this.autoDeleteTimer = null;
-    this.autoDeleteRemainingMs = null;
-    if (this.html3d?.rootDiv) {
-      this.html3d.rootDiv.style.transition = "opacity 0.5s";
-      this.html3d.rootDiv.style.opacity = "0";
+  resumeInteractiveTimer() {
+    if (!this.isInteractive || this.interactiveRemainingMs === null || this.interactiveTimer !== null) return;
+    this.interactiveTimerStartedAt = Date.now();
+    this.interactiveTimer = setTimeout(() => this.deactivateInteractive(), this.interactiveRemainingMs);
+  }
+
+  scheduleAutoDelete(secs?: number) {
+    if (this.autoDeleteTimer !== null) {
+      clearTimeout(this.autoDeleteTimer);
+      this.autoDeleteTimer = null;
     }
-    setTimeout(() => this.w?.bubble?.delete(this.key), 500);
+
+    if (!this.autoDeleteOpts) {
+      return;
+    }
+
+    const { baseSeconds, perWordSeconds } = this.autoDeleteOpts;
+    const wordCount = this.words.trim() ? this.words.trim().split(/\s+/).length : 0;
+    this.autoDeleteRemainingMs =
+      typeof secs === "number"
+        ? Math.min(secs * 1000, 2 ** 31 - 1)
+        : Math.min((baseSeconds + perWordSeconds * wordCount) * 1000, maxBubbleExtantMs);
+
+    if (!this.w?.disabled) {
+      this.autoDeleteTimerStartedAt = Date.now();
+      this.autoDeleteTimer = setTimeout(() => this.fadeAndDelete(), this.autoDeleteRemainingMs);
+    }
+  }
+
+  setOpacity(opacity: number) {
+    const rootDiv = this.html3d?.rootDiv;
+    if (rootDiv) {
+      rootDiv.style.transition = `opacity ${fadeOutMs}ms`;
+      rootDiv.style.opacity = `${opacity}`;
+    }
   }
 
   setWords(words: string, secs?: number) {
@@ -300,19 +318,6 @@ export class SpeechBubbleApi {
     }
   }
 
-  toggleInteractive(e: React.MouseEvent) {
-    if (!(Math.abs(this.resizeStartClient.x - e.clientX) < 2 && Math.abs(this.resizeStartClient.y - e.clientY) < 2)) {
-      return;
-    }
-    this.isInteractive = !this.isInteractive;
-    if (this.isInteractive) {
-      this.startInteractiveTimer();
-    } else {
-      this.stopInteractiveTimer();
-    }
-    this.forceRender();
-  }
-
   startInteractiveTimer() {
     if (this.interactiveTimer !== null) {
       clearTimeout(this.interactiveTimer);
@@ -332,29 +337,17 @@ export class SpeechBubbleApi {
     this.interactiveRemainingMs = null;
   }
 
-  deactivateInteractive() {
-    this.interactiveTimer = null;
-    this.interactiveRemainingMs = null;
-    this.isInteractive = false;
-    this.forceRender();
-  }
-
-  pauseInteractiveTimer() {
-    if (this.interactiveTimer === null) return;
-    clearTimeout(this.interactiveTimer);
-    this.interactiveTimer = null;
-    if (this.interactiveRemainingMs !== null) {
-      this.interactiveRemainingMs = Math.max(
-        0,
-        this.interactiveRemainingMs - (Date.now() - this.interactiveTimerStartedAt),
-      );
+  toggleInteractive(e: React.MouseEvent) {
+    if (!(Math.abs(this.resizeStartClient.x - e.clientX) < 2 && Math.abs(this.resizeStartClient.y - e.clientY) < 2)) {
+      return;
     }
-  }
-
-  resumeInteractiveTimer() {
-    if (!this.isInteractive || this.interactiveRemainingMs === null || this.interactiveTimer !== null) return;
-    this.interactiveTimerStartedAt = Date.now();
-    this.interactiveTimer = setTimeout(() => this.deactivateInteractive(), this.interactiveRemainingMs);
+    this.isInteractive = !this.isInteractive;
+    if (this.isInteractive) {
+      this.startInteractiveTimer();
+    } else {
+      this.stopInteractiveTimer();
+    }
+    this.forceRender();
   }
 }
 
@@ -366,6 +359,7 @@ const minBubbleHeight = 256;
 const defaultBubbleWidth = 560; // w-140
 const defaultBubbleHeight = 288; // h-72
 const maxBubbleExtantMs = 10_000; // 10 seconds
+const fadeOutMs = 500;
 
 export type AutoDeleteOpts = { baseSeconds: number; perWordSeconds: number };
 export const defaultAutoDeleteOpts: AutoDeleteOpts = { baseSeconds: 2, perWordSeconds: 1 };

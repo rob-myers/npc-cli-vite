@@ -1,4 +1,4 @@
-import { geomService, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { ExhaustiveError, geomService, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
@@ -181,6 +181,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.tryCloseDoor(e.gdKey);
             break;
           }
+          case "disabled":
+          case "door-locked":
+          case "door-unlocked":
+          case "enabled":
+          case "enter-topdown":
+          case "exit-topdown":
+          case "nav-updated":
+          case "picked":
+            break;
+          default:
+            throw new ExhaustiveError(e);
         }
       },
       onEnterCollider(e, npc) {

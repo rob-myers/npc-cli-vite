@@ -205,6 +205,12 @@ w decor.byKey.test-decor-point
 
 - ✅ parseGroundPoint -> helper.parseGroundPoint
 
+- 🚧 `say` rethink
+  - ✅ events "enter-topdown" and "exit-topdown"
+  - ✅ fade in/out while paused too but no timer
+  - ✅ clean opacity setting code
+  - does not fade by default
+
 - stress test i.e. spawn many
 
 - 🔔 useful commands
