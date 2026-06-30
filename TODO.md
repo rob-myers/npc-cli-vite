@@ -195,6 +195,13 @@ w decor.byKey.test-decor-point
 - ✅ hide shadows during pick so can spawn close
   - shame because it was preventing close moves
 
+- ✅ nav helpers i.e. when block other
+  - `nudge npc:kate src:rob`
+  - `tweak npc:kate`
+  - `park npc:kate`
+
+- parseGroundPoint -> helper.parseGroundPoint
+
 - stress test i.e. spawn many
 
 - 🔔 useful commands

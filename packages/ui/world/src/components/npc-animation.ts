@@ -91,18 +91,18 @@ export class NpcAnimation {
     }
   }
 
-  playIdleClip(duration = 0.1) {
+  playIdleClip(duration = 0.1, idleClip = this.idleClip) {
     // fading all clips prevents e.g. sit from continuing
     for (const clip of Object.values(this.npc.clips)) {
-      if (clip === this.idleClip) continue;
+      if (clip === idleClip) continue;
       this.mixer.existingAction(clip)?.fadeOut(duration);
     }
 
-    if ((this.mixer.existingAction(this.idleClip)?.getEffectiveWeight() ?? 0) > 0) {
+    if ((this.mixer.existingAction(idleClip)?.getEffectiveWeight() ?? 0) > 0) {
       return;
     }
 
-    this.mixer.clipAction(this.idleClip).reset().fadeIn(duration).play();
+    this.mixer.clipAction(idleClip).reset().fadeIn(duration).play();
   }
 
   rotateTowards(vx: number, vz: number, delta: number) {
