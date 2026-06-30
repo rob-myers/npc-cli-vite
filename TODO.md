@@ -209,8 +209,10 @@ w decor.byKey.test-decor-point
   - ✅ events "enter-topdown" and "exit-topdown"
   - ✅ fade in/out while paused too but no timer
   - ✅ clean opacity setting code
-  - 🚧 does not fade by default
-    - can `say npc:rob foo bar secs:3`
+  - ✅ does not fade by default
+    - ✅ `say npc:rob foo bar` does not fade, unless subsequent to timed
+    - ✅ can `say npc:rob foo bar secs:3`
+    - ✅ can `say npc:rob foo bar secs:Infinity`
     - ✅ can `say npc:rob` to fade out
   - separate resize ui from "active button"
 

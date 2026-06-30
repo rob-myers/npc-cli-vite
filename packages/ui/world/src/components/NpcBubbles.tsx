@@ -2,7 +2,7 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { HandPointingIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
-import { type AutoDeleteOpts, defaultAutoDeleteOpts, SpeechBubbleApi } from "./speech-bubble-api";
+import { SpeechBubbleApi } from "./speech-bubble-api";
 import { WorldContext } from "./world-context";
 
 export default function NpcBubbles() {
@@ -34,7 +34,7 @@ export default function NpcBubbles() {
 
         w.view.forceUpdate();
       },
-      ensure(npcKey, deleteOpts?: Partial<AutoDeleteOpts>) {
+      ensure(npcKey, secs?: number) {
         let b = state.get(npcKey);
         if (b) return b;
 
@@ -47,7 +47,7 @@ export default function NpcBubbles() {
         if (prev?.cssVars) b.initialCssVars = { ...prev.cssVars };
         delete state.lastData[npcKey];
 
-        b.deletion.opts = deleteOpts ? { ...defaultAutoDeleteOpts, ...deleteOpts } : null;
+        b.deletion.opts = typeof secs === "number" ? { secs } : null;
         b.scheduleAutoDelete();
 
         if (w.view.topDown) {
@@ -126,7 +126,7 @@ export type State = {
     [npcKey: string]: { offset?: { x: number; y: number; z: number }; cssVars?: Record<string, string> };
   };
   delete(...npcKeys: string[]): void;
-  ensure(npcKey: string, opts?: AutoDeleteOpts): SpeechBubbleApi;
+  ensure(npcKey: string, secs?: number): SpeechBubbleApi;
   get(npcKey: string): null | SpeechBubbleApi;
   handleDevHotReload(): void;
   onEvent(e: JshCli.Event): void;
