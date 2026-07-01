@@ -1379,7 +1379,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           localStorage.removeItem(getFileSpecifierLocalStorageKey(fileSpecifier));
         }
       },
-      async load(file = state.currentFile, { askToRestore = true, ignoreDraft = false } = {}) {
+      async load(file = state.currentFile, { askToRestore = true, ignoreDraft = false, preserveHistory = false } = {}) {
         if (askToRestore && state.isDirty && !confirm("You have unsaved changes. Discard and load?")) {
           return;
         }
@@ -1400,14 +1400,22 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           maxZoomScale,
         );
 
+        if (preserveHistory) {
+          state.undoStack.push({
+            nodes: JSON.stringify(state.nodes),
+            selectedIds: new Set(state.selectedIds),
+            width: state.svgWidth,
+            height: state.svgHeight,
+          });
+        }
+
         state.set({
           nodes: savedFile.nodes,
           selectedIds: new Set(),
           selectionBox: null,
           currentFile: file,
-          undoStack: [],
-          redoStack: [],
-          isDirty: false,
+          ...(preserveHistory ? {} : { undoStack: [], redoStack: [] }),
+          isDirty: preserveHistory,
           svgWidth: savedFile.width,
           svgHeight: savedFile.height,
           zoom,
@@ -1953,7 +1961,7 @@ export type State = {
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
-  load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean }) => Promise<void>;
+  load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean; preserveHistory?: boolean }) => Promise<void>;
   switchLoadDrafts: (next: LoadDraftsMode) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
