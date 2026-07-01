@@ -205,7 +205,7 @@ w decor.byKey.test-decor-point
 
 - ✅ parseGroundPoint -> helper.parseGroundPoint
 
-- 🚧 `say` rethink
+- ✅ `say` rethink
   - ✅ events "enter-topdown" and "exit-topdown"
   - ✅ fade in/out while paused too but no timer
   - ✅ clean opacity setting code
@@ -214,7 +214,7 @@ w decor.byKey.test-decor-point
     - ✅ can `say npc:rob foo bar secs:3`
     - ✅ can `say npc:rob foo bar secs:Infinity`
     - ✅ can `say npc:rob` to fade out
-  - separate resize ui from "active button"
+  - ✅ separate resize ui from "active button"
 
 - stress test i.e. spawn many
 
