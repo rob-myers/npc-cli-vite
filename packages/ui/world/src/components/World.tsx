@@ -120,7 +120,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       d: null as any,
       e: null as any,
       floor: null as any,
-      menu: { suppressGrayscale: false } as State["menu"],
+      menu: {} as State["menu"],
       npc: null as any,
       n: null as any,
       obs: null as any,
