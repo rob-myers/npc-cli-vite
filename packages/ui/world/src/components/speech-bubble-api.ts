@@ -332,10 +332,7 @@ export class SpeechBubbleApi {
     this.interact.remainingMs = null;
   }
 
-  toggleInteractive(e: React.MouseEvent) {
-    if (!(Math.abs(this.size.startClient.x - e.clientX) < 2 && Math.abs(this.size.startClient.y - e.clientY) < 2)) {
-      return;
-    }
+  toggleInteractive() {
     this.interact.active = !this.interact.active;
     if (this.interact.active) {
       this.startInteractiveTimer();

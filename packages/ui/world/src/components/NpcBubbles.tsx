@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { HandPointingIcon } from "@phosphor-icons/react";
+import { ArrowDownRightIcon, HandPointingIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -11,14 +11,14 @@ export default function NpcBubbles() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
-      lastData: {},
+      prevData: {},
 
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
           const b = state.get(npcKey);
           if (!b) continue;
 
-          state.lastData[npcKey] = {
+          state.prevData[npcKey] = {
             offset: { ...b.offset },
             cssVars: b.getBubbleCssVars(),
           };
@@ -42,10 +42,10 @@ export default function NpcBubbles() {
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
         b = state.byKey[npcKey] = new SpeechBubbleApi(npcKey, tracked, w);
 
-        const prev = state.lastData[npcKey];
+        const prev = state.prevData[npcKey];
         if (prev?.offset) b.offset = { ...prev.offset };
         if (prev?.cssVars) b.initialCssVars = { ...prev.cssVars };
-        delete state.lastData[npcKey];
+        delete state.prevData[npcKey];
 
         b.deletion.opts = typeof secs === "number" ? { secs } : null;
         b.scheduleAutoDelete();
@@ -59,15 +59,15 @@ export default function NpcBubbles() {
         w.view.forceUpdate();
         return b;
       },
+      get(npcKey: string) {
+        return state.byKey[npcKey] ?? null;
+      },
       handleDevHotReload() {
         for (const bubble of Object.values(state.byKey)) {
           const tempBubble = new SpeechBubbleApi(bubble.key, bubble.tracked, w);
           Object.assign(bubble, { ...tempBubble }, { ...bubble });
           Object.setPrototypeOf(bubble, Object.getPrototypeOf(tempBubble));
         }
-      },
-      get(npcKey: string) {
-        return state.byKey[npcKey] ?? null;
       },
       onEvent(e) {
         switch (e.key) {
@@ -122,7 +122,7 @@ export default function NpcBubbles() {
 export type State = {
   byKey: { [npcKey: string]: SpeechBubbleApi };
   /** Persist bubble properties over remounts */
-  lastData: {
+  prevData: {
     [npcKey: string]: { offset?: { x: number; y: number; z: number }; cssVars?: Record<string, string> };
   };
   delete(...npcKeys: string[]): void;
@@ -166,32 +166,44 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        <div
-          className={cn("transition-opacity text-[2.5rem] truncate", !b.interact.active && "select-none opacity-50")}
-        >
-          {b.key}
+        <div className="flex justify-between items-end">
+          <div
+            className={cn("transition-opacity text-[2.5rem] truncate", !b.interact.active && "select-none opacity-50")}
+          >
+            {b.key}
+          </div>
+          <div
+            className={cn(
+              "pointer-events-auto border-2 border-white/25 border-b-black! p-3 rounded-t-full bg-black/60 text-white/80 cursor-pointer",
+              !b.interact.active && "border-white/25",
+            )}
+            onClick={b.toggleInteractive}
+          >
+            <HandPointingIcon className="size-10" />
+          </div>
         </div>
 
         <div
           className={cn(
-            "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl leading-[1.2] text-center select-none",
+            "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl rounded-tr-none leading-[1.2] text-center select-none",
             b.interact.active ? "border-3 border-white/25" : "opacity-75 border-6 border-white/10",
           )}
         >
-          <div className="my-auto w-full">{b.words}</div>
+          <div className="my-auto w-full">
+            {/* main content */}
+            {b.words}
+          </div>
         </div>
 
         <div
           className={cn(
-            "pointer-events-auto absolute bottom-0 right-0 flex gap-2",
-            "transition-opacity border-2 border-white p-2 flex items-center justify-center rounded-full bg-black/60 text-white/80 cursor-pointer",
-            !b.interact.active && "opacity-50",
+            "absolute bottom-0 right-0 text-white/80 cursor-nwse-resize",
+            !b.interact.active && "opacity-25",
           )}
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}
-          onPointerUp={b.toggleInteractive.bind(b)}
         >
-          <HandPointingIcon className="size-10" />
+          <ArrowDownRightIcon className="size-16" />
         </div>
       </div>
     </Html3d>
