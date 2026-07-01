@@ -32,7 +32,7 @@ import { GmGraph } from "../service/gm-graph";
 import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
-import { recomputeHullSymbolUsingDrafts } from "../service/recompute-layout";
+import { recomputeAssetsInProduction } from "../service/recompute-layout";
 import { TexArray } from "../service/tex-array";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
@@ -263,7 +263,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       async queryFn() {
         return await fetchParsed(`/sheets.json${getDevCacheBustQueryParam()}`, SheetsSchema);
       },
-    }).data ?? state.sheets; // spritesheets: obstacles...
+    }).data ?? state.sheets; // spritesheets: decor, skins, symbols (obstacles)
 
   useWorldEvents(state);
 
@@ -284,7 +284,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
       if (import.meta.env.PROD) {
-        recomputeHullSymbolUsingDrafts(state.assets);
+        recomputeAssetsInProduction(state.assets);
       }
 
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
@@ -314,7 +314,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     },
     enabled: state.threeReady, // 🔔 fixes horrible issue on refresh
     gcTime: 0,
-  }).dataUpdatedAt; // query unique to component instance
+  }).dataUpdatedAt;
 
   useEffect(() => {
     if (import.meta.env.DEV && import.meta.hot) {

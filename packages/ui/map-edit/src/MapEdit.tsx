@@ -196,12 +196,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       savedFileSpecifiers: getLocalStorageFileSpecs(),
 
       isReadOnly() {
-        return (
-          isTouchDevice() ||
-          ((import.meta.env.PROD || (import.meta.env.DEV && state.devForceReadOnly)) &&
-            state.currentFile.type === "symbol" &&
-            !isHullSymbolImageKey(state.currentFile.key))
-        );
+        return isTouchDevice() || (import.meta.env.DEV && state.devForceReadOnly);
       },
 
       onPanPointerDown(e) {
