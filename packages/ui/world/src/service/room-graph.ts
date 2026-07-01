@@ -32,7 +32,7 @@ export class RoomGraph extends BaseGraph<Graph.RoomGraphNode, Graph.RoomGraphEdg
     return Array.from(windows);
   }
 
-  getAdjacentRooms(...nodes: Graph.RoomGraphNodeConnector[]) {
+  getAdjacentRooms(...nodes: Graph.RoomGraphNode[]) {
     const rooms = new Set<Graph.RoomGraphNodeRoom>();
     nodes.forEach((node) => this.getSuccs(node).forEach((other) => other.type === "room" && rooms.add(other)));
     return Array.from(rooms);
@@ -57,7 +57,7 @@ export class RoomGraph extends BaseGraph<Graph.RoomGraphNode, Graph.RoomGraphEdg
     });
   }
 
-  getOtherRoom(doorOrWindowNode: Graph.RoomGraphNodeConnector, roomId: number) {
+  getOtherRoom(doorOrWindowNode: Graph.RoomGraphNode, roomId: number) {
     return (this.getSuccs(doorOrWindowNode).find((x) => x.type === "room" && x.roomId !== roomId) ??
       null) as Graph.RoomGraphNodeRoom | null;
   }

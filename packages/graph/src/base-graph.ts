@@ -74,9 +74,15 @@ export class BaseGraph<
     this.idToEdge.clear();
   }
 
-  getCoReachableNodes(node: NodeType): NodeType[] {
-    const coReachable = new Set([node]);
-    let [count, frontier] = [0, [node]];
+  /**
+   * Breadth-first search.
+   */
+  getCoReachableNodes<T extends NodeType>(nodeOrNodes: T | string | T[] | string[]): T[] {
+    const initials = Array.isArray(nodeOrNodes)
+      ? nodeOrNodes.map((n) => (typeof n === "string" ? (this.getNode(n) as T) : n))
+      : [typeof nodeOrNodes === "string" ? (this.getNode(nodeOrNodes) as T) : nodeOrNodes];
+    const coReachable = new Set(initials);
+    let [count, frontier] = [0, initials];
     while (coReachable.size > count) {
       count = coReachable.size;
       frontier = flatten(frontier.map((node) => this.getPreds(node)));
@@ -124,14 +130,19 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
     return preds.length === 1 ? preds[0] : null;
   }
 
-  getPreds(node: NodeType) {
-    return Array.from(this.pred.get(node)?.keys() ?? []);
+  getPreds<T extends NodeType>(node: T): T[] {
+    return Array.from(this.pred.get(node)?.keys() ?? []) as T[];
   }
 
-  getReachableNodes(node: NodeType | string): NodeType[] {
-    node = typeof node === "string" ? (this.getNode(node) as NodeType) : node;
-    const reachable = new Set([node]);
-    let [count, frontier] = [0, [node]];
+  /**
+   * Breadth-first search.
+   */
+  getReachableNodes<T extends NodeType>(nodeOrNodes: T | string | T[] | string[]): T[] {
+    const initials = Array.isArray(nodeOrNodes)
+      ? nodeOrNodes.map((n) => (typeof n === "string" ? (this.getNode(n) as T) : n))
+      : [typeof nodeOrNodes === "string" ? (this.getNode(nodeOrNodes) as T) : nodeOrNodes];
+    const reachable = new Set(initials);
+    let [count, frontier] = [0, initials];
     while (reachable.size > count) {
       count = reachable.size;
       frontier = flatten(frontier.map((node) => this.getSuccs(node)));
@@ -153,8 +164,8 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
     return Array.from(reachable.values());
   }
 
-  getSuccs(node: NodeType) {
-    return Array.from(this.succ.get(node)?.keys() ?? []);
+  getSuccs<T extends NodeType>(node: T): T[] {
+    return Array.from(this.succ.get(node)?.keys() ?? []) as T[];
   }
 
   hasNode(node: NodeType) {
@@ -268,16 +279,22 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
     this.idToEdge.clear();
   }
 
-  stratify(): NodeType[][] {
+  /**
+   * @param subGraphNodes e.g. given graph with edges
+   * symbols -> sub-symbols and a subset of changed symbols,
+   * the co-reachable nodes would be all effected nodes,
+   * and `stratify(coReachableNodes)` would stratify them
+   */
+  stratify(subGraphNodes?: Set<NodeType>): NodeType[][] {
     let frontier: NodeType[] = [];
-    let unseen = this.nodesArray.slice();
+    let unseen = subGraphNodes ? Array.from(subGraphNodes) : this.nodesArray.slice();
     const seen = new Set<NodeType>();
     const output: NodeType[][] = [];
 
     while (
       ((frontier = []),
       (unseen = unseen.filter((x) => {
-        if (this.getSuccs(x).every((y) => seen.has(y))) {
+        if (this.getSuccs(x).every((y) => seen.has(y) || !subGraphNodes?.has(y))) {
           frontier.push(x);
         } else {
           return true;

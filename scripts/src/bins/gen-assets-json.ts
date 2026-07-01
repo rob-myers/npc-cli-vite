@@ -14,7 +14,7 @@
 import fs, { writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { SymbolGraph, type SymbolGraphNode } from "@npc-cli/graph";
+import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
@@ -22,7 +22,7 @@ import { defaultThemeKey, defaultWorldTheme } from "@npc-cli/ui__world/const";
 import {
   createLayout,
   createMapDefFromSavedFile,
-  flattenSymbol,
+  flattenSymbols,
   parseSymbolFromSavedFile,
 } from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
@@ -129,22 +129,6 @@ function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType)
       assets.map[mapDef.key] = mapDef;
     }
   }
-}
-
-function flattenSymbols(symbolsStratified: SymbolGraphNode[][], assets: AssetsType) {
-  // const flattened: AssetsType["flattened"] = {};
-  const flattened: AssetsType["flattened"] = assets.flattened ?? {};
-  for (const level of symbolsStratified) {
-    for (const { id: symbolKey } of level) {
-      const symbol = assets.symbol[symbolKey];
-      if (symbol) {
-        flattenSymbol(symbol, flattened);
-      } else {
-        warn(`Symbol ${symbolKey} not found in assets.symbol`);
-      }
-    }
-  }
-  assets.flattened = flattened;
 }
 
 function createLayouts(assets: AssetsType) {

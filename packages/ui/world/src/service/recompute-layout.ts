@@ -1,19 +1,18 @@
 /**
- * Browser-side layout recomputation.
+ * Browser-side layout recomputation in production.
  *
- * In PROD, users can edit hull symbols via MapEdit, saving drafts to localStorage.
- * We cannot re-run the node script `gen-assets-json`, but the core pipeline
- * (parseMapEditSymbol -> stratify -> flattenSymbol -> createLayout) is pure JS.
+ * In production users can edit symbols via MapEdit, with drafts auto-saving to localStorage.
+ * We cannot re-run the node script `gen-assets-json` in production (no backend).
+ * However, the core pipeline is pure JS:
+ * > parseMapEditSymbol -> stratify -> flattenSymbol -> createLayout
  *
- * This module overlays localStorage drafts onto fetched assets.json,
- * re-flattening and re-laying-out all hull symbols.
+ * This module overlays every localStorage drafts onto the previously fetched "assets.json",
+ * re-flattening and re-laying-out each recursively dependent symbol.
  */
-import {
-  isHullSymbolImageKey,
-  type StarShipGeomorphKey,
-  type StarshipSymbolImageKey,
-} from "@npc-cli/media/starship-symbol";
-import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
+
+import { SymbolGraph } from "@npc-cli/graph";
+import { isHullSymbolImageKey, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
+import { MapEditSavedFileSchema, type MapEditSavedSymbol } from "@npc-cli/ui__map-edit/editor.schema";
 import {
   getFileSpecifierLocalStorageKey,
   getLocalStorageDrafts,
@@ -22,38 +21,50 @@ import {
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { entries, info, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
 import type { AssetsType } from "../assets.schema";
-import { createLayout, flattenSymbol, parseSymbolFromSavedFile } from "./geomorph";
+import { createLayout, flattenSymbol, flattenSymbols, parseSymbolFromSavedFile } from "./geomorph";
 
 /**
- * - Overlay hull symbols localStorage symbol drafts onto `baseAssets`.
- * - 🔔 This avoids flattening and re-stratifying all symbols.
+ * - Browser side version of dev-server `gen-assets-json`:
+ *   > updateChangedSymbolsAndMaps -> stratifySymbols -> flattenSymbols -> createLayout
+ * - Apply all drafts stored in localStorage one-per-symbol
+ * - 🚧 Future work: grouped-drafts for multiple saves.
  */
-export function recomputeHullSymbolUsingDrafts(
-  assets: AssetsType,
-  /** By default use `localStorage` which is not available in webworker */
-  mapEditDrafts = "localStorage" in self ? getLocalStorageDrafts() : [],
-): boolean {
-  const geomorphKeys: StarShipGeomorphKey[] = [];
-  for (const draft of mapEditDrafts) {
-    if (draft.type !== "symbol" || !isHullSymbolImageKey(draft.key)) {
-      continue;
-    }
+export function recomputeAssetsInProduction(assets: AssetsType): void {
+  const mapEditSymbolDrafts = ("localStorage" in self ? getLocalStorageDrafts() : []).filter(
+    (x): x is MapEditSavedSymbol => x.type === "symbol",
+  );
+
+  if (mapEditSymbolDrafts.length === 0) {
+    return;
+  }
+
+  info("[recomputeAssetsInProduction] overlaying localStorage symbol drafts");
+
+  for (const draft of mapEditSymbolDrafts) {
     const symbol = parseSymbolFromSavedFile(draft);
     assets.symbol[symbol.key] = symbol;
-    geomorphKeys.push(symbol.key as StarShipGeomorphKey);
   }
 
-  if (geomorphKeys.length === 0) return false;
-  info("[recompute-hull-symbols] overlaying localStorage hull-symbol drafts");
+  const symbolGraph = SymbolGraph.from(assets.symbol);
+  const draftSymbolKeys = mapEditSymbolDrafts.map((draft) => draft.key);
+  // edges "symbol -> sub-symbol" so need co-reachable
+  const coReachableNodes = symbolGraph.getCoReachableNodes(draftSymbolKeys);
+  const effectedSymbolKeys = coReachableNodes.map((node) => node.id);
+  const subStratification = symbolGraph.stratify(new Set(coReachableNodes));
 
-  // hull symbols are leaves in stratification, so only need to re-flatten them
-  for (const gmKey of geomorphKeys) {
-    const symbol = assets.symbol[gmKey] as Geomorph.Symbol;
-    const flat = flattenSymbol(symbol, assets.flattened);
+  // console.log({
+  //   draftSymbolKeys,
+  //   effectedSymbolKeys,
+  //   coReachableNodes: coReachableNodes.map((n) => n.id),
+  //   subStratification: subStratification.map((level) => level.map((n) => n.id)),
+  // });
+
+  // follow approach in gen-assets-json
+  flattenSymbols(subStratification, assets);
+  for (const gmKey of effectedSymbolKeys.filter(isHullSymbolImageKey)) {
+    const flat = assets.flattened[gmKey] as Geomorph.FlatSymbol;
     assets.layout[gmKey] = createLayout(gmKey, flat, assets);
   }
-
-  return true;
 }
 
 /**

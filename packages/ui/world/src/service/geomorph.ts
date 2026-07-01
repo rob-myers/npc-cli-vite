@@ -6,6 +6,7 @@ import {
   type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
 import "@npc-cli/ui__world/geomorph.d.ts";
+import type { SymbolGraphNode } from "@npc-cli/graph";
 import {
   type DecorImageMapNode,
   isDecorImageMapNode,
@@ -511,6 +512,21 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     walls: walls.concat(flats.flatMap((x) => x.walls)),
     windows: windows.concat(flats.flatMap((x) => x.windows)),
   });
+}
+
+export function flattenSymbols(symbolsStratified: SymbolGraphNode[][], assets: AssetsType) {
+  const flattened: AssetsType["flattened"] = assets.flattened ?? {};
+  for (const level of symbolsStratified) {
+    for (const { id: symbolKey } of level) {
+      const symbol = assets.symbol[symbolKey];
+      if (symbol) {
+        flattenSymbol(symbol, flattened);
+      } else {
+        warn(`Symbol ${symbolKey} not found in assets.symbol`);
+      }
+    }
+  }
+  assets.flattened = flattened;
 }
 
 function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: number, decorId: number): T {

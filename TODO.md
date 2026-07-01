@@ -216,8 +216,6 @@ w decor.byKey.test-decor-point
     - ✅ can `say npc:rob` to fade out
   - ✅ separate resize ui from "active button"
 
-- stress test i.e. spawn many
-
 - 🔔 useful commands
   - `pick | move npc:rob`
     - but moves to doors and non-doable obstacles too
@@ -232,6 +230,16 @@ w decor.byKey.test-decor-point
 
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
+
+- 🚧 can edit any symbol in prod but drafts must be manually restored
+  - ✅ can edit any symbol in prod
+  - ✅ verify recursive edit in local build
+  - ✅ MapEdit readonly only for touch devices or when set in dev
+  - 🚧 drafts not auto-restored
+  - can restore-all-drafts and reset-all from MapEdit
+  - multiple drafts (needs grouping) is future work
+
+- stress test i.e. spawn many
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
