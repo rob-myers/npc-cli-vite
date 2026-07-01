@@ -36,7 +36,6 @@ export function WorldMenu() {
       dragged: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
-      suppressGrayscale: true,
       menuOpen: false,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
@@ -147,7 +146,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="absolute top-0 left-0.25 z-10 touch-none select-none"
+        className="absolute top-0 left-px z-10 touch-none select-none"
         style={{ y }}
         drag="y"
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
@@ -219,7 +218,7 @@ export function WorldMenu() {
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
                       "w-16 accent-white cursor-pointer",
-                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[14px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
                     )}
                   />
                 </div>
@@ -246,7 +245,7 @@ export function WorldMenu() {
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
                       "w-16 accent-white cursor-pointer",
-                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[14px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
                     )}
                   />
                 </div>
@@ -288,7 +287,7 @@ export function WorldMenu() {
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
                         "w-16 accent-white cursor-pointer",
-                        "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[14px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                        "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
                       )}
                     />
                   </div>
@@ -409,7 +408,7 @@ export function WorldMenu() {
                         } catch (err) {
                           console.error("Failed to update obstacles:", err);
                         } finally {
-                          delete w.pending["obstacles"];
+                          delete w.pending.obstacles;
                           w.update();
                         }
                       }}
@@ -530,7 +529,6 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
-  suppressGrayscale: boolean;
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
