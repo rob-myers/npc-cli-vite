@@ -284,7 +284,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
       if (import.meta.env.PROD) {
-        recomputeAssetsInProduction(state.assets);
+        await recomputeAssetsInProduction(state.assets);
       }
 
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;

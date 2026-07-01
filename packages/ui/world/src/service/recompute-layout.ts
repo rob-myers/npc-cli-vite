@@ -19,7 +19,7 @@ import {
   getLocalStorageFileSpecs,
 } from "@npc-cli/ui__map-edit/map-node-api";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { entries, info, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
+import { entries, info, pause, tryLocalStorageGet, warn } from "@npc-cli/util/legacy/generic";
 import type { AssetsType } from "../assets.schema";
 import { createLayout, flattenSymbol, flattenSymbols, parseSymbolFromSavedFile } from "./geomorph";
 
@@ -29,7 +29,7 @@ import { createLayout, flattenSymbol, flattenSymbols, parseSymbolFromSavedFile }
  * - Apply all drafts stored in localStorage one-per-symbol
  * - 🚧 Future work: grouped-drafts for multiple saves.
  */
-export function recomputeAssetsInProduction(assets: AssetsType): void {
+export async function recomputeAssetsInProduction(assets: AssetsType): Promise<void> {
   const mapEditSymbolDrafts = ("localStorage" in self ? getLocalStorageDrafts() : []).filter(
     (x): x is MapEditSavedSymbol => x.type === "symbol",
   );
@@ -43,7 +43,10 @@ export function recomputeAssetsInProduction(assets: AssetsType): void {
   for (const draft of mapEditSymbolDrafts) {
     const symbol = parseSymbolFromSavedFile(draft);
     assets.symbol[symbol.key] = symbol;
+    await pause(0);
   }
+
+  await pause(30);
 
   const symbolGraph = SymbolGraph.from(assets.symbol);
   const draftSymbolKeys = mapEditSymbolDrafts.map((draft) => draft.key);
@@ -59,11 +62,14 @@ export function recomputeAssetsInProduction(assets: AssetsType): void {
   //   subStratification: subStratification.map((level) => level.map((n) => n.id)),
   // });
 
+  await pause(30);
+
   // follow approach in gen-assets-json
   flattenSymbols(subStratification, assets);
   for (const gmKey of effectedSymbolKeys.filter(isHullSymbolImageKey)) {
     const flat = assets.flattened[gmKey] as Geomorph.FlatSymbol;
     assets.layout[gmKey] = createLayout(gmKey, flat, assets);
+    await pause(0);
   }
 }
 
