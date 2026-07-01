@@ -93,6 +93,7 @@ import {
 import { type ParsedPath, PathPickerModal } from "./PathPickerModal";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
+import { getLoadDrafts, type LoadDraftsMode, setLoadDrafts } from "./use-drafts";
 
 export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme, uiStoreApi } = useContext(UiContext);
@@ -191,6 +192,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         key: defaultSymbolKey,
       },
       isDirty: false,
+      loadDrafts: getLoadDrafts(`map-edit-load-drafts:${props.meta.id}`),
+      toastTs: {} as Record<string, number>,
 
       // will extend with symbol/manifest.json
       savedFileSpecifiers: getLocalStorageFileSpecs(),
@@ -1345,8 +1348,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           //   .precision(6),
         };
 
-        // save to local storage: (prod) only way to "save", (dev) provides "draft"
-        tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
+        if (state.loadDrafts === "use-drafts") {
+          // save to local storage: (prod) only way to "save", (dev) provides "draft"
+          tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
+        }
 
         // remember current file for this MapEdit instance
         tryLocalStorageSet(
@@ -1355,17 +1360,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         );
 
         const alreadyKnown = state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier));
+        const toastKey = state.loadDrafts === "use-drafts" ? "draft saved" : "saved to file";
         state.set({
           currentFile: fileSpecifier,
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
+          toastTs: { ...state.toastTs, [toastKey]: Date.now() },
         });
 
-        // notify World to recompute layouts from localStorage drafts
-        window.dispatchEvent(new CustomEvent(mapEditSymbolSavedEvent, { detail: { key: fileSpecifier.key } }));
+        if (state.loadDrafts === "use-drafts") {
+          // notify World(s) to recompute layouts from localStorage drafts
+          window.dispatchEvent(new CustomEvent(mapEditSymbolSavedEvent, { detail: { key: fileSpecifier.key } }));
+        }
 
-        if (import.meta.env.DEV && saveToDiskInDev) {
+        if (import.meta.env.DEV && saveToDiskInDev && state.loadDrafts === "use-originals") {
           void saveMapEditFile(savedFile);
+          // filesystem is canonical: remove stale draft
+          localStorage.removeItem(getFileSpecifierLocalStorageKey(fileSpecifier));
         }
       },
       async load(file = state.currentFile, { askToRestore = true, ignoreDraft = false } = {}) {
@@ -1373,6 +1384,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
+        // 🚧
         // localStorage (draft) takes precedence
         const localStorageResult = ignoreDraft
           ? { data: null }
@@ -1404,6 +1416,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             y: (zoom * (baseSvgSize - savedFile.height)) / 2,
           },
         });
+      },
+      async switchLoadDrafts(next: LoadDraftsMode) {
+        if (next === "use-originals") {
+          // Preserve current edit as a draft before losing localStorage write access
+          tryLocalStorageSet(
+            getFileSpecifierLocalStorageKey(state.currentFile),
+            safeJsonCompact({
+              ...state.currentFile,
+              width: state.svgWidth,
+              height: state.svgHeight,
+              nodes: state.nodes,
+            }),
+          );
+        }
+        setLoadDrafts(`map-edit-load-drafts:${props.meta.id}`, next);
+        state.set({ loadDrafts: next });
+        await state.load(undefined, { askToRestore: false, ignoreDraft: next === "use-originals" });
       },
       async deleteFile(file) {
         if (state.isReadOnly()) return;
@@ -1449,7 +1478,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
   useEffect(() => {
     if (state.nodes === emptyNodes) {
-      state.load(undefined, { askToRestore: false });
+      state.load(undefined, { askToRestore: false, ignoreDraft: state.loadDrafts === "use-originals" });
       isTouchDevice() && state.set({ isAsideCollapsed: true });
     }
   }, []);
@@ -1866,6 +1895,8 @@ export type State = {
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
   isDirty: boolean;
+  loadDrafts: LoadDraftsMode;
+  toastTs: Record<string, number>;
   /** All saved file specifiers including drafts */
   savedFileSpecifiers: MapEditFileSpecifier[];
 
@@ -1923,6 +1954,7 @@ export type State = {
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
   load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean }) => Promise<void>;
+  switchLoadDrafts: (next: LoadDraftsMode) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };

@@ -235,8 +235,12 @@ w decor.byKey.test-decor-point
   - ✅ can edit any symbol in prod
   - ✅ verify recursive edit in local build
   - ✅ MapEdit readonly only for touch devices or when set in dev
-  - 🚧 drafts not auto-restored
-  - can restore-all-drafts and reset-all from MapEdit
+  - ✅ drafts not auto-restored
+  - ✅ can use-drafts use-originals reset all from MapEdit
+  - ✅ can use-drafts use-originals from WorldMenu
+  - ✅ in development in "use-drafts" in MapEdit, saving should not save to filesystem
+    - should also clearly indicate this
+  - 🚧 improve MapEdit toasts
   - multiple drafts (needs grouping) is future work
 
 - stress test i.e. spawn many

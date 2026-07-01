@@ -5,7 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./map-node-api": "./src/map-node-api.ts",
-    "./editor.schema": "./src/editor.schema.ts"
+    "./editor.schema": "./src/editor.schema.ts",
+    "./use-drafts": "./src/use-drafts.ts"
   },
   "scripts": {},
   "dependencies": {

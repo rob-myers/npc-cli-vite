@@ -1,5 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
+import { setLoadDrafts } from "@npc-cli/ui__map-edit/use-drafts";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -311,6 +312,18 @@ export function WorldMenu() {
                     if (!key) return;
                     w.setCanvasFade(true);
                     uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
+                  }}
+                />
+
+                <MenuSelect
+                  label="load drafts"
+                  value={w.loadDrafts}
+                  items={["use-originals", "use-drafts"]}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    const next = v as "use-originals" | "use-drafts";
+                    setLoadDrafts(`world-load-drafts:${w.id}`, next);
+                    w.set({ loadDrafts: next });
                   }}
                 />
 
