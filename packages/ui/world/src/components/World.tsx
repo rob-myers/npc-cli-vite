@@ -1,5 +1,6 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
+import { getLoadDrafts, type LoadDraftsMode } from "@npc-cli/ui__map-edit/use-drafts";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
@@ -74,6 +75,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmsHash: 0,
       lastHmr: 0,
       lastQuery: 0,
+      loadDrafts: getLoadDrafts(`world-load-drafts:${meta.id}`),
 
       // hmr recreates but not named canvas
       texFloor: new TexArray({
@@ -174,7 +176,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
-        if (!import.meta.env.DEV || !hot) return;
+        if (!import.meta.env.DEV || !hot) return () => {};
 
         // biome-ignore format: succinct
         const listeners: [target: "hot" | "window", event: string, handler: (...args: any[]) => void][] = [
@@ -223,9 +225,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }
         };
       },
-      setupProdHullAssetsSync() {
+      setupDraftAssetsSync() {
         const cb = () => {
-          debug("[World] hull symbol edited: recomputing");
+          debug("[World] MapEdit drafts changed: recomputing");
           queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
         };
         window.addEventListener(mapEditSymbolSavedEvent, cb);
@@ -269,7 +271,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
-    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, state.lastHmr],
+    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, state.lastHmr, state.loadDrafts],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_WORLD__) {
         import.meta.hot.data.__JUST_HMR_WORLD__ = false;
@@ -283,7 +285,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.setNextPending({ assets: true });
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
-      if (import.meta.env.PROD) {
+      if (state.loadDrafts === "use-drafts") {
         await recomputeAssetsInProduction(state.assets);
       }
 
@@ -316,18 +318,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     gcTime: 0,
   }).dataUpdatedAt;
 
-  useEffect(() => {
-    if (import.meta.env.DEV && import.meta.hot) {
-      return state.setupDevAssetsSync();
-    }
-    if (import.meta.env.PROD) {
-      return state.setupProdHullAssetsSync();
-    }
-  }, []); // sync assets in dev/prod
+  // sync dev assets
+  useEffect(() => (import.meta.env.DEV && import.meta.hot ? state.setupDevAssetsSync() : undefined), []);
 
-  useBeforeUnloadOrVisibilityChange(() => {
-    state.menu?.persistY();
-  });
+  // sync drafts in dev/prod
+  useEffect(() => (state.loadDrafts === "use-drafts" ? state.setupDraftAssetsSync() : undefined), [state.loadDrafts]);
+
+  useBeforeUnloadOrVisibilityChange(() => state.menu?.persistY());
 
   return (
     <WorldContext.Provider value={state}>
@@ -397,6 +394,7 @@ export type State = {
   lastHmr: number;
   /** Last time the world query succeeded */
   lastQuery: number;
+  loadDrafts: LoadDraftsMode;
   /**
    * Ideally `assets` -> `nav` -> `decor` -> `null`.
    * However, nav/decor could be triggered by HMR.
@@ -437,13 +435,13 @@ export type State = {
   setCanvasFade(on: boolean): void;
   setDisabled(nextDisabled?: boolean): void;
   setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
-  setupDevAssetsSync(): void;
+  setupDevAssetsSync(): () => void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
   onTick(): void;
-  setupProdHullAssetsSync(): void;
+  setupDraftAssetsSync(): () => void;
   stopTick(): void;
 };
 

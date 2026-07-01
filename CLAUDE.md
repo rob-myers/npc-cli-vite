@@ -40,6 +40,22 @@ Navmesh uses `navcat` (recast/detour JS port). Agents live in a `crowd`. To tele
 
 Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DELETE /api/map-edit/file/...` in dev, then invalidates the manifests query). Symbols are not deletable from the UI — only maps have a trash button in `MapFileSelect`.
 
+## `loadDrafts` — use-originals / use-drafts toggle
+
+`LoadDraftsMode = "use-originals" | "use-drafts"` controls where MapEdit loads from and saves to. The value is **per-instance**, persisted to localStorage keyed by instance ID (e.g. `map-edit-load-drafts:<id>`). Shared helpers live in `packages/ui/map-edit/src/use-drafts.ts` and are imported by both MapEdit and World.
+
+**MapEdit behaviour:**
+- `"use-originals"` (DEV default): loads from filesystem/manifest; saves write to filesystem (DEV only via `saveMapEditFile`) and delete any stale localStorage draft for that file.
+- `"use-drafts"` (PROD default): loads from localStorage draft; saves write to localStorage only — `saveMapEditFile` is **not** called even in DEV.
+- On mount: `state.load(undefined, { ignoreDraft: state.loadDrafts === "use-originals" })`.
+- `state.switchLoadDrafts(next)`: when switching to `"use-originals"` it first snapshots the current edit state as a draft (so the work is not lost), then reloads from the original.
+- A motion toast appears after every save — `"draft saved"` or `"saved to file"` — driven by `state.toastTs: Record<string, number>` (timestamp per key) and the `useToastTs` hook in `MainMenu.tsx`.
+
+**World behaviour:**
+- `loadDrafts` lives on World component state (`World.tsx`), not WorldView, because the React Query `queryKey` is constructed there. `state.set({ loadDrafts })` triggers a queryKey change and automatic refetch.
+- `"use-drafts"` enables `recomputeAssetsInProduction` (overlays localStorage symbol drafts onto `assets`) in both DEV and PROD. Previously this was PROD-only.
+- The select is in `WorldMenu.tsx`; the storage key is `world-load-drafts:<id>`.
+
 ## TSL shader notes
 
 - **`positionLocal` range**: returns the raw geometry attribute, which for `BoxGeometry(1,1,1)` is `[-0.5, 0.5]` even after `geo.translate(0.5, 0.5, 0.5)`. Don't use `positionLocal` with `step()` assuming `[0,1]` — use `uv()` instead for per-face detection on box geometry.

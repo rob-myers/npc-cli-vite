@@ -1,4 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
+import { Select } from "@base-ui/react/select";
 import type { UseStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
@@ -6,17 +7,19 @@ import {
   CopyIcon,
   FloppyDiskIcon,
   ListIcon,
-  LockKeyIcon,
   RulerIcon,
   SelectionAllIcon,
   TrashIcon,
-  WarningIcon,
 } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { NodeIcon } from "./InspectorNode";
 import type { State } from "./MapEdit";
 import { clearLocalStorage, getRecursiveNodes, mapNodeTypes } from "./map-node-api";
 
 export function MainMenu({ state }: { state: UseStateRef<State> }) {
+  const toastKeys = useToastTs(state.toastTs);
+
   return (
     <div className="flex items-start gap-2">
       <Menu.Root>
@@ -154,49 +157,116 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                 Select All
               </Menu.Item>
 
-              {!state.isReadOnly() && (
-                <>
-                  <div className="my-1 border-t border-slate-700" />
+              <div className="my-1 border-t border-slate-700" />
 
-                  <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-on-background text-xs hover:bg-slate-700 cursor-pointer"
-                    closeOnClick
-                    onClick={() => {
-                      if (
-                        confirm(
-                          "Clear all localStorage maps and symbols?\n\nThis will delete all saved files from localStorage (not from filesystem). This action cannot be undone.",
-                        )
-                      ) {
-                        clearLocalStorage();
-                        state.updateSavedFileSpecifiers([]);
-                      }
-                    }}
-                  >
-                    <WarningIcon className="size-4 text-red-400" />
-                    Clear localStorage
-                  </Menu.Item>
-                </>
-              )}
+              <div className="px-1 border-2 border-l-8 border-slate-700 text-[0.7rem]">
+                {!state.isReadOnly() && (
+                  <>
+                    <Select.Root
+                      value={state.loadDrafts}
+                      onValueChange={(v) => {
+                        if (v) void state.switchLoadDrafts(v as "use-originals" | "use-drafts");
+                      }}
+                    >
+                      <Select.Trigger className="flex items-center gap-1 px-2 py-1 text-slate-300 cursor-pointer hover:bg-slate-700 w-full ">
+                        <Select.Value />
+                      </Select.Trigger>
+                      <Select.Portal>
+                        <Select.Positioner
+                          className="z-50"
+                          sideOffset={4}
+                          side="right"
+                          align="start"
+                          alignItemWithTrigger={false}
+                        >
+                          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1">
+                            <Select.List>
+                              {(["use-originals", "use-drafts"] as const).map((v) => (
+                                <Select.Item
+                                  key={v}
+                                  value={v}
+                                  className="px-2 py-1 text-slate-300 cursor-pointer data-highlighted:bg-slate-700 data-selected:text-green-400"
+                                >
+                                  <Select.ItemText>{v}</Select.ItemText>
+                                </Select.Item>
+                              ))}
+                            </Select.List>
+                          </Select.Popup>
+                        </Select.Positioner>
+                      </Select.Portal>
+                    </Select.Root>
 
-              {import.meta.env.DEV && (
-                <>
-                  <div className="my-1 border-t border-slate-700" />
+                    <Menu.Item
+                      className="flex items-center gap-2 px-2 text-on-background text-slate-300 hover:bg-slate-700 cursor-pointer"
+                      closeOnClick
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Clear all localStorage maps and symbols?\n\nThis will delete all saved files from localStorage (not from filesystem). This action cannot be undone.",
+                          )
+                        ) {
+                          clearLocalStorage();
+                          state.updateSavedFileSpecifiers([]);
+                        }
+                      }}
+                    >
+                      clear drafts
+                    </Menu.Item>
+                  </>
+                )}
+
+                {import.meta.env.DEV && (
                   <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="flex items-center gap-2 px-2 py-1 text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick
                     onClick={() => {
                       state.set({ devForceReadOnly: !state.devForceReadOnly });
                     }}
                   >
-                    <LockKeyIcon className="size-4" />
-                    {state.devForceReadOnly ? "Disable Read Only" : "Enable Read Only"}
+                    {state.devForceReadOnly ? "disable read only" : "set read only"}
                   </Menu.Item>
-                </>
-              )}
+                )}
+              </div>
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
+
+      <AnimatePresence>
+        {toastKeys.map((key) => (
+          <motion.div
+            key={key}
+            className="bg-gray-800/90 text-slate-300 text-xs px-2 py-1 pointer-events-none"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {key}
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
+}
+
+function useToastTs(tsRecord: Record<string, number>, delayMs = 2000): string[] {
+  const [visible, setVisible] = useState<string[]>([]);
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    for (const [key, ts] of Object.entries(tsRecord)) {
+      if (!ts) continue;
+      setVisible((prev) => (prev.includes(key) ? prev : [...prev, key]));
+      clearTimeout(timers.current[key]);
+      timers.current[key] = setTimeout(() => {
+        setVisible((prev) => prev.filter((k) => k !== key));
+        delete timers.current[key];
+      }, delayMs);
+    }
+  }, [Object.values(tsRecord).join(",")]);
+
+  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+
+  return visible;
 }
