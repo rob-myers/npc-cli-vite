@@ -259,12 +259,15 @@ w decor.byKey.test-decor-point
 - ✅ BUG MapEdit FileMenu on switch to map/symbol should not close
 
 - 🚧 stress test i.e. spawnMany
+  - ✅ refactor `spawn` into sub `rawSpawn`
+  - 🚧 mount all at once
 
 - examples of providing points without using `pick`
   - how to extract meta? e.g. can use decor grid?
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
+  - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
 
 - BUG npc arms through locked door
 - go thru skins

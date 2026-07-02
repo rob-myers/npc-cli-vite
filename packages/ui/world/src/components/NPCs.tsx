@@ -209,8 +209,11 @@ export default function NPCs() {
         if (meta.obstacle === true && Array.isArray(meta.decorIds)) {
           const gm = w.gms[meta.gmId];
           const ds = (meta.decorIds as number[]).map((decorId) => gm.decor[decorId] as Geomorph.DecorPoint);
+          // 🔔 clarify precedence
           const found = ds.find((d) => !w.e.doableToNpc[d.key] || w.e.doableToNpc[d.key] === npcKey) ?? null;
-          if (!found) throw Error("not doable");
+          if (!found) {
+            throw Error("not doable");
+          }
           return { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
         }
 
@@ -226,9 +229,8 @@ export default function NPCs() {
         const npc = state.npc[npcKey];
         if (npc === undefined) {
           throw Error(`npc "${npcKey}" does not exist`);
-        } else {
-          return npc;
         }
+        return npc;
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = groundPointToTuple(helper.parseGroundPoint(targetPos));
@@ -394,6 +396,50 @@ export default function NPCs() {
         // } else if (type === "navigable") {
         //   throw Error("not placable");
       },
+      rawSpawn({ npcKey, groundAt, as, closePolyResult = state.getClosestPoly(groundAt), doResult }) {
+        const npc =
+          w.n[npcKey] ??
+          (() => {
+            const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
+            const graph = buildGraph(clone);
+            const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
+
+            const labelQuad = createSkinnedLabelQuad(0, 0);
+            addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
+            const geometry = mergeWithGroupAttr(clonedSkinnedMesh.geometry, labelQuad);
+
+            return state.createNpc({
+              key: npcKey,
+              pickId: state.nextPickId++,
+              position: groundPointToVector3(groundAt),
+              skinnedMesh: clonedSkinnedMesh,
+              graph,
+              geometry,
+              skinIndex: state.getSkinIndex(as ?? "medic-0"),
+            });
+          })();
+
+        // const prevIdleClip = npc.anim.idleClip;
+
+        if (doResult !== null) {
+          const overrideGroundPoint = doResult.meta.groundPoint;
+          state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
+          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(doResult.meta)];
+          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
+          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
+          w.e.setNpcDo(npcKey, doResult.meta.decorKey);
+        } else {
+          const overrideGroundPoint =
+            groundAt.meta?.npcKey === npcKey ? helper.parseGroundPoint(npc.position) : undefined;
+          state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
+          npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
+          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
+          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
+          w.e.setNpcDo(npcKey, null);
+        }
+
+        return npc;
+      },
       async spawn({ npcKey, at, as, angle, facing }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`opts.npcKey must match: ${npcKeyPattern}`);
@@ -423,46 +469,9 @@ export default function NPCs() {
           angle = Number(angle) || 0;
         }
 
-        let npc = state.npc[npcKey];
+        const prevIdleClip = w.n[npcKey]?.anim.idleClip;
 
-        if (!npc) {
-          // 1st spawn
-          const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
-          const graph = buildGraph(clone);
-          const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
-
-          const labelQuad = createSkinnedLabelQuad(0, 0);
-          addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
-          const geometry = mergeWithGroupAttr(clonedSkinnedMesh.geometry, labelQuad);
-
-          npc = state.createNpc({
-            key: npcKey,
-            pickId: state.nextPickId++,
-            position: groundPointToVector3(groundAt),
-            skinnedMesh: clonedSkinnedMesh,
-            graph,
-            geometry,
-            skinIndex: state.getSkinIndex(as ?? "medic-0"),
-          });
-        }
-
-        const prevIdleClip = npc.anim.idleClip;
-
-        if (doResult !== null) {
-          const overrideGroundPoint = doResult.meta.groundPoint;
-          state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(doResult.meta)];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
-          w.e.setNpcDo(npcKey, doResult.meta.decorKey);
-        } else {
-          const overrideGroundPoint = at.meta?.npcKey === npcKey ? helper.parseGroundPoint(npc.position) : undefined;
-          state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
-          w.e.setNpcDo(npcKey, null);
-        }
+        const npc = state.rawSpawn({ npcKey, groundAt, as, closePolyResult, doResult });
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
 
@@ -645,13 +654,7 @@ export type State = {
    * - Returns `null` if `meta` is not doable.
    * - Throws if `meta` is doable but not free.
    */
-  findFreeDoMeta(
-    meta: Meta,
-    npcKey: string,
-  ): null | {
-    type: "use-current" | "next-free";
-    meta: Meta<{ decorKey: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
-  };
+  findFreeDoMeta(meta: Meta, npcKey: string): null | JshCli.FindDoMetaResult;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
     accuracy?: "0.005" | "0.1" | "0.5",
@@ -661,6 +664,13 @@ export type State = {
   getSkinIndex(skinKey: string): number;
   move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;
+  rawSpawn(opts: {
+    npcKey: string;
+    groundAt: Meta<JshCli.GroundPoint>;
+    as?: string;
+    doResult: JshCli.FindDoMetaResult | null;
+    closePolyResult?: FindNearestPolyResult;
+  }): Npc;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
 

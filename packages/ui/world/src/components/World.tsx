@@ -326,7 +326,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   }, []); // sync dev assets
 
   useEffect(() => {
-    if (state.isPlaygroundMap()) return state.setupDraftAssetsSync();
+    if (state.assets && state.isPlaygroundMap()) return state.setupDraftAssetsSync();
   }, [state.mapKey]); // sync drafts when relevant
 
   useBeforeUnloadOrVisibilityChange(() => state.menu?.persistY());
