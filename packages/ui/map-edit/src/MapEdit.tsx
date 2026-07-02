@@ -86,14 +86,12 @@ import {
   mapNodes,
   migrateMapEditSavedFile,
   removeNodeFromParent,
-  shouldUseOriginalName,
   templateNodeByKey,
   traverseNodesSync,
 } from "./map-node-api";
 import { type ParsedPath, PathPickerModal } from "./PathPickerModal";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
-import { getLoadDrafts, type LoadDraftsMode, persistLoadDrafts } from "./use-drafts";
 
 export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme, uiStoreApi } = useContext(UiContext);
@@ -192,7 +190,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         key: defaultSymbolKey,
       },
       isDirty: false,
-      loadDrafts: getLoadDrafts(`map-edit-load-drafts:${props.meta.id}`),
+
       toastTs: {} as Record<string, number>,
 
       // will extend with symbol/manifest.json
@@ -200,6 +198,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
       isReadOnly() {
         return isTouchDevice() || (import.meta.env.DEV && state.devForceReadOnly);
+      },
+      isPlaygroundFile() {
+        return (
+          (state.currentFile.type === "symbol" && state.currentFile.key.endsWith("--playground")) ||
+          (state.currentFile.type === "map" && state.currentFile.key.endsWith("-playground"))
+        );
       },
 
       onPanPointerDown(e) {
@@ -447,7 +451,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         seenDuringClone?.add(node.id);
         const baseProps = {
           id: crypto.randomUUID(),
-          name: shouldUseOriginalName(node) ? node.name : state.getNextName(node.type, `${node.name.split(" ")[0]} `),
+          // name: shouldUseOriginalName(node) ? node.name : state.getNextName(node.type, `${node.name.split(" ")[0]} `),
+          name: node.name,
           locked: node.locked,
           visible: node.visible,
           transform: { ...node.transform },
@@ -1348,8 +1353,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           //   .precision(6),
         };
 
-        if (state.loadDrafts === "use-drafts") {
-          // save to local storage: (prod) only way to "save", (dev) provides "draft"
+        if (state.isPlaygroundFile()) {
           tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
         }
 
@@ -1360,7 +1364,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         );
 
         const alreadyKnown = state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier));
-        const toastKey = state.loadDrafts === "use-drafts" ? "draft saved" : "saved to file";
+        const toastKey = state.isPlaygroundFile() ? "draft saved" : "saved to file";
         state.set({
           currentFile: fileSpecifier,
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
@@ -1368,14 +1372,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           toastTs: { ...state.toastTs, [toastKey]: Date.now() },
         });
 
-        if (state.loadDrafts === "use-drafts") {
+        if (state.isPlaygroundFile()) {
           // notify World(s) to recompute layouts from localStorage drafts
           window.dispatchEvent(new CustomEvent(mapEditSymbolSavedEvent, { detail: { key: fileSpecifier.key } }));
         }
 
-        if (import.meta.env.DEV && saveToDiskInDev && state.loadDrafts === "use-originals") {
+        if (import.meta.env.DEV && saveToDiskInDev && !state.isPlaygroundFile()) {
           void saveMapEditFile(savedFile);
-          // filesystem is canonical: remove stale draft
+          // filesystem is canonical for non-playground-files: remove stale draft
           localStorage.removeItem(getFileSpecifierLocalStorageKey(fileSpecifier));
         }
       },
@@ -1423,23 +1427,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           },
         });
       },
-      async switchLoadDrafts(next: LoadDraftsMode) {
-        if (next === "use-originals") {
-          // Preserve current edit as a draft before losing localStorage write access
-          tryLocalStorageSet(
-            getFileSpecifierLocalStorageKey(state.currentFile),
-            safeJsonCompact({
-              ...state.currentFile,
-              width: state.svgWidth,
-              height: state.svgHeight,
-              nodes: state.nodes,
-            }),
-          );
-        }
-        persistLoadDrafts(`map-edit-load-drafts:${props.meta.id}`, next);
-        state.set({ loadDrafts: next });
-        await state.load(undefined, { askToRestore: false, ignoreDraft: next === "use-originals" });
-      },
       async deleteFile(file) {
         if (state.isReadOnly()) return;
         // remove draft
@@ -1484,7 +1471,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
   useEffect(() => {
     if (state.nodes === emptyNodes) {
-      state.load(undefined, { askToRestore: false, ignoreDraft: state.loadDrafts === "use-originals" });
+      state.load(undefined, { askToRestore: false });
       isTouchDevice() && state.set({ isAsideCollapsed: true });
     }
   }, []);
@@ -1896,16 +1883,16 @@ export type State = {
   decorManifest: DecorManifest | null;
 
   devForceReadOnly: boolean;
-  isReadOnly: () => boolean;
 
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
   isDirty: boolean;
-  loadDrafts: LoadDraftsMode;
-  toastTs: Record<string, number>;
   /** All saved file specifiers including drafts */
   savedFileSpecifiers: MapEditFileSpecifier[];
+  toastTs: Record<string, number>;
 
+  isPlaygroundFile: () => boolean;
+  isReadOnly: () => boolean;
   scrollInspectorNodeIntoView(nodeId: string): void;
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
@@ -1963,7 +1950,6 @@ export type State = {
     file?: MapEditFileSpecifier,
     opts?: { askToRestore?: boolean; ignoreDraft?: boolean; preserveHistory?: boolean },
   ) => Promise<void>;
-  switchLoadDrafts: (next: LoadDraftsMode) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;
   clientToSvg: (clientX: number, clientY: number) => { x: number; y: number };

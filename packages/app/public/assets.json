@@ -3185,14 +3185,14 @@
             "e": 1.05,
             "f": 2.5125
           },
-          "meta": {"console--051": true}
+          "meta": {"console--051": true, "y": 0.6}
         },
         {
           "symbolKey": "bed--003",
           "width": 2.5,
           "height": 1.5,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -0.025},
-          "meta": {"bed--003": true}
+          "meta": {"bed--003": true, "y": 0.8}
         }
       ]
     },
@@ -10281,7 +10281,7 @@
             ],
             "direction": {"x": 0.7071, "y": -0.7071},
             "obstacleId": 0,
-            "y": 0.01
+            "y": 0.61
           }
         },
         {
@@ -10298,7 +10298,7 @@
             "transform": [1, 0, 0, 1, 0.825, 0.65],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 1,
-            "y": 0.01
+            "y": 0.81
           }
         }
       ],
@@ -10334,6 +10334,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
+            "y": 0.6,
             "transform": [-0.7071, 0.7071, -0.7071, -0.7071, 1.05, 2.5125]
           }
         },
@@ -10348,6 +10349,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
+            "y": 0.8,
             "transform": [1, 0, 0, 1, 0, -0.025]
           }
         },
@@ -10357,7 +10359,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.1,
+            "y": 0.9,
             "symKey": "bed--003",
             "origObstacleId": 1,
             "transform": [1, 0, 0, 1, 0, -0.025]

@@ -1,8 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
-import { cn, type UseStateRef } from "@npc-cli/util";
+import type { UseStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
-  ArrowsClockwiseIcon,
   CaretRightIcon,
   CopyIcon,
   FloppyDiskIcon,
@@ -21,7 +20,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
   const toastKeys = useToastTs(state.toastTs);
 
   return (
-    <div className="flex items-start gap-2">
+    <div className="relative flex items-start gap-2">
       <Menu.Root>
         <Menu.Trigger className="cursor-pointer">
           <ListIcon className="size-5.5 bg-background text-on-background border border-on-background/50 p-0.5" />
@@ -196,38 +195,22 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
         </Menu.Portal>
       </Menu.Root>
 
-      {!state.isReadOnly() && (
-        <button
-          type="button"
-          className="flex items-center gap-1 p-0.5 cursor-pointer hover:bg-slate-700/30"
-          onClick={() => {
-            const next = state.loadDrafts === "use-drafts" ? "use-originals" : "use-drafts";
-            const label = next === "use-drafts" ? "synced with drafts" : "reset symbols";
-            void state.switchLoadDrafts(next);
-            state.set({ toastTs: { ...state.toastTs, [label]: Date.now() } });
-          }}
-        >
-          <ArrowsClockwiseIcon
-            className={cn("size-4", state.loadDrafts === "use-drafts" ? "text-on-background" : "text-slate-500")}
-          />
-          <span className={cn("size-1.5 rounded-full", state.loadDrafts === "use-drafts" ? "bg-green-500" : "bg-red-500")} />
-        </button>
-      )}
-
-      <AnimatePresence>
-        {toastKeys.map((key) => (
-          <motion.div
-            key={key}
-            className="bg-gray-800/90 text-slate-300 text-xs px-2 py-1 pointer-events-none"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {key}
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      <div className="absolute mt-1 flex flex-col gap-1 pointer-events-none z-50">
+        <AnimatePresence>
+          {toastKeys.map((key) => (
+            <motion.div
+              key={key}
+              className="bg-slate-300/90 text-gray-800 text-xs px-2 py-1 rounded whitespace-nowrap"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {key}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
