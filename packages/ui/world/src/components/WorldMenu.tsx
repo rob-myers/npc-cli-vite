@@ -1,11 +1,9 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
-import { persistLoadDrafts } from "@npc-cli/ui__map-edit/use-drafts";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
-  ArrowsClockwiseIcon,
   ArrowsOutIcon,
   CaretDownIcon,
   CaretRightIcon,
@@ -472,26 +470,6 @@ export function WorldMenu() {
             </Menu.Positioner>
           </Menu.Portal>
         </Menu.Root>
-
-        <button
-          type="button"
-          className="flex items-center gap-1.5 px-2 py-1 cursor-pointer hover:bg-slate-700/30"
-          onClick={() => {
-            const next = w.loadDrafts === "use-drafts" ? "use-originals" : "use-drafts";
-            persistLoadDrafts(`world-load-drafts:${w.id}`, next);
-            w.set({ loadDrafts: next });
-            const label = next === "use-drafts" ? "synced with drafts" : "reset symbols";
-            state.set({ toastTs: { ...state.toastTs, [label]: Date.now() } });
-          }}
-          title="sync with drafts"
-        >
-          <ArrowsClockwiseIcon
-            className={cn("size-4", w.loadDrafts === "use-drafts" ? "text-white" : "text-slate-500")}
-          />
-          <span
-            className={cn("size-1.5 rounded-full", w.loadDrafts === "use-drafts" ? "bg-green-500" : "bg-red-500")}
-          />
-        </button>
 
         <AnimatePresence>
           {[...toastKeys, ...toggleToastKeys].map((key) => (

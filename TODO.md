@@ -254,6 +254,10 @@ w decor.byKey.test-decor-point
     - remove use-drafts use-originals controls
     - in playground symbols save to drafts only
 
+- ✅ BUG World should update onchange playground map in MapEdit
+
+- BUG MapEdit FileMenu on switch to map/symbol should not close
+
 - stress test i.e. spawn many
 
 - BUG assets.json decor orient changing for no apparent reason?

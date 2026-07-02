@@ -1,6 +1,5 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
-import { getLoadDrafts, type LoadDraftsMode } from "@npc-cli/ui__map-edit/use-drafts";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
@@ -33,7 +32,7 @@ import { GmGraph } from "../service/gm-graph";
 import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
-import { recomputeAssetsInProduction } from "../service/recompute-layout";
+import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { TexArray } from "../service/tex-array";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
@@ -75,7 +74,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmsHash: 0,
       lastHmr: 0,
       lastQuery: 0,
-      loadDrafts: getLoadDrafts(`world-load-drafts:${meta.id}`),
 
       // hmr recreates but not named canvas
       texFloor: new TexArray({
@@ -141,6 +139,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
+      },
+      isPlaygroundMap() {
+        if (state.mapKey.endsWith("-playground")) return true;
+        const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
+        return mapDef.gms.some(({ gmKey }) => gmKey.endsWith("--playground"));
       },
       isReady(_connectionKey) {
         return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
@@ -271,7 +274,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
-    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, state.lastHmr, state.loadDrafts],
+    queryKey: [...state.worldQueryPrefix, state.mapKey, meta.id, state.lastHmr],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_WORLD__) {
         import.meta.hot.data.__JUST_HMR_WORLD__ = false;
@@ -285,8 +288,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.setNextPending({ assets: true });
       state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
 
-      if (state.loadDrafts === "use-drafts") {
-        await recomputeAssetsInProduction(state.assets);
+      if (state.isPlaygroundMap()) {
+        await recomputeAssetsViaDrafts(state.assets);
       }
 
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
@@ -318,11 +321,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     gcTime: 0,
   }).dataUpdatedAt;
 
-  // sync dev assets
-  useEffect(() => (import.meta.env.DEV && import.meta.hot ? state.setupDevAssetsSync() : undefined), []);
+  useEffect(() => {
+    if (import.meta.env.DEV && import.meta.hot) return state.setupDevAssetsSync();
+  }, []); // sync dev assets
 
-  // sync drafts in dev/prod
-  useEffect(() => (state.loadDrafts === "use-drafts" ? state.setupDraftAssetsSync() : undefined), [state.loadDrafts]);
+  useEffect(() => {
+    if (state.isPlaygroundMap()) return state.setupDraftAssetsSync();
+  }, [state.mapKey]); // sync drafts when relevant
 
   useBeforeUnloadOrVisibilityChange(() => state.menu?.persistY());
 
@@ -394,7 +399,6 @@ export type State = {
   lastHmr: number;
   /** Last time the world query succeeded */
   lastQuery: number;
-  loadDrafts: LoadDraftsMode;
   /**
    * Ideally `assets` -> `nav` -> `decor` -> `null`.
    * However, nav/decor could be triggered by HMR.
@@ -438,6 +442,8 @@ export type State = {
   setupDevAssetsSync(): () => void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
+  /** Either playground map or mentions a playground hull-symbol */
+  isPlaygroundMap(): boolean;
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
   onTick(): void;
