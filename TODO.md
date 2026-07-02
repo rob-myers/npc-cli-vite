@@ -244,7 +244,7 @@ w decor.byKey.test-decor-point
   - ✅ improve WorldMenu select
   - ℹ️ multiple drafts (needs grouping) is future work
 
-- 🚧 draft rethink and simplification
+- ✅ draft rethink and simplification
   - ✅ new hull symbol `g-301--playground` clone of `g-301--bridge`
     - ✅ `packages/media/src/starship-symbol/playground/g-301--playground`
     - ✅ `packages/media/src/starship-symbol/playground/extra` (prev output/extra)
@@ -256,9 +256,12 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG World should update onchange playground map in MapEdit
 
-- BUG MapEdit FileMenu on switch to map/symbol should not close
+- ✅ BUG MapEdit FileMenu on switch to map/symbol should not close
 
-- stress test i.e. spawn many
+- 🚧 stress test i.e. spawnMany
+
+- examples of providing points without using `pick`
+  - how to extract meta? e.g. can use decor grid?
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
