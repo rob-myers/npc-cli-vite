@@ -5,7 +5,7 @@
       "thumbnailFilename": "stateroom--012.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 124 },
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
       "type": "symbol",
       "key": "stateroom--012"
     },
@@ -14,7 +14,7 @@
       "thumbnailFilename": "stateroom--019.thumbnail.png",
       "width": 120,
       "height": 180,
-      "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 184 },
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
       "type": "symbol",
       "key": "stateroom--019"
     },
@@ -23,7 +23,7 @@
       "thumbnailFilename": "console--051.thumbnail.png",
       "width": 30,
       "height": 30,
-      "bounds": { "x": 1.3, "y": -0.5, "width": 27.4, "height": 31 },
+      "bounds": {"x": 1.3, "y": -0.5, "width": 27.4, "height": 31},
       "type": "symbol",
       "key": "console--051"
     },
@@ -32,7 +32,7 @@
       "thumbnailFilename": "bed--003.thumbnail.png",
       "width": 100,
       "height": 60,
-      "bounds": { "x": -0.7, "y": -0.7, "width": 100.4, "height": 61.4 },
+      "bounds": {"x": -0.7, "y": -0.7, "width": 100.4, "height": 61.4},
       "type": "symbol",
       "key": "bed--003"
     },
@@ -41,7 +41,7 @@
       "thumbnailFilename": "extra--004--desk.thumbnail.png",
       "width": 30,
       "height": 60,
-      "bounds": { "x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4 },
+      "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4},
       "type": "symbol",
       "key": "extra--004--desk"
     },
@@ -50,7 +50,7 @@
       "thumbnailFilename": "console--033.thumbnail.png",
       "width": 30,
       "height": 30,
-      "bounds": { "x": 1.6, "y": -1.1, "width": 26.8, "height": 32.2 },
+      "bounds": {"x": 1.6, "y": -1.1, "width": 26.8, "height": 32.2},
       "type": "symbol",
       "key": "console--033"
     },
@@ -59,7 +59,7 @@
       "thumbnailFilename": "extra--003--chair.thumbnail.png",
       "width": 20,
       "height": 20,
-      "bounds": { "x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6 },
+      "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
       "type": "symbol",
       "key": "extra--003--chair"
     },
@@ -68,7 +68,7 @@
       "thumbnailFilename": "g-301--bridge.thumbnail.png",
       "width": 1200,
       "height": 600,
-      "bounds": { "x": -5.5, "y": -22, "width": 1212, "height": 628 },
+      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
       "type": "symbol",
       "key": "g-301--bridge"
     },
@@ -77,7 +77,7 @@
       "thumbnailFilename": "stateroom--014.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": { "x": -2, "y": -2, "width": 124, "height": 126.8 },
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 126.8},
       "type": "symbol",
       "key": "stateroom--014"
     },
@@ -86,7 +86,7 @@
       "thumbnailFilename": "stateroom--036.thumbnail.png",
       "width": 120,
       "height": 240,
-      "bounds": { "x": -2, "y": -2, "width": 124, "height": 246.8 },
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
       "type": "symbol",
       "key": "stateroom--036"
     },
@@ -95,7 +95,7 @@
       "thumbnailFilename": "iris-valves--005.thumbnail.png",
       "width": 60,
       "height": 60,
-      "bounds": { "x": 0.7, "y": 9, "width": 44.2, "height": 44 },
+      "bounds": {"x": 0.7, "y": 9, "width": 44.2, "height": 44},
       "type": "symbol",
       "key": "iris-valves--005"
     },
@@ -104,7 +104,7 @@
       "thumbnailFilename": "console--019.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": { "x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4 },
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
       "type": "symbol",
       "key": "console--019"
     },
@@ -113,7 +113,7 @@
       "thumbnailFilename": "bridge--042.thumbnail.png",
       "width": 480,
       "height": 540,
-      "bounds": { "x": -4.5, "y": -13, "width": 489.2, "height": 558 },
+      "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
       "type": "symbol",
       "key": "bridge--042"
     },
@@ -122,7 +122,7 @@
       "thumbnailFilename": "office--001.thumbnail.png",
       "width": 120,
       "height": 120,
-      "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 124 },
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
       "type": "symbol",
       "key": "office--001"
     },
@@ -131,7 +131,7 @@
       "thumbnailFilename": "g-101--multipurpose.thumbnail.png",
       "width": 1200,
       "height": 1200,
-      "bounds": { "x": -5.5, "y": -5.5, "width": 1212, "height": 1212 },
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
       "type": "symbol",
       "key": "g-101--multipurpose"
     },
@@ -140,7 +140,7 @@
       "thumbnailFilename": "bed--004.thumbnail.png",
       "width": 76,
       "height": 40,
-      "bounds": { "x": 0, "y": 0, "width": 84.4, "height": 52.4 },
+      "bounds": {"x": 0, "y": 0, "width": 84.4, "height": 52.4},
       "type": "symbol",
       "key": "bed--004"
     },
@@ -149,7 +149,7 @@
       "thumbnailFilename": "bed--005.thumbnail.png",
       "width": 76,
       "height": 40,
-      "bounds": { "x": 0, "y": 0, "width": 76.4, "height": 40.4 },
+      "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
       "type": "symbol",
       "key": "bed--005"
     },
@@ -158,7 +158,7 @@
       "thumbnailFilename": "console--031.thumbnail.png",
       "width": 60,
       "height": 60,
-      "bounds": { "x": 0, "y": 0, "width": 75.4, "height": 61.4 },
+      "bounds": {"x": 0, "y": 0, "width": 75.4, "height": 61.4},
       "type": "symbol",
       "key": "console--031"
     },
@@ -167,7 +167,7 @@
       "thumbnailFilename": "misc-stellar-cartography--023.thumbnail.png",
       "width": 240,
       "height": 240,
-      "bounds": { "x": -2, "y": -1.5, "width": 244, "height": 244 },
+      "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
       "type": "symbol",
       "key": "misc-stellar-cartography--023"
     },
@@ -176,7 +176,7 @@
       "thumbnailFilename": "window--007.thumbnail.png",
       "width": 180,
       "height": 12,
-      "bounds": { "x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4 },
+      "bounds": {"x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4},
       "type": "symbol",
       "key": "window--007"
     },
@@ -185,7 +185,7 @@
       "thumbnailFilename": "table--004.thumbnail.png",
       "width": 60,
       "height": 120,
-      "bounds": { "x": -2, "y": -12, "width": 68.8, "height": 144.8 },
+      "bounds": {"x": -2, "y": -12, "width": 68.8, "height": 144.8},
       "type": "symbol",
       "key": "table--004"
     },
@@ -194,7 +194,7 @@
       "thumbnailFilename": "extra--005--chair.thumbnail.png",
       "width": 20,
       "height": 20,
-      "bounds": { "x": 0.5, "y": 0.5, "width": 19, "height": 19 },
+      "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
       "type": "symbol",
       "key": "extra--005--chair"
     },
@@ -203,7 +203,7 @@
       "thumbnailFilename": "extra--001--fresher.thumbnail.png",
       "width": 28,
       "height": 23,
-      "bounds": { "x": 0, "y": 0, "width": 27.4, "height": 23.4 },
+      "bounds": {"x": 0, "y": 0, "width": 27.4, "height": 23.4},
       "type": "symbol",
       "key": "extra--001--fresher"
     },
@@ -212,7 +212,7 @@
       "thumbnailFilename": "extra--002--fresher.thumbnail.png",
       "width": 24,
       "height": 32,
-      "bounds": { "x": 0, "y": 0, "width": 22.8, "height": 31.2 },
+      "bounds": {"x": 0, "y": 0, "width": 22.8, "height": 31.2},
       "type": "symbol",
       "key": "extra--002--fresher"
     },
@@ -221,7 +221,7 @@
       "thumbnailFilename": "extra--021--shower.thumbnail.png",
       "width": 36,
       "height": 58,
-      "bounds": { "x": 0, "y": 0, "width": 36.2, "height": 58.8 },
+      "bounds": {"x": 0, "y": 0, "width": 36.2, "height": 58.8},
       "type": "symbol",
       "key": "extra--021--shower"
     },
@@ -230,7 +230,7 @@
       "thumbnailFilename": "fuel--010.thumbnail.png",
       "width": 240,
       "height": 120,
-      "bounds": { "x": -3.8, "y": -3.9, "width": 247.6, "height": 127.8 },
+      "bounds": {"x": -3.8, "y": -3.9, "width": 247.6, "height": 127.8},
       "type": "symbol",
       "key": "fuel--010"
     },
@@ -239,7 +239,7 @@
       "thumbnailFilename": "stateroom--020.thumbnail.png",
       "width": 120,
       "height": 180,
-      "bounds": { "x": -2, "y": -2, "width": 126.6, "height": 184 },
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
       "type": "symbol",
       "key": "stateroom--020"
     },
@@ -248,7 +248,7 @@
       "thumbnailFilename": "g-302--xboat-repair-bay.thumbnail.png",
       "width": 1200,
       "height": 600,
-      "bounds": { "x": -4, "y": -62, "width": 1212, "height": 667 },
+      "bounds": {"x": -4, "y": -62, "width": 1212, "height": 667},
       "type": "symbol",
       "key": "g-302--xboat-repair-bay"
     },
@@ -257,9 +257,18 @@
       "thumbnailFilename": "couch-and-chairs--006.thumbnail.png",
       "width": 30,
       "height": 120,
-      "bounds": { "x": 1.3, "y": 2.5, "width": 27.4, "height": 115 },
+      "bounds": {"x": 1.3, "y": 2.5, "width": 27.4, "height": 115},
       "type": "symbol",
       "key": "couch-and-chairs--006"
+    },
+    "g-301--playground": {
+      "filename": "g-301--playground.json",
+      "thumbnailFilename": "g-301--playground.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -6, "y": -22, "width": 1212, "height": 628},
+      "type": "symbol",
+      "key": "g-301--playground"
     }
   }
 }
