@@ -1,8 +1,8 @@
 import { Menu } from "@base-ui/react/menu";
-import { Select } from "@base-ui/react/select";
-import type { UseStateRef } from "@npc-cli/util";
+import { cn, type UseStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
+  ArrowsClockwiseIcon,
   CaretRightIcon,
   CopyIcon,
   FloppyDiskIcon,
@@ -161,58 +161,22 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
 
               <div className="px-1 border-2 border-l-8 border-slate-700 text-[0.7rem]">
                 {!state.isReadOnly() && (
-                  <>
-                    <Select.Root
-                      value={state.loadDrafts}
-                      onValueChange={(v) => {
-                        if (v) void state.switchLoadDrafts(v as "use-originals" | "use-drafts");
-                      }}
-                    >
-                      <Select.Trigger className="flex items-center gap-1 px-2 py-1 text-slate-300 cursor-pointer hover:bg-slate-700 w-full ">
-                        <Select.Value />
-                      </Select.Trigger>
-                      <Select.Portal>
-                        <Select.Positioner
-                          className="z-50"
-                          sideOffset={4}
-                          side="right"
-                          align="start"
-                          alignItemWithTrigger={false}
-                        >
-                          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1">
-                            <Select.List>
-                              {(["use-originals", "use-drafts"] as const).map((v) => (
-                                <Select.Item
-                                  key={v}
-                                  value={v}
-                                  className="px-2 py-1 text-slate-300 cursor-pointer data-highlighted:bg-slate-700 data-selected:text-green-400"
-                                >
-                                  <Select.ItemText>{v}</Select.ItemText>
-                                </Select.Item>
-                              ))}
-                            </Select.List>
-                          </Select.Popup>
-                        </Select.Positioner>
-                      </Select.Portal>
-                    </Select.Root>
-
-                    <Menu.Item
-                      className="flex items-center gap-2 px-2 text-on-background text-slate-300 hover:bg-slate-700 cursor-pointer"
-                      closeOnClick
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Clear all localStorage maps and symbols?\n\nThis will delete all saved files from localStorage (not from filesystem). This action cannot be undone.",
-                          )
-                        ) {
-                          clearLocalStorage();
-                          state.updateSavedFileSpecifiers([]);
-                        }
-                      }}
-                    >
-                      clear drafts
-                    </Menu.Item>
-                  </>
+                  <Menu.Item
+                    className="flex items-center gap-2 px-2 py-1 text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    closeOnClick
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Clear all localStorage maps and symbols?\n\nThis will delete all saved files from localStorage (not from filesystem). This action cannot be undone.",
+                        )
+                      ) {
+                        clearLocalStorage();
+                        state.updateSavedFileSpecifiers([]);
+                      }
+                    }}
+                  >
+                    clear drafts
+                  </Menu.Item>
                 )}
 
                 {import.meta.env.DEV && (
@@ -231,6 +195,24 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
+
+      {!state.isReadOnly() && (
+        <button
+          type="button"
+          className="flex items-center gap-1 p-0.5 cursor-pointer hover:bg-slate-700/30"
+          onClick={() => {
+            const next = state.loadDrafts === "use-drafts" ? "use-originals" : "use-drafts";
+            const label = next === "use-drafts" ? "synced with drafts" : "reset symbols";
+            void state.switchLoadDrafts(next);
+            state.set({ toastTs: { ...state.toastTs, [label]: Date.now() } });
+          }}
+        >
+          <ArrowsClockwiseIcon
+            className={cn("size-4", state.loadDrafts === "use-drafts" ? "text-on-background" : "text-slate-500")}
+          />
+          <span className={cn("size-1.5 rounded-full", state.loadDrafts === "use-drafts" ? "bg-green-500" : "bg-red-500")} />
+        </button>
+      )}
 
       <AnimatePresence>
         {toastKeys.map((key) => (
