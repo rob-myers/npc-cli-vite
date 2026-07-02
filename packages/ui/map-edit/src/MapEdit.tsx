@@ -93,7 +93,7 @@ import {
 import { type ParsedPath, PathPickerModal } from "./PathPickerModal";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
-import { getLoadDrafts, type LoadDraftsMode, setLoadDrafts } from "./use-drafts";
+import { getLoadDrafts, type LoadDraftsMode, persistLoadDrafts } from "./use-drafts";
 
 export default function MapEdit(props: { meta: MapEditUiMeta }) {
   const { theme, uiStoreApi } = useContext(UiContext);
@@ -1384,8 +1384,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           return;
         }
 
-        // 🚧
-        // localStorage (draft) takes precedence
         const localStorageResult = ignoreDraft
           ? { data: null }
           : jsonParser
@@ -1438,7 +1436,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             }),
           );
         }
-        setLoadDrafts(`map-edit-load-drafts:${props.meta.id}`, next);
+        persistLoadDrafts(`map-edit-load-drafts:${props.meta.id}`, next);
         state.set({ loadDrafts: next });
         await state.load(undefined, { askToRestore: false, ignoreDraft: next === "use-originals" });
       },
@@ -1961,7 +1959,10 @@ export type State = {
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
-  load: (file?: MapEditFileSpecifier, opts?: { askToRestore?: boolean; ignoreDraft?: boolean; preserveHistory?: boolean }) => Promise<void>;
+  load: (
+    file?: MapEditFileSpecifier,
+    opts?: { askToRestore?: boolean; ignoreDraft?: boolean; preserveHistory?: boolean },
+  ) => Promise<void>;
   switchLoadDrafts: (next: LoadDraftsMode) => Promise<void>;
   deleteFile: (file: MapEditFileSpecifier) => void;
   updateSavedFileSpecifiers: (drafts: MapEditFileSpecifier[]) => void;

@@ -8,6 +8,6 @@ export function getLoadDrafts(storageKey: string): LoadDraftsMode {
   return tryLocalStorageGetParsed<LoadDraftsMode>(storageKey) ?? defaultLoadDrafts;
 }
 
-export function setLoadDrafts(storageKey: string, value: LoadDraftsMode): void {
+export function persistLoadDrafts(storageKey: string, value: LoadDraftsMode): void {
   tryLocalStorageSet(storageKey, JSON.stringify(value));
 }

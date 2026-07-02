@@ -1,10 +1,11 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
-import { setLoadDrafts } from "@npc-cli/ui__map-edit/use-drafts";
+import { persistLoadDrafts } from "@npc-cli/ui__map-edit/use-drafts";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
+  ArrowsClockwiseIcon,
   ArrowsOutIcon,
   CaretDownIcon,
   CaretRightIcon,
@@ -41,6 +42,7 @@ export function WorldMenu() {
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
+      toastTs: {} as Record<string, number>,
       y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
 
       getMaxY() {
@@ -142,6 +144,7 @@ export function WorldMenu() {
 
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
+  const toggleToastKeys = useToastTs(state.toastTs);
   const { extraZoomActive, readyForExtraZoom } = w.view?.controls ?? {};
 
   return (
@@ -307,23 +310,11 @@ export function WorldMenu() {
                 <MenuSelect
                   label={w.mapKey}
                   value={w.mapKey}
-                  items={mapKeys}
+                  items={mapKeys.map((key) => ({ key, value: key }))}
                   onValueChange={(key) => {
                     if (!key) return;
                     w.setCanvasFade(true);
                     uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
-                  }}
-                />
-
-                <MenuSelect
-                  label="load drafts"
-                  value={w.loadDrafts}
-                  items={["use-originals", "use-drafts"]}
-                  onValueChange={(v) => {
-                    if (!v) return;
-                    const next = v as "use-originals" | "use-drafts";
-                    setLoadDrafts(`world-load-drafts:${w.id}`, next);
-                    w.set({ loadDrafts: next });
                   }}
                 />
 
@@ -482,8 +473,28 @@ export function WorldMenu() {
           </Menu.Portal>
         </Menu.Root>
 
+        <button
+          type="button"
+          className="flex items-center gap-1.5 px-2 py-1 cursor-pointer hover:bg-slate-700/30"
+          onClick={() => {
+            const next = w.loadDrafts === "use-drafts" ? "use-originals" : "use-drafts";
+            persistLoadDrafts(`world-load-drafts:${w.id}`, next);
+            w.set({ loadDrafts: next });
+            const label = next === "use-drafts" ? "synced with drafts" : "reset symbols";
+            state.set({ toastTs: { ...state.toastTs, [label]: Date.now() } });
+          }}
+          title="sync with drafts"
+        >
+          <ArrowsClockwiseIcon
+            className={cn("size-4", w.loadDrafts === "use-drafts" ? "text-white" : "text-slate-500")}
+          />
+          <span
+            className={cn("size-1.5 rounded-full", w.loadDrafts === "use-drafts" ? "bg-green-500" : "bg-red-500")}
+          />
+        </button>
+
         <AnimatePresence>
-          {toastKeys.map((key) => (
+          {[...toastKeys, ...toggleToastKeys].map((key) => (
             <motion.div
               key={key}
               className="bg-gray-800/90 text-slate-300 text-xs px-2 py-1"
@@ -545,6 +556,7 @@ export type State = {
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
+  toastTs: Record<string, number>;
   y: number;
   themeEditorOpen: boolean;
   debugOpen: boolean;
@@ -579,18 +591,21 @@ const selectItemClass = cn(
   "data-highlighted:bg-slate-700 data-selected:text-green-400",
 );
 
-function MenuSelect({
+function MenuSelect<T extends string>({
   className,
-  label,
-  value,
   items,
+  label,
+  side = "right",
+  value,
   onValueChange,
 }: {
   className?: string;
-  label: string;
-  value: string | null;
-  items: string[];
-  onValueChange: (value: string | null) => void;
+  items: { key: string; value: T }[];
+  /** Defaults to value */
+  label?: string;
+  side?: "left" | "right" | "bottom" | "top";
+  value: T | null;
+  onValueChange: (value: T | null) => void;
 }) {
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
@@ -600,22 +615,24 @@ function MenuSelect({
           className,
         )}
       >
-        <Select.Value placeholder={label} />
+        <Select.Value placeholder={label}>
+          {label ?? items.find((item) => item.value === value)?.key ?? label}
+        </Select.Value>
       </Select.Trigger>
       <Select.Portal>
         <Select.Positioner
           className="z-50"
           sideOffset={4}
-          side="right"
+          side={side}
           align="start"
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
-              {items.map((item) => (
-                <Select.Item key={item} value={item} className={selectItemClass}>
-                  <Select.ItemText>{item}</Select.ItemText>
+              {items.map(({ key, value }) => (
+                <Select.Item key={key} value={value} className={selectItemClass}>
+                  <Select.ItemText>{key}</Select.ItemText>
                 </Select.Item>
               ))}
             </Select.List>
@@ -624,6 +641,27 @@ function MenuSelect({
       </Select.Portal>
     </Select.Root>
   );
+}
+
+function useToastTs(tsRecord: Record<string, number>, delayMs = 2000): string[] {
+  const [visible, setVisible] = useState<string[]>([]);
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    for (const [key, ts] of Object.entries(tsRecord)) {
+      if (!ts) continue;
+      setVisible((prev) => (prev.includes(key) ? prev : [...prev, key]));
+      clearTimeout(timers.current[key]);
+      timers.current[key] = setTimeout(() => {
+        setVisible((prev) => prev.filter((k) => k !== key));
+        delete timers.current[key];
+      }, delayMs);
+    }
+  }, [Object.values(tsRecord).join(",")]);
+
+  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+
+  return visible;
 }
 
 function useToastKeys(keys: string[], delayMs: number): string[] {

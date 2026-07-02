@@ -231,7 +231,7 @@ w decor.byKey.test-decor-point
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
 
-- 🚧 can edit any symbol in prod but drafts must be manually restored
+- ✅ can edit any symbol in prod but drafts must be manually restored
   - ✅ can edit any symbol in prod
   - ✅ verify recursive edit in local build
   - ✅ MapEdit readonly only for touch devices or when set in dev
@@ -240,8 +240,16 @@ w decor.byKey.test-decor-point
   - ✅ can use-drafts use-originals from WorldMenu
   - ✅ in development in "use-drafts" in MapEdit, saving should not save to filesystem
     - should also clearly indicate this
-  - 🚧 improve MapEdit toasts
-  - multiple drafts (needs grouping) is future work
+  - ✅ improve MapEdit toasts
+  - ✅ improve WorldMenu select
+  - ℹ️ multiple drafts (needs grouping) is future work
+
+- 🚧 draft rethink and simplification
+  - new hull symbol `g-301--playground` clone of `g-301--bridge`
+  - drafts only for:
+    - preserve unsaved
+    - saving playground symbols (suffix `--playground`)
+  - in particular "mode" is determined by symbol not by user
 
 - stress test i.e. spawn many
 
