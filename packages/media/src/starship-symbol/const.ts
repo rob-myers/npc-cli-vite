@@ -1,38 +1,13 @@
 import { hashJson, keys } from "@npc-cli/util/legacy/generic";
 
 /**
- * Symbols not directly based on some extracted spaceship symbol PNG.
+ * 🔔 Must run `pnpm starship-pngs-to-public` after extending this.
+ *
+ * Each symbol must have a corresponding image in packages/media/src/starship-symbol/{output,extra,playground}
  */
-const extraSymbols = {
-  "extra--001--fresher": true,
-  "extra--002--fresher": true,
-  "extra--003--chair": true,
-  "extra--004--desk": true,
-  "extra--005--chair": true,
-  "extra--006--desk": true,
-  "extra--007--desk": true,
-  "extra--008--desk": true,
-  "extra--009--table": true,
-  "extra--010--machine": true,
-  "extra--011--machine": true,
-  "extra--012--battery": true,
-  "extra--013--privacy-screen": true,
-  "extra--014--table": true,
-  "extra--015--table": true,
-  "extra--016--table": true,
-  "extra--017--table": true,
-  "extra--018--table": true,
-  "extra--019--table": true,
-  "extra--020--table": true,
-  "extra--021--shower": true,
-} as const;
-
 export const symbolByGroup = {
   extra: {
-    /**
-     * - 🔔 only add once provided in packages/media/src/starship-symbol/output/extra
-     * - afterwards run `pnpm starship-pngs-to-public`
-     */
+    // 🔔 only add once provided in packages/media/src/starship-symbol/extra
     "extra--001--fresher": true,
     "extra--002--fresher": true,
     "extra--003--chair": true,
@@ -40,6 +15,11 @@ export const symbolByGroup = {
     "extra--005--chair": true,
     "extra--021--shower": true,
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
+
+  playground: {
+    // 🔔 only add once provided in packages/media/src/starship-symbol/playground
+    "g-301--playground": true,
+  },
 
   "geomorph-core": {
     "g-101--multipurpose": true,
@@ -205,11 +185,43 @@ export const symbolByGroup = {
   },
 } as const;
 
+/**
+ * Symbols not directly based on some extracted spaceship symbol PNG.
+ */
+const extraSymbols = {
+  "extra--001--fresher": true,
+  "extra--002--fresher": true,
+  "extra--003--chair": true,
+  "extra--004--desk": true,
+  "extra--005--chair": true,
+  "extra--006--desk": true,
+  "extra--007--desk": true,
+  "extra--008--desk": true,
+  "extra--009--table": true,
+  "extra--010--machine": true,
+  "extra--011--machine": true,
+  "extra--012--battery": true,
+  "extra--013--privacy-screen": true,
+  "extra--014--table": true,
+  "extra--015--table": true,
+  "extra--016--table": true,
+  "extra--017--table": true,
+  "extra--018--table": true,
+  "extra--019--table": true,
+  "extra--020--table": true,
+  "extra--021--shower": true,
+} as const;
+
 export const symbolByGroupHash = hashJson(symbolByGroup);
 
 export type StarshipSymbolGroup = keyof typeof symbolByGroup;
 
-export const geomorphKeys = [...keys(symbolByGroup["geomorph-core"]), ...keys(symbolByGroup["geomorph-edge"])] as const;
+export const geomorphKeys = [
+  ...keys(symbolByGroup["geomorph-core"]),
+  ...keys(symbolByGroup["geomorph-edge"]),
+  // 🔔 currently assume all playground symbols are hull symbols
+  ...keys(symbolByGroup.playground),
+] as const;
 
 /**
  * - 1 sgu (starship geomorph grid unit) ~ 300x300px in original PNGs

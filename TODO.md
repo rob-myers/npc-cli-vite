@@ -245,11 +245,14 @@ w decor.byKey.test-decor-point
   - ℹ️ multiple drafts (needs grouping) is future work
 
 - 🚧 draft rethink and simplification
-  - new hull symbol `g-301--playground` clone of `g-301--bridge`
-  - drafts only for:
-    - preserve unsaved
-    - saving playground symbols (suffix `--playground`)
-  - in particular "mode" is determined by symbol not by user
+  - ✅ new hull symbol `g-301--playground` clone of `g-301--bridge`
+    - ✅ `packages/media/src/starship-symbol/playground/g-301--playground`
+    - ✅ `packages/media/src/starship-symbol/playground/extra` (prev output/extra)
+    - ✅ adapt `starship-pngs-to-public`
+  - ✅ new map `301-playground`
+  - 🚧 drafts only for: preserve unsaved, saving playground symbols
+    - remove use-drafts use-originals controls
+    - in playground symbols save to drafts only
 
 - stress test i.e. spawn many
 

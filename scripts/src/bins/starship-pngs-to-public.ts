@@ -1,8 +1,15 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * - Copy starship symbol PNGs from `symbolByGroup` to packages/app/public/starship-symbol
- * - Compute packages/app/public/starship-symbol/manifest.json
+ * - Copy starship symbol PNGs:
+ *   - referenced by `symbolByGroup`
+ *   - from:
+ *     - packages/media/src/starship-symbol/output
+ *     - packages/media/src/starship-symbol/extra
+ *     - packages/media/src/starship-symbol/playground
+ *   - to: packages/app/public/starship-symbol
+ *
+ * - Also compute packages/app/public/starship-symbol/manifest.json
  *
  * Usage:
  * ```sh
@@ -18,12 +25,30 @@ import { imageSizeFromFile } from "image-size/fromFile";
 import { PROJECT_ROOT } from "../const";
 
 const mediaOutputDir = path.join(PROJECT_ROOT, "packages/media/src/starship-symbol/output");
+/** Extra symbols not directly obtained from Eric Smith's decomposition */
+const mediaExtraDir = path.join(PROJECT_ROOT, "packages/media/src/starship-symbol/extra");
+/** Playground symbols are extra symbols which may be edited */
+const mediaPlaygroundDir = path.join(PROJECT_ROOT, "packages/media/src/starship-symbol/playground");
+
 const assetsOutputDir = path.join(PROJECT_ROOT, "packages/app/public/starship-symbol");
 const seen = new Set<string>();
 
+/**
+ * - original symbols from `output/{group}/{symbol_key}.png`
+ * - extra-- prefixed from `extra/extra--foo.png`
+ * - --playground suffixed come from `playground/foo--playground.png`
+ */
+function getSymbolParentDirectory(folderName: string) {
+  return folderName === "extra"
+    ? mediaExtraDir
+    : folderName === "playground"
+      ? mediaPlaygroundDir
+      : path.join(mediaOutputDir, folderName);
+}
+
 // Verify each {folder}/{file} exists
 for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
-  const mediaSubFolderPath = path.join(mediaOutputDir, folderName);
+  const mediaSubFolderPath = getSymbolParentDirectory(folderName);
 
   if (!fs.existsSync(mediaSubFolderPath)) {
     error(`Missing folder: ${mediaSubFolderPath}`);
@@ -45,13 +70,14 @@ for (const [folderName, symbols] of Object.entries(symbolByGroup)) {
 }
 
 // - Copy each {folder}/{file} to public/starship-symbol/{file}
+// - may assume no filename collisions
 mkdirSync(assetsOutputDir, { recursive: true });
 
-// - Generate manifest.json with dimensions of each image
+// Generate manifest.json with dimensions of each image
 const byKey = {} as StarshipSymbolPngsManifest["byKey"];
 
 for (const [folderName, symbols] of entries(symbolByGroup)) {
-  const mediaSubFolderPath = path.join(mediaOutputDir, folderName);
+  const mediaSubFolderPath = getSymbolParentDirectory(folderName);
 
   for (const symbolKey of keys(symbols)) {
     const srcPath = path.join(mediaSubFolderPath, `${symbolKey}.png`);

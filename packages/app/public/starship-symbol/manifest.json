@@ -36,6 +36,12 @@
       "width": 181,
       "height": 294
     },
+    "g-301--playground": {
+      "key": "g-301--playground",
+      "group": "playground",
+      "width": 1212,
+      "height": 628
+    },
     "g-101--multipurpose": {
       "key": "g-101--multipurpose",
       "group": "geomorph-core",
