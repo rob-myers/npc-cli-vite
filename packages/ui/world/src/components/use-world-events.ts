@@ -3,7 +3,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import { defaultDoorCloseMs } from "../const";
+import { defaultDoorCloseMs, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { groundPointToTuple, groundPointToVector3 } from "../service/geometry";
 import { helper } from "../service/helper";
@@ -479,6 +479,59 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         w.e.npcToDoable[npcKey] = decorKey;
       },
+      async spawnMany(opts) {
+        const baseKey = opts.baseKey ?? "npc";
+        const numPermitted = MAX_NPCS - (state.npcToRoom.size + state.externalNpcs.size);
+        const groundPoints = opts.ats.slice(0, numPermitted).map(helper.parseGroundPoint);
+        const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
+        /** Ground point either should be doable or navigable */
+        const doResults = groundPoints.map((p, i) => {
+          try {
+            const result = w.npc.findFreeDoMeta(p, npcKeys[i]);
+            return result === null ? null : result;
+          } catch {
+            return null;
+          }
+        });
+        const angles = doResults.map((doResult, i) => {
+          const meta = doResult?.meta;
+          const entry = opts.looks?.[i];
+          if (typeof meta?.orient === "number") {
+            return meta.orient * (Math.PI / 180); // 🚧 CW from N?
+          } else if (entry == null) {
+            return null;
+          } else if (typeof entry === "number") {
+            return entry * (Math.PI / 180); // 🚧 CW from N?
+          } else {
+            const look = helper.parseGroundPoint(entry);
+            const groundPoint = groundPoints[i];
+            return helper.isVectJson(look)
+              ? geomService.getThreeRotationY(look.y - groundPoint.y, look.x - groundPoint.x)
+              : Math.PI / 2;
+          }
+        });
+
+        const npcs: Npc[] = [];
+        for (const [i, npcKey] of npcKeys.entries()) {
+          const doResult = doResults[i];
+          const groundAt = doResult?.meta.groundPoint ?? groundPoints[i];
+          // 🚧 angles
+          const npc = w.npc.rawSpawn({
+            npcKey,
+            groundAt,
+            doResult,
+            as: "medic-0", // 🚧
+          });
+
+          npcs.push(npc);
+        }
+
+        w.shadows?.onTick(); // ensure shadow visible even when paused
+
+        // 🚧 mount all
+        // 🚧 finish setup all
+        // 🚧 spawned-many event
+      },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -604,6 +657,7 @@ export type State = {
   removeAgents(npcs: Npc[], opts?: { keepPhysics?: boolean }): void;
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
+  spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {

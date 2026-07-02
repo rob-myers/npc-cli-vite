@@ -68,6 +68,19 @@ declare namespace JshCli {
     as?: string;
   };
 
+  type SpawnManyOpts = {
+    /** Default "npc" */
+    baseKey?: string;
+    keys?: string[];
+    ats: MaybeMeta<JshCli.PointAnyFormat>[];
+    /**
+     * Entries either:
+     * - Radians, CW from north viewed from above
+     * - an `JshCli.PointAnyFormat`
+     */
+    looks?: (number | JshCli.PointAnyFormat)[];
+  };
+
   type MoveOpts = {
     npcKey: string;
     to: MaybeMeta<JshCli.PointAnyFormat>;
@@ -87,5 +100,10 @@ declare namespace JshCli {
   type NpcLabelStyle = {
     color: string;
     speaking: boolean;
+  };
+
+  type FindDoMetaResult = {
+    type: "use-current" | "next-free";
+    meta: Meta<{ decorKey: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
   };
 }

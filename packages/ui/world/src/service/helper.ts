@@ -47,6 +47,10 @@ export const helper = {
     return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
 
+  isVectJson(input: any): input is Geom.VectJson {
+    return !!input && typeof input.x === "number" && typeof input.y === "number";
+  },
+
   parseGroundPoint(input: MaybeMeta<JshCli.PointAnyFormat>): MaybeMeta<JshCli.GroundPoint> {
     if (Array.isArray(input)) {
       return input.length === 3 ? { x: input[0], y: input[2] } : { x: input[0], y: input[1] };
