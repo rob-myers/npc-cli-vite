@@ -151,6 +151,18 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     });
   }, [meta.currentTabId]); // lazy mount
 
+  const hasMounted = useRef(false);
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    const content = rootRef.current?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
+    if (!content) return;
+    const focusTarget = content.querySelector<HTMLElement>('[tabindex]:not([tabindex="-1"])') ?? content;
+    focusTarget.focus();
+  }, [meta.currentTabId]); // focus e.g. key events
+
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
@@ -195,7 +207,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           <div
             key={tab.id}
             data-tab-content={tab.id}
-            className={cn("size-full", tab.id !== meta.currentTabId && "hidden")}
+            tabIndex={-1}
+            className={cn("size-full outline-none", tab.id !== meta.currentTabId && "hidden")}
           >
             {byId[tab.id] && meta.currentTabId === tab.id && (
               <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
