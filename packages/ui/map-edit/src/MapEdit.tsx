@@ -1321,10 +1321,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           isDirty: true,
         });
       },
-      save(fileSpecifier = state.currentFile, { saveToDiskInDev = true } = {}) {
-        if (state.isReadOnly()) return;
+      save(fileSpecifier = state.currentFile, { autoSaveDraftOnDirtyExit = false } = {}) {
+        if (state.isReadOnly()) {
+          return;
+        }
 
-        // symbol files should have a partially transparent image node (underlay)
+        // symbol files should have a respective image node (underlay)
         const underlayImageNode = [...getRecursiveNodes(state.nodes)].find(
           (n): n is ImageMapNode => n.type === "image" && n.srcKey === fileSpecifier.key,
         );
@@ -1353,7 +1355,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           //   .precision(6),
         };
 
-        if (state.isPlaygroundFile()) {
+        if (
+          state.isPlaygroundFile() || // in dev on dirty exit we always save the draft
+          (import.meta.env.DEV && autoSaveDraftOnDirtyExit)
+        ) {
           tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
         }
 
@@ -1377,9 +1382,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           window.dispatchEvent(new CustomEvent(mapEditSymbolSavedEvent, { detail: { key: fileSpecifier.key } }));
         }
 
-        if (import.meta.env.DEV && saveToDiskInDev && !state.isPlaygroundFile()) {
+        if (import.meta.env.DEV && !autoSaveDraftOnDirtyExit && !state.isPlaygroundFile()) {
           void saveMapEditFile(savedFile);
-          // filesystem is canonical for non-playground-files: remove stale draft
+          // filesystem canonical for non-playground-files: remove stale draft
           localStorage.removeItem(getFileSpecifierLocalStorageKey(fileSpecifier));
         }
       },
@@ -1395,7 +1400,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
 
         const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
-        if (!savedFile) return;
+        if (!savedFile) {
+          return;
+        }
 
         const zoom = Math.min(
           Math.max((zoomToFitFraction * baseSvgSize) / Math.max(savedFile.width, savedFile.height), minZoomScale),
@@ -1471,10 +1478,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
   useEffect(() => {
     if (state.nodes === emptyNodes) {
-      state.load(undefined, { askToRestore: false });
+      state.load(undefined, {
+        askToRestore: false,
+        ignoreDraft:
+          // - in dev we always restore from draft
+          // - in prod we only restore playground files (maps, symbols)
+          import.meta.env.PROD && !state.isPlaygroundFile(),
+      });
       isTouchDevice() && state.set({ isAsideCollapsed: true });
     }
-  }, []);
+  }, []); // load
 
   [state.pngsManifest, state.symbolsManifest, state.mapsManifest, state.pathManifest, state.decorManifest] = useQuery({
     // refetch on edit `symbolByGroup` mapping
@@ -1494,30 +1507,31 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     state.updateSavedFileSpecifiers(state.savedFileSpecifiers);
   }, [state.symbolsManifest, state.mapsManifest]);
 
-  // Refresh manifests on dev server signal
   useEffect(() => {
-    if (!import.meta.hot) return;
+    if (!import.meta.hot) {
+      return;
+    }
+
     const onRecomputedPathManifest = () => {
       queryClientApi.queryClient.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
     };
-    import.meta.hot.on(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
-
-    // onchange assets updating localVersion updates thumbnails
     const onAssetsChanged = () => {
+      // onchange assets updating localVersion updates thumbnails
       uiStoreApi.setUiMeta(props.meta.id, (state) => {
         const currentVersion = (state as MapEditUiMeta).localVersion ?? 0;
         (state as MapEditUiMeta).localVersion = currentVersion + 1;
       });
     };
+
+    import.meta.hot.on(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
     import.meta.hot.on(assetsJsonChangedEvent, onAssetsChanged);
 
     return () => {
       import.meta.hot?.off(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
       import.meta.hot?.off(assetsJsonChangedEvent, onAssetsChanged);
     };
-  }, []);
+  }, []); // refresh manifests on dev server signal
 
-  // Pointer events
   useEffect(() => {
     const container = state.containerEl;
     if (!container) return;
@@ -1557,9 +1571,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       container.removeEventListener("touchmove", state.onTouchMove);
       container.removeEventListener("touchend", state.onTouchEnd);
     };
-  }, [state.containerEl]);
+  }, [state.containerEl]); // pointer events
 
-  // Key events
   useEffect(() => {
     const wrapper = state.wrapperEl;
     if (!wrapper) return;
@@ -1673,13 +1686,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, [state.wrapperEl]);
+  }, [state.wrapperEl]); // key events
 
-  // - autosave draft in dev
-  // - turn off in prod while debug perf issues
   useBeforeUnloadOrVisibilityChange(() => {
-    if (state.isDirty && import.meta.env.DEV) state.save(state.currentFile, { saveToDiskInDev: false });
-  });
+    if (state.isDirty) state.save(state.currentFile, { autoSaveDraftOnDirtyExit: true });
+  }); // autosave unsaved changes
 
   const selectedImageNode = useMemo(() => {
     if (state.selectedIds.size !== 1) return null;
@@ -1945,7 +1956,7 @@ export type State = {
   applyBoundsOffset: () => void;
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
-  save: (file?: MapEditFileSpecifier, options?: { saveToDiskInDev?: boolean }) => void;
+  save: (file?: MapEditFileSpecifier, options?: { autoSaveDraftOnDirtyExit?: boolean }) => void;
   load: (
     file?: MapEditFileSpecifier,
     opts?: { askToRestore?: boolean; ignoreDraft?: boolean; preserveHistory?: boolean },

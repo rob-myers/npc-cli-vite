@@ -250,9 +250,9 @@ w decor.byKey.test-decor-point
     - ✅ `packages/media/src/starship-symbol/playground/extra` (prev output/extra)
     - ✅ adapt `starship-pngs-to-public`
   - ✅ new map `301-playground`
-  - 🚧 drafts only for: preserve unsaved, saving playground symbols
-    - remove use-drafts use-originals controls
-    - in playground symbols save to drafts only
+  - ✅ drafts only for: preserve unsaved, saving playground symbols
+    - ✅ remove use-drafts use-originals controls
+    - ✅ in playground symbols save to drafts only
 
 - ✅ BUG World should update onchange playground map in MapEdit
 
