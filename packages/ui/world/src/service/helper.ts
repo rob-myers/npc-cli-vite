@@ -47,6 +47,12 @@ export const helper = {
     return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
 
+  isPointAnyFormat(input: any): input is JshCli.PointAnyFormat {
+    return !!input && Array.isArray(input)
+      ? input.length >= 2 && input.every(Number.isFinite)
+      : helper.isVectJson(input); // could test z numeric when exists
+  },
+
   isVectJson(input: any): input is Geom.VectJson {
     return !!input && typeof input.x === "number" && typeof input.y === "number";
   },

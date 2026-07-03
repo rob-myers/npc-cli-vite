@@ -31,7 +31,7 @@ import {
   unlockedDoorTint,
 } from "../const";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
-import { addToDecorGrid, removeFromDecorGrid } from "../service/grid";
+import { addToDecorGrid, queryDecorGridRect, removeFromDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
@@ -323,6 +323,14 @@ export default function Decor() {
           (decor.type === "rect" && decor.meta.shown === true) ||
           (decor.type === "circle" && decor.meta.shown === true)
         );
+      },
+      query(center, radius = defaultDecorQueryRadius, opts) {
+        center = helper.parseGroundPoint(center);
+        const rect = { x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2 };
+        return queryDecorGridRect(state.grid, rect, opts);
+      },
+      queryRect(rect, opts) {
+        return queryDecorGridRect(state.grid, rect, opts);
       },
       remove(...decorKeys) {
         const runtime = state.runtime;
@@ -907,6 +915,8 @@ export type State = {
   hasInstance(
     decor: Geomorph.Decor,
   ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
+  query: (center: JshCli.PointAnyFormat, radius?: number, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
+  queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
@@ -1011,3 +1021,5 @@ import.meta.hot?.on("vite:beforeUpdate", (payload) => {
     import.meta.hot.data.__JUST_HMR_DECOR__ = true;
   }
 });
+
+const defaultDecorQueryRadius = 0.5;

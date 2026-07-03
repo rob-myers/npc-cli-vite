@@ -1,6 +1,6 @@
 import { events } from "./core";
 
-export function add_decor(ct: JshCli.RunArg) {
+export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
     type: "circle",
     key: "test-decor-circle",
@@ -30,10 +30,25 @@ export function add_decor(ct: JshCli.RunArg) {
     meta: { foo: "bar", shown: true, collider: true },
   });
 
+  const _angledDecorRect2 = ct.w.decor.create({
+    type: "rect",
+    key: "test-decor-rect-angled",
+    x: 3,
+    y: 5,
+    width: 2 * 1.5,
+    height: 1 * 1.5,
+    angle: (Math.PI / 2) * 1,
+    meta: { foo: "bar", shown: true, collider: true },
+  });
+
   ct.w.view.forceUpdate();
 }
 
-export async function* log_speech(ct: JshCli.RunArg) {
+export function demo_remove_decor(ct: JshCli.RunArg) {
+  ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
+}
+
+export async function* demo_log_speech(ct: JshCli.RunArg) {
   for await (const e of events(ct, {
     where: (e) => e.key === "speech",
   })) {

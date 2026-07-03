@@ -145,6 +145,7 @@ export function queryDecorGridRect(
 }
 
 export function removeFromDecorGrid(d: Geomorph.Decor, grid: Geomorph.DecorGrid) {
+  if (!d.meta.gridMin) return;
   const [mx, my] = d.meta.gridMin as [number, number];
   const [Mx, My] = d.meta.gridMax as [number, number];
   for (let i = mx; i <= Mx; i++) for (let j = my; j <= My; j++) grid[`${i},${j}`]?.delete(d);

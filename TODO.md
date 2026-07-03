@@ -262,8 +262,14 @@ w decor.byKey.test-decor-point
   - ✅ refactor `spawn` into sub `rawSpawn`
   - 🚧 mount all at once
 
-- examples of providing points without using `pick`
-  - how to extract meta? e.g. can use decor grid?
+- 🚧 `meta` extracts meta via decor grid
+  - ℹ️ provides points with meta without using `pick`
+    - `pick` object-picks with pointer and decodes pixel rgba
+  - ℹ️ `w decor.query $( pick 1 )`
+  - 🚧 `meta at:$point`
+    - e.g. `meta [1,1.5]`, `meta at:{x:1,y:1.5}`, `meta npc:rob`
+    - ✅ outputs `{x,y,z,meta}`
+    - 🚧 add all obstacles as decor rects with an outline
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?

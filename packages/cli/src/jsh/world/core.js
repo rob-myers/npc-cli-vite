@@ -133,6 +133,33 @@ export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc
 }
 
 /**
+ * ```sh
+ * meta [1.5,4.5]
+ * meta at:[1.5,4.5]
+ * ```
+ * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
+ * @param {{ npcKey?: string; at?: JshCli.PointAnyFormat; }} [opts]
+ */
+export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  if (opts.npcKey) {
+    const npc = w.npc.get(opts.npcKey);
+    const { x, y, z } = npc.position;
+    return { x, y, z, meta: { npcKey: opts.npcKey /** 🚧 */ } };
+  }
+
+  const inputPoint = opts.at ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
+  if (!w.helper.isPointAnyFormat(inputPoint)) {
+    throw Error("expected opts.npcKey or opts.at");
+  }
+
+  // currently return 1st matching decor
+  // 🚧 obstacles/points take precedence over decor circles
+  const groundPoint = w.helper.parseGroundPoint(inputPoint);
+  const results = w.decor.query(groundPoint);
+  return results.find((d) => d.bounds.contains(groundPoint));
+}
+
+/**
  * Usage
  * ```sh
  * move npc:rob to:$( pick 1 )
@@ -654,6 +681,23 @@ export async function spawn(
 }
 
 /**
+ * ```sh
+ * unlock g0d29 g0d30
+ * unlock doors:['g0d29','g0d30']
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
+ */
+export async function unlock({ api, args, w }, opts = api.jsArg(args)) {
+  const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
+  for (const gdKey of inputs) {
+    if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { unlock: true });
+    else throw Error(`invalid gdKey: ${gdKey}`);
+  }
+  w.view.forceUpdate();
+}
+
+/**
  * Usage:
  * ```sh
  * w
@@ -713,23 +757,6 @@ export async function* w(ct) {
       yield `${api.ansi.Cyan}${e}${api.ansi.Reset}`;
     }
   }
-}
-
-/**
- * ```sh
- * unlock g0d29 g0d30
- * unlock doors:['g0d29','g0d30']
- * ```
- * @param {JshCli.RunArg} ct
- * @param {{ all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
- */
-export async function unlock({ api, args, w }, opts = api.jsArg(args)) {
-  const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
-  for (const gdKey of inputs) {
-    if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { unlock: true });
-    else throw Error(`invalid gdKey: ${gdKey}`);
-  }
-  w.view.forceUpdate();
 }
 
 /**
