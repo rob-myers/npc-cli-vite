@@ -78,6 +78,7 @@ export const DecorRectSchema = BaseDecorSchema.extend({
 
 export const DecorRectDefSchema = BaseDecorDefSchema.extend(RectJsonSchema.shape).extend({
   type: z.literal("rect"),
+  /** Radians */
   angle: z.number().optional(),
 });
 
