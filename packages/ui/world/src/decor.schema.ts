@@ -9,7 +9,15 @@ const GmRoomIdSchema = z.object({
 
 const BaseDecorSchema = z.object({
   key: z.string(),
-  meta: MetaSchema.and(GmRoomIdSchema),
+  meta: MetaSchema.and(GmRoomIdSchema).and(
+    z.object({
+      /**
+       * For optional refinements e.g.
+       * - point-tests against obstacle polygons modelled as decor rects
+       */
+      refinedOutline: z.array(VectJsonSchema).optional(),
+    }),
+  ),
   /** 2D bounds in XZ plane (for decor quads this is pre-tilting) */
   bounds: rectCodec,
   updatedAt: z.number().optional(),

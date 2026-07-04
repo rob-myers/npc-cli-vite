@@ -35,8 +35,11 @@ export function Debug() {
       depthWrite: false,
       side: THREE.FrontSide,
     });
-    // fresnel: transparent at center, opaque at silhouette edges
-    mat.opacityNode = pow(float(1).sub(normalView.z), float(3)).mul(float(0.8));
+    mat.opacityNode = w.view.objectPick.greaterThan(0).select(
+      0,
+      // fresnel: transparent at center, opaque at silhouette edges
+      pow(float(1).sub(normalView.z), float(3)).mul(float(0.8)),
+    );
     return mat;
   }, []);
 

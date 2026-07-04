@@ -227,6 +227,9 @@ w decor.byKey.test-decor-point
     - exactly the navigable or doables
   - `pick meta.{floor,do} | move npc:rob`
     - can pick floor points near nav
+  - `w decor.query $( pick 1 )`
+  - `pick | w decor.query -`
+  - `meta $( pick as:point 1 )`
 
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
@@ -265,11 +268,16 @@ w decor.byKey.test-decor-point
 - 🚧 `meta` extracts meta via decor grid
   - ℹ️ provides points with meta without using `pick`
     - `pick` object-picks with pointer and decodes pixel rgba
-  - ℹ️ `w decor.query $( pick 1 )`
   - 🚧 `meta at:$point`
     - e.g. `meta [1,1.5]`, `meta at:{x:1,y:1.5}`, `meta npc:rob`
     - ✅ outputs `{x,y,z,meta}`
-    - 🚧 add all obstacles as decor rects with an outline
+    - ✅ add all obstacles as decor rects with an outline
+      - `d.meta.refinedOutline?: Geom.VectJson[]`
+    - ✅ d.meta.refinedOutline checked in `w.decor.queryPoint`
+    - ✅ test angled rect point containment
+    - ✅ test decor circle point containment
+    - ✅ `meta all:$point`
+    - 🚧 most-relevant strategy
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?

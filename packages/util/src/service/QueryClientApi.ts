@@ -11,7 +11,8 @@ export class QueryClientApi {
           refetchOnReconnect: import.meta.env.DEV ? false : undefined,
           // prod refetch on switch tabs caused observable lag
           refetchOnWindowFocus: false,
-          refetchOnMount: false,
+          // in dev useQuery should rerun on hmr
+          refetchOnMount: import.meta.env.DEV,
           refetchIntervalInBackground: false,
           gcTime: Infinity,
         },

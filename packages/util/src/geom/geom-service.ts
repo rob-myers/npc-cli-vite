@@ -246,6 +246,30 @@ class GeomService {
   }
 
   /**
+   * https://github.com/davidfig/intersects/blob/master/polygon-point.js
+   * polygon-point collision
+   * based on https://stackoverflow.com/a/17490923/1955997
+   * - Maximum distance of point to polygon's edges that triggers collision (see pointLine).
+   * - We can ignore edges by setting `tolerance` as `null`.
+   */
+  outlineProperlyContains(outline: Geom.VectJson[], p: Geom.VectJson) {
+    const length = outline.length;
+    let c = false;
+    let i: number, j: number;
+    for (i = 0, j = length - 1; i < length; i++) {
+      if (
+        // eslint-disable-next-line no-mixed-operators
+        outline[i].y > p.y !== outline[j].y > p.y &&
+        p.x < ((outline[j].x - outline[i].x) * (p.y - outline[i].y)) / (outline[j].y - outline[i].y) + outline[i].x
+      ) {
+        c = !c;
+      }
+      j = i;
+    }
+    return c;
+  }
+
+  /**
    * Convert a polygonal rectangle back into a `Rect` and `angle` s.t.
    * - rectangle needs to be rotated about its "top-left point" `(x, y)`.
    * - rectangle `width` is greater than or equal to its `height`.
