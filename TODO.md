@@ -282,7 +282,7 @@ w decor.byKey.test-decor-point
       - ✅ decor induced by obstacle needs aggregated `meta.y` which is available as `obstacle.height`
       - ✅ opts.desiredHeight restricts to ≤ 1
 
-- w.decor.byRoom
+- ✅ w.decor.byRoom
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
