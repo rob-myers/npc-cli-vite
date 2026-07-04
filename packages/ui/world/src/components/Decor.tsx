@@ -43,6 +43,7 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
+      byRoom: [],
       grid: {},
       lastHmr: 0,
       ready: false,
@@ -78,11 +79,14 @@ export default function Decor() {
           colliders: decorDefs.map(state.getColliderDefFromDecorDef),
         } satisfies WW.MsgToWorker);
       },
-      addRuntimeDecorToGrid() {
+      addRuntimeDecorAgain() {
         for (const runtimeDecor of Object.values(state.runtime.byKey)) {
           runtimeDecor.meta.roomId = -1; // force recompute
           if (state.ensureGmRoomId(runtimeDecor) !== null) {
             addToDecorGrid(runtimeDecor, state.grid);
+            state.groupByRoom(runtimeDecor);
+          } else {
+            /** now outside any room */
           }
         }
       },
@@ -108,8 +112,9 @@ export default function Decor() {
         runtime.box.getAttribute("uvData").needsUpdate = true;
         runtime.box.getAttribute("shapeParams").needsUpdate = true;
       },
-      clearGrid() {
+      clearGridAndRoomLookup() {
         Object.values(state.grid).forEach((col) => col.clear());
+        state.byRoom.forEach((inner) => inner.forEach((entry) => entry.clear()));
       },
       create(def) {
         if (state.runtime.byKey[def.key]) {
@@ -247,6 +252,7 @@ export default function Decor() {
 
         if (state.ensureGmRoomId(d) !== null) {
           addToDecorGrid(d, state.grid);
+          state.groupByRoom(d);
         }
 
         state.byKey[d.key] = d;
@@ -314,6 +320,9 @@ export default function Decor() {
         if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
         return decorKeyFallback;
       },
+      groupByRoom(d) {
+        ((state.byRoom[d.meta.gmId] ??= [])[d.meta.roomId] ??= new Set()).add(d);
+      },
       hasInstance(
         decor,
       ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle {
@@ -379,6 +388,7 @@ export default function Decor() {
           removeFromDecorGrid(d, state.grid);
           delete runtime.byKey[decorKey];
           delete state.byKey[decorKey];
+          state.byRoom[d.meta.gmId]?.[d.meta.roomId]?.delete(d);
 
           const id = runtime.decorKeyToId[decorKey];
           if (id === undefined) {
@@ -634,8 +644,8 @@ export default function Decor() {
       // - preserves runtime decor across HMR
       // - obstacles induce decor rects with `d.meta.gridOutline`
       state.byKey = { ...state.runtime.byKey };
-      state.clearGrid();
-      state.addRuntimeDecorToGrid();
+      state.clearGridAndRoomLookup();
+      state.addRuntimeDecorAgain();
 
       const metaPoint = { x: 0, y: 0, meta: {} as Meta };
 
@@ -645,17 +655,15 @@ export default function Decor() {
           metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
           metaPoint.meta = decor.meta;
           const gmRoomId = w.e.findRoomContaining(metaPoint, true);
-          if (gmRoomId !== null) {
-            Object.assign(decor.meta, gmRoomId);
-          }
+          Object.assign(decor.meta, gmRoomId);
 
           // rename periods because used as delimiter in CLI
-          const suffix = `${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_");
-          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
+          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${`${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_")}`;
           state.byKey[decor.key] = decor;
           decor.meta.decorKey = decor.key;
-
+          // add even when gmRoomId null
           addToDecorGrid(decor, state.grid);
+          state.groupByRoom(decor);
         }
 
         // careful with obstacle coordinate systems:
@@ -668,13 +676,7 @@ export default function Decor() {
           metaPoint.meta = emptyMeta;
           const gmRoomId = w.e.findRoomContaining(metaPoint, true);
 
-          if (gmRoomId === null) {
-            warn(`expected obstacle to reside in some room`, { gmId, obstacleId, meta: obs.meta });
-            continue;
-          }
-
           tmpMat.setMatrixValue(obs.transform).postMultiply(gm.transform);
-
           /** Refined outline for decor grid containment testing */
           const refinedOutline = obs.origPoly.outline.map((p) => tmpMat.transformPoint(p.clone()).precision(2));
           const bounds = Rect.fromPoints(...refinedOutline).precision(2);
@@ -683,7 +685,7 @@ export default function Decor() {
             type: "rect",
             key: `g${gmId}r${gmRoomId?.roomId ?? "?"}-${"obstacle"}-${obstacleId}`,
             meta: {
-              ...gmRoomId,
+              ...(gmRoomId ?? helper.getGmRoomId(gmId, -1)),
               ...obs.meta,
               rect: true,
               refinedOutline,
@@ -699,7 +701,9 @@ export default function Decor() {
 
           state.byKey[d.key] = d;
           d.meta.decorKey = d.key;
+          // add even when gmRoomId null
           addToDecorGrid(d, state.grid);
+          state.groupByRoom(d);
         }
       }
 
@@ -948,6 +952,7 @@ export default function Decor() {
 
 export type State = {
   byKey: Record<string, Geomorph.Decor>;
+  byRoom: Geomorph.RoomDecor[][];
   grid: Geomorph.DecorGrid;
   lastHmr: number;
   /** Also false briefly after HMR */
@@ -980,15 +985,16 @@ export type State = {
   };
 
   addDecorColliders(...colliders: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>[]): void;
-  addRuntimeDecorToGrid(): void;
+  addRuntimeDecorAgain(): void;
   addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle): void;
-  clearGrid(): void;
+  clearGridAndRoomLookup(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
   decodeStaticInstanceId(instanceId: number): Meta<Geomorph.GmRoomId & { decorKey: string }> | null;
   decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   getColliderDefFromDecorDef(def: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>): WW.PhysicsColliderDef;
   getDecorImgKey(decor: Geomorph.Decor): string;
+  groupByRoom(decor: Geomorph.Decor): void;
   hasInstance(
     decor: Geomorph.Decor,
   ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
