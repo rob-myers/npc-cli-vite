@@ -169,7 +169,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           -1 + 2 * (((e.clientX - left) * glPixelRatio) / w.view.canvas.width),
           +1 - 2 * (((e.clientY - top) * glPixelRatio) / w.view.canvas.height),
         );
-        w.view.raycaster.setFromCamera(normalizedDeviceCoords, w.view.controls.object);
+        w.view.raycaster.setFromCamera(normalizedDeviceCoords, state.controls?.object ?? w.r3f.camera);
 
         switch (picked.type) {
           case "floor":
