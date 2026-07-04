@@ -74,7 +74,9 @@ declare namespace Geomorph {
   type DecorGrid = { [gridKey: `${number},${number}`]: Set<Geomorph.Decor> };
 
   type DecorGridQueryOpts = {
+    /** Restrict by room id? */
     grKey?: Geomorph.GmRoomKey;
+    /** Extend by extant meta.reachRect? */
     reachRect?: boolean;
   };
 

@@ -327,25 +327,39 @@ export default function Decor() {
       queryPoint(center, opts) {
         const groundPoint = helper.parseGroundPoint(center);
         const smallRadius = 0.05;
-        const queryRect = {
-          x: groundPoint.x - smallRadius,
-          y: groundPoint.y - smallRadius,
-          width: smallRadius * 2,
-          height: smallRadius * 2,
-        };
-        return queryDecorGridRect(state.grid, queryRect, opts).filter((d) => {
+        tmpRect.x = groundPoint.x - smallRadius;
+        tmpRect.y = groundPoint.y - smallRadius;
+        tmpRect.width = smallRadius * 2;
+        tmpRect.height = smallRadius * 2;
+
+        const results = queryDecorGridRect(state.grid, tmpRect, opts).filter((d) => {
           switch (d.type) {
             case "rect":
-              if (Array.isArray(d.meta.refinedOutline)) {
-                return geomService.outlineProperlyContains(d.meta.refinedOutline, groundPoint);
-              }
-              return geomService.outlineProperlyContains(d.points, groundPoint);
+              return geomService.outlineProperlyContains(
+                Array.isArray(d.meta.refinedOutline) ? d.meta.refinedOutline : d.points,
+                groundPoint,
+              );
             case "circle":
               return Math.hypot(groundPoint.x - d.center.x, groundPoint.y - d.center.y) < d.radius;
             default:
               return d.bounds.contains(groundPoint);
           }
         });
+
+        // we'll return ≤ 1 decor if opts?.desiredHeight defined
+        const desiredHeight = opts?.desiredHeight;
+
+        if (desiredHeight === undefined || results.length === 0) {
+          return results;
+        }
+
+        let closestDeltaSoFar = Infinity;
+        return [
+          results.reduce((closestSoFar, d) => {
+            const delta = Math.abs((d.meta.y ?? 0) - desiredHeight);
+            return delta >= closestDeltaSoFar ? closestSoFar : ((closestDeltaSoFar = delta), d);
+          }, results[0]),
+        ];
       },
       queryRect(rect, opts) {
         return queryDecorGridRect(state.grid, rect, opts);
@@ -673,6 +687,8 @@ export default function Decor() {
               ...obs.meta,
               rect: true,
               refinedOutline,
+              obstacleId,
+              y: obs.height, // aggregated 3D Y
             },
             // define decor rect as gridOutline aabb
             bounds,
@@ -977,7 +993,13 @@ export type State = {
     decor: Geomorph.Decor,
   ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
   /** Find decor containing `point`, possibly using `d.meta.refinedOutline`  */
-  queryPoint: (point: JshCli.PointAnyFormat, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
+  queryPoint: (
+    point: JshCli.PointAnyFormat,
+    opts?: Geomorph.DecorGridQueryOpts & {
+      /** Restrict to closest to supplied height (meters)? */
+      desiredHeight?: number;
+    },
+  ) => Geomorph.Decor[];
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
@@ -1001,6 +1023,7 @@ const tmpMat = new Mat();
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4().set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 const tmpColor = new THREE.Color();
+const emptyMeta = {};
 
 /**
  * TSL outputNode for the top face of the box geometry.
@@ -1083,6 +1106,3 @@ import.meta.hot?.on("vite:beforeUpdate", (payload) => {
     import.meta.hot.data.__JUST_HMR_DECOR__ = true;
   }
 });
-
-const defaultDecorQueryRadius = 0.5;
-const emptyMeta = {};

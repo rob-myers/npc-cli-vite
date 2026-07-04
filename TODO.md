@@ -230,6 +230,7 @@ w decor.byKey.test-decor-point
   - `w decor.query $( pick 1 )`
   - `pick | w decor.query -`
   - `meta $( pick as:point 1 )`
+  - `pick | w helper.parse3dHeight -`
 
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
@@ -265,10 +266,10 @@ w decor.byKey.test-decor-point
   - ✅ refactor `spawn` into sub `rawSpawn`
   - 🚧 mount all at once
 
-- 🚧 `meta` extracts meta via decor grid
+- ✅ `meta` extracts meta via decor grid
   - ℹ️ provides points with meta without using `pick`
     - `pick` object-picks with pointer and decodes pixel rgba
-  - 🚧 `meta at:$point`
+  - ✅ `meta at:$point`
     - e.g. `meta [1,1.5]`, `meta at:{x:1,y:1.5}`, `meta npc:rob`
     - ✅ outputs `{x,y,z,meta}`
     - ✅ add all obstacles as decor rects with an outline
@@ -277,7 +278,11 @@ w decor.byKey.test-decor-point
     - ✅ test angled rect point containment
     - ✅ test decor circle point containment
     - ✅ `meta all:$point`
-    - 🚧 most-relevant strategy
+    - ✅ most-relevant strategy
+      - ✅ decor induced by obstacle needs aggregated `meta.y` which is available as `obstacle.height`
+      - ✅ opts.desiredHeight restricts to ≤ 1
+
+- w.decor.byRoom
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
