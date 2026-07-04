@@ -8,12 +8,12 @@
       "name": "extra--005--chair 1",
       "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0.5 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0.5},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "extra--005--chair",
-      "baseRect": { "width": 19, "height": 19 },
-      "offset": { "x": 0, "y": 0 },
+      "baseRect": {"width": 19, "height": 19},
+      "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 0.5, 0.5)"
     },
     {
@@ -21,10 +21,10 @@
       "name": "obstacle chair h=0.15 inset=1",
       "locked": false,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",
       "d": "M14.6225,0 L20,5.2 L20,14.6148 L14.6225,20 L5.39295,20 L0,14.6148 L0,5.38523 L5.39295,0 L14.6225,0 Z",
-      "baseRect": { "width": 20, "height": 20 },
+      "baseRect": {"width": 20, "height": 20},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
@@ -32,16 +32,16 @@
       "name": "decor point do=sit on",
       "locked": false,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 5, "f": 7 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 5, "f": 7},
       "type": "image",
       "srcType": "decor",
       "srcKey": "arrow",
-      "baseRect": { "width": 6, "height": 6 },
-      "offset": { "x": 0, "y": 0 },
+      "baseRect": {"width": 6, "height": 6},
+      "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 5, 7)"
     }
   ],
-  "bounds": { "x": 0.5, "y": 0.5, "width": 19, "height": 19 },
+  "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
   "type": "symbol",
   "key": "extra--005--chair"
 }
