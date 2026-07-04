@@ -44,7 +44,8 @@ declare namespace JshCli {
     longDown: boolean;
     /** Was right mouse button being pressed?  */
     rightDown: boolean;
-  } & (GroundPoint & Pick<import("three").Intersection, "distance" | "point" | "faceIndex" | "normal">);
+  } & (GroundPoint &
+    Pick<import("three").Intersection, "distance" | "faceIndex" | "normal"> & { point: import("three").Vector3Tuple });
 
   type EnterColliderEvent = Extract<Event, { key: "enter-collider" }>;
   type ExitColliderEvent = Extract<Event, { key: "exit-collider" }>;

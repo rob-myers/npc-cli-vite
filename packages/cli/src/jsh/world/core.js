@@ -133,30 +133,32 @@ export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc
 }
 
 /**
+ * Get most-relevant (or all) decor at given world or ground point.
  * ```sh
  * meta [1.5,4.5]
  * meta at:[1.5,4.5]
+ * meta all:[1.5,4.5]
+ * # 🚧 top bunk bed
+ * meta at:[1.5,2,4.5]
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {{ npcKey?: string; at?: JshCli.PointAnyFormat; }} [opts]
+ * @param {{ [key in 'all' | 'at']?: JshCli.PointAnyFormat; }} [opts]
  */
-export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args, { npc: "npcKey" })) {
-  if (opts.npcKey) {
-    const npc = w.npc.get(opts.npcKey);
-    const { x, y, z } = npc.position;
-    return { x, y, z, meta: { npcKey: opts.npcKey /** 🚧 */ } };
-  }
-
-  const inputPoint = opts.at ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
+export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
+  const inputPoint = opts.all ?? opts.at ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
   if (!w.helper.isPointAnyFormat(inputPoint)) {
-    throw Error("expected opts.npcKey or opts.at");
+    throw Error("expected point");
   }
 
-  // currently return 1st matching decor
-  // 🚧 obstacles/points take precedence over decor circles
   const groundPoint = w.helper.parseGroundPoint(inputPoint);
-  const results = w.decor.query(groundPoint);
-  return results.find((d) => d.bounds.contains(groundPoint));
+  const results = w.decor.queryPoint(groundPoint);
+
+  if (opts.all) {
+    return results;
+  }
+
+  // 🚧 most-relevant decor
+  return results[0];
 }
 
 /**

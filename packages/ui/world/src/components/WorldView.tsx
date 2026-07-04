@@ -309,7 +309,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           gmRoomId,
 
           distance,
-          point,
+          point: point.toArray(), // better for CLI
           faceIndex: intersection.faceIndex,
           normal: intersection.normal,
 

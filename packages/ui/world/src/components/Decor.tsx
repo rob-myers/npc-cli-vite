@@ -324,10 +324,28 @@ export default function Decor() {
           (decor.type === "circle" && decor.meta.shown === true)
         );
       },
-      query(center, radius = defaultDecorQueryRadius, opts) {
-        center = helper.parseGroundPoint(center);
-        const rect = { x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2 };
-        return queryDecorGridRect(state.grid, rect, opts);
+      queryPoint(center, opts) {
+        const groundPoint = helper.parseGroundPoint(center);
+        const smallRadius = 0.05;
+        const queryRect = {
+          x: groundPoint.x - smallRadius,
+          y: groundPoint.y - smallRadius,
+          width: smallRadius * 2,
+          height: smallRadius * 2,
+        };
+        return queryDecorGridRect(state.grid, queryRect, opts).filter((d) => {
+          switch (d.type) {
+            case "rect":
+              if (Array.isArray(d.meta.refinedOutline)) {
+                return geomService.outlineProperlyContains(d.meta.refinedOutline, groundPoint);
+              }
+              return geomService.outlineProperlyContains(d.points, groundPoint);
+            case "circle":
+              return Math.hypot(groundPoint.x - d.center.x, groundPoint.y - d.center.y) < d.radius;
+            default:
+              return d.bounds.contains(groundPoint);
+          }
+        });
       },
       queryRect(rect, opts) {
         return queryDecorGridRect(state.grid, rect, opts);
@@ -530,7 +548,7 @@ export default function Decor() {
       if (!w.sheets) return null;
       w.setNextPending({ decor: true });
 
-      // 1. load sheet images
+      // 1. load sheet images ⏳
       const images = await w.loadDecorImages();
 
       // 2. draw sheets into texture array
@@ -597,9 +615,10 @@ export default function Decor() {
 
       await pause(100);
 
-      // 4. build state.byKey, grid, enrich decor.meta
-      // - applies to all decor not only those with an instancedMesh instance
-      // - preserve runtime decor across HMR
+      // 4. build `state.byKey`, `state.grid`, enrich decor.meta
+      // - for all decor, not only those with an instancedMesh instance
+      // - preserves runtime decor across HMR
+      // - obstacles induce decor rects with `d.meta.gridOutline`
       state.byKey = { ...state.runtime.byKey };
       state.clearGrid();
       state.addRuntimeDecorToGrid();
@@ -616,13 +635,55 @@ export default function Decor() {
             Object.assign(decor.meta, gmRoomId);
           }
 
-          // we use periods for paths in CLI
+          // rename periods because used as delimiter in CLI
           const suffix = `${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_");
           decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${suffix}`;
           state.byKey[decor.key] = decor;
           decor.meta.decorKey = decor.key;
 
           addToDecorGrid(decor, state.grid);
+        }
+
+        // careful with obstacle coordinate systems:
+        // - obstacle.center in geomorph coords (not world yet)
+        // - obstacle.origPoly in geomorph symbol coords (not geomorph yet)
+        for (const [obstacleId, obs] of gm.obstacles.entries()) {
+          metaPoint.x = obs.center.x;
+          metaPoint.y = obs.center.y;
+          gm.matrix.transformPoint(tmpVect.copy(obs.center));
+          metaPoint.meta = emptyMeta;
+          const gmRoomId = w.e.findRoomContaining(metaPoint, true);
+
+          if (gmRoomId === null) {
+            warn(`expected obstacle to reside in some room`, { gmId, obstacleId, meta: obs.meta });
+            continue;
+          }
+
+          tmpMat.setMatrixValue(obs.transform).postMultiply(gm.transform);
+
+          /** Refined outline for decor grid containment testing */
+          const refinedOutline = obs.origPoly.outline.map((p) => tmpMat.transformPoint(p.clone()).precision(2));
+          const bounds = Rect.fromPoints(...refinedOutline).precision(2);
+
+          const d: Geomorph.DecorRect = {
+            type: "rect",
+            key: `g${gmId}r${gmRoomId?.roomId ?? "?"}-${"obstacle"}-${obstacleId}`,
+            meta: {
+              ...gmRoomId,
+              ...obs.meta,
+              rect: true,
+              refinedOutline,
+            },
+            // define decor rect as gridOutline aabb
+            bounds,
+            points: bounds.points.map((p) => p.precision(2)),
+            center: bounds.center.precision(2),
+            angle: 0,
+          };
+
+          state.byKey[d.key] = d;
+          d.meta.decorKey = d.key;
+          addToDecorGrid(d, state.grid);
         }
       }
 
@@ -915,7 +976,8 @@ export type State = {
   hasInstance(
     decor: Geomorph.Decor,
   ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
-  query: (center: JshCli.PointAnyFormat, radius?: number, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
+  /** Find decor containing `point`, possibly using `d.meta.refinedOutline`  */
+  queryPoint: (point: JshCli.PointAnyFormat, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
@@ -1023,3 +1085,4 @@ import.meta.hot?.on("vite:beforeUpdate", (payload) => {
 });
 
 const defaultDecorQueryRadius = 0.5;
+const emptyMeta = {};
