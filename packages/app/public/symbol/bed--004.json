@@ -8,12 +8,12 @@
       "name": "bed--004",
       "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "bed--004",
-      "baseRect": { "width": 84.4, "height": 52.400000000000006 },
-      "offset": { "x": 0, "y": 0 },
+      "baseRect": {"width": 84.4, "height": 52.400000000000006},
+      "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
@@ -21,18 +21,11 @@
       "name": "bed--005",
       "locked": false,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": -0.00003449980369651939,
-        "f": -0.000021072608818784033
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "symbol",
       "srcKey": "bed--005",
-      "baseRect": { "width": 76, "height": 40 },
-      "offset": { "x": 0, "y": 0 },
+      "baseRect": {"width": 76, "height": 40},
+      "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
@@ -40,22 +33,15 @@
       "name": "bed--005 y=1",
       "locked": false,
       "visible": true,
-      "transform": {
-        "a": 1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": -0.00003449980369651939,
-        "f": -0.000021072608818339944
-      },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "symbol",
       "srcKey": "bed--005",
-      "baseRect": { "width": 76, "height": 40 },
-      "offset": { "x": 0, "y": 0 },
+      "baseRect": {"width": 76, "height": 40},
+      "offset": {"x": 0, "y": 0},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": { "x": 0, "y": 0, "width": 84.4, "height": 52.4 },
+  "bounds": {"x": 0, "y": 0, "width": 84.4, "height": 52.4},
   "type": "symbol",
   "key": "bed--004"
 }
