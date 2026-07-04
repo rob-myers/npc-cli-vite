@@ -1,3 +1,4 @@
+import { npcHeight } from "@npc-cli/ui__world/const";
 import { geomService, Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
@@ -151,13 +152,16 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
   }
 
   const groundPoint = w.helper.parseGroundPoint(inputPoint);
-  const results = w.decor.queryPoint(groundPoint);
+  const results = w.decor.queryPoint(
+    groundPoint,
+    // when we don't request all, results.length ≤ 1 via closest 3D height-off-ground
+    { desiredHeight: !opts.all ? (w.helper.parse3dHeight(inputPoint) ?? npcHeight) : undefined },
+  );
 
   if (opts.all) {
     return results;
   }
 
-  // 🚧 most-relevant decor
   return results[0];
 }
 

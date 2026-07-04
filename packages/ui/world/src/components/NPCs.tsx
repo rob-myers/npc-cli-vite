@@ -46,13 +46,13 @@ import {
   idleSeparationWeight,
   maxAgentRadius,
   npcBrightness,
+  npcHeight,
   walkMaxAcceleration,
 } from "../const";
 import {
   addEmptyBillboardOffset,
   createSkinnedLabelQuad,
   groundPointToTuple,
-  groundPointToVector3,
   mergeWithGroupAttr,
 } from "../service/geometry";
 import { helper } from "../service/helper";
@@ -382,7 +382,7 @@ export default function NPCs() {
         } else {
           w.worker.worker.postMessage({
             type: "add-physics-npcs",
-            npcs: [{ npcKey: npc.key, position: groundPointToVector3(groundPoint) }],
+            npcs: [{ npcKey: npc.key, position: helper.groundPointToVector3(groundPoint) }],
           } satisfies WW.MsgToWorker);
         }
 
@@ -411,7 +411,7 @@ export default function NPCs() {
             return state.createNpc({
               key: npcKey,
               pickId: state.nextPickId++,
-              position: groundPointToVector3(groundAt),
+              position: helper.groundPointToVector3(groundAt),
               skinnedMesh: clonedSkinnedMesh,
               graph,
               geometry,
@@ -677,7 +677,7 @@ export type State = {
 function getAgentParams(): crowd.AgentParams {
   return {
     radius: 0.2,
-    height: 1.2,
+    height: npcHeight,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
     // collisionQueryRange: 1,

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { groundPointToTuple, groundPointToVector3 } from "../service/geometry";
+import { groundPointToTuple } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -559,7 +559,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         const { position: npcPoint } = w.npc.npc[opts.npcKey];
-        if (npcPoint.distanceTo(groundPointToVector3(helper.parseGroundPoint(opts.point))) > 1.5) {
+        if (npcPoint.distanceTo(helper.groundPointToVector3(helper.parseGroundPoint(opts.point))) > 1.5) {
           return false; // e.g. button not close enough
         }
 

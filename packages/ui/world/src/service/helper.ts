@@ -1,3 +1,5 @@
+import { Vector3 } from "three";
+
 export const helper = {
   /**
    * Usage:
@@ -34,6 +36,10 @@ export const helper = {
     }
   },
 
+  groundPointToVector3(point: JshCli.GroundPoint) {
+    return new Vector3(point.x, 0, point.y);
+  },
+
   isGmDoorKey(input: any): input is Geomorph.GmDoorKey {
     return !!input && typeof input === "string" && gdKeyRegex.test(input);
   },
@@ -55,6 +61,16 @@ export const helper = {
 
   isVectJson(input: any): input is Geom.VectJson {
     return !!input && typeof input.x === "number" && typeof input.y === "number";
+  },
+
+  parse3dHeight(input: JshCli.PointAnyFormat): number | undefined {
+    if ("z" in input) {
+      return input.y;
+    }
+    if (Array.isArray(input)) {
+      return input.length === 3 ? input[1] : undefined;
+    }
+    return undefined;
   },
 
   parseGroundPoint(input: MaybeMeta<JshCli.PointAnyFormat>): MaybeMeta<JshCli.GroundPoint> {
