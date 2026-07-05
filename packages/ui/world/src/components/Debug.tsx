@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import { attribute, float, normalView, pow, select, texture, uv, vec2 } from "three/tsl";
+import { attribute, Break, Fn, float, If, int, instanceIndex, Loop, normalView, positionWorld, pow, select, texture, uv, uniformArray, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
@@ -16,7 +16,6 @@ import { WorldContext } from "./world-context";
 export function Debug() {
   const w = useContext(WorldContext);
   const navPathRef = useRef<THREE.InstancedMesh>(null);
-  const lightSpheresRef = useRef<THREE.InstancedMesh>(null);
 
   const doorNormalsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
@@ -28,21 +27,6 @@ export function Debug() {
     return geo;
   }, []);
 
-  const lightSphereMat = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial({
-      color: "white",
-      transparent: true,
-      depthWrite: false,
-      side: THREE.FrontSide,
-    });
-    mat.opacityNode = w.view.objectPick.greaterThan(0).select(
-      0,
-      // fresnel: transparent at center, opaque at silhouette edges
-      pow(float(1).sub(normalView.z), float(3)).mul(float(0.8)),
-    );
-    return mat;
-  }, []);
-
   const state = useStateRef(
     (): State => ({
       arrowGeo: createArrowGeo(),
@@ -52,7 +36,10 @@ export function Debug() {
       demoNavPathShown: false,
       doorNormalsShown: false,
       gridShown: false,
+      lightSpheres: null,
       lightSpheresShown: false,
+      lightSpherePolyInfo: Array.from({ length: maxLightSpheres }, () => new THREE.Vector4()),
+      lightSpherePolyVerts: Array.from({ length: maxTotalPolyVerts }, () => new THREE.Vector2()),
       logGPUInfo: false,
       navMeshHelper: null,
       navMeshShown: false,
@@ -109,15 +96,28 @@ export function Debug() {
         }
       },
       updateLightSpheres() {
-        const inst = lightSpheresRef.current;
+        const inst = state.lightSpheres;
         if (!inst) return;
         const positions: THREE.Vector3[] = [];
         const radii: number[] = [];
+        let totalVerts = 0;
+        let instanceIdx = 0;
         for (const gm of w.gms) {
           for (const p of getLightMetas(gm)) {
             const wp = gm.matrix.transformPoint(p);
             positions.push(new THREE.Vector3(wp.x, lightSphereHeight, wp.y));
             radii.push(p.radius);
+
+            const roomId = typeof p.roomId === "number" ? p.roomId : -1;
+            const room = roomId >= 0 ? gm.rooms[roomId] : null;
+            const verts = room?.outline ?? [];
+            const count = Math.min(verts.length, MAX_ROOM_POLY_VERTS);
+            state.lightSpherePolyInfo[instanceIdx].set(totalVerts, count, 0, 0);
+            for (let v = 0; v < count && totalVerts < maxTotalPolyVerts; v++, totalVerts++) {
+              const wv = gm.matrix.transformPoint(verts[v]);
+              state.lightSpherePolyVerts[totalVerts].set(wv.x, wv.y); // wv.y = world Z
+            }
+            instanceIdx++;
           }
         }
         inst.count = Math.min(positions.length, maxLightSpheres);
@@ -229,6 +229,50 @@ export function Debug() {
 
   w.debug = state;
 
+  const lightSphereMat = useMemo(() => {
+    const polyInfoNode = uniformArray<"vec4">(state.lightSpherePolyInfo, "vec4"); // (offset, count, 0, 0) per instance
+    const polyVertsNode = uniformArray<"vec2">(state.lightSpherePolyVerts, "vec2"); // flat world XZ verts
+
+    // Ray-casting point-in-polygon. Returns 1.0 inside room, 0.0 outside.
+    // count == 0 (no roomId) → unclipped (returns 1.0).
+    const clipFactor = Fn(() => {
+      const info = polyInfoNode.element(instanceIndex);
+      const count = info.y.toInt();
+      const inside = int(0).toVar("pipInside");
+
+      If(count.greaterThan(0), () => {
+        const offset = info.x.toInt();
+        const px = positionWorld.x;
+        const pz = positionWorld.z;
+        Loop(MAX_ROOM_POLY_VERTS, ({ i }) => {
+          If(i.greaterThanEqual(count), () => {
+            Break();
+          });
+          const a = polyVertsNode.element(offset.add(i));
+          const b = polyVertsNode.element(offset.add(i.add(1).mod(count)));
+          // horizontal ray from (px, pz) in +x direction — XOR via float comparison
+          const yCross = a.y.greaterThan(pz).toFloat().notEqual(b.y.greaterThan(pz).toFloat());
+          const t = b.x.sub(a.x).mul(pz.sub(a.y)).div(b.y.sub(a.y)).add(a.x);
+          If(yCross.and(px.lessThan(t)), () => {
+            inside.assign(inside.bitXor(int(1)));
+          });
+        });
+      });
+
+      return count.equal(0).select(float(1), inside.toFloat());
+    })();
+
+    const mat = new THREE.MeshBasicNodeMaterial({
+      color: "white",
+      transparent: true,
+      depthWrite: false,
+      side: THREE.FrontSide,
+    });
+    const fresnel = pow(float(1).sub(normalView.z), float(3)).mul(float(0.8));
+    mat.opacityNode = w.view.objectPick.greaterThan(0).select(0, fresnel.mul(clipFactor));
+    return mat;
+  }, []);
+
   useFrame((root) => {
     const gl = root.gl as unknown as THREE.WebGPURenderer;
     gl.info.autoReset = false;
@@ -254,6 +298,7 @@ export function Debug() {
     state.update();
   }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
 
+  // 🚧 persisted option in WorldMenu
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {
@@ -264,20 +309,6 @@ export function Debug() {
     });
     return () => sub.unsubscribe();
   }, [state.openDoorsOnClick]);
-
-  const decorPointsMaterial = useMemo(() => {
-    // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
-    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
-    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
-    const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
-    const transformedUv = vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs);
-    const texNode = texture(w.texDecor.tex, transformedUv);
-    texNode.depthNode = uvTexIds;
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
-    mat.colorNode = texNode;
-    mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.debugPoint, 0.6);
-    return { material: mat, uid: crypto.randomUUID() };
-  }, [state.doPointsShown]);
 
   useEffect(() => {
     const navMeshHelper = createNavMeshHelper(w.nav?.navMesh);
@@ -296,6 +327,20 @@ export function Debug() {
     state.set({ navMeshHelper });
     return navMeshHelper.dispose();
   }, [w.nav?.navMesh]);
+
+  const decorPointsMaterial = useMemo(() => {
+    // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
+    const uvDims = attribute<"vec2">("uvDimensions", "vec2");
+    const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
+    const uvTexIds = attribute<"uint">("uvTextureIds", "uint");
+    const transformedUv = vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs);
+    const texNode = texture(w.texDecor.tex, transformedUv);
+    texNode.depthNode = uvTexIds;
+    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
+    mat.colorNode = texNode;
+    mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.debugPoint, 0.6);
+    return { material: mat, uid: crypto.randomUUID() };
+  }, [state.doPointsShown]);
 
   return (
     <>
@@ -316,7 +361,7 @@ export function Debug() {
       </instancedMesh>
 
       <instancedMesh
-        ref={lightSpheresRef}
+        ref={state.ref("lightSpheres")}
         args={[undefined, undefined, maxLightSpheres]}
         frustumCulled={false}
         visible={state.lightSpheresShown}
@@ -362,6 +407,8 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const maxLightSpheres = 1024;
+const MAX_ROOM_POLY_VERTS = 64;
+const maxTotalPolyVerts = 4096;
 const maxDecorPoints = 1024;
 const maxDoorNormals = 512;
 const onPointHeight = 0.005;
@@ -379,7 +426,10 @@ export type State = {
   demoNavPathShown: boolean;
   doorNormalsShown: boolean;
   gridShown: boolean;
+  lightSpheres: null | THREE.InstancedMesh;
   lightSpheresShown: boolean;
+  lightSpherePolyInfo: THREE.Vector4[];
+  lightSpherePolyVerts: THREE.Vector2[];
   logGPUInfo: boolean;
   navMeshHelper: null | NavMeshHelperObject;
   navMeshShown: boolean;

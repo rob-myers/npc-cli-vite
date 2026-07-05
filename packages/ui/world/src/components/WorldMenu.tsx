@@ -86,11 +86,11 @@ export function WorldMenu() {
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
         return w.debug?.gridShown ?? false;
-      case "Lights":
+      case "Room Lights":
         return w.debug?.lightSpheresShown ?? true;
       case "NavMesh":
         return w.debug?.navMeshShown ?? false;
-      case "Normals":
+      case "Door Normals":
         return w.debug?.doorNormalsShown ?? true;
       case "Points":
         return w.debug?.doPointsShown ?? false;
@@ -126,7 +126,7 @@ export function WorldMenu() {
         w.debug?.set({ gridShown: !w.debug.gridShown });
         void w.floor?.draw().then(() => w.update());
         break;
-      case "Lights":
+      case "Room Lights":
         w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
         w.update();
         break;
@@ -134,7 +134,7 @@ export function WorldMenu() {
         w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
         setTimeout(() => w.view.forceUpdate());
         break;
-      case "Normals":
+      case "Door Normals":
         w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
         w.view.forceUpdate();
         break;
@@ -565,9 +565,9 @@ const debugItems = [
   "Skins",
   "Colliders",
   "Grid",
-  "Lights",
+  "Room Lights",
   "NavMesh",
-  "Normals",
+  "Door Normals",
   "Points",
 ] as const;
 
