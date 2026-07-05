@@ -315,12 +315,12 @@ export function Debug() {
     state.update();
   }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
 
-  // 🚧 persisted option in WorldMenu
+  // option "Toggle Doors"
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {
-        if (state.pickOpenDoors && event.key === "picked" && event.meta.type === "door") {
-          w.e.toggleDoor(event.meta.gdKey); // toggle
+        if (state.pickOpenDoors === true && event.key === "picked" && event.meta.type === "door") {
+          w.e.toggleDoor(event.meta.gdKey);
         }
       },
     });

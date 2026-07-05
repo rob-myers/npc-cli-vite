@@ -302,8 +302,9 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG change geom-service should not restart world
 
-- 🚧 move "open door on click" to a script
+- ✅ move "open door on click" to a script
   - WorldMenu has debug option "Toggle Doors"
+  - `demo_toggle_doors`
 
 - larger pause UI
 - larger mobile UI
