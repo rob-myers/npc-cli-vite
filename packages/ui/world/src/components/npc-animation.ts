@@ -165,11 +165,14 @@ export class NpcAnimation {
     );
 
     // track destination for checkNpcTargetUnreachable
-    this.npc.last.dst = groundPoint;
-    this.npc.last.dstGrId = this.w.e.findRoomContaining(groundPoint);
-    this.npc.last.blockingArea = -1;
-    this.npc.last.pos = this.npc.point;
+    const { last } = this.npc;
+    last.dst = groundPoint;
+    last.dstGrId = this.w.e.findRoomContaining(groundPoint);
+    last.blockingArea = -1;
+    last.navNodeRef = -1;
+    last.pos = this.npc.point;
 
+    this.npc.nodeCount = 0;
     this.stuckAccum = 0;
     this.arrive = arrive;
 
