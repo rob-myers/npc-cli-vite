@@ -9,17 +9,17 @@ export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => 
 
 const gmGraphsFilterKey = "world-gm-graphs-filter";
 
-export function RoomHitModal({ open, onOpenChange }: DebugModalProps) {
+export function RoomHitModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
+      <Dialog.Portal container={container}>
+        <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-3xl w-[90vw] max-h-[80vh] flex flex-col",
+            "max-w-3xl w-[90%] max-h-[90%] flex flex-col",
           )}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
@@ -351,19 +351,19 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
   );
 }
 
-export function SkinDebugModal({ open, onOpenChange }: DebugModalProps) {
+export function SkinDebugModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
   const { entries, manifest } = w.npc.skin;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
+      <Dialog.Portal container={container}>
+        <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-4xl w-[90vw] max-h-[80vh] flex flex-col",
+            "max-w-4xl w-[90%] h-[90%] flex flex-col",
           )}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">

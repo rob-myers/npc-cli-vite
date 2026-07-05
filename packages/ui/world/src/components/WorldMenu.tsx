@@ -92,7 +92,7 @@ export function WorldMenu() {
         return w.debug?.navMeshShown ?? false;
       case "Door Normals":
         return w.debug?.doorNormalsShown ?? true;
-      case "Points":
+      case "Decor Points":
         return w.debug?.doPointsShown ?? false;
       default:
         return false;
@@ -138,7 +138,7 @@ export function WorldMenu() {
         w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
         w.view.forceUpdate();
         break;
-      case "Points": {
+      case "Decor Points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
         w.view.forceUpdate();
         break;
@@ -493,14 +493,22 @@ export function WorldMenu() {
         </AnimatePresence>
       </motion.div>
 
-      <RoomHitModal open={state.debugHitOpen} onOpenChange={(open) => state.set({ debugHitOpen: open })} />
+      <RoomHitModal
+        open={state.debugHitOpen}
+        onOpenChange={(open) => state.set({ debugHitOpen: open })}
+        container={w.rootEl}
+      />
       <GeomorphGraphsModal
         open={state.gmGraphsOpen}
         onOpenChange={(open) => state.set({ gmGraphsOpen: open })}
         container={w.rootEl}
       />
       {w.npc && (
-        <SkinDebugModal open={state.skinDebugOpen} onOpenChange={(open) => state.set({ skinDebugOpen: open })} />
+        <SkinDebugModal
+          open={state.skinDebugOpen}
+          onOpenChange={(open) => state.set({ skinDebugOpen: open })}
+          container={w.rootEl}
+        />
       )}
     </>
   );
@@ -566,9 +574,9 @@ const debugItems = [
   "Colliders",
   "Grid",
   "Room Lights",
-  "NavMesh",
   "Door Normals",
-  "Points",
+  "Decor Points",
+  "NavMesh",
 ] as const;
 
 const selectItemClass = cn(
