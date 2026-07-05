@@ -44,15 +44,23 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
-export function demo_remove_decor(ct: JshCli.RunArg) {
-  ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
-}
-
 export async function* demo_log_speech(ct: JshCli.RunArg) {
   for await (const e of events(ct, {
     where: (e) => e.key === "speech",
   })) {
-    console.log({ e });
-    yield `${e.npcKey}: ${e.words}`;
+    // console.log({ e });
+    yield `${ct.api.ansi.Blue}${e.npcKey}${ct.api.ansi.Reset}: ${e.words}`;
+  }
+}
+
+export function demo_remove_decor(ct: JshCli.RunArg) {
+  ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
+}
+
+export async function demo_toggle_doors(ct: JshCli.RunArg) {
+  for await (const e of events(ct, { where: (e) => e.key === "picked" })) {
+    if (e.meta.type === "door") {
+      ct.w.e.toggleDoor(e.meta.gdKey);
+    }
   }
 }
