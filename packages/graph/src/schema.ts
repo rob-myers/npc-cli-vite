@@ -1,5 +1,5 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
-import { SixTupleSchema } from "@npc-cli/util/geom";
+import { SixTupleSchema } from "@npc-cli/util/geom.schema";
 import z from "zod";
 import { SymbolGraph } from "./symbol-graph.ts";
 

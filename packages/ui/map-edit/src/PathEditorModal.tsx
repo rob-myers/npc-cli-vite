@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { cn, useStateRef } from "@npc-cli/util";
-import { geomService } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { MinusCircleIcon, PlusCircleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import type { State as MapEditState } from "./MapEdit";

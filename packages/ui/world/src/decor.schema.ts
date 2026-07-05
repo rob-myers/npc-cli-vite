@@ -1,4 +1,11 @@
-import { MetaSchema, pointCodec, RectJsonSchema, rectCodec, SixTupleSchema, VectJsonSchema } from "@npc-cli/util/geom";
+import {
+  MetaSchema,
+  pointCodec,
+  RectJsonSchema,
+  rectCodec,
+  SixTupleSchema,
+  VectJsonSchema,
+} from "@npc-cli/util/geom.schema";
 import z from "zod";
 
 const GmRoomIdSchema = z.object({

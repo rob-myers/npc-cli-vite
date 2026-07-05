@@ -1,5 +1,5 @@
 import { StarShipSymbolImageKeySchema } from "@npc-cli/media/starship-symbol";
-import { AffineTransformSchema, pointCodec, rectCodec } from "@npc-cli/util/geom";
+import { AffineTransformSchema, pointCodec, rectCodec } from "@npc-cli/util/geom.schema";
 import { toPrecision } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 

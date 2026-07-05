@@ -1,5 +1,5 @@
-export * from "./geom.schema.ts";
-export * from "./geom-service.ts";
+// export * from "./geom.schema.ts";
+// export * from "./geom-service.ts";
 export * from "./mat.js";
 export * from "./poly.js";
 export * from "./rect.js";

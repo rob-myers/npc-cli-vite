@@ -1,6 +1,7 @@
 import fs, { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { geomService, Poly, Vect } from "@npc-cli/util/geom";
+import { Poly, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { tagsToMeta, textToTags } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 

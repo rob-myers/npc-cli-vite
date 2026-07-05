@@ -1,7 +1,7 @@
 import { url } from "@npc-cli/media";
-import { geomService, useStateRef } from "@npc-cli/util";
-
+import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+import { geomService } from "@npc-cli/util/geom-service";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph } from "@react-three/fiber";

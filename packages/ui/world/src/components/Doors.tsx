@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
-import { geomService, Mat, Vect } from "@npc-cli/util/geom";
+import { Mat, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
 import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";

@@ -17,7 +17,8 @@ import {
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
 import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
-import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
+import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 import {
   decorPointDefaultRadius,

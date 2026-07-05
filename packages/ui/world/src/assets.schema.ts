@@ -14,7 +14,7 @@ import {
   polyCodec,
   rectCodec,
   TriangulationSchema,
-} from "@npc-cli/util/geom";
+} from "@npc-cli/util/geom.schema";
 import { Matrix4 } from "three/src/math/Matrix4.js";
 import z, { url } from "zod";
 import { DecorSchema } from "./decor.schema.ts";

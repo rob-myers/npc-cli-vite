@@ -1,4 +1,6 @@
-import { geomService, Mat, Poly, useStateRef, Vect } from "@npc-cli/util";
+import { useStateRef } from "@npc-cli/util";
+import { Mat, Poly, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";

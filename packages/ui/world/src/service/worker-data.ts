@@ -1,5 +1,6 @@
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
-import { geomService, Poly } from "@npc-cli/util/geom";
+import { Poly } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { helper } from "./helper";
 
 /**

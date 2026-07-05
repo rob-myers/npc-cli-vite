@@ -13,17 +13,9 @@ import {
 import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const";
 import type { ThemeName } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import {
-  cn,
-  ExhaustiveError,
-  Mat,
-  Rect,
-  type UseStateRef,
-  useBeforeUnloadOrVisibilityChange,
-  useStateRef,
-  Vect,
-} from "@npc-cli/util";
+import { cn, ExhaustiveError, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
+import { Mat, Rect, Vect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {

@@ -1,5 +1,5 @@
 import type { UseStateRef } from "@npc-cli/util";
-import { geomService } from "@npc-cli/util";
+import { geomService } from "@npc-cli/util/geom-service";
 import type { buildGraph } from "@react-three/fiber";
 import { deltaAngle } from "maath/misc";
 import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, type QueryFilter } from "navcat";

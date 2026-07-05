@@ -1,4 +1,5 @@
-import { ExhaustiveError, geomService, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";

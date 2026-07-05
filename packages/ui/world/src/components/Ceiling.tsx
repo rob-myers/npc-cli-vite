@@ -1,4 +1,5 @@
-import { Mat, useStateRef } from "@npc-cli/util";
+import { useStateRef } from "@npc-cli/util";
+import { Mat } from "@npc-cli/util/geom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";

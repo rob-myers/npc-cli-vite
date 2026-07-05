@@ -1,7 +1,8 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { geomService, Mat, Vect } from "@npc-cli/util/geom";
+import { Mat, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";

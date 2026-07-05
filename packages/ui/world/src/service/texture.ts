@@ -1,4 +1,4 @@
-import { geomService } from "@npc-cli/util";
+import { geomService } from "@npc-cli/util/geom-service";
 import { drawPolygons, drawRoundedRect } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
 import type { DecorSheetEntry } from "../assets.schema";

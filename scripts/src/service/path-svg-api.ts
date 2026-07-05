@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { geomService, Rect } from "@npc-cli/util";
+import { Rect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { PROJECT_ROOT } from "../const.ts";
 
 const PATH_DIR = path.join(PROJECT_ROOT, "packages/app/public/path");

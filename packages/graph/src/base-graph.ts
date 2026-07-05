@@ -1,4 +1,4 @@
-import { Vect } from "@npc-cli/util/geom";
+import { Vect } from "@npc-cli/util/geom/vect";
 import { deepClone, flatten, removeFirst, warn } from "@npc-cli/util/legacy/generic";
 import chalk from "chalk";
 

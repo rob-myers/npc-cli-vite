@@ -300,7 +300,7 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG navMeshHelper should not occlude object-pick
 
-- 🚧 BUG change geom-service should not restart world
+- ✅ BUG change geom-service should not restart world
 
 - move "open door on click" to a script
 - larger pause UI

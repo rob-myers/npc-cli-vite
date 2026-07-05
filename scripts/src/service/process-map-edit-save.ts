@@ -15,7 +15,8 @@ import {
   SymbolsManifestSchema,
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { isNodeTransformable, migrateMapEditSavedFile, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
-import { geomService, Mat, Rect } from "@npc-cli/util/geom";
+import { Mat, Rect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { deepClone, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
