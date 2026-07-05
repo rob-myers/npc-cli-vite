@@ -2,7 +2,6 @@ export * from "./components/BasicPopover";
 export * from "./components/PopoverArrow";
 export * from "./components/Spinner";
 export * from "./ExhaustiveError";
-export * from "./geom";
 export * from "./hooks/use-before-unload-or-visibility-change";
 export * from "./hooks/use-composed-refs";
 export * from "./hooks/use-double-tap";

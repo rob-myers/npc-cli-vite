@@ -1,6 +1,7 @@
 import { BaseGraph, createBaseAstar } from "@npc-cli/graph";
 import type { StarShipGeomorphKey, StarshipGeomorphNumber } from "@npc-cli/media/starship-symbol";
-import { directionChars, geomService, Mat, Rect } from "@npc-cli/util/geom";
+import { Mat, Rect } from "@npc-cli/util/geom";
+import { directionChars, geomService } from "@npc-cli/util/geom-service";
 import { error } from "@npc-cli/util/legacy/generic";
 import { AStar } from "../pathfinding/AStar";
 import { createGmIdGrid, queryGmIdGrid } from "./grid";

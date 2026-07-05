@@ -1,6 +1,6 @@
 import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import { geomService } from "@npc-cli/util";
 import { Poly } from "@npc-cli/util/geom/poly";
+import { geomService } from "@npc-cli/util/geom-service";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import {
   floorTextureDimension,

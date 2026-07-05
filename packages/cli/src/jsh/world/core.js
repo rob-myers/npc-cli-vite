@@ -1,5 +1,6 @@
 import { npcHeight } from "@npc-cli/ui__world/const";
-import { geomService, Vect } from "@npc-cli/util/geom";
+import { Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
 /**

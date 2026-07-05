@@ -1,4 +1,5 @@
-import { geomService, Poly, Vect } from "@npc-cli/util/geom";
+import { Poly, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { connectorEntranceHalfDepth, doorDepth, hullDoorDepth, precision, wallOutset } from "../const.ts";
 
 export class Connector {

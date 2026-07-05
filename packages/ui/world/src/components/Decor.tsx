@@ -1,5 +1,6 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { geomService, Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
+import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
