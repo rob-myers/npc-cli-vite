@@ -24,18 +24,19 @@ export class NpcAnimation {
   npc: Npc;
 
   /**
-   * - true iff when npc moving it should slow down before final destination
-   * - set via `move` or `preventArrive` during move
+   * Arrive is `true` iff when npc moves it should slow down before final destination.
+   * It can be set via `npc.move` or alternatively via `npc.preventArrive` during move.
    */
   arrive = true;
-  idleClip: THREE.AnimationClip = emptyAnimationClip;
   fadeState = { delta: 0, target: 1 };
-  lookAtState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, longLook: false };
-  mixer: THREE.AnimationMixer = emptyMixer;
-  moveClip: THREE.AnimationClip = emptyAnimationClip;
+  lookState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, longLook: false };
   /** true iff moving via agent in navmesh */
   moving = false;
   stuckAccum = 0;
+
+  idleClip = emptyAnimationClip;
+  mixer = emptyMixer;
+  moveClip = emptyAnimationClip;
 
   constructor(npc: Npc) {
     this.npc = npc;
@@ -56,7 +57,7 @@ export class NpcAnimation {
     const s = Math.max(0, finished ? this.fadeState.target : next);
 
     this.npc.labelVisible.value = s >= 1 ? 1 : 0;
-    this.npc.alphaTestScale.value = Math.min(0.9, Math.max(0, s - 0.2));
+    this.npc.alphaTest.value = Math.min(0.9, Math.max(0, s - 0.2));
     this.npc.colorScale.value = next;
     this.npc.opacityScale.value = next;
     this.npc.material.depthWrite = next > 0.2;
@@ -69,7 +70,7 @@ export class NpcAnimation {
   }
 
   lookTick(delta: number) {
-    const s = this.lookAtState;
+    const s = this.lookState;
     if (!s.active) {
       return;
     }

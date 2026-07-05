@@ -15,31 +15,38 @@ import { NpcAnimation } from "./npc-animation";
 
 export class Npc {
   key: string;
+  /** for render cache bust */
   epochMs = 0;
 
-  /** Physics body */
-  bodyUid: number;
-  alphaTestScale: THREE.UniformNode<"float", number>;
-  colorScale: THREE.UniformNode<"float", number>;
+  anim = new NpcAnimation(this);
+  w: UseStateRef<import("./World").State>;
 
+  agentId: string | null = null;
+  /** physics body */
+  bodyUid: number;
+  /** object-picking id*/
+  pickId: number;
+
+  bubbleOffset = new THREE.Vector3(0, 0, 0);
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
   group: THREE.Group | null = null;
-  /** Points into ArrayTexture */
+  material: THREE.MeshStandardNodeMaterial;
+  /** synced with crowd agent */
+  position: THREE.Vector3;
+  rotation: THREE.Euler;
+  skinnedMesh: THREE.SkinnedMesh;
+
+  alphaTest: THREE.UniformNode<"float", number>;
+  colorScale: THREE.UniformNode<"float", number>;
+  /** points into ArrayTexture */
   labelLayerIndex: number;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
-  material: THREE.MeshStandardNodeMaterial;
   opacityScale: THREE.UniformNode<"float", number>;
-  /** Expect ≤ 200 npcs but technically ≤ 65535 */
-  pickId: number;
-  skinnedMesh: THREE.SkinnedMesh;
-  /** Skin selection */
+  /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
-  agentId: string | null = null;
-  anim = new NpcAnimation(this);
-  bubbleOffset = new THREE.Vector3(0, 0, 0);
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   labelStyle: JshCli.NpcLabelStyle = { color: "#ff9a", speaking: false };
   last = {
@@ -52,9 +59,6 @@ export class Npc {
     dst: { x: 0, y: 0 },
     dstGrId: null as Geomorph.GmRoomId | null,
   };
-  /** Synced with crowd agent */
-  position: THREE.Vector3;
-  rotation: THREE.Euler;
   queryFilter!: QueryFilter;
   spawns = 0;
 
@@ -70,8 +74,6 @@ export class Npc {
     scale: rejectNoop,
     look: rejectNoop,
   };
-
-  w: UseStateRef<import("./World").State>;
 
   get agent() {
     return this.agentId === null ? null : (this.w.npc.crowd.agents[this.agentId] ?? null);
@@ -95,9 +97,10 @@ export class Npc {
 
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
-    Object.assign(this, init);
+
+    // Object.assign(this, init);
     this.key = init.key;
-    this.alphaTestScale = init.alphaTestScale;
+    this.alphaTest = init.alphaTest;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
@@ -108,9 +111,10 @@ export class Npc {
     this.opacityScale = init.opacityScale;
     this.pickId = init.pickId;
     this.position = init.position;
-    this.rotation = init.skinnedMesh.rotation;
+    this.rotation = init.rotation;
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
+
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
@@ -171,7 +175,7 @@ export class Npc {
     } finally {
       // guarded in case of re-fade midway
       if (this.anim.fadeState.delta === 0) {
-        this.alphaTestScale.value = 0.9;
+        this.alphaTest.value = 0.9;
         this.opacityScale.value = 1;
         this.colorScale.value = 1;
 
@@ -202,6 +206,8 @@ export class Npc {
       return;
     }
     this.group = group;
+
+    // overwrite
     this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;
     this.position = this.skinnedMesh.position;
     this.rotation = this.skinnedMesh.rotation;
@@ -261,7 +267,8 @@ export class Npc {
     // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
     const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
     const thresholdDegrees = 30;
-    const walking = Math.abs(totalDiff) > thresholdDegrees * (Math.PI / 180);
+    const longLook = Math.abs(totalDiff) > thresholdDegrees * (Math.PI / 180);
+    const { lookState: lookAtState } = this.anim;
 
     try {
       await new Promise<string>((resolve, reject) => {
@@ -269,14 +276,14 @@ export class Npc {
         this.resolve.look = resolve;
         this.reject.look = reject;
 
-        this.anim.lookAtState.active = true;
-        this.anim.lookAtState.startAngle = startAngle;
-        this.anim.lookAtState.totalDiff = totalDiff;
-        this.anim.lookAtState.duration = duration;
-        this.anim.lookAtState.elapsed = 0;
-        this.anim.lookAtState.longLook = walking;
+        lookAtState.active = true;
+        lookAtState.startAngle = startAngle;
+        lookAtState.totalDiff = totalDiff;
+        lookAtState.duration = duration;
+        lookAtState.elapsed = 0;
+        lookAtState.longLook = longLook;
 
-        if (walking) {
+        if (longLook) {
           this.anim.moveClip = this.clips.breathe; // breathe if look large angle
           this.anim.mixer.existingAction(this.anim.idleClip)?.fadeOut(0.15);
           this.anim.mixer.clipAction(this.anim.moveClip).reset().fadeIn(0.15).play();
@@ -284,7 +291,7 @@ export class Npc {
         }
       });
     } finally {
-      this.anim.lookAtState.longLook = false;
+      lookAtState.longLook = false;
       this.anim.mixer.timeScale = 1;
       this.anim.moveClip = this.clips.walk;
     }
@@ -314,7 +321,7 @@ export class Npc {
     this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, look: rejectNoop };
     // synchronously stop scale or look
     this.anim.fadeState.delta = 0;
-    this.anim.lookAtState.active = false;
+    this.anim.lookState.active = false;
     reject.spawn(err);
     reject.move(err);
     reject.scale(err);
@@ -346,19 +353,20 @@ export class Npc {
 
 export type NpcInit = {
   key: string;
-  alphaTestScale: THREE.UniformNode<"float", number>;
+  alphaTest: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
-  pickId: number;
   labelLayerIndex: number;
   labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   opacityScale: THREE.UniformNode<"float", number>;
+  pickId: number;
   position: THREE.Vector3;
-  skinIndexUniform: THREE.UniformNode<"float", number>;
+  rotation: THREE.Euler;
   skinnedMesh: THREE.SkinnedMesh;
+  skinIndexUniform: THREE.UniformNode<"float", number>;
 };
 
 export function npcBubbleHeightForClip(clipName: string): number {
