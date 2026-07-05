@@ -138,7 +138,7 @@ export const npcBrightness = 0.6;
 
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
-export const lockedDoorTint = "#b44";
+export const lockedDoorTint = "#f44";
 
 export const unlockedDoorTint = "#4b4";
 

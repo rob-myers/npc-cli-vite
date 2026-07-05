@@ -199,6 +199,17 @@ class GeomService {
     }
   }
 
+  /**
+   * @param p0 seg src
+   * @param p1 seg dst
+   * @param q point
+   */
+  getPerpendicularDistanceSeg(p0: Geom.VectJson, p1: Geom.VectJson, q: Geom.VectJson): number {
+    const normal = tempVect1.set(-(p1.y - p0.y), p1.x - p0.x).normalize();
+    const delta = tempVect2.copy(q).sub(p0);
+    return Math.abs(normal.dot(delta));
+  }
+
   getThreeRotationY(dy: number, dx: number) {
     return -Math.atan2(dy, dx) - Math.PI / 2;
   }

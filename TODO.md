@@ -226,7 +226,7 @@ w decor.byKey.test-decor-point
   - `pick meta.{nav,do} | move npc:rob`
     - exactly the navigable or doables
   - `pick meta.{floor,do} | move npc:rob`
-    - can pick floor points near nav
+    - can pick floor points near nav 👈
   - `w decor.query $( pick 1 )`
   - `pick | w decor.query -`
   - `meta $( pick as:point 1 )`
@@ -288,6 +288,20 @@ w decor.byKey.test-decor-point
 
 - ✅ clean `Npc` variable ordering
 
+- ✅ on manually open locked door while npc close it is not auto-closing
+  - because npcKey in `w.e.doorToNpcs.g0d25.inside`
+  - do "refined inside doorway test"
+
+- ✅ BUG door.closeTimeoutId not triggered when leave locked doorway
+  - worked when left `nearby`, but now also triggered when leave `inside`
+- 🚧 BUG npc stuck when starts from locked doorway poly
+
+- BUG change geom-service should not restart world
+
+- move "open door on click" to a script
+- larger pause UI
+- larger mobile UI
+
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
   - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
@@ -297,7 +311,8 @@ w decor.byKey.test-decor-point
   - improve general-0
   - add a couple more
 - ✅ remove shuffle-back animation
-- npc: unify state.lookAtPoint and updateLookAt
+- ✅ npc: unify state.lookAtPoint and updateLookAt
+  - now have `npc.look` and `npc.anim.lookTick`
 - BUG locked door opens when npc close enough to nearby sensor
   - `w e.toggleLock g0d31`
 - ✅ abstract npc animation logic into class

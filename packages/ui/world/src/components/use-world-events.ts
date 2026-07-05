@@ -30,7 +30,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (closeNpcs === undefined) {
           return true;
         } else if (closeNpcs.inside.size > 0) {
-          return false; // nope: npc(s) using doorway
+          return [...closeNpcs.inside].some((npcKey) => {
+            const distance = geomService.getPerpendicularDistanceSeg(door.src, door.dst, w.n[npcKey].point);
+            // console.log({ distance });
+            return distance > 0.2; // npc(s) using doorway
+          });
         } else if (closeNpcs.nearby.size === 0) {
           return true;
         } else if (door.auto === true && door.locked === false) {
@@ -206,6 +210,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onExitCollider(e, npc) {
         if (e.type === "inside") {
+          const door = w.door.byKey[e.meta.gdKey];
+          if (door.locked === true && door.auto === true) {
+            state.tryCloseDoor(e.meta.gdKey);
+          }
+
           // trigger enter-room on exit inside-collider and changed room
           const gmRoomId = state.npcToRoom.get(npc.key);
           const nextGmRoomId = state.findRoomContaining(npc.position);
@@ -222,7 +231,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
               state.tryCloseDoor(e.meta.gdKey);
             }
-            return;
           } else if (door.locked === true) {
             state.tryCloseDoor(e.meta.gdKey);
           } else if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
