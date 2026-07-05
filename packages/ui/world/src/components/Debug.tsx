@@ -2,9 +2,9 @@ import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
-import { createNavMeshHelper } from "navcat/three";
+import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import { attribute, float, normalView, pow, texture, uv, vec2 } from "three/tsl";
+import { attribute, float, normalView, pow, select, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
@@ -54,6 +54,7 @@ export function Debug() {
       gridShown: false,
       lightSpheresShown: false,
       logGPUInfo: false,
+      navMeshHelper: null,
       navMeshShown: false,
       doPointsShown: false,
       originShown: false,
@@ -278,8 +279,22 @@ export function Debug() {
     return { material: mat, uid: crypto.randomUUID() };
   }, [state.doPointsShown]);
 
-  const navMeshHelper = useMemo(() => {
-    return createNavMeshHelper(w.nav?.navMesh);
+  useEffect(() => {
+    const navMeshHelper = createNavMeshHelper(w.nav?.navMesh);
+
+    // hide during object-picking
+    const meshOrLines = [] as (THREE.Mesh | THREE.Line)[];
+    // biome-ignore format: succint
+    navMeshHelper.object.traverse((object) => (object instanceof THREE.Mesh || object instanceof THREE.Line) && meshOrLines.push(object));
+    // biome-ignore format: succint
+    meshOrLines.forEach(child => {
+      const material = child.material as THREE.MeshBasicMaterial | THREE.LineBasicMaterial;
+      material.transparent = true;
+      material.opacityNode = select(w.view.objectPick.greaterThan(0), 0, 0.5)
+    });
+
+    state.set({ navMeshHelper });
+    return navMeshHelper.dispose();
   }, [w.nav?.navMesh]);
 
   return (
@@ -339,7 +354,7 @@ export function Debug() {
         renderOrder={-5}
       />
 
-      {state.navMeshShown && <primitive object={navMeshHelper.object} />}
+      {state.navMeshShown && state.navMeshHelper && <primitive object={state.navMeshHelper.object} />}
     </>
   );
 }
@@ -366,6 +381,7 @@ export type State = {
   gridShown: boolean;
   lightSpheresShown: boolean;
   logGPUInfo: boolean;
+  navMeshHelper: null | NavMeshHelperObject;
   navMeshShown: boolean;
   doPointsShown: boolean;
   originShown: boolean;
