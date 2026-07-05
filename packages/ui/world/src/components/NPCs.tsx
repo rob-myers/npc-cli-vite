@@ -419,8 +419,6 @@ export default function NPCs() {
             });
           })();
 
-        // const prevIdleClip = npc.anim.idleClip;
-
         if (doResult !== null) {
           const overrideGroundPoint = doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
@@ -483,7 +481,7 @@ export default function NPCs() {
           npc.anim.playIdleClip(0); // after mount
         } else {
           if (as) npc.setSkin(as);
-          prevIdleClip !== npc.anim.idleClip && npc.anim.playIdleClip(0); // before update
+          if (prevIdleClip !== npc.anim.idleClip) npc.anim.playIdleClip(0); // before update
           w.view.forceUpdate();
         }
 

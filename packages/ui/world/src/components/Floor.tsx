@@ -109,6 +109,13 @@ export default function Floor() {
           ),
           { fillStyle: "#0006", strokeStyle: null },
         );
+
+        if (w.debug?.gridShown) {
+          ct.save();
+          drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#fff0", strokeStyle: null });
+          drawGrid(ct, gm.bounds, gm.gridRect);
+          ct.restore();
+        }
       },
       transformInstances() {
         if (!state.inst) return;
@@ -191,3 +198,44 @@ export type State = {
 
 const tmpMat1 = new Mat();
 const tmpPoly = new Poly();
+
+const gridSize = 1.5;
+
+function drawGrid(
+  ct: CanvasRenderingContext2D,
+  bounds: { x: number; y: number; width: number; height: number },
+  gridOrigin: { x: number; y: number },
+) {
+  const ixMin = Math.floor(bounds.x / gridSize);
+  const ixMax = Math.ceil((bounds.x + bounds.width) / gridSize);
+  const iyMin = Math.floor(bounds.y / gridSize);
+  const iyMax = Math.ceil((bounds.y + bounds.height) / gridSize);
+
+  ct.strokeStyle = "rgba(0, 220, 0, 0.45)";
+  ct.lineWidth = 0.012;
+  ct.beginPath();
+  for (let ix = ixMin; ix <= ixMax; ix++) {
+    const x = ix * gridSize;
+    ct.moveTo(x, iyMin * gridSize);
+    ct.lineTo(x, iyMax * gridSize);
+  }
+  for (let iy = iyMin; iy <= iyMax; iy++) {
+    const y = iy * gridSize;
+    ct.moveTo(ixMin * gridSize, y);
+    ct.lineTo(ixMax * gridSize, y);
+  }
+  ct.stroke();
+
+  const worldOffsetX = gridOrigin.x;
+  const worldOffsetY = gridOrigin.y;
+  ct.fillStyle = "rgba(0, 220, 0, 0.85)";
+  ct.font = "0.11px monospace";
+  ct.textBaseline = "top";
+  for (let ix = ixMin; ix < ixMax; ix++) {
+    for (let iy = iyMin; iy < iyMax; iy++) {
+      const wx = ix * gridSize + worldOffsetX;
+      const wy = iy * gridSize + worldOffsetY;
+      ct.fillText(`${wx}, ${wy}`, ix * gridSize + 0.04, iy * gridSize + 0.04);
+    }
+  }
+}

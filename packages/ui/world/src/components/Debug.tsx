@@ -51,6 +51,7 @@ export function Debug() {
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
       doorNormalsShown: false,
+      gridShown: false,
       lightSpheresShown: false,
       logGPUInfo: false,
       navMeshShown: false,
@@ -362,6 +363,7 @@ export type State = {
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
   doorNormalsShown: boolean;
+  gridShown: boolean;
   lightSpheresShown: boolean;
   logGPUInfo: boolean;
   navMeshShown: boolean;
