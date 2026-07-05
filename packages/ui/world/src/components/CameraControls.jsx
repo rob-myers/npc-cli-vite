@@ -69,9 +69,13 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
   useEffect(() => {
     const old = r3f.get().controls;
     r3f.set({ controls });
-    controls.setParams({ fixedPolar: false, snapAzimuth: props.cameraMode === "cardinal" });
+    controls.setParams({
+      fixedPolar: false,
+      snapAzimuth: props.cameraMode === "cardinal",
+      numCardinalDirections: props.numCardinalDirections ?? 4,
+    });
     return () => r3f.set({ controls: old });
-  }, [props.cameraMode, controls]);
+  }, [props.cameraMode, props.numCardinalDirections, controls]);
 
   useFrame(() => {
     controls.update();
@@ -100,6 +104,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
 /**
  * @typedef Props
  * @property {CameraModeType} [cameraMode]
+ * @property {number} [numCardinalDirections]
  * @property {HTMLElement} domElement
  * @property {number} [extraZoom]
  * @property {number} [initialAzimuthal]

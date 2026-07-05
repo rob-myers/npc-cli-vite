@@ -212,94 +212,26 @@ export function WorldMenu() {
           <Menu.Portal>
             <Menu.Positioner className="z-50" sideOffset={4} align="start">
               <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1">
-                <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                  <BrightnessPie
-                    ratio={brightnessToRatio(w.brightness)}
-                    onClick={() => {
-                      w.brightness = 1;
-                      w.update();
-                      tryLocalStorageSet(brightnessStorageKey, "1");
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="2"
-                    step="0.1"
-                    value={w.brightness}
-                    onChange={(e) => {
-                      w.brightness = Number(e.target.value);
-                      w.update();
-                      tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn(
-                      "w-16 accent-white cursor-pointer",
-                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                    )}
-                  />
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                  <CircleHalfIcon
-                    className="size-4 text-white cursor-pointer shrink-0"
-                    onClick={() => {
-                      w.contrast = 1;
-                      w.update();
-                      tryLocalStorageSet(contrastStorageKey, "1");
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min="0.75"
-                    max="1.75"
-                    step="0.05"
-                    value={w.contrast}
-                    onChange={(e) => {
-                      w.contrast = Number(e.target.value);
-                      w.update();
-                      tryLocalStorageSet(contrastStorageKey, String(w.contrast));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn(
-                      "w-16 accent-white cursor-pointer",
-                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                    )}
-                  />
-                </div>
-
-                {w.view && (
+                <div className="flex flex-wrap max-w-52">
                   <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                    <ArrowsOutIcon
-                      className="size-4 text-white cursor-pointer shrink-0"
+                    <BrightnessPie
+                      ratio={brightnessToRatio(w.brightness)}
                       onClick={() => {
-                        w.view.fov = defaultFov;
-                        const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                        if (cam?.isPerspectiveCamera) {
-                          cam.fov = defaultFov;
-                          cam.updateProjectionMatrix();
-                        }
-                        w.r3f?.invalidate();
-                        tryLocalStorageSet(fovStorageKey, String(defaultFov));
+                        w.brightness = 1;
                         w.update();
+                        tryLocalStorageSet(brightnessStorageKey, "1");
                       }}
                     />
                     <input
                       type="range"
-                      min="20"
-                      max="100"
-                      step="5"
-                      value={w.view.fov}
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={w.brightness}
                       onChange={(e) => {
-                        const fov = Number(e.target.value);
-                        w.view.fov = fov;
-                        const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                        if (cam?.isPerspectiveCamera) {
-                          cam.fov = fov;
-                          cam.updateProjectionMatrix();
-                        }
-                        w.r3f?.invalidate();
-                        tryLocalStorageSet(fovStorageKey, String(fov));
+                        w.brightness = Number(e.target.value);
                         w.update();
+                        tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                       }}
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
@@ -308,15 +240,106 @@ export function WorldMenu() {
                       )}
                     />
                   </div>
-                )}
+
+                  <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                    <CircleHalfIcon
+                      className="size-4 text-white cursor-pointer shrink-0"
+                      onClick={() => {
+                        w.contrast = 1;
+                        w.update();
+                        tryLocalStorageSet(contrastStorageKey, "1");
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min="0.75"
+                      max="1.75"
+                      step="0.05"
+                      value={w.contrast}
+                      onChange={(e) => {
+                        w.contrast = Number(e.target.value);
+                        w.update();
+                        tryLocalStorageSet(contrastStorageKey, String(w.contrast));
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        "w-16 accent-white cursor-pointer",
+                        "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                      )}
+                    />
+                  </div>
+
+                  {w.view && (
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                      <ArrowsOutIcon
+                        className="size-4 text-white cursor-pointer shrink-0"
+                        onClick={() => {
+                          w.view.fov = defaultFov;
+                          const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
+                          if (cam?.isPerspectiveCamera) {
+                            cam.fov = defaultFov;
+                            cam.updateProjectionMatrix();
+                          }
+                          w.r3f?.invalidate();
+                          tryLocalStorageSet(fovStorageKey, String(defaultFov));
+                          w.update();
+                        }}
+                      />
+                      <input
+                        type="range"
+                        min="20"
+                        max="100"
+                        step="5"
+                        value={w.view.fov}
+                        onChange={(e) => {
+                          const fov = Number(e.target.value);
+                          w.view.fov = fov;
+                          const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
+                          if (cam?.isPerspectiveCamera) {
+                            cam.fov = fov;
+                            cam.updateProjectionMatrix();
+                          }
+                          w.r3f?.invalidate();
+                          tryLocalStorageSet(fovStorageKey, String(fov));
+                          w.update();
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "w-16 accent-white cursor-pointer",
+                          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {w.view && (
                   <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="flex flex-col gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick={false}
                     onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
                   >
-                    camera: {w.view.cameraMode}
+                    <div className="shrink-0">camera: {w.view.cameraMode}</div>
+                    <div className="flex gap-2">
+                      <input
+                        type="range"
+                        min={1}
+                        max={16}
+                        step={1}
+                        disabled={w.view.cameraMode === "free"}
+                        value={w.view.numCardinalDirections}
+                        onChange={(e) => w.view.setNumCardinalDirections(Number(e.target.value))}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "w-16 accent-white",
+                          w.view.cameraMode === "cardinal" ? "cursor-pointer" : "cursor-not-allowed opacity-40",
+                          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                        )}
+                      />
+                      <span className={cn("shrink-0", w.view.cameraMode === "free" && "opacity-40")}>
+                        {w.view.numCardinalDirections}
+                      </span>
+                    </div>
                   </Menu.Item>
                 )}
 

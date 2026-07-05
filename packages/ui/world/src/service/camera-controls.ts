@@ -253,7 +253,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   //#endregion
 
   //#region Custom
-  params = { fixedPolar: false, fixedAzimuth: false, snapAzimuth: false };
+  params = { fixedPolar: false, fixedAzimuth: false, snapAzimuth: false, numCardinalDirections: 4 };
 
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
   /** `(clientX, clientY)` of first pointerdown */
@@ -1102,10 +1102,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
           this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08);
         }
       } else if (!this.snapAzimuth.committed) {
-        // Follow drag continuously; commit when 45° from origin (at most one snap per gesture)
+        // Follow drag continuously; commit when past half a step (at most one snap per gesture)
         const delta = deltaAngle(this.snapAzimuth.origin, this.spherical.theta);
-        if (!this.snapAzimuth.fired && Math.abs(delta) >= halfPi / 2) {
-          const newTarget = normalizeAngle(this.snapAzimuth.origin + Math.sign(delta) * halfPi);
+        const snapStep = (2 * Math.PI) / this.params.numCardinalDirections;
+        if (!this.snapAzimuth.fired && Math.abs(delta) >= snapStep / 2) {
+          const originSlot = Math.round(this.snapAzimuth.origin / snapStep);
+          const newTarget = normalizeAngle((originSlot + Math.sign(delta)) * snapStep);
           this.snapAzimuth.target = newTarget;
           this.snapAzimuth.committed = true;
           this.snapAzimuth.animating = true;
@@ -1203,7 +1205,6 @@ const twoFingerZoomBoost = 3.0;
 
 const threeFingerPolarSensitivity = 0.006;
 
-const halfPi = Math.PI / 2;
 const twoPI = 2 * Math.PI;
 
 function normalizeAngle(a: number) {
