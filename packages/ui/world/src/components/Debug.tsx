@@ -1,12 +1,29 @@
 import { useStateRef } from "@npc-cli/util";
-import { pause } from "@npc-cli/util/legacy/generic";
+import { pause, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import { attribute, Break, Fn, float, If, int, instanceIndex, Loop, normalView, positionWorld, pow, select, texture, uv, uniformArray, vec2 } from "three/tsl";
+import {
+  attribute,
+  Break,
+  Fn,
+  float,
+  If,
+  instanceIndex,
+  int,
+  Loop,
+  normalView,
+  positionWorld,
+  pow,
+  select,
+  texture,
+  uniformArray,
+  uv,
+  vec2,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
-import { sguToWorldScale } from "../const";
+import { pickOpenDoorsKey, sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getLightMetas } from "../service/texture";
@@ -45,7 +62,7 @@ export function Debug() {
       navMeshShown: false,
       doPointsShown: false,
       originShown: false,
-      openDoorsOnClick: true,
+      pickOpenDoors: tryLocalStorageGetParsed(pickOpenDoorsKey) ?? false,
 
       physicsLines: new THREE.BufferGeometry(),
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
@@ -223,7 +240,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, openDoorsOnClick: true, arrowGeo: false },
+      reset: { demoNavPathShown: true, originShown: true, pickOpenDoors: true, arrowGeo: false },
     },
   );
 
@@ -302,13 +319,13 @@ export function Debug() {
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {
-        if (state.openDoorsOnClick && event.key === "picked" && event.meta.type === "door") {
+        if (state.pickOpenDoors && event.key === "picked" && event.meta.type === "door") {
           w.e.toggleDoor(event.meta.gdKey); // toggle
         }
       },
     });
     return () => sub.unsubscribe();
-  }, [state.openDoorsOnClick]);
+  }, [state.pickOpenDoors]);
 
   useEffect(() => {
     const navMeshHelper = createNavMeshHelper(w.nav?.navMesh);
@@ -435,7 +452,7 @@ export type State = {
   navMeshShown: boolean;
   doPointsShown: boolean;
   originShown: boolean;
-  openDoorsOnClick: boolean;
+  pickOpenDoors: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
   physicsColliders: (WW.PhysicDebugItem & {
     parsedKey: WW.PhysicsParsedBodyKey;

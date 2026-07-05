@@ -17,7 +17,7 @@ import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
-import { brightnessStorageKey, contrastStorageKey, defaultFov, fovStorageKey } from "../const";
+import { brightnessStorageKey, contrastStorageKey, defaultFov, fovStorageKey, pickOpenDoorsKey } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
@@ -78,7 +78,7 @@ export function WorldMenu() {
 
   const isDebugActive = (item: string) => {
     switch (item) {
-      case "Pick":
+      case "View Pick":
         return w.view?.objectPick.value === 1;
       case "Post FX":
         return w.view?.postProcessing ?? true;
@@ -90,6 +90,8 @@ export function WorldMenu() {
         return w.debug?.lightSpheresShown ?? true;
       case "NavMesh":
         return w.debug?.navMeshShown ?? false;
+      case "Toggle Doors":
+        return w.debug?.pickOpenDoors ?? true;
       case "Door Normals":
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
@@ -101,7 +103,7 @@ export function WorldMenu() {
 
   const onDebugToggle = (item: string) => {
     switch (item) {
-      case "Pick":
+      case "View Pick":
         w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
         w.view.forceUpdate();
         break;
@@ -134,6 +136,13 @@ export function WorldMenu() {
         w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
         setTimeout(() => w.view.forceUpdate());
         break;
+      case "Toggle Doors": {
+        const next = !w.debug?.pickOpenDoors;
+        w.debug?.set({ pickOpenDoors: next });
+        tryLocalStorageSet(pickOpenDoorsKey, String(next));
+        state.update();
+        break;
+      }
       case "Door Normals":
         w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
         w.view.forceUpdate();
@@ -566,7 +575,7 @@ const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
 const debugItems = [
-  "Pick",
+  "View Pick",
   "Post FX",
   "Room Hit",
   "Graphs",
@@ -574,6 +583,7 @@ const debugItems = [
   "Colliders",
   "Grid",
   "Room Lights",
+  "Toggle Doors",
   "Door Normals",
   "Decor Points",
   "NavMesh",
