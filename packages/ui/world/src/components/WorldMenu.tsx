@@ -84,6 +84,8 @@ export function WorldMenu() {
         return w.view?.postProcessing ?? true;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
+      case "Grid":
+        return w.debug?.gridShown ?? false;
       case "Lights":
         return w.debug?.lightSpheresShown ?? true;
       case "NavMesh":
@@ -119,6 +121,10 @@ export function WorldMenu() {
       case "Colliders":
         w.debug?.showPhysicsColliders();
         w.update();
+        break;
+      case "Grid":
+        w.debug?.set({ gridShown: !w.debug.gridShown });
+        void w.floor?.draw().then(() => w.update());
         break;
       case "Lights":
         w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
@@ -558,6 +564,7 @@ const debugItems = [
   "Graphs",
   "Skins",
   "Colliders",
+  "Grid",
   "Lights",
   "NavMesh",
   "Normals",
