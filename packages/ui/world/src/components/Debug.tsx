@@ -308,9 +308,6 @@ export function Debug() {
   useEffect(() => {
     state.updateLightSpheres();
     state.updateDoorNormals();
-  }, [w.hash, w.gmsData]);
-
-  useEffect(() => {
     state.updateDecorPoints();
     state.update();
   }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
