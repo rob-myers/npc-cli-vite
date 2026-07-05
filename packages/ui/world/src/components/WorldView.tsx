@@ -23,6 +23,7 @@ import {
   defaultCameraModeMobile,
   defaultFov,
   fovStorageKey,
+  numCardinalDirectionsKey,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
@@ -41,6 +42,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       cameraMode:
         tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
         (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
+      numCardinalDirections: tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ?? 4,
       canvas: null as any,
       controls: null as any,
       clickIds: [],
@@ -331,6 +333,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(cameraModeStorageKey, mode);
         w.update();
       },
+      setNumCardinalDirections(n) {
+        state.numCardinalDirections = n;
+        tryLocalStorageSet(numCardinalDirectionsKey, String(n));
+        w.update();
+      },
       setupPostProcessing() {
         const gl = w.r3f.gl as unknown as THREE.WebGPURenderer;
         const { scene, camera } = w.r3f;
@@ -448,6 +455,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         <CameraControls
           ref={state.ref("controls")}
           cameraMode={state.cameraMode}
+          numCardinalDirections={state.numCardinalDirections}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -469,6 +477,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
 export type State = {
   cameraMode: CameraModeType;
+  numCardinalDirections: number;
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -497,6 +506,7 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   onCameraChange(spherical: THREE.Spherical): void;
   setCameraMode(mode: CameraModeType): void;
+  setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
