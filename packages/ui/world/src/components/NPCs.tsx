@@ -122,14 +122,14 @@ export default function NPCs() {
         const isPickMode = w.view.objectPick.notEqual(0);
         const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
 
-        const alphaTestScale = uniform(0.9);
+        const alphaTest = uniform(0.9);
 
         const mat = new THREE.MeshStandardNodeMaterial({
           transparent: true,
           depthWrite: true,
           side: THREE.FrontSide,
         });
-        mat.alphaTestNode = (select as any)(isLabel, float(0), alphaTestScale);
+        mat.alphaTestNode = (select as SelectAnyType)(isLabel, float(0), alphaTest);
         mat.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         mat.colorNode = (select as any)(isLabel, labelColor, mainColor);
         mat.outputNode = (select as SelectAnyType)(
@@ -139,7 +139,7 @@ export default function NPCs() {
         );
 
         return {
-          alphaTestScale,
+          alphaTest,
           colorScale,
           opacityScale,
           labelVisible,
@@ -148,23 +148,20 @@ export default function NPCs() {
           material: mat,
         };
       },
-      createNpc(opts: {
-        key: string;
-        pickId: number;
-        position: THREE.Vector3;
-        skinnedMesh: THREE.SkinnedMesh;
-        graph: ReturnType<typeof buildGraph>;
-        geometry: THREE.BufferGeometry;
-        skinIndex: number;
-      }) {
+      createNpc(
+        opts: Pick<NpcInit, "key" | "graph" | "geometry" | "pickId" | "position" | "rotation" | "skinnedMesh"> & {
+          skinIndex: number;
+        },
+      ) {
         const npc = new Npc(w, {
           key: opts.key,
-          pickId: opts.pickId,
-          labelLayerIndex: opts.pickId,
-          position: opts.position,
-          skinnedMesh: opts.skinnedMesh,
           graph: opts.graph,
           geometry: opts.geometry,
+          labelLayerIndex: opts.pickId,
+          pickId: opts.pickId,
+          position: opts.position,
+          rotation: opts.rotation,
+          skinnedMesh: opts.skinnedMesh,
           ...state.createMaterials(opts.pickId, opts.skinIndex),
         });
         npc.init();
@@ -410,11 +407,12 @@ export default function NPCs() {
 
             return state.createNpc({
               key: npcKey,
+              geometry,
+              graph,
               pickId: state.nextPickId++,
               position: helper.groundPointToVector3(groundAt),
+              rotation: clonedSkinnedMesh.rotation,
               skinnedMesh: clonedSkinnedMesh,
-              graph,
-              geometry,
               skinIndex: state.getSkinIndex(as ?? "medic-0"),
             });
           })();
@@ -622,7 +620,7 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    | "alphaTestScale"
+    | "alphaTest"
     | "colorScale"
     | "opacityScale"
     | "labelVisible"
@@ -632,11 +630,12 @@ export type State = {
   >;
   createNpc(opts: {
     key: string;
+    geometry: THREE.BufferGeometry;
+    graph: ReturnType<typeof buildGraph>;
     pickId: number;
     position: THREE.Vector3;
+    rotation: THREE.Euler;
     skinnedMesh: THREE.SkinnedMesh;
-    graph: ReturnType<typeof buildGraph>;
-    geometry: THREE.BufferGeometry;
     skinIndex: number;
   }): Npc;
   /**

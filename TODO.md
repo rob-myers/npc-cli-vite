@@ -231,6 +231,7 @@ w decor.byKey.test-decor-point
   - `pick | w decor.query -`
   - `meta $( pick as:point 1 )`
   - `pick | w helper.parse3dHeight -`
+  - `spawn npc:rob at:$( meta [4.5,4.5] )`
 
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
@@ -283,11 +284,13 @@ w decor.byKey.test-decor-point
       - ✅ opts.desiredHeight restricts to ≤ 1
 
 - ✅ w.decor.byRoom
+  - recomputed on hmr
+
+- ✅ clean `Npc` variable ordering
 
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
   - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
-
 - BUG npc arms through locked door
 - go thru skins
   - fix medic-0 foot texturing
