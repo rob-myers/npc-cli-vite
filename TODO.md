@@ -295,12 +295,12 @@ w decor.byKey.test-decor-point
 - ✅ BUG door.closeTimeoutId not triggered when leave locked doorway
   - worked when left `nearby`, but now also triggered when leave `inside`
 
-- 🚧 BUG npc stuck when starts from locked doorway poly
+- ✅ BUG npc stuck when starts from locked doorway poly
   - try allow first 2 polygons encountered
 
 - ✅ BUG navMeshHelper should not occlude object-pick
 
-- BUG change geom-service should not restart world
+- 🚧 BUG change geom-service should not restart world
 
 - move "open door on click" to a script
 - larger pause UI

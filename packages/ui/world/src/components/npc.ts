@@ -26,6 +26,8 @@ export class Npc {
   bodyUid: number;
   /** object-picking id*/
   pickId: number;
+  /** navigation strategy */
+  queryFilter!: QueryFilter;
 
   bubbleOffset = new THREE.Vector3(0, 0, 0);
   geometry: THREE.BufferGeometry;
@@ -51,15 +53,22 @@ export class Npc {
   labelStyle: JshCli.NpcLabelStyle = { color: "#ff9a", speaking: false };
   last = {
     blockingArea: -1,
-    /** Seconds elapsed */
-    pinTime: 0,
-    /** World time when NPC last became idle (seconds) */
-    idleTime: 0,
-    pos: { x: 0, y: 0 },
     dst: { x: 0, y: 0 },
     dstGrId: null as Geomorph.GmRoomId | null,
+    /** World time when NPC last became idle (seconds) */
+    idleTime: 0,
+    navNodeRef: -1,
+    /** Seconds elapsed */
+    pinTime: 0,
+    pos: { x: 0, y: 0 },
   };
-  queryFilter!: QueryFilter;
+  /**
+   * Number of times current nav node changed during current/last navigation.
+   *
+   * Inaccessible nav nodes (polygons of doorways of locked doors) are set
+   * initially accessible to prevent npc getting stuck just beyond locked door.
+   */
+  nodeCount = 0;
   spawns = 0;
 
   resolve = {
@@ -222,12 +231,17 @@ export class Npc {
   init() {
     this.queryFilter = {
       ...createDefaultQueryFilter(),
+
       passFilter: (nodeRef, navMesh) => {
         const node = getNodeByRef(navMesh, nodeRef);
+        if (nodeRef !== this.last.navNodeRef) {
+          this.last.navNodeRef = nodeRef;
+          this.nodeCount++;
+        }
 
-        if (isDoorAreaId(node.area) === true) {
-          const decoded = decodeDoorAreaId(node.area);
-          if (!this.w.e.npcCanAccess(this.key, decoded.gdKey)) {
+        if (this.nodeCount > 2 && isDoorAreaId(node.area) === true) {
+          const gmDoorId = decodeDoorAreaId(node.area);
+          if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
             this.last.blockingArea = node.area;
             return false;
           }
