@@ -153,3 +153,5 @@ export const fromAnimationClipKey = {
 };
 
 export const defaultIdleAnimationClipKey = "idle" satisfies import("./components/NPCs").AnimationClipKey;
+
+export const pickOpenDoorsKey = "world-debug-pick-open-doors";
