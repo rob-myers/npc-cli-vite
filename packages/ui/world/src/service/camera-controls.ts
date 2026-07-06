@@ -842,9 +842,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     if (this.params.snapAzimuth && !this.snapAzimuth.committed && !this.snapAzimuth.animating) {
-      // Snap back to origin if finger/mouse released before crossing 45°
-      const remaining = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
+      // Snap to nearest compass direction on release
+      const snapStep = (2 * Math.PI) / this.params.numCardinalDirections;
+      const nearest = normalizeAngle(Math.round(this.spherical.theta / snapStep) * snapStep);
+      const remaining = deltaAngle(this.spherical.theta, nearest);
       if (Math.abs(remaining) > 0.005) {
+        this.snapAzimuth.target = nearest;
         this.snapAzimuth.animating = true;
         this.sphericalDelta.theta = remaining;
       }
