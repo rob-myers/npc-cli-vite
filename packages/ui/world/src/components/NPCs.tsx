@@ -412,10 +412,10 @@ export default function NPCs() {
       rawSpawn(opts) {
         let npc = w.n[opts.npcKey];
 
-        const closePolyResult = opts.closePolyResult ?? state.getClosestPoly(opts.groundAt);
+        const closePolyResult = opts.closePolyResult ?? state.getClosestPoly(opts.groundPoint);
         const positionY = opts.doResult?.meta.y ?? 0;
         const rotationY = state.determineSpawnedAngle({
-          groundPoint: opts.groundAt,
+          groundPoint: opts.groundPoint,
           meta: opts.doResult?.meta ?? {},
           angle: opts.angle,
           facing: opts.facing,
@@ -439,7 +439,7 @@ export default function NPCs() {
             geometry,
             graph,
             pickId: state.nextPickId++,
-            position: helper.groundPointToVector3(opts.groundAt).setY(positionY),
+            position: helper.groundPointToVector3(opts.groundPoint).setY(positionY),
             rotation,
             skinnedMesh: clonedSkinnedMesh,
             skinIndex: state.getSkinIndex(opts.as ?? "medic-0"),
@@ -455,7 +455,7 @@ export default function NPCs() {
           w.e.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
         } else {
           const overrideGroundPoint =
-            opts.groundAt.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
+            opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
@@ -492,7 +492,7 @@ export default function NPCs() {
 
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
 
-        const npc = state.rawSpawn({ npcKey, doResult, groundAt, angle, as, closePolyResult, facing });
+        const npc = state.rawSpawn({ npcKey, doResult, groundPoint: groundAt, angle, as, closePolyResult, facing });
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
 
@@ -649,7 +649,7 @@ export type State = {
     /** Spawn destination */
     groundPoint: JshCli.GroundPoint;
     /** Meta of spawn destination */
-    meta: Meta;
+    meta: Meta<Record<string, any>>;
     /** Desired angle, if any */
     angle?: number;
     /** Target to look at, if any */
@@ -692,7 +692,7 @@ export type State = {
   onTick(delta: number): void;
   rawSpawn(opts: {
     npcKey: string;
-    groundAt: Meta<JshCli.GroundPoint>;
+    groundPoint: Meta<JshCli.GroundPoint>;
     doResult: JshCli.FindDoMetaResult | null;
     angle?: number;
     /** Skin to use */

@@ -57,6 +57,20 @@ export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
+export async function demo_spawn_many(ct: JshCli.RunArg) {
+  await ct.w.e.spawnMany({
+    baseKey: "npc",
+    ats: [
+      [1.5, 3],
+      [1.5, 4.5],
+      [1.5, 7.5],
+      [2.25, 3],
+      [2.25, 4.5],
+      [2.25, 7.5],
+    ],
+  });
+}
+
 export async function demo_toggle_doors(ct: JshCli.RunArg) {
   for await (const e of events(ct, { where: (e) => e.key === "picked" })) {
     if (e.meta.type === "door") {
