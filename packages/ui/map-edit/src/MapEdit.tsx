@@ -651,7 +651,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
           if ("offset" in node) {
-            // 🚧 clarify
             new Mat().setRotation(-(180 / Math.PI) * degrees).transformPoint(node.offset);
           }
           node.cssTransform = computeNodeCssTransform(node);

@@ -746,7 +746,11 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
       polysLookup.doors.push(poly);
     } else if (meta.obstacle === true) {
       polysLookup.obstacles.push(poly);
-    } else if (meta.decor === true && Array.isArray(meta.transform)) {
+    } else if (
+      meta.decor === true &&
+      // should come from image node of type decor
+      typeof meta.img === "string"
+    ) {
       polysLookup.decor.push(poly);
     } else if (meta.window === true) {
       polysLookup.windows.push(poly);
