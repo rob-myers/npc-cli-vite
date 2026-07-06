@@ -315,30 +315,23 @@ export function WorldMenu() {
 
                 {w.view && (
                   <Menu.Item
-                    className="flex flex-col gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer"
                     closeOnClick={false}
                     onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
                   >
-                    <div className="shrink-0">camera: {w.view.cameraMode}</div>
-                    <div className="flex gap-2">
-                      <input
-                        type="range"
-                        min={1}
-                        max={16}
-                        step={1}
-                        disabled={w.view.cameraMode === "free"}
-                        value={w.view.numCardinalDirections}
-                        onChange={(e) => w.view.setNumCardinalDirections(Number(e.target.value))}
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "w-16 accent-white",
-                          w.view.cameraMode === "cardinal" ? "cursor-pointer" : "cursor-not-allowed opacity-40",
-                          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                        )}
+                    <div>camera: {w.view.cameraMode}</div>
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}
+                    >
+                      <MenuSelect
+                        side="bottom"
+                        value={String(w.view.numCardinalDirections)}
+                        items={cardinalDirItems}
+                        onValueChange={(v) => {
+                          if (v) w.view.setNumCardinalDirections(Number(v));
+                        }}
                       />
-                      <span className={cn("shrink-0", w.view.cameraMode === "free" && "opacity-40")}>
-                        {w.view.numCardinalDirections}
-                      </span>
                     </div>
                   </Menu.Item>
                 )}
@@ -597,6 +590,7 @@ const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
+const cardinalDirItems = [1, 2, 4, 8, 16].map((n) => ({ key: String(n), value: String(n) }));
 const debugItems = [
   "View Pick",
   "Post FX",

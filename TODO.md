@@ -326,6 +326,10 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG speech bubble activate broken
 
+- ✅ cardinal camera improvements
+  - tweak ui
+  - snap to closest when rotate multiple increments
+
 - larger pause UI
 - larger mobile UI
 
