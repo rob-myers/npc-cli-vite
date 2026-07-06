@@ -306,6 +306,16 @@ w decor.byKey.test-decor-point
   - WorldMenu has debug option "Toggle Doors"
   - `demo_toggle_doors`
 
+- 🚧 BUG tile near origin?
+  - 🚧 cannot navigate to it
+  - ✅ pre flicker on spawn to shower
+  - ✅ post move without walk
+  - was referencing non-existent animKey `stand`
+
+- BUG animation stops sometimes when go idle
+
+- ✅ BUG speech bubble activate broken
+
 - larger pause UI
 - larger mobile UI
 
@@ -336,7 +346,7 @@ w decor.byKey.test-decor-point
 - onchange map sealed doors are staying sealed
 - ❌ change lighting from "loop thru radii in shaders" to "multiply by texture"
   - the lighting was already efficient i.e. precomputes two relative light sources per instance
-- on idle should pin in front otherwise npc "slides back"
+- ✅ on idle should pin in front otherwise npc "slides back"
 - skin remapping
   - currently only have skinIndex
 - ❌ world context menu?
@@ -358,9 +368,6 @@ w decor.byKey.test-decor-point
 
 ## Bugs
 
-- 🚧 BUG cannot navigate into tile near origin?
-  - unclear how to fix since nav mesh is correct
-  - post bug?
 - BUG npc animation out of sync after save npc.ts (?)
   - possibly fixed via `cfg clear-all` then respawn
 - BUG on collapse/expand should persist pane dimensions

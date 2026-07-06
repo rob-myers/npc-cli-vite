@@ -184,8 +184,6 @@ export class Npc {
 
       await this.fadeIn();
     } finally {
-      // 🚧
-
       // guarded in case of re-fade midway
       // if (this.anim.fadeState.delta === 0) {
       //   this.alphaTest.value = 0.9;
@@ -198,7 +196,6 @@ export class Npc {
       //     this.labelVisible.value = 1;
       //   }
       // }
-
       this.material.depthWrite = true;
       this.material.needsUpdate = true;
     }

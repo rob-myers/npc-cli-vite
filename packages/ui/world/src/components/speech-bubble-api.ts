@@ -318,10 +318,11 @@ export class SpeechBubbleApi {
       clearTimeout(this.interact.timer);
     }
     this.interact.remainingMs = interactiveDurationMs;
+
     if (!this.w?.disabled) {
       this.interact.timerStartedAt = Date.now();
       this.interact.timer = setTimeout(() => this.deactivateInteractive(), this.interact.remainingMs);
-    }
+    } // else timer started/paused on enabled/disabled world
   }
 
   stopInteractiveTimer() {
@@ -350,7 +351,6 @@ const minBubbleWidth = 256;
 const minBubbleHeight = 256;
 const defaultBubbleWidth = 560; // w-140
 const defaultBubbleHeight = 288; // h-72
-const maxBubbleExtantMs = 10_000; // 10 seconds
 const fadeOutMs = 500;
 
 export type AutoDeleteOpts = { secs: number };
