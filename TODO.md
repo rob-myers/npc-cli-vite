@@ -322,13 +322,14 @@ w decor.byKey.test-decor-point
   - asset.json has change for symbol.stateroom--036 and flattened.stateroom--036 but no change for flattened hull symbol or its layout
   - stratification was being computed correctly
 
-- BUG animation stops sometimes when go idle
+- ✅ remap feet textures
 
 - ✅ BUG speech bubble activate broken
 
 - larger pause UI
 - larger mobile UI
 
+- BUG animation stops sometimes when go idle
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
   - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
