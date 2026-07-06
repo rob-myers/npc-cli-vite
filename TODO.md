@@ -312,6 +312,11 @@ w decor.byKey.test-decor-point
   - ✅ post move without walk
   - was referencing non-existent animKey `stand`
 
+- ✅ BUG stateroom--036 remove extra--002--fresher and does not update
+  - `w.assets` synced
+  - asset.json has change for symbol.stateroom--036 and flattened.stateroom--036 but no change for flattened hull symbol or its layout
+  - stratification was being computed correctly
+
 - BUG animation stops sometimes when go idle
 
 - ✅ BUG speech bubble activate broken

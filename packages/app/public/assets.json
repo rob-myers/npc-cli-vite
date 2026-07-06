@@ -19955,36 +19955,40 @@
   "stratifiedSymbolNodes": [
     [
       {"id": "bed--003"},
-      {"id": "bridge--042"},
-      {"id": "console--019"},
       {"id": "console--033"},
       {"id": "console--051"},
       {"id": "extra--003--chair"},
       {"id": "extra--004--desk"},
-      {"id": "g-101--multipurpose"},
-      {"id": "g-301--bridge"},
       {"id": "iris-valves--005"},
-      {"id": "office--001"},
-      {"id": "stateroom--012"},
-      {"id": "stateroom--014"},
-      {"id": "stateroom--019"},
-      {"id": "stateroom--036"},
-      {"id": "bed--004"},
       {"id": "bed--005"},
-      {"id": "console--031"},
-      {"id": "misc-stellar-cartography--023"},
       {"id": "window--007"},
-      {"id": "table--004"},
       {"id": "extra--005--chair"},
       {"id": "extra--001--fresher"},
       {"id": "extra--002--fresher"},
       {"id": "extra--021--shower"},
       {"id": "fuel--010"},
-      {"id": "stateroom--020"},
-      {"id": "g-302--xboat-repair-bay"},
       {"id": "couch-and-chairs--006"},
       {"id": "g-301--playground"}
-    ]
+    ],
+    [
+      {"id": "console--019"},
+      {"id": "stateroom--012"},
+      {"id": "stateroom--014"},
+      {"id": "stateroom--019"},
+      {"id": "bed--004"},
+      {"id": "console--031"},
+      {"id": "misc-stellar-cartography--023"},
+      {"id": "table--004"},
+      {"id": "stateroom--020"},
+      {"id": "g-302--xboat-repair-bay"}
+    ],
+    [
+      {"id": "bridge--042"},
+      {"id": "g-101--multipurpose"},
+      {"id": "office--001"},
+      {"id": "stateroom--036"}
+    ],
+    [{"id": "g-301--bridge"}]
   ],
   "layout": {
     "g-101--multipurpose": {
