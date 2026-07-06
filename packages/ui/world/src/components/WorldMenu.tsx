@@ -451,18 +451,6 @@ export function WorldMenu() {
                   </>
                 )}
 
-                <button
-                  type="button"
-                  className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    w.debug.logGPUInfo = true;
-                    w.view.forceUpdate();
-                  }}
-                >
-                  log gpu info
-                </button>
-
                 <div
                   className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
                   onClick={(e) => {
@@ -476,26 +464,40 @@ export function WorldMenu() {
                   debug
                 </div>
                 {state.debugOpen && (
-                  <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
-                    {debugItems.map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={cn(
-                          "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                          isDebugActive(item)
-                            ? "text-green-400 bg-slate-700"
-                            : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDebugToggle(item);
-                        }}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
+                      {debugItems.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className={cn(
+                            "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                            isDebugActive(item)
+                              ? "text-green-400 bg-slate-700"
+                              : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDebugToggle(item);
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        w.debug.logGPUInfo = true;
+                        w.view.forceUpdate();
+                      }}
+                    >
+                      log gpu info
+                    </button>
+                  </>
                 )}
               </Menu.Popup>
             </Menu.Positioner>
