@@ -174,10 +174,10 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
           </div>
           <div
             className={cn(
-              "pointer-events-auto border-2 border-white/25 border-b-black! p-3 rounded-t-full bg-black/60 text-white/80 cursor-pointer",
+              "pointer-events-auto border-2 border-white/75 border-b-black! p-3 rounded-t-full bg-black/60 text-white/80 cursor-pointer",
               !b.interact.active && "border-white/25",
             )}
-            onClick={b.toggleInteractive}
+            onClick={b.toggleInteractive.bind(b)}
           >
             <HandPointingIcon className="size-10" />
           </div>
