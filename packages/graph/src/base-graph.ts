@@ -294,7 +294,7 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
     while (
       ((frontier = []),
       (unseen = unseen.filter((x) => {
-        if (this.getSuccs(x).every((y) => seen.has(y) || !subGraphNodes?.has(y))) {
+        if (this.getSuccs(x).every((y) => seen.has(y) || (subGraphNodes !== undefined && !subGraphNodes.has(y)))) {
           frontier.push(x);
         } else {
           return true;
