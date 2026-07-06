@@ -1,23 +1,34 @@
 {
   "filename": "iris-valves--005.json",
-  "width": 60,
-  "height": 60,
+  "width": 44,
+  "height": 44,
   "nodes": [
     {
       "id": "30b291f3-bdd8-4140-9128-82d6ada3a817",
-      "name": "iris-valves--005 1",
-      "locked": false,
+      "name": "iris-valves--005",
+      "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 9 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.7, "f": 0.5},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "iris-valves--005",
-      "baseRect": { "width": 44.2, "height": 44 },
-      "offset": { "x": 0.7, "y": 0 },
-      "cssTransform": "matrix(1, 0, 0, 1, 0.7, 9)"
+      "baseRect": {"width": 44.2, "height": 44},
+      "offset": {"x": 0.7, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0.5)"
+    },
+    {
+      "id": "2f51f7f9-169a-455d-9e9c-77c11be9728d",
+      "name": "obstacle permit-nav",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M22.6,0 L34,0 L44,10.5 L44,22 L44,33.5 L34,44 L22.5,44 L11,44 L-0.5,33.5 L-0.5,22 L-0.5,10.5 L11,0 Z",
+      "baseRect": {"width": 45, "height": 44},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
-  "bounds": { "x": 0.7, "y": 9, "width": 44.2, "height": 44 },
+  "bounds": {"x": 0, "y": 0.5, "width": 44.2, "height": 44},
   "type": "symbol",
   "key": "iris-valves--005"
 }
