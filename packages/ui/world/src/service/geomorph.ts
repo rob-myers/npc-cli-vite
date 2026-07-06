@@ -746,7 +746,7 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
       polysLookup.doors.push(poly);
     } else if (meta.obstacle === true) {
       polysLookup.obstacles.push(poly);
-    } else if (meta.decor === true) {
+    } else if (meta.decor === true && Array.isArray(meta.transform)) {
       polysLookup.decor.push(poly);
     } else if (meta.window === true) {
       polysLookup.windows.push(poly);
