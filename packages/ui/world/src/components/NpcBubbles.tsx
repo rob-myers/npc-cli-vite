@@ -100,7 +100,17 @@ export default function NpcBubbles() {
         }
       },
       setShown(npcKey: string, shown: boolean) {
-        this.get(npcKey)?.setOpacity(shown && !w.view.topDown ? 1 : 0);
+        const npc = w.n[npcKey];
+        const bubble = this.get(npcKey);
+        if (!npc || !bubble) {
+          return;
+        }
+
+        const willShow = shown === true && w.view.topDown === false;
+        const targetOpacity = willShow ? 1 : 0;
+        bubble.setOpacity(targetOpacity);
+
+        return willShow;
       },
     }),
   );
@@ -130,7 +140,8 @@ export type State = {
   get(npcKey: string): null | SpeechBubbleApi;
   handleDevHotReload(): void;
   onEvent(e: JshCli.Event): void;
-  setShown(npcKey: string, shown: boolean): void;
+  /** forced hidden in topDown view */
+  setShown(npcKey: string, shown: boolean): boolean | undefined;
 };
 
 type SpeechBubbleProps = {
