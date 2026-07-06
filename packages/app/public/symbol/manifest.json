@@ -93,9 +93,9 @@
     "iris-valves--005": {
       "filename": "iris-valves--005.json",
       "thumbnailFilename": "iris-valves--005.thumbnail.png",
-      "width": 60,
-      "height": 60,
-      "bounds": {"x": 0.7, "y": 9, "width": 44.2, "height": 44},
+      "width": 44,
+      "height": 44,
+      "bounds": {"x": 0, "y": 0.5, "width": 44.2, "height": 44},
       "type": "symbol",
       "key": "iris-valves--005"
     },
