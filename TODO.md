@@ -332,7 +332,10 @@ w decor.byKey.test-decor-point
 - 🚧 stress test i.e. spawnMany
   - ✅ refactor `spawn` into sub `rawSpawn`
   - ✅ absorb positionY and rotationY into rawSpawn
-  - 🚧 mount all at once
+  - ✅ mount all at once
+    - `demo_spawn_many`
+    - `remove npc-{0..5}`
+  - 🚧 spawn 200 npcs
 
 - larger pause UI
 - larger mobile UI

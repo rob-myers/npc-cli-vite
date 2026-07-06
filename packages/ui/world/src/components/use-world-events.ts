@@ -194,6 +194,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "exit-topdown":
           case "nav-updated":
           case "picked":
+          case "spawned-many":
             break;
           default:
             throw new ExhaustiveError(e);
@@ -493,7 +494,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const numPermitted = MAX_NPCS - (state.npcToRoom.size + state.externalNpcs.size);
         const groundPoints = opts.ats.slice(0, numPermitted).map(helper.parseGroundPoint);
         const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
-        /** Ground point either should be doable or navigable */
+
+        /** Ground point should either be doable or navigable */
         const doResults = groundPoints.map((p, i) => {
           try {
             const result = w.npc.findFreeDoMeta(p, npcKeys[i]);
@@ -502,44 +504,45 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             return null;
           }
         });
+
         const angles = doResults.map((doResult, i) => {
-          const meta = doResult?.meta;
-          const entry = opts.looks?.[i];
-          if (typeof meta?.orient === "number") {
-            return meta.orient * (Math.PI / 180); // 🚧 CW from N?
-          } else if (entry == null) {
-            return null;
-          } else if (typeof entry === "number") {
-            return entry * (Math.PI / 180); // 🚧 CW from N?
-          } else {
-            const look = helper.parseGroundPoint(entry);
-            const groundPoint = groundPoints[i];
-            return helper.isVectJson(look)
-              ? geomService.getThreeRotationY(look.y - groundPoint.y, look.x - groundPoint.x)
-              : Math.PI / 2;
-          }
+          const angleOrPoint = opts.looks?.[i];
+          return w.npc.determineSpawnedAngle({
+            groundPoint: groundPoints[i],
+            meta: doResult?.meta ?? emptyMeta,
+            angle: typeof angleOrPoint === "number" ? angleOrPoint : undefined,
+            facing: helper.isPointAnyFormat(angleOrPoint) ? angleOrPoint : undefined,
+            npc: w.n[npcKeys[i]],
+          });
         });
 
         const npcs: Npc[] = [];
         for (const [i, npcKey] of npcKeys.entries()) {
           const doResult = doResults[i];
-          const groundAt = doResult?.meta.groundPoint ?? groundPoints[i];
-          // 🚧 angles
-          const npc = w.npc.rawSpawn({
-            npcKey,
-            groundAt,
-            doResult,
-            as: "medic-0", // 🚧
-          });
-
-          npcs.push(npc);
+          const groundPoint = doResult?.meta.groundPoint ?? groundPoints[i];
+          npcs.push(
+            w.npc.rawSpawn({
+              npcKey,
+              groundPoint,
+              doResult,
+              as: "medic-0", // 🚧
+              angle: angles[i],
+            }),
+          );
         }
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
+        w.view.forceUpdate();
 
-        // 🚧 mount all
-        // 🚧 finish setup all
-        // 🚧 spawned-many event
+        await Promise.all(
+          npcs.map(
+            (npc) =>
+              npc.spawns++ === 0 &&
+              new Promise((resolve, reject) => ((npc.resolve.spawn = resolve), (npc.reject.spawn = reject))),
+          ),
+        );
+
+        w.events.next({ key: "spawned-many" });
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
@@ -689,3 +692,4 @@ export type State = {
 };
 
 const emptySet = new Set();
+const emptyMeta = {};
