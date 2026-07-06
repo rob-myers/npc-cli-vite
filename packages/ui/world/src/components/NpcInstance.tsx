@@ -12,10 +12,11 @@ function NpcInstance({ npc }: { npc: Npc }) {
       <skinnedMesh
         geometry={npc.geometry}
         material={npc.material}
-        skeleton={npc.skinnedMesh.skeleton}
-        scale={npcScale}
         position={npc.position}
         renderOrder={0}
+        rotation={npc.rotation}
+        skeleton={npc.skinnedMesh.skeleton}
+        scale={npcScale}
       >
         {bones.length > 0 && <primitive object={bones[0]} />}
       </skinnedMesh>
