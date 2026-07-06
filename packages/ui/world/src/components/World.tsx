@@ -327,7 +327,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     if (state.assets && state.isPlaygroundMap()) return state.setupDraftAssetsSync();
-  }, [state.mapKey]); // sync drafts when relevant
+  }, [state.mapKey, state.hash]); // sync drafts when relevant
 
   useBeforeUnloadOrVisibilityChange(() => state.menu?.persistY());
 

@@ -330,6 +330,9 @@ w decor.byKey.test-decor-point
   - tweak ui
   - snap to closest when rotate multiple increments
 
+- ✅ BUG out-of-sync 301--playground post-refresh
+  - the issue was when we started with 301--playground rather than switched to it
+
 - larger pause UI
 - larger mobile UI
 
