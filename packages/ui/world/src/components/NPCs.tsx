@@ -170,6 +170,21 @@ export default function NPCs() {
         state.byPickId[npc.pickId] = npc;
         return npc;
       },
+      determineSpawnedAngle(opts) {
+        let angle = undefined as undefined | number;
+
+        if (typeof opts.meta.orient === "number") {
+          angle = -(opts.meta.orient + 90) * (Math.PI / 180);
+        } else if (opts.facing) {
+          const parsed = helper.parseGroundPoint(opts.facing);
+          angle = geomService.getThreeRotationY(parsed.y - opts.groundPoint.y, parsed.x - opts.groundPoint.x);
+        } else if (angle !== undefined) {
+          // absorb errors else npc disappears
+          angle = Number(angle) || 0;
+        }
+
+        return typeof angle === "number" ? angle : (opts.npc?.rotation.y ?? 0);
+      },
       devHotReload() {
         /**
          * Don't create but instead mutate existing npcs, thereby avoiding stale references in ongoing code.
@@ -394,46 +409,63 @@ export default function NPCs() {
         // } else if (type === "navigable") {
         //   throw Error("not placable");
       },
-      rawSpawn({ npcKey, groundAt, as, closePolyResult = state.getClosestPoly(groundAt), doResult }) {
-        const npc =
-          w.n[npcKey] ??
-          (() => {
-            const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
-            const graph = buildGraph(clone);
-            const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
+      rawSpawn(opts) {
+        let npc = w.n[opts.npcKey];
 
-            const labelQuad = createSkinnedLabelQuad(0, 0);
-            addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
-            const geometry = mergeWithGroupAttr(clonedSkinnedMesh.geometry, labelQuad);
+        const closePolyResult = opts.closePolyResult ?? state.getClosestPoly(opts.groundAt);
+        const positionY = opts.doResult?.meta.y ?? 0;
+        const rotationY = state.determineSpawnedAngle({
+          groundPoint: opts.groundAt,
+          meta: opts.doResult?.meta ?? {},
+          angle: opts.angle,
+          facing: opts.facing,
+          npc,
+        });
 
-            return state.createNpc({
-              key: npcKey,
-              geometry,
-              graph,
-              pickId: state.nextPickId++,
-              position: helper.groundPointToVector3(groundAt),
-              rotation: clonedSkinnedMesh.rotation,
-              skinnedMesh: clonedSkinnedMesh,
-              skinIndex: state.getSkinIndex(as ?? "medic-0"),
-            });
-          })();
+        if (!npc) {
+          const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
+          const graph = buildGraph(clone);
+          const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
 
-        if (doResult !== null) {
-          const overrideGroundPoint = doResult.meta.groundPoint;
+          const labelQuad = createSkinnedLabelQuad(0, 0);
+          addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
+          const geometry = mergeWithGroupAttr(clonedSkinnedMesh.geometry, labelQuad);
+
+          const rotation = clonedSkinnedMesh.rotation;
+          rotation.y = rotationY;
+
+          npc = state.createNpc({
+            key: opts.npcKey,
+            geometry,
+            graph,
+            pickId: state.nextPickId++,
+            position: helper.groundPointToVector3(opts.groundAt).setY(positionY),
+            rotation,
+            skinnedMesh: clonedSkinnedMesh,
+            skinIndex: state.getSkinIndex(opts.as ?? "medic-0"),
+          });
+        }
+
+        if (opts.doResult !== null) {
+          const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(doResult.meta)];
+          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
           npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
-          w.e.setNpcDo(npcKey, doResult.meta.decorKey);
+          w.e.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
         } else {
           const overrideGroundPoint =
-            groundAt.meta?.npcKey === npcKey ? helper.parseGroundPoint(npc.position) : undefined;
+            opts.groundAt.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
           npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
           npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
-          w.e.setNpcDo(npcKey, null);
+          w.e.setNpcDo(opts.npcKey, null);
         }
+
+        // for respawn
+        npc.position.setY(positionY);
+        npc.rotation.y = rotationY;
 
         return npc;
       },
@@ -458,17 +490,9 @@ export default function NPCs() {
           throw Error("not placable");
         }
 
-        if (facing) {
-          facing = helper.parseGroundPoint(facing);
-          angle = geomService.getThreeRotationY(facing.y - groundAt.y, facing.x - groundAt.x);
-        } else if (angle !== undefined) {
-          // absorb errors else npc disappears
-          angle = Number(angle) || 0;
-        }
-
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
 
-        const npc = state.rawSpawn({ npcKey, groundAt, as, closePolyResult, doResult });
+        const npc = state.rawSpawn({ npcKey, doResult, groundAt, angle, as, closePolyResult, facing });
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
 
@@ -482,14 +506,6 @@ export default function NPCs() {
           if (as) npc.setSkin(as);
           if (prevIdleClip !== npc.anim.idleClip) npc.anim.playIdleClip(0); // before update
           w.view.forceUpdate();
-        }
-
-        npc.skinnedMesh.position.y = doResult?.meta.y ?? 0;
-        if (typeof doResult?.meta.orient === "number") {
-          angle = -(doResult.meta.orient + 90) * (Math.PI / 180);
-        }
-        if (typeof angle === "number") {
-          npc.skinnedMesh.rotation.y = angle;
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
@@ -562,8 +578,8 @@ export default function NPCs() {
     if (!queryData) return;
 
     state.gltf = queryData.gltf;
-    const anims = queryData.gltf.animations;
 
+    const anims = queryData.gltf.animations;
     const clips = mapValues(
       fromAnimationClipKey,
       (_, clipName) => anims.find((c) => c.name === clipName) ?? emptyAnimationClip,
@@ -629,6 +645,18 @@ export type State = {
     | "skinIndexUniform"
     | "material"
   >;
+  determineSpawnedAngle(opts: {
+    /** Spawn destination */
+    groundPoint: JshCli.GroundPoint;
+    /** Meta of spawn destination */
+    meta: Meta;
+    /** Desired angle, if any */
+    angle?: number;
+    /** Target to look at, if any */
+    facing?: JshCli.PointAnyFormat;
+    /** Non-existent on 1st spawn */
+    npc?: Npc;
+  }): number;
   createNpc(opts: {
     key: string;
     geometry: THREE.BufferGeometry;
@@ -665,9 +693,18 @@ export type State = {
   rawSpawn(opts: {
     npcKey: string;
     groundAt: Meta<JshCli.GroundPoint>;
-    as?: string;
     doResult: JshCli.FindDoMetaResult | null;
+    angle?: number;
+    /** Skin to use */
+    as?: string;
+    /** Defaults to `state.getClosestPoly(groundAt)` */
     closePolyResult?: FindNearestPolyResult;
+    /**
+     * Position to look towards
+     * - overrides `angle`
+     * - overriden by `meta.orient`
+     */
+    facing?: JshCli.PointAnyFormat;
   }): Npc;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
