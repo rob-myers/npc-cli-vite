@@ -277,6 +277,7 @@ export default function NPCs() {
           return;
         }
 
+        w.e.setNpcDo(npcKey, null); // in case do=stand
         npc.rejectAll(new Error("move again"));
 
         // shuffle, walk or run
