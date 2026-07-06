@@ -46,13 +46,13 @@ export class NpcAnimation {
     return this.npc.w;
   }
 
-  fadeTick(delta: number) {
+  fadeTick(deltaSecs: number) {
     if (this.fadeState.delta === 0) {
       return;
     }
 
     const current = this.npc.opacityScale.value;
-    const next = current + this.fadeState.delta * delta;
+    const next = current + this.fadeState.delta * deltaSecs;
     const finished = this.fadeState.delta > 0 ? next >= this.fadeState.target : next <= this.fadeState.target;
     const s = Math.max(0, finished ? this.fadeState.target : next);
 
@@ -65,7 +65,7 @@ export class NpcAnimation {
     if (finished === true) {
       this.fadeState.delta = 0;
       this.npc.material.needsUpdate = true;
-      this.npc.resolve.scale("scale");
+      this.npc.resolve.fade("fade");
     }
   }
 

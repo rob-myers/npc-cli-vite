@@ -694,8 +694,16 @@ function getAgentParams(): crowd.AgentParams {
 }
 
 function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
-  if (meta.do === "sit" || meta.do === "lie" || meta.do === "stand") return meta.do;
-  return defaultIdleAnimationClipKey;
+  switch (meta.do) {
+    case "sit":
+      return "sit";
+    case "lie":
+      return "lie";
+    case "stand":
+      return "breathe";
+    default:
+      return defaultIdleAnimationClipKey;
+  }
 }
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;

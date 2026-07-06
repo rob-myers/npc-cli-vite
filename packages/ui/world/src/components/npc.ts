@@ -74,7 +74,7 @@ export class Npc {
   resolve = {
     spawn: (_k: string): void => {},
     move: (_k: string): void => {},
-    scale: (_k: string): void => {},
+    fade: (_k: string): void => {},
     look: (_k: string): void => {},
   };
   reject = {
@@ -151,7 +151,7 @@ export class Npc {
   async fadeIn(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
-      this.resolve.scale = resolve;
+      this.resolve.fade = resolve;
       this.reject.scale = reject;
       this.anim.fadeState.target = 1;
       this.anim.fadeState.delta = Math.abs(speed);
@@ -161,7 +161,7 @@ export class Npc {
   async fadeOut(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
-      this.resolve.scale = resolve;
+      this.resolve.fade = resolve;
       this.reject.scale = reject;
       this.anim.fadeState.target = 0;
       this.anim.fadeState.delta = -Math.abs(speed);
@@ -172,6 +172,7 @@ export class Npc {
     try {
       await this.fadeOut();
       this.w.bubble.setShown(this.key, false);
+
       const groundTarget = helper.parseGroundPoint(at);
       await this.w.npc.spawn({
         npcKey: this.key,
@@ -180,20 +181,23 @@ export class Npc {
           ? geomService.getThreeRotationY(groundTarget.y - this.position.z, groundTarget.x - this.position.x)
           : undefined,
       });
+
       await this.fadeIn();
     } finally {
-      // guarded in case of re-fade midway
-      if (this.anim.fadeState.delta === 0) {
-        this.alphaTest.value = 0.9;
-        this.opacityScale.value = 1;
-        this.colorScale.value = 1;
+      // 🚧
 
-        if (this.w.bubble.get(this.key)) {
-          this.w.bubble.setShown(this.key, true);
-        } else {
-          this.labelVisible.value = 1;
-        }
-      }
+      // guarded in case of re-fade midway
+      // if (this.anim.fadeState.delta === 0) {
+      //   this.alphaTest.value = 0.9;
+      //   this.opacityScale.value = 1;
+      //   this.colorScale.value = 1;
+
+      //   if (this.w.bubble.get(this.key)) {
+      //     this.w.bubble.setShown(this.key, true);
+      //   } else {
+      //     this.labelVisible.value = 1;
+      //   }
+      // }
 
       this.material.depthWrite = true;
       this.material.needsUpdate = true;
