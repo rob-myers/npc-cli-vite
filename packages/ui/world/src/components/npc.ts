@@ -170,8 +170,8 @@ export class Npc {
 
   async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>, { facingTarget }: { facingTarget?: boolean } = {}) {
     try {
-      await this.fadeOut();
       this.w.bubble.setShown(this.key, false);
+      await this.fadeOut();
 
       const groundTarget = helper.parseGroundPoint(at);
       await this.w.npc.spawn({
@@ -185,17 +185,14 @@ export class Npc {
       await this.fadeIn();
     } finally {
       // guarded in case of re-fade midway
-      // if (this.anim.fadeState.delta === 0) {
-      //   this.alphaTest.value = 0.9;
-      //   this.opacityScale.value = 1;
-      //   this.colorScale.value = 1;
+      if (this.anim.fadeState.delta === 0) {
+        // this.alphaTest.value = 0.9;
+        // this.opacityScale.value = 1;
+        // this.colorScale.value = 1;
 
-      //   if (this.w.bubble.get(this.key)) {
-      //     this.w.bubble.setShown(this.key, true);
-      //   } else {
-      //     this.labelVisible.value = 1;
-      //   }
-      // }
+        const willShow = this.w.bubble.setShown(this.key, true);
+        this.labelVisible.value = willShow ? 0 : 1;
+      }
       this.material.depthWrite = true;
       this.material.needsUpdate = true;
     }
