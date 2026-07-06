@@ -263,10 +263,6 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG MapEdit FileMenu on switch to map/symbol should not close
 
-- 🚧 stress test i.e. spawnMany
-  - ✅ refactor `spawn` into sub `rawSpawn`
-  - 🚧 mount all at once
-
 - ✅ `meta` extracts meta via decor grid
   - ℹ️ provides points with meta without using `pick`
     - `pick` object-picks with pointer and decodes pixel rgba
@@ -332,6 +328,11 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG out-of-sync 301--playground post-refresh
   - the issue was when we started with 301--playground rather than switched to it
+
+- 🚧 stress test i.e. spawnMany
+  - ✅ refactor `spawn` into sub `rawSpawn`
+  - ✅ absorb positionY and rotationY into rawSpawn
+  - 🚧 mount all at once
 
 - larger pause UI
 - larger mobile UI
