@@ -306,11 +306,16 @@ w decor.byKey.test-decor-point
   - WorldMenu has debug option "Toggle Doors"
   - `demo_toggle_doors`
 
-- 🚧 BUG tile near origin?
-  - 🚧 cannot navigate to it
+- ✅ BUG tile near origin?
+  - ❌ cannot navigate to it
+    - although can navigate from it
+    - can navigate more on remove extra--002--fresher
+    - but there's some kind of slow down entering top-left tile
   - ✅ pre flicker on spawn to shower
+    - was referencing non-existent animKey `stand`
   - ✅ post move without walk
-  - was referencing non-existent animKey `stand`
+
+- ✅ BUG on walk off shower do=stand doable not cleared
 
 - ✅ BUG stateroom--036 remove extra--002--fresher and does not update
   - `w.assets` synced
