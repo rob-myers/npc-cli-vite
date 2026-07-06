@@ -1,4 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
+import { Vect } from "@npc-cli/util/geom/vect";
 import { pause, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
@@ -131,7 +132,7 @@ export function Debug() {
             const count = Math.min(verts.length, MAX_ROOM_POLY_VERTS);
             state.lightSpherePolyInfo[instanceIdx].set(totalVerts, count, 0, 0);
             for (let v = 0; v < count && totalVerts < maxTotalPolyVerts; v++, totalVerts++) {
-              const wv = gm.matrix.transformPoint(verts[v]);
+              const wv = gm.matrix.transformPoint(tmpVect.copy(verts[v])); // must not mutate underlying rooms
               state.lightSpherePolyVerts[totalVerts].set(wv.x, wv.y); // wv.y = world Z
             }
             instanceIdx++;
@@ -431,6 +432,7 @@ const arrowLen = 0.5;
 const arrowWidth = 0.25;
 const doorNormalHeight = 0.05;
 const tmpMat4 = new THREE.Matrix4();
+const tmpVect = new Vect();
 
 export type State = {
   arrowGeo: THREE.BufferGeometry;
