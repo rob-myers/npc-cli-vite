@@ -127,16 +127,22 @@ for (const [sheetId, bin] of bins.entries()) {
   // ct.fillRect(0, 0, bin.width, bin.height);
 
   for (const rect of bin.rects) {
-    // can replace image
+    const symKey = rect.data.key as StarshipSymbolImageKey;
+    const sym = assets.symbol[symKey];
+    if (!sym) {
+      warn(`symbolKey not found: ${symKey}`);
+      continue;
+    }
+
+    // can replace image -- they'll be inverted like original images
+    const shouldReplaceImage = existsSync(path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`));
+
     const image = await loadImage(
-      existsSync(path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`))
+      shouldReplaceImage
         ? path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`)
         : path.resolve(starshipSymbolDir, `${rect.data.key}.png`),
     );
 
-    const symKey = rect.data.key as StarshipSymbolImageKey;
-    const sym = assets.symbol[symKey];
-    if (!sym) continue;
     const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
 
     // 🔔 clip to obstacles for much smaller file size
@@ -158,11 +164,10 @@ for (const [sheetId, bin] of bins.entries()) {
     }
 
     const masks = masksBySymbol[symKey];
-
-    // erase "mask remove" regions
     const offsetX = rect.x - sym.bounds.x * scale;
     const offsetY = rect.y - sym.bounds.y * scale;
 
+    // erase "mask remove" regions
     if (masks?.remove.length) {
       ct.save();
       ct.globalCompositeOperation = "destination-out";
