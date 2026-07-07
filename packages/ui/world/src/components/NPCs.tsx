@@ -505,7 +505,7 @@ export default function NPCs() {
         } else {
           if (as) npc.setSkin(as);
           if (prevIdleClip !== npc.anim.idleClip) npc.anim.playIdleClip(0); // before update
-          w.view.forceUpdate();
+          w.view.forceUpdate(0.01);
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
@@ -596,7 +596,7 @@ export default function NPCs() {
         const oldAct = npc.anim.mixer.existingAction(oldClip);
         if (!oldAct || !oldAct.isRunning()) continue;
         const act = npc.anim.mixer.clipAction(clip);
-        crossFadeSynchronized(oldAct, act);
+        crossFadeSynchronized(oldAct, act, 0);
       }
     }
 

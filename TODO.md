@@ -337,9 +337,21 @@ w decor.byKey.test-decor-point
     - `remove npc-{0..5}`
   - 🚧 spawn 200 npcs
 
+- ✅ rect in symbol with title "decor quad y=0.2" broke things
+  - must be an image node of type decor
+
+- ✅ spawn transition issue
+  - if keep unpaused no issue
+  - repro: pause, spawn chair, play, pause, edit Npcs.tsx, respawn on nav
+    
+- remove obstacle trim from fuel (can overlap nearby ground symbols e.g. shower)
+
 - larger pause UI
 - larger mobile UI
 
+- obstacle resizing can be confusing
+  - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
+  - we can forget to "update obstacles"
 - BUG animation stops sometimes when go idle
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?

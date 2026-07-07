@@ -12,8 +12,7 @@ export function crossFadeSynchronized(
   newAction.timeScale = oldAction.timeScale;
 
   newAction.enabled = true;
-  newAction.setEffectiveWeight(1);
-  newAction.play();
+  newAction.setEffectiveWeight(1).play();
 
   // Smoothly blend from old to new while locked in position
   oldAction.crossFadeTo(newAction, duration, true);
