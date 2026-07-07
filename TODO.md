@@ -354,13 +354,13 @@ w decor.byKey.test-decor-point
   - ✅ darker restyled fuel--010
   - ✅ remove mask/fuel--010
 
-- remove internal SVG path editor
-- 🚧 BUG obstacle texture bleeding induced by obstacle polygon
-  - try fix via padding `gen-starship-sheets` 2 --> 8
+- 🚧 remove internal SVG path editor
 
 - larger pause UI
 - larger mobile UI
 
+- 🚧 BUG obstacle texture bleeding induced by obstacle polygon
+  - try fix via padding `gen-starship-sheets` 2 --> 8
 - debug update obstacles button should have spinner
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it

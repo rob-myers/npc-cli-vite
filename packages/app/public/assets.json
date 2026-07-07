@@ -4647,7 +4647,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -7183,7 +7183,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7206,7 +7206,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7229,7 +7229,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7252,7 +7252,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7275,7 +7275,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7298,7 +7298,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7321,7 +7321,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -7344,7 +7344,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0,
@@ -18491,7 +18491,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -20950,7 +20950,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -20971,7 +20971,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -20996,7 +20996,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21017,7 +21017,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -21042,7 +21042,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21063,7 +21063,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -21088,7 +21088,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21109,7 +21109,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -21134,7 +21134,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21155,7 +21155,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -21180,7 +21180,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21201,7 +21201,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -21226,7 +21226,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21247,7 +21247,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -21272,7 +21272,7 @@
               "fuel": true,
               "h": 0.7,
               "inset": 0.05,
-              "tint": "#889",
+              "tint": "#667",
               "skirtTint": "#aaa",
               "symKey": "fuel--010",
               "origObstacleId": 0
@@ -21293,7 +21293,7 @@
             "fuel": true,
             "h": 0.7,
             "inset": 0.05,
-            "tint": "#889",
+            "tint": "#667",
             "skirtTint": "#aaa",
             "symKey": "fuel--010",
             "origObstacleId": 0
@@ -33672,7 +33672,7 @@
       "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {
-      "background": "bg-[#333]",
+      "background": "bg-[#555]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#fff1"},
         "nonHull": {"fill": "#111", "stroke": "#000"}
@@ -33686,5 +33686,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 29177942}
+  "hash": {"obstacles": -1493449324}
 }
