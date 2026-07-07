@@ -354,7 +354,12 @@ w decor.byKey.test-decor-point
   - ✅ darker restyled fuel--010
   - ✅ remove mask/fuel--010
 
-- 🚧 remove internal SVG path editor
+- 🚧 remove replace/iris-valves--005 and use iris-valves--006 instead
+  - ✅ 301
+  - 302
+  - 101
+
+- remove internal SVG path editor
 
 - larger pause UI
 - larger mobile UI

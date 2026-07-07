@@ -269,6 +269,15 @@
       "bounds": {"x": -6, "y": -22, "width": 1212, "height": 628},
       "type": "symbol",
       "key": "g-301--playground"
+    },
+    "iris-valves--006": {
+      "filename": "iris-valves--006.json",
+      "thumbnailFilename": "iris-valves--006.thumbnail.png",
+      "width": 44,
+      "height": 44,
+      "bounds": {"x": 0, "y": 0, "width": 44.2, "height": 44},
+      "type": "symbol",
+      "key": "iris-valves--006"
     }
   }
 }
