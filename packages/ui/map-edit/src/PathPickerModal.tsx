@@ -132,15 +132,6 @@ export function PathPickerModal({
             <div className="flex gap-2 px-4 py-2 border-b border-slate-700">
               <button
                 type="button"
-                className="px-3 py-1 text-xs rounded cursor-pointer bg-green-700 hover:bg-green-600 text-white"
-                onClick={() =>
-                  state.set({ editorOpen: true, editorInitialPaths: undefined, editorInitialFilename: undefined })
-                }
-              >
-                Create Path
-              </button>
-              <button
-                type="button"
                 className={cn(
                   "px-3 py-1 text-xs rounded cursor-pointer bg-blue-700 hover:bg-blue-600 text-white",
                   !canOpenSelection && "opacity-50 pointer-events-none",
