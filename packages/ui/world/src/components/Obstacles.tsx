@@ -132,6 +132,7 @@ export default function Obstacles(_props: Props) {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
+        if (state.skirtInst?.instanceColor) state.skirtInst.instanceColor.needsUpdate = true;
       },
       transformAndColorObstacles() {
         if (!state.inst) return;
@@ -157,7 +158,7 @@ export default function Obstacles(_props: Props) {
         state.skirtInst.instanceMatrix.array.fill(0);
 
         for (const { obstacles, transform: gmTransform, determinant } of w.gms) {
-          for (const { origPoly, transform: obTransform, height } of obstacles) {
+          for (const { origPoly, transform: obTransform, height, meta } of obstacles) {
             // skirts support numeric meta.inset
             // 🔔 this may increase the number of edges ~ instances
             tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
@@ -176,6 +177,7 @@ export default function Obstacles(_props: Props) {
               const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
               const skirtDimY = typeof origPoly.meta.h === 'number' ? origPoly.meta.h : skirtDepth;
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
+              state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
               state.skirtInst.setMatrixAt(sId++,
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
               );

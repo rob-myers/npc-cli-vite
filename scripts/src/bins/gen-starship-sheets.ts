@@ -70,7 +70,7 @@ const {
   })),
   {
     logPrefix: "gen-starship-sheets",
-    packedPadding: 2,
+    packedPadding: 8,
     maxWidth: 4096,
     maxHeight: 4096,
     // maxWidth: 2048,

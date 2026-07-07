@@ -440,3 +440,44 @@ export function bootstrapInstanceColor(mesh: THREE.InstancedMesh | null) {
     mesh.instanceColor.needsUpdate = true;
   }
 }
+
+const gridSize = 1.5;
+
+export function drawFloorGrid(
+  ct: CanvasRenderingContext2D,
+  bounds: { x: number; y: number; width: number; height: number },
+  gridOrigin: { x: number; y: number },
+) {
+  const ixMin = Math.floor(bounds.x / gridSize);
+  const ixMax = Math.ceil((bounds.x + bounds.width) / gridSize);
+  const iyMin = Math.floor(bounds.y / gridSize);
+  const iyMax = Math.ceil((bounds.y + bounds.height) / gridSize);
+
+  ct.strokeStyle = "rgba(220, 220, 220, 0.35)";
+  ct.lineWidth = 0.012;
+  ct.beginPath();
+  for (let ix = ixMin; ix <= ixMax; ix++) {
+    const x = ix * gridSize;
+    ct.moveTo(x, iyMin * gridSize);
+    ct.lineTo(x, iyMax * gridSize);
+  }
+  for (let iy = iyMin; iy <= iyMax; iy++) {
+    const y = iy * gridSize;
+    ct.moveTo(ixMin * gridSize, y);
+    ct.lineTo(ixMax * gridSize, y);
+  }
+  ct.stroke();
+
+  const worldOffsetX = gridOrigin.x;
+  const worldOffsetY = gridOrigin.y;
+  ct.fillStyle = "rgba(0, 220, 0, 0.85)";
+  ct.font = "0.11px monospace";
+  ct.textBaseline = "top";
+  for (let ix = ixMin; ix < ixMax; ix++) {
+    for (let iy = iyMin; iy < iyMax; iy++) {
+      const wx = ix * gridSize + worldOffsetX;
+      const wy = iy * gridSize + worldOffsetY;
+      ct.fillText(`${wx}, ${wy}`, ix * gridSize + 0.04, iy * gridSize + 0.04);
+    }
+  }
+}
