@@ -65,9 +65,14 @@
       "rect": {"x": 3429, "y": 2466, "width": 221, "height": 220},
       "sheetId": 0
     },
+    "iris-valves--006": {
+      "key": "iris-valves--006",
+      "rect": {"x": 1647, "y": 2806, "width": 221, "height": 220},
+      "sheetId": 0
+    },
     "console--033": {
       "key": "console--033",
-      "rect": {"x": 1647, "y": 2806, "width": 134, "height": 161},
+      "rect": {"x": 1876, "y": 2806, "width": 134, "height": 161},
       "sheetId": 0
     },
     "extra--002--fresher": {
@@ -77,12 +82,12 @@
     },
     "console--051": {
       "key": "console--051",
-      "rect": {"x": 1789, "y": 2806, "width": 137, "height": 155},
+      "rect": {"x": 2018, "y": 2806, "width": 137, "height": 155},
       "sheetId": 0
     },
     "extra--001--fresher": {
       "key": "extra--001--fresher",
-      "rect": {"x": 1647, "y": 2975, "width": 137, "height": 117},
+      "rect": {"x": 1876, "y": 2975, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair": {
