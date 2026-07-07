@@ -612,7 +612,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const clipboardData = JSON.stringify({ mapEditNodes: nodesToCopy });
         void navigator.clipboard.writeText(clipboardData);
       },
-      async pasteFromClipboard() {
+      async pasteFromClipboard(shiftKey = false) {
         if (state.isReadOnly()) return;
         const parsed = jsonParser
           .pipe(z.object({ mapEditNodes: z.array(MapNodeSchema) }))
@@ -624,6 +624,19 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const clones = parsed.data.mapEditNodes.flatMap((node) =>
           seen.has(node.id) ? [] : state.cloneNode(node, seen),
         );
+
+        if (shiftKey && clones.length === 1) {
+          const clone = clones[0];
+          const center = state.getViewportCenter();
+          if (center && "baseRect" in clone) {
+            clone.transform = {
+              ...clone.transform,
+              e: center.x - clone.baseRect.width / 2,
+              f: center.y - clone.baseRect.height / 2,
+            };
+            clone.cssTransform = computeNodeCssTransform(clone);
+          }
+        }
 
         if (state.selectedIds.size === 1) {
           const [selectedId] = state.selectedIds;
@@ -937,8 +950,20 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (!state.svgEl || paths.length === 0) return;
         state.pushHistory();
 
-        const center = state.getViewportCenter();
         const selection = state.getSelectedNode();
+
+        // Replace selected path node in-place (keep position/transform)
+        if (paths.length === 1 && selection?.type === "path") {
+          const p = paths[0];
+          selection.d = p.d;
+          selection.name = p.name;
+          selection.baseRect = { width: p.svgWidth, height: p.svgHeight };
+          selection.cssTransform = computeNodeCssTransform(selection);
+          state.set({ pickPathOpen: false, editingId: null });
+          return;
+        }
+
+        const center = state.getViewportCenter();
         const parent = selection?.type === "group" ? selection : null;
 
         const newNodes: MapNode[] = paths.map((p) => {
@@ -1642,7 +1667,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.copySelected();
           break;
         case "v":
-          void state.pasteFromClipboard();
+          void state.pasteFromClipboard(e.shiftKey);
           break;
         case "d":
           state.selectedIds.size > 0 && state.duplicateSelected();
@@ -1937,7 +1962,7 @@ export type State = {
   duplicateSelected: () => void;
   ensureSelectionDescendants: (selectedIds: Set<string>) => Set<MapNode>;
   copySelected: () => void;
-  pasteFromClipboard: () => Promise<void>;
+  pasteFromClipboard: (shiftKey?: boolean) => Promise<void>;
   rotateNode: (nodeId: string, degrees: -90 | 90 | -5 | 5) => void;
   rotateSelected: (degrees: -90 | 90 | -5 | 5) => void;
   moveNodes: (srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside") => void;
