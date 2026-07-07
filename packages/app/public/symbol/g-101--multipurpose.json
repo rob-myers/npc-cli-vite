@@ -330,7 +330,7 @@
         {
           "id": "a93756d9-24c0-4676-926b-7c205c36e052",
           "name": "fuel--010 y=1.705",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 595.7, "f": 1.7},
           "type": "symbol",
@@ -341,7 +341,7 @@
         },
         {
           "id": "0d882080-a674-4441-be67-0688fff999e8",
-          "name": "fuel--010 y=1.7",
+          "name": "fuel--010 y=1.7+0.01",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 959.5, "f": 2},
@@ -353,8 +353,8 @@
         },
         {
           "id": "3ee0763f-d66a-48a9-a15b-231686f8f094",
-          "name": "fuel--010 y=1.7-0.05",
-          "locked": false,
+          "name": "fuel--010 y=1.7+0.01",
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1.7, "f": 1079.7},
           "type": "symbol",
@@ -365,7 +365,7 @@
         },
         {
           "id": "20d40093-46f3-4595-8d8e-ee8d064da231",
-          "name": "fuel--010 y=1.705",
+          "name": "fuel--010 y=1.7+0.01",
           "locked": true,
           "visible": true,
           "transform": {
@@ -465,46 +465,46 @@
           "baseRect": {"width": 44, "height": 44},
           "offset": {"x": -0.477045733736409, "y": 0.14975769737776778},
           "cssTransform": "matrix(1, 0, 0, -1, 840.023, 54.1498)"
+        },
+        {
+          "id": "322a5012-8e24-4e17-969a-489b8b544c2a",
+          "name": "iris-valves--005",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 1192.0001,
+            "f": 839.5
+          },
+          "type": "symbol",
+          "srcKey": "iris-valves--005",
+          "baseRect": {"width": 44, "height": 44},
+          "offset": {"x": -0.0000540585290376705, "y": 0.49996903611891347},
+          "cssTransform": "matrix(0, 1, -1, 0, 1192, 840)"
+        },
+        {
+          "id": "8da8975a-6561-4114-bd71-eb5b2e2024c9",
+          "name": "iris-valves--005",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 360.4771,
+            "f": 1148.1497
+          },
+          "type": "symbol",
+          "srcKey": "iris-valves--005",
+          "baseRect": {"width": 44, "height": 44},
+          "offset": {"x": -0.4770756852758846, "y": -0.14966228823102054},
+          "cssTransform": "matrix(-1, 0, 0, 1, 360, 1148)"
         }
       ]
-    },
-    {
-      "id": "322a5012-8e24-4e17-969a-489b8b544c2a",
-      "name": "iris-valves--005",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": 1,
-        "c": -1,
-        "d": 0,
-        "e": 1192.0001,
-        "f": 839.5
-      },
-      "type": "symbol",
-      "srcKey": "iris-valves--005",
-      "baseRect": {"width": 44, "height": 44},
-      "offset": {"x": -0.0000540585290376705, "y": 0.49996903611891347},
-      "cssTransform": "matrix(0, 1, -1, 0, 1192, 840)"
-    },
-    {
-      "id": "8da8975a-6561-4114-bd71-eb5b2e2024c9",
-      "name": "iris-valves--005",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -1,
-        "b": 0,
-        "c": 0,
-        "d": 1,
-        "e": 360.4771,
-        "f": 1148.1497
-      },
-      "type": "symbol",
-      "srcKey": "iris-valves--005",
-      "baseRect": {"width": 44, "height": 44},
-      "offset": {"x": -0.4770756852758846, "y": -0.14966228823102054},
-      "cssTransform": "matrix(-1, 0, 0, 1, 360, 1148)"
     },
     {
       "id": "0a81ef49-43e0-41ca-bf58-9add75d54401",
@@ -513,7 +513,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "9eb1d387-d582-40ae-a01e-7e7ccb124a01",

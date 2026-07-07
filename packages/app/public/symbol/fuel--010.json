@@ -18,7 +18,7 @@
     },
     {
       "id": "ceb0df44-c4d1-4dbe-b918-aeb1afc47e21",
-      "name": "obstacle fuel h=1.7",
+      "name": "obstacle fuel h=1.5 inset=10",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": -4},

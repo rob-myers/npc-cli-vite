@@ -1890,7 +1890,7 @@
             "e": 23.9875,
             "f": 0.05
           },
-          "meta": {"fuel--010": true, "y": 1.7}
+          "meta": {"fuel--010": true, "y": 1.71}
         },
         {
           "symbolKey": "fuel--010",
@@ -1904,7 +1904,7 @@
             "e": 0.0425,
             "f": 26.9925
           },
-          "meta": {"fuel--010": true, "y": 1.65}
+          "meta": {"fuel--010": true, "y": 1.71}
         },
         {
           "symbolKey": "fuel--010",
@@ -1918,7 +1918,7 @@
             "e": 9.0925,
             "f": 27.0425
           },
-          "meta": {"fuel--010": true, "y": 1.705}
+          "meta": {"fuel--010": true, "y": 1.71}
         },
         {
           "symbolKey": "fuel--010",
@@ -4631,7 +4631,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -7188,7 +7189,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
@@ -7203,7 +7205,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
@@ -7223,7 +7226,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.71,
@@ -7243,10 +7247,11 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
-            "y": 1.7,
+            "y": 1.71,
             "transform": [1, 0, 0, 1, 23.9875, 0.05]
           }
         },
@@ -7263,10 +7268,11 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
-            "y": 1.65,
+            "y": 1.71,
             "transform": [1, 0, 0, 1, 0.0425, 26.9925]
           }
         },
@@ -7283,7 +7289,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.71,
@@ -7303,7 +7310,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
@@ -7323,7 +7331,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0,
             "y": 1.7,
@@ -18784,7 +18793,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21264,7 +21274,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21282,7 +21293,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21299,7 +21311,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21310,7 +21323,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21327,7 +21341,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21345,7 +21360,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21353,7 +21369,7 @@
         {
           "symbolKey": "fuel--010",
           "obstacleId": 0,
-          "height": 1.7,
+          "height": 1.71,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -21362,7 +21378,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21380,7 +21397,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21388,7 +21406,7 @@
         {
           "symbolKey": "fuel--010",
           "obstacleId": 0,
-          "height": 1.65,
+          "height": 1.71,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -21397,7 +21415,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21415,7 +21434,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21432,7 +21452,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21450,7 +21471,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21467,7 +21489,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21485,7 +21508,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -21502,7 +21526,8 @@
             "meta": {
               "obstacle": true,
               "fuel": true,
-              "h": 1.7,
+              "h": 1.5,
+              "inset": 0.25,
               "symKey": "fuel--010",
               "origObstacleId": 0
             }
@@ -21520,7 +21545,8 @@
           "meta": {
             "obstacle": true,
             "fuel": true,
-            "h": 1.7,
+            "h": 1.5,
+            "inset": 0.25,
             "symKey": "fuel--010",
             "origObstacleId": 0
           }
@@ -34337,5 +34363,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 789578345}
+  "hash": {"obstacles": -1279750485}
 }
