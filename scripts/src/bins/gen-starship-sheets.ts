@@ -23,7 +23,7 @@
  * - `pngquant` command to reduce PNG size
  */
 
-import fs, { mkdirSync, writeFileSync } from "node:fs";
+import fs, { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import assetsEncoded from "@npc-cli/app/public/assets.json" with { type: "json" };
 import starshipSymbolManifestEncoded from "@npc-cli/app/public/starship-symbol/manifest.json" with { type: "json" };
@@ -113,10 +113,12 @@ const starshipSymbolDir = path.resolve("packages/app/public/starship-symbol");
 const symbolsSheetDirectory = path.resolve("packages/app/public/sheet");
 mkdirSync(symbolsSheetDirectory, { recursive: true });
 
-/** mapping from "symbol key" to array of polygons to erase/color, in SVG viewBox coordinates */
-const masksBySymbol = collectMasks(path.resolve(starshipSymbolDir, "mask"));
-
+const starshipSymbolsReplaceDir = path.resolve(starshipSymbolDir, "replace");
+const starshipSymbolsMasksDir = path.resolve(starshipSymbolDir, "mask");
 const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, "symbols");
+
+/** "symbol key" to array of polygons to erase/color, in SVG viewBox coordinates */
+const masksBySymbol = collectMasks(starshipSymbolsMasksDir);
 
 for (const [sheetId, bin] of bins.entries()) {
   const canvas = new Canvas(bin.width, bin.height);
@@ -125,10 +127,16 @@ for (const [sheetId, bin] of bins.entries()) {
   // ct.fillRect(0, 0, bin.width, bin.height);
 
   for (const rect of bin.rects) {
-    const image = await loadImage(path.resolve(starshipSymbolDir, `${rect.data.key}.png`));
+    // can replace image
+    const image = await loadImage(
+      existsSync(path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`))
+        ? path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`)
+        : path.resolve(starshipSymbolDir, `${rect.data.key}.png`),
+    );
 
     const symKey = rect.data.key as StarshipSymbolImageKey;
-    const sym = assets.symbol[symKey]!;
+    const sym = assets.symbol[symKey];
+    if (!sym) continue;
     const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
 
     // 🔔 clip to obstacles for much smaller file size

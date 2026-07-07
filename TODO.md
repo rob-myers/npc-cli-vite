@@ -346,11 +346,12 @@ w decor.byKey.test-decor-point
     
 - ✅ remove obstacle trim from fuel (can overlap nearby ground symbols e.g. shower)
 
-- public/starship-symbol/mask -> media/src/starship-symbol/mask
-- can replace symbols
-  - public/starship-symbol/override
-  - iris--valves--005 sans handle
-  - fuel--010 restyled border
+- ❌ public/starship-symbol/mask -> media/src/starship-symbol/mask
+  - only apply masks in `gen-starship-sheets` which only depends on public/starship-symbols
+- 🚧 can replace symbols
+  - ✅ public/starship-symbol/replace
+  - ✅ iris-valves--005 sans handle
+  - 🚧 fuel--010 restyled border
 
 - remove internal SVG path editor
 - BUG obstacle texture bleeding induced by obstacle polygon
@@ -358,6 +359,7 @@ w decor.byKey.test-decor-point
 - larger pause UI
 - larger mobile UI
 
+- debug update obstacles button should have spinner
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"
