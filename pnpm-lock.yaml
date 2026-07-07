@@ -879,6 +879,9 @@ importers:
       '@inquirer/prompts':
         specifier: 'catalog:'
         version: 8.1.0(@types/node@24.12.0)
+      '@npc-cli/app':
+        specifier: workspace:^
+        version: link:../packages/app
       '@npc-cli/cli':
         specifier: workspace:^
         version: link:../packages/cli

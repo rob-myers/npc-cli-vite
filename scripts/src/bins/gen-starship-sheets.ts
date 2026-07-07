@@ -25,6 +25,8 @@
 
 import fs, { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import assetsEncoded from "@npc-cli/app/public/assets.json" with { type: "json" };
+import starshipSymbolManifestEncoded from "@npc-cli/app/public/starship-symbol/manifest.json" with { type: "json" };
 import {
   isHullSymbolImageKey,
   type StarshipSymbolImageKey,
@@ -44,13 +46,9 @@ import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
-import assetsEncoded from "../../..//packages/app/public/assets.json" with { type: "json" };
-import starshipSymbolManifestEncoded from "../../../packages/app/public/starship-symbol/manifest.json" with {
-  type: "json",
-};
-import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
 import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
+import { packRectangles } from "../service/rects-packer.ts";
 import { collectMasks } from "../service/svg-masks.ts";
 
 const assets = z.parse(AssetsSchema, assetsEncoded);
@@ -198,10 +196,15 @@ for (const [sheetId, bin] of bins.entries()) {
 //#endregion
 
 // reduce PNG size
-process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
-await loggedSpawn({
-  label: "pngquant",
-  command: "pngquant",
-  args: ["--force", "--ext", ".png", "*.png"],
-  shell: true,
-});
+try {
+  process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
+  await loggedSpawn({
+    label: "pngquant",
+    command: "pngquant",
+    args: ["--force", "--ext", ".png", "*.png"],
+    shell: true,
+  });
+} catch (e) {
+  warn(`pngquant failed to optimize PNGs: have you installed it?`);
+  warn(e);
+}
