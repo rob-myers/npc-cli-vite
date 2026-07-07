@@ -12,7 +12,7 @@ import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/dr
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
 import debounce from "debounce";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import { colorBleeding, vignette } from "three/addons/tsl/display/CRT.js";
 import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
@@ -471,6 +471,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         {props.children}
       </Canvas>
+
+      <AnimatePresence>
+        {w.disabled && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/40 text-xs font-mono tracking-[0.3em] uppercase select-none">
+              paused
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
