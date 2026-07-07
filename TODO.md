@@ -348,13 +348,15 @@ w decor.byKey.test-decor-point
 
 - ❌ public/starship-symbol/mask -> media/src/starship-symbol/mask
   - only apply masks in `gen-starship-sheets` which only depends on public/starship-symbols
-- 🚧 can replace symbols
+- ✅ can replace symbols
   - ✅ public/starship-symbol/replace
   - ✅ iris-valves--005 sans handle
-  - 🚧 fuel--010 restyled border
+  - ✅ darker restyled fuel--010
+  - ✅ remove mask/fuel--010
 
 - remove internal SVG path editor
-- BUG obstacle texture bleeding induced by obstacle polygon
+- 🚧 BUG obstacle texture bleeding induced by obstacle polygon
+  - try fix via padding `gen-starship-sheets` 2 --> 8
 
 - larger pause UI
 - larger mobile UI
