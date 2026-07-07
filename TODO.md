@@ -356,8 +356,8 @@ w decor.byKey.test-decor-point
 
 - 🚧 remove replace/iris-valves--005 and use iris-valves--006 instead
   - ✅ 301
+  - ✅ 101
   - 302
-  - 101
 
 - remove internal SVG path editor
 
