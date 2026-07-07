@@ -344,7 +344,16 @@ w decor.byKey.test-decor-point
   - if keep unpaused no issue
   - repro: pause, spawn chair, play, pause, edit Npcs.tsx, respawn on nav
     
-- remove obstacle trim from fuel (can overlap nearby ground symbols e.g. shower)
+- ✅ remove obstacle trim from fuel (can overlap nearby ground symbols e.g. shower)
+
+- public/starship-symbol/mask -> media/src/starship-symbol/mask
+- can replace symbols
+  - public/starship-symbol/override
+  - iris--valves--005 sans handle
+  - fuel--010 restyled border
+
+- remove internal SVG path editor
+- BUG obstacle texture bleeding induced by obstacle polygon
 
 - larger pause UI
 - larger mobile UI
