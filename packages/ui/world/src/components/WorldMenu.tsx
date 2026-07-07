@@ -10,6 +10,8 @@ import {
   CircleHalfIcon,
   GlobeStandIcon,
   MagnifyingGlassIcon,
+  PauseIcon,
+  PlayIcon,
   SunIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -503,6 +505,13 @@ export function WorldMenu() {
             </Menu.Positioner>
           </Menu.Portal>
         </Menu.Root>
+
+        <div
+          className="flex w-9 items-center justify-center bg-gray-800 text-white p-2 cursor-pointer hover:bg-gray-700"
+          onClick={() => w.setDisabled()}
+        >
+          {w.disabled ? <PlayIcon className="size-5" weight="bold" /> : <PauseIcon className="size-5" weight="bold" />}
+        </div>
 
         <AnimatePresence>
           {[...toastKeys, ...toggleToastKeys].map((key) => (
