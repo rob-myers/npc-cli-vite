@@ -362,6 +362,10 @@ w decor.byKey.test-decor-point
 
 - ❌ remove internal SVG path editor
 
+- 🚧 clean skins
+  - ✅ civilian-0 -> human-0
+  - 🚧 human-0.svg with extra detail
+
 - larger pause UI
 - larger mobile UI
 

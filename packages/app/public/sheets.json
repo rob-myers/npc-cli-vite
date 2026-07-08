@@ -193,17 +193,17 @@
       "originalWidth": 64,
       "originalHeight": 64
     },
-    "civilian-0": {
-      "key": "civilian-0",
-      "filename": "civilian-0--23aa3d70ee53af87--civilian.png",
+    "dog-0": {
+      "key": "dog-0",
+      "filename": "dog-0--c2b1b1f65798dc3c--dog.png",
       "rect": {"x": 68, "y": 2, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
     },
-    "dog-0": {
-      "key": "dog-0",
-      "filename": "dog-0--c2b1b1f65798dc3c--dog.png",
+    "human-0": {
+      "key": "human-0",
+      "filename": "human-0--23aa3d70ee53af87--human.png",
       "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
