@@ -364,7 +364,9 @@ w decor.byKey.test-decor-point
 
 - 🚧 clean skins
   - ✅ civilian-0 -> human-0
-  - 🚧 human-0.svg with extra detail
+  - ✅ human-0.svg with extra detail
+  - ✅ discard skins
+  - 🚧 add new skins
 
 - larger pause UI
 - larger mobile UI

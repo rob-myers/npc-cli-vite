@@ -1,28 +1,12 @@
 {
   "byKey": {
-    "cat-0": {
-      "key": "cat-0",
-      "id": "b7b088cac46c71a5",
-      "filename": "cat-0--b7b088cac46c71a5--cat.png",
-      "tags": ["cat"],
-      "url": "https://namemc.com/skin/b7b088cac46c71a5",
-      "svgPath": "skin/cat-0.svg"
-    },
-    "dog-0": {
-      "key": "dog-0",
-      "id": "c2b1b1f65798dc3c",
-      "filename": "dog-0--c2b1b1f65798dc3c--dog.png",
-      "tags": ["dog"],
-      "url": "https://namemc.com/skin/c2b1b1f65798dc3c",
-      "svgPath": null
-    },
     "human-0": {
       "key": "human-0",
       "id": "23aa3d70ee53af87",
       "filename": "human-0--23aa3d70ee53af87--human--J_az.png",
       "tags": ["human", "J_az"],
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
-      "svgPath": null
+      "svgPath": "skin/human-0.svg"
     },
     "medic-0": {
       "key": "medic-0",
