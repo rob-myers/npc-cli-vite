@@ -353,7 +353,7 @@ export function Debug() {
     texNode.depthNode = uvTexIds;
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
     mat.colorNode = texNode;
-    mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.debugPoint, 0.6);
+    mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.debugPoint);
     return { material: mat, uid: crypto.randomUUID() };
   }, [state.doPointsShown]);
 
