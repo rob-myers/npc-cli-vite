@@ -330,13 +330,13 @@ w decor.byKey.test-decor-point
 - ✅ BUG out-of-sync 301--playground post-refresh
   - the issue was when we started with 301--playground rather than switched to it
 
-- 🚧 stress test i.e. spawnMany
+- ✅ stress test i.e. spawnMany
   - ✅ refactor `spawn` into sub `rawSpawn`
   - ✅ absorb positionY and rotationY into rawSpawn
   - ✅ mount all at once
     - `demo_spawn_many`
     - `remove npc-{0..5}`
-  - 🚧 spawn 200 npcs
+  - ✅ spawn 110 npcs
 
 - ✅ rect in symbol with title "decor quad y=0.2" broke things
   - must be an image node of type decor

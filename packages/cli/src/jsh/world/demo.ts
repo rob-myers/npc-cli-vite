@@ -61,8 +61,11 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
   const pointsWithMeta = [] as WithMeta<JshCli.GroundPoint>[];
   for (const [_gmId, gmRooms] of w.decor.byRoom.entries()) {
     for (const [_roomId, roomDecor] of gmRooms.entries()) {
-      roomDecor.forEach((decor) => {
-        if (decor.type === "point" && (decor.meta.do === "lie" || decor.meta.do === "sit")) {
+      roomDecor?.forEach((decor) => {
+        if (
+          decor.type === "point" &&
+          (decor.meta.do === "lie" || decor.meta.do === "sit" || decor.meta.do === "stand")
+        ) {
           pointsWithMeta.push({ x: decor.x, y: decor.y, meta: { ...decor.meta } });
         }
       });

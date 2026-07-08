@@ -115,7 +115,7 @@ export default function Decor() {
       },
       clearGridAndRoomLookup() {
         Object.values(state.grid).forEach((col) => col.clear());
-        state.byRoom.forEach((inner) => inner.forEach((entry) => entry.clear()));
+        state.byRoom.forEach((inner) => inner.forEach((entry) => entry?.clear()));
       },
       create(def) {
         if (state.runtime.byKey[def.key]) {
@@ -953,7 +953,7 @@ export default function Decor() {
 
 export type State = {
   byKey: Record<string, Geomorph.Decor>;
-  byRoom: Geomorph.RoomDecor[][];
+  byRoom: (Geomorph.RoomDecor | undefined)[][];
   grid: Geomorph.DecorGrid;
   lastHmr: number;
   /** Also false briefly after HMR */
