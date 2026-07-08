@@ -73,6 +73,9 @@ export const helper = {
     return undefined;
   },
 
+  /**
+   * Preserves meta.
+   */
   parseGroundPoint(input: MaybeMeta<JshCli.PointAnyFormat>): MaybeMeta<JshCli.GroundPoint> {
     if (Array.isArray(input)) {
       return input.length === 3 ? { x: input[0], y: input[2] } : { x: input[0], y: input[1] };

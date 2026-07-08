@@ -106,6 +106,8 @@ declare namespace JshCli {
 
   type FindDoMetaResult = {
     type: "use-current" | "next-free";
-    meta: Meta<{ decorKey: string; groundPoint: Geom.VectJson; y?: number; orient?: number }>;
+    meta: Meta<BaseDoableMeta>;
   };
+
+  type BaseDoableMeta = { decorKey?: string; groundPoint?: Geom.VectJson; y?: number; orient?: number };
 }
