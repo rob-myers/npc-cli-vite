@@ -432,7 +432,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     >
       <Canvas
         className={props.className}
-        style={{ filter: `brightness(${w.brightness}) contrast(${w.contrast})` }}
+        style={{ filter: `brightness(${w.brightness})` }}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
