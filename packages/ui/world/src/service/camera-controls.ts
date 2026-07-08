@@ -209,10 +209,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     TOUCH_PAN: 4,
     TOUCH_DOLLY_PAN: 5,
     TOUCH_DOLLY_ROTATE: 6,
-    TOUCH_POLAR: 7,
   } as const;
 
-  state: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 = this.STATE.NONE;
+  state: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 = this.STATE.NONE;
 
   /** Update state */
   u = {
@@ -585,9 +584,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     if (element) {
       if (this.params.snapAzimuth) {
-        if (!this.snapAzimuth.committed) {
+        if (this.rotateAxis === "none") {
+          const ax = Math.abs(this.u.rotateDelta.x);
+          const ay = Math.abs(this.u.rotateDelta.y);
+          if (ax > 2 || ay > 2) {
+            this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+          }
+        }
+        const horiz = this.rotateAxis !== "vertical";
+        const vert = this.rotateAxis !== "horizontal";
+        if (horiz && !this.snapAzimuth.committed) {
           this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
         }
+        if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
       } else {
         const isFree = !this.params.fixedPolar;
         if (isFree && this.rotateAxis === "none") {
@@ -887,21 +896,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         this.update();
         break;
 
-      case this.STATE.TOUCH_POLAR: {
-        let cy = 0,
-          n = 0;
-        for (const pos of Object.values(this.pointerPositions)) {
-          cy += pos.y;
-          n++;
-        }
-        if (n === 0) break;
-        const avg = cy / n;
-        this.rotateUp((avg - this.u.rotateStart.y) * threeFingerPolarSensitivity);
-        this.u.rotateStart.set(0, avg);
-        this.update();
-        break;
-      }
-
       default:
         this.state = this.STATE.NONE;
     }
@@ -934,12 +928,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         this.twoFinger.start[p.pointerId] = pos ? { x: pos.x, y: pos.y } : { x: p.pageX, y: p.pageY };
       }
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
-      this.dispatchEvent(startEvent);
-    } else if (this.pointers.length === 3 && this.params.snapAzimuth) {
-      let cy = 0;
-      for (const p of this.pointers) cy += p.pageY;
-      this.u.rotateStart.set(0, cy / 3);
-      this.state = this.STATE.TOUCH_POLAR;
       this.dispatchEvent(startEvent);
     } else {
       this.state = this.STATE.NONE;
@@ -1205,8 +1193,6 @@ const twoFingerSameDirThreshold = 0.7;
 const twoFingerStopThreshold = 0.3;
 const twoFingerZoomStopThreshold = 0.5;
 const twoFingerZoomBoost = 3.0;
-
-const threeFingerPolarSensitivity = 0.006;
 
 const twoPI = 2 * Math.PI;
 
