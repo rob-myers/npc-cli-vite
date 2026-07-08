@@ -150,7 +150,9 @@ export default function Floor() {
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return {
       texNode: texNode.depth(instanceIndex),
-      pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor),
+      // - force alpha 1 to avoid object-pick having rgb scaled by alpha
+      // - can pick texture alpha < 1 because floor can be partially transparent
+      outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1),
       uid: generateUUID(),
     };
   }, [w.texFloor.hash]);
@@ -178,9 +180,9 @@ export default function Floor() {
         key={shaderMeta.uid}
         side={THREE.FrontSide} // one draw call
         transparent
-        alphaTest={0.8}
+        alphaTest={0.01}
         colorNode={shaderMeta.texNode}
-        outputNode={shaderMeta.pickNode}
+        outputNode={shaderMeta.outputNode}
         depthWrite={false}
       />
     </instancedMesh>

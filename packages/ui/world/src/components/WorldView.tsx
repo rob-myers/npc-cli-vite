@@ -385,15 +385,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return "always";
         }
       },
-      withPickOutput(typeId, colorScale = 1) {
+      withPickOutput(typeId, forceAlpha) {
         const idx = float(instanceIndex);
-        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), 1);
+        const pickVec = vec4(
+          float(typeId).div(255),
+          idx.div(256).floor().div(255),
+          idx.mod(256).div(255),
+          forceAlpha ?? output.a,
+        );
         // 🔔 SelectAnyType fixes horrible: Expression produces a union type that is too complex to represent.
-        return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output.mul(colorScale));
+        return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
       withPickOutputId(typeId, idUniform) {
         const idx = float(idUniform);
-        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), 1);
+        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
@@ -531,7 +536,7 @@ export type State = {
    * We include `colorScale` here because scaling colorNode on
    * transparent material broke picking.
    */
-  withPickOutput(typeId: number, colorScale?: number): THREE.Node;
+  withPickOutput(typeId: number, forceAlpha?: number): THREE.Node;
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setupPostProcessing(): () => void;
