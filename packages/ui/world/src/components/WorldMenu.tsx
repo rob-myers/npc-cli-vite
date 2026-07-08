@@ -19,7 +19,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
 import { brightnessStorageKey, defaultFov, fovStorageKey, pickOpenDoorsKey } from "../const";
-import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
+import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
 
@@ -511,7 +511,7 @@ export function WorldMenu() {
         container={w.rootEl}
       />
       {w.npc && (
-        <SkinDebugModal
+        <SkinsModal
           open={state.skinDebugOpen}
           onOpenChange={(open) => state.set({ skinDebugOpen: open })}
           container={w.rootEl}

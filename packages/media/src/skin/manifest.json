@@ -19,16 +19,16 @@
     "human-0": {
       "key": "human-0",
       "id": "23aa3d70ee53af87",
-      "filename": "human-0--23aa3d70ee53af87--human.png",
-      "tags": ["human"],
+      "filename": "human-0--23aa3d70ee53af87--human--J_az.png",
+      "tags": ["human", "J_az"],
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
       "svgPath": null
     },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
-      "filename": "medic-0--3573d1c9cad6c8fc--medic--doctor--mask.png",
-      "tags": ["medic", "doctor", "mask"],
+      "filename": "medic-0--3573d1c9cad6c8fc--medic--doctor--mask--NoneType_.png",
+      "tags": ["medic", "doctor", "mask", "NoneType_"],
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
       "svgPath": "skin/medic-0.svg"
     },
