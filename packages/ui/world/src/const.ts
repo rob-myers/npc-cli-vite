@@ -72,7 +72,6 @@ export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
-export const contrastStorageKey = `world-contrast-value`;
 export const fovStorageKey = `world-fov-value`;
 export const defaultFov = 60;
 

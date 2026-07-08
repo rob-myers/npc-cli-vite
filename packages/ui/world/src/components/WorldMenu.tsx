@@ -7,7 +7,6 @@ import {
   ArrowsOutIcon,
   CaretDownIcon,
   CaretRightIcon,
-  CircleHalfIcon,
   GlobeStandIcon,
   MagnifyingGlassIcon,
   PauseIcon,
@@ -19,7 +18,7 @@ import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
-import { brightnessStorageKey, contrastStorageKey, defaultFov, fovStorageKey, pickOpenDoorsKey } from "../const";
+import { brightnessStorageKey, defaultFov, fovStorageKey, pickOpenDoorsKey } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinDebugModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
@@ -234,34 +233,6 @@ export function WorldMenu() {
                         w.brightness = Number(e.target.value);
                         w.update();
                         tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className={cn(
-                        "w-16 accent-white cursor-pointer",
-                        "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                    <CircleHalfIcon
-                      className="size-4 text-white cursor-pointer shrink-0"
-                      onClick={() => {
-                        w.contrast = 1;
-                        w.update();
-                        tryLocalStorageSet(contrastStorageKey, "1");
-                      }}
-                    />
-                    <input
-                      type="range"
-                      min="0.75"
-                      max="1.75"
-                      step="0.05"
-                      value={w.contrast}
-                      onChange={(e) => {
-                        w.contrast = Number(e.target.value);
-                        w.update();
-                        tryLocalStorageSet(contrastStorageKey, String(w.contrast));
                       }}
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
