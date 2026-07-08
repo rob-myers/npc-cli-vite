@@ -387,13 +387,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       withPickOutput(typeId, colorScale = 1) {
         const idx = float(instanceIndex);
-        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
+        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), 1);
         // 🔔 SelectAnyType fixes horrible: Expression produces a union type that is too complex to represent.
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output.mul(colorScale));
       },
       withPickOutputId(typeId, idUniform) {
         const idx = float(idUniform);
-        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
+        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), 1);
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
