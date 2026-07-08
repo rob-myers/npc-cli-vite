@@ -558,7 +558,7 @@ export async function remove({ w, args }) {
   const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
   npcKeys.length && w.e.removeNpcs(...npcKeys);
   runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
-  setTimeout(() => w.view.forceUpdate(0.001));
+  setTimeout(() => w.view.forceUpdate(0.001), 30);
 }
 
 /**
