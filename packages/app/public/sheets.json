@@ -216,8 +216,16 @@
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
+    },
+    "vargr-0": {
+      "key": "vargr-0",
+      "filename": "vargr-0--4de884eb80766903--canine.png",
+      "rect": {"x": 134, "y": 2, "width": 64, "height": 64},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 134, "height": 134}],
-  "maxSkinSheetDim": {"width": 134, "height": 134}
+  "skinSheetDims": [{"width": 200, "height": 134}],
+  "maxSkinSheetDim": {"width": 200, "height": 134}
 }
