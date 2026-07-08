@@ -1,4 +1,4 @@
-import { events } from "./core";
+import { events, nudge } from "./core";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -42,6 +42,35 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   });
 
   ct.w.view.forceUpdate();
+}
+
+export async function demo_auto_nudge(ct: JshCli.RunArg) {
+  const { api, w } = ct;
+  const nudgedEpoch = {} as { [npcKey: string]: number };
+
+  const handled = api.handleStatus({
+    cleanups: w.e.addFrameCallback(() => {
+      if (w.disabled === true) {
+        return;
+      }
+      const epoch = Date.now();
+      for (const npc of Object.values(w.n)) {
+        if (npc.agent === null || npc.isMoving() === true) {
+          continue;
+        }
+        const [closestNei] = npc.agent.neis;
+
+        if (closestNei?.dist < 0.5 && (nudgedEpoch[npc.key] === undefined || epoch - nudgedEpoch[npc.key] > 3000)) {
+          // idle npc on navmesh has nearby moving neighbour
+          nudgedEpoch[npc.key] = Date.now();
+          void nudge(ct, { npcKey: npc.key, src: w.npc.byAgentId[closestNei.agentId].key });
+        }
+      }
+    }),
+  });
+
+  // run until killed
+  await api.read().finally(handled.dispose);
 }
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {

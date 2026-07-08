@@ -371,10 +371,15 @@ w decor.byKey.test-decor-point
     - vargr-0
     - droyne-0
 
+- ✅ `demo_auto_nudge`
+  - idle npcs on nearby non-idle get nudged away
+  - e.g. two static npcs close together and non-idle tries to navigate through
+  - ✅ detect nearby collision
+
 - larger pause UI
 - larger mobile UI
 
-- 🚧 BUG obstacle texture bleeding induced by obstacle polygon
+- ✅ BUG obstacle texture bleeding induced by obstacle polygon
   - try fix via padding `gen-starship-sheets` 2 --> 8
 - debug update obstacles button should have spinner
 - obstacle resizing can be confusing

@@ -4,7 +4,7 @@ import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { keys, mapValues } from "@npc-cli/util/legacy/generic";
-import { buildGraph } from "@react-three/fiber";
+import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import {
   ANY_QUERY_FILTER,
@@ -603,6 +603,8 @@ export default function NPCs() {
     state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
     w.setNextPending({ skins: false });
   }, [queryData]);
+
+  w.r3fStore = useReactThreeFiberStore();
 
   useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
 
