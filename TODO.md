@@ -362,13 +362,14 @@ w decor.byKey.test-decor-point
 
 - ❌ remove internal SVG path editor
 
-- 🚧 clean skins
+- ✅ clean skins
   - ✅ civilian-0 -> human-0
   - ✅ human-0.svg with extra detail
   - ✅ discard skins
-  - 🚧 add new skins
+  - ✅ add new skins
     - aslan-0
-    - ...
+    - vargr-0
+    - droyne-0
 
 - larger pause UI
 - larger mobile UI
