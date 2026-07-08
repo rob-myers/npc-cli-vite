@@ -507,7 +507,7 @@ export class TtyShell implements Device {
       }
       this.prompt("$");
     } finally {
-      this.input.resolve();
+      this.input?.resolve();
       this.input = null;
     }
   }
