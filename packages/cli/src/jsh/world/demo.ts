@@ -57,17 +57,21 @@ export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
-export async function demo_spawn_many(ct: JshCli.RunArg) {
-  await ct.w.e.spawnMany({
+export async function demo_spawn_many({ w }: JshCli.RunArg) {
+  const pointsWithMeta = [] as WithMeta<JshCli.GroundPoint>[];
+  for (const [_gmId, gmRooms] of w.decor.byRoom.entries()) {
+    for (const [_roomId, roomDecor] of gmRooms.entries()) {
+      roomDecor.forEach((decor) => {
+        if (decor.type === "point" && (decor.meta.do === "lie" || decor.meta.do === "sit")) {
+          pointsWithMeta.push({ x: decor.x, y: decor.y, meta: { ...decor.meta } });
+        }
+      });
+    }
+  }
+
+  await w.e.spawnMany({
     baseKey: "npc",
-    ats: [
-      [1.5, 3],
-      [1.5, 4.5],
-      [1.5, 7.5],
-      [2.25, 3],
-      [2.25, 4.5],
-      [2.25, 7.5],
-    ],
+    ats: [...pointsWithMeta],
   });
 }
 
