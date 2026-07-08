@@ -185,10 +185,18 @@
   "decorSheetDims": [{"width": 1034, "height": 776}],
   "maxDecorSheetDim": {"width": 1034, "height": 776},
   "skin": {
+    "aslan-0": {
+      "key": "aslan-0",
+      "filename": "aslan-0--ff2642d58fc89270--aslan--suit--Lopn.png",
+      "rect": {"x": 2, "y": 2, "width": 64, "height": 64},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
     "human-0": {
       "key": "human-0",
       "filename": "human-0--23aa3d70ee53af87--human--J_az.png",
-      "rect": {"x": 2, "y": 2, "width": 64, "height": 64},
+      "rect": {"x": 68, "y": 2, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -196,7 +204,7 @@
     "medic-0": {
       "key": "medic-0",
       "filename": "medic-0--3573d1c9cad6c8fc--medic--doctor--mask--NoneType_.png",
-      "rect": {"x": 68, "y": 2, "width": 64, "height": 64},
+      "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -204,7 +212,7 @@
     "robot-0": {
       "key": "robot-0",
       "filename": "robot-0--e91cc700154075b2--robot.png",
-      "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
+      "rect": {"x": 68, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64

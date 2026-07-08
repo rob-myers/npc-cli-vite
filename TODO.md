@@ -367,6 +367,8 @@ w decor.byKey.test-decor-point
   - ✅ human-0.svg with extra detail
   - ✅ discard skins
   - 🚧 add new skins
+    - aslan-0
+    - ...
 
 - larger pause UI
 - larger mobile UI
