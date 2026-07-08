@@ -498,8 +498,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         /** Ground point should either be doable or navigable */
         const doResults = groundPoints.map((p, i) => {
           try {
-            const result = w.npc.findFreeDoMeta(p, npcKeys[i]);
-            return result === null ? null : result;
+            return w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i]);
           } catch {
             return null;
           }
