@@ -33793,15 +33793,15 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-gray-700",
+      "background": "bg-zinc-800",
       "ceiling": {
-        "hull": {"fill": "#000", "stroke": "#6666"},
-        "nonHull": {"fill": "#5555", "stroke": "#0005"}
+        "hull": {"fill": "#000", "stroke": "#6662"},
+        "nonHull": {"fill": "#9991", "stroke": "#000"}
       },
       "floor": {
-        "hullFill": "#111",
+        "hullFill": "#1110",
         "navStroke": "#000c",
-        "patternFill": "#4444",
+        "patternFill": "#4445",
         "tileStroke": "#0001"
       },
       "walls": {"color": "#000000", "opacity": 0.5}
