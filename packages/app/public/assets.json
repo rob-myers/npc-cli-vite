@@ -5948,6 +5948,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -7752,6 +7753,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -7781,6 +7783,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -7810,6 +7813,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -7839,6 +7843,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -14671,6 +14676,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -14700,6 +14706,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -14729,6 +14736,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -14758,6 +14766,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -19217,6 +19226,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0,
@@ -19914,6 +19924,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -22121,6 +22132,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -22134,6 +22146,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -22166,6 +22179,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -22179,6 +22193,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -22211,6 +22226,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -22224,6 +22240,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -22256,6 +22273,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -22269,6 +22287,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -26836,6 +26855,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -26849,6 +26869,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -26881,6 +26902,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -26894,6 +26916,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -26926,6 +26949,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -26939,6 +26963,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -26971,6 +26996,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -26984,6 +27010,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -32597,6 +32624,7 @@
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
               "symKey": "iris-valves--006",
               "origObstacleId": 0
@@ -32610,6 +32638,7 @@
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
             "symKey": "iris-valves--006",
             "origObstacleId": 0
@@ -33792,5 +33821,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 678825534}
+  "hash": {"obstacles": -81777678}
 }
