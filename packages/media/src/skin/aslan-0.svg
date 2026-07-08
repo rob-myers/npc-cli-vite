@@ -1,19 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" xmlns:bx="https://boxy-svg.com">
   <defs>
-    <filter id="spot-light-filter-0" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 30 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
-      </feSpecularLighting>
-      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
-        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
-      </feDiffuseLighting>
-      <feMerge result="lighting">
-        <feMergeNode in="diffuse-lighting"/>
-        <feMergeNode in="specular-lighting"/>
-      </feMerge>
-      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
-    </filter>
     <bx:grid x="0" y="0" width="16" height="16"/>
     <filter id="inner-shadow-filter-0" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
       <feOffset dx="0" dy="0"/>
@@ -59,17 +46,36 @@
       <feComposite operator="in" in="color" in2="choke" result="shadow"/>
       <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
     </filter>
+    <filter id="filter-5" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 30 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <filter id="saturate-filter-0" bx:preset="saturate 1 1.53" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feColorMatrix type="saturate" values="1.53"/>
+    </filter>
   </defs>
-  <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAzFBMVEUAAAD///8AAAADAwEAAAABAQECAgIDAwMEBAQHBwcREREWFhYaDAweCwAeHh4iEAAiEQ8oFwAqFRIyHhU6Jho+JBdCLB5IKxtKMx5UNiBUOx9cOiFePyZoQiZoSSp0Uix2UCx6VjF+QEB/XTGDWzKEYziKZjWNbUGPZziVd0qecz6gcj+sf0Wygka4fV66i0m/o4XAk1TIoGXMlXDPuKnQrXbRrHjRtZHS0tLeu4fh4eHjyKDovZLrypbv2sfx8fH2sU322av/6bn/7dYbB7Y4AAAABHRSTlMAABAjWzYFuQAAA7hJREFUWMPtln97kzAQgE/t2ACdrrCYMgZ10JpRUoWu2rVorf3+38nLL1pGV5n6n7unpTR39+buEsgBaCkpofgp+v2+5+EFWkKAwhHh6E0CyqU7fg+YUAiOAD4SmmAIH9H33TsktAMQ+iMAEqMBCQj6v36NhJaB0B8LgSZxEiPFG15fXV0P2wChh/hxQJLHyThKgjQdXl8P07RlkIPSq39tPcujeIyUlLHPnxlL23oQeuF5d3cIkGYYQo6ebIXSBoDSo+d3lD1AwSeYXZKxLE+SPGMsToJgwouC+EFASFEWHPOTAKEHWQZelAC+KikfhLdJxFhWlvN5WWZZysa34YBz3BQU90UB4S1AxDIoP41LyDJgcBtGhdxXgjAJo3HG8ry8/zaff7sv8zyKxlE4+UAD4hP6gceyAHkOMJ9jKfMkEmvKAfW4N3D9R0EUYwJf3l7c31+8/YKwLAxGBDPArUkIjNA8EzNLQCb0IAZB6jETP8QCsPzNj9522/vxJmdpHFNKfdL3qUeJWGEMOy8UoMA6xiIon4i9jfq+R8Moy7PVdrT5OdqucIo0jd77PvEwCuKBRwH1RbH5WpZfN0WR4UpEOC8mIPU+GaSYAePF6u5uVXB0Z2Gf+B5RFx8GgBkAh83NzQZ/UqwiEB+LKC/gXw7iAe68CV9ttys+SdOr9+GlmL9PPc/vwyUu3BAmHIQe+ASuIMQl9AAfWHlBsWzHsVDM3rCM4Ljj2PU43lqz6XQq7l9o0QC7CVhIQYCUetxFQlV1AqwX+DkIwAiqAwCVwktl9woBvZ4ACIXdTAEjaAJ2uap8bfG/BugYUNzzcxcj0OK4NUDO4dRiSxtrfdJbS+daoQCOsd4BHDW8w4hfe907WVp6zHWFyaMArcBZRSkdVxkseqcLVxmjAZo4jnHXcT0EqHWvAdZZz9Kzuc75ubMHUBMdBQg5Oa3n0q7qauychzWoFSoC+/TM3eXbAWDXW1ev0pllYpHlw9V5IqC+NQD9X9vZ9uMAVSR7r2BylZbr9XK5XGhZLps78aGoHWFmk6hKyGwqniX8zqrjAO20/0jPqlklngMETAWj8TD9iTwDngHPgP8DYF5xu37BdvAtMusOsB8A8M0q3kJ/BaieFMGBFKquEZg+oXFOiGNF9wcdAfog2TvOzfH+e4DpE5p9Q3dAfRqZvqF5Rv8+BXPMm2Pf9AN/DKiPOn06dwW0+oGnAWzjYP8jgCpko2vtDDD9gOkPugH2xPQDpj94MkA2A1PhLBoE1anvA34BXe+WxwlncpsAAAAASUVORK5CYII=" width="256" height="256" y="0.00001" style="image-rendering: pixelated;">
+  <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAzFBMVEUAAAD///8AAAADAwEAAAABAQECAgIDAwMEBAQHBwcREREWFhYaDAweCwAeHh4iEAAiEQ8oFwAqFRIyHhU6Jho+JBdCLB5IKxtKMx5UNiBUOx9cOiFePyZoQiZoSSp0Uix2UCx6VjF+QEB/XTGDWzKEYziKZjWNbUGPZziVd0qecz6gcj+sf0Wygka4fV66i0m/o4XAk1TIoGXMlXDPuKnQrXbRrHjRtZHS0tLeu4fh4eHjyKDovZLrypbv2sfx8fH2sU322av/6bn/7dYbB7Y4AAAABHRSTlMAABAjWzYFuQAAA7hJREFUWMPtln97kzAQgE/t2ACdrrCYMgZ10JpRUoWu2rVorf3+38nLL1pGV5n6n7unpTR39+buEsgBaCkpofgp+v2+5+EFWkKAwhHh6E0CyqU7fg+YUAiOAD4SmmAIH9H33TsktAMQ+iMAEqMBCQj6v36NhJaB0B8LgSZxEiPFG15fXV0P2wChh/hxQJLHyThKgjQdXl8P07RlkIPSq39tPcujeIyUlLHPnxlL23oQeuF5d3cIkGYYQo6ebIXSBoDSo+d3lD1AwSeYXZKxLE+SPGMsToJgwouC+EFASFEWHPOTAKEHWQZelAC+KikfhLdJxFhWlvN5WWZZysa34YBz3BQU90UB4S1AxDIoP41LyDJgcBtGhdxXgjAJo3HG8ry8/zaff7sv8zyKxlE4+UAD4hP6gceyAHkOMJ9jKfMkEmvKAfW4N3D9R0EUYwJf3l7c31+8/YKwLAxGBDPArUkIjNA8EzNLQCb0IAZB6jETP8QCsPzNj9522/vxJmdpHFNKfdL3qUeJWGEMOy8UoMA6xiIon4i9jfq+R8Moy7PVdrT5OdqucIo0jd77PvEwCuKBRwH1RbH5WpZfN0WR4UpEOC8mIPU+GaSYAePF6u5uVXB0Z2Gf+B5RFx8GgBkAh83NzQZ/UqwiEB+LKC/gXw7iAe68CV9ttys+SdOr9+GlmL9PPc/vwyUu3BAmHIQe+ASuIMQl9AAfWHlBsWzHsVDM3rCM4Ljj2PU43lqz6XQq7l9o0QC7CVhIQYCUetxFQlV1AqwX+DkIwAiqAwCVwktl9woBvZ4ACIXdTAEjaAJ2uap8bfG/BugYUNzzcxcj0OK4NUDO4dRiSxtrfdJbS+daoQCOsd4BHDW8w4hfe907WVp6zHWFyaMArcBZRSkdVxkseqcLVxmjAZo4jnHXcT0EqHWvAdZZz9Kzuc75ubMHUBMdBQg5Oa3n0q7qauychzWoFSoC+/TM3eXbAWDXW1ev0pllYpHlw9V5IqC+NQD9X9vZ9uMAVSR7r2BylZbr9XK5XGhZLps78aGoHWFmk6hKyGwqniX8zqrjAO20/0jPqlklngMETAWj8TD9iTwDngHPgP8DYF5xu37BdvAtMusOsB8A8M0q3kJ/BaieFMGBFKquEZg+oXFOiGNF9wcdAfog2TvOzfH+e4DpE5p9Q3dAfRqZvqF5Rv8+BXPMm2Pf9AN/DKiPOn06dwW0+oGnAWzjYP8jgCpko2vtDDD9gOkPugH2xPQDpj94MkA2A1PhLBoE1anvA34BXe+WxwlncpsAAAAASUVORK5CYII=" width="256" height="256" y="0.00001" style="image-rendering: pixelated; filter: url(&quot;#saturate-filter-0&quot;);">
     <title>aslan-0--ff2642d58fc89270--aslan--suit--Lopn</title>
   </image>
   <g style="pointer-events: none;">
     <title>head</title>
-    <rect width="32" height="32" style="filter: none; fill: none; stroke-opacity: 0.5; stroke-width: 2px;" x="31.4486">
+    <rect x="32" width="32" height="32" style="opacity: 0.5; mix-blend-mode: hard-light; stroke-width: 2px; filter: url(&quot;#filter-5&quot;); fill: none; stroke: rgb(0, 0, 0);">
       <title>top</title>
     </rect>
-    <rect x="32" width="32" height="32" style="fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light; stroke-width: 2px;" y="32">
+    <rect x="32" width="32" height="32" style="filter: none; opacity: 0.5; mix-blend-mode: hard-light; stroke-width: 2px; fill: none; stroke: rgb(0, 0, 0);" y="32">
       <title>front</title>
+    </rect>
+    <rect x="160" width="32" height="32" style="opacity: 0.5; mix-blend-mode: hard-light; stroke-width: 2px; filter: none; fill: none; stroke: rgb(0, 0, 0);" y="32">
+      <title>front-overlay</title>
     </rect>
     <rect width="32" height="32" style="filter: none; opacity: 0.2; stroke-width: 2px;" y="32" x="96">
       <title>back</title>

@@ -31,6 +31,14 @@
       "tags": ["robot"],
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
+    },
+    "vargr-0": {
+      "key": "vargr-0",
+      "id": "4de884eb80766903",
+      "filename": "vargr-0--4de884eb80766903--canine.png",
+      "tags": ["canine"],
+      "url": "https://namemc.com/skin/4de884eb80766903",
+      "svgPath": null
     }
   }
 }
