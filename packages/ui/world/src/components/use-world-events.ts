@@ -476,7 +476,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         w.shadows?.onTick();
-        state.update();
+        w.npc.update();
         w.events.next({ key: "removed-npcs", npcKeys });
       },
       setNpcDo(npcKey, decorKey) {
