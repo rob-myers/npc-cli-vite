@@ -351,7 +351,7 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
   );
 }
 
-export function SkinDebugModal({ open, onOpenChange, container }: DebugModalProps) {
+export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
   const { entries, manifest } = w.npc.skin;
 
@@ -404,7 +404,7 @@ export function SkinDebugModal({ open, onOpenChange, container }: DebugModalProp
                       >
                         {entry.key}
                       </a>
-                      <div className="flex flex-wrap justify-center gap-2 mt-1">
+                      <div className="max-w-64 flex flex-wrap justify-center gap-2 mt-1">
                         {skinEntry.tags.map((tag) => (
                           <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
                             {tag}
