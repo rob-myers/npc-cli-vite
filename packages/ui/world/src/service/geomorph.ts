@@ -309,7 +309,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   } else if (meta.quad === true) {
     const polyRect = poly.rect.precision(precision);
     const { transform } = poly.meta;
-    const quadMeta = { ...base.meta } as Geomorph.DecorQuad["meta"];
+    const quadMeta = { ...(base.meta as typeof meta & { img: string }) };
     delete quadMeta.transform; // already provided one-level-up
 
     const center = poly.center.precision(3);

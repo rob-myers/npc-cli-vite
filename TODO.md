@@ -232,6 +232,7 @@ w decor.byKey.test-decor-point
   - `meta $( pick as:point 1 )`
   - `pick | w helper.parse3dHeight -`
   - `spawn npc:rob at:$( meta [4.5,4.5] )`
+  - `w decor.byRoom.0.1 | split | map meta.do`
 
 - ✅ how to handle npc blocking one door of a double door
   - lock the door (even with npc standing in it)
