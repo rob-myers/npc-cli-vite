@@ -33784,7 +33784,7 @@
         "nonHull": {"fill": "#111", "stroke": "#000"}
       },
       "floor": {
-        "hullFill": "#666",
+        "hullFill": "#4440",
         "navStroke": "#000c",
         "patternFill": "#222",
         "tileStroke": "#0001"

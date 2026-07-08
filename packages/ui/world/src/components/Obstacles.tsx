@@ -151,7 +151,7 @@ export default function Obstacles(_props: Props) {
 
         obsInst.computeBoundingSphere();
       },
-      transformSkirts() {
+      transformAndColorSkirts() {
         if (!state.skirtInst) return;
         let sId = 0;
 
@@ -241,7 +241,7 @@ export default function Obstacles(_props: Props) {
   useEffect(() => {
     state.addUvs();
     state.transformAndColorObstacles();
-    state.transformSkirts();
+    state.transformAndColorSkirts();
 
     // Collect all light world positions with per-light radius
     const lights: { x: number; z: number; radius: number }[] = [];
@@ -349,7 +349,7 @@ export type State = {
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
   decodeInstanceId(instanceId: number): Meta<{ gmId: number; obstacleId: number }>;
   transformAndColorObstacles(): void;
-  transformSkirts(): void;
+  transformAndColorSkirts(): void;
   sendDataToGpu(): void;
 };
 
