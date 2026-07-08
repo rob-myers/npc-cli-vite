@@ -5,7 +5,7 @@ import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, u
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
 import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
-import type { RootState } from "@react-three/fiber";
+import type { RootState, RootStore } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
@@ -108,6 +108,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: emptyTiledNavmeshResponse,
       pending: {},
       r3f: null as any,
+      r3fStore: null as any,
 
       b: null as any,
       bubble: null as any,
@@ -371,6 +372,7 @@ export type State = {
 
   events: Broadcaster<JshCli.Event>;
   r3f: RootState & { camera: THREE.PerspectiveCamera };
+  r3fStore: RootStore;
   reqAnimId: number;
   threeReady: boolean;
   timer: Timer;

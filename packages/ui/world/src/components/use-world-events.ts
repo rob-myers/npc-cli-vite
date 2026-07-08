@@ -26,6 +26,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       pendingRaycast: {},
       roomToNpcs: [],
 
+      addFrameCallback(cb) {
+        return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
+      },
       canCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
         if (closeNpcs === undefined) {
@@ -641,6 +644,7 @@ export type State = {
    */
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
+  addFrameCallback(cb: () => void): () => void;
   canCloseDoor(door: Geomorph.DoorState): boolean;
   /**
    * - When an npc is moving its destination should be inside a room.
