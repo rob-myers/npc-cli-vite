@@ -113,7 +113,11 @@ export default function NPCs() {
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(npcBrightness);
-        const mainColor = vec4(skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1), skinTex.a.mul(opacityScale));
+        const mainColor = vec4(
+          skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1),
+          // when entirely black ignore texture for more uniform fade
+          select(colorScale.equal(0), opacityScale, skinTex.a.mul(opacityScale)),
+        );
 
         const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(uniform(pickId));
         const labelColor = vec4(labelTex.rgb, labelTex.a.mul(opacityScale).mul(labelVisible));
@@ -129,7 +133,7 @@ export default function NPCs() {
           depthWrite: true,
           side: THREE.FrontSide,
         });
-        mat.alphaTestNode = (select as SelectAnyType)(isLabel, float(0), alphaTest);
+        mat.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.5), alphaTest);
         mat.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         mat.colorNode = (select as any)(isLabel, labelColor, mainColor);
         mat.outputNode = (select as SelectAnyType)(
