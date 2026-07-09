@@ -429,12 +429,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
 
   return (
-    <motion.div
-      className={cn("size-full transition-[filter] duration-1000", w.disabled && "brightness-100")}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 2, delay: 0.1 }}
-    >
+    <div className="size-full">
       <Canvas
         className={props.className}
         style={{ filter: `brightness(${w.brightness})` }}
@@ -492,7 +487,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
