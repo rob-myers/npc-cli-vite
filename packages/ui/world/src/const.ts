@@ -81,7 +81,7 @@ export const defaultCameraModeMobile = "cardinal" satisfies import("./components
 export const defaultThemeKey = "light-theme";
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
-  background: "bg-gray-800",
+  background: "bg-[#000]", // seeing initial flicker
   ceiling: {
     hull: { fill: "#000", stroke: "#666" },
     nonHull: { fill: "#444", stroke: "#000" },
