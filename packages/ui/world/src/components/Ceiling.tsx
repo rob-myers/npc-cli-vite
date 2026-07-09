@@ -94,8 +94,10 @@ export default function Ceiling() {
 
         drawPolygons(ct, tops.broad, {
           fillStyle: tc.hull.fill,
+          // strokeStyle: null,
           strokeStyle: "rgba(90, 90, 90, 0.5)",
           lineWidth: thickerLineWidth,
+          // lineWidth: thinLineWidth,
         });
 
         for (const decal of polyDecals) {
