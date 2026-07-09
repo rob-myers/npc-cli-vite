@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg width="6" height="6" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg">
-  <path d="M 5.6,3 L 2.8,5.2 L 2.8,4 L 0.4,4 L 0.4,2 L 2.8,2 L 2.8,0.8 Z" fill="red" stroke="black" stroke-width="0.15" stroke-linejoin="round">
+  <path d="M 5.6,3 L 2.8,5.2 L 2.8,4 L 0.4,4 L 0.4,2 L 2.8,2 L 2.8,0.8 Z" stroke-linejoin="round" style="stroke-width: 0.25px; stroke: rgb(255, 255, 255);">
     <title>decor arrow</title>
   </path>
 </svg>
