@@ -6025,6 +6025,7 @@
             "y": 1,
             "h": 1,
             "tint": "#444",
+            "skirtTint": "#ddd",
             "symKey": "machinery--158",
             "origObstacleId": 0
           }
@@ -7938,6 +7939,7 @@
             "y": 1,
             "h": 1,
             "tint": "#444",
+            "skirtTint": "#ddd",
             "symKey": "machinery--158",
             "origObstacleId": 0,
             "transform": [0, -1, 1, 0, 0.2875, 6.125]
@@ -20009,6 +20011,7 @@
             "y": 1,
             "h": 1,
             "tint": "#444",
+            "skirtTint": "#ddd",
             "symKey": "machinery--158",
             "origObstacleId": 0
           }
@@ -22390,6 +22393,7 @@
               "y": 1,
               "h": 1,
               "tint": "#444",
+              "skirtTint": "#ddd",
               "symKey": "machinery--158",
               "origObstacleId": 0
             }
@@ -22409,6 +22413,7 @@
             "y": 1,
             "h": 1,
             "tint": "#444",
+            "skirtTint": "#ddd",
             "symKey": "machinery--158",
             "origObstacleId": 0
           }
@@ -33878,8 +33883,8 @@
     "dark-theme": {
       "background": "bg-zinc-800",
       "ceiling": {
-        "hull": {"fill": "#000", "stroke": "#6662"},
-        "nonHull": {"fill": "#fff1", "stroke": "#000"}
+        "hull": {"fill": "#0006", "stroke": "#6662"},
+        "nonHull": {"fill": "#0006", "stroke": "#fff1"}
       },
       "floor": {
         "hullFill": "#1110",
@@ -33890,7 +33895,7 @@
       "walls": {"color": "#000000", "opacity": 0.5}
     },
     "light-theme": {
-      "background": "bg-[#777]",
+      "background": "bg-[#444]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#fff1"},
         "nonHull": {"fill": "#111", "stroke": "#000"}
@@ -33904,5 +33909,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 1671869097}
+  "hash": {"obstacles": -1711696812}
 }
