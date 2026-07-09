@@ -29,6 +29,8 @@ export function WorldMenu() {
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
   const themeKeys = Object.keys(w.assets?.theme ?? {});
+  /** Bigger touch targets on mobile */
+  const big = w.touchDevice;
 
   const state = useStateRef(
     (): State => ({
@@ -193,9 +195,9 @@ export function WorldMenu() {
               state.set({ menuOpen: !state.menuOpen });
             }}
           >
-            <div className="flex items-center gap-2 bg-gray-800 text-white p-2">
-              <GlobeStandIcon className="size-5" weight="bold" />
-              {pendingKeys.length > 0 && <Spinner className="size-4" />}
+            <div className={cn("flex items-center gap-2 bg-gray-800 text-white p-2", big && "p-3")}>
+              <GlobeStandIcon className={cn("size-5", big && "size-6")} weight="bold" />
+              {pendingKeys.length > 0 && <Spinner className={cn("size-4", big && "size-5")} />}
             </div>
           </Menu.Trigger>
 
@@ -203,19 +205,26 @@ export function WorldMenu() {
             <div
               className={cn(
                 "pointer-events-none flex justify-center rounded p-1 select-none",
+                big && "p-2",
                 extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
               )}
             >
-              <MagnifyingGlassIcon size={22} weight="bold" />
+              <MagnifyingGlassIcon size={big ? 26 : 22} weight="bold" />
             </div>
           )}
 
           <Menu.Portal>
             <Menu.Positioner className="z-50" sideOffset={4} align="start">
-              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1">
-                <div className="flex flex-wrap max-w-52">
-                  <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+              <Menu.Popup className={cn("bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1", big && "py-2")}>
+                <div className={cn("flex flex-wrap", big ? "max-w-72" : "max-w-52")}>
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+                      big && "gap-3 px-3 py-2 text-sm",
+                    )}
+                  >
                     <BrightnessPie
+                      big={big}
                       ratio={brightnessToRatio(w.brightness)}
                       onClick={() => {
                         const brightness = 2;
@@ -238,14 +247,21 @@ export function WorldMenu() {
                       className={cn(
                         "w-16 accent-white cursor-pointer",
                         "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                        big &&
+                          "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
                       )}
                     />
                   </div>
 
                   {w.view && (
-                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+                        big && "gap-3 px-3 py-2 text-sm",
+                      )}
+                    >
                       <ArrowsOutIcon
-                        className="size-4 text-white cursor-pointer shrink-0"
+                        className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
                         onClick={() => {
                           w.view.fov = defaultFov;
                           const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
@@ -280,6 +296,8 @@ export function WorldMenu() {
                         className={cn(
                           "w-16 accent-white cursor-pointer",
                           "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                          big &&
+                            "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
                         )}
                       />
                     </div>
@@ -288,7 +306,10 @@ export function WorldMenu() {
 
                 {w.view && (
                   <Menu.Item
-                    className="flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer"
+                    className={cn(
+                      "flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer",
+                      big && "gap-3 px-3 py-2 text-sm",
+                    )}
                     closeOnClick={false}
                     onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
                   >
@@ -298,6 +319,7 @@ export function WorldMenu() {
                       className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}
                     >
                       <MenuSelect
+                        big={big}
                         side="bottom"
                         value={String(w.view.numCardinalDirections)}
                         items={cardinalDirItems}
@@ -310,6 +332,7 @@ export function WorldMenu() {
                 )}
 
                 <MenuSelect
+                  big={big}
                   label={w.mapKey}
                   value={w.mapKey}
                   items={mapKeys.map((key) => ({ key, value: key }))}
@@ -321,7 +344,10 @@ export function WorldMenu() {
                 />
 
                 <Menu.Item
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
+                    big && "gap-3 px-3 py-2 text-sm",
+                  )}
                   closeOnClick={false}
                   onClick={() => {
                     const currentIdx = themeKeys.indexOf(w.themeKey);
@@ -425,7 +451,10 @@ export function WorldMenu() {
                 )}
 
                 <div
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
+                    big && "gap-2 px-3 py-2 text-sm",
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
                     state.debugOpen = !state.debugOpen;
@@ -433,18 +462,23 @@ export function WorldMenu() {
                     state.update();
                   }}
                 >
-                  {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                  {state.debugOpen ? (
+                    <CaretDownIcon className={cn("size-3", big && "size-4")} />
+                  ) : (
+                    <CaretRightIcon className={cn("size-3", big && "size-4")} />
+                  )}
                   debug
                 </div>
                 {state.debugOpen && (
                   <>
-                    <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
+                    <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", big && "gap-1.5")}>
                       {debugItems.map((item) => (
                         <button
                           key={item}
                           type="button"
                           className={cn(
                             "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                            big && "text-sm px-2 py-1.5",
                             isDebugActive(item)
                               ? "text-green-400 bg-slate-700"
                               : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
@@ -461,7 +495,10 @@ export function WorldMenu() {
 
                     <button
                       type="button"
-                      className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                      className={cn(
+                        "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
+                        big && "text-sm px-3 py-1.5",
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
                         w.debug.logGPUInfo = true;
@@ -478,17 +515,24 @@ export function WorldMenu() {
         </Menu.Root>
 
         <div
-          className="flex w-9 items-center justify-center bg-gray-800 text-white p-2 cursor-pointer hover:bg-gray-700"
+          className={cn(
+            "flex w-9 items-center justify-center bg-gray-800 text-white p-2 cursor-pointer hover:bg-gray-700",
+            big && "w-11 p-3",
+          )}
           onClick={() => w.setDisabled()}
         >
-          {w.disabled ? <PlayIcon className="size-5" weight="bold" /> : <PauseIcon className="size-5" weight="bold" />}
+          {w.disabled ? (
+            <PlayIcon className={cn("size-5", big && "size-6")} weight="bold" />
+          ) : (
+            <PauseIcon className={cn("size-5", big && "size-6")} weight="bold" />
+          )}
         </div>
 
         <AnimatePresence>
           {[...toastKeys, ...toggleToastKeys].map((key) => (
             <motion.div
               key={key}
-              className="bg-gray-800/90 text-slate-300 text-xs px-2 py-1"
+              className={cn("bg-gray-800/90 text-slate-300 text-xs px-2 py-1", big && "text-sm px-3 py-1.5")}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -522,13 +566,13 @@ export function WorldMenu() {
 }
 
 /** Sun icon wi\th a pie-chart fill showing brightness ratio (0–1) */
-function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void }) {
+function BrightnessPie({ ratio, onClick, big }: { ratio: number; onClick?: () => void; big?: boolean }) {
   const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
   return (
-    <div className="relative size-4 cursor-pointer" onClick={onClick}>
-      <SunIcon className="size-4 text-white" />
+    <div className={cn("relative size-4 cursor-pointer", big && "size-6")} onClick={onClick}>
+      <SunIcon className={cn("size-4 text-white", big && "size-6")} />
       {ratio > 0 && (
-        <svg className="absolute inset-0 size-4" viewBox="0 0 16 16">
+        <svg className={cn("absolute inset-0 size-4", big && "size-6")} viewBox="0 0 16 16">
           <path
             d={
               ratio >= 1
@@ -588,12 +632,15 @@ const debugItems = [
   "NavMesh",
 ] as const;
 
-const selectItemClass = cn(
-  "px-2 py-1 text-xs cursor-pointer text-slate-300",
-  "data-highlighted:bg-slate-700 data-selected:text-green-400",
-);
+const getSelectItemClass = (big?: boolean) =>
+  cn(
+    "px-2 py-1 text-xs cursor-pointer text-slate-300",
+    "data-highlighted:bg-slate-700 data-selected:text-green-400",
+    big && "px-3 py-2 text-sm",
+  );
 
 function MenuSelect<T extends string>({
+  big,
   className,
   items,
   label,
@@ -601,6 +648,7 @@ function MenuSelect<T extends string>({
   value,
   onValueChange,
 }: {
+  big?: boolean;
   className?: string;
   items: { key: string; value: T }[];
   /** Defaults to value */
@@ -614,6 +662,7 @@ function MenuSelect<T extends string>({
       <Select.Trigger
         className={cn(
           "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full",
+          big && "gap-2 px-3 py-2 text-sm",
           className,
         )}
       >
@@ -630,10 +679,15 @@ function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
+          <Select.Popup
+            className={cn(
+              "bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto",
+              big && "max-h-80",
+            )}
+          >
             <Select.List>
               {items.map(({ key, value }) => (
-                <Select.Item key={key} value={value} className={selectItemClass}>
+                <Select.Item key={key} value={value} className={getSelectItemClass(big)}>
                   <Select.ItemText>{key}</Select.ItemText>
                 </Select.Item>
               ))}

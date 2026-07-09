@@ -172,7 +172,7 @@ hot?.on("vite:afterUpdate", (_payload) => {
   if (hot.data.__DerivedGmsDataString__ !== DerivedGmsData.toString()) {
     hot.data.__DerivedGmsDataString__ = DerivedGmsData.toString();
     // 🔔 without delay, World sees old DerivedGmsData
-    setTimeout(() => window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData")), 30);
+    setTimeout(() => window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData")), 300);
   }
 });
 
