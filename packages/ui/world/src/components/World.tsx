@@ -178,54 +178,39 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
-        if (!import.meta.env.DEV || !hot) return () => {};
+        if (!(import.meta.env.DEV && hot)) return () => {};
 
         // biome-ignore format: succinct
-        const listeners: [target: "hot" | "window", event: string, handler: (...args: any[]) => void][] = [
-          ["hot", assetsJsonChangingEvent, () => {
+        const listeners: [event: string, handler: (...args: any[]) => void][] = [
+          [assetsJsonChangingEvent, () => {
             state.setNextPending({ assets: true });
           }],
-          ["hot", assetsJsonChangedEvent, () => {
+          [assetsJsonChangedEvent, () => {
             debug("[World] assets.json changed: refetching");
             queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
           }],
-          ["hot", devMessageFromServer.decorSheetsRebuilt, () => {
+          [devMessageFromServer.decorSheetsRebuilt, () => {
             debug("[World] decor sheets rebuilt: refetching");
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
           }],
-          ["hot", devMessageFromServer.skinSheetsRebuilding, () => {
+          [devMessageFromServer.skinSheetsRebuilding, () => {
             state.setNextPending({ skins: true });
           }],
-          ["hot", devMessageFromServer.skinSheetsRebuilt, async () => {
+          [devMessageFromServer.skinSheetsRebuilt, async () => {
             debug("[World] skin sheets rebuilt: refetching");
             // await pause(100);
             await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
             queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
           }],
-          ["hot", devMessageFromServer.skinSvgsChanged, async () => {
+          [devMessageFromServer.skinSvgsChanged, async () => {
             debug("[World] skin svgs changed");
             await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
             queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
           }],
-          ["window", "hmr:DerivedGmsData", (_e: Event) => {
-            debug("[World] HMR: DerivedGmsData updated: recomputing");
-            const nextGmsData = new DerivedGmsData();
-            for (const gmKey of state.seenGmKeys) {
-              nextGmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
-            }
-            nextGmsData.computeRoot(state.gms);
-            state.set({ gmsData: nextGmsData });
-          }],
         ];
 
-        for (const [target, event, handler] of listeners) {
-          target === "hot" ? hot.on(event, handler) : window.addEventListener(event, handler);
-        }
-        return () => {
-          for (const [target, event, handler] of listeners) {
-            target === "hot" ? hot.off(event, handler) : window.removeEventListener(event, handler);
-          }
-        };
+        listeners.forEach(([event, handler]) => hot.on(event, handler));
+        return () => listeners.forEach(([event, handler]) => hot.off(event, handler));
       },
       setupDraftAssetsSync() {
         const cb = () => {
@@ -301,6 +286,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         (agg, { key }) => (agg.includes(key) ? agg : agg.concat(key)),
         [],
       );
+
+      // reinstantiate in case changed
+      state.gmsData = new DerivedGmsData();
 
       for (const gmKey of state.seenGmKeys) {
         state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
