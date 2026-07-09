@@ -14,5 +14,6 @@
   <path d="M 0 0 L 1241 0 L 1241 642.06799 L 0 642.06799 Z M 36 601 L 1202 601 L 1202 38 L 36 38 Z" style="stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255); pointer-events: none;">
     <title>border</title>
   </path>
-  <circle style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px;" cx="617.853" cy="317.654" r="44.1165"/>
+  <circle style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 12px; pointer-events: none;" cx="617.853" cy="317.654" r="44.1165"/>
+  <rect x="35.5273" y="38.041" width="1164.47" height="561.959" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 12px;"/>
 </svg>
