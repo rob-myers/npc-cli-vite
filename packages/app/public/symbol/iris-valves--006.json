@@ -17,14 +17,13 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
-      "id": "666729c8-0ce5-4c50-9454-fc13de79888b",
+      "id": "d8b91cbb-6529-4626-8318-452f53c7f994",
       "name": "obstacle permit-nav no-shadow y=0 h=0 tint=#888",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-      "type": "path",
-      "d": "M22.6,0 L34,0 L44,10.5 L44,22 L44,33.5 L34,45 L22.5,45 L11,45 L-0.5,33.5 L-0.5,22 L-0.5,10.5 L11,0 L22.6,0 Z",
-      "baseRect": {"width": 45, "height": 45},
+      "type": "rect",
+      "baseRect": {"width": 44, "height": 44},
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     }
   ],
