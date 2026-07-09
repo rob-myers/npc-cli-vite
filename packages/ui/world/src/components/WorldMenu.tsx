@@ -218,15 +218,15 @@ export function WorldMenu() {
                     <BrightnessPie
                       ratio={brightnessToRatio(w.brightness)}
                       onClick={() => {
-                        w.brightness = 1;
-                        w.update();
-                        tryLocalStorageSet(brightnessStorageKey, "1");
+                        const brightness = 1.5;
+                        w.set({ brightness });
+                        tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
                       }}
                     />
                     <input
                       type="range"
-                      min="0.5"
-                      max="2"
+                      min="1"
+                      max="3"
                       step="0.1"
                       value={w.brightness}
                       onChange={(e) => {
