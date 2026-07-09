@@ -51,7 +51,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
-        maxPolarAngle: Math.PI / 2 - Math.PI / 4,
+        maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         minDistance: w.touchDevice ? 5 : 4,
         maxDistance: 60,
         extraZoom: 2,
@@ -349,7 +349,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         pipeline.outputNode = vec4(
           vignette(
             // multiply by alpha avoids unnatural color bleeding onto transparent areas
-            colorBleeding(sceneColor, uniform(0.0035)).mul(sceneColor.a),
+            colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
             float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
             float(0.7), // Smoothness: Controls gradient falloff softness
             screenUV, // Coordinates mapping
