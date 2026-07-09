@@ -361,6 +361,7 @@ w decor.byKey.test-decor-point
   - ✅ 302
 
 - ❌ remove internal SVG path editor
+  - removed "create" inside path picker but can still convert selected rect to path
 
 - ✅ clean skins
   - ✅ civilian-0 -> human-0
@@ -385,12 +386,17 @@ w decor.byKey.test-decor-point
 
 - ✅ BUG hmr not working onchange DerivedGmsData
 
-- larger pause UI
-- larger mobile UI
+- 🚧 larger mobile UI
+  - 🚧 larger WorldMenu
+  - larger TtyMenu
+
+- BUG initial shader errors
+- BUG Walls are disappearing on hmr
 
 - ✅ BUG obstacle texture bleeding induced by obstacle polygon
   - try fix via padding `gen-starship-sheets` 2 --> 8
-- debug update obstacles button should have spinner
+- ✅ debug update obstacles button should have spinner
+  - already done via WorldMenu spinner
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"
@@ -399,14 +405,14 @@ w decor.byKey.test-decor-point
   - mostly in 101 so maybe needs re-save?
   - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
 - BUG npc arms through locked door
-- go thru skins
-  - fix medic-0 foot texturing
-  - improve general-0
-  - add a couple more
+- ✅ go thru skins
+  - ✅ fix medic-0 foot texturing
+  - ❌ improve general-0
+  - ✅ add a couple more
 - ✅ remove shuffle-back animation
 - ✅ npc: unify state.lookAtPoint and updateLookAt
   - now have `npc.look` and `npc.anim.lookTick`
-- BUG locked door opens when npc close enough to nearby sensor
+- ❌ BUG locked door opens when npc close enough to nearby sensor
   - `w e.toggleLock g0d31`
 - ✅ abstract npc animation logic into class
 - BUG on save shell.ts terminal profile does not run

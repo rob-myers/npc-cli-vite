@@ -209,12 +209,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }],
           ["window", "hmr:DerivedGmsData", (_e: Event) => {
             debug("[World] HMR: DerivedGmsData updated: recomputing");
-            state.gmsData = new DerivedGmsData();
+            const nextGmsData = new DerivedGmsData();
             for (const gmKey of state.seenGmKeys) {
-              state.gmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
+              nextGmsData.computeGmKey(state.assets.layout[gmKey] as Geomorph.Layout);
             }
-            state.gmsData.computeRoot(state.gms);
-            state.update();
+            nextGmsData.computeRoot(state.gms);
+            state.set({ gmsData: nextGmsData });
           }],
         ];
 
