@@ -84,6 +84,7 @@ export default class DerivedGmsData {
     );
     gmData.tops = {
       broad: gm.walls.filter((x) => x.meta.broad === true).flatMap((x) => geomService.createInset(x, 0.05)),
+      // broad: [],
       nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.05))),
       hullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? door.computeThinPoly(0.15) : [])),
       hullWall: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
@@ -166,13 +167,14 @@ export default class DerivedGmsData {
   }
 }
 
-if (import.meta.hot) {
-  import.meta.hot.on("vite:afterUpdate", (payload) => {
-    if (payload.updates.some((update) => update.path.endsWith("DerivedGmsData.ts"))) {
-      window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData"));
-    }
-  });
-}
+const hot = import.meta.hot;
+hot?.on("vite:afterUpdate", (_payload) => {
+  if (hot.data.__DerivedGmsDataString__ !== DerivedGmsData.toString()) {
+    hot.data.__DerivedGmsDataString__ = DerivedGmsData.toString();
+    // 🔔 without delay, World sees old DerivedGmsData
+    setTimeout(() => window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData")), 30);
+  }
+});
 
 function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
   return {
