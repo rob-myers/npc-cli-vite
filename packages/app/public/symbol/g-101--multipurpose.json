@@ -613,6 +613,18 @@
           "cssTransform": "matrix(1, 0, 0, 1, 358, 116)"
         }
       ]
+    },
+    {
+      "id": "d545c7ad-750e-4c1e-94b3-63f68a7b1db3",
+      "name": "machinery--158",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 11.5, "f": 245},
+      "type": "symbol",
+      "srcKey": "machinery--158",
+      "baseRect": {"width": 112, "height": 220},
+      "offset": {"x": -0.5990307895110712, "y": -1.9081829349456363},
+      "cssTransform": "matrix(0, -1, 1, 0, 10.901, 243.0918)"
     }
   ],
   "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},

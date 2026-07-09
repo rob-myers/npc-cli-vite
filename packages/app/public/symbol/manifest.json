@@ -278,6 +278,15 @@
       "bounds": {"x": 0, "y": 0, "width": 44.2, "height": 44},
       "type": "symbol",
       "key": "iris-valves--006"
+    },
+    "machinery--158": {
+      "filename": "machinery--158.json",
+      "thumbnailFilename": "machinery--158.thumbnail.png",
+      "width": 112,
+      "height": 220,
+      "bounds": {"x": 2, "y": 0, "width": 112, "height": 220},
+      "type": "symbol",
+      "key": "machinery--158"
     }
   }
 }
