@@ -14,7 +14,9 @@ export class QueryClientApi {
           // in dev useQuery should rerun on hmr
           refetchOnMount: import.meta.env.DEV,
           refetchIntervalInBackground: false,
+          retryOnMount: import.meta.env.PROD ? false : undefined,
           gcTime: Infinity,
+          staleTime: import.meta.env.PROD ? Infinity : undefined,
         },
       },
       queryCache: new QueryCache({
