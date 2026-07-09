@@ -215,7 +215,9 @@ export function WorldMenu() {
 
           <Menu.Portal>
             <Menu.Positioner className="z-50" sideOffset={4} align="start">
-              <Menu.Popup className={cn("bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1", big && "py-2")}>
+              <Menu.Popup
+                className={cn("bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1", big && "py-2")}
+              >
                 <div className={cn("flex flex-wrap", big ? "max-w-72" : "max-w-52")}>
                   <div
                     className={cn(
@@ -303,7 +305,6 @@ export function WorldMenu() {
                     </div>
                   )}
                 </div>
-
                 {w.view && (
                   <Menu.Item
                     className={cn(
@@ -331,18 +332,21 @@ export function WorldMenu() {
                   </Menu.Item>
                 )}
 
-                <MenuSelect
-                  big={big}
-                  label={w.mapKey}
-                  value={w.mapKey}
-                  items={mapKeys.map((key) => ({ key, value: key }))}
-                  onValueChange={(key) => {
-                    if (!key) return;
-                    w.setCanvasFade(true);
-                    uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
-                  }}
-                />
-
+                <div className="flex">
+                  <div className="text-white text-xs flex items-center px-2">map:</div>
+                  <MenuSelect
+                    big={big}
+                    label={w.mapKey}
+                    value={w.mapKey}
+                    items={mapKeys.map((key) => ({ key, value: key }))}
+                    side="bottom"
+                    onValueChange={(key) => {
+                      if (!key) return;
+                      w.setCanvasFade(true);
+                      uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
+                    }}
+                  />
+                </div>
                 <Menu.Item
                   className={cn(
                     "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
@@ -357,7 +361,6 @@ export function WorldMenu() {
                 >
                   {w.themeKey}
                 </Menu.Item>
-
                 {import.meta.env.DEV && (
                   <>
                     <div
@@ -449,7 +452,6 @@ export function WorldMenu() {
                     </button>
                   </>
                 )}
-
                 <div
                   className={cn(
                     "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
