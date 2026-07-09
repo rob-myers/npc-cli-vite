@@ -376,6 +376,12 @@ w decor.byKey.test-decor-point
   - e.g. two static npcs close together and non-idle tries to navigate through
   - ✅ detect nearby collision
 
+- ✅ BUG fade spawn against mostly transparent wall look bad again
+  - fade opacity out after fade to black 
+  - fade opacity in before fade from black 
+
+- thick lined walls (e.g. bridge) need larger inset
+
 - larger pause UI
 - larger mobile UI
 
