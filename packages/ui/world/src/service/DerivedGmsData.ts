@@ -14,6 +14,9 @@ import { getContext2d } from "./tex-array";
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
+/**
+ * Editing this file triggers World query HMR, which instantiates latest DerivedGmsData.
+ */
 export default class DerivedGmsData {
   count = {
     door: 0,
@@ -167,15 +170,6 @@ export default class DerivedGmsData {
   }
 }
 
-const hot = import.meta.hot;
-hot?.on("vite:afterUpdate", (_payload) => {
-  if (hot.data.__DerivedGmsDataString__ !== DerivedGmsData.toString()) {
-    hot.data.__DerivedGmsDataString__ = DerivedGmsData.toString();
-    // 🔔 without delay, World sees old DerivedGmsData
-    setTimeout(() => window.dispatchEvent(new CustomEvent("hmr:DerivedGmsData")), 300);
-  }
-});
-
 function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
   return {
     gmKey,
@@ -218,3 +212,5 @@ const gmHitUtil = {
     return null;
   },
 } as const;
+
+1;
