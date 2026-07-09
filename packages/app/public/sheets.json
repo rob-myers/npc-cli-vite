@@ -15,6 +15,11 @@
       "rect": {"x": 2462, "y": 655, "width": 1220, "height": 1220},
       "sheetId": 0
     },
+    "machinery--158": {
+      "key": "machinery--158",
+      "rect": {"x": 8, "y": 2806, "width": 560, "height": 1100},
+      "sheetId": 0
+    },
     "window--007": {
       "key": "window--007",
       "rect": {"x": 2462, "y": 1883, "width": 907, "height": 67},
@@ -22,87 +27,87 @@
     },
     "table--004": {
       "key": "table--004",
-      "rect": {"x": 2462, "y": 1958, "width": 344, "height": 724},
+      "rect": {"x": 576, "y": 2806, "width": 344, "height": 724},
       "sheetId": 0
     },
     "console--019": {
       "key": "console--019",
-      "rect": {"x": 2814, "y": 1958, "width": 607, "height": 607},
+      "rect": {"x": 928, "y": 2806, "width": 607, "height": 607},
       "sheetId": 0
     },
     "couch-and-chairs--006": {
       "key": "couch-and-chairs--006",
-      "rect": {"x": 3429, "y": 1883, "width": 137, "height": 575},
+      "rect": {"x": 3377, "y": 1883, "width": 137, "height": 575},
       "sheetId": 0
     },
     "bed--003": {
       "key": "bed--003",
-      "rect": {"x": 8, "y": 2806, "width": 502, "height": 307},
+      "rect": {"x": 576, "y": 3538, "width": 502, "height": 307},
       "sheetId": 0
     },
     "bed--005": {
       "key": "bed--005",
-      "rect": {"x": 518, "y": 2806, "width": 382, "height": 202},
+      "rect": {"x": 1086, "y": 3421, "width": 382, "height": 202},
       "sheetId": 0
     },
     "console--031": {
       "key": "console--031",
-      "rect": {"x": 908, "y": 2806, "width": 377, "height": 307},
+      "rect": {"x": 1476, "y": 3421, "width": 377, "height": 307},
       "sheetId": 0
     },
     "extra--004--desk": {
       "key": "extra--004--desk",
-      "rect": {"x": 1293, "y": 2806, "width": 157, "height": 307},
+      "rect": {"x": 3522, "y": 1883, "width": 157, "height": 307},
       "sheetId": 0
     },
     "extra--021--shower": {
       "key": "extra--021--shower",
-      "rect": {"x": 1458, "y": 2806, "width": 181, "height": 294},
+      "rect": {"x": 1543, "y": 2806, "width": 181, "height": 294},
       "sheetId": 0
     },
     "iris-valves--005": {
       "key": "iris-valves--005",
-      "rect": {"x": 3429, "y": 2466, "width": 221, "height": 220},
+      "rect": {"x": 1086, "y": 3631, "width": 221, "height": 220},
       "sheetId": 0
     },
     "iris-valves--006": {
       "key": "iris-valves--006",
-      "rect": {"x": 1647, "y": 2806, "width": 221, "height": 220},
+      "rect": {"x": 1543, "y": 3108, "width": 221, "height": 220},
       "sheetId": 0
     },
     "console--033": {
       "key": "console--033",
-      "rect": {"x": 1876, "y": 2806, "width": 134, "height": 161},
+      "rect": {"x": 1315, "y": 3736, "width": 134, "height": 161},
       "sheetId": 0
     },
     "extra--002--fresher": {
       "key": "extra--002--fresher",
-      "rect": {"x": 3574, "y": 1883, "width": 114, "height": 156},
+      "rect": {"x": 1457, "y": 3736, "width": 114, "height": 156},
       "sheetId": 0
     },
     "console--051": {
       "key": "console--051",
-      "rect": {"x": 2018, "y": 2806, "width": 137, "height": 155},
+      "rect": {"x": 1579, "y": 3736, "width": 137, "height": 155},
       "sheetId": 0
     },
     "extra--001--fresher": {
       "key": "extra--001--fresher",
-      "rect": {"x": 1876, "y": 2975, "width": 137, "height": 117},
+      "rect": {"x": 3522, "y": 2198, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair": {
       "key": "extra--003--chair",
-      "rect": {"x": 3574, "y": 2047, "width": 97, "height": 103},
+      "rect": {"x": 928, "y": 3421, "width": 97, "height": 103},
       "sheetId": 0
     },
     "extra--005--chair": {
       "key": "extra--005--chair",
-      "rect": {"x": 518, "y": 3016, "width": 95, "height": 95},
+      "rect": {"x": 1315, "y": 3631, "width": 95, "height": 95},
       "sheetId": 0
     }
   },
-  "symbolSheetDims": [{"width": 3708, "height": 3121}],
-  "maxSymbolSheetDim": {"width": 3708, "height": 3121},
+  "symbolSheetDims": [{"width": 3708, "height": 3914}],
+  "maxSymbolSheetDim": {"width": 3708, "height": 3914},
   "decor": {
     "arrow-boxed": {
       "key": "arrow-boxed",

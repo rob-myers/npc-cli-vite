@@ -49,6 +49,13 @@
       "width": 1200,
       "height": 1200
     },
+    "machinery--158": {
+      "key": "machinery--158",
+      "filename": "machinery--158.svg",
+      "pathCount": 1,
+      "width": 112,
+      "height": 220
+    },
     "octogon-20x20": {
       "key": "octogon-20x20",
       "filename": "octogon-20x20.svg",
