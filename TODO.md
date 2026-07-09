@@ -380,7 +380,10 @@ w decor.byKey.test-decor-point
   - fade opacity out after fade to black 
   - fade opacity in before fade from black 
 
-- thick lined walls (e.g. bridge) need larger inset
+- ✅ thick lined walls (e.g. bridge) need larger inset
+  - DerivedGmsData top.broad now inset
+
+- BUG hmr not working onchange DerivedGmsData
 
 - larger pause UI
 - larger mobile UI
