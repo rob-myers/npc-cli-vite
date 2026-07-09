@@ -519,7 +519,7 @@ export function WorldMenu() {
         <div
           className={cn(
             "flex w-9 items-center justify-center bg-gray-800 text-white p-2 cursor-pointer hover:bg-gray-700",
-            big && "w-11 p-3",
+            big && "w-12 p-3",
           )}
           onClick={() => w.setDisabled()}
         >
