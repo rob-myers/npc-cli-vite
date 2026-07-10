@@ -168,7 +168,15 @@ export class Npc {
     });
   }
 
-  async fadeSpawn(at: MaybeMeta<JshCli.PointAnyFormat>, { facingTarget }: { facingTarget?: boolean } = {}) {
+  async fadeSpawn({
+    at,
+    facing,
+    facingTarget,
+  }: {
+    at: MaybeMeta<JshCli.PointAnyFormat>;
+    facing?: JshCli.PointAnyFormat;
+    facingTarget?: boolean;
+  }) {
     try {
       this.w.bubble.setShown(this.key, false);
       await this.fadeOut();
@@ -180,6 +188,7 @@ export class Npc {
         angle: facingTarget
           ? geomService.getThreeRotationY(groundTarget.y - this.position.z, groundTarget.x - this.position.x)
           : undefined,
+        facing,
       });
 
       await this.fadeIn();
