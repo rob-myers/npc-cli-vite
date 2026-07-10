@@ -56,7 +56,7 @@ export class NpcAnimation {
     if (delta < 0) {
       // fade color out to black, then (once black) fade opacity out
       if (this.npc.colorScale.value > target) {
-        const next = Math.max(target, this.npc.colorScale.value + 4 * delta * deltaSecs);
+        const next = Math.max(target, this.npc.colorScale.value + 2 * delta * deltaSecs);
         this.npc.labelVisible.value = next >= 1 ? 1 : 0;
         this.npc.alphaTest.value = Math.min(0.9, Math.max(0, next - 0.2));
         this.npc.colorScale.value = next;
@@ -66,7 +66,7 @@ export class NpcAnimation {
           this.npc.material.depthWrite = false;
         }
       } else {
-        const next = Math.max(target, this.npc.opacityScale.value + delta * deltaSecs);
+        const next = Math.max(target, this.npc.opacityScale.value + 0.5 * delta * deltaSecs);
         this.npc.opacityScale.value = next;
 
         if (next <= target) {
