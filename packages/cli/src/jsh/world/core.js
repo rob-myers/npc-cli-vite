@@ -320,18 +320,21 @@ export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   }
 
   if (seg.d > 0.0005) {
+    const currentPoint = npc.point;
+
     // assume 1st segment closest (seg.d minimal)
     const closest = geomService.getClosestOnSeg(
-      npc.point,
+      currentPoint,
       { x: seg.s[0 + 0], y: seg.s[0 + 2] },
       { x: seg.s[3 + 0], y: seg.s[3 + 2] },
     );
 
-    await npc.fadeSpawn(closest);
+    await npc.fadeSpawn({
+      at: closest,
+      // seems to always face outwards 🤞
+      facing: { x: currentPoint.x + (seg.s[3 + 2] - seg.s[2]), y: currentPoint.y + (seg.s[0] - seg.s[3]) },
+    });
   }
-
-  // seems to always face outwards
-  await npc.look({ x: npc.position.x + (seg.s[3 + 2] - seg.s[2]), y: npc.position.z + (seg.s[0] - seg.s[3]) });
 }
 
 /**
@@ -772,7 +775,7 @@ export async function* w(ct) {
  */
 export async function warp({ w, api, args }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey);
-  await npc.fadeSpawn(opts.to);
+  await npc.fadeSpawn({ at: opts.to });
 }
 
 /**

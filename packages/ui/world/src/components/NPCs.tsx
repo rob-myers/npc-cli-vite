@@ -286,7 +286,7 @@ export default function NPCs() {
           if (doResult.type === "use-current") {
             await state.spawn({ npcKey, at: to });
           } else {
-            await npc.fadeSpawn(to);
+            await npc.fadeSpawn({ at: to });
           }
           // fix contiguous move
           npc.anim.moving = false;
@@ -299,7 +299,7 @@ export default function NPCs() {
 
         if (npc.agentId === null) {
           // fade spawn from doable to nav
-          await npc.fadeSpawn(result.position, { facingTarget: true });
+          await npc.fadeSpawn({ at: result.position, facingTarget: true });
           return;
         }
 
