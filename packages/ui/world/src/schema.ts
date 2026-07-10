@@ -2,7 +2,6 @@ import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
 // Avoid HMR issue
-// const emptyMapKey: typeof import("./const").emptyMapKey = "empty-map";
 const defaultMapKey: typeof import("./const").defaultMapKey = "301-only";
 const defaultThemeKey: typeof import("./const").defaultThemeKey = "light-theme";
 
@@ -10,6 +9,8 @@ export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
   uiKey: z.literal("World"),
   disabled: z.boolean().default(true),
+  // disable World when refresh page
+  disableOnMount: z.boolean().default(true),
   worldKey: z.templateLiteral(["world-", z.number()]),
   mapKey: z.string().default(defaultMapKey),
   themeKey: z.string().default(defaultThemeKey),

@@ -111,14 +111,22 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
             persistedPanes,
           }),
           onRehydrateStorage: () => (state) => {
-            if (state) {
-              const pp = state.persistedPanes as any;
-              if (!pp?.root || !pp?.toUi) {
-                console.warn("persistedPanes invalid, reverting to default:", pp);
-                state.persistedPanes = getDefaultPanes();
-              }
-              state.ready = true;
+            if (!state) return;
+
+            const persistedPanes = state.persistedPanes;
+            if (!(persistedPanes?.root && persistedPanes.toUi)) {
+              console.warn("persistedPanes invalid: reverting to default", { invalidPersistedPanes: persistedPanes });
+              state.persistedPanes = getDefaultPanes();
             }
+
+            const rehydratedUis = Object.values(state.persistedPanes.toUi);
+            for (const ui of rehydratedUis) {
+              if (ui.disableOnMount === true) {
+                ui.disabled = true;
+              }
+            }
+
+            state.ready = true;
           },
         },
       ),
@@ -130,10 +138,10 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
 export let uiStore: ReturnType<typeof uiStoreFactory>;
 if (import.meta.hot) {
   // Check if a store already exists in the HMR data object
-  if (!import.meta.hot.data.__ZUSTAND_STORE__) {
-    import.meta.hot.data.__ZUSTAND_STORE__ = uiStoreFactory();
+  if (!import.meta.hot.data.__ZUSTAND_UI_STORE__) {
+    import.meta.hot.data.__ZUSTAND_UI_STORE__ = uiStoreFactory();
   }
-  uiStore = import.meta.hot.data.__ZUSTAND_STORE__;
+  uiStore = import.meta.hot.data.__ZUSTAND_UI_STORE__;
 } else {
   uiStore = uiStoreFactory();
 }
@@ -166,7 +174,7 @@ export type PersistedPaneNode =
       hiddenIds?: number[];
     };
 
-export function getDefaultPanes(): PersistedPanesLayout {
+function getDefaultPanes(): PersistedPanesLayout {
   const { tabs, toUi } = getDefaultTabs();
   return {
     root: {

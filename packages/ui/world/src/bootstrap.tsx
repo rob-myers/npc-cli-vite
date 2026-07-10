@@ -3,13 +3,14 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
+import type { WorldUiMeta } from "./schema";
 
 export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode {
   const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     invalid: false,
-    worldKey: uiStoreApi.getDefaultTitle("World", "world"), // e.g. world-0
+    worldKey: uiStoreApi.getDefaultTitle("World", "world") as WorldKey,
     onClickCreate() {
       if (state.invalid) return;
 
@@ -21,9 +22,8 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
 
       props.addInstance({
         worldKey: state.worldKey,
-        // title matches worldKey
-        title: state.worldKey,
-      });
+        title: state.worldKey, // title matches worldKey
+      } satisfies Partial<WorldUiMeta>);
     },
   }));
 
@@ -35,7 +35,7 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
           autoCorrect="off"
           className={cn("w-full p-1 border border-black/30 invalid:bg-red-400/30 outline-black")}
           placeholder="worldKey"
-          onChange={(e) => state.set({ worldKey: e.currentTarget.value })}
+          onChange={(e) => state.set({ worldKey: e.currentTarget.value as WorldKey })}
           onInput={(e) => state.set({ invalid: !e.currentTarget.checkValidity() })}
           pattern="world-[0-9]+"
           value={state.worldKey}
@@ -57,3 +57,5 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
     </div>
   );
 }
+
+type WorldKey = `world-${number}`;
