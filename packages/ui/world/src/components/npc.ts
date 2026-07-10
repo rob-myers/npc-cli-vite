@@ -148,7 +148,7 @@ export class Npc {
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
 
-  async fadeIn(speed = 8) {
+  async fadeIn(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.fade = resolve;
@@ -158,7 +158,7 @@ export class Npc {
     });
   }
 
-  async fadeOut(speed = 8) {
+  async fadeOut(speed = 4) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.fade = resolve;

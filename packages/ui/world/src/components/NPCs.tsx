@@ -119,7 +119,8 @@ export default function NPCs() {
           // scale towards black:
           // skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1),
           // scale towards specific colour:
-          mix(vec3(0.4, 1, 1), skinTex.rgb.mul(ndotv), colorScale),
+          // mix(vec3(0.4, 1, 1), skinTex.rgb.mul(ndotv), colorScale),
+          mix(vec3(0.4, 1, 1).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),
           skinTex.a.mul(opacityScale),
           // blocky opacity when uniform colour:
           // select(colorScale.equal(0), opacityScale, skinTex.a.mul(opacityScale)),
