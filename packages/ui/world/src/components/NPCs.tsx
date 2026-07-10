@@ -128,15 +128,15 @@ export default function NPCs() {
 
         const alphaTest = uniform(0.9);
 
-        const mat = new THREE.MeshStandardNodeMaterial({
+        const material = new THREE.MeshStandardNodeMaterial({
           transparent: true,
           depthWrite: true,
-          side: THREE.FrontSide,
+          side: THREE.FrontSide, // one draw call
         });
-        mat.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.5), alphaTest);
-        mat.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
-        mat.colorNode = (select as any)(isLabel, labelColor, mainColor);
-        mat.outputNode = (select as SelectAnyType)(
+        material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.15), alphaTest);
+        material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
+        material.colorNode = (select as any)(isLabel, labelColor, mainColor);
+        material.outputNode = (select as SelectAnyType)(
           isPickMode,
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
           output,
@@ -149,7 +149,7 @@ export default function NPCs() {
           labelVisible,
           labelYShiftUniform: labelYShift,
           skinIndexUniform,
-          material: mat,
+          material,
         };
       },
       createNpc(
@@ -557,16 +557,18 @@ export default function NPCs() {
 
         const skinEntries = Object.values(w.sheets.skin);
         const { width: tw, height: th } = w.texSkin.opts;
-        w.texSkin.ct.imageSmoothingEnabled = false;
+        const { ct } = w.texSkin;
+
+        ct.imageSmoothingEnabled = false;
         skinEntries.forEach(({ sheetId, rect }, i) => {
-          w.texSkin.ct.clearRect(0, 0, tw, th);
+          ct.clearRect(0, 0, tw, th);
 
           const svgImage = skinKeyToSvgOverride[skinEntries[i].key];
 
           if (svgImage) {
-            w.texSkin.ct.drawImage(svgImage, 0, 0, tw, th);
+            ct.drawImage(svgImage, 0, 0, tw, th);
           } else {
-            w.texSkin.ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+            ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
           }
 
           w.texSkin.updateIndex(i);
