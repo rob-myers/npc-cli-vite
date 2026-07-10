@@ -16,6 +16,7 @@ import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
   brightnessStorageKey,
+  defaultBrightness,
   defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
@@ -60,7 +61,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       themeKey: meta.themeKey,
       worldQueryPrefix: ["world", meta.worldKey],
 
-      brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? 1.5,
+      brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? defaultBrightness,
 
       events: new Broadcaster(),
       reqAnimId: -1,
