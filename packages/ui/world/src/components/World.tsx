@@ -333,7 +333,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               )
             }
           >
-            <ambientLight intensity={0.85} color="#ffffff" />
+            <ambientLight intensity={0.75} color="#fff" />
+            {/* <ambientLight intensity={0.25} color="#fff" />
+            <directionalLight position={[1, 1, 1]} lookAt={[0, 0, 0]} intensity={0.15} />
+            <directionalLight position={[-1, 1, 1]} lookAt={[0, 0, 0]} intensity={0.15} />
+            <directionalLight position={[0, 1, -1]} lookAt={[0, 0, 0]} intensity={0.15} />
+            <directionalLight position={[1, 1, 1]} lookAt={[0, 0, 0]} intensity={0.15} /> */}
             <Floor key="floor" />
             <Ceiling key="ceiling" />
             <Walls key="walls" />
