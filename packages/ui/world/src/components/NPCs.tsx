@@ -25,6 +25,7 @@ import {
   cameraProjectionMatrix,
   cameraViewMatrix,
   float,
+  mix,
   modelWorldMatrix,
   normalWorld,
   output,
@@ -34,6 +35,7 @@ import {
   texture as tslTexture,
   uniform,
   uv,
+  vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -114,9 +116,13 @@ export default function NPCs() {
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(npcBrightness);
         const mainColor = vec4(
-          skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1),
-          // when entirely black ignore texture for more uniform fade
-          select(colorScale.equal(0), opacityScale, skinTex.a.mul(opacityScale)),
+          // scale towards black:
+          // skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1),
+          // scale towards specific colour:
+          mix(vec3(0.4, 1, 1), skinTex.rgb.mul(ndotv), colorScale),
+          skinTex.a.mul(opacityScale),
+          // blocky opacity when uniform colour:
+          // select(colorScale.equal(0), opacityScale, skinTex.a.mul(opacityScale)),
         );
 
         const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(uniform(pickId));

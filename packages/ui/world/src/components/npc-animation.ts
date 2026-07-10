@@ -66,7 +66,7 @@ export class NpcAnimation {
           this.npc.material.depthWrite = false;
         }
       } else {
-        const next = Math.max(target, this.npc.opacityScale.value + 0.5 * delta * deltaSecs);
+        const next = Math.max(target, this.npc.opacityScale.value + delta * deltaSecs);
         this.npc.opacityScale.value = next;
 
         if (next <= target) {
