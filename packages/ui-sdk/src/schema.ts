@@ -23,6 +23,7 @@ const FlatBaseUiMetaSchema = z.looseObject({
   menuPosition: z.enum(["left", "right"]).optional(),
   /** For pausing */
   disabled: z.boolean().optional(),
+  disableOnMount: z.boolean().optional(),
   /** For sub-uis e.g. individual tabs */
   parentId: z.string().optional(),
   /** e.g. tab header */
@@ -34,7 +35,7 @@ const FlatBaseUiMetaSchema = z.looseObject({
 export const BaseUiMetaSchema = z.looseObject({
   ...FlatBaseUiMetaSchema.shape,
 
-  /** For sub-uis (Tabs) */
+  /** For sub uis (Tabs) */
   items: z.array(z.string()).optional(),
 
   onRemoveUi: z.function({ input: [FlatBaseUiMetaSchema], output: z.void() }).optional(),
