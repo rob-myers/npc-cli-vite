@@ -49,7 +49,7 @@ export class Npc {
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
-  labelStyle: JshCli.NpcLabelStyle = { color: "#ff9a", speaking: false };
+  labelStyle: JshCli.NpcLabelStyle = { color: "#ff9", speaking: false };
   last = {
     blockingArea: -1,
     dst: { x: 0, y: 0 },
