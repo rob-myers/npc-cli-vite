@@ -1,0 +1,31 @@
+import type { Vec3 } from "navcat";
+
+export default function Light() {
+  return (
+    <>
+      {/* <ambientLight intensity={0.75} color="#fff" /> */}
+
+      <ambientLight intensity={0.25} color="#fff" />
+      <directionalLight
+        position={[Math.cos(2 * Math.PI * (0 / 3)), 1, Math.sin(2 * Math.PI * (0 / 3))]}
+        lookAt={origin}
+        intensity={directionLightIntensity}
+        color="red" // 👈 could transition to other colours
+      />
+      <directionalLight
+        position={[Math.cos(2 * Math.PI * (1 / 3)), 1, Math.sin(2 * Math.PI * (1 / 3))]}
+        lookAt={origin}
+        intensity={directionLightIntensity}
+        // color="red"
+      />
+      <directionalLight
+        position={[Math.cos(2 * Math.PI * (2 / 3)), 1, Math.sin(2 * Math.PI * (2 / 3))]}
+        lookAt={origin}
+        intensity={directionLightIntensity}
+      />
+    </>
+  );
+}
+
+const origin: Vec3 = [0, 0, 0];
+const directionLightIntensity = 0.15;
