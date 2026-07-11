@@ -315,6 +315,7 @@ export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
 
+  // handle too far from boundary or just spawned
   if (agent.boundary.segments.length === 0) {
     const extendedCollisionQueryRange = 2;
     const result = w.npc.getClosestPoly(npc.position);
