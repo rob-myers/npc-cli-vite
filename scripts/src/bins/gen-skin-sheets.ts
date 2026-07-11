@@ -34,6 +34,7 @@ import { loggedSpawn } from "../service/logged-spawn.ts";
 import { packRectangles } from "../service/rects-packer.ts";
 import { rebuildSkinManifest } from "../service/watch-skin-pngs.ts";
 
+/** Minecraft skins are 64x64 */
 const skinSheetCellSize = 64;
 
 // 1. rebuild manifest
@@ -121,10 +122,15 @@ for (const [sheetId, bin] of bins.entries()) {
 }
 
 // 6. reduce PNG size of skin sheets
-process.chdir(sheetDir);
-await loggedSpawn({
-  label: "pngquant",
-  command: "pngquant",
-  args: ["--force", "--ext", ".png", "skin.*.png"],
-  shell: true,
-});
+try {
+  process.chdir(sheetDir);
+  await loggedSpawn({
+    label: "pngquant",
+    command: "pngquant",
+    args: ["--force", "--ext", ".png", "skin.*.png"],
+    shell: true,
+  });
+} catch (e) {
+  warn(`pngquant failed to optimize PNGs: have you installed it?`);
+  warn(e);
+}

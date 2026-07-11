@@ -405,9 +405,9 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
                         {entry.key}
                       </a>
                       <div className="max-w-64 flex flex-wrap justify-center gap-2 mt-1">
-                        {skinEntry.tags.map((tag) => (
-                          <span key={tag} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
-                            {tag}
+                        {Object.entries(skinEntry.meta).map(([key, value]) => (
+                          <span key={key} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
+                            {key}={value === true ? "true" : value}
                           </span>
                         ))}
                       </div>
