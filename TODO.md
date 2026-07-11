@@ -396,7 +396,10 @@ w decor.byKey.test-decor-point
   - ✅ meta comes from SVG not filename
   - all dark skins?
 
-- BUG initial shader errors
+- ✅ spawned npc on navMesh lacks `agent.boundary.segments`
+  - hasn't moved yet
+
+- 🚧 BUG initial shader errors
 
 - ✅ BUG obstacle texture bleeding induced by obstacle polygon
   - try fix via padding `gen-starship-sheets` 2 --> 8
