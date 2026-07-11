@@ -134,6 +134,8 @@ export default function NPCs() {
           transparent: true,
           depthWrite: true,
           side: THREE.FrontSide, // one draw call
+          metalness: 0,
+          roughness: 1,
         });
         material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.15), alphaTest);
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
