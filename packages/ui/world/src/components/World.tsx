@@ -39,6 +39,7 @@ import { Debug } from "./Debug";
 import Decor from "./Decor";
 import Doors from "./Doors";
 import Floor from "./Floor";
+import Light from "./Light";
 import NPCs from "./NPCs";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
@@ -333,12 +334,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               )
             }
           >
-            <ambientLight intensity={0.75} color="#fff" />
-            {/* <ambientLight intensity={0.25} color="#fff" />
-            <directionalLight position={[1, 1, 1]} lookAt={[0, 0, 0]} intensity={0.15} />
-            <directionalLight position={[-1, 1, 1]} lookAt={[0, 0, 0]} intensity={0.15} />
-            <directionalLight position={[0, 1, -1]} lookAt={[0, 0, 0]} intensity={0.15} />
-            <directionalLight position={[1, 1, 1]} lookAt={[0, 0, 0]} intensity={0.15} /> */}
+            <Light />
             <Floor key="floor" />
             <Ceiling key="ceiling" />
             <Walls key="walls" />
