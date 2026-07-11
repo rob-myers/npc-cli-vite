@@ -585,8 +585,9 @@ export function textToTags(text) {
 }
 
 /**
- * e.g. `['foo', 'bar=baz', 'qux='1 2 3' ]` yields:
- * > `{ foo: true, bar: 'baz', qux: '1 2 3' }`
+ * - e.g. `['foo', 'bar=baz', 'qux='1 2 3' ]` yields:
+ *   > `{ foo: true, bar: 'baz', qux: '1 2 3' }`
+ * - Mutates and returns `baseMeta` if provided
  * @param {string[]} tags
  * @param {Meta} [baseMeta]
  * @param {string[]} [names]

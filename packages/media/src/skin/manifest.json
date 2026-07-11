@@ -3,58 +3,65 @@
     "aslan-0": {
       "key": "aslan-0",
       "id": "ff2642d58fc89270",
-      "filename": "aslan-0--ff2642d58fc89270--aslan--suit--Lopn.png",
-      "tags": ["aslan", "suit", "Lopn"],
+      "filename": "aslan-0--ff2642d58fc89270.png",
+      "meta": {
+        "skinKey": "aslan-0",
+        "prefix": "aslan",
+        "firstSeen": "Lopn",
+        "suit": true
+      },
       "url": "https://namemc.com/skin/ff2642d58fc89270",
       "svgPath": "skin/aslan-0.svg"
     },
     "droyne-0": {
       "key": "droyne-0",
       "id": "e578cf0ea6f93c0c",
-      "filename": "droyne-0--e578cf0ea6f93c0c--droyne.png",
-      "tags": ["droyne"],
+      "filename": "droyne-0--e578cf0ea6f93c0c.png",
+      "meta": {"skinKey": "droyne-0", "prefix": "droyne"},
       "url": "https://namemc.com/skin/e578cf0ea6f93c0c",
       "svgPath": "skin/droyne-0.svg"
     },
     "human-0": {
       "key": "human-0",
       "id": "23aa3d70ee53af87",
-      "filename": "human-0--23aa3d70ee53af87--human--J_az.png",
-      "tags": ["human", "J_az"],
+      "filename": "human-0--23aa3d70ee53af87.png",
+      "meta": {"skinKey": "human-0", "prefix": "human", "firstSeen": "J_az"},
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
       "svgPath": "skin/human-0.svg"
     },
     "human-1": {
       "key": "human-1",
       "id": "8c524ef1dc111a13",
-      "filename": "human-1--8c524ef1dc111a13--human--dark--o__________.png",
-      "tags": ["human", "dark", "o__________"],
+      "filename": "human-1--8c524ef1dc111a13.png",
+      "meta": {
+        "skinKey": "human-1",
+        "prefix": "human",
+        "firstSeen": "o__________"
+      },
       "url": "https://namemc.com/skin/8c524ef1dc111a13",
       "svgPath": "skin/human-1.svg"
     },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
-      "filename": "medic-0--3573d1c9cad6c8fc--medic--doctor--mask--NoneType_.png",
-      "tags": ["medic", "doctor", "mask", "NoneType_"],
+      "filename": "medic-0--3573d1c9cad6c8fc.png",
+      "meta": {
+        "skinKey": "medic-0",
+        "prefix": "medic",
+        "firstSeen": "NoneType_",
+        "doctor": true,
+        "mask": true
+      },
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
       "svgPath": "skin/medic-0.svg"
     },
     "robot-0": {
       "key": "robot-0",
       "id": "e91cc700154075b2",
-      "filename": "robot-0--e91cc700154075b2--robot.png",
-      "tags": ["robot"],
+      "filename": "robot-0--e91cc700154075b2.png",
+      "meta": {"skinKey": "robot-0", "prefix": "robot"},
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
-    },
-    "vargr-0": {
-      "key": "vargr-0",
-      "id": "4de884eb80766903",
-      "filename": "vargr-0--4de884eb80766903--canine.png",
-      "tags": ["canine"],
-      "url": "https://namemc.com/skin/4de884eb80766903",
-      "svgPath": null
     }
   }
 }

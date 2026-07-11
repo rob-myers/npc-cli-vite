@@ -385,13 +385,18 @@ w decor.byKey.test-decor-point
   - DerivedGmsData top.broad now inset
 
 - ✅ BUG hmr not working onchange DerivedGmsData
+  - ✅ BUG Walls are disappearing on hmr
 
 - 🚧 larger mobile UI
-  - 🚧 larger WorldMenu
+  - ✅ larger WorldMenu
   - larger TtyMenu
+  - can change profile of TtyMenu (reboots)
+
+- 🚧 skins
+  - ✅ meta comes from SVG not filename
+  - all dark skins?
 
 - BUG initial shader errors
-- BUG Walls are disappearing on hmr
 
 - ✅ BUG obstacle texture bleeding induced by obstacle polygon
   - try fix via padding `gen-starship-sheets` 2 --> 8

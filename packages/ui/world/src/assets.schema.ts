@@ -282,7 +282,7 @@ export const AssetsSkinEntrySchema = z.object({
   key: z.string(),
   id: z.string(),
   filename: z.string(),
-  tags: z.array(z.string()),
+  meta: z.record(z.string(), z.any()),
   url: url(),
   /** `skin/{key}.svg` */
   svgPath: z.string().nullable().default(null),

@@ -7,9 +7,11 @@ import {
   AssetsSkinManifestSchema,
   type AssetsSkinManifestType,
 } from "@npc-cli/ui__world/assets.schema";
-import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { info, safeJsonCompact, tagsToMeta, textToTags, warn } from "@npc-cli/util/legacy/generic";
+import { Parser } from "htmlparser2";
 import type { ViteDevServer } from "vite";
 import z from "zod";
+
 import { PROJECT_ROOT } from "../const.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
@@ -55,12 +57,15 @@ export async function rebuildSkinManifest() {
   for (const filePath of pngFiles) {
     const filename = path.basename(filePath);
     const basename = path.basename(filename, ".png");
-    // e.g. {key}--{namemcDotComUid}--{tagA}--{tagB}.png
-    const [key, namemcDotComUid, ...tags] = basename.split("--");
-    const svgPath = `skin/${key}.svg`;
+    // e.g. human-0--23aa3d70ee53af87
+    const [key, namemcDotComUid] = basename.split("--");
 
-    if (!key || !namemcDotComUid || tags.length === 0) {
-      warn(`[watch-skin] expected filename format {key}--{namemcDotComUid}--{tagA}--{tagB}.png: saw "${filename}"`);
+    const svgLocalPath = `skin/${key}.svg`;
+    const svgPath = path.join(PUBLIC_DIR, svgLocalPath);
+    const svgExists = fs.existsSync(svgPath);
+
+    if (!key || !namemcDotComUid) {
+      warn(`[rebuildSkinManifest] expected filename format {key}--{namemc.com__uid}.png: saw "${filename}"`);
       continue;
     }
 
@@ -68,9 +73,13 @@ export async function rebuildSkinManifest() {
       key,
       id: namemcDotComUid,
       filename,
-      tags,
+      meta: {
+        skinKey: key,
+        // via SVG top-level objects with title "meta foo=bar ..."
+        ...(svgExists ? parseSvgMetadata(svgPath) : null),
+      },
       url: `https://namemc.com/skin/${namemcDotComUid}`,
-      svgPath: fs.existsSync(path.join(PUBLIC_DIR, svgPath)) ? svgPath : null,
+      svgPath: svgExists ? svgLocalPath : null,
     });
   }
 
@@ -85,4 +94,36 @@ export async function rebuildSkinManifest() {
 
   fs.writeFileSync(SKIN_MANIFEST_PATH, nextRaw);
   info(`[watch-skin] rebuilt manifest.json`);
+}
+
+/**
+ * SVG {skinKey}.svg represents meta via top-level object(s) titled "meta ..."
+ */
+function parseSvgMetadata(svgPath: string) {
+  const svgContent = fs.readFileSync(svgPath, "utf-8");
+
+  const meta = {} as Record<string, any>;
+  const tagStack = [] as string[];
+
+  const parser = new Parser({
+    onopentag(tagName) {
+      tagStack.push(tagName);
+      console.log(tagStack);
+    },
+    ontext(contents) {
+      // e.g. ["svg", "g", "title"]
+      if (tagStack.length === 3 && tagStack[2] === "title" && contents.startsWith("meta ")) {
+        const ownTags = textToTags(contents.slice("meta ".length));
+        tagsToMeta(ownTags, meta);
+      }
+    },
+    onclosetag() {
+      tagStack.pop();
+    },
+  });
+
+  parser.write(svgContent);
+  parser.end();
+
+  return meta;
 }
