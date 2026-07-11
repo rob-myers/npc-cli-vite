@@ -177,7 +177,7 @@ export default function NPCs() {
         return npc;
       },
       determineSpawnedAngle(opts) {
-        let angle = undefined as undefined | number;
+        let angle = opts.angle;
 
         if (typeof opts.meta.orient === "number") {
           angle = -(opts.meta.orient + 90) * (Math.PI / 180);
