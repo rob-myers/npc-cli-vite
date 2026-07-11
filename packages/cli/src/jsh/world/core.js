@@ -2,6 +2,7 @@ import { npcHeight } from "@npc-cli/ui__world/const";
 import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
+import { localBoundary } from "navcat/blocks";
 
 /**
  * @param {JshCli.RunArg} ct
@@ -314,27 +315,39 @@ export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
 
+  if (agent.boundary.segments.length === 0) {
+    const extendedCollisionQueryRange = 2;
+    const result = w.npc.getClosestPoly(npc.position);
+    localBoundary.updateLocalBoundary(
+      agent.boundary,
+      result.nodeRef,
+      w.helper.groundPointToTuple(npc.point),
+      extendedCollisionQueryRange,
+      w.nav.navMesh,
+      npc.queryFilter,
+    );
+  }
+
   const [seg] = agent.boundary.segments;
   if (seg === undefined) {
     throw Error("boundary too far");
   }
+  // else if (seg.d <= 0.0005) return
 
-  if (seg.d > 0.0005) {
-    const currentPoint = npc.point;
+  const currentPoint = npc.point;
 
-    // assume 1st segment closest (seg.d minimal)
-    const closest = geomService.getClosestOnSeg(
-      currentPoint,
-      { x: seg.s[0 + 0], y: seg.s[0 + 2] },
-      { x: seg.s[3 + 0], y: seg.s[3 + 2] },
-    );
+  // assume 1st segment closest (seg.d minimal)
+  const closest = geomService.getClosestOnSeg(
+    currentPoint,
+    { x: seg.s[0 + 0], y: seg.s[0 + 2] },
+    { x: seg.s[3 + 0], y: seg.s[3 + 2] },
+  );
 
-    await npc.fadeSpawn({
-      at: closest,
-      // seems to always face outwards 🤞
-      facing: { x: currentPoint.x + (seg.s[3 + 2] - seg.s[2]), y: currentPoint.y + (seg.s[0] - seg.s[3]) },
-    });
-  }
+  await npc.fadeSpawn({
+    at: closest,
+    // seems to always face outwards 🤞
+    facing: { x: currentPoint.x + (seg.s[3 + 2] - seg.s[2]), y: currentPoint.y + (seg.s[0] - seg.s[3]) },
+  });
 }
 
 /**
