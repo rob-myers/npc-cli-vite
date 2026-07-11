@@ -13,7 +13,7 @@ import {
   walkMaxAcceleration,
   walkSeparationWeight,
 } from "../const";
-import { groundPointToTuple } from "../service/geometry";
+import { helper } from "../service/helper";
 import { emptyAnimationClip } from "../service/three-animation";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
@@ -191,7 +191,7 @@ export class NpcAnimation {
       this.w.npc.crowd,
       this.npc.agentId as string,
       result.nodeRef,
-      groundPointToTuple(groundPoint),
+      helper.groundPointToTuple(groundPoint),
     );
 
     // track destination for checkNpcTargetUnreachable

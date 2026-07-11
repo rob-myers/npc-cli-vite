@@ -99,7 +99,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return renderer;
       },
       forceUpdate(delta = 0) {
-        w.npc.onTick(delta); // enough to tick a frame
+        w.npc.onTick(delta);
         w.r3f?.invalidate();
         w.update();
       },
