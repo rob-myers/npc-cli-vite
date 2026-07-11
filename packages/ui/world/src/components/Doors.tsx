@@ -14,15 +14,20 @@ import { WorldContext } from "./world-context";
 
 export default function Doors() {
   const w = useContext(WorldContext);
+  const instanceCount = w.gms.length << 8;
 
   const state = useStateRef(
     (): State => ({
       animTargets: new Map(),
       box: createDoorBox(),
       byKey: {},
+      doorBackLabelLayerArray: new Float32Array(0),
+      doorLabelLayerArray: new Float32Array(0),
+      flipFrontBackArray: new Float32Array(0),
       inst: null,
       labelToLayer: new Map(),
       openRatioArray: new Float32Array(0),
+      slideSignArray: new Float32Array(0),
 
       buildByKey() {
         const prevByKey = state.byKey;
@@ -133,8 +138,8 @@ export default function Doors() {
         await state.drawBaseDoorTextures();
 
         let nextLabelIdx = state.labelToLayer.size;
-        const frontArray = new Float32Array(w.gms.length << 8);
-        const backArray = new Float32Array(w.gms.length << 8);
+        state.doorLabelLayerArray.fill(0);
+        state.doorBackLabelLayerArray.fill(0);
 
         for (const { instanceId, connector, hull } of Object.values(state.byKey)) {
           const label = (connector.meta.label as string | undefined) ?? "";
@@ -142,25 +147,31 @@ export default function Doors() {
             state.labelToLayer.set(label, nextLabelIdx);
             drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
           }
-          frontArray[instanceId] = state.labelToLayer.get(label) ?? 0;
+          state.doorLabelLayerArray[instanceId] = state.labelToLayer.get(label) ?? 0;
 
           if (hull) {
-            backArray[instanceId] = 0;
+            state.doorBackLabelLayerArray[instanceId] = 0;
           } else if (typeof connector.meta.backLabel === "string") {
             const backLabel = connector.meta.backLabel as string;
             if (!state.labelToLayer.has(backLabel)) {
               state.labelToLayer.set(backLabel, nextLabelIdx);
               drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, backLabel);
             }
-            backArray[instanceId] = state.labelToLayer.get(backLabel) ?? 0;
+            state.doorBackLabelLayerArray[instanceId] = state.labelToLayer.get(backLabel) ?? 0;
           } else {
             // choose stable random icon
-            backArray[instanceId] = 1 + (((instanceId * 2654435761) >>> 0) % doorIconKeys.length);
+            state.doorBackLabelLayerArray[instanceId] = 1 + (((instanceId * 2654435761) >>> 0) % doorIconKeys.length);
           }
         }
 
-        state.box.setAttribute("doorLabelLayer", new THREE.InstancedBufferAttribute(frontArray, 1));
-        state.box.setAttribute("doorBackLabelLayer", new THREE.InstancedBufferAttribute(backArray, 1));
+        const doorLabelLayerAttr = state.box.getAttribute("doorLabelLayer") as
+          | THREE.InstancedBufferAttribute
+          | undefined;
+        const doorBackLabelLayerAttr = state.box.getAttribute("doorBackLabelLayer") as
+          | THREE.InstancedBufferAttribute
+          | undefined;
+        if (doorLabelLayerAttr) doorLabelLayerAttr.needsUpdate = true;
+        if (doorBackLabelLayerAttr) doorBackLabelLayerAttr.needsUpdate = true;
       },
       encodeGmDoorId(gmId: number, doorId: number) {
         return (gmId << 8) | doorId;
@@ -224,17 +235,14 @@ export default function Doors() {
         const { inst } = state;
         if (!inst) return;
 
-        const n = w.gms.length << 8;
-        if (state.openRatioArray.length !== n) {
-          state.openRatioArray = new Float32Array(n);
-        }
-
-        const slideSignArray = new Float32Array(n).fill(1);
-        const flipFrontBackArray = new Float32Array(n);
+        const count = w.gms.length << 8;
+        state.openRatioArray.fill(0);
+        state.slideSignArray.fill(1);
+        state.flipFrontBackArray.fill(0);
 
         // zero-scale all instances so unused slots are invisible
         zeroMat4.makeScale(0, 0, 0);
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < count; i++) {
           inst.setMatrixAt(i, zeroMat4);
         }
 
@@ -276,7 +284,7 @@ export default function Doors() {
             if (Array.isArray(sd)) {
               tmpV1.set(sd[0], sd[1]);
               tmpMat.transformSansTranslate(tmpV1);
-              slideSignArray[instanceId] = tmpV1.x * nx + tmpV1.y * nz >= 0 ? 1 : -1;
+              state.slideSignArray[instanceId] = tmpV1.x * nx + tmpV1.y * nz >= 0 ? 1 : -1;
             }
 
             // biome-ignore format: matrix layout
@@ -291,14 +299,17 @@ export default function Doors() {
 
             // box local -z maps to world 2D (nz, -nx); flip when door.normal points the other way
             const ds = state.byKey[helper.getGmDoorKey(gmId, localId)];
-            flipFrontBackArray[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
-            ds.gapAtHighLambda = determinant > 0 === slideSignArray[instanceId] > 0;
+            state.flipFrontBackArray[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
+            ds.gapAtHighLambda = determinant > 0 === state.slideSignArray[instanceId] > 0;
           }
         }
 
-        state.box.setAttribute("openRatio", new THREE.InstancedBufferAttribute(state.openRatioArray, 1));
-        state.box.setAttribute("slideSign", new THREE.InstancedBufferAttribute(slideSignArray, 1));
-        state.box.setAttribute("flipFrontBack", new THREE.InstancedBufferAttribute(flipFrontBackArray, 1));
+        const openRatioAttr = state.box.getAttribute("openRatio") as THREE.InstancedBufferAttribute | undefined;
+        const slideSignAttr = state.box.getAttribute("slideSign") as THREE.InstancedBufferAttribute | undefined;
+        const flipFrontBackAttr = state.box.getAttribute("flipFrontBack") as THREE.InstancedBufferAttribute | undefined;
+        if (openRatioAttr) openRatioAttr.needsUpdate = true;
+        if (slideSignAttr) slideSignAttr.needsUpdate = true;
+        if (flipFrontBackAttr) flipFrontBackAttr.needsUpdate = true;
 
         inst.computeBoundingSphere();
         inst.instanceMatrix.needsUpdate = true;
@@ -385,16 +396,21 @@ export default function Doors() {
   w.door = state;
   w.d = w.door.byKey;
 
-  useEffect(() => {
-    state.buildByKey();
-    state.positionInstances();
-    state.drawDoorTextures();
-  }, [w.mapKey, w.hash]);
+  // (re)allocate per-instance attribute arrays whenever the instance count changes,
+  // so the geometry's buffers are always correctly sized before first paint
+  useMemo(() => {
+    state.openRatioArray = new Float32Array(instanceCount);
+    state.slideSignArray = new Float32Array(instanceCount).fill(1);
+    state.flipFrontBackArray = new Float32Array(instanceCount);
+    state.doorLabelLayerArray = new Float32Array(instanceCount);
+    state.doorBackLabelLayerArray = new Float32Array(instanceCount);
+  }, [instanceCount]);
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
     const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
 
+    // 🚧 DoubleSide?
     const panelOpts = { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide, transparent: false, depthWrite: true };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
@@ -427,27 +443,45 @@ export default function Doors() {
     return [edge, front, back]; // only 3 groups in door box
   }, []);
 
-  const instanceCount = w.gms.length << 8;
+  useEffect(() => {
+    state.buildByKey();
+    state.positionInstances();
+    state.drawDoorTextures();
+  }, [w.mapKey, w.hash]);
 
-  return instanceCount ? (
+  return (
     <instancedMesh
       name="doors"
       ref={state.ref("inst")}
       args={[state.box, undefined, instanceCount]}
       material={materials}
       renderOrder={4}
-    />
-  ) : null;
+      visible={instanceCount > 0}
+    >
+      <instancedBufferAttribute attach="geometry-attributes-openRatio" args={[state.openRatioArray, 1]} />
+      <instancedBufferAttribute attach="geometry-attributes-slideSign" args={[state.slideSignArray, 1]} />
+      <instancedBufferAttribute attach="geometry-attributes-flipFrontBack" args={[state.flipFrontBackArray, 1]} />
+      <instancedBufferAttribute attach="geometry-attributes-doorLabelLayer" args={[state.doorLabelLayerArray, 1]} />
+      <instancedBufferAttribute
+        attach="geometry-attributes-doorBackLabelLayer"
+        args={[state.doorBackLabelLayerArray, 1]}
+      />
+    </instancedMesh>
+  );
 }
 
 export type State = {
   animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
+  doorBackLabelLayerArray: Float32Array;
+  doorLabelLayerArray: Float32Array;
+  flipFrontBackArray: Float32Array;
   inst: null | THREE.InstancedMesh;
   /** Label or iconKey. */
   labelToLayer: Map<string, number>;
   openRatioArray: Float32Array;
+  slideSignArray: Float32Array;
   buildByKey: () => void;
   cancelClose: (door: Geomorph.DoorState) => void;
   computeRayDoorIntersect: (src: Geom.VectJson, dst: Geom.VectJson, gdKey: Geomorph.GmDoorKey) => Geom.VectJson | null;
