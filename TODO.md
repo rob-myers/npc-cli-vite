@@ -399,7 +399,8 @@ w decor.byKey.test-decor-point
 - ✅ spawned npc on navMesh lacks `agent.boundary.segments`
   - hasn't moved yet
 
-- 🚧 BUG initial shader errors
+- ✅ BUG initial shader errors
+  - Doors: use `<bufferAttribute>` instead
 
 - ✅ BUG obstacle texture bleeding induced by obstacle polygon
   - try fix via padding `gen-starship-sheets` 2 --> 8

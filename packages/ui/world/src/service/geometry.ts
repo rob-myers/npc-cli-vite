@@ -166,10 +166,8 @@ export function createDoorBox() {
     { start: 24, count: 6, materialIndex: 1 }, // +z front
     { start: 30, count: 6, materialIndex: 2 }, // -z back
   ];
-  g.setAttribute("openRatio", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
-  g.setAttribute("slideSign", new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));
-  g.setAttribute("flipFrontBack", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
-  g.setAttribute("doorBackLabelLayer", new THREE.InstancedBufferAttribute(new Float32Array([0]), 1));
+  // Per-instance attributes (openRatio, slideSign, flipFrontBack, doorLabelLayer, doorBackLabelLayer)
+  // are declared as JSX <instancedBufferAttribute> children in Doors.tsx.
   return g;
 }
 
