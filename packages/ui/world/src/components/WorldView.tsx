@@ -60,7 +60,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
       },
       initial: {
-        azimuthal: Math.PI / 4,
+        azimuthal: 0,
         polar: Math.PI / 4,
         position: { x: 4, y: 12, z: 4 },
       },
