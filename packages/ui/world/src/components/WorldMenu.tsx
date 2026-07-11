@@ -115,13 +115,13 @@ export function WorldMenu() {
         state.update();
         break;
       case "Room Hit":
-        state.set({ debugHitOpen: true });
+        state.set({ menuOpen: false, debugHitOpen: true });
         break;
       case "Graphs":
-        state.set({ gmGraphsOpen: true });
+        state.set({ menuOpen: false, gmGraphsOpen: true });
         break;
       case "Skins":
-        state.set({ skinDebugOpen: true });
+        state.set({ menuOpen: false, skinDebugOpen: true });
         break;
       case "Colliders":
         w.debug?.showPhysicsColliders();
