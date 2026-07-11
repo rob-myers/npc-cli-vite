@@ -391,11 +391,6 @@ export function getTempInstanceMesh(inst: THREE.InstancedMesh, instanceId: numbe
 
 //#endregion
 
-// 🚧 move to helper
-export function groundPointToTuple(point: GroundPoint): [number, number, number] {
-  return [point.x, 0, point.y];
-}
-
 /**
  * Array or object, 2d or 3d
  */

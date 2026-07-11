@@ -36,6 +36,10 @@ export const helper = {
     }
   },
 
+  groundPointToTuple(point: JshCli.GroundPoint): [number, number, number] {
+    return [point.x, 0, point.y];
+  },
+
   groundPointToVector3(point: JshCli.GroundPoint) {
     return new Vector3(point.x, 0, point.y);
   },

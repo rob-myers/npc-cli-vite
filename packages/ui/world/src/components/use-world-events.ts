@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { groundPointToTuple } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -117,7 +116,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.npc.crowd,
           npc.agentId,
           result.nodeRef,
-          groundPointToTuple(blockingDoorNode.astar.centroid),
+          helper.groundPointToTuple(blockingDoorNode.astar.centroid),
         );
       },
       getPoint(npcKey) {

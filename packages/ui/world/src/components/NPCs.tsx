@@ -51,12 +51,7 @@ import {
   npcHeight,
   walkMaxAcceleration,
 } from "../const";
-import {
-  addEmptyBillboardOffset,
-  createSkinnedLabelQuad,
-  groundPointToTuple,
-  mergeWithGroupAttr,
-} from "../service/geometry";
+import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
@@ -256,7 +251,7 @@ export default function NPCs() {
         return npc;
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
-        const targetTuple = groundPointToTuple(helper.parseGroundPoint(targetPos));
+        const targetTuple = helper.groundPointToTuple(helper.parseGroundPoint(targetPos));
         const { halfExtents, distance } = byAccuracy[accuracy];
         const result = findNearestPoly(
           createFindNearestPolyResult(),
@@ -410,13 +405,18 @@ export default function NPCs() {
           } satisfies WW.MsgToWorker);
         }
 
-        npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, groundPointToTuple(groundPoint), getAgentParams());
+        npc.agentId = crowdApi.addAgent(
+          state.crowd,
+          w.nav.navMesh,
+          helper.groundPointToTuple(groundPoint),
+          getAgentParams(),
+        );
         state.byAgentId[npc.agentId] = npc;
 
         npc.pinTo(closePolyResult, groundPoint);
 
         // might have spawned into a sensor
-        state.physics.positions.push(npc.bodyUid, ...groundPointToTuple(groundPoint));
+        state.physics.positions.push(npc.bodyUid, ...helper.groundPointToTuple(groundPoint));
         // } else if (type === "navigable") {
         //   throw Error("not placable");
       },
