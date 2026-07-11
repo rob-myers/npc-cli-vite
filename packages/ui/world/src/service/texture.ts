@@ -453,8 +453,8 @@ export function drawFloorGrid(
   const iyMin = Math.floor(bounds.y / gridSize);
   const iyMax = Math.ceil((bounds.y + bounds.height) / gridSize);
 
-  ct.strokeStyle = "rgba(220, 220, 220, 0.35)";
-  ct.lineWidth = 0.012;
+  ct.strokeStyle = "rgba(220, 220, 220, 0.05)";
+  ct.lineWidth = 0.012 * 4;
   ct.beginPath();
   for (let ix = ixMin; ix <= ixMax; ix++) {
     const x = ix * gridSize;
