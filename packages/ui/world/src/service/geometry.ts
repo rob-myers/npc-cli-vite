@@ -144,7 +144,10 @@ unitTwoSidedXyQuad.setIndex([
   4,5,6, 4,6,7,  // back:  geometric normal +Z (CCW from +Z)
 ]);
 
-/** Embed a 2D affine transform into three.js XZ plane. */
+/**
+ * Embed a 2D affine transform into three.js XZ plane.
+ * 🔔 non-uniform scaling (e.g. y scale 1) breaks normal computation in InstancedMesh.
+ */
 export function embedXZMat4(
   transform: Geom.AffineTransform,
   { yScale, yHeight, mat4 }: { yScale?: number; yHeight?: number; mat4?: THREE.Matrix4 } = {},

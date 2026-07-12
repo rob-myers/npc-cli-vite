@@ -2,10 +2,9 @@ import type { Vec3 } from "navcat";
 
 export default function Light() {
   return (
-    <>
-      {/* <ambientLight intensity={0.75} color="#fff" /> */}
-
+    <group name="lights">
       <ambientLight intensity={0.25} color="#fff" />
+
       <directionalLight
         position={[Math.cos(2 * Math.PI * (0 / 3)), 1, Math.sin(2 * Math.PI * (0 / 3))]}
         lookAt={origin}
@@ -23,7 +22,7 @@ export default function Light() {
         lookAt={origin}
         intensity={directionLightIntensity}
       />
-    </>
+    </group>
   );
 }
 
