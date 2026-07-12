@@ -396,7 +396,10 @@ w decor.byKey.test-decor-point
   - ✅ meta comes from SVG not filename
   - ✅ keeping: aslan-0, human-0, robot-0, human-1 ...
   - ✅ add dark skins
-  - 🚧 touch up: human-2, robot-1, demon-0, robot-2
+  - 🚧 touch up
+    - ✅ human-2
+    - 🚧 robot-0
+    - robot-1, demon-0, robot-2
   - ensure SVG meta
 
 - ✅ spawned npc on navMesh lacks `agent.boundary.segments`
