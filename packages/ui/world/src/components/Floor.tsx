@@ -91,6 +91,7 @@ export default function Floor() {
         });
 
         // door shadow
+        // 🔔 gaps in doorways should be fixed by adjusting door relative to wall
         for (const door of layout.doors) {
           ct.lineWidth = door.meta.hull ? 0.225 : 0.125;
           tmpPoly.outline = door.seg;
