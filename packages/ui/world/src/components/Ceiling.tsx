@@ -4,7 +4,7 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { attribute, instanceIndex, int, texture, uv } from "three/tsl";
+import { attribute, instanceIndex, int, texture, transformNormalToView, uv, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
@@ -136,7 +136,7 @@ export default function Ceiling() {
 
   w.ceil = state;
 
-  const shaderMeta = useMemo(() => {
+  const material = useMemo(() => {
     const texArray = w.texCeil;
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
@@ -152,9 +152,11 @@ export default function Ceiling() {
     );
 
     return {
-      texNode: texNode.depth(uvTexIds),
-      pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
+      // fix InstancedMesh non-uniform scaling
+      normalNode: transformNormalToView(vec3(0, 1, 0)),
       opacityNode,
+      pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
+      texNode: texNode.depth(uvTexIds),
       uid: generateUUID(),
     };
   }, [w.texCeil.hash]);
@@ -180,12 +182,13 @@ export default function Ceiling() {
       </bufferGeometry>
 
       <meshStandardNodeMaterial
-        key={shaderMeta.uid}
+        key={material.uid}
         side={THREE.FrontSide} // one draw-call
         transparent
-        colorNode={shaderMeta.texNode}
-        outputNode={shaderMeta.pickNode}
-        opacityNode={shaderMeta.opacityNode}
+        colorNode={material.texNode}
+        normalNode={material.normalNode}
+        outputNode={material.pickNode}
+        opacityNode={material.opacityNode}
         depthWrite={false}
       />
     </instancedMesh>
