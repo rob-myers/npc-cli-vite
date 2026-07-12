@@ -339,7 +339,8 @@ export default function Doors() {
         if (door.open === true) {
           // was open
           if (opts.open === true) {
-            state.forceDoor(door.gmId, door.doorId, true); // reverses any in-progress close animation
+            // reverse any in-progress close animation
+            state.forceDoor(door.gmId, door.doorId, true);
             door.auto === true &&
               w.events.next({
                 key: "try-close-door",
