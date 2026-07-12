@@ -26,9 +26,9 @@ export default function Doors() {
       instanceCount: 0,
       toInstanceId: [],
       fromInstanceId: {},
-      openRatioArray: new Float32Array(0),
+      openRatioArray: new Float32Array(MAX_DOORS),
       /** Per-instance `[slideSign, flipFrontBack, doorLabelLayer, doorBackLabelLayer]` */
-      doorMetaArray: new Float32Array(0),
+      doorMetaArray: new Float32Array(MAX_DOORS * 4),
 
       buildInstanceIds() {
         state.toInstanceId = [];
@@ -42,7 +42,10 @@ export default function Doors() {
             nextId++;
           }
         }
-        return (state.instanceCount = nextId);
+        if (nextId > MAX_DOORS) {
+          console.warn(`Doors: ${nextId} doors exceeds MAX_DOORS (${MAX_DOORS}); extra doors will not render`);
+        }
+        return (state.instanceCount = Math.min(nextId, MAX_DOORS));
       },
       buildByKey() {
         const prevByKey = state.byKey;
@@ -182,9 +185,6 @@ export default function Doors() {
               1 + (((instanceId * 2654435761) >>> 0) % doorIconKeys.length);
           }
         }
-
-        const doorMetaAttr = state.box.getAttribute("doorMeta") as THREE.InstancedBufferAttribute | undefined;
-        if (doorMetaAttr) doorMetaAttr.needsUpdate = true;
       },
       encodeGmDoorId(gmId: number, doorId: number) {
         return state.toInstanceId[gmId]?.[doorId] ?? -1;
@@ -247,6 +247,7 @@ export default function Doors() {
         if (!inst) return;
 
         const count = state.instanceCount;
+        inst.count = count; // draw only the real doors; buffers stay at MAX_DOORS capacity
         state.openRatioArray.fill(0);
 
         // zero-scale all instances so unused slots are invisible; reset slideSign default (1)
@@ -315,13 +316,14 @@ export default function Doors() {
           }
         }
 
-        const openRatioAttr = state.box.getAttribute("openRatio") as THREE.InstancedBufferAttribute | undefined;
-        const doorMetaAttr = state.box.getAttribute("doorMeta") as THREE.InstancedBufferAttribute | undefined;
+        inst.computeBoundingSphere();
+      },
+      sendDataToGpu() {
+        if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
+        const openRatioAttr = state.box.getAttribute("openRatio");
+        const doorMetaAttr = state.box.getAttribute("doorMeta");
         if (openRatioAttr) openRatioAttr.needsUpdate = true;
         if (doorMetaAttr) doorMetaAttr.needsUpdate = true;
-
-        inst.computeBoundingSphere();
-        inst.instanceMatrix.needsUpdate = true;
       },
       toggleDoor(door, opts = {}) {
         if (door.sealed === true) {
@@ -405,21 +407,15 @@ export default function Doors() {
   w.door = state;
   w.d = w.door.byKey;
 
-  // dense instanceIds (0..instanceCount-1), rebuilt whenever the set of doors can change
+  // dense instanceIds (0..instanceCount-1), rebuilt whenever the set of doors can change;
+  // instanceCount must stay <= MAX_DOORS since attribute buffers are allocated at that fixed size
   const instanceCount = useMemo(() => state.buildInstanceIds(), [w.mapKey, w.hash]);
-
-  // (re)allocate per-instance attribute arrays whenever the instance count changes,
-  // so the geometry's buffers are always correctly sized before first paint
-  useMemo(() => {
-    state.openRatioArray = new Float32Array(instanceCount);
-    state.doorMetaArray = new Float32Array(instanceCount * 4);
-  }, [instanceCount]);
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
     const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
 
-    const panelOpts = { metalness: 0.7, roughness: 0.25, side: THREE.FrontSide, transparent: false, depthWrite: true };
+    const panelOpts = { metalness: 0.5, roughness: 0.25, side: THREE.FrontSide, transparent: false, depthWrite: true };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
 
@@ -460,14 +456,17 @@ export default function Doors() {
   useEffect(() => {
     state.buildByKey();
     state.positionInstances();
-    state.drawDoorTextures();
+    state.drawDoorTextures().then(() => {
+      state.sendDataToGpu();
+      state.update();
+    });
   }, [w.mapKey, w.hash]);
 
   return (
     <instancedMesh
       name="doors"
       ref={state.ref("inst")}
-      args={[state.box, undefined, instanceCount]}
+      args={[state.box, undefined, MAX_DOORS]}
       material={materials}
       renderOrder={4}
       visible={instanceCount > 0}
@@ -517,10 +516,13 @@ export type State = {
   onDoorChanged: (instanceId: number, target: number) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
+  sendDataToGpu: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
 };
 
+/** Fixed InstancedMesh capacity so geometry attribute buffers are never recreated */
+const MAX_DOORS = 512;
 const doorHeight = wallHeight - 0.001;
 const doorSpeed = 4;
 const doorOpenTarget = 0.98;
