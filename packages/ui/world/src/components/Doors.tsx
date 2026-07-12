@@ -3,7 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
-import { attribute, float, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
+import { attribute, float, lights, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
@@ -411,8 +411,7 @@ export default function Doors() {
   const materials = useMemo(() => {
     const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
 
-    // 🚧 DoubleSide?
-    const panelOpts = { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide, transparent: false, depthWrite: true };
+    const panelOpts = { metalness: 0.7, roughness: 0.25, side: THREE.FrontSide, transparent: false, depthWrite: true };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
 
@@ -441,7 +440,12 @@ export default function Doors() {
       (select as SelectAnyType)(notFlipped, backTexLayer, texLayer),
     );
 
-    return [edge, front, back]; // only 3 groups in door box
+    // only 3 groups in door box
+    const output = [edge, front, back];
+    // directional lights potentially costly due to dynamic openRatio + instancing
+    const lightsNode = lights([new THREE.AmbientLight(0xffffff, 0.4)]);
+    output.forEach((material) => (material.lightsNode = lightsNode));
+    return output;
   }, []);
 
   useEffect(() => {
