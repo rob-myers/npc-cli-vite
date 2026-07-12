@@ -19,6 +19,7 @@ import {
   normalWorld,
   positionWorld,
   texture,
+  transformNormalToView,
   uniformArray,
   uv,
   vec3,
@@ -202,7 +203,7 @@ export default function Obstacles(_props: Props) {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     const texNodeFinal = texNode.depth(uvTexIds);
-    const normalNode = vec3(0, 1, 0);
+    const normalNode = transformNormalToView(vec3(0, 1, 0));
     return {
       colorNode: texNodeFinal,
       normalNode,

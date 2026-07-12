@@ -5,7 +5,7 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { attribute, instanceIndex, int, texture, uv } from "three/tsl";
+import { attribute, instanceIndex, int, texture, transformNormalToView, uv, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_GEOMORPH_INSTANCES } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
@@ -141,7 +141,7 @@ export default function Floor() {
 
   w.floor = state;
 
-  const shaderMeta = useMemo(() => {
+  const material = useMemo(() => {
     const texArray = w.texFloor;
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
@@ -149,10 +149,12 @@ export default function Floor() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     return {
-      texNode: texNode.depth(instanceIndex),
+      // fix InstancedMesh non-uniform scaling
+      normalNode: transformNormalToView(vec3(0, 1, 0)),
       // - force alpha 1 to avoid object-pick having rgb scaled by alpha
       // - can pick texture alpha < 1 because floor can be partially transparent
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1),
+      texNode: texNode.depth(instanceIndex),
       uid: generateUUID(),
     };
   }, [w.texFloor.hash]);
@@ -177,12 +179,13 @@ export default function Floor() {
       </bufferGeometry>
 
       <meshStandardNodeMaterial
-        key={shaderMeta.uid}
+        key={material.uid}
         side={THREE.FrontSide} // one draw call
         transparent
         alphaTest={0.01}
-        colorNode={shaderMeta.texNode}
-        outputNode={shaderMeta.outputNode}
+        colorNode={material.texNode}
+        normalNode={material.normalNode}
+        outputNode={material.outputNode}
         depthWrite={false}
       />
     </instancedMesh>
