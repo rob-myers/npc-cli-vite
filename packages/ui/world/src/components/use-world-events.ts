@@ -588,10 +588,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // do not close whilst paused; recheck in {ms}
             state.tryCloseDoor(gdKey);
           } else if (door.open === true) {
-            w.door.toggleDoor(door, {
-              clear: state.canCloseDoor(door) === true,
-            });
-            state.tryCloseDoor(gdKey); // recheck in {ms}
+            const clear = state.canCloseDoor(door);
+            state.toggleDoor(gdKey, { clear, close: true });
           } else {
             // closed
             delete door.closeTimeoutId;
