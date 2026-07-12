@@ -1,7 +1,6 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import { Select } from "@base-ui/react/select";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
@@ -348,11 +347,24 @@ function TabHeaderItem({
       )}
       onClick={onClickTab}
     >
-      <div className={"flex items-center px-1 py-0.5 border text-sm border-on-background/20"}>
+      <div className={"flex items-center gap-0.5 px-1 py-0.5 border text-sm border-on-background/20"}>
         <pre className="p-1">{tab.title}</pre>
 
         {isCurrentTab && (
           <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                uiStoreApi.setUiMeta(tab.id, (draft) => (draft.disabled = !draft.disabled));
+              }}
+            >
+              <PlayCircleIcon
+                weight="duotone"
+                className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
+              />
+            </button>
+
             <BasicPopover
               trigger={
                 <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
@@ -364,52 +376,6 @@ function TabHeaderItem({
               sideOffset={8}
             >
               <div className="flex items-center gap-2 px-2 py-1">
-                {allTabs.length > 1 && (
-                  <Select.Root
-                    value={allTabs.find((t) => t.id === tabsMetaId)?.title ?? ""}
-                    onValueChange={(title) => {
-                      const target = allTabs.find((t) => t.title === title);
-                      if (!target || target.id === tabsMetaId) return;
-
-                      const sourceWasEmptied = moveTabBetweenPanes(uiStore, {
-                        draggedId: tab.id,
-                        sourceTabsMetaId: tabsMetaId,
-                        targetTabsMetaId: target.id,
-                        copyDisabled: true,
-                      });
-                      if (sourceWasEmptied) layoutApi.closePane(tabsMetaId);
-                    }}
-                  >
-                    <Select.Trigger className="flex items-center gap-1 text-sm text-white bg-gray-600 px-2 cursor-pointer outline-none">
-                      <Select.Value placeholder="Move to..." />
-                    </Select.Trigger>
-                    <Select.Portal>
-                      <Select.Positioner className="z-10000" sideOffset={4}>
-                        <Select.Popup
-                          className="bg-black border border-white/20 rounded shadow-lg py-1"
-                          // must prevent selection from selecting current tab
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Select.List>
-                            {allTabs.map((t) => (
-                              <Select.Item
-                                key={t.id}
-                                value={t.title}
-                                className={cn(
-                                  "px-3 py-1 text-sm cursor-pointer text-white",
-                                  "data-highlighted:bg-white/20 data-selected:text-blue-400",
-                                )}
-                              >
-                                <Select.ItemText>{t.title}</Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.List>
-                        </Select.Popup>
-                      </Select.Positioner>
-                    </Select.Portal>
-                  </Select.Root>
-                )}
-
                 {/* 🗑️ */}
                 <button
                   type="button"
@@ -420,19 +386,6 @@ function TabHeaderItem({
                 </button>
               </div>
             </BasicPopover>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                uiStoreApi.setUiMeta(tab.id, (draft) => (draft.disabled = !draft.disabled));
-              }}
-            >
-              <PlayCircleIcon
-                weight="duotone"
-                className={cn("size-5 cursor-pointer mr-0.5", tab.disabled ? "text-gray-500" : "text-green-700")}
-              />
-            </button>
           </>
         )}
       </div>
