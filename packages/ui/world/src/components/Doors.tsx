@@ -21,11 +21,12 @@ export default function Doors() {
       animTargets: new Map(),
       box: createDoorBox(),
       byKey: {},
+      labelToLayer: new Map(),
+
+      inst: null,
       doorBackLabelLayerArray: new Float32Array(0),
       doorLabelLayerArray: new Float32Array(0),
       flipFrontBackArray: new Float32Array(0),
-      inst: null,
-      labelToLayer: new Map(),
       openRatioArray: new Float32Array(0),
       slideSignArray: new Float32Array(0),
 
@@ -474,12 +475,12 @@ export type State = {
   animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
-  doorBackLabelLayerArray: Float32Array;
-  doorLabelLayerArray: Float32Array;
-  flipFrontBackArray: Float32Array;
   inst: null | THREE.InstancedMesh;
   /** Label or iconKey. */
   labelToLayer: Map<string, number>;
+  doorBackLabelLayerArray: Float32Array;
+  doorLabelLayerArray: Float32Array;
+  flipFrontBackArray: Float32Array;
   openRatioArray: Float32Array;
   slideSignArray: Float32Array;
   buildByKey: () => void;
