@@ -23,12 +23,12 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "a8a66d77-96ee-44ed-91fa-2e4eb7a142fd",
           "name": "iris-valves--006",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 8, "f": 316},
           "type": "symbol",
@@ -40,7 +40,7 @@
         {
           "id": "ae4275c8-65e8-4036-9dfb-94959247b341",
           "name": "iris-valves--006",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 318, "f": 548},
           "type": "symbol",
@@ -52,7 +52,7 @@
         {
           "id": "6fda85ec-f342-4fbe-9b18-3a5630fbeded",
           "name": "iris-valves--006",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 918, "f": 548},
           "type": "symbol",
@@ -64,7 +64,7 @@
         {
           "id": "8c7b5425-a88f-4890-8f7d-0cd4204a5a7e",
           "name": "iris-valves--006",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1150, "f": 240},
           "type": "symbol",
@@ -475,7 +475,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "65fb9ce5-3351-47de-bf05-0374e13aff02",
@@ -487,15 +487,15 @@
             "b": 0,
             "c": 0,
             "d": 2.4333,
-            "e": 181.5,
-            "f": 272.5
+            "e": 216,
+            "f": 236
           },
           "type": "image",
           "srcType": "decor",
           "srcKey": "circle-1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 181.5, 272.5)"
+          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 216, 236)"
         },
         {
           "id": "007041d0-3ebe-415e-bdc9-3db08c0993d3",
@@ -567,15 +567,15 @@
             "b": 0,
             "c": 0,
             "d": 2.4333,
-            "e": 193.5,
-            "f": 409
+            "e": 280,
+            "f": 418
           },
           "type": "image",
           "srcType": "decor",
           "srcKey": "circle-1",
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 193.5, 409)"
+          "cssTransform": "matrix(2.4333, 0, 0, 2.4333, 280, 418)"
         },
         {
           "id": "2b0e437e-af65-4a8b-ba0d-f12ba55d7235",
