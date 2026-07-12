@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "8c0ddce7-acc2-4ffd-9c82-7367ef95b0fc",
@@ -78,12 +78,12 @@
           "name": "window--007 y=1.7",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180.5, "f": 300.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180, "f": 300.5},
           "type": "symbol",
           "srcKey": "window--007",
           "baseRect": {"width": 180, "height": 12},
           "offset": {"x": -0.7, "y": -0.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 179.8, 299.8)"
+          "cssTransform": "matrix(1, 0, 0, 1, 179.3, 299.8)"
         },
         {
           "id": "14e63646-0d07-458b-85ab-001a2717ad74",
@@ -210,7 +210,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "50f4058b-e508-4b43-8951-5240b220f752",
@@ -640,7 +640,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "521acaa7-0ee2-4731-9d08-26982a7961b6",
@@ -772,7 +772,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 299},
           "type": "rect",
-          "baseRect": {"width": 360, "height": 4},
+          "baseRect": {"width": 181, "height": 4},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 299)"
         },
         {
@@ -780,10 +780,10 @@
           "name": "wall",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 299},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 361.5, "f": 299},
           "type": "rect",
-          "baseRect": {"width": 120, "height": 4},
-          "cssTransform": "matrix(1, 0, 0, 1, 360, 299)"
+          "baseRect": {"width": 118.5, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 361.5, 299)"
         },
         {
           "id": "841c81c0-28fd-45b4-ada8-3a1a127383f8",
