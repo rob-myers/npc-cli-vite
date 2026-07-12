@@ -347,24 +347,11 @@ function TabHeaderItem({
       )}
       onClick={onClickTab}
     >
-      <div className={"flex items-center gap-0.5 px-1 py-0.5 border text-sm border-on-background/20"}>
+      <div className={"flex items-center px-1 py-0.5 border text-sm border-on-background/20"}>
         <pre className="p-1">{tab.title}</pre>
 
         {isCurrentTab && (
           <>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                uiStoreApi.setUiMeta(tab.id, (draft) => (draft.disabled = !draft.disabled));
-              }}
-            >
-              <PlayCircleIcon
-                weight="duotone"
-                className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
-              />
-            </button>
-
             <BasicPopover
               trigger={
                 <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
@@ -386,6 +373,20 @@ function TabHeaderItem({
                 </button>
               </div>
             </BasicPopover>
+
+            <button
+              type="button"
+              className="mr-0.5"
+              onClick={(e) => {
+                e.stopPropagation();
+                uiStoreApi.setUiMeta(tab.id, (draft) => (draft.disabled = !draft.disabled));
+              }}
+            >
+              <PlayCircleIcon
+                weight="duotone"
+                className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
+              />
+            </button>
           </>
         )}
       </div>
