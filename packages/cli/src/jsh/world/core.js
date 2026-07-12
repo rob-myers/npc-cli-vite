@@ -637,7 +637,7 @@ export function skin({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })
   const npc = w.npc.get(opts.npcKey);
   const skinKey = opts.as ?? (api.getJsOperands(args, opts)[0] || "medic-0");
 
-  if (w.npc.getSkinIndex(skinKey) === -1) {
+  if (w.npc.getSkinIndexBySkinKey(skinKey) === -1) {
     throw Error(`skin "${skinKey}" not found`);
   }
   npc.setSkin(skinKey);
