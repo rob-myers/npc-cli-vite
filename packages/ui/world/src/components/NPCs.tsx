@@ -111,9 +111,7 @@ export default function NPCs() {
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(npcBrightness);
         const mainColor = vec4(
-          // scale towards black:
           // skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1),
-          // scale towards specific colour:
           // mix(vec3(0.4, 1, 1), skinTex.rgb.mul(ndotv), colorScale),
           mix(vec3(0.4, 1, 1).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),
           skinTex.a.mul(opacityScale),
@@ -134,6 +132,8 @@ export default function NPCs() {
           transparent: true,
           depthWrite: true,
           side: THREE.FrontSide, // one draw call
+          // - keep these fixed or they'll effect label quad
+          // - could add metalness map but we'll handle via SVG edit instead
           metalness: 0,
           roughness: 1,
         });
@@ -172,8 +172,10 @@ export default function NPCs() {
           skinnedMesh: opts.skinnedMesh,
           ...state.createMaterials(opts.pickId, opts.skinIndex),
         });
+
         npc.init();
         npc.drawLabel();
+
         state.npc[opts.key] = npc;
         state.byPickId[npc.pickId] = npc;
         return npc;
@@ -269,8 +271,16 @@ export default function NPCs() {
         }
         return result;
       },
-      getSkinIndex(skinKey) {
+      getSkinIndexBySkinKey(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
+      },
+      getSkinKeyBySkinIndex(skinIndex) {
+        return state.skin.entries[skinIndex].key;
+      },
+      getSkinMeta(skinKey: string) {
+        const { manifest } = state.skin;
+        const { meta } = manifest.byKey[skinKey];
+        return meta;
       },
       async move({ npcKey, to, arrive = true, fast }) {
         const npc = state.get(npcKey);
@@ -455,7 +465,7 @@ export default function NPCs() {
             position: helper.groundPointToVector3(opts.groundPoint).setY(positionY),
             rotation,
             skinnedMesh: clonedSkinnedMesh,
-            skinIndex: state.getSkinIndex(opts.as ?? "medic-0"),
+            skinIndex: state.getSkinIndexBySkinKey(opts.as ?? "medic-0"),
           });
         }
 
@@ -621,7 +631,7 @@ export default function NPCs() {
 
   w.r3fStore = useReactThreeFiberStore();
 
-  useEffect(() => void (import.meta.env.DEV && state.devHotReload()), []);
+  useEffect(() => void (import.meta.env.DEV && state.devHotReload()), [queryData?.gltf]);
 
   return (
     state.gltf &&
@@ -704,7 +714,9 @@ export type State = {
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;
-  getSkinIndex(skinKey: string): number;
+  getSkinIndexBySkinKey(skinKey: string): number;
+  getSkinKeyBySkinIndex(skinIndex: number): string;
+  getSkinMeta(skinKey: string): Meta;
   move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;
   rawSpawn(opts: {

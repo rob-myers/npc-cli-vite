@@ -41,14 +41,6 @@
       "url": "https://namemc.com/skin/8c524ef1dc111a13",
       "svgPath": "skin/human-1.svg"
     },
-    "human-2": {
-      "key": "human-2",
-      "id": "17b378f49f7fe0bc",
-      "filename": "human-2--17b378f49f7fe0bc.png",
-      "meta": {"skinKey": "human-2", "prefix": "human", "firstSeen": "Discra"},
-      "url": "https://namemc.com/skin/17b378f49f7fe0bc",
-      "svgPath": "skin/human-2.svg"
-    },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
