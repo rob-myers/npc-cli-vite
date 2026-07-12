@@ -96,7 +96,7 @@ export default function Floor() {
           ct.lineWidth = door.meta.hull ? 0.225 : 0.125;
           tmpPoly.outline = door.seg;
           ct.lineJoin = "miter";
-          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000a" });
+          drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000c" });
         }
 
         // light circles
