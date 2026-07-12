@@ -193,7 +193,7 @@ export default function Obstacles(_props: Props) {
 
   w.obs = state;
 
-  const shaderMeta = useMemo(() => {
+  const material = useMemo(() => {
     const texArray = w.texObs;
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
@@ -202,8 +202,10 @@ export default function Obstacles(_props: Props) {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     const texNodeFinal = texNode.depth(uvTexIds);
+    const normalNode = vec3(0, 1, 0);
     return {
       colorNode: texNodeFinal,
+      normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),
     };
@@ -228,6 +230,17 @@ export default function Obstacles(_props: Props) {
     })();
     return { light0Values, light1Values, factor };
   }, [skirtCount]);
+
+  const skirtMaterial = useMemo(() => {
+    const mat = new THREE.MeshBasicNodeMaterial({
+      side: THREE.FrontSide, // 1 draw call
+    });
+    const viewDir = cameraPosition.sub(positionWorld).normalize();
+    const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
+    const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
+    mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(0.1)), 1);
+    return mat;
+  }, [skirtLightMeta]);
 
   state.images =
     useQuery({
@@ -282,17 +295,6 @@ export default function Obstacles(_props: Props) {
     });
   }, [w.mapKey, w.hash, skirtLightMeta, state.images, w.decor.ready]);
 
-  const skirtMaterial = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial({
-      side: THREE.FrontSide, // 1 draw call
-    });
-    const viewDir = cameraPosition.sub(positionWorld).normalize();
-    const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
-    const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
-    mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(0.1)), 1);
-    return mat;
-  }, [skirtLightMeta]);
-
   return (
     <>
       <instancedMesh
@@ -310,12 +312,13 @@ export default function Obstacles(_props: Props) {
         </bufferGeometry>
 
         <meshStandardNodeMaterial
-          key={shaderMeta.uid}
+          key={material.uid}
           side={THREE.FrontSide} // 1 draw call
           transparent
           alphaTest={0.5}
-          colorNode={shaderMeta.colorNode}
-          outputNode={shaderMeta.outputNode}
+          colorNode={material.colorNode}
+          outputNode={material.outputNode}
+          normalNode={material.normalNode}
         />
       </instancedMesh>
 
