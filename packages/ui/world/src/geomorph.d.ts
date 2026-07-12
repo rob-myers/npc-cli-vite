@@ -93,7 +93,7 @@ declare namespace Geomorph {
   type HullDoorMeta = Meta<{ edge: Geom.DirectionString }>;
 
   type DoorState = Geomorph.GmDoorId & {
-    /** `gmId << 8 + doorId` */
+    /** Dense index into the `doors` InstancedMesh; see `Doors` component's `toInstanceId`/`fromInstanceId` */
     instanceId: number;
 
     /** Determined purely via (gmKey, doorId) */
