@@ -108,7 +108,6 @@ function parseSvgMetadata(svgPath: string) {
   const parser = new Parser({
     onopentag(tagName) {
       tagStack.push(tagName);
-      console.log(tagStack);
     },
     ontext(contents) {
       // e.g. ["svg", "g", "title"]
