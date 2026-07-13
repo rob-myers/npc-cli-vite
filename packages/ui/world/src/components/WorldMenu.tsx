@@ -341,7 +341,7 @@ export function WorldMenu() {
                     items={mapKeys.map((key) => ({ key, value: key }))}
                     side="bottom"
                     onValueChange={(key) => {
-                      if (!key) return;
+                      if (!key || key === w.mapKey) return;
                       w.setCanvasFade(true);
                       uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
                     }}
