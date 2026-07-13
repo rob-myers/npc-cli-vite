@@ -914,10 +914,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         }
 
         node.cssTransform = computeNodeCssTransform(node);
-
-        if (node.name.match(/^(Image \d+)$/)) {
-          node.name = state.getNextName("image", `${selection.key} `);
-        }
+        node.name = selection.key;
 
         state.update();
       },
