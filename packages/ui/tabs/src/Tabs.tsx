@@ -7,8 +7,8 @@ import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, PlusCircleIcon, TrashIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useMemo, useRef } from "react";
+import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, PlusCircleIcon } from "@phosphor-icons/react";
+import { useContext, useEffect, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
@@ -41,8 +41,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             }
 
             result.data.parentId = meta.id;
-            // inherit disabled to keep in sync
-            result.data.disabled = uiStoreApi.getUi(meta.id)?.meta?.disabled;
             uiStoreApi.addUis({ metas: [result.data] });
 
             uiStore.setState((draft) => {
@@ -239,19 +237,12 @@ function TabHeaderItem({
   uiStoreApi,
 }: TabHeaderItemProps) {
   const { layoutApi } = useContext(UiContext);
-  const byId = useStore(uiStore, (s) => s.byId);
-  const allTabs = useMemo(
-    () =>
-      Object.values(byId)
-        .filter(({ meta: m }) => m.uiKey === "Tabs")
-        .map(({ meta: m }) => m),
-    [byId],
-  );
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
     isDragging: false,
     isDropTarget: false,
+    confirmClose: false,
   }));
 
   useEffect(() => {
@@ -361,15 +352,22 @@ function TabHeaderItem({
               arrowClassName="fill-gray-700"
               side="bottom"
               sideOffset={8}
+              onOpenChange={(open) => !open && state.set({ confirmClose: false })}
             >
               <div className="flex items-center gap-2 px-2 py-1">
-                {/* 🗑️ */}
                 <button
                   type="button"
-                  className="cursor-pointer text-white/80 hover:text-white"
-                  onPointerDown={onDeleteTab}
+                  className="cursor-pointer text-white/80 hover:text-white text-sm"
+                  onPointerDown={() => {
+                    if (state.confirmClose) {
+                      state.set({ confirmClose: false });
+                      onDeleteTab();
+                    } else {
+                      state.set({ confirmClose: true });
+                    }
+                  }}
                 >
-                  <TrashIcon className="size-4" />
+                  {state.confirmClose ? "confirm" : "close"}
                 </button>
               </div>
             </BasicPopover>

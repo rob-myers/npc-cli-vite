@@ -121,8 +121,11 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
 
             const rehydratedUis = Object.values(state.persistedPanes.toUi);
             for (const ui of rehydratedUis) {
-              if (ui.disableOnMount === true) {
+              if (ui.disableOnRehydrate === true) {
                 ui.disabled = true;
+              }
+              if (ui.enableOnRehydrate === true) {
+                ui.disabled = false;
               }
             }
 
