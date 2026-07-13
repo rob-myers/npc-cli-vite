@@ -30,14 +30,14 @@
   </g>
   <g>
     <title>head</title>
+    <rect x="32" width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px; fill: none;">
+      <title>top</title>
+    </rect>
     <rect x="32" width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px; fill: none;" y="32">
       <title>front</title>
     </rect>
-    <rect x="32" width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px; fill: none;">
-      <title>front</title>
-    </rect>
   </g>
-  <g transform="matrix(1, 0, 0, 1.5, -0.337996, -64.188988)" style="pointer-events: none; visibility: hidden;">
+  <g transform="matrix(1, 0, 0, 1.5, -0.337996, -64.188988)" style="">
     <title>left-arm</title>
     <rect x="176.338" y="96.126" width="16" height="32" style="stroke: rgb(0, 0, 0); opacity: 0.5; filter: none; stroke-width: 2px;">
       <title>front</title>
@@ -52,7 +52,7 @@
       <title>back</title>
     </rect>
   </g>
-  <g transform="matrix(0.999999, 0, 0, 1.5, -32.337784, 63.810989)" style="pointer-events: none; visibility: hidden;">
+  <g transform="matrix(0.999999, 0, 0, 1.5, -32.337784, 63.810989)" style="pointer-events: none;">
     <title>right-arm</title>
     <rect x="176.338" y="96.126" width="16" height="32" style="stroke: rgb(0, 0, 0); opacity: 0.5; filter: none; stroke-width: 2px;">
       <title>front</title>

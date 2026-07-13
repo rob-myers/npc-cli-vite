@@ -276,7 +276,7 @@ export default function NPCs() {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
       },
       getSkinKeyBySkinIndex(skinIndex) {
-        return state.skin.entries[skinIndex].key;
+        return state.skin.entries[skinIndex]?.key ?? null;
       },
       getSkinMeta(skinKey: string) {
         return state.skin.manifest.byKey[skinKey]?.meta ?? {};
@@ -715,7 +715,7 @@ export type State = {
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;
   getSkinIndexBySkinKey(skinKey: string): number;
-  getSkinKeyBySkinIndex(skinIndex: number): string;
+  getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;
   move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;

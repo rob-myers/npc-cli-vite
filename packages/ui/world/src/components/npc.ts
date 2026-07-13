@@ -6,7 +6,7 @@ import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, typ
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultIdleAnimationClipKey } from "../const";
+import { defaultIdleAnimationClipKey, defaultSkinKey } from "../const";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -265,7 +265,7 @@ export class Npc {
       },
     };
 
-    const skinKey = this.w.npc.getSkinKeyBySkinIndex(this.skinIndex);
+    const skinKey = this.w.npc.getSkinKeyBySkinIndex(this.skinIndex) ?? defaultSkinKey;
     const skinMeta = this.w.npc.getSkinMeta(skinKey);
     this.brightness.value = typeof skinMeta?.brightness === "number" ? skinMeta.brightness : 1;
   }

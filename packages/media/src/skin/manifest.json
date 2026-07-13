@@ -13,14 +13,6 @@
       "url": "https://namemc.com/skin/ff2642d58fc89270",
       "svgPath": "skin/aslan-0.svg"
     },
-    "demon-0": {
-      "key": "demon-0",
-      "id": "b726ede17b0bf2d4",
-      "filename": "demon-0--b726ede17b0bf2d4.png",
-      "meta": {"skinKey": "demon-0"},
-      "url": "https://namemc.com/skin/b726ede17b0bf2d4",
-      "svgPath": null
-    },
     "human-0": {
       "key": "human-0",
       "id": "23aa3d70ee53af87",
@@ -73,17 +65,16 @@
       "key": "robot-1",
       "id": "0f19ae4312c72d03",
       "filename": "robot-1--0f19ae4312c72d03.png",
-      "meta": {"skinKey": "robot-1"},
+      "meta": {
+        "skinKey": "robot-1",
+        "prefix": "medic",
+        "firstSeen": "NoneType_",
+        "doctor": true,
+        "mask": true,
+        "brightness": 0.5
+      },
       "url": "https://namemc.com/skin/0f19ae4312c72d03",
-      "svgPath": null
-    },
-    "robot-2": {
-      "key": "robot-2",
-      "id": "b62107f441702cc5",
-      "filename": "robot-2--b62107f441702cc5.png",
-      "meta": {"skinKey": "robot-2"},
-      "url": "https://namemc.com/skin/b62107f441702cc5",
-      "svgPath": null
+      "svgPath": "skin/robot-1.svg"
     }
   }
 }

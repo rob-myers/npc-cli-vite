@@ -198,18 +198,10 @@
       "originalWidth": 64,
       "originalHeight": 64
     },
-    "demon-0": {
-      "key": "demon-0",
-      "filename": "demon-0--b726ede17b0bf2d4.png",
-      "rect": {"x": 68, "y": 2, "width": 64, "height": 64},
-      "sheetId": 0,
-      "originalWidth": 64,
-      "originalHeight": 64
-    },
     "human-0": {
       "key": "human-0",
       "filename": "human-0--23aa3d70ee53af87.png",
-      "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
+      "rect": {"x": 68, "y": 2, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -217,7 +209,7 @@
     "human-1": {
       "key": "human-1",
       "filename": "human-1--8c524ef1dc111a13.png",
-      "rect": {"x": 68, "y": 68, "width": 64, "height": 64},
+      "rect": {"x": 2, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -225,7 +217,7 @@
     "medic-0": {
       "key": "medic-0",
       "filename": "medic-0--3573d1c9cad6c8fc.png",
-      "rect": {"x": 134, "y": 2, "width": 64, "height": 64},
+      "rect": {"x": 68, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -233,7 +225,7 @@
     "robot-0": {
       "key": "robot-0",
       "filename": "robot-0--e91cc700154075b2.png",
-      "rect": {"x": 134, "y": 68, "width": 64, "height": 64},
+      "rect": {"x": 134, "y": 2, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -241,20 +233,12 @@
     "robot-1": {
       "key": "robot-1",
       "filename": "robot-1--0f19ae4312c72d03.png",
-      "rect": {"x": 2, "y": 134, "width": 64, "height": 64},
-      "sheetId": 0,
-      "originalWidth": 64,
-      "originalHeight": 64
-    },
-    "robot-2": {
-      "key": "robot-2",
-      "filename": "robot-2--b62107f441702cc5.png",
-      "rect": {"x": 68, "y": 134, "width": 64, "height": 64},
+      "rect": {"x": 134, "y": 68, "width": 64, "height": 64},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 200, "height": 200}],
-  "maxSkinSheetDim": {"width": 200, "height": 200}
+  "skinSheetDims": [{"width": 200, "height": 134}],
+  "maxSkinSheetDim": {"width": 200, "height": 134}
 }
