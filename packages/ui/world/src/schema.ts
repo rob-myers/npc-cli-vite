@@ -8,9 +8,9 @@ const defaultThemeKey: typeof import("./const").defaultThemeKey = "light-theme";
 export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
   uiKey: z.literal("World"),
-  disabled: z.boolean().default(true),
+  disabled: BaseUiMetaSchema.shape.disabled.default(true),
   // disable World when refresh page
-  disableOnMount: z.boolean().default(true),
+  disableOnRehydrate: BaseUiMetaSchema.shape.disableOnRehydrate.default(true),
   worldKey: z.templateLiteral(["world-", z.number()]),
   mapKey: z.string().default(defaultMapKey),
   themeKey: z.string().default(defaultThemeKey),

@@ -53,9 +53,7 @@ export function PaneTreeWrapper({
           title: uiStoreApi.getDefaultTitle(uiRegistryKey),
           uiKey: uiRegistryKey,
         };
-        if (state.overrideContextMenuOpts?.addItem) {
-          state.overrideContextMenuOpts.addItem({ uiMeta });
-        }
+        state.overrideContextMenuOpts?.addItem({ uiMeta });
       }
     },
     closeContextMenu() {

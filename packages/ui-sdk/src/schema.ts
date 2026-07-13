@@ -23,7 +23,10 @@ const FlatBaseUiMetaSchema = z.looseObject({
   menuPosition: z.enum(["left", "right"]).optional(),
   /** For pausing */
   disabled: z.boolean().optional(),
-  disableOnMount: z.boolean().optional(),
+  /** Force UI initially disabled */
+  disableOnRehydrate: z.boolean().optional(),
+  /** Force UI initially enabled */
+  enableOnRehydrate: z.boolean().optional(),
   /** For sub-uis e.g. individual tabs */
   parentId: z.string().optional(),
   /** e.g. tab header */

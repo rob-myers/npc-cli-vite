@@ -55,7 +55,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
       try {
         const localStorageKey = `var@session-${sessionKey}`;
         const persistedSessionHome = restoreFromPersistedJsStringify(tryLocalStorageGet(localStorageKey) || "null");
-        // Remove PROFILE_KEY from persisted session, so we can overwrite it.
+        // 🔔 Remove PROFILE_KEY from persisted session, so we can overwrite it.
         delete persistedSessionHome.PROFILE_KEY;
         tryLocalStorageSet(localStorageKey, jsStringify(persistedSessionHome, false, true));
       } catch {
