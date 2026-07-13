@@ -38,6 +38,14 @@
       "url": "https://namemc.com/skin/8c524ef1dc111a13",
       "svgPath": "skin/human-1.svg"
     },
+    "human-2": {
+      "key": "human-2",
+      "id": "5c3354746a0827d6",
+      "filename": "human-2--5c3354746a0827d6.png",
+      "meta": {"skinKey": "human-2", "prefix": "human", "brightness": 0.5},
+      "url": "https://namemc.com/skin/5c3354746a0827d6",
+      "svgPath": "skin/human-2.svg"
+    },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
