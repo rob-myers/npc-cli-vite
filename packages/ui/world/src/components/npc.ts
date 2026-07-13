@@ -39,6 +39,7 @@ export class Npc {
   skinnedMesh: THREE.SkinnedMesh;
 
   alphaTest: THREE.UniformNode<"float", number>;
+  brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   /** points into ArrayTexture */
   labelLayerIndex: number;
@@ -109,6 +110,7 @@ export class Npc {
     // Object.assign(this, init);
     this.key = init.key;
     this.alphaTest = init.alphaTest;
+    this.brightness = init.brightness;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
@@ -262,6 +264,10 @@ export class Npc {
         return true;
       },
     };
+
+    const skinKey = this.w.npc.getSkinKeyBySkinIndex(this.skinIndex);
+    const skinMeta = this.w.npc.getSkinMeta(skinKey);
+    this.brightness.value = typeof skinMeta?.brightness === "number" ? skinMeta.brightness : 1;
   }
 
   isMoving() {
@@ -377,6 +383,7 @@ export class Npc {
 export type NpcInit = {
   key: string;
   alphaTest: THREE.UniformNode<"float", number>;
+  brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;

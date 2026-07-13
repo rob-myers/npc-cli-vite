@@ -47,7 +47,6 @@ import {
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   maxAgentRadius,
-  npcBrightness,
   npcHeight,
   walkMaxAcceleration,
 } from "../const";
@@ -93,6 +92,7 @@ export default function NPCs() {
         const colorScale = uniform(1);
         const opacityScale = uniform(1);
         const labelVisible = uniform(1, "float");
+        const brightness = uniform(1);
 
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
@@ -109,7 +109,7 @@ export default function NPCs() {
 
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
-        const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(npcBrightness);
+        const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(brightness);
         const mainColor = vec4(
           // skinTex.rgb.mul(ndotv).mul(colorScale).clamp(0, 1),
           // mix(vec3(0.4, 1, 1), skinTex.rgb.mul(ndotv), colorScale),
@@ -148,6 +148,7 @@ export default function NPCs() {
 
         return {
           alphaTest,
+          brightness,
           colorScale,
           opacityScale,
           labelVisible,
@@ -278,9 +279,7 @@ export default function NPCs() {
         return state.skin.entries[skinIndex].key;
       },
       getSkinMeta(skinKey: string) {
-        const { manifest } = state.skin;
-        const { meta } = manifest.byKey[skinKey];
-        return meta;
+        return state.skin.manifest.byKey[skinKey]?.meta ?? {};
       },
       async move({ npcKey, to, arrive = true, fast }) {
         const npc = state.get(npcKey);
@@ -665,6 +664,7 @@ export type State = {
   ): Pick<
     NpcInit,
     | "alphaTest"
+    | "brightness"
     | "colorScale"
     | "opacityScale"
     | "labelVisible"

@@ -401,8 +401,9 @@ w decor.byKey.test-decor-point
     - ✅ npc main material metalness, roughness determined by skin
       - can be specified as meta of skin e.g. metalness=0.4
     - ✅ remove human-2
-    - 🚧 robot-0
-    - 🚧 medic-0
+    - ✅ can drive npc brightness from skin SVG meta
+    - robot-0
+    - medic-0
     - robot-1, demon-0, robot-2
   - ensure SVG meta
 
