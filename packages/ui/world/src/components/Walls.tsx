@@ -50,7 +50,8 @@ export default function Walls() {
       positionTrimInstances() {
         const { instTrim: ti } = state;
         if (!ti) return;
-        const color = new THREE.Color(w.getTheme().walls.color);
+        // const color = new THREE.Color(w.getTheme().walls.color);
+        const color = new THREE.Color("#222");
         let id = 0;
         for (const [_gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
           for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
@@ -176,7 +177,7 @@ export default function Walls() {
   state.light = mat;
 
   const trimMaterial = useMemo(() => {
-    const m = new THREE.MeshBasicNodeMaterial({
+    const m = new THREE.MeshStandardNodeMaterial({
       side: THREE.FrontSide, // 1 draw call
       transparent: true,
       depthWrite: false,
@@ -292,4 +293,4 @@ const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
 const ceilTrimHeight = 0.2;
-const ceilDoorTrimHeight = 0.1;
+const ceilDoorTrimHeight = 0.2;

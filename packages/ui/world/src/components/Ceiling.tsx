@@ -78,7 +78,7 @@ export default function Ceiling() {
         drawPolygons(ct, tops.nonHullWall, {
           fillStyle: tc.nonHull.fill,
           strokeStyle: tc.nonHull.stroke,
-          lineWidth: thickLineWidth,
+          lineWidth: thinLineWidth,
         });
         drawPolygons(ct, tops.hullWall, {
           fillStyle: tc.hull.fill,
