@@ -78,6 +78,8 @@ magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
 
 # Gotchas
 
+### `pnpm gen-assets-json --force` recomputes stratification in case out-of-sync
+
 ### Shaders can have at most 8 vertex attributes -- check console for errors
 
 ### Hull doors can have navRectId -1 if hull walls not properly aligned

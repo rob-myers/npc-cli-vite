@@ -1,0 +1,34 @@
+{
+  "filename": "extra--019--table.json",
+  "width": 30,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "741f4634-f9f6-412d-9c75-43f984378c40",
+      "name": "extra--019--table 1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "extra--019--table",
+      "baseRect": {"width": 31.400000000000002, "height": 121.4},
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+    },
+    {
+      "id": "d09d037e-2af2-49d7-92f0-a2d6e45e8b16",
+      "name": "obstacle table",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M-1,-0.5 L30.5,-0.5 L30.5,38 L24.9,51.2 L23.9,60.1 L25.2,70.2 L30.5,80 L30.5,90.3 L30.5,120.5 L-1,120.5 L-1,-0.5 Z",
+      "baseRect": {"width": 32, "height": 121},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 121.4},
+  "type": "symbol",
+  "key": "extra--019--table"
+}

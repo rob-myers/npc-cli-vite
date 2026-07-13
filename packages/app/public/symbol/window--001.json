@@ -1,0 +1,43 @@
+{
+  "filename": "window--001.json",
+  "width": 60,
+  "height": 12,
+  "nodes": [
+    {
+      "id": "c1f35176-8c58-4fc2-b947-6eafdc974bff",
+      "name": "window--001",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "window--001",
+      "baseRect": {"width": 61.400000000000006, "height": 13.4},
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+    },
+    {
+      "id": "0193deff-2fe1-4f33-a27d-7772a750305a",
+      "name": "obstacle y=0.8",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": -0.5},
+      "type": "rect",
+      "baseRect": {"width": 62, "height": 13.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -1, -0.5)"
+    },
+    {
+      "id": "b95a2c8e-0d9a-497d-9d87-ce1018f4357a",
+      "name": "window",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": -0.5},
+      "type": "rect",
+      "baseRect": {"width": 62, "height": 13.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -1, -0.5)"
+    }
+  ],
+  "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 13.4},
+  "type": "symbol",
+  "key": "window--001"
+}

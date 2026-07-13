@@ -35,9 +35,14 @@
       "rect": {"x": 928, "y": 2806, "width": 607, "height": 607},
       "sheetId": 0
     },
+    "extra--019--table": {
+      "key": "extra--019--table",
+      "rect": {"x": 3377, "y": 1883, "width": 157, "height": 607},
+      "sheetId": 0
+    },
     "couch-and-chairs--006": {
       "key": "couch-and-chairs--006",
-      "rect": {"x": 3377, "y": 1883, "width": 137, "height": 575},
+      "rect": {"x": 3542, "y": 1883, "width": 137, "height": 575},
       "sheetId": 0
     },
     "bed--003": {
@@ -57,7 +62,12 @@
     },
     "extra--004--desk": {
       "key": "extra--004--desk",
-      "rect": {"x": 3522, "y": 1883, "width": 157, "height": 307},
+      "rect": {"x": 3542, "y": 2466, "width": 157, "height": 307},
+      "sheetId": 0
+    },
+    "window--001": {
+      "key": "window--001",
+      "rect": {"x": 1086, "y": 3631, "width": 307, "height": 67},
       "sheetId": 0
     },
     "extra--021--shower": {
@@ -67,32 +77,32 @@
     },
     "iris-valves--005": {
       "key": "iris-valves--005",
-      "rect": {"x": 1086, "y": 3631, "width": 221, "height": 220},
+      "rect": {"x": 1543, "y": 3108, "width": 221, "height": 220},
       "sheetId": 0
     },
     "iris-valves--006": {
       "key": "iris-valves--006",
-      "rect": {"x": 1543, "y": 3108, "width": 221, "height": 220},
+      "rect": {"x": 1732, "y": 2806, "width": 221, "height": 220},
       "sheetId": 0
     },
     "console--033": {
       "key": "console--033",
-      "rect": {"x": 1315, "y": 3736, "width": 134, "height": 161},
+      "rect": {"x": 1086, "y": 3736, "width": 134, "height": 161},
       "sheetId": 0
     },
     "extra--002--fresher": {
       "key": "extra--002--fresher",
-      "rect": {"x": 1457, "y": 3736, "width": 114, "height": 156},
+      "rect": {"x": 1228, "y": 3736, "width": 114, "height": 156},
       "sheetId": 0
     },
     "console--051": {
       "key": "console--051",
-      "rect": {"x": 1579, "y": 3736, "width": 137, "height": 155},
+      "rect": {"x": 1350, "y": 3736, "width": 137, "height": 155},
       "sheetId": 0
     },
     "extra--001--fresher": {
       "key": "extra--001--fresher",
-      "rect": {"x": 3522, "y": 2198, "width": 137, "height": 117},
+      "rect": {"x": 1495, "y": 3736, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair": {
@@ -102,7 +112,7 @@
     },
     "extra--005--chair": {
       "key": "extra--005--chair",
-      "rect": {"x": 1315, "y": 3631, "width": 95, "height": 95},
+      "rect": {"x": 1640, "y": 3736, "width": 95, "height": 95},
       "sheetId": 0
     }
   },

@@ -1,8 +1,8 @@
 import { hashJson, keys } from "@npc-cli/util/legacy/generic";
 
+// 🔔 Must run `pnpm starship-pngs-to-public` after extending this.
+
 /**
- * 🔔 Must run `pnpm starship-pngs-to-public` after extending this.
- *
  * Each symbol must have a corresponding image in packages/media/src/starship-symbol/{output,extra,playground}
  */
 export const symbolByGroup = {
@@ -13,6 +13,7 @@ export const symbolByGroup = {
     "extra--003--chair": true,
     "extra--004--desk": true,
     "extra--005--chair": true,
+    "extra--019--table": true,
     "extra--021--shower": true,
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
 
