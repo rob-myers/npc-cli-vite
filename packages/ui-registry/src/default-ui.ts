@@ -3,6 +3,7 @@ import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
 import Tabs from "@npc-cli/ui__tabs";
 import World from "@npc-cli/ui__world";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 
 /**
  * We also provide `toUi` for panes.
@@ -44,6 +45,16 @@ export function getDefaultTabs() {
     currentTabId: worldMeta.id,
   });
   worldMeta.parentId = tabs0Meta.id;
+
+  if (isTouchDevice()) {
+    // only one Tabs on mobile
+    jshMeta.parentId = tabs0Meta.id;
+    mapEditMeta.parentId = tabs0Meta.id;
+    return {
+      tabs: [tabs0Meta],
+      toUi: Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta].map((meta) => [meta.id, meta])),
+    };
+  }
 
   const tabs1Meta = Tabs.schema.decode({
     id: uid(),
