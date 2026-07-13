@@ -101,9 +101,14 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
     }
   }
 
+  // random skins
+  const skinKeys = w.npc.skin.entries.map((x) => x.key);
+  const skinCount = skinKeys.length;
+
   await w.e.spawnMany({
     baseKey: "npc",
-    ats: [...pointsWithMeta],
+    ats: pointsWithMeta,
+    skins: pointsWithMeta.map(() => skinKeys[Math.floor(skinCount * Math.random())]),
   });
 }
 

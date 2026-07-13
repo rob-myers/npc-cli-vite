@@ -81,6 +81,7 @@ declare namespace JshCli {
      * - an `JshCli.PointAnyFormat`
      */
     looks?: (number | JshCli.PointAnyFormat)[];
+    skins?: string[];
   };
 
   type MoveOpts = {
