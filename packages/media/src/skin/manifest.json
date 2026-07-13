@@ -25,7 +25,12 @@
       "key": "human-0",
       "id": "23aa3d70ee53af87",
       "filename": "human-0--23aa3d70ee53af87.png",
-      "meta": {"skinKey": "human-0", "prefix": "human", "firstSeen": "J_az"},
+      "meta": {
+        "skinKey": "human-0",
+        "prefix": "human",
+        "firstSeen": "J_az",
+        "brightness": 0.5
+      },
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
       "svgPath": "skin/human-0.svg"
     },
