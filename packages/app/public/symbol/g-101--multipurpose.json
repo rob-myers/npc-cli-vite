@@ -45,7 +45,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "4cc6d6a7-7986-4bf5-a54b-ac238ea3cedb",
@@ -291,6 +291,26 @@
           "type": "rect",
           "baseRect": {"width": 48, "height": 10},
           "cssTransform": "matrix(1, 0, 0, 1, 604, 536)"
+        },
+        {
+          "id": "07fc4451-cc3d-47b6-af7c-0e386ff55c91",
+          "name": "door slide=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 548, "f": 655.5},
+          "type": "rect",
+          "baseRect": {"width": 48, "height": 10},
+          "cssTransform": "matrix(1, 0, 0, 1, 548, 655.5)"
+        },
+        {
+          "id": "98ef73d3-32fb-49d8-acac-eab004888f5e",
+          "name": "door slide=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 604, "f": 655.5},
+          "type": "rect",
+          "baseRect": {"width": 48, "height": 10},
+          "cssTransform": "matrix(1, 0, 0, 1, 604, 655.5)"
         }
       ]
     },
@@ -350,6 +370,18 @@
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
           "cssTransform": "matrix(1, 0, 0, 1, 955.8, -1.7)"
+        },
+        {
+          "id": "d545c7ad-750e-4c1e-94b3-63f68a7b1db3",
+          "name": "machinery--158",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 11.5, "f": 245},
+          "type": "symbol",
+          "srcKey": "machinery--158",
+          "baseRect": {"width": 112, "height": 220},
+          "offset": {"x": -0.5990307895110712, "y": -1.9081829349456363},
+          "cssTransform": "matrix(0, -1, 1, 0, 10.901, 243.0918)"
         },
         {
           "id": "3ee0763f-d66a-48a9-a15b-231686f8f094",
@@ -441,6 +473,44 @@
           "baseRect": {"width": 120, "height": 180},
           "offset": {"x": 2.5072, "y": 1.3092},
           "cssTransform": "matrix(0, -1, -1, 0, 842.0072, 542.3092)"
+        },
+        {
+          "id": "78273f7a-ea62-4bea-8167-b9de31a71f9a",
+          "name": "office--026",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 538.2947,
+            "f": 661.1255
+          },
+          "type": "symbol",
+          "srcKey": "office--026",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 3.7052753034788504, "y": -5.125518015325837},
+          "cssTransform": "matrix(0, 1, -1, 0, 542, 656)"
+        },
+        {
+          "id": "fbefdeae-447b-4f00-abb6-dc7ff6d34f67",
+          "name": "office--026",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": 1,
+            "d": 0,
+            "e": 661.5,
+            "f": 661.251
+          },
+          "type": "symbol",
+          "srcKey": "office--026",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -3.7053, "y": -5.1255},
+          "cssTransform": "matrix(0, 1, 1, 0, 657.7947, 656.1255)"
         },
         {
           "id": "ec7610f7-f7ac-46b9-bafe-8bc41dd6b2e4",
@@ -570,7 +640,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "8f151d06-c5b5-4b3b-80d6-4b6c91c0af13",
@@ -579,7 +649,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": -1.5},
           "type": "rect",
-          "baseRect": {"width": 4, "height": 421.5},
+          "baseRect": {"width": 4, "height": 544},
           "cssTransform": "matrix(1, 0, 0, 1, 358, -1.5)"
         },
         {
@@ -611,20 +681,48 @@
           "type": "rect",
           "baseRect": {"width": 484, "height": 4},
           "cssTransform": "matrix(1, 0, 0, 1, 358, 116)"
+        },
+        {
+          "id": "8a63ae0a-67a7-4684-81eb-6e824c63f9d9",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 658},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 544},
+          "cssTransform": "matrix(1, 0, 0, 1, 356, 658)"
+        },
+        {
+          "id": "60999f20-ac4b-4057-bfd5-d224aeb95c9e",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 840.5, "f": 658},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 544},
+          "cssTransform": "matrix(1, 0, 0, 1, 840.5, 658)"
+        },
+        {
+          "id": "6b92adb9-7895-4199-90ec-76a9c3c677e8",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 1082},
+          "type": "rect",
+          "baseRect": {"width": 484, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 360, 1082)"
+        },
+        {
+          "id": "53171c6d-caf2-4769-81ca-5973705e6655",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 658},
+          "type": "rect",
+          "baseRect": {"width": 484, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 360, 658)"
         }
       ]
-    },
-    {
-      "id": "d545c7ad-750e-4c1e-94b3-63f68a7b1db3",
-      "name": "machinery--158",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 11.5, "f": 245},
-      "type": "symbol",
-      "srcKey": "machinery--158",
-      "baseRect": {"width": 112, "height": 220},
-      "offset": {"x": -0.5990307895110712, "y": -1.9081829349456363},
-      "cssTransform": "matrix(0, -1, 1, 0, 10.901, 243.0918)"
     }
   ],
   "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},

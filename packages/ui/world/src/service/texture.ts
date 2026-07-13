@@ -138,6 +138,7 @@ export function drawLightsIntoTexture(ct: CanvasRenderingContext2D, gm: Geomorph
   auxCt.strokeStyle = "#f00";
   auxCt.lineWidth = 0.01;
 
+  // 🔔 "isolated room in room" unsupported -- connect it to hull somehow
   for (const [roomId, room] of gm.rooms.entries()) {
     // clip to room
     auxCt.save();

@@ -287,6 +287,15 @@
       "bounds": {"x": 2, "y": 0, "width": 112, "height": 220},
       "type": "symbol",
       "key": "machinery--158"
+    },
+    "office--026": {
+      "filename": "office--026.json",
+      "thumbnailFilename": "office--026.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
+      "type": "symbol",
+      "key": "office--026"
     }
   }
 }
