@@ -477,7 +477,7 @@
         {
           "id": "78273f7a-ea62-4bea-8167-b9de31a71f9a",
           "name": "office--026",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -496,7 +496,7 @@
         {
           "id": "fbefdeae-447b-4f00-abb6-dc7ff6d34f67",
           "name": "office--026",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -511,6 +511,37 @@
           "baseRect": {"width": 120, "height": 180},
           "offset": {"x": -3.7053, "y": -5.1255},
           "cssTransform": "matrix(0, 1, 1, 0, 657.7947, 656.1255)"
+        },
+        {
+          "id": "d8aa33ac-5ea7-4c24-ab5e-08626a33fd66",
+          "name": "office--026",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 538.2947,
+            "f": 1080.8745
+          },
+          "type": "symbol",
+          "srcKey": "office--026",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 3.7053, "y": 5.1255},
+          "cssTransform": "matrix(0, -1, -1, 0, 542, 1086)"
+        },
+        {
+          "id": "51f67e9a-c3dd-4d69-9c0a-d71bc4a4b769",
+          "name": "office--026",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 661.5, "f": 1081},
+          "type": "symbol",
+          "srcKey": "office--026",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -3.7053, "y": 5.1255},
+          "cssTransform": "matrix(0, -1, 1, 0, 657.7947, 1086.1255)"
         },
         {
           "id": "ec7610f7-f7ac-46b9-bafe-8bc41dd6b2e4",
@@ -559,6 +590,44 @@
           "baseRect": {"width": 44, "height": 44},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 318, 1148)"
+        },
+        {
+          "id": "bd678555-de9d-4029-a06d-b43920825967",
+          "name": "window--001",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 510.5255,
+            "f": 669.3257
+          },
+          "type": "symbol",
+          "srcKey": "window--001",
+          "baseRect": {"width": 60, "height": 12},
+          "offset": {"x": 0.9744532165843843, "y": 0.17433995149806275},
+          "cssTransform": "matrix(-1, 0, 0, -1, 511.5, 669.5)"
+        },
+        {
+          "id": "f299bba3-04d9-46e3-90c0-2933b0d6b1d3",
+          "name": "window--001",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 749.0255,
+            "f": 669.8257
+          },
+          "type": "symbol",
+          "srcKey": "window--001",
+          "baseRect": {"width": 60, "height": 12},
+          "offset": {"x": 0.9745, "y": 0.1743},
+          "cssTransform": "matrix(-1, 0, 0, -1, 750, 670)"
         }
       ]
     },

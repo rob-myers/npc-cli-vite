@@ -19,7 +19,7 @@
     {
       "id": "28bcfca1-4968-42eb-8859-2fa021e0b61e",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -28,7 +28,7 @@
         {
           "id": "a324b6ac-45ab-405b-8fa2-0c4348abcd63",
           "name": "console--011",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0.5},
           "type": "symbol",
@@ -38,28 +38,9 @@
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
-          "id": "9be704c7-5469-4b3f-b5f6-5ea9775206c9",
-          "name": "window--001",
-          "locked": false,
-          "visible": true,
-          "transform": {
-            "a": 0,
-            "b": -1,
-            "c": 1,
-            "d": 0,
-            "e": -5.5418,
-            "f": 89.1225
-          },
-          "type": "symbol",
-          "srcKey": "window--001",
-          "baseRect": {"width": 60, "height": 12},
-          "offset": {"x": -0.4582032509020978, "y": 0.8775248035598476},
-          "cssTransform": "matrix(0, -1, 1, 0, -6, 90)"
-        },
-        {
           "id": "500c25f4-d00b-414c-9c06-dc2469f38ecc",
           "name": "extra--010--machine y=1",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 10, "f": 130},
           "type": "symbol",
@@ -67,13 +48,34 @@
           "baseRect": {"width": 100, "height": 40},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 10, 130)"
+        },
+        {
+          "id": "dee273c6-f24c-430d-928d-14ce6c21faaf",
+          "name": "doors",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "group",
+          "expanded": true,
+          "children": [
+            {
+              "id": "045ab621-12e8-473a-b771-f8f5d6b6d218",
+              "name": "door slide=[0,-1]",
+              "locked": true,
+              "visible": true,
+              "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 8},
+              "type": "rect",
+              "baseRect": {"width": 8, "height": 45},
+              "cssTransform": "matrix(1, 0, 0, 1, 116, 8)"
+            }
+          ]
         }
       ]
     },
     {
       "id": "e82b02fe-d57b-4c33-b1b3-f6f32b06f9f3",
       "name": "walls",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -82,7 +84,7 @@
         {
           "id": "069a4047-212e-4e09-b9d5-4cc1da161ac9",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
           "type": "rect",
@@ -92,7 +94,7 @@
         {
           "id": "9ea7a14a-83fb-48a9-82a2-692b0da1fff7",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 178},
           "type": "rect",
@@ -102,7 +104,7 @@
         {
           "id": "4b2be6d8-e762-41b0-bfe3-f2c2fb5abb88",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
           "type": "rect",
@@ -112,7 +114,7 @@
         {
           "id": "fa11901b-d1a2-4557-8bd9-4d6fe3759689",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
           "type": "rect",
@@ -120,16 +122,6 @@
           "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
         }
       ]
-    },
-    {
-      "id": "045ab621-12e8-473a-b771-f8f5d6b6d218",
-      "name": "door slide=[0,-1]",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 8},
-      "type": "rect",
-      "baseRect": {"width": 9.5, "height": 45},
-      "cssTransform": "matrix(1, 0, 0, 1, 116, 8)"
     }
   ],
   "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
