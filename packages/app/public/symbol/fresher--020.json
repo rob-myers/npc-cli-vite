@@ -19,7 +19,7 @@
     {
       "id": "7d2ae6e0-1c6a-4974-9ffb-3fbdac896736",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -28,7 +28,7 @@
         {
           "id": "d0087126-6111-4f0e-81a2-5c74cbd571d6",
           "name": "extra--021--shower",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3, "f": 0.5},
           "type": "symbol",
@@ -36,29 +36,53 @@
           "baseRect": {"width": 36, "height": 58},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 3, 0.5)"
+        },
+        {
+          "id": "76d88335-ad99-4f02-b284-4a4ce7c3b1de",
+          "name": "extra--002--fresher y=0.6",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 48, "f": 0},
+          "type": "symbol",
+          "srcKey": "extra--002--fresher",
+          "baseRect": {"width": 24, "height": 32},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 48, 0)"
+        },
+        {
+          "id": "050ae24b-90f3-41d1-960e-a124f4628fa5",
+          "name": "extra--007--desk y=0.7-0.01",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 80.7, "f": 0.7},
+          "type": "symbol",
+          "srcKey": "extra--007--desk",
+          "baseRect": {"width": 40, "height": 24},
+          "offset": {"x": -0.7, "y": -0.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 80, 0)"
         }
       ]
     },
     {
-      "id": "76d88335-ad99-4f02-b284-4a4ce7c3b1de",
-      "name": "extra--002--fresher y=0.6",
-      "locked": false,
+      "id": "1894dbbf-4db3-46d0-ad04-b122e0160f20",
+      "name": "counter--010 y=0.705",
+      "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 48, "f": 0},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 4},
       "type": "symbol",
-      "srcKey": "extra--002--fresher",
-      "baseRect": {"width": 24, "height": 32},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(1, 0, 0, 1, 48, 0)"
+      "srcKey": "counter--010",
+      "baseRect": {"width": 20, "height": 18},
+      "offset": {"x": 0, "y": -0.3},
+      "cssTransform": "matrix(1, 0, 0, 1, 90, 3.7)"
     },
     {
       "id": "0559f055-40ba-4ed0-ab41-741a15ecfa85",
       "name": "doors",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "dde0ae4f-9d2a-4b51-a257-4042772f580b",
