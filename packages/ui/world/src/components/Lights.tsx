@@ -1,6 +1,6 @@
 import type { Vec3 } from "navcat";
 
-export default function Light() {
+export default function Lights() {
   return (
     <group name="lights">
       <ambientLight intensity={0.25} color="#fff" />
