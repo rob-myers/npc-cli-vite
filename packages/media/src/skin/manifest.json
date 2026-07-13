@@ -42,7 +42,12 @@
       "key": "human-2",
       "id": "5c3354746a0827d6",
       "filename": "human-2--5c3354746a0827d6.png",
-      "meta": {"skinKey": "human-2", "prefix": "human", "brightness": 0.5},
+      "meta": {
+        "skinKey": "human-2",
+        "prefix": "human",
+        "brightness": 0.5,
+        "firstSeen": "Maxonelli"
+      },
       "url": "https://namemc.com/skin/5c3354746a0827d6",
       "svgPath": "skin/human-2.svg"
     },
@@ -75,10 +80,9 @@
       "filename": "robot-1--0f19ae4312c72d03.png",
       "meta": {
         "skinKey": "robot-1",
-        "prefix": "medic",
-        "firstSeen": "NoneType_",
-        "doctor": true,
-        "mask": true,
+        "prefix": "robot",
+        "firstSeen": "PrismarineBlocks",
+        "robot": true,
         "brightness": 0.5
       },
       "url": "https://namemc.com/skin/0f19ae4312c72d03",
