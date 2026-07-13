@@ -1,0 +1,33 @@
+{
+  "filename": "extra--007--desk.json",
+  "width": 40,
+  "height": 24,
+  "nodes": [
+    {
+      "id": "add3b6ac-51fe-4825-bf6d-18af8150707a",
+      "name": "extra--007--desk",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "extra--007--desk",
+      "baseRect": {"width": 41.400000000000006, "height": 25.400000000000002},
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+    },
+    {
+      "id": "39ffecbf-089c-47bb-ab65-9a8bfcb61511",
+      "name": "obstacle table",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
+      "type": "rect",
+      "baseRect": {"width": 41, "height": 24.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
+    }
+  ],
+  "bounds": {"x": -0.7, "y": -0.7, "width": 41.4, "height": 25.4},
+  "type": "symbol",
+  "key": "extra--007--desk"
+}

@@ -30,6 +30,12 @@
       "width": 95,
       "height": 95
     },
+    "extra--007--desk": {
+      "key": "extra--007--desk",
+      "group": "extra",
+      "width": 207,
+      "height": 127
+    },
     "extra--010--machine": {
       "key": "extra--010--machine",
       "group": "extra",
