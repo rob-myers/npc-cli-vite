@@ -392,11 +392,11 @@ w decor.byKey.test-decor-point
   - larger TtyMenu
   - can change profile of TtyMenu (reboots)
 
-- 🚧 skins
+- ✅ skins
   - ✅ meta comes from SVG not filename
   - ✅ keeping: aslan-0, human-0, robot-0, human-1 ...
   - ✅ add dark skins
-  - 🚧 touch up
+  - ✅ touch up
     - ✅ human-2
     - ✅ npc main material metalness, roughness determined by skin
       - can be specified as meta of skin e.g. metalness=0.4
@@ -407,7 +407,7 @@ w decor.byKey.test-decor-point
     - ✅ robot-1
     - ❌ demon-0
     - ❌ robot-2
-  - ensure SVG meta
+  - ✅ ensure SVG meta
 
 - ✅ spawned npc on navMesh lacks `agent.boundary.segments`
   - hasn't moved yet
