@@ -45,7 +45,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "4cc6d6a7-7986-4bf5-a54b-ac238ea3cedb",
@@ -277,20 +277,20 @@
           "name": "door slide=[1,0]",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 548, "f": 536},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 548, "f": 536.5},
           "type": "rect",
           "baseRect": {"width": 48, "height": 10},
-          "cssTransform": "matrix(1, 0, 0, 1, 548, 536)"
+          "cssTransform": "matrix(1, 0, 0, 1, 548, 536.5)"
         },
         {
           "id": "8f0fa97b-48c5-4881-ad8d-58b71525c361",
           "name": "door slide=[1,0]",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 604, "f": 536},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 604, "f": 536.5},
           "type": "rect",
           "baseRect": {"width": 48, "height": 10},
-          "cssTransform": "matrix(1, 0, 0, 1, 604, 536)"
+          "cssTransform": "matrix(1, 0, 0, 1, 604, 536.5)"
         },
         {
           "id": "07fc4451-cc3d-47b6-af7c-0e386ff55c91",
@@ -321,7 +321,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "c73c7d92-fb57-46f7-a36e-caf59d246541",
@@ -675,7 +675,7 @@
         {
           "id": "ac5062c2-2e70-4701-aa16-322d365cfee2",
           "name": "counter--006 y=0.9",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": -1, "d": 0, "e": 840.5, "f": 240},
           "type": "symbol",
@@ -760,7 +760,7 @@
     {
       "id": "95d33e69-dc7d-4048-8170-ba0ca91ec304",
       "name": "walls",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -769,7 +769,7 @@
         {
           "id": "8f151d06-c5b5-4b3b-80d6-4b6c91c0af13",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": -1.5},
           "type": "rect",
@@ -779,7 +779,7 @@
         {
           "id": "638c319d-b224-4719-a471-b272c8220b80",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 838, "f": -2},
           "type": "rect",
@@ -789,7 +789,7 @@
         {
           "id": "ef2aa1a9-27a0-4075-ae48-035ee3f1d502",
           "name": "window h=0.8",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 838, "f": 116},
           "type": "rect",
@@ -799,7 +799,7 @@
         {
           "id": "93439352-a511-4740-bb36-53509e3ddae3",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 838, "f": 240},
           "type": "rect",
@@ -809,7 +809,7 @@
         {
           "id": "91e9cefa-40ed-4752-acf2-7e8aa9fac59b",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 540},
           "type": "rect",
@@ -819,7 +819,7 @@
         {
           "id": "7e706640-cf86-4571-84dd-f5f4e34b8c75",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 358, "f": 116},
           "type": "rect",
@@ -829,7 +829,7 @@
         {
           "id": "8a63ae0a-67a7-4684-81eb-6e824c63f9d9",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 658},
           "type": "rect",
@@ -839,7 +839,7 @@
         {
           "id": "60999f20-ac4b-4057-bfd5-d224aeb95c9e",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 840.5, "f": 658},
           "type": "rect",
@@ -849,7 +849,7 @@
         {
           "id": "6b92adb9-7895-4199-90ec-76a9c3c677e8",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 1082},
           "type": "rect",
@@ -859,7 +859,7 @@
         {
           "id": "53171c6d-caf2-4769-81ca-5973705e6655",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 658},
           "type": "rect",
