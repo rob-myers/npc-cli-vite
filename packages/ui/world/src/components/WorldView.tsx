@@ -42,7 +42,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       cameraMode:
         tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
         (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
-      numCardinalDirections: tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ?? 4,
+      numCardinalDirections: tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ?? 8,
       canvas: null as any,
       controls: null as any,
       clickIds: [],
@@ -60,7 +60,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
       },
       initial: {
-        azimuthal: 0,
+        azimuthal: Math.PI / 4,
         polar: Math.PI / 4,
         position: { x: 4, y: 12, z: 4 },
       },
