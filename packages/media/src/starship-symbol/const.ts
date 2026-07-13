@@ -13,6 +13,7 @@ export const symbolByGroup = {
     "extra--003--chair": true,
     "extra--004--desk": true,
     "extra--005--chair": true,
+    "extra--010--machine": true,
     "extra--019--table": true,
     "extra--021--shower": true,
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,

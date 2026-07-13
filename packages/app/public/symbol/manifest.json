@@ -323,6 +323,15 @@
       "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 13.4},
       "type": "symbol",
       "key": "window--001"
+    },
+    "extra--010--machine": {
+      "filename": "extra--010--machine.json",
+      "thumbnailFilename": "extra--010--machine.thumbnail.png",
+      "width": 100,
+      "height": 40,
+      "bounds": {"x": 0, "y": 0, "width": 100, "height": 40},
+      "type": "symbol",
+      "key": "extra--010--machine"
     }
   }
 }

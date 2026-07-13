@@ -50,14 +50,19 @@
       "rect": {"x": 576, "y": 3538, "width": 502, "height": 307},
       "sheetId": 0
     },
+    "extra--010--machine": {
+      "key": "extra--010--machine",
+      "rect": {"x": 1086, "y": 3421, "width": 500, "height": 200},
+      "sheetId": 0
+    },
     "bed--005": {
       "key": "bed--005",
-      "rect": {"x": 1086, "y": 3421, "width": 382, "height": 202},
+      "rect": {"x": 1086, "y": 3629, "width": 382, "height": 202},
       "sheetId": 0
     },
     "console--031": {
       "key": "console--031",
-      "rect": {"x": 1476, "y": 3421, "width": 377, "height": 307},
+      "rect": {"x": 1543, "y": 2806, "width": 377, "height": 307},
       "sheetId": 0
     },
     "extra--004--desk": {
@@ -67,42 +72,42 @@
     },
     "window--001": {
       "key": "window--001",
-      "rect": {"x": 1086, "y": 3631, "width": 307, "height": 67},
+      "rect": {"x": 1086, "y": 3839, "width": 307, "height": 67},
       "sheetId": 0
     },
     "extra--021--shower": {
       "key": "extra--021--shower",
-      "rect": {"x": 1543, "y": 2806, "width": 181, "height": 294},
+      "rect": {"x": 1594, "y": 3121, "width": 181, "height": 294},
       "sheetId": 0
     },
     "iris-valves--005": {
       "key": "iris-valves--005",
-      "rect": {"x": 1543, "y": 3108, "width": 221, "height": 220},
+      "rect": {"x": 1476, "y": 3629, "width": 221, "height": 220},
       "sheetId": 0
     },
     "iris-valves--006": {
       "key": "iris-valves--006",
-      "rect": {"x": 1732, "y": 2806, "width": 221, "height": 220},
+      "rect": {"x": 1705, "y": 3423, "width": 221, "height": 220},
       "sheetId": 0
     },
     "console--033": {
       "key": "console--033",
-      "rect": {"x": 1086, "y": 3736, "width": 134, "height": 161},
+      "rect": {"x": 1705, "y": 3651, "width": 134, "height": 161},
       "sheetId": 0
     },
     "extra--002--fresher": {
       "key": "extra--002--fresher",
-      "rect": {"x": 1228, "y": 3736, "width": 114, "height": 156},
+      "rect": {"x": 1847, "y": 3651, "width": 114, "height": 156},
       "sheetId": 0
     },
     "console--051": {
       "key": "console--051",
-      "rect": {"x": 1350, "y": 3736, "width": 137, "height": 155},
+      "rect": {"x": 1783, "y": 3121, "width": 137, "height": 155},
       "sheetId": 0
     },
     "extra--001--fresher": {
       "key": "extra--001--fresher",
-      "rect": {"x": 1495, "y": 3736, "width": 137, "height": 117},
+      "rect": {"x": 1783, "y": 3284, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair": {
@@ -112,7 +117,7 @@
     },
     "extra--005--chair": {
       "key": "extra--005--chair",
-      "rect": {"x": 1640, "y": 3736, "width": 95, "height": 95},
+      "rect": {"x": 1594, "y": 3423, "width": 95, "height": 95},
       "sheetId": 0
     }
   },
