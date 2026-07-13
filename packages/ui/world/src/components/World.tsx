@@ -39,7 +39,7 @@ import { Debug } from "./Debug";
 import Decor from "./Decor";
 import Doors from "./Doors";
 import Floor from "./Floor";
-import Light from "./Light";
+import Lights from "./Lights";
 import NPCs from "./NPCs";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
@@ -334,7 +334,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               )
             }
           >
-            <Light />
+            <Lights />
             <Floor key="floor" />
             <Ceiling key="ceiling" />
             <Walls key="walls" />
