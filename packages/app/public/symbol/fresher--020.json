@@ -1,0 +1,150 @@
+{
+  "filename": "fresher--020.json",
+  "width": 120,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "866c3ec2-7f97-4094-adcc-c79d570d9384",
+      "name": "fresher--020",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "fresher--020",
+      "baseRect": {"width": 126.80000000000001, "height": 124},
+      "offset": {"x": 0, "y": -4},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "7d2ae6e0-1c6a-4974-9ffb-3fbdac896736",
+      "name": "symbols",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "d0087126-6111-4f0e-81a2-5c74cbd571d6",
+          "name": "extra--021--shower",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3, "f": 0.5},
+          "type": "symbol",
+          "srcKey": "extra--021--shower",
+          "baseRect": {"width": 36, "height": 58},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 3, 0.5)"
+        }
+      ]
+    },
+    {
+      "id": "76d88335-ad99-4f02-b284-4a4ce7c3b1de",
+      "name": "extra--002--fresher y=0.6",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 48, "f": 0},
+      "type": "symbol",
+      "srcKey": "extra--002--fresher",
+      "baseRect": {"width": 24, "height": 32},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 48, 0)"
+    },
+    {
+      "id": "0559f055-40ba-4ed0-ab41-741a15ecfa85",
+      "name": "doors",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "dde0ae4f-9d2a-4b51-a257-4042772f580b",
+          "name": "door slide=[0,-1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 68},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, 116, 68)"
+        }
+      ]
+    },
+    {
+      "id": "b5985336-f76b-4e62-aaae-98199cd69653",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "9d110238-77c3-4756-b0ae-b036e565f441",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "dc9d25e1-ae80-4229-b997-1f1c06f34df5",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
+        },
+        {
+          "id": "21c03155-ab43-469c-94f9-f8730896494e",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+        },
+        {
+          "id": "a0a0c8e9-6c3d-48ad-bfe0-33b3d2fc7fdd",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "7f3c3de3-bfd1-44a1-a986-7256f06c3066",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 38, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 62},
+          "cssTransform": "matrix(1, 0, 0, 1, 38, 0)"
+        },
+        {
+          "id": "557282bb-679b-44c8-99fc-d71555df6352",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 78, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 62},
+          "cssTransform": "matrix(1, 0, 0, 1, 78, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 126.8, "height": 124},
+  "type": "symbol",
+  "key": "fresher--020"
+}
