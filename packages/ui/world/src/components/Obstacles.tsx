@@ -144,7 +144,7 @@ export default function Obstacles(_props: Props) {
 
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
-            obsInst.setColorAt(oId, tmpColor.set(o.meta.tint ?? "#999"));
+            obsInst.setColorAt(oId, tmpColor.set(o.meta.tint ?? "#666"));
             obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
             oId++;
           });
