@@ -36,6 +36,37 @@
           "baseRect": {"width": 75, "height": 120},
           "offset": {"x": 0, "y": -0.5},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "9be704c7-5469-4b3f-b5f6-5ea9775206c9",
+          "name": "window--001",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": -5.5418,
+            "f": 89.1225
+          },
+          "type": "symbol",
+          "srcKey": "window--001",
+          "baseRect": {"width": 60, "height": 12},
+          "offset": {"x": -0.4582032509020978, "y": 0.8775248035598476},
+          "cssTransform": "matrix(0, -1, 1, 0, -6, 90)"
+        },
+        {
+          "id": "500c25f4-d00b-414c-9c06-dc2469f38ecc",
+          "name": "extra--010--machine y=1",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 10, "f": 130},
+          "type": "symbol",
+          "srcKey": "extra--010--machine",
+          "baseRect": {"width": 100, "height": 40},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 10, 130)"
         }
       ]
     },
@@ -99,25 +130,6 @@
       "type": "rect",
       "baseRect": {"width": 9.5, "height": 45},
       "cssTransform": "matrix(1, 0, 0, 1, 116, 8)"
-    },
-    {
-      "id": "9be704c7-5469-4b3f-b5f6-5ea9775206c9",
-      "name": "window--001",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": -5.5418,
-        "f": 89.1225
-      },
-      "type": "symbol",
-      "srcKey": "window--001",
-      "baseRect": {"width": 60, "height": 12},
-      "offset": {"x": -0.4582032509020978, "y": 0.8775248035598476},
-      "cssTransform": "matrix(0, -1, 1, 0, -6, 90)"
     }
   ],
   "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},

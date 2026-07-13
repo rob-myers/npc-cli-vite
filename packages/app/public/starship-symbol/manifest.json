@@ -30,6 +30,12 @@
       "width": 95,
       "height": 95
     },
+    "extra--010--machine": {
+      "key": "extra--010--machine",
+      "group": "extra",
+      "width": 500,
+      "height": 200
+    },
     "extra--019--table": {
       "key": "extra--019--table",
       "group": "extra",
