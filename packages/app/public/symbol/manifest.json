@@ -296,6 +296,33 @@
       "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
       "type": "symbol",
       "key": "office--026"
+    },
+    "console--011": {
+      "filename": "console--011.json",
+      "thumbnailFilename": "console--011.thumbnail.png",
+      "width": 75,
+      "height": 120,
+      "bounds": {"x": 0, "y": -0.5, "width": 73.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--011"
+    },
+    "extra--019--table": {
+      "filename": "extra--019--table.json",
+      "thumbnailFilename": "extra--019--table.thumbnail.png",
+      "width": 30,
+      "height": 120,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 121.4},
+      "type": "symbol",
+      "key": "extra--019--table"
+    },
+    "window--001": {
+      "filename": "window--001.json",
+      "thumbnailFilename": "window--001.thumbnail.png",
+      "width": 60,
+      "height": 12,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 13.4},
+      "type": "symbol",
+      "key": "window--001"
     }
   }
 }

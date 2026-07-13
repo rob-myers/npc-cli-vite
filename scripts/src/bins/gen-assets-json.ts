@@ -9,6 +9,9 @@
  * ```sh
  * pnpm gen-assets-json
  * pnpm gen-assets-json --changedFiles='["/path/to/.../public/symbol/console--051.json"]'
+ *
+ * # force recompute stratification
+ * pnpm gen-assets-json --force
  * ```
  */
 import fs, { writeFileSync } from "node:fs";
@@ -33,7 +36,7 @@ import { perf } from "../service/performance";
 
 const opts = parseArgs({
   args: process.argv.slice(2),
-  options: { changedFiles: { type: "string" } },
+  options: { changedFiles: { type: "string" }, force: { type: "boolean" } },
 });
 
 const inputChangedFiles = jsonParser.pipe(z.array(z.string())).safeParse(opts.values.changedFiles)?.data;
@@ -81,7 +84,7 @@ updateChangedSymbolsAndMaps(changedFiles, assets);
 perf("symbols/maps");
 
 perf("stratify symbols");
-if (someSymbolCreated) {
+if (someSymbolCreated || opts.values.force) {
   const symbolGraph = SymbolGraph.from(assets.symbol);
   assets.stratifiedSymbolNodes = symbolGraph.stratify();
 }

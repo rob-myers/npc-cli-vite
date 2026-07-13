@@ -30,6 +30,12 @@
       "width": 95,
       "height": 95
     },
+    "extra--019--table": {
+      "key": "extra--019--table",
+      "group": "extra",
+      "width": 157,
+      "height": 607
+    },
     "extra--021--shower": {
       "key": "extra--021--shower",
       "group": "extra",
@@ -336,12 +342,6 @@
       "width": 633,
       "height": 620
     },
-    "office--026": {
-      "key": "office--026",
-      "group": "symbol-office",
-      "width": 657,
-      "height": 920
-    },
     "office--020": {
       "key": "office--020",
       "group": "symbol-office",
@@ -353,6 +353,12 @@
       "group": "symbol-office",
       "width": 620,
       "height": 934
+    },
+    "office--026": {
+      "key": "office--026",
+      "group": "symbol-office",
+      "width": 657,
+      "height": 920
     },
     "office--061": {
       "key": "office--061",
