@@ -135,8 +135,6 @@ export const maxAgentRadius = 0.5;
 
 export const defaultDoorCloseMs = 3000;
 
-export const npcBrightness = 1;
-
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
 export const lockedDoorTint = "#f44";
