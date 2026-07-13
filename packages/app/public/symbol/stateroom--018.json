@@ -1,0 +1,161 @@
+{
+  "filename": "stateroom--018.json",
+  "width": 120,
+  "height": 180,
+  "nodes": [
+    {
+      "id": "e60ac5bd-2653-414a-ba4a-4c1d1befd9b3",
+      "name": "stateroom--018",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "stateroom--018",
+      "baseRect": {"width": 126.60000000000001, "height": 184},
+      "offset": {"x": 0, "y": -4},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "956d8d57-cfdb-42cb-bac5-1b03392cf11c",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "00100c62-2532-4569-84fd-7fa812cc3924",
+          "name": "bed--003 y=0.6",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.7, "f": 0.7},
+          "type": "symbol",
+          "srcKey": "bed--003",
+          "baseRect": {"width": 100, "height": 60},
+          "offset": {"x": -0.7, "y": -0.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "f4e38056-b710-4304-b8f0-d890a9b7b2e0",
+          "name": "bed--003 y=0.6",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0.7, "f": 179.3},
+          "type": "symbol",
+          "srcKey": "bed--003",
+          "baseRect": {"width": 100, "height": 60},
+          "offset": {"x": -0.7, "y": 0.7},
+          "cssTransform": "matrix(1, 0, 0, -1, 0, 180)"
+        },
+        {
+          "id": "b013c311-5a8d-42eb-82f3-7deae9e57cdf",
+          "name": "extra--004--desk y=0.6",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": -1.2044,
+            "f": 60.6534
+          },
+          "type": "symbol",
+          "srcKey": "extra--004--desk",
+          "baseRect": {"width": 30, "height": 60},
+          "offset": {"x": -0.7, "y": -0.7},
+          "cssTransform": "matrix(1, 0, 0, 1, -1.9044, 59.9534)"
+        },
+        {
+          "id": "7d37c627-4c2c-4e67-af71-fef5673c4b9a",
+          "name": "extra--003--chair y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 33.7, "f": 80.3},
+          "type": "symbol",
+          "srcKey": "extra--003--chair",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": 0.3, "y": -0.3},
+          "cssTransform": "matrix(1, 0, 0, 1, 34, 80)"
+        }
+      ]
+    },
+    {
+      "id": "9cddf750-b7c1-415e-b3f9-28731d8aa068",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "0788f3ed-4948-4d93-bb56-0700a1896819",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "99262789-e7b8-47b6-a5b7-928972a2cdbb",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 178},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 178)"
+        },
+        {
+          "id": "a806d0a7-b503-4251-84cd-13664ac01d9b",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 180},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+        },
+        {
+          "id": "536a921a-f252-4c94-92ed-02cd30efcd09",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 180},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        }
+      ]
+    },
+    {
+      "id": "82dfd8a0-e7d4-45da-81c0-98c93686f0e1",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "1d046c43-3249-4843-9400-166b05c0a5f3",
+          "name": "door slide=[0,-1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 68},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, 116, 68)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+  "type": "symbol",
+  "key": "stateroom--018"
+}

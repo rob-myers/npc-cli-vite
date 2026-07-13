@@ -332,6 +332,15 @@
       "bounds": {"x": 0, "y": 0, "width": 100, "height": 40},
       "type": "symbol",
       "key": "extra--010--machine"
+    },
+    "stateroom--018": {
+      "filename": "stateroom--018.json",
+      "thumbnailFilename": "stateroom--018.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "stateroom--018"
     }
   }
 }
