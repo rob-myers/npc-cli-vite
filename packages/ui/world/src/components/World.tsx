@@ -165,7 +165,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setCanvasFade(on) {
         if (!state.fadeEl) return;
-        state.fadeEl.style.transitionDuration = on ? "0.3s" : "0.5s";
+        state.fadeEl.style.transitionDuration = on ? "0.3s" : "0.75s";
         state.fadeEl.style.opacity = on ? "1" : "0";
       },
       setDisabled(disabled) {
