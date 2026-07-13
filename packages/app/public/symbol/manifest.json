@@ -368,6 +368,24 @@
       "bounds": {"x": 0, "y": -0.3, "width": 20.2, "height": 18.6},
       "type": "symbol",
       "key": "counter--010"
+    },
+    "counter--006": {
+      "filename": "counter--006.json",
+      "thumbnailFilename": "counter--006.thumbnail.png",
+      "width": 120,
+      "height": 24,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 25.4},
+      "type": "symbol",
+      "key": "counter--006"
+    },
+    "window--005": {
+      "filename": "window--005.json",
+      "thumbnailFilename": "window--005.thumbnail.png",
+      "width": 120,
+      "height": 12,
+      "bounds": {"x": -0.5, "y": -1, "width": 121.4, "height": 13.4},
+      "type": "symbol",
+      "key": "window--005"
     }
   }
 }
