@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import { defaultDoorCloseMs, MAX_NPCS } from "../const";
+import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -526,7 +526,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               npcKey,
               groundPoint,
               doResult,
-              as: "medic-0", // 🚧
+              as: opts.skins?.[i] ?? defaultSkinKey,
               angle: angles[i],
             }),
           );
