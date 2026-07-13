@@ -19,7 +19,6 @@ export default function Ceiling() {
     (): State => ({
       inst: null,
       quad: createTwoSidedXzQuad(),
-
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_GEOMORPH_INSTANCES * 1),
@@ -53,14 +52,14 @@ export default function Ceiling() {
         }
       },
       drawGm(gmKey) {
-        const { ct } = w.texCeil;
         const layout = w.assets.layout[gmKey];
         if (!layout) return;
-        const { bounds } = layout;
 
+        const { ct } = w.texCeil;
         ct.resetTransform();
         ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -bounds.x * worldToCanvas, -bounds.y * worldToCanvas);
+        // biome-ignore format: preserve whitespace
+        ct.setTransform(worldToCanvas, 0, 0, worldToCanvas, -layout.bounds.x * worldToCanvas, -layout.bounds.y * worldToCanvas);
 
         const { tops, polyDecals } = w.gmsData.byKey[gmKey];
 
