@@ -1,0 +1,43 @@
+{
+  "filename": "window--005.json",
+  "width": 120,
+  "height": 12,
+  "nodes": [
+    {
+      "id": "846aa161-d987-4cd9-8444-42a3104b48d2",
+      "name": "window--005",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.2, "f": -0.3},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "window--005",
+      "baseRect": {"width": 121.4, "height": 13.4},
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -1)"
+    },
+    {
+      "id": "fcff0b90-2571-4f0d-9d62-4fd12c7a2f42",
+      "name": "window",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -1},
+      "type": "rect",
+      "baseRect": {"width": 121.5, "height": 14},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -1)"
+    },
+    {
+      "id": "4b713048-e8f8-4ee6-ae9e-3ef8ff5c2010",
+      "name": "obstacle window",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -1},
+      "type": "rect",
+      "baseRect": {"width": 121.5, "height": 14},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -1)"
+    }
+  ],
+  "bounds": {"x": -0.5, "y": -1, "width": 121.4, "height": 13.4},
+  "type": "symbol",
+  "key": "window--005"
+}

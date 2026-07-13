@@ -662,7 +662,7 @@ export function instantiateFlatSymbol(
       }),
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {
-        // aggregate height from MapEdit symbols
+        // aggregate height-off-floor from MapEdit symbols
         ...(typeof meta.y === "number" && {
           y: toPrecision(meta.y + (parseFloat(poly.meta.y) || 0)),
         }),

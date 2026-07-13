@@ -1,0 +1,33 @@
+{
+  "filename": "counter--006.json",
+  "width": 120,
+  "height": 24,
+  "nodes": [
+    {
+      "id": "af1d3e8c-2299-4c16-a1c0-cd01ef13d8ff",
+      "name": "counter--006",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "counter--006",
+      "baseRect": {"width": 121.4, "height": 25.400000000000002},
+      "offset": {"x": -0.7, "y": -0.7},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+    },
+    {
+      "id": "a94252cc-7d74-4fb8-bf02-f36b5beb3bfb",
+      "name": "obstacle sink h=0.3",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
+      "type": "rect",
+      "baseRect": {"width": 121.5, "height": 25.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
+    }
+  ],
+  "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 25.4},
+  "type": "symbol",
+  "key": "counter--006"
+}
