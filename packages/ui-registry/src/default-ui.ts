@@ -37,37 +37,45 @@ export function getDefaultTabs() {
     uiKey: "MapEdit",
   });
 
-  const tabs0Meta = Tabs.schema.decode({
-    id: uid(),
-    title: "tabs-0",
-    uiKey: "Tabs",
-    items: [worldMeta.id],
-    currentTabId: worldMeta.id,
-  });
-  worldMeta.parentId = tabs0Meta.id;
-
   if (isTouchDevice()) {
     // only one Tabs on mobile
+    const tabsMeta = Tabs.schema.decode({
+      id: uid(),
+      title: "tabs-0",
+      uiKey: "Tabs",
+      items: [worldMeta.id, jshMeta.id, mapEditMeta.id],
+      currentTabId: worldMeta.id,
+    });
+    worldMeta.parentId = tabsMeta.id;
+    jshMeta.parentId = tabsMeta.id;
+    mapEditMeta.parentId = tabsMeta.id;
+    return {
+      tabs: [tabsMeta],
+      toUi: Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabsMeta].map((meta) => [meta.id, meta])),
+    };
+  } else {
+    const tabs0Meta = Tabs.schema.decode({
+      id: uid(),
+      title: "tabs-0",
+      uiKey: "Tabs",
+      items: [worldMeta.id],
+      currentTabId: worldMeta.id,
+    });
+    worldMeta.parentId = tabs0Meta.id;
+
+    const tabs1Meta = Tabs.schema.decode({
+      id: uid(),
+      title: "tabs-1",
+      uiKey: "Tabs",
+      items: [jshMeta.id, mapEditMeta.id],
+      currentTabId: jshMeta.id,
+    });
     jshMeta.parentId = tabs0Meta.id;
     mapEditMeta.parentId = tabs0Meta.id;
+
     return {
-      tabs: [tabs0Meta],
-      toUi: Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta].map((meta) => [meta.id, meta])),
+      tabs: [tabs0Meta, tabs1Meta],
+      toUi: Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta].map((meta) => [meta.id, meta])),
     };
   }
-
-  const tabs1Meta = Tabs.schema.decode({
-    id: uid(),
-    title: "tabs-1",
-    uiKey: "Tabs",
-    items: [jshMeta.id, mapEditMeta.id],
-    currentTabId: jshMeta.id,
-  });
-  jshMeta.parentId = tabs0Meta.id;
-  mapEditMeta.parentId = tabs0Meta.id;
-
-  return {
-    tabs: [tabs0Meta, tabs1Meta],
-    toUi: Object.fromEntries([jshMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta].map((meta) => [meta.id, meta])),
-  };
 }
