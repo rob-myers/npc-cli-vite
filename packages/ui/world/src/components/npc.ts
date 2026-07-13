@@ -235,6 +235,12 @@ export class Npc {
   };
 
   init() {
+    this.skinnedMesh.computeBoundingSphere();
+
+    this.bubbleOffset.y = npcBubbleHeightForClip(this.anim.idleClip.name);
+
+    this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
+
     this.queryFilter = {
       ...createDefaultQueryFilter(),
 
@@ -256,9 +262,6 @@ export class Npc {
         return true;
       },
     };
-
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.anim.idleClip.name);
-    this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
   }
 
   isMoving() {
