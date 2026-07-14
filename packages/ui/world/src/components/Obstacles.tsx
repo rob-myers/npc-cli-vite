@@ -258,6 +258,8 @@ export default function Obstacles(_props: Props) {
     state.transformAndColorSkirts();
 
     // Collect all light world positions with per-light radius
+    // 🔔 obstacle metas aren't gmRoomIds, so we'll restrict
+    // to nearby lights (technically might be in other room)
     const lights: { x: number; z: number; radius: number }[] = [];
     for (const gm of w.gms) {
       for (const p of getLightMetas(gm)) {
