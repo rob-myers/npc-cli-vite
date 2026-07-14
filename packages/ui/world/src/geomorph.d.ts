@@ -19,7 +19,14 @@ declare namespace Geomorph {
     gmKey: StarShipGeomorphKey;
     doorSegs: { seg: [Geom.Vect, Geom.Vect]; hull: boolean }[];
     polyDecals: Geom.Poly[];
-    tops: { [key in "broad" | "nonHullDoor" | "hullDoor" | "hullWall" | "nonHullWall" | "window"]: Geom.Poly[] };
+    tops: {
+      broad: Geom.Poly[];
+      nonHullDoor: Geom.Poly[];
+      hullDoor: Geom.Poly[];
+      hullWall: Geom.Poly[];
+      nonHullWall: Geom.Poly[];
+      window: Geom.Poly[];
+    };
     unseen: boolean;
     wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta }[];
     wallPolyCount: number;
