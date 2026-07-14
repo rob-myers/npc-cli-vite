@@ -365,7 +365,7 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 const obstaclesSkirtBaseColor = "#222";
-const defaultObstacleTint = "#888";
+const defaultObstacleTint = "#666";
 
 function loadObstacleImages(numSheets: number, cacheBust: string): Promise<HTMLImageElement[]> {
   return Promise.all(
