@@ -151,7 +151,7 @@ export const fromAnimationClipKey = {
   walk: true,
 };
 
-export const defaultIdleAnimationClipKey = "idle" satisfies import("./components/NPCs").AnimationClipKey;
+export const defaultIdleAnimationClipKey = "breathe" satisfies import("./components/NPCs").AnimationClipKey;
 
 export const pickOpenDoorsKey = "world-debug-pick-open-doors";
 

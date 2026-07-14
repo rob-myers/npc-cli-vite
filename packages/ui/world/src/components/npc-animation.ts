@@ -145,7 +145,7 @@ export class NpcAnimation {
       this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
     }
 
-    this.playIdleClip(0.3);
+    this.playIdleClip(0.5);
     this.npc.setBubbleHeight(bubbleHeightForClip(this.idleClip.name));
     this.npc.setLabelYShift(labelYShiftForClip(this.idleClip.name));
 
