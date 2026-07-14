@@ -2644,7 +2644,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#5551",
-            "stroke": "#777777",
+            "stroke": "#333",
             "strokeWidth": 4
           }
         },
@@ -2669,7 +2669,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#5551",
-            "stroke": "#777777",
+            "stroke": "#333",
             "strokeWidth": 4
           }
         }
@@ -6462,7 +6462,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0
           }
@@ -9129,7 +9130,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0,
             "y": 1,
@@ -9195,7 +9197,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0,
             "y": 1,
@@ -9261,7 +9264,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0,
             "y": 1,
@@ -9327,7 +9331,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0,
             "y": 1,
@@ -18540,7 +18545,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#5551",
-            "stroke": "#777777",
+            "stroke": "#333",
             "strokeWidth": 4
           }
         },
@@ -18565,7 +18570,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#5551",
-            "stroke": "#777777",
+            "stroke": "#333",
             "strokeWidth": 4
           }
         },
@@ -22304,7 +22309,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0,
             "y": 1,
@@ -22523,7 +22529,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0
           }
@@ -25843,7 +25850,8 @@
             "meta": {
               "obstacle": true,
               "machine": true,
-              "tint": "#666",
+              "tint": "#555",
+              "skirtTint": "#555",
               "symKey": "extra--010--machine",
               "origObstacleId": 0
             }
@@ -25861,7 +25869,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0
           }
@@ -25963,7 +25972,8 @@
             "meta": {
               "obstacle": true,
               "machine": true,
-              "tint": "#666",
+              "tint": "#555",
+              "skirtTint": "#555",
               "symKey": "extra--010--machine",
               "origObstacleId": 0
             }
@@ -25981,7 +25991,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0
           }
@@ -26083,7 +26094,8 @@
             "meta": {
               "obstacle": true,
               "machine": true,
-              "tint": "#666",
+              "tint": "#555",
+              "skirtTint": "#555",
               "symKey": "extra--010--machine",
               "origObstacleId": 0
             }
@@ -26101,7 +26113,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0
           }
@@ -26203,7 +26216,8 @@
             "meta": {
               "obstacle": true,
               "machine": true,
-              "tint": "#666",
+              "tint": "#555",
+              "skirtTint": "#555",
               "symKey": "extra--010--machine",
               "origObstacleId": 0
             }
@@ -26221,7 +26235,8 @@
           "meta": {
             "obstacle": true,
             "machine": true,
-            "tint": "#666",
+            "tint": "#555",
+            "skirtTint": "#555",
             "symKey": "extra--010--machine",
             "origObstacleId": 0
           }
@@ -30008,7 +30023,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -35567,7 +35582,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#5551",
-            "stroke": "#777777",
+            "stroke": "#333",
             "strokeWidth": 4
           }
         },
@@ -35592,7 +35607,7 @@
             "poly": true,
             "ceil": true,
             "fill": "#5551",
-            "stroke": "#777777",
+            "stroke": "#333",
             "strokeWidth": 4
           }
         },
@@ -39106,5 +39121,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 1388552214}
+  "hash": {"obstacles": -1845834879}
 }
