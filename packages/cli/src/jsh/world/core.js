@@ -183,7 +183,7 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
  * move npc:rob fast to:$( pick 1 )
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {Omit<JshCli.MoveOpts, 'to'> & { to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
+ * @param {Omit<JshCli.MoveOpts, 'to'> & { to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey);
@@ -193,13 +193,15 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
   });
 
   try {
-    if (api.isTtyAt(0)) {
+    if (opts.to) {
       // move to point or smoothly along points
       const points = expectArrayOfPoints(opts.to) ? opts.to : [opts.to];
       for (const [index, point] of points.entries()) {
         await w.npc.move({ npcKey: opts.npcKey, to: point, arrive: index === points.length - 1, fast: opts.fast });
       }
       return;
+    } else if (api.isTtyAt(0)) {
+      throw Error("opts.to is required");
     }
 
     if (!opts.along) {
@@ -333,7 +335,6 @@ export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   if (seg === undefined) {
     throw Error("boundary too far");
   }
-  // else if (seg.d <= 0.0005) return
 
   const currentPoint = npc.point;
 
@@ -344,11 +345,17 @@ export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
     { x: seg.s[3 + 0], y: seg.s[3 + 2] },
   );
 
-  await npc.fadeSpawn({
-    at: closest,
-    // seems to always face outwards 🤞
-    facing: { x: currentPoint.x + (seg.s[3 + 2] - seg.s[2]), y: currentPoint.y + (seg.s[0] - seg.s[3]) },
-  });
+  // seems to always face outwards 🤞
+  const facing = { x: currentPoint.x + (seg.s[3 + 2] - seg.s[2]), y: currentPoint.y + (seg.s[0] - seg.s[3]) };
+
+  if (seg.d > 0.0005) {
+    await npc.fadeSpawn({
+      at: closest,
+      facing,
+    });
+  } else {
+    await npc.look(facing);
+  }
 }
 
 /**
