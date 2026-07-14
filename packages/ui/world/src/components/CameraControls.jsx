@@ -79,7 +79,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
 
   useFrame(() => {
     controls.update();
-    props.onFrame?.(controls.spherical);
+    props.onFrame?.(controls.spherical, controls.target);
   }, -1);
 
   return (
@@ -119,7 +119,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [minPanDistance] // 🚧 implement in controls (from patch to make mobile touch more precise)
  * @property {(e?: import('three').Event) => void} [onChange]
  * @property {() => void} [onEnd]
- * @property {(spherical: import('three').Spherical) => void} [onFrame]
+ * @property {(spherical: import('three').Spherical, target: import('three').Vector3) => void} [onFrame]
  * @property {() => void} [onStart]
  * @property {number} [panSpeed]
  * @property {number} [zoomSpeed]

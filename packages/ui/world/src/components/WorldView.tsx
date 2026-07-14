@@ -22,13 +22,16 @@ import {
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   defaultFov,
+  defaultXzCircleRadius,
   fovStorageKey,
   numCardinalDirectionsKey,
+  xzCircleRadiusStorageKey,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
+import { createXzCirclePostprocess, type XzCirclePostprocess } from "../service/xz-circle-postprocess";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -62,7 +65,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       initial: {
         azimuthal: -Math.PI / 4,
         polar: Math.PI / 4,
-        position: { x: 4, y: 34, z: 4 },
+        position: { x: 4, y: 10, z: 4 },
       },
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
@@ -70,6 +73,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
       postProcessing: true,
+      light: {
+        postprocess: createXzCirclePostprocess({
+          radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
+          darkness: 0.92,
+        }),
+        /** Desktop-only: mouse position raycast onto the y=0 ground plane */
+        mouseGroundHit: new THREE.Vector3(),
+        mouseHasGroundHit: false,
+        /** Eased-towards-target center, so it lags behind rather than snapping */
+        displayCenter: new THREE.Vector3(),
+        ready: false,
+        lastUpdateMs: 0,
+        /** Toggled via Space: freezes the light in place, ignoring further target updates */
+        frozen: false,
+      },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
 
       async createRenderer(props) {
@@ -229,7 +247,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
+        } else if (e.key === " ") {
+          e.preventDefault(); // avoid page scroll
+          state.toggleLightFrozen();
         }
+      },
+      toggleLightFrozen() {
+        state.light.frozen = !state.light.frozen;
+        w.update(); // e.g. reflect in WorldMenu's frozen indicator
       },
       onPointerDown(e) {
         const last = state.lastPointer;
@@ -249,6 +274,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
+        // 🔔 keep light.mouseHasGroundHit/mouseGroundHit as-is so the light freezes at its last
+        // position, rather than jumping to the camera target when the mouse leaves the canvas
+      },
+      onPointerMove(e) {
+        if (w.touchDevice) return;
+
+        const glPixelRatio = w.r3f.gl.getPixelRatio();
+        const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
+        tmpNdc.set(
+          -1 + 2 * (((e.clientX - left) * glPixelRatio) / w.view.canvas.width),
+          +1 - 2 * (((e.clientY - top) * glPixelRatio) / w.view.canvas.height),
+        );
+        const camera = state.controls?.object ?? w.r3f.camera;
+        state.raycaster.setFromCamera(tmpNdc, camera);
+        state.light.mouseHasGroundHit =
+          state.raycaster.ray.intersectPlane(groundPlane, state.light.mouseGroundHit) !== null;
+
+        // 🔔 light is normally kept in sync via onCameraChange (driven by the render loop),
+        // but that stops firing while paused (demand frameloop), so update+invalidate directly here
+        if (state.light.mouseHasGroundHit) {
+          state.updateLight(camera, state.light.mouseGroundHit);
+          w.r3f?.invalidate();
+        }
       },
       async onPointerUp(e) {
         const last = state.lastPointer;
@@ -321,12 +369,41 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ...point, // can provide as point with meta
         });
       },
-      onCameraChange(spherical: THREE.Spherical) {
+      onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3) {
         const topDown = spherical.phi <= 2 * (Math.PI / 18);
         if (topDown !== state.topDown) {
           state.topDown = topDown;
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
+
+        // 🔔 use controls.object (matches getRaycastIntersection) rather than w.r3f.camera,
+        // which is not guaranteed to be the same live-manipulated camera instance
+        const lightTarget = !w.touchDevice && state.light.mouseHasGroundHit ? state.light.mouseGroundHit : target;
+        state.updateLight(state.controls?.object ?? w.r3f.camera, lightTarget);
+      },
+      updateLight(camera, rawTarget) {
+        const now = performance.now();
+
+        if (state.light.frozen) {
+          // keep world position fixed, but still refresh the camera matrices so it correctly
+          // stays in place (rather than sliding on-screen) as the camera pans/rotates
+          state.light.lastUpdateMs = now;
+          state.light.postprocess.update(camera, state.light.displayCenter);
+          return;
+        }
+
+        if (!state.light.ready || w.disabled) {
+          // snap instantly: first-ever update, or while paused (no easing delay)
+          state.light.displayCenter.copy(rawTarget);
+          state.light.ready = true;
+        } else {
+          const dt = Math.min((now - state.light.lastUpdateMs) / 1000, 0.5);
+          const smoothing = 1 - Math.exp(-dt / lightSmoothingSeconds);
+          state.light.displayCenter.lerp(rawTarget, smoothing);
+        }
+
+        state.light.lastUpdateMs = now;
+        state.light.postprocess.update(camera, state.light.displayCenter);
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -356,7 +433,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         //   ),
         //   sceneColor.a,
         // );
-        pipeline.outputNode = vec4(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), sceneColor.a);
+        pipeline.outputNode = vec4(
+          state.light.postprocess.apply(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a)),
+          sceneColor.a,
+        );
         // pipeline.outputNode = rgbShift(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), 0.008, 0).mul(
         //   sceneColor.a,
         // );
@@ -420,14 +500,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     });
     ro.observe(w.rootEl);
 
-    w.rootEl.addEventListener("keydown", state.onKeyDown);
+    const { onKeyDown } = state;
+    w.rootEl.addEventListener("keydown", onKeyDown);
 
     const onExtraZoomChange = (_e: Event) => w.update();
     w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
 
     return () => {
       ro.disconnect();
-      w.rootEl?.removeEventListener("keydown", state.onKeyDown);
+      w.rootEl?.removeEventListener("keydown", onKeyDown);
       w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
     };
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
@@ -443,6 +524,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onCreated={state.onCreated}
         onPointerDown={state.onPointerDown}
         onPointerLeave={state.onPointerLeave}
+        onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
@@ -511,6 +593,7 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  light: LightState;
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
@@ -521,10 +604,13 @@ export type State = {
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
+  onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
-  onCameraChange(spherical: THREE.Spherical): void;
+  onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
+  updateLight(camera: THREE.Camera, rawTarget: THREE.Vector3): void;
+  toggleLightFrozen(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
@@ -541,11 +627,30 @@ export type State = {
   setupPostProcessing(): () => void;
 };
 
+/** The XZ-circle "light" drawn in post-processing, centered on the mouse/camera target */
+export type LightState = {
+  postprocess: XzCirclePostprocess;
+  /** Desktop-only: mouse position raycast onto the y=0 ground plane */
+  mouseGroundHit: THREE.Vector3;
+  mouseHasGroundHit: boolean;
+  /** Eased-towards-target center, so it lags behind rather than snapping */
+  displayCenter: THREE.Vector3;
+  ready: boolean;
+  lastUpdateMs: number;
+  /** Toggled via Space: freezes the light in place, ignoring further target updates */
+  frozen: boolean;
+};
+
 function PostProcessing() {
   const w = useContext(WorldContext);
   useEffect(() => w.view.setupPostProcessing(), []);
   return null;
 }
+
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const tmpNdc = new THREE.Vector2();
+/** Exponential time-constant (seconds) for the light easing towards its target */
+const lightSmoothingSeconds = 1;
 
 export type Picked = {
   instanceId: number;
