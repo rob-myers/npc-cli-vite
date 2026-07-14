@@ -321,43 +321,43 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "c73c7d92-fb57-46f7-a36e-caf59d246541",
           "name": "fuel--010 y=1.6",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.7, "f": 1.7},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.7, "f": -2.3},
           "type": "symbol",
           "srcKey": "fuel--010",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, -2)"
+          "cssTransform": "matrix(1, 0, 0, 1, 0, -6)"
         },
         {
           "id": "97447bd8-99de-476c-b079-b32cb0b1e594",
           "name": "fuel--010 y=1.6",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 363.7, "f": 1.7},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 363.7, "f": -4.3},
           "type": "symbol",
           "srcKey": "fuel--010",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 360, -2)"
+          "cssTransform": "matrix(1, 0, 0, 1, 360, -8)"
         },
         {
           "id": "a93756d9-24c0-4676-926b-7c205c36e052",
           "name": "fuel--010 y=1.6-0.01",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 599.7, "f": 1.7},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 599.7, "f": -4.3},
           "type": "symbol",
           "srcKey": "fuel--010",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 596, -2)"
+          "cssTransform": "matrix(1, 0, 0, 1, 596, -8)"
         },
         {
           "id": "0d882080-a674-4441-be67-0688fff999e8",
