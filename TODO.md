@@ -409,7 +409,7 @@ w decor.byKey.test-decor-point
     - ❌ robot-2
   - ✅ ensure SVG meta
 
-- 🚧 editor bug: delayed update of console--011
+- ✅ editor bug: delayed update of console--011
   - stratification wrong i.e. office--026 depends on console--011 but in same level
   - fixed via manual `pnpm gen-assets-json`
   - can also run `pnpm gen-assets-json --force`
