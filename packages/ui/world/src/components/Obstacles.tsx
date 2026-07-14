@@ -239,7 +239,7 @@ export default function Obstacles(_props: Props) {
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
-    mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(0.1)), 1);
+    mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1);
     return mat;
   }, [skirtLightMeta]);
 
@@ -364,7 +364,7 @@ const tmpVec1 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
-const obstaclesSkirtBaseColor = "#222";
+const obstaclesSkirtBaseColor = "#555";
 const defaultObstacleTint = "#666";
 
 function loadObstacleImages(numSheets: number, cacheBust: string): Promise<HTMLImageElement[]> {
