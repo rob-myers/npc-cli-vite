@@ -17,7 +17,8 @@ export default function NpcShadows() {
         for (const npc of Object.values(w.n)) {
           state.xzoData[i * 3] = npc.position.x;
           state.xzoData[i * 3 + 1] = npc.position.z;
-          state.xzoData[i * 3 + 2] = npc.opacityScale.value;
+          // state.xzoData[i * 3 + 2] = npc.opacityScale.value;
+          state.xzoData[i * 3 + 2] = 1;
           i++;
         }
         state.geo.instanceCount = i;
