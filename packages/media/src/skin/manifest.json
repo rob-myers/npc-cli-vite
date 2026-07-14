@@ -1,18 +1,5 @@
 {
   "byKey": {
-    "aslan-0": {
-      "key": "aslan-0",
-      "id": "ff2642d58fc89270",
-      "filename": "aslan-0--ff2642d58fc89270.png",
-      "meta": {
-        "skinKey": "aslan-0",
-        "prefix": "aslan",
-        "firstSeen": "Lopn",
-        "suit": true
-      },
-      "url": "https://namemc.com/skin/ff2642d58fc89270",
-      "svgPath": "skin/aslan-0.svg"
-    },
     "human-0": {
       "key": "human-0",
       "id": "23aa3d70ee53af87",
@@ -38,19 +25,6 @@
       "url": "https://namemc.com/skin/8c524ef1dc111a13",
       "svgPath": "skin/human-1.svg"
     },
-    "human-2": {
-      "key": "human-2",
-      "id": "5c3354746a0827d6",
-      "filename": "human-2--5c3354746a0827d6.png",
-      "meta": {
-        "skinKey": "human-2",
-        "prefix": "human",
-        "brightness": 0.5,
-        "firstSeen": "Maxonelli"
-      },
-      "url": "https://namemc.com/skin/5c3354746a0827d6",
-      "svgPath": "skin/human-2.svg"
-    },
     "medic-0": {
       "key": "medic-0",
       "id": "3573d1c9cad6c8fc",
@@ -61,7 +35,7 @@
         "firstSeen": "NoneType_",
         "doctor": true,
         "mask": true,
-        "brightness": 0.5
+        "brightness": 0.4
       },
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
       "svgPath": "skin/medic-0.svg"
@@ -70,23 +44,9 @@
       "key": "robot-0",
       "id": "e91cc700154075b2",
       "filename": "robot-0--e91cc700154075b2.png",
-      "meta": {"skinKey": "robot-0", "prefix": "robot", "brightness": 0.4},
+      "meta": {"skinKey": "robot-0", "prefix": "robot", "brightness": 0.35},
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
-    },
-    "robot-1": {
-      "key": "robot-1",
-      "id": "0f19ae4312c72d03",
-      "filename": "robot-1--0f19ae4312c72d03.png",
-      "meta": {
-        "skinKey": "robot-1",
-        "prefix": "robot",
-        "firstSeen": "PrismarineBlocks",
-        "robot": true,
-        "brightness": 0.5
-      },
-      "url": "https://namemc.com/skin/0f19ae4312c72d03",
-      "svgPath": "skin/robot-1.svg"
     }
   }
 }
