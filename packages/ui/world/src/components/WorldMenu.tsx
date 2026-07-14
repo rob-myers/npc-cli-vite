@@ -690,7 +690,7 @@ const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
-const cardinalDirItems = [1, 2, 4].map((n) => ({ key: String(n), value: String(n) }));
+const cardinalDirItems = [1, 2, 4, 8].map((n) => ({ key: String(n), value: String(n) }));
 const debugItems = [
   "View Pick",
   "Post FX",
