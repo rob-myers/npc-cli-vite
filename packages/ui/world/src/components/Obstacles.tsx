@@ -144,7 +144,7 @@ export default function Obstacles(_props: Props) {
 
         w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
           obstacles.forEach((o) => {
-            obsInst.setColorAt(oId, tmpColor.set(o.meta.tint ?? "#666"));
+            obsInst.setColorAt(oId, tmpColor.set(o.meta.tint ?? defaultObstacleTint));
             obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
             oId++;
           });
@@ -365,6 +365,7 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 const obstaclesSkirtBaseColor = "#222";
+const defaultObstacleTint = "#888";
 
 function loadObstacleImages(numSheets: number, cacheBust: string): Promise<HTMLImageElement[]> {
   return Promise.all(
