@@ -213,6 +213,7 @@ export default function Obstacles(_props: Props) {
   }, [w.texObs.hash]);
 
   const skirtCount = w.gmsData.count.obstacleSkirtEdges;
+
   const skirtLightMeta = useMemo(() => {
     // xyz = world position, w = radius (non-zero to avoid div-by-zero in shader)
     const sentinel = new THREE.Vector4(0, -1000, 0, 1);
@@ -233,7 +234,7 @@ export default function Obstacles(_props: Props) {
   }, [skirtCount]);
 
   const skirtMaterial = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial({
+    const mat = new THREE.MeshStandardNodeMaterial({
       side: THREE.FrontSide, // 1 draw call
     });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
@@ -327,7 +328,7 @@ export default function Obstacles(_props: Props) {
 
       <instancedMesh
         name="obstacle-skirts"
-        ref={state.ref("skirtInst")}
+        ref={state.ref("skirtInst", bootstrapInstanceColor)}
         args={[state.skirtQuad, undefined, MAX_OBSTACLE_SKIRT_INSTANCES]}
         frustumCulled={false}
         // fix issue with early mount
