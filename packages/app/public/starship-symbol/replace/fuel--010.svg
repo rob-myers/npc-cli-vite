@@ -23,14 +23,15 @@
   </path>
   <circle style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 12px; pointer-events: none;" cx="617.853" cy="317.654" r="44.1165"/>
   <rect x="35.5273" y="38.041" width="1164.47" height="561.959" style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 12px; pointer-events: none;"/>
-  <rect style="stroke: rgb(0, 0, 0); fill: none; stroke-width: 8px; pointer-events: none;" x="79.155" y="79.8687" width="1080.81" height="481.45" rx="128" ry="128">
+  <rect style="fill: none; stroke-width: 8px; pointer-events: none; stroke: rgb(119, 119, 119);" x="79.155" y="79.8687" width="1080.81" height="481.45" rx="128" ry="128">
     <title>curved-border</title>
   </rect>
   <g>
     <title>diagonals</title>
-    <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" d="M 200 200 L 535.31735 282.92314"/>
-    <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" d="M 200 440.922 L 535.317 357.999"/>
-    <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" d="M 700 358 L 1035.32 440.923"/>
-    <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 8px;" d="M 700 280.924 L 1035.32 198.001"/>
+    <path style="fill: none; stroke-width: 8px; stroke: rgb(136, 136, 136);" d="M 200 200 L 535.31735 282.92314"/>
+    <path style="fill: none; stroke-width: 8px; stroke: rgb(136, 136, 136);" d="M 200 440.922 L 535.317 357.999"/>
+    <path style="fill: none; stroke-width: 8px; stroke: rgb(136, 136, 136);" d="M 700 358 L 1035.32 440.923"/>
+    <path style="fill: none; stroke-width: 8px; stroke: rgb(136, 136, 136);" d="M 700 280.924 L 1035.32 198.001"/>
   </g>
+  <rect x="30" y="32" width="1176" height="576" style="fill: none; stroke: rgb(255, 255, 255); stroke-width: 32px;"/>
 </svg>

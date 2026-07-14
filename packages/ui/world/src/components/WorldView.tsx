@@ -14,8 +14,8 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
-import { colorBleeding, vignette } from "three/addons/tsl/display/CRT.js";
-import { float, instanceIndex, output, pass, screenUV, select, uniform, vec4 } from "three/tsl";
+import { colorBleeding } from "three/addons/tsl/display/CRT.js";
+import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
@@ -346,16 +346,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const pipeline = new THREE.RenderPipeline(gl);
 
-        pipeline.outputNode = vec4(
-          vignette(
-            // multiply by alpha avoids unnatural color bleeding onto transparent areas
-            colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-            float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
-            float(0.7), // Smoothness: Controls gradient falloff softness
-            screenUV, // Coordinates mapping
-          ),
-          sceneColor.a,
-        );
+        // pipeline.outputNode = vec4(
+        //   vignette(
+        //     // multiply by alpha avoids unnatural color bleeding onto transparent areas
+        //     colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
+        //     float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
+        //     float(0.7), // Smoothness: Controls gradient falloff softness
+        //     screenUV, // Coordinates mapping
+        //   ),
+        //   sceneColor.a,
+        // );
+        pipeline.outputNode = vec4(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), sceneColor.a);
+        // pipeline.outputNode = rgbShift(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), 0.008, 0).mul(
+        //   sceneColor.a,
+        // );
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -402,7 +406,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, postProcessing: true, initial: false } },
+    { reset: { ctrlOpts: true, initial: false } },
   );
 
   w.view = state;
