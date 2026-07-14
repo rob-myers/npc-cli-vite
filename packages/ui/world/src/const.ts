@@ -73,7 +73,7 @@ export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
-export const defaultFov = 50;
+export const defaultFov = 30;
 export const defaultBrightness = 2;
 
 export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;

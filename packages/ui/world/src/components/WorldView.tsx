@@ -42,7 +42,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       cameraMode:
         tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
         (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
-      numCardinalDirections: tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ?? 8,
+      numCardinalDirections: tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ?? 4,
       canvas: null as any,
       controls: null as any,
       clickIds: [],
