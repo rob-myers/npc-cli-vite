@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { Fn, float, If, instanceIndex, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
+import { Fn, float, If, instanceIndex, lights, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -183,6 +183,7 @@ export default function Walls() {
       depthWrite: false,
     });
     m.opacityNode = w.view.objectPick.equal(0).select(float(0.75), float(0));
+    m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
   }, []);
 
