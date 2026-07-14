@@ -62,7 +62,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       initial: {
         azimuthal: -Math.PI / 4,
         polar: Math.PI / 4,
-        position: { x: 4, y: 24, z: 4 },
+        position: { x: 4, y: 34, z: 4 },
       },
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
