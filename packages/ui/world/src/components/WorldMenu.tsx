@@ -84,7 +84,7 @@ export function WorldMenu() {
       case "View Pick":
         return w.view?.objectPick.value === 1;
       case "Post FX":
-        return w.view?.postProcessing ?? true;
+        return w.view?.postProcessing ?? false;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
