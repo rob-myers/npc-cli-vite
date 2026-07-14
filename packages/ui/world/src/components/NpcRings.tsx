@@ -118,7 +118,7 @@ function createSpawnRingResources(objectPick: THREE.UniformNode<"float", number>
 
   const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   ringMat.vertexNode = clipPos;
-  ringMat.colorNode = vec4(1, 1, 0.8, alpha.mul(0.5));
+  ringMat.colorNode = vec4(0.4, 0.4, 0.4, alpha.mul(0.5));
 
   const ringMesh = new THREE.Mesh(ringGeo, ringMat);
   ringMesh.frustumCulled = false;
