@@ -45,7 +45,6 @@ export class Npc {
   labelLayerIndex: number;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
-  opacityScale: THREE.UniformNode<"float", number>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
@@ -118,7 +117,6 @@ export class Npc {
     this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.material = init.material;
-    this.opacityScale = init.opacityScale;
     this.pickId = init.pickId;
     this.position = init.position;
     this.rotation = init.rotation;
@@ -159,7 +157,7 @@ export class Npc {
     });
   }
 
-  async fadeOut(speed = 4) {
+  async fadeOut(speed = 8) {
     await new Promise<string>((resolve, reject) => {
       this.rejectAll(new Error("interrupted"));
       this.resolve.fade = resolve;
@@ -391,7 +389,6 @@ export type NpcInit = {
   labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
-  opacityScale: THREE.UniformNode<"float", number>;
   pickId: number;
   position: THREE.Vector3;
   rotation: THREE.Euler;

@@ -54,47 +54,24 @@ export class NpcAnimation {
     const { delta, target } = this.fadeState;
 
     if (delta < 0) {
-      // fade color out to black, then (once black) fade opacity out
       if (this.npc.colorScale.value > target) {
-        const next = Math.max(target, this.npc.colorScale.value + 2 * delta * deltaSecs);
+        const next = Math.max(target, this.npc.colorScale.value + 0.5 * delta * deltaSecs);
         this.npc.labelVisible.value = next >= 1 ? 1 : 0;
-        this.npc.alphaTest.value = Math.min(0.9, Math.max(0, next - 0.2));
         this.npc.colorScale.value = next;
-
-        if (next <= target) {
-          // just faded to black
-          this.npc.material.depthWrite = false;
-        }
       } else {
-        const next = Math.max(target, this.npc.opacityScale.value + 0.5 * delta * deltaSecs);
-        this.npc.opacityScale.value = next;
-
-        if (next <= target) {
-          this.fadeState.delta = 0;
-          this.npc.material.needsUpdate = true;
-          this.npc.resolve.fade("fade");
-        }
+        this.fadeState.delta = 0;
+        this.npc.material.needsUpdate = true;
+        this.npc.resolve.fade("fade");
       }
     } else {
-      // before fading color in from black, fade opacity in
-      if (this.npc.opacityScale.value < target) {
-        const next = Math.min(target, this.npc.opacityScale.value + delta * deltaSecs);
-        this.npc.opacityScale.value = next;
+      const next = Math.min(target, this.npc.colorScale.value + 0.5 * delta * deltaSecs);
+      this.npc.labelVisible.value = next >= 1 ? 1 : 0;
+      this.npc.colorScale.value = next;
 
-        if (next >= target) {
-          this.npc.material.depthWrite = true;
-        }
-      } else {
-        const next = Math.min(target, this.npc.colorScale.value + delta * deltaSecs);
-        this.npc.labelVisible.value = next >= 1 ? 1 : 0;
-        this.npc.alphaTest.value = Math.min(0.9, Math.max(0, next - 0.2));
-        this.npc.colorScale.value = next;
-
-        if (next >= target) {
-          this.fadeState.delta = 0;
-          this.npc.material.needsUpdate = true;
-          this.npc.resolve.fade("fade");
-        }
+      if (next >= target) {
+        this.fadeState.delta = 0;
+        this.npc.material.needsUpdate = true;
+        this.npc.resolve.fade("fade");
       }
     }
   }
