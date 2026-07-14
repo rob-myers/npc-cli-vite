@@ -69,7 +69,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
-      postProcessing: false,
+      postProcessing: true,
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
 
       async createRenderer(props) {
