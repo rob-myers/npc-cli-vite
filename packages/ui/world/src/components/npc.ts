@@ -176,11 +176,23 @@ export class Npc {
     facing?: JshCli.PointAnyFormat;
     facingTarget?: boolean;
   }) {
+    const groundTarget = helper.parseGroundPoint(at);
+    // when doable, ring is centered/heighted at the doable's own position rather than the raw target
+    let ringAt = groundTarget;
+    let ringHeight: number | undefined;
+    try {
+      const doResult = this.w.npc.findFreeDoMeta(at.meta ?? {}, this.key);
+      if (doResult?.meta.groundPoint) ringAt = doResult.meta.groundPoint;
+      if (typeof doResult?.meta.y === "number") ringHeight = doResult.meta.y;
+    } catch {
+      // not doable — fall back to raw target/default height
+    }
+
     try {
       this.w.bubble.setShown(this.key, false);
+      this.w.rings.showSpawnRing(this.key, ringAt, ringHeight);
       await this.fadeOut();
 
-      const groundTarget = helper.parseGroundPoint(at);
       await this.w.npc.spawn({
         npcKey: this.key,
         at,
@@ -190,14 +202,16 @@ export class Npc {
         facing,
       });
 
+      this.w.rings.fadeOutSpawnRing(this.key);
       await this.fadeIn();
+    } catch (e) {
+      // teleport (or the fade preceding it) failed — drop the ring immediately, no fade
+      this.w.rings.removeSpawnRing(this.key);
+      throw e;
     } finally {
       // guarded in case of re-fade midway
       if (this.anim.fadeState.delta === 0) {
-        // this.alphaTest.value = 0.9;
-        // this.opacityScale.value = 1;
-        // this.colorScale.value = 1;
-
+        this.colorScale.value = 1;
         const willShow = this.w.bubble.setShown(this.key, true);
         this.labelVisible.value = willShow ? 0 : 1;
       }

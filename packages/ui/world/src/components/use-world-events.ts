@@ -478,6 +478,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         w.shadows?.onTick();
+        w.rings?.onTick();
         w.npc.update();
         w.events.next({ key: "removed-npcs", npcKeys });
       },
@@ -533,6 +534,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
+        w.rings?.onTick();
         w.view.forceUpdate();
 
         await Promise.all(

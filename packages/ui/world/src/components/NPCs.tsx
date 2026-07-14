@@ -387,6 +387,7 @@ export default function NPCs() {
         state.postCrowdTickEvents.length = 0;
 
         w.shadows?.onTick();
+        w.rings?.onTick(delta);
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
@@ -511,6 +512,7 @@ export default function NPCs() {
         const npc = state.rawSpawn({ npcKey, doResult, groundPoint: groundAt, angle, as, closePolyResult, facing });
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
+        w.rings?.onTick();
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
