@@ -1,5 +1,6 @@
-import { float, getViewPosition, mix, screenUV, uniform, vec3, vec4 } from "three/tsl";
+import { float, getViewPosition, mix, screenUV, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import type { SelectAnyType } from "./texture";
 
 export type XzCirclePostprocessOpts = {
   /** World-space radius of the circle */
@@ -77,7 +78,7 @@ export function createXzCirclePostprocess(opts: XzCirclePostprocessOpts): XzCirc
       }
 
       const onBorder = dist.sub(radius).abs().lessThan(borderWidth);
-      return onBorder.select(vec3(r, g, b), darkened);
+      return (select as SelectAnyType)(onBorder, vec3(r, g, b), darkened) as THREE.Node<"vec3">;
     },
   };
 }

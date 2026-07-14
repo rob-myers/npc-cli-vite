@@ -238,7 +238,7 @@ export function WorldMenu() {
               onPointerDown={(e) => e.preventDefault()}
               onClick={() => {
                 if (state.dragged) return;
-                w.view.light.toggleFrozen();
+                w.view.toggleLightFrozen();
               }}
             >
               <SnowflakeIcon className={cn("size-5", big && "size-6")} weight="bold" />
