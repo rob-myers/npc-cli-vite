@@ -18,7 +18,7 @@
     },
     {
       "id": "1d80806a-726d-412f-a28c-b8a90c2ba09d",
-      "name": "obstacle y=1 h=1 tint=#444 skirtTint=#ddd",
+      "name": "obstacle y=1 h=0.5 tint=#444 skirtTint=#999",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 0},
