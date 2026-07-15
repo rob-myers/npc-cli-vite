@@ -9,9 +9,13 @@ export type XzCirclePostprocessOpts = {
   borderWidth?: number;
   /** Border color as `[r, g, b]` in `0..1` */
   color?: [number, number, number];
-  /** How dark it gets outside the circle: 0 = no darkening, 1 = fully black. Default `0.75` */
+  /** Solid color tint applied outside the circle, as `[r, g, b]` in `0..1`. Default deep blue */
+  tintColor?: [number, number, number];
+  /** How strongly the tint is applied outside the circle: 0 = no tint, 1 = fully tinted. Default `0.75` */
   darkness?: number;
-  /** World-space distance over which the darkening fades in, starting at `radius`. Default `0.6` */
+  /** How much darker (multiplicatively) it gets outside the circle: 0 = none, 1 = fully black. Default `0.6` */
+  darkenAmount?: number;
+  /** World-space distance over which the tint/darkening fade in, starting at `radius`. Default `0.6` */
   falloff?: number;
   /** Draw the colored border ring at `radius`? Default `false` */
   showBorder?: boolean;
@@ -41,7 +45,9 @@ export function createXzCirclePostprocess(opts: XzCirclePostprocessOpts): XzCirc
   const radius = uniform(opts.radius);
   const borderWidth = opts.borderWidth ?? 0.15;
   const [r, g, b] = opts.color ?? [1, 0, 0];
+  const [tr, tg, tb] = opts.tintColor ?? [0.05, 0.05, 0.05];
   const darkness = opts.darkness ?? 0.75;
+  const darkenAmount = opts.darkenAmount ?? 0.7;
   const falloff = opts.falloff ?? 0.6;
   const showBorder = opts.showBorder ?? false;
 
@@ -71,14 +77,19 @@ export function createXzCirclePostprocess(opts: XzCirclePostprocessOpts): XzCirc
 
       // 1 inside radius, fading to 0 by radius + falloff
       const litAmount = float(1).sub(dist.sub(radius).div(falloff).clamp(0, 1));
-      const darkened = mix(inputColor.mul(float(1).sub(darkness)), inputColor, litAmount);
+      const outsideAmount = float(1).sub(litAmount);
+      // tint towards a fixed solid color outside the circle — always visible, regardless of
+      // how dark the underlying scene is (unlike darkening/desaturating/inverting near-black colors)
+      const tinted = mix(inputColor, vec3(tr, tg, tb), outsideAmount.mul(darkness));
+      // additionally darken (multiplicatively) outside the circle
+      const result = tinted.mul(float(1).sub(outsideAmount.mul(darkenAmount)));
 
       if (!showBorder) {
-        return darkened;
+        return result;
       }
 
       const onBorder = dist.sub(radius).abs().lessThan(borderWidth);
-      return (select as SelectAnyType)(onBorder, vec3(r, g, b), darkened) as THREE.Node<"vec3">;
+      return (select as SelectAnyType)(onBorder, vec3(r, g, b), result) as THREE.Node<"vec3">;
     },
   };
 }

@@ -347,7 +347,7 @@ export function WorldMenu() {
                       <CircleDashedIcon
                         className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
                         onClick={() => {
-                          w.view.light.postprocess.radius.value = defaultXzCircleRadius;
+                          w.view.lightPostprocess.radius.value = defaultXzCircleRadius;
                           w.r3f?.invalidate();
                           tryLocalStorageSet(xzCircleRadiusStorageKey, String(defaultXzCircleRadius));
                           w.update();
@@ -358,10 +358,10 @@ export function WorldMenu() {
                         min="1"
                         max="4"
                         step="1"
-                        value={w.view.light.postprocess.radius.value}
+                        value={w.view.lightPostprocess.radius.value}
                         onChange={(e) => {
                           const radius = Number(e.target.value);
-                          w.view.light.postprocess.radius.value = radius;
+                          w.view.lightPostprocess.radius.value = radius;
                           w.r3f?.invalidate();
                           tryLocalStorageSet(xzCircleRadiusStorageKey, String(radius));
                           w.update();
