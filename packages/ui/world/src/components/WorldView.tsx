@@ -73,11 +73,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
       postProcessing: true,
+      lightPostprocess: createXzCirclePostprocess({
+        radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
+        darkness: 0.4,
+        showBorder: true, // 🚧 debug
+      }),
       light: {
-        postprocess: createXzCirclePostprocess({
-          radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
-          darkness: 0.92,
-        }),
         /** Desktop-only: mouse position raycast onto the y=0 ground plane */
         mouseGroundHit: new THREE.Vector3(),
         mouseHasGroundHit: false,
@@ -286,17 +287,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           -1 + 2 * (((e.clientX - left) * glPixelRatio) / w.view.canvas.width),
           +1 - 2 * (((e.clientY - top) * glPixelRatio) / w.view.canvas.height),
         );
-        const camera = state.controls?.object ?? w.r3f.camera;
-        state.raycaster.setFromCamera(tmpNdc, camera);
+        // 🔔 just track the ground hit here; the light itself is only ever updated via
+        // onCameraChange (driven by the render loop), which doesn't run while paused —
+        // so the light simply doesn't move while paused, then picks up from here on resume
+        state.raycaster.setFromCamera(tmpNdc, state.controls?.object ?? w.r3f.camera);
         state.light.mouseHasGroundHit =
           state.raycaster.ray.intersectPlane(groundPlane, state.light.mouseGroundHit) !== null;
-
-        // 🔔 light is normally kept in sync via onCameraChange (driven by the render loop),
-        // but that stops firing while paused (demand frameloop), so update+invalidate directly here
-        if (state.light.mouseHasGroundHit) {
-          state.updateLight(camera, state.light.mouseGroundHit);
-          w.r3f?.invalidate();
-        }
       },
       async onPointerUp(e) {
         const last = state.lastPointer;
@@ -384,16 +380,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       updateLight(camera, rawTarget) {
         const now = performance.now();
 
-        if (state.light.frozen) {
-          // keep world position fixed, but still refresh the camera matrices so it correctly
-          // stays in place (rather than sliding on-screen) as the camera pans/rotates
+        if (state.light.frozen || w.disabled) {
+          // keep world position fixed (frozen, or simply paused), but still refresh the camera
+          // matrices so it correctly stays in place (rather than sliding on-screen, or rendering
+          // with stale matrices) as the camera pans/rotates/zooms
           state.light.lastUpdateMs = now;
-          state.light.postprocess.update(camera, state.light.displayCenter);
+          state.lightPostprocess.update(camera, state.light.displayCenter);
           return;
         }
 
-        if (!state.light.ready || w.disabled) {
-          // snap instantly: first-ever update, or while paused (no easing delay)
+        if (!state.light.ready) {
+          // snap instantly on the very first update, instead of easing in from the origin
           state.light.displayCenter.copy(rawTarget);
           state.light.ready = true;
         } else {
@@ -403,7 +400,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
 
         state.light.lastUpdateMs = now;
-        state.light.postprocess.update(camera, state.light.displayCenter);
+        state.lightPostprocess.update(camera, state.light.displayCenter);
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -434,7 +431,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         //   sceneColor.a,
         // );
         pipeline.outputNode = vec4(
-          state.light.postprocess.apply(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a)),
+          state.lightPostprocess.apply(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a)),
           sceneColor.a,
         );
         // pipeline.outputNode = rgbShift(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), 0.008, 0).mul(
@@ -486,7 +483,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false } },
+    { reset: { ctrlOpts: true, initial: false, lightPostprocess: true } },
   );
 
   w.view = state;
@@ -593,6 +590,7 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  lightPostprocess: XzCirclePostprocess;
   light: LightState;
   fov: number;
 
@@ -629,7 +627,6 @@ export type State = {
 
 /** The XZ-circle "light" drawn in post-processing, centered on the mouse/camera target */
 export type LightState = {
-  postprocess: XzCirclePostprocess;
   /** Desktop-only: mouse position raycast onto the y=0 ground plane */
   mouseGroundHit: THREE.Vector3;
   mouseHasGroundHit: boolean;
