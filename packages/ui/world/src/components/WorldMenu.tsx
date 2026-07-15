@@ -356,7 +356,7 @@ export function WorldMenu() {
                       <input
                         type="range"
                         min="1"
-                        max="4"
+                        max="20"
                         step="1"
                         value={w.view.lightPostprocess.radius.value}
                         onChange={(e) => {
