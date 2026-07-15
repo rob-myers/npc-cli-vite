@@ -424,6 +424,9 @@ w decor.byKey.test-decor-point
   - try fix via padding `gen-starship-sheets` 2 --> 8
 - ✅ debug update obstacles button should have spinner
   - already done via WorldMenu spinner
+
+- 🚧 `w n.rob.position | w view.setLightTarget -`
+
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"

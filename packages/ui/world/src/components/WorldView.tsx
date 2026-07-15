@@ -15,7 +15,7 @@ import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
+import { float, instanceIndex, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
@@ -25,6 +25,7 @@ import {
   defaultXzCircleRadius,
   fovStorageKey,
   numCardinalDirectionsKey,
+  wallHeight,
   xzCircleRadiusStorageKey,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
@@ -63,9 +64,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
       },
       initial: {
-        azimuthal: -Math.PI / 4,
+        azimuthal: w.touchDevice ? 0 : -Math.PI / 4,
         polar: Math.PI / 4,
-        position: { x: 4, y: 10, z: 4 },
+        position: { x: 4, y: w.touchDevice ? 10 : 24, z: 4 },
       },
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
@@ -75,19 +76,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       postProcessing: true,
       lightPostprocess: createXzCirclePostprocess({
         radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
-        darkness: 0.4,
-        showBorder: true, // 🚧 debug
+        showBorder: true, // debug
+        planeHeight: wallHeight,
       }),
       light: {
-        /** Desktop-only: mouse position raycast onto the y=0 ground plane */
-        mouseGroundHit: new THREE.Vector3(),
-        mouseHasGroundHit: false,
         /** Eased-towards-target center, so it lags behind rather than snapping */
         displayCenter: new THREE.Vector3(),
         ready: false,
         lastUpdateMs: 0,
         /** Toggled via Space: freezes the light in place, ignoring further target updates */
         frozen: false,
+        /** Set via `w.view.setLightTarget`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
+        targetOverride: null as null | { x: number; y: number; z: number },
       },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
 
@@ -255,6 +255,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       toggleLightFrozen() {
         state.light.frozen = !state.light.frozen;
+        if (!state.light.frozen) {
+          // 🔔 avoid a big jump-then-crawl: without this, `lastUpdateMs` is still stale from
+          // whenever freezing began, so the very next update sees a large (clamped) dt and
+          // eases a big chunk of the way in one frame, then crawls at a normal per-frame rate
+          state.light.lastUpdateMs = performance.now();
+        }
         w.update(); // e.g. reflect in WorldMenu's frozen indicator
       },
       onPointerDown(e) {
@@ -275,24 +281,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
-        // 🔔 keep light.mouseHasGroundHit/mouseGroundHit as-is so the light freezes at its last
-        // position, rather than jumping to the camera target when the mouse leaves the canvas
-      },
-      onPointerMove(e) {
-        if (w.touchDevice) return;
-
-        const glPixelRatio = w.r3f.gl.getPixelRatio();
-        const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
-        tmpNdc.set(
-          -1 + 2 * (((e.clientX - left) * glPixelRatio) / w.view.canvas.width),
-          +1 - 2 * (((e.clientY - top) * glPixelRatio) / w.view.canvas.height),
-        );
-        // 🔔 just track the ground hit here; the light itself is only ever updated via
-        // onCameraChange (driven by the render loop), which doesn't run while paused —
-        // so the light simply doesn't move while paused, then picks up from here on resume
-        state.raycaster.setFromCamera(tmpNdc, state.controls?.object ?? w.r3f.camera);
-        state.light.mouseHasGroundHit =
-          state.raycaster.ray.intersectPlane(groundPlane, state.light.mouseGroundHit) !== null;
       },
       async onPointerUp(e) {
         const last = state.lastPointer;
@@ -365,30 +353,34 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ...point, // can provide as point with meta
         });
       },
-      onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3) {
+      onCameraChange(spherical: THREE.Spherical, _target: THREE.Vector3) {
         const topDown = spherical.phi <= 2 * (Math.PI / 18);
         if (topDown !== state.topDown) {
           state.topDown = topDown;
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
 
-        // 🔔 use controls.object (matches getRaycastIntersection) rather than w.r3f.camera,
-        // which is not guaranteed to be the same live-manipulated camera instance
-        const lightTarget = !w.touchDevice && state.light.mouseHasGroundHit ? state.light.mouseGroundHit : target;
-        state.updateLight(state.controls?.object ?? w.r3f.camera, lightTarget);
-      },
-      updateLight(camera, rawTarget) {
-        const now = performance.now();
-
-        if (state.light.frozen || w.disabled) {
-          // keep world position fixed (frozen, or simply paused), but still refresh the camera
-          // matrices so it correctly stays in place (rather than sliding on-screen, or rendering
-          // with stale matrices) as the camera pans/rotates/zooms
-          state.light.lastUpdateMs = now;
-          state.lightPostprocess.update(camera, state.light.displayCenter);
-          return;
+        // 🔔 refresh the light's camera matrices on every rendered frame — including while
+        // paused/frozen, when `updateLight` isn't advancing `displayCenter` — so it keeps
+        // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms
+        if (state.light.targetOverride) {
+          state.lightPostprocess.update(state.controls?.object ?? w.r3f.camera, state.light.displayCenter);
         }
+      },
+      setLightTarget(target) {
+        // 🔔 keep a live reference (not a snapshot copy), so e.g. `npc.position` continues
+        // to be read fresh each tick and the light tracks a moving target automatically
+        state.light.targetOverride = target ?? null;
+        state.lightPostprocess.setActive(target !== undefined);
+        target && state.updateLight(target);
+        state.forceUpdate();
+      },
+      updateLight(rawTarget) {
+        // world position only ever moves here (from World's onTick, only while active), so
+        // pausing the world naturally keeps it fixed; freezing does so explicitly too
+        if (state.light.frozen) return;
 
+        const now = performance.now();
         if (!state.light.ready) {
           // snap instantly on the very first update, instead of easing in from the origin
           state.light.displayCenter.copy(rawTarget);
@@ -398,9 +390,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           const smoothing = 1 - Math.exp(-dt / lightSmoothingSeconds);
           state.light.displayCenter.lerp(rawTarget, smoothing);
         }
-
         state.light.lastUpdateMs = now;
-        state.lightPostprocess.update(camera, state.light.displayCenter);
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -431,7 +421,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         //   sceneColor.a,
         // );
         pipeline.outputNode = vec4(
-          state.lightPostprocess.apply(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a)),
+          state.lightPostprocess.apply(
+            colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
+            sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
+          ),
           sceneColor.a,
         );
         // pipeline.outputNode = rgbShift(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), 0.008, 0).mul(
@@ -483,7 +476,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, lightPostprocess: true } },
+    { reset: { ctrlOpts: true, initial: false, lightPostprocess: false } },
   );
 
   w.view = state;
@@ -521,7 +514,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onCreated={state.onCreated}
         onPointerDown={state.onPointerDown}
         onPointerLeave={state.onPointerLeave}
-        onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
@@ -602,12 +594,13 @@ export type State = {
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
-  onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  updateLight(camera: THREE.Camera, rawTarget: THREE.Vector3): void;
+  /** By default the light follows the camera (or mouse, on desktop); override with a fixed world point, or `undefined` to resume the default */
+  setLightTarget(target?: { x: number; y: number; z: number }): void;
+  updateLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleLightFrozen(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
@@ -625,17 +618,19 @@ export type State = {
   setupPostProcessing(): () => void;
 };
 
-/** The XZ-circle "light" drawn in post-processing, centered on the mouse/camera target */
+/**
+ * The XZ-circle "light" drawn in post-processing. Hidden by default; only shown once a target
+ * is set via `w.view.setLightTarget`, and only then updated (from `World`'s `onTick`).
+ */
 export type LightState = {
-  /** Desktop-only: mouse position raycast onto the y=0 ground plane */
-  mouseGroundHit: THREE.Vector3;
-  mouseHasGroundHit: boolean;
   /** Eased-towards-target center, so it lags behind rather than snapping */
   displayCenter: THREE.Vector3;
   ready: boolean;
   lastUpdateMs: number;
   /** Toggled via Space: freezes the light in place, ignoring further target updates */
   frozen: boolean;
+  /** Set via `w.view.setLightTarget`; `null` means hidden. A live reference — not a snapshot. */
+  targetOverride: null | { x: number; y: number; z: number };
 };
 
 function PostProcessing() {
@@ -644,10 +639,8 @@ function PostProcessing() {
   return null;
 }
 
-const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-const tmpNdc = new THREE.Vector2();
 /** Exponential time-constant (seconds) for the light easing towards its target */
-const lightSmoothingSeconds = 1;
+const lightSmoothingSeconds = 0.5;
 
 export type Picked = {
   instanceId: number;
