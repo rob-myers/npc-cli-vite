@@ -1,4 +1,4 @@
-import { atan, float, fract, getViewPosition, mix, screenUV, uniform, vec3, vec4 } from "three/tsl";
+import { float, getViewPosition, mix, screenUV, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 
 export type XzCirclePostprocessOpts = {
@@ -6,7 +6,7 @@ export type XzCirclePostprocessOpts = {
   radius: number;
   /** World-space distance over which the transition fades in, starting at `radius`. Default `0.6` */
   falloff?: number;
-  /** Draw a thin dashed border ring at `radius`? Default `false` (debug only) */
+  /** Draw a solid red border ring at `radius`? Default `false` (debug only) */
   showBorder?: boolean;
   /** World-space height (y) of the XZ plane the circle is drawn on. Default `0` */
   planeHeight?: number;
@@ -31,10 +31,7 @@ export type XzCirclePostprocess = {
 };
 
 /** Cosmetic constants for the (debug-only) border ring — not worth exposing as options */
-const borderWidth = 0.012;
-const borderOpacity = 0.3;
-const dashCount = 24;
-const dashRatio = 0.5;
+const borderWidth = 0.01;
 
 /**
  * Post-processing helper drawing a circle on a horizontal `y = planeHeight` plane, centered at a
@@ -96,12 +93,7 @@ export function createXzCirclePostprocess(opts: XzCirclePostprocessOpts): XzCirc
 
       if (showBorder) {
         const onRing = dist.sub(radius).abs().lessThan(borderWidth);
-        // angle around the center, used to chop the ring into dashes
-        const rel = groundHit.sub(center);
-        const angle = atan(rel.y, rel.x);
-        const onDash = fract(angle.div(Math.PI * 2).mul(dashCount)).lessThan(dashRatio);
-        const borderAlpha = onRing.and(onDash).select(float(borderOpacity), float(0));
-        effect = mix(effect, vec3(1, 1, 1), borderAlpha);
+        effect = mix(effect, vec3(1, 0, 0), onRing.select(float(1), float(0)));
       }
 
       // fully bypass (always insideColor everywhere) unless made active via `setActive`
