@@ -25,7 +25,6 @@ import {
   defaultXzCircleRadius,
   fovStorageKey,
   numCardinalDirectionsKey,
-  wallHeight,
   xzCircleRadiusStorageKey,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
@@ -71,19 +70,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
+      groundPlane: new THREE.Plane(new THREE.Vector3(0, 1, 0), -circlePlaneHeight),
+      cameraGroundHit: new THREE.Vector3(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
       postProcessing: true,
-      lightPostprocess: createXzCirclePostprocess({
-        radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
-        showBorder: true, // debug
-        planeHeight: wallHeight,
-      }),
+      lightPostprocess: (() => {
+        const postprocess = createXzCirclePostprocess({
+          radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
+          // showBorder: true, // debug
+          planeHeight: circlePlaneHeight,
+        });
+        // 🔔 always shown — tracks either the explicit target, or the camera's viewport center
+        postprocess.setActive(true);
+        return postprocess;
+      })(),
       light: {
-        /** Eased-towards-target center, so it lags behind rather than snapping */
         displayCenter: new THREE.Vector3(),
-        ready: false,
-        lastUpdateMs: 0,
         /** Toggled via Space: freezes the light in place, ignoring further target updates */
         frozen: false,
         /** Set via `w.view.setLightTarget`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
@@ -255,12 +258,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       toggleLightFrozen() {
         state.light.frozen = !state.light.frozen;
-        if (!state.light.frozen) {
-          // 🔔 avoid a big jump-then-crawl: without this, `lastUpdateMs` is still stale from
-          // whenever freezing began, so the very next update sees a large (clamped) dt and
-          // eases a big chunk of the way in one frame, then crawls at a normal per-frame rate
-          state.light.lastUpdateMs = performance.now();
-        }
         w.update(); // e.g. reflect in WorldMenu's frozen indicator
       },
       onPointerDown(e) {
@@ -363,34 +360,32 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // 🔔 refresh the light's camera matrices on every rendered frame — including while
         // paused/frozen, when `updateLight` isn't advancing `displayCenter` — so it keeps
         // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms
-        if (state.light.targetOverride) {
-          state.lightPostprocess.update(state.controls?.object ?? w.r3f.camera, state.light.displayCenter);
+        state.lightPostprocess.update(state.controls?.object ?? w.r3f.camera, state.light.displayCenter);
+
+        // 🔔 World's onTick (the usual driver of the camera-center fallback) doesn't run while
+        // paused, so keep it alive here instead — but only the fallback: an explicit target
+        // should still stay fixed in place while paused, same as when frozen
+        if (w.disabled && !state.light.targetOverride) {
+          const target = state.getCameraGroundTarget();
+          target && state.updateLight(target);
         }
+      },
+      getCameraGroundTarget() {
+        const camera = state.controls?.object ?? w.r3f.camera;
+        state.raycaster.setFromCamera(screenCenterNdc, camera);
+        return state.raycaster.ray.intersectPlane(state.groundPlane, state.cameraGroundHit);
       },
       setLightTarget(target) {
         // 🔔 keep a live reference (not a snapshot copy), so e.g. `npc.position` continues
         // to be read fresh each tick and the light tracks a moving target automatically
         state.light.targetOverride = target ?? null;
-        state.lightPostprocess.setActive(target !== undefined);
         target && state.updateLight(target);
         state.forceUpdate();
       },
       updateLight(rawTarget) {
-        // world position only ever moves here (from World's onTick, only while active), so
-        // pausing the world naturally keeps it fixed; freezing does so explicitly too
+        // freezing (Space / button) always keeps the world position fixed, whether paused or not
         if (state.light.frozen) return;
-
-        const now = performance.now();
-        if (!state.light.ready) {
-          // snap instantly on the very first update, instead of easing in from the origin
-          state.light.displayCenter.copy(rawTarget);
-          state.light.ready = true;
-        } else {
-          const dt = Math.min((now - state.light.lastUpdateMs) / 1000, 0.5);
-          const smoothing = 1 - Math.exp(-dt / lightSmoothingSeconds);
-          state.light.displayCenter.lerp(rawTarget, smoothing);
-        }
-        state.light.lastUpdateMs = now;
+        state.light.displayCenter.copy(rawTarget);
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -476,7 +471,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, lightPostprocess: false } },
+    { reset: { ctrlOpts: true, initial: false, lightPostprocess: true } },
   );
 
   w.view = state;
@@ -578,6 +573,9 @@ export type State = {
   lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
+  /** Horizontal `y = circlePlaneHeight` plane the light circle is projected onto */
+  groundPlane: THREE.Plane;
+  cameraGroundHit: THREE.Vector3;
   objectPick: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
@@ -598,7 +596,9 @@ export type State = {
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  /** By default the light follows the camera (or mouse, on desktop); override with a fixed world point, or `undefined` to resume the default */
+  /** Where the light tracks by default, absent an explicit target: the camera's viewport center projected onto the ground */
+  getCameraGroundTarget(): THREE.Vector3 | null;
+  /** By default the light tracks the camera's viewport center; override with a fixed world point, or `undefined` to resume the default */
   setLightTarget(target?: { x: number; y: number; z: number }): void;
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleLightFrozen(): void;
@@ -619,17 +619,15 @@ export type State = {
 };
 
 /**
- * The XZ-circle "light" drawn in post-processing. Hidden by default; only shown once a target
- * is set via `w.view.setLightTarget`, and only then updated (from `World`'s `onTick`).
+ * The XZ-circle "light" drawn in post-processing. Always shown; tracks either an explicit
+ * target set via `w.view.setLightTarget`, or (absent one) the camera's viewport center —
+ * both updated from `World`'s `onTick`.
  */
 export type LightState = {
-  /** Eased-towards-target center, so it lags behind rather than snapping */
   displayCenter: THREE.Vector3;
-  ready: boolean;
-  lastUpdateMs: number;
   /** Toggled via Space: freezes the light in place, ignoring further target updates */
   frozen: boolean;
-  /** Set via `w.view.setLightTarget`; `null` means hidden. A live reference — not a snapshot. */
+  /** Set via `w.view.setLightTarget`; `null` means track the camera's viewport center instead. A live reference — not a snapshot. */
   targetOverride: null | { x: number; y: number; z: number };
 };
 
@@ -639,8 +637,11 @@ function PostProcessing() {
   return null;
 }
 
-/** Exponential time-constant (seconds) for the light easing towards its target */
-const lightSmoothingSeconds = 0.5;
+/** World-space height (y) of the XZ plane the light circle is drawn on / raycast against */
+const circlePlaneHeight = 0;
+
+/** Reused across calls to `getCameraGroundTarget` — `raycaster.setFromCamera` doesn't retain it */
+const screenCenterNdc = new THREE.Vector2(0, 0);
 
 export type Picked = {
   instanceId: number;
