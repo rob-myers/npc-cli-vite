@@ -77,6 +77,7 @@ export const defaultFov = 60;
 export const defaultBrightness = 2;
 export const xzCircleRadiusStorageKey = `world-xz-circle-radius`;
 export const defaultXzCircleRadius = 3;
+export const showDebugLightOutlineKey = "world-show-debug-light-outlline";
 
 export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
@@ -112,6 +113,8 @@ export const npcScale = 0.7;
 
 export const MAX_NPCS = 256;
 export const MAX_DOOR_LABELS = 32;
+/** Static, right-click-managed post-processing lights (excludes the 1 tracked light) */
+export const MAX_POSTPROCESS_LIGHTS = 32;
 
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;

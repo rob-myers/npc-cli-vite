@@ -425,7 +425,12 @@ w decor.byKey.test-decor-point
 - ✅ debug update obstacles button should have spinner
   - already done via WorldMenu spinner
 
-- 🚧 `w n.rob.position | w view.setLightTarget -`
+- ✅ multiple cylindrical lights
+  - can set/clear via long press
+- ✅ can set moving target light
+  - `w n.rob.position | w view.setLightTarget -`
+  - `w view.setLightTarget`
+- 🚧 light ui: can enable/disable/reset
 
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
