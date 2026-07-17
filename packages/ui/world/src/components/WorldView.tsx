@@ -24,6 +24,7 @@ import {
   defaultFov,
   defaultXzCircleRadius,
   fovStorageKey,
+  lightEditingEnabledKey,
   numCardinalDirectionsKey,
   showDebugLightOutlineKey,
   wallHeight,
@@ -87,11 +88,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         bottomHeight: 0,
         topHeight: wallHeight,
       }),
-      /** Radius newly-created lights get (right-click, or `setLightTarget`) — existing lights keep their own */
+      /** Radius newly-created lights get (long-press, or `setLightTarget`) — existing lights keep their own */
       defaultLightRadius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
+      /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove */
+      lightEditingEnabled: tryLocalStorageGetParsed<boolean>(lightEditingEnabledKey) ?? true,
       light: {
         displayCenter: new THREE.Vector3(),
-        /** Set via `w.view.setLightTarget` (e.g. right-click); a live reference, so a moving target (e.g. `npc.position`) is tracked */
+        /** Set via `w.view.setLightTarget`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
         targetOverride: null as null | { x: number; y: number; z: number },
       },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
@@ -389,6 +392,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       updateLight(rawTarget) {
         state.light.displayCenter.copy(rawTarget);
       },
+      toggleLightEditing() {
+        state.lightEditingEnabled = !state.lightEditingEnabled;
+        tryLocalStorageSet(lightEditingEnabledKey, String(state.lightEditingEnabled));
+        w.update();
+      },
+      resetAllLights() {
+        state.lightPostprocess.resetLights();
+        state.light.targetOverride = null;
+        state.forceUpdate();
+      },
       setCameraMode(mode) {
         state.cameraMode = mode;
         tryLocalStorageSet(cameraModeStorageKey, mode);
@@ -589,8 +602,10 @@ export type State = {
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
   lightPostprocess: XzCylinderPostprocess;
-  /** Radius newly-created lights get (right-click, or `setLightTarget`) — existing lights keep their own */
+  /** Radius newly-created lights get (long-press, or `setLightTarget`) — existing lights keep their own */
   defaultLightRadius: number;
+  /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove in `use-world-events.ts` */
+  lightEditingEnabled: boolean;
   light: LightState;
   fov: number;
 
@@ -608,9 +623,12 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  /** Sets/clears the light's target — e.g. via right-click, or a live reference like `npc.position`. `undefined` turns the light off. */
+  /** Sets/clears the tracked light's target — e.g. a live reference like `npc.position`. `undefined` turns it off. */
   setLightTarget(target?: { x: number; y: number; z: number }): void;
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
+  toggleLightEditing(): void;
+  /** Deactivates every static light and the tracked light */
+  resetAllLights(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
@@ -628,10 +646,11 @@ export type State = {
 };
 
 /**
- * The XZ-cylinder "light" drawn in post-processing. Off until a target is set (e.g. via
- * right-click, or `w.view.setLightTarget`); once set, tracked every tick from `World`'s `onTick`.
- * A target that's a fixed snapshot (e.g. a right-clicked point) naturally stays put; a live
- * reference (e.g. `npc.position`) is tracked automatically as it moves.
+ * The single "tracked" light drawn in post-processing (separate from the many static,
+ * long-press-managed lights — see `xz-cylinder-postprocess.ts`). Off until a target is set via
+ * `w.view.setLightTarget`; once set, tracked every tick from `World`'s `onTick`. A target that's
+ * a fixed snapshot naturally stays put; a live reference (e.g. `npc.position`) is tracked
+ * automatically as it moves.
  */
 export type LightState = {
   displayCenter: THREE.Vector3;

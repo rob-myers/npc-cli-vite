@@ -18,6 +18,7 @@ import {
   brightnessStorageKey,
   defaultBrightness,
   defaultWorldTheme,
+  defaultXzCircleRadius,
   emptyMapDef,
   floorTextureDimension,
   MAX_DOOR_LABELS,
@@ -128,7 +129,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       obs: null as any,
       rings: null as any,
       shadows: null as any,
-      view: null as any,
+      view: { defaultLightRadius: defaultXzCircleRadius, lightEditingEnabled: true } as State["view"],
       wall: null as any,
       worker: { worker: { postMessage() {} } } as any,
 

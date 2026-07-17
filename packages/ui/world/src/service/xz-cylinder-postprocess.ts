@@ -50,6 +50,8 @@ export type XzCylinderPostprocess = {
    * point itself is outside the light's flat XZ radius.
    */
   findLightNear(bottomXZ: { x: number; z: number }, topXZ: { x: number; z: number }): number | null;
+  /** Deactivates every static light (and the tracked light) in one pass */
+  resetLights(): void;
 
   /** `1` inside any active light (tracked or static), fading to `0` over `falloff` — unions all lights */
   litAmount(): THREE.Node<"float">;
@@ -176,6 +178,11 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         }
       }
       return bestIndex;
+    },
+    resetLights() {
+      for (const s of slots) s.set(0, 0, 0, 0);
+      hiWater.value = 0;
+      trackedActive.value = 0;
     },
     litAmount() {
       return Fn(() => {

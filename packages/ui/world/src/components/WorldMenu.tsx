@@ -9,6 +9,7 @@ import {
   CaretRightIcon,
   CircleDashedIcon,
   GlobeStandIcon,
+  LightbulbIcon,
   MagnifyingGlassIcon,
   PauseIcon,
   PlayIcon,
@@ -48,6 +49,9 @@ export function WorldMenu() {
       gmGraphsOpen: false,
       skinDebugOpen: false,
       menuOpen: false,
+      lightMenuOpen: false,
+      lightLongPress: false,
+      lightLongPressTimer: 0,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
@@ -181,7 +185,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="absolute top-0 left-px z-10 touch-none select-none"
+        className="absolute top-0 left-px z-10 touch-none select-none flex flex-col"
         style={{ y }}
         drag="y"
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
@@ -307,44 +311,6 @@ export function WorldMenu() {
                           }
                           w.r3f?.invalidate();
                           tryLocalStorageSet(fovStorageKey, String(fov));
-                          w.update();
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "w-16 accent-white cursor-pointer",
-                          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                          big &&
-                            "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
-                        )}
-                      />
-                    </div>
-                  )}
-
-                  {w.view && (
-                    <div
-                      className={cn(
-                        "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                        big && "gap-3 px-3 py-2 text-sm",
-                      )}
-                    >
-                      <CircleDashedIcon
-                        className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
-                        onClick={() => {
-                          w.view.defaultLightRadius = defaultXzCircleRadius;
-                          tryLocalStorageSet(xzCircleRadiusStorageKey, String(defaultXzCircleRadius));
-                          w.update();
-                        }}
-                      />
-                      <input
-                        type="range"
-                        min="0.5"
-                        max="8"
-                        step="0.5"
-                        value={w.view.defaultLightRadius}
-                        onChange={(e) => {
-                          const radius = Number(e.target.value);
-                          w.view.defaultLightRadius = radius;
-                          tryLocalStorageSet(xzCircleRadiusStorageKey, String(radius));
                           w.update();
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -569,6 +535,105 @@ export function WorldMenu() {
           </Menu.Portal>
         </Menu.Root>
 
+        <Menu.Root
+          open={state.lightMenuOpen}
+          onOpenChange={(open, { reason }) => {
+            if (open) {
+              state.set({ lightMenuOpen: true });
+            } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
+              state.set({ lightMenuOpen: false });
+            }
+          }}
+        >
+          <Menu.Trigger
+            className="cursor-pointer"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              state.lightLongPress = false;
+              clearTimeout(state.lightLongPressTimer);
+              state.lightLongPressTimer = window.setTimeout(() => {
+                state.lightLongPress = true;
+                w.view.toggleLightEditing();
+              }, 500);
+            }}
+            onPointerUp={() => clearTimeout(state.lightLongPressTimer)}
+            onPointerLeave={() => clearTimeout(state.lightLongPressTimer)}
+            onClick={() => {
+              if (state.dragged || state.lightLongPress) return;
+              state.set({ lightMenuOpen: !state.lightMenuOpen });
+            }}
+          >
+            <div
+              className={cn(
+                "flex justify-center rounded select-none p-2",
+                big && "p-3",
+                w.view.lightEditingEnabled ? "bg-gray-800/90 text-yellow-300" : "bg-gray-800/50 text-gray-400",
+              )}
+              title={
+                w.view.lightEditingEnabled
+                  ? "Light editing on — long-press to disable, click for settings"
+                  : "Light editing off — long-press to enable, click for settings"
+              }
+            >
+              <LightbulbIcon
+                className={cn("size-5 grayscale", big && "size-6")}
+                weight={w.view.lightEditingEnabled ? "fill" : "bold"}
+              />
+            </div>
+          </Menu.Trigger>
+
+          <Menu.Portal>
+            <Menu.Positioner className="z-50" sideOffset={4} align="start">
+              <Menu.Popup
+                className={cn(
+                  "bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 px-2",
+                  big && "py-2 px-3",
+                )}
+              >
+                <div className={cn("flex items-center gap-2 py-1 text-xs text-slate-300", big && "gap-3 py-2 text-sm")}>
+                  <CircleDashedIcon
+                    className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
+                    onClick={() => {
+                      w.view.defaultLightRadius = defaultXzCircleRadius;
+                      tryLocalStorageSet(xzCircleRadiusStorageKey, String(defaultXzCircleRadius));
+                      w.update();
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="8"
+                    step="0.5"
+                    value={w.view.defaultLightRadius}
+                    onChange={(e) => {
+                      const radius = Number(e.target.value);
+                      w.view.defaultLightRadius = radius;
+                      tryLocalStorageSet(xzCircleRadiusStorageKey, String(radius));
+                      w.update();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "w-16 accent-white cursor-pointer",
+                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                      big &&
+                        "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
+                    )}
+                  />
+                </div>
+                <Menu.Item
+                  className={cn(
+                    "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
+                    big && "text-sm px-3 py-1.5",
+                  )}
+                  onClick={() => w.view.resetAllLights()}
+                >
+                  reset all lights
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+
         <div
           className={cn(
             "flex w-9 items-center justify-center bg-gray-800 text-white p-2 cursor-pointer hover:bg-gray-700",
@@ -653,6 +718,10 @@ export type State = {
   skinDebugOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
+  lightMenuOpen: boolean;
+  /** Was the current press on the light icon long enough to toggle `lightEditingEnabled` (vs. open the menu)? */
+  lightLongPress: boolean;
+  lightLongPressTimer: number;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;

@@ -167,8 +167,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "picked": {
-            const { defaultLightRadius, lastPointer, lightPostprocess, raycaster } = w.view;
-            if (lastPointer.longPress === true) {
+            const { defaultLightRadius, lastPointer, lightEditingEnabled, lightPostprocess, raycaster } = w.view;
+            if (lastPointer.longPress === true && lightEditingEnabled) {
               // mirror litAmount()'s per-pixel test: intersect the SAME click ray with the
               // bottom/top planes (not just the raycast-hit floor point), so removal-detection
               // matches what's actually visible on screen from an angled camera
