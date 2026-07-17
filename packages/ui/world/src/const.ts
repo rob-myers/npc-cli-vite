@@ -78,6 +78,7 @@ export const defaultBrightness = 2;
 export const xzCircleRadiusStorageKey = `world-xz-circle-radius`;
 export const defaultXzCircleRadius = 3;
 export const showDebugLightOutlineKey = "world-show-debug-light-outlline";
+export const lightEditingEnabledKey = "world-light-editing-enabled";
 
 export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;

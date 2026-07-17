@@ -430,7 +430,7 @@ w decor.byKey.test-decor-point
 - ✅ can set moving target light
   - `w n.rob.position | w view.setLightTarget -`
   - `w view.setLightTarget`
-- 🚧 light ui: can enable/disable/reset
+- ✅ light ui: can enable/disable/reset
 
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
