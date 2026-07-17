@@ -15,7 +15,7 @@ import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { float, instanceIndex, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
+import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
@@ -25,13 +25,15 @@ import {
   defaultXzCircleRadius,
   fovStorageKey,
   numCardinalDirectionsKey,
+  showDebugLightOutlineKey,
+  wallHeight,
   xzCircleRadiusStorageKey,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
-import { createXzCirclePostprocess, type XzCirclePostprocess } from "../service/xz-circle-postprocess";
+import { createXzCylinderPostprocess, type XzCylinderPostprocess } from "../service/xz-cylinder-postprocess";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -56,7 +58,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         minDistance: w.touchDevice ? 5 : 4,
-        maxDistance: 60,
+        maxDistance: 16,
         extraZoom: 2,
         panSpeed: 2,
         rotateSpeed: 0.5,
@@ -67,29 +69,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         polar: Math.PI / 4,
         position: { x: 4, y: w.touchDevice ? 10 : 24, z: 4 },
       },
-      lastPointer: { point: new Vect(), epochMs: 0, longPressTimer: 0, longPress: false, rightPress: false },
+      lastPointer: {
+        epochMs: 0,
+        longPressTimer: 0,
+        longPress: false,
+        move: new Vect(),
+        down: new Vect(),
+        rightPress: false,
+      },
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
-      groundPlane: new THREE.Plane(new THREE.Vector3(0, 1, 0), -circlePlaneHeight),
-      cameraGroundHit: new THREE.Vector3(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // do not walls by default
       postProcessing: true,
-      lightPostprocess: (() => {
-        const postprocess = createXzCirclePostprocess({
-          radius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
-          // showBorder: true, // debug
-          planeHeight: circlePlaneHeight,
-        });
-        // 🔔 always shown — tracks either the explicit target, or the camera's viewport center
-        postprocess.setActive(true);
-        return postprocess;
-      })(),
+      lightPostprocess: createXzCylinderPostprocess({
+        showBorder: tryLocalStorageGetParsed<boolean>(showDebugLightOutlineKey) ?? false,
+        bottomHeight: 0,
+        topHeight: wallHeight,
+      }),
+      /** Radius newly-created lights get (right-click, or `setLightTarget`) — existing lights keep their own */
+      defaultLightRadius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
       light: {
         displayCenter: new THREE.Vector3(),
-        /** Toggled via Space: freezes the light in place, ignoring further target updates */
-        frozen: false,
-        /** Set via `w.view.setLightTarget`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
+        /** Set via `w.view.setLightTarget` (e.g. right-click); a live reference, so a moving target (e.g. `npc.position`) is tracked */
         targetOverride: null as null | { x: number; y: number; z: number },
       },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
@@ -234,6 +236,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         intersection.normal = computeIntersectionNormal(mesh, intersection);
         return intersection;
       },
+      isPointDiffDrag(pointA, pointB) {
+        return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
+      },
       onCreated(rootState) {
         w.threeReady = true;
         w.r3f = rootState as typeof w.r3f;
@@ -251,33 +256,34 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
-        } else if (e.key === " ") {
-          e.preventDefault(); // avoid page scroll
-          state.toggleLightFrozen();
         }
-      },
-      toggleLightFrozen() {
-        state.light.frozen = !state.light.frozen;
-        w.update(); // e.g. reflect in WorldMenu's frozen indicator
       },
       onPointerDown(e) {
         const last = state.lastPointer;
         clearTimeout(last.longPressTimer);
-        last.point.copy(getRelativePointer(e));
+        last.down.copy(getRelativePointer(e));
         last.epochMs = Date.now();
         last.longPress = false;
         last.rightPress = isRMB(e.nativeEvent);
+
+        const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
+        state.canvas.style.cursor = modifier ? "grabbing" : "move";
+
         last.longPressTimer = window.setTimeout(() => {
           last.longPress = true;
+          if (state.isPointDiffDrag(last.down, last.move) === true) {
+            return; // drag is not long press
+          }
           state.pickObject(e);
         }, 500);
-        const mod = e.shiftKey || e.ctrlKey || e.metaKey;
-        state.canvas.style.cursor = mod ? "grabbing" : "move";
       },
       onPointerLeave(_e) {
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
+      },
+      onPointerMove(e) {
+        state.lastPointer.move.copy(getRelativePointer(e));
       },
       async onPointerUp(e) {
         const last = state.lastPointer;
@@ -285,8 +291,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         last.longPressTimer = 0;
         state.canvas.style.cursor = "";
         e.currentTarget.focus();
-        if (last.longPress) return;
-        if (last.point.distanceTo(getRelativePointer(e)) > (w.touchDevice ? 20 : 5)) return;
+
+        if (last.longPress === true) {
+          return; // already picked
+        }
+        if (state.isPointDiffDrag(last.down, getRelativePointer(e)) === true) {
+          return; // drag is not a pick
+        }
         state.pickObject(e);
       },
       async pickObject(e) {
@@ -357,34 +368,25 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
 
-        // 🔔 refresh the light's camera matrices on every rendered frame — including while
-        // paused/frozen, when `updateLight` isn't advancing `displayCenter` — so it keeps
-        // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms
-        state.lightPostprocess.update(state.controls?.object ?? w.r3f.camera, state.light.displayCenter);
-
-        // 🔔 World's onTick (the usual driver of the camera-center fallback) doesn't run while
-        // paused, so keep it alive here instead — but only the fallback: an explicit target
-        // should still stay fixed in place while paused, same as when frozen
-        if (w.disabled && !state.light.targetOverride) {
-          const target = state.getCameraGroundTarget();
-          target && state.updateLight(target);
-        }
-      },
-      getCameraGroundTarget() {
+        // 🔔 refresh the shared camera matrices on every rendered frame — so every light keeps
+        // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms,
+        // even while paused (when `updateLight` isn't advancing `displayCenter`)
         const camera = state.controls?.object ?? w.r3f.camera;
-        state.raycaster.setFromCamera(screenCenterNdc, camera);
-        return state.raycaster.ray.intersectPlane(state.groundPlane, state.cameraGroundHit);
+        state.lightPostprocess.update(camera);
+        state.lightPostprocess.setTrackedCenter(state.light.displayCenter.x, state.light.displayCenter.z);
       },
       setLightTarget(target) {
         // 🔔 keep a live reference (not a snapshot copy), so e.g. `npc.position` continues
         // to be read fresh each tick and the light tracks a moving target automatically
         state.light.targetOverride = target ?? null;
-        target && state.updateLight(target);
+        state.lightPostprocess.setTrackedActive(target !== undefined);
+        if (target) {
+          state.lightPostprocess.setTrackedRadius(state.defaultLightRadius);
+          state.updateLight(target);
+        }
         state.forceUpdate();
       },
       updateLight(rawTarget) {
-        // freezing (Space / button) always keeps the world position fixed, whether paused or not
-        if (state.light.frozen) return;
         state.light.displayCenter.copy(rawTarget);
       },
       setCameraMode(mode) {
@@ -415,13 +417,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         //   ),
         //   sceneColor.a,
         // );
-        pipeline.outputNode = vec4(
-          state.lightPostprocess.apply(
-            colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-            sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
-          ),
-          sceneColor.a,
+        const outsideAmount = float(1).sub(state.lightPostprocess.litAmount());
+        let effect = mix(
+          colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
+          sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
+          outsideAmount,
         );
+        effect = state.lightPostprocess.drawBorder(effect);
+        pipeline.outputNode = vec4(effect, sceneColor.a);
         // pipeline.outputNode = rgbShift(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), 0.008, 0).mul(
         //   sceneColor.a,
         // );
@@ -509,6 +512,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onCreated={state.onCreated}
         onPointerDown={state.onPointerDown}
         onPointerLeave={state.onPointerLeave}
+        onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
         resize={{ debounce: 0 }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
@@ -570,17 +574,23 @@ export type State = {
   topDown: boolean;
   ctrlOpts: MapControlsProps & { extraZoom?: number };
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
-  lastPointer: { point: Geom.Vect; epochMs: number; longPressTimer: number; longPress: boolean; rightPress: boolean };
+  lastPointer: {
+    epochMs: number;
+    longPress: boolean;
+    longPressTimer: number;
+    move: Geom.Vect;
+    down: Geom.Vect;
+    rightPress: boolean;
+  };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
-  /** Horizontal `y = circlePlaneHeight` plane the light circle is projected onto */
-  groundPlane: THREE.Plane;
-  cameraGroundHit: THREE.Vector3;
   objectPick: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
-  lightPostprocess: XzCirclePostprocess;
+  lightPostprocess: XzCylinderPostprocess;
+  /** Radius newly-created lights get (right-click, or `setLightTarget`) — existing lights keep their own */
+  defaultLightRadius: number;
   light: LightState;
   fov: number;
 
@@ -592,16 +602,15 @@ export type State = {
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
+  onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
+  isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  /** Where the light tracks by default, absent an explicit target: the camera's viewport center projected onto the ground */
-  getCameraGroundTarget(): THREE.Vector3 | null;
-  /** By default the light tracks the camera's viewport center; override with a fixed world point, or `undefined` to resume the default */
+  /** Sets/clears the light's target — e.g. via right-click, or a live reference like `npc.position`. `undefined` turns the light off. */
   setLightTarget(target?: { x: number; y: number; z: number }): void;
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
-  toggleLightFrozen(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
@@ -619,15 +628,14 @@ export type State = {
 };
 
 /**
- * The XZ-circle "light" drawn in post-processing. Always shown; tracks either an explicit
- * target set via `w.view.setLightTarget`, or (absent one) the camera's viewport center —
- * both updated from `World`'s `onTick`.
+ * The XZ-cylinder "light" drawn in post-processing. Off until a target is set (e.g. via
+ * right-click, or `w.view.setLightTarget`); once set, tracked every tick from `World`'s `onTick`.
+ * A target that's a fixed snapshot (e.g. a right-clicked point) naturally stays put; a live
+ * reference (e.g. `npc.position`) is tracked automatically as it moves.
  */
 export type LightState = {
   displayCenter: THREE.Vector3;
-  /** Toggled via Space: freezes the light in place, ignoring further target updates */
-  frozen: boolean;
-  /** Set via `w.view.setLightTarget`; `null` means track the camera's viewport center instead. A live reference — not a snapshot. */
+  /** Set via `w.view.setLightTarget`; `null` means off. A live reference — not a snapshot. */
   targetOverride: null | { x: number; y: number; z: number };
 };
 
@@ -637,11 +645,7 @@ function PostProcessing() {
   return null;
 }
 
-/** World-space height (y) of the XZ plane the light circle is drawn on / raycast against */
-const circlePlaneHeight = 0;
-
-/** Reused across calls to `getCameraGroundTarget` — `raycaster.setFromCamera` doesn't retain it */
-const screenCenterNdc = new THREE.Vector2(0, 0);
+const tmpVect = new Vect();
 
 export type Picked = {
   instanceId: number;

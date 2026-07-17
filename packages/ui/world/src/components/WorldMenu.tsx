@@ -12,7 +12,6 @@ import {
   MagnifyingGlassIcon,
   PauseIcon,
   PlayIcon,
-  SnowflakeIcon,
   SunIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -108,6 +107,8 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
+      case "Focus Outline":
+        return w.view?.lightPostprocess.showBorder.value === 1;
       default:
         return false;
     }
@@ -164,6 +165,11 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
+      case "Focus Outline":
+        w.view.lightPostprocess.setShowBorder(w.view.lightPostprocess.showBorder.value !== 1);
+        w.r3f?.invalidate();
+        state.update();
+        break;
     }
   };
 
@@ -220,29 +226,6 @@ export function WorldMenu() {
             >
               <MagnifyingGlassIcon size={big ? 26 : 22} weight="bold" />
             </div>
-          )}
-
-          {w.view && (
-            <button
-              type="button"
-              className={cn(
-                "flex justify-center rounded select-none cursor-pointer p-2",
-                big && "p-3",
-                w.view.light.frozen ? "bg-gray-800/90 text-cyan-300" : "bg-gray-800/50 text-gray-400",
-              )}
-              title={
-                w.view.light.frozen
-                  ? "Light frozen — click to resume (or press space)"
-                  : "Click to freeze light position (or press space)"
-              }
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => {
-                if (state.dragged) return;
-                w.view.toggleLightFrozen();
-              }}
-            >
-              <SnowflakeIcon className={cn("size-5", big && "size-6")} weight="bold" />
-            </button>
           )}
 
           <Menu.Portal>
@@ -347,22 +330,20 @@ export function WorldMenu() {
                       <CircleDashedIcon
                         className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
                         onClick={() => {
-                          w.view.lightPostprocess.radius.value = defaultXzCircleRadius;
-                          w.r3f?.invalidate();
+                          w.view.defaultLightRadius = defaultXzCircleRadius;
                           tryLocalStorageSet(xzCircleRadiusStorageKey, String(defaultXzCircleRadius));
                           w.update();
                         }}
                       />
                       <input
                         type="range"
-                        min="1"
-                        max="20"
-                        step="1"
-                        value={w.view.lightPostprocess.radius.value}
+                        min="0.5"
+                        max="8"
+                        step="0.5"
+                        value={w.view.defaultLightRadius}
                         onChange={(e) => {
                           const radius = Number(e.target.value);
-                          w.view.lightPostprocess.radius.value = radius;
-                          w.r3f?.invalidate();
+                          w.view.defaultLightRadius = radius;
                           tryLocalStorageSet(xzCircleRadiusStorageKey, String(radius));
                           w.update();
                         }}
@@ -704,6 +685,7 @@ const debugItems = [
   "Door Normals",
   "Decor Points",
   "NavMesh",
+  "Focus Outline",
 ] as const;
 
 const getSelectItemClass = (big?: boolean) =>
