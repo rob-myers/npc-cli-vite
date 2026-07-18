@@ -29,6 +29,7 @@ import {
   lightSizingStartRadius,
   lightsEnabledKey,
   numCardinalDirectionsKey,
+  postProcessingEnabledKey,
   showDebugLightOutlineKey,
   wallHeight,
 } from "../const";
@@ -84,7 +85,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
-      postProcessing: true,
+      postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
       lightPostprocess: createXzCylinderPostprocess({
         showBorder: tryLocalStorageGetParsed<boolean>(showDebugLightOutlineKey) ?? false,
         lightsEnabled: tryLocalStorageGetParsed<boolean>(lightsEnabledKey) ?? true,
@@ -413,11 +414,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(lightEditingEnabledKey, String(state.lightEditingEnabled));
         w.update();
       },
-      toggleLightsEnabled() {
-        const next = state.lightPostprocess.lightsEnabled.value === 0;
+      setLightsEnabled(next = state.lightPostprocess.lightsEnabled.value === 0) {
         state.lightPostprocess.setLightsEnabled(next);
         tryLocalStorageSet(lightsEnabledKey, String(next));
-        state.forceUpdate();
+        state.setPostProcessingEnabled(true);
       },
       startLightSizing(center) {
         state.lightSizing = {
@@ -459,7 +459,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       resetAllLights() {
         state.lightPostprocess.resetLights();
         state.light.targetOverride = null;
-        state.forceUpdate();
+        state.setPostProcessingEnabled(true);
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -471,6 +471,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(numCardinalDirectionsKey, String(n));
         w.update();
       },
+      setPostProcessingEnabled(next = !state.postProcessing) {
+        state.postProcessing = next;
+        tryLocalStorageSet(postProcessingEnabledKey, String(next));
+        state.forceUpdate();
+      },
       setupPostProcessing() {
         const gl = w.r3f.gl as unknown as THREE.WebGPURenderer;
         const { scene, camera } = w.r3f;
@@ -481,27 +486,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const pipeline = new THREE.RenderPipeline(gl);
 
-        // pipeline.outputNode = vec4(
-        //   vignette(
-        //     // multiply by alpha avoids unnatural color bleeding onto transparent areas
-        //     colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-        //     float(1.4), // Intensity (0 to 1): Higher = thicker dark edges
-        //     float(0.7), // Smoothness: Controls gradient falloff softness
-        //     screenUV, // Coordinates mapping
-        //   ),
-        //   sceneColor.a,
-        // );
         const outsideAmount = float(1).sub(state.lightPostprocess.litAmount(sceneDepth.r));
         let effect = mix(
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-          sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
+          // tint
+          // sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
+          sceneColor.rgb.mul(vec3(0.1, 0.7, 0.7)),
           outsideAmount,
         );
         effect = state.lightPostprocess.drawBorder(effect);
         pipeline.outputNode = vec4(effect, sceneColor.a);
-        // pipeline.outputNode = rgbShift(colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a), 0.008, 0).mul(
-        //   sceneColor.a,
-        // );
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -693,7 +687,7 @@ export type State = {
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleLightEditing(): void;
   /** Toggles `lightPostprocess.lightsEnabled` — persisted to localStorage */
-  toggleLightsEnabled(): void;
+  setLightsEnabled(next?: boolean): void;
   /** Begins a hold-to-grow preview (via the tracked light) for a new light being placed at `center` */
   startLightSizing(center: { x: number; z: number }): void;
   /** Grows `lightSizing.radius` based on elapsed hold time — called every frame from `onCameraChange` */
@@ -715,6 +709,7 @@ export type State = {
   withPickOutput(typeId: number, forceAlpha?: number): THREE.Node;
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
+  setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
 

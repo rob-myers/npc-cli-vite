@@ -117,7 +117,7 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       case "Post FX":
-        w.view.set({ postProcessing: !w.view.postProcessing });
+        w.view.setPostProcessingEnabled();
         state.update();
         break;
       case "Room Hit":
@@ -227,7 +227,7 @@ export function WorldMenu() {
           )}
 
           <Menu.Portal>
-            <Menu.Positioner className="z-50" sideOffset={4} align="start">
+            <Menu.Positioner className="z-50" side="right" sideOffset={4} align="start">
               <Menu.Popup
                 className={cn("bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1", big && "py-2")}
               >
@@ -577,7 +577,7 @@ export function WorldMenu() {
           </Menu.Trigger>
 
           <Menu.Portal>
-            <Menu.Positioner className="z-50" sideOffset={4} align="start">
+            <Menu.Positioner className="z-50" side="right" sideOffset={4} align="start">
               <Menu.Popup
                 className={cn(
                   "bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 px-2",
@@ -601,12 +601,27 @@ export function WorldMenu() {
                       w.view.lightPostprocess?.lightsEnabled.value === 0 && "opacity-50",
                     )}
                     onClick={() => {
-                      w.view.toggleLightsEnabled();
+                      w.view.setPostProcessingEnabled(true);
+                      w.view.setLightsEnabled();
                       state.update();
                     }}
                     closeOnClick={false}
                   >
                     shown
+                  </Menu.Item>
+                  <Menu.Item
+                    className={cn(
+                      "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
+                      big && "text-sm px-3 py-1.5",
+                      w.view.postProcessing && "opacity-50",
+                    )}
+                    onClick={() => {
+                      w.view.setPostProcessingEnabled();
+                      state.update();
+                    }}
+                    closeOnClick={false}
+                  >
+                    global
                   </Menu.Item>
                 </div>
               </Menu.Popup>
