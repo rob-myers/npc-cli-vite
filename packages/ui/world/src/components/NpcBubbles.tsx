@@ -214,7 +214,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}
         >
-          <ArrowDownRightIcon className="size-16" />
+          <ArrowDownRightIcon className="size-12" />
         </div>
       </div>
     </Html3d>
