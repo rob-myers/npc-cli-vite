@@ -12,6 +12,7 @@ import {
   LightbulbIcon,
   MagnifyingGlassIcon,
   PauseIcon,
+  PencilSimpleIcon,
   PlayIcon,
   SunIcon,
 } from "@phosphor-icons/react";
@@ -565,9 +566,9 @@ export function WorldMenu() {
           >
             <div
               className={cn(
-                "flex justify-center rounded select-none p-2",
-                big && "p-3",
-                w.view.lightEditingEnabled ? "bg-gray-800/90 text-yellow-300" : "bg-gray-800/50 text-gray-400",
+                "relative flex justify-center rounded select-none",
+                big ? "p-3" : "p-2",
+                w.view.lightEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
               )}
               title={
                 w.view.lightEditingEnabled
@@ -576,9 +577,10 @@ export function WorldMenu() {
               }
             >
               <LightbulbIcon
-                className={cn("size-5 grayscale", big && "size-6")}
+                className={big ? "size-6" : "size-5"}
                 weight={w.view.lightEditingEnabled ? "fill" : "bold"}
-              />
+              ></LightbulbIcon>
+              <PencilSimpleIcon className="absolute right-0.5 bottom-0.5 size-4" />
             </div>
           </Menu.Trigger>
 
@@ -602,7 +604,7 @@ export function WorldMenu() {
                   <input
                     type="range"
                     min="0.5"
-                    max="8"
+                    max="5"
                     step="0.5"
                     value={w.view.defaultLightRadius}
                     onChange={(e) => {
