@@ -22,14 +22,15 @@ import {
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   defaultFov,
-  defaultXzCircleRadius,
   fovStorageKey,
   lightEditingEnabledKey,
+  lightSizingGrowDurationMs,
+  lightSizingMaxRadius,
+  lightSizingStartRadius,
   lightsEnabledKey,
   numCardinalDirectionsKey,
   showDebugLightOutlineKey,
   wallHeight,
-  xzCircleRadiusStorageKey,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
@@ -90,10 +91,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         bottomHeight: 0,
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
-      /** Radius newly-created lights get (long-press, or `setLightTarget`) — existing lights keep their own */
-      defaultLightRadius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
       /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove */
       lightEditingEnabled: tryLocalStorageGetParsed<boolean>(lightEditingEnabledKey) ?? true,
+      lightSizing: null,
       light: {
         displayCenter: new THREE.Vector3(),
         /** Set via `w.view.setLightTarget`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
@@ -286,6 +286,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
+        if (state.lightSizing) {
+          state.commitLightSizing();
+        }
       },
       onPointerMove(e) {
         state.lastPointer.move.copy(getRelativePointer(e));
@@ -297,6 +300,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.canvas.style.cursor = "";
         e.currentTarget.focus();
 
+        if (state.lightSizing) {
+          state.commitLightSizing();
+          return;
+        }
         if (last.longPress === true) {
           return; // already picked
         }
@@ -379,14 +386,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const camera = state.controls?.object ?? w.r3f.camera;
         state.lightPostprocess.update(camera);
         state.lightPostprocess.setTrackedCenter(state.light.displayCenter.x, state.light.displayCenter.z);
+
+        if (state.lightSizing) {
+          state.updateLightSizing();
+          // keep the demand-frameloop render chain alive frame-by-frame while paused, mirroring
+          // the extraZoom tween's self-sustaining invalidate() idiom
+          w.r3f?.invalidate();
+        }
       },
-      setLightTarget(target) {
+      setLightTarget(target, radius) {
         // 🔔 keep a live reference (not a snapshot copy), so e.g. `npc.position` continues
         // to be read fresh each tick and the light tracks a moving target automatically
         state.light.targetOverride = target ?? null;
         state.lightPostprocess.setTrackedActive(target !== undefined);
         if (target) {
-          state.lightPostprocess.setTrackedRadius(state.defaultLightRadius);
+          state.lightPostprocess.setTrackedRadius(radius ?? lightSizingStartRadius);
           state.updateLight(target);
         }
         state.forceUpdate();
@@ -403,6 +417,43 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const next = state.lightPostprocess.lightsEnabled.value === 0;
         state.lightPostprocess.setLightsEnabled(next);
         tryLocalStorageSet(lightsEnabledKey, String(next));
+        state.forceUpdate();
+      },
+      startLightSizing(center) {
+        state.lightSizing = {
+          center,
+          startEpochMs: Date.now(),
+          radius: lightSizingStartRadius,
+        };
+        state.lightPostprocess.setTrackedActive(true);
+        // 🔔 `displayCenter` (not `setTrackedCenter` directly) is the source of truth `onCameraChange`
+        // re-pushes into the tracked-center uniform every frame — setting `setTrackedCenter` here
+        // directly would get stomped back to `displayCenter`'s stale value on the very next frame
+        state.light.displayCenter.set(center.x, 0, center.z);
+        state.lightPostprocess.setTrackedCenter(center.x, center.z);
+        state.lightPostprocess.setTrackedRadius(state.lightSizing.radius);
+        if (state.controls) state.controls.enabled = false; // suppress camera pan/rotate while sizing
+        state.forceUpdate();
+      },
+      updateLightSizing() {
+        if (!state.lightSizing) return;
+        const elapsedMs = Date.now() - state.lightSizing.startEpochMs;
+        const t = Math.min(1, elapsedMs / lightSizingGrowDurationMs);
+        const radius = lightSizingStartRadius + t * (lightSizingMaxRadius - lightSizingStartRadius);
+        state.lightSizing.radius = radius;
+        state.lightPostprocess.setTrackedRadius(radius);
+      },
+      commitLightSizing() {
+        if (!state.lightSizing) return;
+        const { center, radius } = state.lightSizing;
+        const index = state.lightPostprocess.addLight(center, radius);
+        state.lightPostprocess.setTrackedActive(false);
+        if (state.controls) state.controls.enabled = true;
+        state.lightSizing = null;
+        if (index === null) {
+          // all MAX_POSTPROCESS_LIGHTS slots full
+          w.menu?.set({ toastTs: { ...w.menu.toastTs, "lights full": Date.now() } });
+        }
         state.forceUpdate();
       },
       resetAllLights() {
@@ -612,10 +663,14 @@ export type State = {
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
   lightPostprocess: XzCylinderPostprocess;
-  /** Radius newly-created lights get (long-press, or `setLightTarget`) — existing lights keep their own */
-  defaultLightRadius: number;
   /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove in `use-world-events.ts` */
   lightEditingEnabled: boolean;
+  /** Active while long-pressing to place a NEW light and still holding — grows over time. `null` when idle. */
+  lightSizing: null | {
+    center: { x: number; z: number };
+    startEpochMs: number;
+    radius: number;
+  };
   light: LightState;
   fov: number;
 
@@ -633,12 +688,18 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  /** Sets/clears the tracked light's target — e.g. a live reference like `npc.position`. `undefined` turns it off. */
-  setLightTarget(target?: { x: number; y: number; z: number }): void;
+  /** Sets/clears the tracked light's target — e.g. a live reference like `npc.position`. `undefined` turns it off. `radius` defaults to `lightSizingStartRadius`. */
+  setLightTarget(target?: { x: number; y: number; z: number }, radius?: number): void;
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleLightEditing(): void;
   /** Toggles `lightPostprocess.lightsEnabled` — persisted to localStorage */
   toggleLightsEnabled(): void;
+  /** Begins a hold-to-grow preview (via the tracked light) for a new light being placed at `center` */
+  startLightSizing(center: { x: number; z: number }): void;
+  /** Grows `lightSizing.radius` based on elapsed hold time — called every frame from `onCameraChange` */
+  updateLightSizing(): void;
+  /** Commits the current `lightSizing` preview as a static light (or discards if `lightSizing` is `null`) */
+  commitLightSizing(): void;
   /** Deactivates every static light and the tracked light */
   resetAllLights(): void;
   setCameraMode(mode: CameraModeType): void;

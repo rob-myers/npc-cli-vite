@@ -68,18 +68,21 @@ export const assetsJsonChangingEvent = "assets-json-changing";
 export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
-// 🚧 restrict by worldKey
 export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
 export const defaultFov = 60;
 export const defaultBrightness = 2;
-export const xzCircleRadiusStorageKey = `world-xz-circle-radius`;
-export const defaultXzCircleRadius = 3;
 export const showDebugLightOutlineKey = "world-show-debug-light-outlline";
 export const lightEditingEnabledKey = "world-light-editing-enabled";
 export const lightsEnabledKey = "world-lights-enabled";
+/** Radius a long-pressed new light starts at before it grows */
+export const lightSizingStartRadius = 0.5;
+/** Time (ms) for a long-pressed new light to grow from `lightSizingStartRadius` to `lightSizingMaxRadius` */
+export const lightSizingGrowDurationMs = 2500;
+/** Cap for a long-pressed new light's radius while growing */
+export const lightSizingMaxRadius = 6;
 
 export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
