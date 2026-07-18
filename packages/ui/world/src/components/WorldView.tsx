@@ -86,7 +86,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       lightPostprocess: createXzCylinderPostprocess({
         showBorder: tryLocalStorageGetParsed<boolean>(showDebugLightOutlineKey) ?? false,
         bottomHeight: 0,
-        topHeight: wallHeight,
+        topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
       /** Radius newly-created lights get (long-press, or `setLightTarget`) — existing lights keep their own */
       defaultLightRadius: tryLocalStorageGetParsed<number>(xzCircleRadiusStorageKey) ?? defaultXzCircleRadius,
@@ -417,6 +417,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
         const sceneColor = scenePass.getTextureNode("output");
+        // raw (logarithmic) depth — litAmount() does its own log-depth inversion
+        const sceneDepth = scenePass.getTextureNode("depth");
 
         const pipeline = new THREE.RenderPipeline(gl);
 
@@ -430,7 +432,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         //   ),
         //   sceneColor.a,
         // );
-        const outsideAmount = float(1).sub(state.lightPostprocess.litAmount());
+        const outsideAmount = float(1).sub(state.lightPostprocess.litAmount(sceneDepth.r));
         let effect = mix(
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
           sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),

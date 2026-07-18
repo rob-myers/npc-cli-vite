@@ -431,6 +431,10 @@ w decor.byKey.test-decor-point
   - `w n.rob.position | w view.setLightTarget -`
   - `w view.setLightTarget`
 - ✅ light ui: can enable/disable/reset
+- ✅ fix light occlusion
+  - use depth map to avoid lighting npc outside light but occluding it
+
+- clean MAX_DOORS_PER_GEOMORPH
 
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it

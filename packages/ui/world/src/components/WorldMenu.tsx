@@ -94,9 +94,9 @@ export function WorldMenu() {
   const isDebugActive = (item: string) => {
     switch (item) {
       case "View Pick":
-        return w.view?.objectPick.value === 1;
+        return w.view.objectPick?.value === 1;
       case "Post FX":
-        return w.view?.postProcessing ?? false;
+        return w.view.postProcessing ?? false;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
@@ -112,7 +112,7 @@ export function WorldMenu() {
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
       case "Focus Outline":
-        return w.view?.lightPostprocess.showBorder.value === 1;
+        return w.view.lightPostprocess?.showBorder.value === 1;
       default:
         return false;
     }
@@ -180,7 +180,7 @@ export function WorldMenu() {
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
   const toggleToastKeys = useToastTs(state.toastTs);
-  const { extraZoomActive, readyForExtraZoom } = w.view?.controls ?? {};
+  const { extraZoomActive, readyForExtraZoom } = w.view.controls ?? {};
 
   return (
     <>

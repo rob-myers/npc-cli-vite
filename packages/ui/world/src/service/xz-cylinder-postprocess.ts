@@ -5,6 +5,7 @@ import {
   getViewPosition,
   If,
   Loop,
+  logarithmicDepthToViewZ,
   mix,
   screenUV,
   uniform,
@@ -12,6 +13,7 @@ import {
   vec2,
   vec3,
   vec4,
+  viewZToPerspectiveDepth,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_POSTPROCESS_LIGHTS } from "../const";
@@ -53,8 +55,15 @@ export type XzCylinderPostprocess = {
   /** Deactivates every static light (and the tracked light) in one pass */
   resetLights(): void;
 
-  /** `1` inside any active light (tracked or static), fading to `0` over `falloff` — unions all lights */
-  litAmount(): THREE.Node<"float">;
+  /**
+   * `1` inside any active light (tracked or static), fading to `0` over `falloff` — unions all
+   * lights. Tests the REAL world position visible at each fragment (reconstructed from `sceneDepth`),
+   * not a plane-projected approximation — so an npc (or anything else) in front of or behind a
+   * light's actual cylinder, but screen-aligned with it, is correctly excluded.
+   * @param sceneDepth The real scene's depth texture (e.g. `scenePass.getTextureNode("depth")`) —
+   * raw/logarithmic, NOT pre-linearized; this function does its own log-depth inversion.
+   */
+  litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
   /** Draws every active light's debug wireframe on top of `color` (no-op when `showBorder` is off) */
   drawBorder(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
 };
@@ -68,15 +77,23 @@ const debugLineCount = 8;
  * `topHeight`) unioned together: one "tracked" light (position set live, e.g. to follow an npc)
  * plus up to `MAX_POSTPROCESS_LIGHTS` independent "static" lights, each with its own radius.
  *
- * Since there's no usable depth buffer (see 🔔 below), each fragment's view ray is intersected
- * with the `bottomHeight` and `topHeight` planes ONCE per fragment (shared by every light) to
- * get the ray segment's two endpoints; each light then only needs a cheap point-to-segment
- * distance test against that shared segment.
+ * `litAmount()` reconstructs the REAL world position visible at each fragment from the scene's
+ * own (logarithmic) depth buffer — `logarithmicDepthToViewZ` → `viewZToPerspectiveDepth` →
+ * `getViewPosition`, then view→world via `camWorldMatrix` — and tests each light against that
+ * real point (XZ distance + real Y in `[bottomHeight, topHeight]`). This matters because without
+ * it, anything screen-aligned with a light but at a very different depth (e.g. an npc standing
+ * well in front of or behind the light's actual cylinder) would be lit incorrectly.
+ *
+ * `drawBorder()` (debug wireframe only) still uses the older, cheaper analytic approach: each
+ * fragment's view ray is intersected with the `bottomHeight`/`topHeight` planes directly (no
+ * depth buffer involved), giving two ray/plane intersection points once per fragment that every
+ * light's wireframe test can share.
  *
  * 🔔 TSL's built-in `cameraPosition` / `cameraProjectionMatrixInverse` / `cameraWorldMatrix`
  * resolve to whatever camera renders the *current* pass — inside a post-processing composite
  * pass that's an internal fullscreen-quad camera, not the real scene camera. So the real
- * camera's matrices are copied into our own uniforms via `update` instead.
+ * camera's matrices (and near/far, for the depth inversion) are copied into our own uniforms via
+ * `update` instead.
  */
 export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): XzCylinderPostprocess {
   const falloff = opts.falloff ?? 0.6;
@@ -86,6 +103,9 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
   const camWorldMatrix = uniform(new THREE.Matrix4());
   const camPosition = uniform(new THREE.Vector3());
+  // needed to invert the real scene's logarithmic depth back into a world position (see litAmount)
+  const camNear = uniform(0.1);
+  const camFar = uniform(1000);
   const showBorder = uniform(opts.showBorder ? 1 : 0);
 
   // the tracked light
@@ -144,6 +164,10 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
       camWorldMatrix.value.copy(camera.matrixWorld);
       camPosition.value.copy(camera.position);
+      // assumes a perspective camera (always true in this project) — needed to invert log depth
+      const perspectiveCam = camera as THREE.PerspectiveCamera;
+      camNear.value = perspectiveCam.near;
+      camFar.value = perspectiveCam.far;
     },
     setTrackedActive(isActive) {
       trackedActive.value = isActive ? 1 : 0;
@@ -184,15 +208,47 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       hiWater.value = 0;
       trackedActive.value = 0;
     },
-    litAmount() {
+    litAmount(sceneDepth) {
       return Fn(() => {
-        const bottomXZ = rayXZAt(bottomHeight);
-        const topXZ = rayXZAt(topHeight);
+        const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
+        // 🔔 the floor (and any other depthWrite:false transparent surface, see Floor.tsx) never
+        // populates the depth buffer, so sampling depth "through" it just returns the background/
+        // far-plane clear value (viewZ magnitude ~= camFar) — detect that and fall back to the old
+        // plane-projection ray/bottomHeight intersection, exactly correct for a flat floor anyway.
+        const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
+
+        // real `If/Else` (not `.select()`): floor regions are large and spatially coherent on
+        // screen, so most GPU warps covering them take ONE branch uniformly and the other branch's
+        // work (the full depth-based reconstruction, or the fallback ray) is genuinely skipped —
+        // unlike `.select()`, which always pays for both regardless of coherence. Divergent warps
+        // (the thin silhouette where floor meets a wall/npc) cost the same either way.
+        const worldXZ = vec2(0, 0).toVar();
+        const worldY = float(0).toVar();
+
+        If(isBackground, () => {
+          worldXZ.assign(rayXZAt(bottomHeight));
+          worldY.assign(float(bottomHeight));
+        }).Else(() => {
+          // reconstruct the REAL world position visible at this fragment: convert the log-depth
+          // -derived viewZ to the standard perspective NDC depth getViewPosition expects, then
+          // transform view-space -> world-space. This is what fixes the "npc in front of/behind
+          // the cylinder still lit" bug — the old approach only tested where the camera ray
+          // crossed the bottom/top PLANES, never what was really there.
+          const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
+          const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
+          const realWorldPos = camWorldMatrix.mul(vec4(viewPos, 1.0)).xyz;
+          worldXZ.assign(realWorldPos.xz);
+          worldY.assign(realWorldPos.y);
+        });
+
+        const inHeightRange = worldY.greaterThanEqual(float(bottomHeight)).and(worldY.lessThanEqual(float(topHeight)));
+
         const litMax = float(0).toVar();
 
         If(trackedActive.notEqual(0), () => {
-          const dist = distToSegment(trackedCenter, bottomXZ, topXZ);
-          litMax.assign(litMax.max(float(1).sub(dist.sub(trackedRadius).div(falloff).clamp(0, 1))));
+          const dist = worldXZ.sub(trackedCenter).length();
+          const litVal = float(1).sub(dist.sub(trackedRadius).div(falloff).clamp(0, 1));
+          litMax.assign(litMax.max(inHeightRange.select(litVal, float(0))));
         });
 
         Loop(MAX_POSTPROCESS_LIGHTS, ({ i }) => {
@@ -201,9 +257,10 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
           });
           const l = lightsNode.element(i);
           If(l.z.notEqual(0), () => {
-            const dist = distToSegment(l.xy, bottomXZ, topXZ);
+            const dist = worldXZ.sub(l.xy).length();
             // l.w = this light's own radius
-            litMax.assign(litMax.max(float(1).sub(dist.sub(l.w).div(falloff).clamp(0, 1))));
+            const litVal = float(1).sub(dist.sub(l.w).div(falloff).clamp(0, 1));
+            litMax.assign(litMax.max(inHeightRange.select(litVal, float(0))));
           });
         });
 
