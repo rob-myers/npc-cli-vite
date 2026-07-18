@@ -75,6 +75,7 @@ export const fovStorageKey = `world-fov-value`;
 export const defaultFov = 60;
 export const defaultBrightness = 2;
 export const showDebugLightOutlineKey = "world-show-debug-light-outlline";
+export const postProcessingEnabledKey = "world-post-processing-enabled";
 export const lightEditingEnabledKey = "world-light-editing-enabled";
 export const lightsEnabledKey = "world-lights-enabled";
 /** Radius a long-pressed new light starts at before it grows */
