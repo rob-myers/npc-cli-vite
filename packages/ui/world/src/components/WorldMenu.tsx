@@ -7,7 +7,6 @@ import {
   ArrowsOutIcon,
   CaretDownIcon,
   CaretRightIcon,
-  CircleDashedIcon,
   GlobeStandIcon,
   LightbulbIcon,
   MagnifyingGlassIcon,
@@ -20,14 +19,7 @@ import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
-import {
-  brightnessStorageKey,
-  defaultFov,
-  defaultXzCircleRadius,
-  fovStorageKey,
-  pickOpenDoorsKey,
-  xzCircleRadiusStorageKey,
-} from "../const";
+import { brightnessStorageKey, defaultFov, fovStorageKey, pickOpenDoorsKey } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
@@ -214,9 +206,11 @@ export function WorldMenu() {
               state.set({ menuOpen: !state.menuOpen });
             }}
           >
-            <div className={cn("flex items-center gap-2 bg-gray-800 text-white p-2", big && "p-3")}>
-              <GlobeStandIcon className={cn("size-5", big && "size-6")} weight="bold" />
-              {pendingKeys.length > 0 && <Spinner className={cn("size-4", big && "size-5")} />}
+            <div className="w-fit grid grid-flow-col items-center bg-gray-800 text-white">
+              <div className={cn("grid place-items-center", big ? "size-12" : "size-9")}>
+                <GlobeStandIcon className={cn(big ? "size-6" : "size-5")} weight="bold" />
+              </div>
+              {pendingKeys.length > 0 && <Spinner className={cn("mr-2", big ? "size-5" : "size-4")} />}
             </div>
           </Menu.Trigger>
 
@@ -565,8 +559,8 @@ export function WorldMenu() {
           >
             <div
               className={cn(
-                "relative flex justify-center rounded select-none",
-                big ? "p-3" : "p-2",
+                "grid place-items-center select-none",
+                big ? "size-12" : "size-9",
                 w.view.lightEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
               )}
               title={
@@ -578,7 +572,7 @@ export function WorldMenu() {
               <LightbulbIcon
                 className={big ? "size-6" : "size-5"}
                 weight={w.view.lightEditingEnabled ? "fill" : "bold"}
-              ></LightbulbIcon>
+              />
             </div>
           </Menu.Trigger>
 
@@ -590,36 +584,6 @@ export function WorldMenu() {
                   big && "py-2 px-3",
                 )}
               >
-                <div className={cn("flex items-center gap-2 py-1 text-xs text-slate-300", big && "gap-3 py-2 text-sm")}>
-                  <CircleDashedIcon
-                    className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
-                    onClick={() => {
-                      w.view.defaultLightRadius = defaultXzCircleRadius;
-                      tryLocalStorageSet(xzCircleRadiusStorageKey, String(defaultXzCircleRadius));
-                      w.update();
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="5"
-                    step="0.5"
-                    value={w.view.defaultLightRadius}
-                    onChange={(e) => {
-                      const radius = Number(e.target.value);
-                      w.view.defaultLightRadius = radius;
-                      tryLocalStorageSet(xzCircleRadiusStorageKey, String(radius));
-                      w.update();
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn(
-                      "w-16 accent-white cursor-pointer",
-                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                      big &&
-                        "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
-                    )}
-                  />
-                </div>
                 <div className="flex gap-1">
                   <Menu.Item
                     className={cn(
@@ -634,7 +598,7 @@ export function WorldMenu() {
                     className={cn(
                       "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
                       big && "text-sm px-3 py-1.5",
-                      w.view.lightPostprocess.lightsEnabled.value === 0 && "opacity-50",
+                      w.view.lightPostprocess?.lightsEnabled.value === 0 && "opacity-50",
                     )}
                     onClick={() => {
                       w.view.toggleLightsEnabled();
@@ -652,8 +616,8 @@ export function WorldMenu() {
 
         <div
           className={cn(
-            "flex w-9 items-center justify-center bg-gray-800 text-white p-2 cursor-pointer hover:bg-gray-700",
-            big && "w-12 p-3",
+            "grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700",
+            big ? "size-12" : "size-9",
           )}
           onClick={() => w.setDisabled()}
         >
@@ -668,7 +632,7 @@ export function WorldMenu() {
           {[...toastKeys, ...toggleToastKeys].map((key) => (
             <motion.div
               key={key}
-              className={cn("bg-gray-800/90 text-slate-300 text-xs px-2 py-1", big && "text-sm px-3 py-1.5")}
+              className={cn("bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5", big && "text-sm px-3 py-1.5")}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}

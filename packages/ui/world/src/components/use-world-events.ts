@@ -167,7 +167,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "picked": {
-            const { defaultLightRadius, lastPointer, lightEditingEnabled, lightPostprocess, raycaster } = w.view;
+            const { lastPointer, lightEditingEnabled, lightPostprocess, raycaster } = w.view;
             if (lastPointer.longPress === true && lightEditingEnabled) {
               // mirror litAmount()'s per-pixel test: intersect the SAME click ray with the
               // bottom/top planes (not just the raycast-hit floor point), so removal-detection
@@ -180,10 +180,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
                   : null;
               if (near !== null) {
                 lightPostprocess.removeLight(near);
+                w.view.forceUpdate();
               } else {
-                lightPostprocess.addLight({ x: e.x, z: e.z }, defaultLightRadius);
+                w.view.startLightSizing({ x: e.x, z: e.z });
               }
-              w.view.forceUpdate();
             }
             break;
           }
