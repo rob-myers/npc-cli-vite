@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { ArrowDownRightIcon, DotIcon } from "@phosphor-icons/react";
+import { ArrowDownRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -177,7 +177,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        <div className="flex justify-between items-end">
+        <div className="flex gap-8 justify-center items-center">
           <div
             className={cn("transition-opacity text-[2.5rem] truncate", !b.interact.active && "select-none opacity-50")}
           >
@@ -185,19 +185,19 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
           </div>
           <div
             className={cn(
-              "pointer-events-auto border-2 border-white/75 border-b-black! p-3 rounded-t-full bg-black/0 text-white/80 cursor-pointer",
+              "pointer-events-auto border-2 border-white/75 p-1 rounded-xl bg-black/0 text-white/80 cursor-pointer",
               "border-white/25",
             )}
             onClick={b.toggleInteractive.bind(b)}
           >
-            <DotIcon className="size-10" />
+            <DotsThreeIcon className="size-10" />
           </div>
         </div>
 
         <div
           className={cn(
-            "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider rounded-2xl rounded-tr-none leading-[1.2] text-center select-none",
-            b.interact.active ? "border-3 border-white/25" : "opacity-75 border-6 border-white/10",
+            "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider leading-[1.2] text-center select-none",
+            b.interact.active ? "border-white/25" : "opacity-75 border-white/10",
           )}
         >
           <div className="my-auto w-full">
@@ -209,7 +209,7 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         <div
           className={cn(
             "absolute bottom-0 right-0 text-white/80 cursor-nwse-resize",
-            !b.interact.active && "opacity-25",
+            b.interact.active ? "opacity-50" : "opacity-0",
           )}
           onMouseDown={b.onResizeMouseDown}
           onTouchStart={b.onResizeTouchStart}
