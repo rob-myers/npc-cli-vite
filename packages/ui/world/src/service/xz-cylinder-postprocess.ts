@@ -27,12 +27,17 @@ export type XzCylinderPostprocessOpts = {
   falloff?: number;
   /** Draw a debug wireframe (two rims + vertical lines) per active light? Default `false`. Toggle later via `setShowBorder`. */
   showBorder?: boolean;
+  /** Are lights' dimming/tinting effect active? Default `true`. Toggle later via `setLightsEnabled`. */
+  lightsEnabled?: boolean;
 };
 
 export type XzCylinderPostprocess = {
   /** `0` or `1`. Toggle via `setShowBorder`. */
   showBorder: THREE.UniformNode<"float", number>;
   setShowBorder(showBorder: boolean): void;
+  /** `0` or `1`. When `0`, `litAmount()` always returns unlit (as if no lights exist), so the outside dimming/tinting applies everywhere. Toggle via `setLightsEnabled`. */
+  lightsEnabled: THREE.UniformNode<"float", number>;
+  setLightsEnabled(lightsEnabled: boolean): void;
   /** Feed the real scene camera (not the internal post-processing quad camera) — shared by every light */
   update(camera: THREE.Camera): void;
 
@@ -107,6 +112,7 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const camNear = uniform(0.1);
   const camFar = uniform(1000);
   const showBorder = uniform(opts.showBorder ? 1 : 0);
+  const lightsEnabled = uniform(opts.lightsEnabled ?? true ? 1 : 0);
 
   // the tracked light
   const trackedCenter = uniform(new THREE.Vector2());
@@ -157,6 +163,10 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
     showBorder,
     setShowBorder(isShown) {
       showBorder.value = isShown ? 1 : 0;
+    },
+    lightsEnabled,
+    setLightsEnabled(isEnabled) {
+      lightsEnabled.value = isEnabled ? 1 : 0;
     },
     update(camera) {
       // ensure matrixWorld reflects this frame's position/orientation, not last frame's
@@ -264,7 +274,9 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
           });
         });
 
-        return litMax;
+        // when lights are disabled, pretend none exist: nothing is lit, so the outside dim/tint
+        // effect applies everywhere
+        return lightsEnabled.equal(0).select(float(0), litMax);
       })();
     },
     drawBorder(color) {

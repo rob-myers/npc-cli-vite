@@ -12,7 +12,6 @@ import {
   LightbulbIcon,
   MagnifyingGlassIcon,
   PauseIcon,
-  PencilSimpleIcon,
   PlayIcon,
   SunIcon,
 } from "@phosphor-icons/react";
@@ -208,7 +207,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer"
+            className="cursor-pointer outline-none"
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => {
               if (state.dragged) return;
@@ -547,7 +546,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer"
+            className="cursor-pointer outline-none"
             onPointerDown={(e) => {
               e.preventDefault();
               state.lightLongPress = false;
@@ -580,7 +579,6 @@ export function WorldMenu() {
                 className={big ? "size-6" : "size-5"}
                 weight={w.view.lightEditingEnabled ? "fill" : "bold"}
               ></LightbulbIcon>
-              <PencilSimpleIcon className="absolute right-0.5 bottom-0.5 size-4" />
             </div>
           </Menu.Trigger>
 
@@ -622,15 +620,31 @@ export function WorldMenu() {
                     )}
                   />
                 </div>
-                <Menu.Item
-                  className={cn(
-                    "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
-                    big && "text-sm px-3 py-1.5",
-                  )}
-                  onClick={() => w.view.resetAllLights()}
-                >
-                  reset all lights
-                </Menu.Item>
+                <div className="flex gap-1">
+                  <Menu.Item
+                    className={cn(
+                      "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
+                      big && "text-sm px-3 py-1.5",
+                    )}
+                    onClick={() => w.view.resetAllLights()}
+                  >
+                    clear
+                  </Menu.Item>
+                  <Menu.Item
+                    className={cn(
+                      "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
+                      big && "text-sm px-3 py-1.5",
+                      w.view.lightPostprocess.lightsEnabled.value === 0 && "opacity-50",
+                    )}
+                    onClick={() => {
+                      w.view.toggleLightsEnabled();
+                      state.update();
+                    }}
+                    closeOnClick={false}
+                  >
+                    shown
+                  </Menu.Item>
+                </div>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
