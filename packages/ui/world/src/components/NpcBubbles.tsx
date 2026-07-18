@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { ArrowDownRightIcon, HandPointingIcon } from "@phosphor-icons/react";
+import { ArrowDownRightIcon, DotIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -185,12 +185,12 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
           </div>
           <div
             className={cn(
-              "pointer-events-auto border-2 border-white/75 border-b-black! p-3 rounded-t-full bg-black/60 text-white/80 cursor-pointer",
-              !b.interact.active && "border-white/25",
+              "pointer-events-auto border-2 border-white/75 border-b-black! p-3 rounded-t-full bg-black/0 text-white/80 cursor-pointer",
+              "border-white/25",
             )}
             onClick={b.toggleInteractive.bind(b)}
           >
-            <HandPointingIcon className="size-10" />
+            <DotIcon className="size-10" />
           </div>
         </div>
 
