@@ -25,6 +25,7 @@ import {
   defaultXzCircleRadius,
   fovStorageKey,
   lightEditingEnabledKey,
+  lightsEnabledKey,
   numCardinalDirectionsKey,
   showDebugLightOutlineKey,
   wallHeight,
@@ -81,10 +82,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
-      objectPickScale: 0.5, // do not walls by default
+      objectPickScale: 0.5, // don't pick walls by default
       postProcessing: true,
       lightPostprocess: createXzCylinderPostprocess({
         showBorder: tryLocalStorageGetParsed<boolean>(showDebugLightOutlineKey) ?? false,
+        lightsEnabled: tryLocalStorageGetParsed<boolean>(lightsEnabledKey) ?? true,
         bottomHeight: 0,
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
@@ -397,6 +399,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(lightEditingEnabledKey, String(state.lightEditingEnabled));
         w.update();
       },
+      toggleLightsEnabled() {
+        const next = state.lightPostprocess.lightsEnabled.value === 0;
+        state.lightPostprocess.setLightsEnabled(next);
+        tryLocalStorageSet(lightsEnabledKey, String(next));
+        state.forceUpdate();
+      },
       resetAllLights() {
         state.lightPostprocess.resetLights();
         state.light.targetOverride = null;
@@ -629,6 +637,8 @@ export type State = {
   setLightTarget(target?: { x: number; y: number; z: number }): void;
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleLightEditing(): void;
+  /** Toggles `lightPostprocess.lightsEnabled` — persisted to localStorage */
+  toggleLightsEnabled(): void;
   /** Deactivates every static light and the tracked light */
   resetAllLights(): void;
   setCameraMode(mode: CameraModeType): void;
