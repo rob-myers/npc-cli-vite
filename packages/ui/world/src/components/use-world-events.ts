@@ -236,6 +236,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
+
+        if (e.type === "inside" && w.view.light.trackedNpcKey === npc.key) {
+          const door = w.door.byKey[e.meta.gdKey];
+          const gmRoomId = state.npcToRoom.get(npc.key) as Geomorph.GmRoomId;
+          const otherRoomId = w.gmGraph.getOtherGmRoomId(door, gmRoomId.roomId);
+          otherRoomId && state.switchTrackedNpcRoom(otherRoomId);
+        }
       },
       onExitCollider(e, npc) {
         if (e.type === "inside") {
@@ -244,12 +251,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.tryCloseDoor(e.meta.gdKey);
           }
 
-          // trigger enter-room on exit inside-collider and changed room
           const gmRoomId = state.npcToRoom.get(npc.key);
-          const nextGmRoomId = state.findRoomContaining(npc.position);
-          if (gmRoomId === undefined || nextGmRoomId === null || nextGmRoomId.grKey === gmRoomId.grKey) {
+          const nextGmRoomId = state.findRoomContaining(npc.position, true);
+          if (gmRoomId === undefined || nextGmRoomId === null) {
             return;
           }
+          if (nextGmRoomId.grKey === gmRoomId.grKey) {
+            // entered collider then turned around and exited
+            if (w.view.light.trackedNpcKey === npc.key) {
+              state.switchTrackedNpcRoom(nextGmRoomId);
+            }
+            return;
+          }
+
+          // trigger enter-room on exit inside-collider and changed room
           w.events.next({ key: "enter-room", npcKey: npc.key, gmRoomId: nextGmRoomId });
         }
 
@@ -294,13 +309,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.npcToRoom.set(npc.key, e.gmRoomId);
             (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
 
-            // keep the tracked light's room-poly clip in sync as its npc moves between rooms
-            if (w.view.light.trackedNpcKey === npc.key) {
-              w.view.lightPostprocess.setTrackedRoomOutline(w.view.computeRoomOutline(e.gmRoomId));
-            }
-
-            // 🚧
-            // state.fixInaccessibleTarget(npc);
             break;
           }
           case "exit-collider": {
@@ -577,6 +585,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many" });
       },
+      switchTrackedNpcRoom(gmRoomId) {
+        w.view.lightPostprocess.setTrackedRoomOutline(w.view.computeRoomOutline(gmRoomId));
+      },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -702,6 +713,7 @@ export type State = {
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
+  switchTrackedNpcRoom(nextRoomOrDoor: Geomorph.GmRoomId): void;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {
