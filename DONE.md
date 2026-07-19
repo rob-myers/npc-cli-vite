@@ -1,5 +1,439 @@
 # DONE
 
+# By Jul 19th 2026
+
+- ✅ custom decor preserved on hmr
+
+```sh
+# repro
+source /etc/demo.js.sh
+demo_add_decor
+w decor.byKey | keys | split
+w decor.byKey.test-decor-point
+# save Decor.tsx
+w decor.byKey.test-decor-point
+# w: selector not found: decor.byKey.test-decor-point
+```
+
+- ✅ decor fixes
+  - ✅ fix custom decor quad
+    - no issue we need to use respective decor image
+  - ✅ fix flipped decor
+  - ✅ can specify decor quad height via meta.h
+  - ✅ can pick decor quad
+    - 🔔 cuboid MUST not intersect other geometry else pick can be occluded
+  - ✅ can render decor point via meta.shown
+    - ✅ can pick
+    - ✅ fix rotation
+    - ✅ decor point has transform
+    - ✅ fix flip
+    - ✅ scale/position now wrong
+  - ✅ icons should be "filled in" so we needn't rely on "cuboid" for pick
+    - for number-zero, number-one, arrow-boxed
+  - ✅ Debug points can be picked
+  - can remove custom decor
+    - ❌ track gaps
+
+- ✅ runtime decor
+  - ✅ render runtime decor as separate instancedMesh
+    - ✅ can remove `w decor.remove test-decor-point`
+    - ❌ remove def.{x,y} and only use def.transform
+      - instead def.transform overrides
+    - ✅ can pick
+  - ✅ remove instance via swap with last
+  - ✅ more explicit hmr i.e. recompute gmRoomId
+  - ✅ shell function for removing runtime decor
+    - `remove` also replaces `clear`
+  - ✅ show static/runtime decor rect/circle when meta.shown
+    - ✅ fix initially white runtime decor rect/circle (saving Decor changes to green)
+    - ✅ bug when `remove test-decor-rect` when `demo_add_decor` twice
+      - auto remove extant on create
+      - remove decor also removes from grid
+    - ✅ simplify code in Decor
+      - ✅ can tint static or runtime decor
+        - `w e.toggleLock g0d23`
+        - `w decor.tintDecor blue test-decor-rect`
+      - ✅ simplify shader code
+        - could pre-render circle/rects but won't like as good
+        - for the moment we'll accept the complexity
+  - ✅ can create colliders from decor rect/circle
+    - ✅ can manually create a collider
+      - `demo_add_colliders`
+    - ✅ improve debug colliders
+    - ✅ decor rects are being rendered wrong
+    - ✅ runtime colliders should survive rebuild world
+      - 🔔 saving physics.ts loses worker.store
+      - 🔔 hot reload store trick does not work maybe because worker "self" destroyed?
+      - ✅ instead, send the runtime decor defs in "rebuild payload"
+        - ✅ aligned `demo_add_decor` and `demo_add_colliders` preserves colliders on hmr
+        - ✅ align "colliders" with "decor" i.e. rect/circle collider created only via decor
+          - w.decor.create
+          - w.decor.remove
+      - ✅ clean away old approach
+    - ✅ hook into `w.decor.create`
+    - ✅ verify events
+      - `events /-collider/ | map meta`
+
+- ✅ can log draw calls from WorldMenu
+- ✅ reduce draw calls
+  - avoid multiple materials where possible
+  - avoid THREE.DoubleSide where possible
+
+- ❌ npc has selector quad
+  - restyle label instead
+
+- ✅ npc labels should match animation e.g. sit, lie
+- ✅ support `look`
+
+- ✅ hide speech bubbles whilst looking down from above
+  - two modes: "looking down" and not, based on camera polar angle
+  - ✅ whilst "looking down" contract speech bubble
+  - ✅ can indicate they're talking via ellipsis added to their unique label
+    - `label npc:rob speaking`
+  - ❌ whilst speech bubble contracted can temporarily view its contents
+  - ✅ fix translate/resize on mobile
+  - ✅ hide speech bubble whilst top down, after all
+  - ✅ when `npc.labelStyle.speaking` show icon rather than ellipsis
+    - icons should always be decor
+    - ✅ `w.decor.imgForOtherText['speech-bubble']`
+  - ✅ if top down and `say npc:foo bar` then see flicker
+  - ✅ demo_log_speech outputs speech in terminal
+  - ❌ initial (sans resize) bubble width based on text length
+
+- ✅ speech bubble extras
+  - ✅ fade in 
+  - ✅ fade out and auto-delete
+  - ✅ clean Html3d
+  - ✅ clean NpcBubbles
+
+- ✅ speech bubble pointer events redo
+  - ✅ by default pointer-events-none except interactive toggle
+  - ✅ interactive toggle permits resize when interactive
+  - ✅ after timeout become non-interactive
+  - ❌ does not fade when translating or resizing
+    - can pause and translate/resize
+  - ✅ clean
+
+- ✅ remove w.bubble.topDown using w.view.topDown instead
+- ✅ speech bubble remembers offset after dispose and re-create
+
+- ✅ mobile camera changes
+  - isolate pinch-zoom from rotation
+  - pinch-zoom has more effect
+- ❌ clean camera-controls
+  - no need
+
+- ✅ camera-controls snapAzimuth shows rotation until half-way then snaps
+  - ✅ cameraMode is a CameraControls prop and persisted in WorldView
+  - ✅ can change polar angle in cameraMode cardinal
+  - ✅ cannot chain rotations in one gesture
+  - ✅ snapping shows initial azimuthal rotation until half way
+  - ✅ desktop polar angle control still wrong
+  - ✅ verify mobile too
+
+- ✅ BUG camera cardinal desktop got stuck on zoom on far and zoom back
+- ❌ BUG cannot change polar angle sometimes when polar minimal
+
+- ✅ support `lock` and `unlock`
+- ✅ support `grant` and `revoke`
+- ✅ BUG trigger nearby door on npc start-moving
+  - covers case where previously revoked npc is provided key and is already nearby
+
+- ✅ speech bubble remembers resize after dispose and re-create
+- ✅ reduce npc draw calls
+  - reduce multiple materials
+  - ✅ front-sided
+  - ✅ issue with overlapping shadow quads (depthWrite true)
+- ✅ alphaTest looks better at 0.9 for robot-0
+
+- ✅ avoid respawn when move to self or current doable
+- ✅ BUG lie on bed, `say npc:rob zZZZzzZZZ`, click edit speech bubble => npc disappears
+  - seems fixed
+- ✅ can say for longer e.g. `say npc:rob zZZzzZZZZZ` stops too early
+  - `say npc:rob zZZZzzZZZ secs:10`
+  - `say npc:rob zZZZzzZZZ for:Infinity`
+
+
+- ✅ BUG `pick | move npc:rob along` offmesh, onmesh, onmesh => walk animation not playing
+  - REPRO (while unpaused) click navigable, chair, navigable, navigable
+    - final navigation has no walk anim
+  - we're setting `npc.arrive := false` as part of contiguous motion, however this prevents `startIdle` from reaching the assignment `npc.moving := false`
+  - ✅ enforce `npc.moving = false` on `move` to doable
+
+- ✅ clean animation logic using ai
+  - ✅ NpcAnimation class
+  - ✅ verify hmr
+  - ✅ clean `npc.anim.startIdle`
+  - ✅ clean `npc.anim.startMoving`
+  - ✅ reorg npc separation
+    - ✅ do not bother rotating idle npc as default separation behaviour
+    - ✅ remove `updateLookAt` and `lookAtPoint`
+    - ✅ updateIdle
+
+- ✅ separation refinement
+  - stuck example: idle npc on nav edge looking perp, other adjacent, target diametric
+    - resolves on 2nd attempt i.e. npc velocity direction changes
+  - stuck example: idle npc near (not on) nav edge looking along it, other behind and against nav edge
+    - if on nav edge resolves on 2nd attempt
+  - `agent.boundary.segments` of type `{ d: number; s: SixTuple<number> }`
+  - ✅ idle npc "moves to closest segment" by default when other close
+
+- ✅ rethink separation
+  - ✅ no separation detection
+  - ✅ after walk -> idle slow down, set small maxAcceleration
+  - ✅ can `excuse_me npc:kate` (demo.js)
+    - e.g case where other sandwiched against nav border
+  - ✅ can move randomly `excuse_me again npc:kate`
+
+- ✅ BUG move target too close to current position never arrives
+  - bug was in playIdleAnim
+
+- ✅ jerky idle transition on stuck  
+  - `stand` seems better than `idle`
+  - `idle -> breathe` and `stand -> idle` 
+
+- ✅ hide shadows during pick so can spawn close
+  - shame because it was preventing close moves
+
+- ✅ nav helpers i.e. when block other
+  - `nudge npc:kate src:rob`
+  - `tweak npc:kate`
+  - `park npc:kate`
+
+- ✅ `tweak npc:kate by:1` -> `pad npc:kate by:1`
+  - since we are providing "padding" relative to navmesh edge
+
+- ✅ parseGroundPoint -> helper.parseGroundPoint
+
+- ✅ `say` rethink
+  - ✅ events "enter-topdown" and "exit-topdown"
+  - ✅ fade in/out while paused too but no timer
+  - ✅ clean opacity setting code
+  - ✅ does not fade by default
+    - ✅ `say npc:rob foo bar` does not fade, unless subsequent to timed
+    - ✅ can `say npc:rob foo bar secs:3`
+    - ✅ can `say npc:rob foo bar secs:Infinity`
+    - ✅ can `say npc:rob` to fade out
+  - ✅ separate resize ui from "active button"
+
+- 🔔 useful commands
+  - `pick | move npc:rob`
+    - but moves to doors and non-doable obstacles too
+  - `pick as:meta.gdKey`
+    - get gdKey from door or switch
+  - `pick meta.floor | move npc:rob`
+    - but does not permit move to doable
+  - `pick meta.{nav,do} | move npc:rob`
+    - exactly the navigable or doables
+  - `pick meta.{floor,do} | move npc:rob`
+    - can pick floor points near nav 👈
+  - `w decor.query $( pick 1 )`
+  - `pick | w decor.query -`
+  - `meta $( pick as:point 1 )`
+  - `pick | w helper.parse3dHeight -`
+  - `spawn npc:rob at:$( meta [4.5,4.5] )`
+  - `w decor.byRoom.0.1 | split | map meta.do`
+
+- ✅ how to handle npc blocking one door of a double door
+  - lock the door (even with npc standing in it)
+
+- ✅ can edit any symbol in prod but drafts must be manually restored
+  - ✅ can edit any symbol in prod
+  - ✅ verify recursive edit in local build
+  - ✅ MapEdit readonly only for touch devices or when set in dev
+  - ✅ drafts not auto-restored
+  - ✅ can use-drafts use-originals reset all from MapEdit
+  - ✅ can use-drafts use-originals from WorldMenu
+  - ✅ in development in "use-drafts" in MapEdit, saving should not save to filesystem
+    - should also clearly indicate this
+  - ✅ improve MapEdit toasts
+  - ✅ improve WorldMenu select
+  - ℹ️ multiple drafts (needs grouping) is future work
+
+- ✅ draft rethink and simplification
+  - ✅ new hull symbol `g-301--playground` clone of `g-301--bridge`
+    - ✅ `packages/media/src/starship-symbol/playground/g-301--playground`
+    - ✅ `packages/media/src/starship-symbol/playground/extra` (prev output/extra)
+    - ✅ adapt `starship-pngs-to-public`
+  - ✅ new map `301-playground`
+  - ✅ drafts only for: preserve unsaved, saving playground symbols
+    - ✅ remove use-drafts use-originals controls
+    - ✅ in playground symbols save to drafts only
+
+- ✅ BUG World should update onchange playground map in MapEdit
+
+- ✅ BUG MapEdit FileMenu on switch to map/symbol should not close
+
+- ✅ `meta` extracts meta via decor grid
+  - ℹ️ provides points with meta without using `pick`
+    - `pick` object-picks with pointer and decodes pixel rgba
+  - ✅ `meta at:$point`
+    - e.g. `meta [1,1.5]`, `meta at:{x:1,y:1.5}`, `meta npc:rob`
+    - ✅ outputs `{x,y,z,meta}`
+    - ✅ add all obstacles as decor rects with an outline
+      - `d.meta.refinedOutline?: Geom.VectJson[]`
+    - ✅ d.meta.refinedOutline checked in `w.decor.queryPoint`
+    - ✅ test angled rect point containment
+    - ✅ test decor circle point containment
+    - ✅ `meta all:$point`
+    - ✅ most-relevant strategy
+      - ✅ decor induced by obstacle needs aggregated `meta.y` which is available as `obstacle.height`
+      - ✅ opts.desiredHeight restricts to ≤ 1
+
+- ✅ w.decor.byRoom
+  - recomputed on hmr
+
+- ✅ clean `Npc` variable ordering
+
+- ✅ on manually open locked door while npc close it is not auto-closing
+  - because npcKey in `w.e.doorToNpcs.g0d25.inside`
+  - do "refined inside doorway test"
+
+- ✅ BUG door.closeTimeoutId not triggered when leave locked doorway
+  - worked when left `nearby`, but now also triggered when leave `inside`
+
+- ✅ BUG npc stuck when starts from locked doorway poly
+  - try allow first 2 polygons encountered
+
+- ✅ BUG navMeshHelper should not occlude object-pick
+
+- ✅ BUG change geom-service should not restart world
+
+- ✅ move "open door on click" to a script
+  - WorldMenu has debug option "Toggle Doors"
+  - `demo_toggle_doors`
+
+- ✅ BUG tile near origin?
+  - ❌ cannot navigate to it
+    - although can navigate from it
+    - can navigate more on remove extra--002--fresher
+    - but there's some kind of slow down entering top-left tile
+  - ✅ pre flicker on spawn to shower
+    - was referencing non-existent animKey `stand`
+  - ✅ post move without walk
+
+- ✅ BUG on walk off shower do=stand doable not cleared
+
+- ✅ BUG stateroom--036 remove extra--002--fresher and does not update
+  - `w.assets` synced
+  - asset.json has change for symbol.stateroom--036 and flattened.stateroom--036 but no change for flattened hull symbol or its layout
+  - stratification was being computed correctly
+
+- ✅ remap feet textures
+
+- ✅ BUG speech bubble activate broken
+
+- ✅ cardinal camera improvements
+  - tweak ui
+  - snap to closest when rotate multiple increments
+
+- ✅ BUG out-of-sync 301--playground post-refresh
+  - the issue was when we started with 301--playground rather than switched to it
+
+- ✅ stress test i.e. spawnMany
+  - ✅ refactor `spawn` into sub `rawSpawn`
+  - ✅ absorb positionY and rotationY into rawSpawn
+  - ✅ mount all at once
+    - `demo_spawn_many`
+    - `remove npc-{0..5}`
+  - ✅ spawn 110 npcs
+
+- ✅ rect in symbol with title "decor quad y=0.2" broke things
+  - must be an image node of type decor
+
+- ✅ spawn transition issue
+  - if keep unpaused no issue
+  - repro: pause, spawn chair, play, pause, edit Npcs.tsx, respawn on nav
+    
+- ✅ remove obstacle trim from fuel (can overlap nearby ground symbols e.g. shower)
+
+- ❌ public/starship-symbol/mask -> media/src/starship-symbol/mask
+  - only apply masks in `gen-starship-sheets` which only depends on public/starship-symbols
+- ✅ can replace symbols
+  - ✅ public/starship-symbol/replace
+  - ✅ iris-valves--005 sans handle
+  - ✅ darker restyled fuel--010
+  - ✅ remove mask/fuel--010
+
+- ✅ remove replace/iris-valves--005 and use iris-valves--006 instead
+  - ✅ 301
+  - ✅ 101
+  - ✅ 302
+
+- ❌ remove internal SVG path editor
+  - removed "create" inside path picker but can still convert selected rect to path
+
+- ✅ clean skins
+  - ✅ civilian-0 -> human-0
+  - ✅ human-0.svg with extra detail
+  - ✅ discard skins
+  - ✅ add new skins
+    - aslan-0
+    - vargr-0
+    - droyne-0
+
+- ✅ `demo_auto_nudge`
+  - idle npcs on nearby non-idle get nudged away
+  - e.g. two static npcs close together and non-idle tries to navigate through
+  - ✅ detect nearby collision
+
+- ✅ BUG fade spawn against mostly transparent wall look bad again
+  - fade opacity out after fade to black 
+  - fade opacity in before fade from black 
+
+- ✅ thick lined walls (e.g. bridge) need larger inset
+  - DerivedGmsData top.broad now inset
+
+- ✅ BUG hmr not working onchange DerivedGmsData
+  - ✅ BUG Walls are disappearing on hmr
+
+- 🚧 larger mobile UI
+  - ✅ larger WorldMenu
+  - larger TtyMenu
+  - can change profile of TtyMenu (reboots)
+
+- ✅ skins
+  - ✅ meta comes from SVG not filename
+  - ✅ keeping: aslan-0, human-0, robot-0, human-1 ...
+  - ✅ add dark skins
+  - ✅ touch up
+    - ✅ human-2
+    - ✅ npc main material metalness, roughness determined by skin
+      - can be specified as meta of skin e.g. metalness=0.4
+    - ✅ remove human-2
+    - ✅ can drive npc brightness from skin SVG meta
+    - ✅ robot-0
+    - ✅ medic-0
+    - ✅ robot-1
+    - ❌ demon-0
+    - ❌ robot-2
+  - ✅ ensure SVG meta
+
+- ✅ editor bug: delayed update of console--011
+  - stratification wrong i.e. office--026 depends on console--011 but in same level
+  - fixed via manual `pnpm gen-assets-json`
+  - can also run `pnpm gen-assets-json --force`
+
+- ✅ spawned npc on navMesh lacks `agent.boundary.segments`
+  - hasn't moved yet
+
+- ✅ BUG initial shader errors
+  - Doors: use `<bufferAttribute>` instead
+
+- ✅ BUG obstacle texture bleeding induced by obstacle polygon
+  - try fix via padding `gen-starship-sheets` 2 --> 8
+- ✅ debug update obstacles button should have spinner
+  - already done via WorldMenu spinner
+
+- ✅ multiple cylindrical lights
+  - can set/clear via long press
+- ✅ can set moving target light
+  - `w npc.trackNpc rob` (room-aware; `w npc.trackNpc -` to stop)
+- ✅ light ui: can enable/disable/reset
+- ✅ fix light occlusion
+  - use depth map to avoid lighting npc outside light but occluding it
+
+
 # By Jun 17th 2026
 
 - ✅ door normals determined by slide direction

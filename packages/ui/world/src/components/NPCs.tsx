@@ -220,7 +220,9 @@ export default function NPCs() {
 
         if (typeof meta.do === "string") {
           const otherNpcKey = w.e.doableToNpc[meta.decorKey];
-          if (otherNpcKey && otherNpcKey !== npcKey) throw Error("not doable");
+          if (otherNpcKey && otherNpcKey !== npcKey) {
+            return { type: "occupied", meta };
+          }
           return { type: meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta };
         }
 
@@ -230,7 +232,7 @@ export default function NPCs() {
           // 🔔 clarify precedence
           const found = ds.find((d) => !w.e.doableToNpc[d.key] || w.e.doableToNpc[d.key] === npcKey) ?? null;
           if (!found) {
-            throw Error("not doable");
+            return { type: "occupied", meta };
           }
           return { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
         }
@@ -240,8 +242,7 @@ export default function NPCs() {
           return { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta };
         }
 
-        // not doable
-        return null;
+        return { type: "none", meta };
       },
       get(npcKey) {
         const npc = state.npc[npcKey];
@@ -304,8 +305,13 @@ export default function NPCs() {
         const groundPoint = helper.parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint, "0.5");
 
-        const doResult = state.findFreeDoMeta(to?.meta ?? {}, npcKey);
-        if (doResult) {
+        const doResult = state.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
+
+        if (doResult.type === "occupied") {
+          throw Error("occupied");
+        } else if (doResult.type === "none") {
+          // noop
+        } else {
           // doable overrides navigable
           if (doResult.type === "use-current") {
             await state.spawn({ npcKey, at: to });
@@ -457,7 +463,7 @@ export default function NPCs() {
         const positionY = opts.doResult?.meta.y ?? 0;
         const rotationY = state.determineSpawnedAngle({
           groundPoint: opts.groundPoint,
-          meta: opts.doResult?.meta ?? {},
+          meta: opts.doResult.meta ?? emptyMeta,
           angle: opts.angle,
           facing: opts.facing,
           npc,
@@ -526,8 +532,11 @@ export default function NPCs() {
         // - throw if doable but occupied
         // - throw if not doable and not navigable
         const doResult = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
+        if (doResult.type === "occupied") {
+          throw Error("occupied");
+        }
         const closePolyResult = state.getClosestPoly(groundAt);
-        if (closePolyResult.success === false && doResult === null) {
+        if (closePolyResult.success === false && doResult.type === "none") {
           throw Error("not placable");
         }
 
@@ -720,7 +729,7 @@ export type State = {
    * - Returns `null` if `meta` is not doable.
    * - Throws if `meta` is doable but not free.
    */
-  findFreeDoMeta(meta: Meta, npcKey: string): null | JshCli.FindDoMetaResult;
+  findFreeDoMeta(meta: Meta, npcKey: string): JshCli.FindDoMetaResult;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
     accuracy?: "0.005" | "0.1" | "0.5",
@@ -737,7 +746,7 @@ export type State = {
   rawSpawn(opts: {
     npcKey: string;
     groundPoint: Meta<JshCli.GroundPoint>;
-    doResult: JshCli.FindDoMetaResult | null;
+    doResult: JshCli.FindDoMetaResult;
     angle?: number;
     /** Skin to use */
     as?: string;
@@ -807,6 +816,7 @@ const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance:
 
 const labelHw = 0.5;
 const labelHh = 0.125;
+const emptyMeta = {};
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));

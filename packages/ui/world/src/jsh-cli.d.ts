@@ -107,7 +107,7 @@ declare namespace JshCli {
   };
 
   type FindDoMetaResult = {
-    type: "use-current" | "next-free";
+    type: "none" | "occupied" | "use-current" | "next-free";
     meta: Meta<BaseDoableMeta>;
   };
 

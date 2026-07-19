@@ -544,13 +544,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
 
         /** Ground point should either be doable or navigable */
-        const doResults = groundPoints.map((p, i) => {
-          try {
-            return w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i]);
-          } catch {
-            return null;
-          }
-        });
+        const doResults = groundPoints.map((p, i) => w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i]));
 
         const angles = doResults.map((doResult, i) => {
           const angleOrPoint = opts.looks?.[i];
