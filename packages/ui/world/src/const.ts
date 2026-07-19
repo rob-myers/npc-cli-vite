@@ -87,6 +87,10 @@ export const lightSizingGrowDurationMs = 2500;
 export const lightSizingMaxRadius = 6;
 /** How far (meters) a light's room-polygon clip is outset past the room's inner wall face */
 export const lightRoomOutset = 0.1;
+/** Duration (ms) of each half (shrink, then grow) of the tracked light's radius-pulse transition across a room-poly swap */
+export const lightRoomFadeMs = 150;
+/** Radius the tracked light shrinks to (close around the npc) mid-transition, before growing back */
+export const lightRoomTransitionRadius = 0.5;
 
 export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;

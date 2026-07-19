@@ -1,6 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { Vect } from "@npc-cli/util/geom";
+import { Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
@@ -20,9 +20,11 @@ import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } 
 import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
+  connectorEntranceHalfDepth,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   defaultFov,
+  defaultTargetLightRadius,
   fovStorageKey,
   lightEditingEnabledKey,
   lightRoomOutset,
@@ -97,12 +99,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove */
       lightEditingEnabled: tryLocalStorageGetParsed<boolean>(lightEditingEnabledKey) ?? true,
       lightSizing: null,
+      lightRadiusPulse: null,
       light: {
         displayCenter: new THREE.Vector3(),
         /** Set by `w.npc.trackNpc`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
         targetOverride: null as null | { x: number; y: number; z: number },
         /** Set by `w.npc.trackNpc`; lets the `"enter-room"` handler know which npc's room-transitions should refresh the tracked light's room-poly clip */
         trackedNpcKey: null as string | null,
+        /** Current tracked-light radius, animated via `pulseTrackedRadius`/`updateLightRadiusPulse` */
+        radius: defaultTargetLightRadius,
       },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
 
@@ -385,27 +390,49 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
 
-        // 🔔 refresh the shared camera matrices on every rendered frame — so every light keeps
+        // refresh the shared camera matrices on every rendered frame — so every light keeps
         // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms,
         // even while paused (when `updateLight` isn't advancing `displayCenter`)
         const camera = state.controls?.object ?? w.r3f.camera;
         state.lightPostprocess.update(camera);
-        // 🔔 only push a center-refresh while genuinely tracking a target — `setTracked` with a
+
+        // only push a center-refresh while genuinely tracking a target — `setTracked` with a
         // non-null center always sets active=1, so this must not fire once tracking is turned off
         // (radius omitted -> keeps whatever `trackNpc` set it to)
-        if (state.light.targetOverride) {
+        if (state.light.targetOverride !== null) {
           state.lightPostprocess.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
         }
 
-        if (state.lightSizing) {
+        if (state.lightSizing !== null) {
           state.updateLightSizing();
           // keep the demand-frameloop render chain alive frame-by-frame while paused, mirroring
           // the extraZoom tween's self-sustaining invalidate() idiom
           w.r3f?.invalidate();
         }
+        if (state.lightRadiusPulse !== null) {
+          state.updateLightRadiusPulse();
+          w.r3f?.invalidate();
+        }
       },
       updateLight(rawTarget) {
         state.light.displayCenter.copy(rawTarget);
+      },
+      pulseTrackedRadius(to, durationMs, onComplete) {
+        state.lightRadiusPulse = { from: state.light.radius, to, startEpochMs: Date.now(), durationMs, onComplete };
+      },
+      updateLightRadiusPulse() {
+        if (state.lightRadiusPulse === null) {
+          return;
+        }
+        const { from, to, startEpochMs, durationMs, onComplete } = state.lightRadiusPulse;
+        const t = Math.min(1, (Date.now() - startEpochMs) / durationMs);
+        const radius = from + (to - from) * t;
+        state.light.radius = radius;
+        state.lightPostprocess.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, radius);
+        if (t >= 1) {
+          state.lightRadiusPulse = null;
+          onComplete?.();
+        }
       },
       toggleLightEditing() {
         state.lightEditingEnabled = !state.lightEditingEnabled;
@@ -423,7 +450,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
         // cut off exactly at the room's inner wall face
         const outsetRoom = geomService.createOutset(room.clone(), lightRoomOutset);
-        const extended = outsetRoom.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
+        // also union in adjacent doorways, so the light already covers the doorway itself —
+        // avoids a brief "partially dark" moment while an npc is mid-transition through a door
+        // (room-change detection only fires once they've fully crossed to the other side)
+        const doorwayPolys = gm.doors
+          .filter((d) => d.roomIds.includes(gmRoomId.roomId))
+          .map((d) =>
+            d.computeThinPoly(
+              d.meta.hull === true ? 2 * connectorEntranceHalfDepth.hull : 2 * connectorEntranceHalfDepth.nonHull,
+            ),
+          );
+        const merged = Poly.union([...outsetRoom, ...doorwayPolys]);
+        const extended = merged.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
         return extended.outline.map((p) => {
           const wp = gm.matrix.transformPoint({ x: p.x, y: p.y });
           return { x: wp.x, z: wp.y };
@@ -682,6 +720,14 @@ export type State = {
     /** World-space outline of the room `center` is in — empty if none found. For debug rendering. */
     roomOutline: { x: number; z: number }[];
   };
+  /** Active while `light.radius` is animating (e.g. shrinking/growing the tracked light across a room-poly swap). `null` when idle. */
+  lightRadiusPulse: null | {
+    from: number;
+    to: number;
+    startEpochMs: number;
+    durationMs: number;
+    onComplete?: () => void;
+  };
   light: LightState;
   fov: number;
 
@@ -701,6 +747,10 @@ export type State = {
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
   /** Advances `light.displayCenter` from a live target — called every tick from `World`'s `onTick` while `light.targetOverride` is set (see `w.npc.trackNpc`) */
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
+  /** Animates the tracked light's radius from its current value to `to` over `durationMs`, then calls `onComplete` (e.g. to swap its room-poly clip while shrunk down near the npc) */
+  pulseTrackedRadius(to: number, durationMs: number, onComplete?: () => void): void;
+  /** Advances `light.radius` toward `lightRadiusPulse.to` — called every frame from `onCameraChange` while `lightRadiusPulse` is set */
+  updateLightRadiusPulse(): void;
   toggleLightEditing(): void;
   /** Toggles `lightPostprocess.lightsEnabled` — persisted to localStorage */
   setLightsEnabled(next?: boolean): void;
@@ -743,6 +793,8 @@ export type LightState = {
   targetOverride: null | { x: number; y: number; z: number };
   /** Set by `w.npc.trackNpc`; lets `"enter-room"` know which npc's room-transitions should refresh the tracked light's room-poly clip */
   trackedNpcKey: null | string;
+  /** Current tracked-light radius, animated via `pulseTrackedRadius`/`updateLightRadiusPulse` */
+  radius: number;
 };
 
 function PostProcessing() {
