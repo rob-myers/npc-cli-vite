@@ -176,7 +176,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               const topHit = raycaster.ray.intersectPlane(topLightPlane, tmpTopXZ);
               const near =
                 bottomHit && topHit
-                  ? lightPostprocess.findLightNear({ x: bottomHit.x, z: bottomHit.z }, { x: topHit.x, z: topHit.z })
+                  ? lightPostprocess.findLightNear(
+                      { x: bottomHit.x, z: bottomHit.z },
+                      { x: topHit.x, z: topHit.z },
+                      { x: e.x, z: e.z },
+                    )
                   : null;
               if (near !== null) {
                 lightPostprocess.removeLight(near);
