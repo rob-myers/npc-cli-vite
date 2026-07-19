@@ -418,15 +418,21 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         If(tracked.z.notEqual(0), () => {
           const dist = worldXZ.sub(tracked.xy).length();
           const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
-          const roomFactor = singleRoomClipFactor(trackedRoomPolyCount, trackedRoomPolyVertsNode, worldXZ.x, worldXZ.y);
-          litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
+          // skip the room-clip polygon scan unless this fragment is actually within the
+          // light's falloff radius and height range (the overwhelming majority aren't)
+          If(inHeightRange.and(litVal.greaterThan(0)), () => {
+            const roomFactor = singleRoomClipFactor(trackedRoomPolyCount, trackedRoomPolyVertsNode, worldXZ.x, worldXZ.y);
+            litMax.assign(litMax.max(litVal.mul(roomFactor)));
+          });
         });
 
         If(preview.z.notEqual(0), () => {
           const dist = worldXZ.sub(preview.xy).length();
           const litVal = float(1).sub(dist.sub(preview.w).div(falloff).clamp(0, 1));
-          const roomFactor = singleRoomClipFactor(previewRoomPolyCount, previewRoomPolyVertsNode, worldXZ.x, worldXZ.y);
-          litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
+          If(inHeightRange.and(litVal.greaterThan(0)), () => {
+            const roomFactor = singleRoomClipFactor(previewRoomPolyCount, previewRoomPolyVertsNode, worldXZ.x, worldXZ.y);
+            litMax.assign(litMax.max(litVal.mul(roomFactor)));
+          });
         });
 
         Loop(MAX_POSTPROCESS_LIGHTS, ({ i }) => {
@@ -438,8 +444,12 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
             const dist = worldXZ.sub(l.xy).length();
             // l.w = this light's own radius
             const litVal = float(1).sub(dist.sub(l.w).div(falloff).clamp(0, 1));
-            const roomFactor = roomClipFactor(i, worldXZ.x, worldXZ.y);
-            litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
+            // same early-out as above — this is the highest-leverage guard since it's
+            // inside the per-active-light loop (cost scales with # active lights)
+            If(inHeightRange.and(litVal.greaterThan(0)), () => {
+              const roomFactor = roomClipFactor(i, worldXZ.x, worldXZ.y);
+              litMax.assign(litMax.max(litVal.mul(roomFactor)));
+            });
           });
         });
 
