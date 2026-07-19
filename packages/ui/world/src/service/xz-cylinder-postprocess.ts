@@ -66,8 +66,17 @@ export type XzCylinderPostprocess = {
    * Nearest active static light whose own radius contains the clicked ray's `[bottomXZ, topXZ]`
    * segment, else `null`. Takes a segment (not a single ground point) since `litAmount()` tests
    * the segment too — matches what's actually visible on screen from an angled camera.
+   * @param groundPoint The actual raycast-hit ground point (not the plane-projected segment,
+   * which — being an infinite-plane intersection unconstrained by walls — can sweep straight
+   * through an unrelated room). Also required to be inside the candidate light's own room-poly
+   * clip, so a click that only *passes over* another room's light via the swept segment doesn't
+   * falsely register as a hit on it.
    */
-  findLightNear(bottomXZ: { x: number; z: number }, topXZ: { x: number; z: number }): number | null;
+  findLightNear(
+    bottomXZ: { x: number; z: number },
+    topXZ: { x: number; z: number },
+    groundPoint: { x: number; z: number },
+  ): number | null;
   /** Deactivates every static light (and the tracked light) in one pass */
   resetLights(): void;
 
@@ -306,7 +315,7 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       roomPolyInfo[index].set(0, 0, 0, 0);
       recomputeHiWater();
     },
-    findLightNear(bottomXZ, topXZ) {
+    findLightNear(bottomXZ, topXZ, groundPoint) {
       let bestIndex = null as number | null;
       let bestDist = Infinity;
       for (let i = 0; i < slots.length; i++) {
@@ -314,9 +323,10 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         if (s.z === 0) continue; // empty slot
         const closest = closestPointOnSegment2D(s.x, s.y, bottomXZ.x, bottomXZ.z, topXZ.x, topXZ.z);
         const dist = Math.hypot(s.x - closest.x, s.y - closest.z);
-        // also require the click point inside the light's own room-poly clip, else a long-press
-        // just past a wall could "hit" a light whose radius nominally reaches that far but isn't
-        if (dist <= s.w && dist < bestDist && pointInRoomPoly2D(i, closest.x, closest.z)) {
+        // the room-poly check uses the actual ground click point, NOT the swept segment's
+        // closest-point (an infinite-plane intersection unconstrained by walls, which can sweep
+        // through an unrelated room and falsely satisfy that room's own light's clip)
+        if (dist <= s.w && dist < bestDist && pointInRoomPoly2D(i, groundPoint.x, groundPoint.z)) {
           bestDist = dist;
           bestIndex = i;
         }
