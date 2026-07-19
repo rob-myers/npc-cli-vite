@@ -42,12 +42,24 @@ export type XzCylinderPostprocess = {
   /** Feed the real scene camera (not the internal post-processing quad camera) — shared by every light */
   update(camera: THREE.Camera): void;
 
-  /** The single "tracked" light — e.g. follows a live reference like `npc.position`. Not managed via `addLight`/`removeLight`. */
-  setTrackedActive(active: boolean): void;
-  setTrackedCenter(x: number, z: number): void;
-  setTrackedRadius(radius: number): void;
+  /**
+   * The single "tracked" light — e.g. follows a live reference like `npc.position`. Not managed
+   * via `addLight`/`removeLight`. Pass `null` to deactivate (center/radius left as last known,
+   * harmless while inactive). Omitting `radius` while re-centering keeps the last radius set.
+   */
+  setTracked(center: { x: number; z: number } | null, radius?: number): void;
   /** Clips the tracked light to this world-space room polygon (or removes clipping if omitted/empty) */
   setTrackedRoomOutline(roomOutline?: { x: number; z: number }[]): void;
+
+  /**
+   * A second, independent single light — used for the hold-to-grow static-light sizing preview,
+   * so it never competes with the tracked light (e.g. an npc-following light stays visible and
+   * correct while a new static light is simultaneously being sized elsewhere). Same semantics as
+   * `setTracked`.
+   */
+  setPreview(center: { x: number; z: number } | null, radius?: number): void;
+  /** Clips the preview light to this world-space room polygon (or removes clipping if omitted/empty) */
+  setPreviewRoomOutline(roomOutline?: { x: number; z: number }[]): void;
 
   /**
    * Creates a "static" light at `point` with its own `radius`. Returns its slot index, or `null`
@@ -127,14 +139,19 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const showBorder = uniform(opts.showBorder ? 1 : 0);
   const lightsEnabled = uniform(opts.lightsEnabled ?? true ? 1 : 0);
 
-  // the tracked light
-  const trackedCenter = uniform(new THREE.Vector2());
-  const trackedActive = uniform(0);
-  const trackedRadius = uniform(1);
+  // the tracked light: vec4(worldX, worldZ, activeFlag, radius) — same layout as static-light slots[i]
+  const tracked = uniform(new THREE.Vector4(0, 0, 0, 1));
   // room-polygon clip for the tracked light only — single polygon, no per-slot indexing needed
   const trackedRoomPolyCount = uniform(0);
   const trackedRoomPolyVerts = Array.from({ length: maxRoomPolyVerts }, () => new THREE.Vector2());
   const trackedRoomPolyVertsNode = uniformArray<"vec2">(trackedRoomPolyVerts, "vec2");
+
+  // the sizing-preview light — same shape as `tracked`, but fully independent, so the hold-to-grow
+  // static-light preview never competes with (and can't disable) an active tracked light
+  const preview = uniform(new THREE.Vector4(0, 0, 0, 1));
+  const previewRoomPolyCount = uniform(0);
+  const previewRoomPolyVerts = Array.from({ length: maxRoomPolyVerts }, () => new THREE.Vector2());
+  const previewRoomPolyVertsNode = uniformArray<"vec2">(previewRoomPolyVerts, "vec2");
 
   // static lights: vec4(worldX, worldZ, activeFlag, radius) — mirrored in plain JS for CPU-side
   // hit-testing (no GPU readback needed), same idiom as Walls.tsx's light0Values/light1Values
@@ -203,10 +220,16 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
     return inside;
   }
 
-  // ray-cast point-in-polygon for the TRACKED light's room outline (single, non-nested Loop —
-  // only one tracked light exists). 1 = inside room, or unclipped (count == 0); 0 = outside.
-  function trackedRoomClipFactor(px: THREE.Node<"float">, pz: THREE.Node<"float">) {
-    const count = trackedRoomPolyCount.toInt();
+  // ray-cast point-in-polygon for a SINGLE light's room outline (single, non-nested Loop — used
+  // by both `tracked` and `preview`, which are each exactly one light). 1 = inside room, or
+  // unclipped (count == 0); 0 = outside.
+  function singleRoomClipFactor(
+    polyCount: THREE.UniformNode<"float", number>,
+    polyVertsNode: ReturnType<typeof uniformArray<"vec2">>,
+    px: THREE.Node<"float">,
+    pz: THREE.Node<"float">,
+  ) {
+    const count = polyCount.toInt();
     const inside = int(0).toVar();
 
     If(count.greaterThan(0), () => {
@@ -214,8 +237,8 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         If(v.greaterThanEqual(count), () => {
           Break();
         });
-        const a = trackedRoomPolyVertsNode.element(v);
-        const b = trackedRoomPolyVertsNode.element(v.add(1).mod(count));
+        const a = polyVertsNode.element(v);
+        const b = polyVertsNode.element(v.add(1).mod(count));
         // horizontal ray from (px, pz) in +x direction — XOR via float comparison
         const yCross = a.y.greaterThan(pz).toFloat().notEqual(b.y.greaterThan(pz).toFloat());
         const t = b.x.sub(a.x).mul(pz.sub(a.y)).div(b.y.sub(a.y)).add(a.x);
@@ -275,14 +298,12 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       camNear.value = perspectiveCam.near;
       camFar.value = perspectiveCam.far;
     },
-    setTrackedActive(isActive) {
-      trackedActive.value = isActive ? 1 : 0;
-    },
-    setTrackedCenter(x, z) {
-      trackedCenter.value.set(x, z);
-    },
-    setTrackedRadius(radius) {
-      trackedRadius.value = radius;
+    setTracked(center, radius) {
+      if (center === null) {
+        tracked.value.z = 0;
+      } else {
+        tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
+      }
     },
     setTrackedRoomOutline(roomOutline) {
       const count = roomOutline ? Math.min(roomOutline.length, maxRoomPolyVerts) : 0;
@@ -290,6 +311,22 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       if (roomOutline) {
         for (let v = 0; v < count; v++) {
           trackedRoomPolyVerts[v].set(roomOutline[v].x, roomOutline[v].z);
+        }
+      }
+    },
+    setPreview(center, radius) {
+      if (center === null) {
+        preview.value.z = 0;
+      } else {
+        preview.value.set(center.x, center.z, 1, radius ?? preview.value.w);
+      }
+    },
+    setPreviewRoomOutline(roomOutline) {
+      const count = roomOutline ? Math.min(roomOutline.length, maxRoomPolyVerts) : 0;
+      previewRoomPolyCount.value = count;
+      if (roomOutline) {
+        for (let v = 0; v < count; v++) {
+          previewRoomPolyVerts[v].set(roomOutline[v].x, roomOutline[v].z);
         }
       }
     },
@@ -337,7 +374,7 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       for (const s of slots) s.set(0, 0, 0, 0);
       for (const info of roomPolyInfo) info.set(0, 0, 0, 0);
       hiWater.value = 0;
-      trackedActive.value = 0;
+      tracked.value.z = 0;
     },
     litAmount(sceneDepth) {
       return Fn(() => {
@@ -378,10 +415,17 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
 
         const litMax = float(0).toVar();
 
-        If(trackedActive.notEqual(0), () => {
-          const dist = worldXZ.sub(trackedCenter).length();
-          const litVal = float(1).sub(dist.sub(trackedRadius).div(falloff).clamp(0, 1));
-          const roomFactor = trackedRoomClipFactor(worldXZ.x, worldXZ.y);
+        If(tracked.z.notEqual(0), () => {
+          const dist = worldXZ.sub(tracked.xy).length();
+          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
+          const roomFactor = singleRoomClipFactor(trackedRoomPolyCount, trackedRoomPolyVertsNode, worldXZ.x, worldXZ.y);
+          litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
+        });
+
+        If(preview.z.notEqual(0), () => {
+          const dist = worldXZ.sub(preview.xy).length();
+          const litVal = float(1).sub(dist.sub(preview.w).div(falloff).clamp(0, 1));
+          const roomFactor = singleRoomClipFactor(previewRoomPolyCount, previewRoomPolyVertsNode, worldXZ.x, worldXZ.y);
           litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
         });
 
@@ -425,8 +469,12 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
           onWireframe.assign(onWireframe.max(onLight.select(float(1), float(0))));
         }
 
-        If(trackedActive.notEqual(0), () => {
-          markIfOnWireframe(trackedCenter, trackedRadius);
+        If(tracked.z.notEqual(0), () => {
+          markIfOnWireframe(tracked.xy, tracked.w);
+        });
+
+        If(preview.z.notEqual(0), () => {
+          markIfOnWireframe(preview.xy, preview.w);
         });
 
         Loop(MAX_POSTPROCESS_LIGHTS, ({ i }) => {

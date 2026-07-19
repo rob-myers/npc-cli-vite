@@ -99,8 +99,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       lightSizing: null,
       light: {
         displayCenter: new THREE.Vector3(),
-        /** Set via `w.view.setLightTarget`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
+        /** Set by `w.npc.trackNpc`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
         targetOverride: null as null | { x: number; y: number; z: number },
+        /** Set by `w.npc.trackNpc`; lets the `"enter-room"` handler know which npc's room-transitions should refresh the tracked light's room-poly clip */
+        trackedNpcKey: null as string | null,
       },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
 
@@ -388,7 +390,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // even while paused (when `updateLight` isn't advancing `displayCenter`)
         const camera = state.controls?.object ?? w.r3f.camera;
         state.lightPostprocess.update(camera);
-        state.lightPostprocess.setTrackedCenter(state.light.displayCenter.x, state.light.displayCenter.z);
+        // 🔔 only push a center-refresh while genuinely tracking a target — `setTracked` with a
+        // non-null center always sets active=1, so this must not fire once tracking is turned off
+        // (radius omitted -> keeps whatever `trackNpc` set it to)
+        if (state.light.targetOverride) {
+          state.lightPostprocess.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
+        }
 
         if (state.lightSizing) {
           state.updateLightSizing();
@@ -396,17 +403,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // the extraZoom tween's self-sustaining invalidate() idiom
           w.r3f?.invalidate();
         }
-      },
-      setLightTarget(target, radius) {
-        // 🔔 keep a live reference (not a snapshot copy), so e.g. `npc.position` continues
-        // to be read fresh each tick and the light tracks a moving target automatically
-        state.light.targetOverride = target ?? null;
-        state.lightPostprocess.setTrackedActive(target !== undefined);
-        if (target) {
-          state.lightPostprocess.setTrackedRadius(radius ?? lightSizingStartRadius);
-          state.updateLight(target);
-        }
-        state.forceUpdate();
       },
       updateLight(rawTarget) {
         state.light.displayCenter.copy(rawTarget);
@@ -421,22 +417,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(lightsEnabledKey, String(next));
         state.setPostProcessingEnabled(true);
       },
+      computeRoomOutline(gmRoomId) {
+        const gm = w.gms[gmRoomId.gmId];
+        const room = gm.rooms[gmRoomId.roomId];
+        // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
+        // cut off exactly at the room's inner wall face
+        const outsetRoom = geomService.createOutset(room.clone(), lightRoomOutset);
+        const extended = outsetRoom.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
+        return extended.outline.map((p) => {
+          const wp = gm.matrix.transformPoint({ x: p.x, y: p.y });
+          return { x: wp.x, z: wp.y };
+        });
+      },
       startLightSizing(center) {
         // find the room `center` is in, so the light can be clipped to its world-space outline
         const gmRoomId = w.e.findRoomContaining({ x: center.x, y: center.z }, true);
-        let roomOutline: { x: number; z: number }[] = [];
-        if (gmRoomId) {
-          const gm = w.gms[gmRoomId.gmId];
-          const room = gm.rooms[gmRoomId.roomId];
-          // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
-          // cut off exactly at the room's inner wall face
-          const outsetRoom = geomService.createOutset(room.clone(), lightRoomOutset);
-          const extended = outsetRoom.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
-          roomOutline = extended.outline.map((p) => {
-            const wp = gm.matrix.transformPoint({ x: p.x, y: p.y });
-            return { x: wp.x, z: wp.y };
-          });
-        }
+        const roomOutline = gmRoomId ? state.computeRoomOutline(gmRoomId) : [];
 
         state.lightSizing = {
           center,
@@ -444,14 +440,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           radius: lightSizingStartRadius,
           roomOutline,
         };
-        state.lightPostprocess.setTrackedActive(true);
-        // 🔔 `displayCenter` (not `setTrackedCenter` directly) is the source of truth `onCameraChange`
-        // re-pushes into the tracked-center uniform every frame — setting `setTrackedCenter` here
-        // directly would get stomped back to `displayCenter`'s stale value on the very next frame
-        state.light.displayCenter.set(center.x, 0, center.z);
-        state.lightPostprocess.setTrackedCenter(center.x, center.z);
-        state.lightPostprocess.setTrackedRadius(state.lightSizing.radius);
-        state.lightPostprocess.setTrackedRoomOutline(roomOutline);
+        // 🔔 `preview` is a fully independent channel from `tracked` (the npc-following light) —
+        // it never touches `state.light.displayCenter`/`targetOverride`, so an active tracked
+        // light stays visible and correct while a new static light is simultaneously being sized
+        state.lightPostprocess.setPreview(center, state.lightSizing.radius);
+        state.lightPostprocess.setPreviewRoomOutline(roomOutline);
         if (state.controls) state.controls.enabled = false; // suppress camera pan/rotate while sizing
         state.forceUpdate();
       },
@@ -461,13 +454,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const t = Math.min(1, elapsedMs / lightSizingGrowDurationMs);
         const radius = lightSizingStartRadius + t * (lightSizingMaxRadius - lightSizingStartRadius);
         state.lightSizing.radius = radius;
-        state.lightPostprocess.setTrackedRadius(radius);
+        state.lightPostprocess.setPreview(state.lightSizing.center, radius);
       },
       commitLightSizing() {
         if (!state.lightSizing) return;
         const { center, radius, roomOutline } = state.lightSizing;
         const index = state.lightPostprocess.addLight(center, radius, roomOutline);
-        state.lightPostprocess.setTrackedActive(false);
+        state.lightPostprocess.setPreview(null);
         if (state.controls) state.controls.enabled = true;
         state.lightSizing = null;
         if (index === null) {
@@ -515,6 +508,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           sceneColor.rgb.mul(vec3(0.1, 0.4, 0.7)),
           outsideAmount,
         );
+        // 🚧 remove?
         effect = state.lightPostprocess.drawBorder(effect);
         pipeline.outputNode = vec4(effect, sceneColor.a);
 
@@ -705,13 +699,14 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  /** Sets/clears the tracked light's target — e.g. a live reference like `npc.position`. `undefined` turns it off. `radius` defaults to `lightSizingStartRadius`. */
-  setLightTarget(target?: { x: number; y: number; z: number }, radius?: number): void;
+  /** Advances `light.displayCenter` from a live target — called every tick from `World`'s `onTick` while `light.targetOverride` is set (see `w.npc.trackNpc`) */
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleLightEditing(): void;
   /** Toggles `lightPostprocess.lightsEnabled` — persisted to localStorage */
   setLightsEnabled(next?: boolean): void;
-  /** Begins a hold-to-grow preview (via the tracked light) for a new light being placed at `center` */
+  /** World-space outline of `gmRoomId`'s room, outset slightly (see `lightRoomOutset`) — shared by `startLightSizing` and npc-tracking room-transitions */
+  computeRoomOutline(gmRoomId: Geomorph.GmRoomId): { x: number; z: number }[];
+  /** Begins a hold-to-grow preview (via the independent `preview` light channel) for a new light being placed at `center` */
   startLightSizing(center: { x: number; z: number }): void;
   /** Grows `lightSizing.radius` based on elapsed hold time — called every frame from `onCameraChange` */
   updateLightSizing(): void;
@@ -739,14 +734,15 @@ export type State = {
 /**
  * The single "tracked" light drawn in post-processing (separate from the many static,
  * long-press-managed lights — see `xz-cylinder-postprocess.ts`). Off until a target is set via
- * `w.view.setLightTarget`; once set, tracked every tick from `World`'s `onTick`. A target that's
- * a fixed snapshot naturally stays put; a live reference (e.g. `npc.position`) is tracked
- * automatically as it moves.
+ * `w.npc.trackNpc`; once set, tracked every tick from `World`'s `onTick`. A live reference (e.g.
+ * `npc.position`) is tracked automatically as it moves.
  */
 export type LightState = {
   displayCenter: THREE.Vector3;
-  /** Set via `w.view.setLightTarget`; `null` means off. A live reference — not a snapshot. */
+  /** Set by `w.npc.trackNpc`; `null` means off. A live reference — not a snapshot. */
   targetOverride: null | { x: number; y: number; z: number };
+  /** Set by `w.npc.trackNpc`; lets `"enter-room"` know which npc's room-transitions should refresh the tracked light's room-poly clip */
+  trackedNpcKey: null | string;
 };
 
 function PostProcessing() {

@@ -752,7 +752,7 @@ export async function* w(ct) {
   // support piped inputs via hyphen args -
   // e.g. `pick 1 | w e.findRoomContaining -`
   const stdinInputChar = "-";
-  const readStdin = args.slice(1).some((arg) => arg === stdinInputChar);
+  const readStdin = !ct.api.isTtyAt(0) && args.slice(1).some((arg) => arg === stdinInputChar);
 
   let reject = /** @param {*} _e */ (_e) => {};
   const handlers = api.handleStatus({
