@@ -1,6 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
   testNever,
@@ -24,6 +25,7 @@ import {
   defaultFov,
   fovStorageKey,
   lightEditingEnabledKey,
+  lightRoomOutset,
   lightSizingGrowDurationMs,
   lightSizingMaxRadius,
   lightSizingStartRadius,
@@ -420,10 +422,27 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.setPostProcessingEnabled(true);
       },
       startLightSizing(center) {
+        // find the room `center` is in, so the light can be clipped to its world-space outline
+        const gmRoomId = w.e.findRoomContaining({ x: center.x, y: center.z }, true);
+        let roomOutline: { x: number; z: number }[] = [];
+        if (gmRoomId) {
+          const gm = w.gms[gmRoomId.gmId];
+          const room = gm.rooms[gmRoomId.roomId];
+          // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
+          // cut off exactly at the room's inner wall face
+          const outsetRoom = geomService.createOutset(room.clone(), lightRoomOutset);
+          const extended = outsetRoom.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
+          roomOutline = extended.outline.map((p) => {
+            const wp = gm.matrix.transformPoint({ x: p.x, y: p.y });
+            return { x: wp.x, z: wp.y };
+          });
+        }
+
         state.lightSizing = {
           center,
           startEpochMs: Date.now(),
           radius: lightSizingStartRadius,
+          roomOutline,
         };
         state.lightPostprocess.setTrackedActive(true);
         // 🔔 `displayCenter` (not `setTrackedCenter` directly) is the source of truth `onCameraChange`
@@ -432,6 +451,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.light.displayCenter.set(center.x, 0, center.z);
         state.lightPostprocess.setTrackedCenter(center.x, center.z);
         state.lightPostprocess.setTrackedRadius(state.lightSizing.radius);
+        state.lightPostprocess.setTrackedRoomOutline(roomOutline);
         if (state.controls) state.controls.enabled = false; // suppress camera pan/rotate while sizing
         state.forceUpdate();
       },
@@ -445,8 +465,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       commitLightSizing() {
         if (!state.lightSizing) return;
-        const { center, radius } = state.lightSizing;
-        const index = state.lightPostprocess.addLight(center, radius);
+        const { center, radius, roomOutline } = state.lightSizing;
+        const index = state.lightPostprocess.addLight(center, radius, roomOutline);
         state.lightPostprocess.setTrackedActive(false);
         if (state.controls) state.controls.enabled = true;
         state.lightSizing = null;
@@ -491,7 +511,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
           // tint
           // sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
-          sceneColor.rgb.mul(vec3(0.1, 0.7, 0.7)),
+          // sceneColor.rgb.mul(vec3(0.1, 0.7, 0.7)),
+          sceneColor.rgb.mul(vec3(0.1, 0.4, 0.7)),
           outsideAmount,
         );
         effect = state.lightPostprocess.drawBorder(effect);
@@ -664,6 +685,8 @@ export type State = {
     center: { x: number; z: number };
     startEpochMs: number;
     radius: number;
+    /** World-space outline of the room `center` is in — empty if none found. For debug rendering. */
+    roomOutline: { x: number; z: number }[];
   };
   light: LightState;
   fov: number;

@@ -84,6 +84,8 @@ export const lightSizingStartRadius = 0.5;
 export const lightSizingGrowDurationMs = 2500;
 /** Cap for a long-pressed new light's radius while growing */
 export const lightSizingMaxRadius = 6;
+/** How far (meters) a light's room-polygon clip is outset past the room's inner wall face */
+export const lightRoomOutset = 0.1;
 
 export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
