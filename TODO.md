@@ -7,6 +7,7 @@
 - clean MAX_DOORS_PER_GEOMORPH
   - can use e.g. 64 and no longer in sync with Doors.tsx
 
+- fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
 - fix npc final turn when ends near nav border
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
