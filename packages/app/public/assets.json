@@ -39122,7 +39122,7 @@
       "background": "bg-zinc-800",
       "ceiling": {
         "hull": {"fill": "#0006", "stroke": "#6662"},
-        "nonHull": {"fill": "#0006", "stroke": "#fff1"}
+        "nonHull": {"fill": "#000", "stroke": "#fff1"}
       },
       "floor": {
         "hullFill": "#1110",
@@ -39135,8 +39135,8 @@
     "light-theme": {
       "background": "bg-[#444]",
       "ceiling": {
-        "hull": {"fill": "#000", "stroke": "#fff1"},
-        "nonHull": {"fill": "#5554", "stroke": "#000"}
+        "hull": {"fill": "#000", "stroke": "#111"},
+        "nonHull": {"fill": "#000", "stroke": "#000"}
       },
       "floor": {
         "hullFill": "#4440",

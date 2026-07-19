@@ -177,16 +177,11 @@ export class Npc {
     facingTarget?: boolean;
   }) {
     const groundTarget = helper.parseGroundPoint(at);
+
     // when doable, ring is centered/heighted at the doable's own position rather than the raw target
-    let ringAt = groundTarget;
-    let ringHeight: number | undefined;
-    try {
-      const doResult = this.w.npc.findFreeDoMeta(at.meta ?? {}, this.key);
-      if (doResult?.meta.groundPoint) ringAt = doResult.meta.groundPoint;
-      if (typeof doResult?.meta.y === "number") ringHeight = doResult.meta.y;
-    } catch {
-      // not doable — fall back to raw target/default height
-    }
+    const doResult = this.w.npc.findFreeDoMeta(at.meta ?? {}, this.key);
+    const ringAt = doResult.meta.groundPoint ?? groundTarget;
+    const ringHeight = doResult.meta.y;
 
     try {
       this.w.bubble.setShown(this.key, false);
