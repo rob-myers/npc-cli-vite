@@ -428,14 +428,17 @@ w decor.byKey.test-decor-point
 - ✅ multiple cylindrical lights
   - can set/clear via long press
 - ✅ can set moving target light
-  - `w n.rob.position | w view.setLightTarget -`
-  - `w view.setLightTarget`
+  - `w npc.trackNpc rob` (room-aware; `w npc.trackNpc -` to stop)
 - ✅ light ui: can enable/disable/reset
 - ✅ fix light occlusion
   - use depth map to avoid lighting npc outside light but occluding it
 
+- clean fadeSpawn
+  - also prevent bubble fade while paused
 - clean MAX_DOORS_PER_GEOMORPH
+  - can use e.g. 64 and no longer in sync with Doors.tsx
 
+- fix npc final turn when ends near nav border
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"

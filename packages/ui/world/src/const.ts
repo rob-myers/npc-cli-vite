@@ -80,6 +80,7 @@ export const lightEditingEnabledKey = "world-light-editing-enabled";
 export const lightsEnabledKey = "world-lights-enabled";
 /** Radius a long-pressed new light starts at before it grows */
 export const lightSizingStartRadius = 0.5;
+export const defaultTargetLightRadius = 1;
 /** Time (ms) for a long-pressed new light to grow from `lightSizingStartRadius` to `lightSizingMaxRadius` */
 export const lightSizingGrowDurationMs = 2500;
 /** Cap for a long-pressed new light's radius while growing */

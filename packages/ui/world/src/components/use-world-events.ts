@@ -294,6 +294,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.npcToRoom.set(npc.key, e.gmRoomId);
             (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
 
+            // keep the tracked light's room-poly clip in sync as its npc moves between rooms
+            if (w.view.light.trackedNpcKey === npc.key) {
+              w.view.lightPostprocess.setTrackedRoomOutline(w.view.computeRoomOutline(e.gmRoomId));
+            }
+
             // 🚧
             // state.fixInaccessibleTarget(npc);
             break;
