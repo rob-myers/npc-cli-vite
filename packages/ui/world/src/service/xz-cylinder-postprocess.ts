@@ -4,6 +4,7 @@ import {
   float,
   getViewPosition,
   If,
+  int,
   Loop,
   logarithmicDepthToViewZ,
   mix,
@@ -45,16 +46,26 @@ export type XzCylinderPostprocess = {
   setTrackedActive(active: boolean): void;
   setTrackedCenter(x: number, z: number): void;
   setTrackedRadius(radius: number): void;
+  /** Clips the tracked light to this world-space room polygon (or removes clipping if omitted/empty) */
+  setTrackedRoomOutline(roomOutline?: { x: number; z: number }[]): void;
 
-  /** Creates a "static" light at `point` with its own `radius`. Returns its slot index, or `null` if all `MAX_POSTPROCESS_LIGHTS` slots are in use. */
-  addLight(point: { x: number; z: number }, radius: number): number | null;
+  /**
+   * Creates a "static" light at `point` with its own `radius`. Returns its slot index, or `null`
+   * if all `MAX_POSTPROCESS_LIGHTS` slots are in use.
+   * @param roomOutline World-space outline of the room `point` is in — if provided, the light is
+   * clipped to this polygon (won't leak into neighbouring rooms) in addition to its own radius.
+   * Omit for an unclipped (plain circular) light.
+   */
+  addLight(
+    point: { x: number; z: number },
+    radius: number,
+    roomOutline?: { x: number; z: number }[],
+  ): number | null;
   removeLight(index: number): void;
   /**
    * Nearest active static light whose own radius contains the clicked ray's `[bottomXZ, topXZ]`
-   * segment, else `null`. Takes a segment (not a single ground point) so this matches what's
-   * actually visible on screen — `litAmount()` tests the *segment*, not just the ground hit, so
-   * a light can appear "under the cursor" from an angled camera even when the raycast-hit floor
-   * point itself is outside the light's flat XZ radius.
+   * segment, else `null`. Takes a segment (not a single ground point) since `litAmount()` tests
+   * the segment too — matches what's actually visible on screen from an angled camera.
    */
   findLightNear(bottomXZ: { x: number; z: number }, topXZ: { x: number; z: number }): number | null;
   /** Deactivates every static light (and the tracked light) in one pass */
@@ -62,11 +73,9 @@ export type XzCylinderPostprocess = {
 
   /**
    * `1` inside any active light (tracked or static), fading to `0` over `falloff` — unions all
-   * lights. Tests the REAL world position visible at each fragment (reconstructed from `sceneDepth`),
-   * not a plane-projected approximation — so an npc (or anything else) in front of or behind a
-   * light's actual cylinder, but screen-aligned with it, is correctly excluded.
-   * @param sceneDepth The real scene's depth texture (e.g. `scenePass.getTextureNode("depth")`) —
-   * raw/logarithmic, NOT pre-linearized; this function does its own log-depth inversion.
+   * lights, testing each fragment's reconstructed real world position (see impl. for why).
+   * @param sceneDepth The scene's depth texture (e.g. `scenePass.getTextureNode("depth")`) — raw
+   * logarithmic depth, NOT pre-linearized; this function does its own log-depth inversion.
    */
   litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
   /** Draws every active light's debug wireframe on top of `color` (no-op when `showBorder` is off) */
@@ -75,6 +84,8 @@ export type XzCylinderPostprocess = {
 
 /** Cosmetic constants for the (debug-only) wireframe — not worth exposing as options */
 const borderWidth = 0.01;
+/** Per-light cap on room-polygon vertices for clipping — matches Debug.tsx's MAX_ROOM_POLY_VERTS */
+const maxRoomPolyVerts = 64;
 const debugLineCount = 8;
 
 /**
@@ -82,23 +93,16 @@ const debugLineCount = 8;
  * `topHeight`) unioned together: one "tracked" light (position set live, e.g. to follow an npc)
  * plus up to `MAX_POSTPROCESS_LIGHTS` independent "static" lights, each with its own radius.
  *
- * `litAmount()` reconstructs the REAL world position visible at each fragment from the scene's
- * own (logarithmic) depth buffer — `logarithmicDepthToViewZ` → `viewZToPerspectiveDepth` →
- * `getViewPosition`, then view→world via `camWorldMatrix` — and tests each light against that
- * real point (XZ distance + real Y in `[bottomHeight, topHeight]`). This matters because without
- * it, anything screen-aligned with a light but at a very different depth (e.g. an npc standing
- * well in front of or behind the light's actual cylinder) would be lit incorrectly.
+ * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
+ * and tests lights against that, not a plane-projected approximation — otherwise anything
+ * screen-aligned with a light but at a different depth (e.g. an npc behind it) would be lit
+ * incorrectly. `drawBorder()` (debug wireframe only) instead intersects the view ray with the
+ * `bottomHeight`/`topHeight` planes directly — cheaper, and fine since it's just a wireframe.
  *
- * `drawBorder()` (debug wireframe only) still uses the older, cheaper analytic approach: each
- * fragment's view ray is intersected with the `bottomHeight`/`topHeight` planes directly (no
- * depth buffer involved), giving two ray/plane intersection points once per fragment that every
- * light's wireframe test can share.
- *
- * 🔔 TSL's built-in `cameraPosition` / `cameraProjectionMatrixInverse` / `cameraWorldMatrix`
- * resolve to whatever camera renders the *current* pass — inside a post-processing composite
- * pass that's an internal fullscreen-quad camera, not the real scene camera. So the real
- * camera's matrices (and near/far, for the depth inversion) are copied into our own uniforms via
- * `update` instead.
+ * 🔔 TSL's built-in `cameraPosition`/`cameraProjectionMatrixInverse`/`cameraWorldMatrix` resolve
+ * to whatever camera renders the *current* pass — inside post-processing that's an internal
+ * fullscreen-quad camera, not the real scene camera — so the real camera's matrices are copied
+ * into our own uniforms via `update` instead.
  */
 export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): XzCylinderPostprocess {
   const falloff = opts.falloff ?? 0.6;
@@ -118,6 +122,10 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const trackedCenter = uniform(new THREE.Vector2());
   const trackedActive = uniform(0);
   const trackedRadius = uniform(1);
+  // room-polygon clip for the tracked light only — single polygon, no per-slot indexing needed
+  const trackedRoomPolyCount = uniform(0);
+  const trackedRoomPolyVerts = Array.from({ length: maxRoomPolyVerts }, () => new THREE.Vector2());
+  const trackedRoomPolyVertsNode = uniformArray<"vec2">(trackedRoomPolyVerts, "vec2");
 
   // static lights: vec4(worldX, worldZ, activeFlag, radius) — mirrored in plain JS for CPU-side
   // hit-testing (no GPU readback needed), same idiom as Walls.tsx's light0Values/light1Values
@@ -125,6 +133,13 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const lightsNode = uniformArray<"vec4">(slots, "vec4");
   /** Highest active slot index + 1 — lets the shader `Loop` `Break` early instead of scanning all `MAX_POSTPROCESS_LIGHTS` */
   const hiWater = uniform(0);
+
+  // per-light room-polygon clip: fixed-size block of `maxRoomPolyVerts` world-space verts per
+  // light slot (simpler than Debug.tsx's packed offset/count scheme — fine at only 32 lights)
+  const roomPolyInfo = Array.from({ length: MAX_POSTPROCESS_LIGHTS }, () => new THREE.Vector4()); // (offset, count, 0, 0)
+  const roomPolyInfoNode = uniformArray<"vec4">(roomPolyInfo, "vec4");
+  const roomPolyVerts = Array.from({ length: MAX_POSTPROCESS_LIGHTS * maxRoomPolyVerts }, () => new THREE.Vector2());
+  const roomPolyVertsNode = uniformArray<"vec2">(roomPolyVerts, "vec2");
 
   function recomputeHiWater() {
     let hi = 0;
@@ -151,12 +166,84 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   }
 
   // CPU-side mirror of `distToSegment`, for hit-testing clicks against the same segment `litAmount()` uses
-  function distToSegment2D(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
+  function closestPointOnSegment2D(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
     const abx = bx - ax;
     const abz = bz - az;
     const abLenSq = abx * abx + abz * abz;
     const t = abLenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * abx + (pz - az) * abz) / abLenSq)) : 0;
-    return Math.hypot(px - (ax + abx * t), pz - (az + abz * t));
+    return { x: ax + abx * t, z: az + abz * t };
+  }
+
+  // CPU-side mirror of `roomClipFactor`'s ray-cast, for hit-testing clicks against the same
+  // room-polygon `litAmount()` clips light slot `index` to. `count === 0` (unclipped) → always inside.
+  function pointInRoomPoly2D(index: number, px: number, pz: number) {
+    const info = roomPolyInfo[index];
+    const count = info.y;
+    if (count === 0) return true;
+    const offset = info.x;
+    let inside = false;
+    for (let v = 0; v < count; v++) {
+      const a = roomPolyVerts[offset + v];
+      const b = roomPolyVerts[offset + ((v + 1) % count)];
+      const yCross = a.y > pz !== b.y > pz;
+      if (yCross) {
+        const t = ((b.x - a.x) * (pz - a.y)) / (b.y - a.y) + a.x;
+        if (px < t) inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  // ray-cast point-in-polygon for the TRACKED light's room outline (single, non-nested Loop —
+  // only one tracked light exists). 1 = inside room, or unclipped (count == 0); 0 = outside.
+  function trackedRoomClipFactor(px: THREE.Node<"float">, pz: THREE.Node<"float">) {
+    const count = trackedRoomPolyCount.toInt();
+    const inside = int(0).toVar();
+
+    If(count.greaterThan(0), () => {
+      Loop(maxRoomPolyVerts, ({ i: v }) => {
+        If(v.greaterThanEqual(count), () => {
+          Break();
+        });
+        const a = trackedRoomPolyVertsNode.element(v);
+        const b = trackedRoomPolyVertsNode.element(v.add(1).mod(count));
+        // horizontal ray from (px, pz) in +x direction — XOR via float comparison
+        const yCross = a.y.greaterThan(pz).toFloat().notEqual(b.y.greaterThan(pz).toFloat());
+        const t = b.x.sub(a.x).mul(pz.sub(a.y)).div(b.y.sub(a.y)).add(a.x);
+        If(yCross.and(px.lessThan(t)), () => {
+          inside.assign(inside.bitXor(int(1)));
+        });
+      });
+    });
+
+    return count.equal(0).select(float(1), inside.toFloat());
+  }
+
+  // Same, but for static light slot `i`'s room outline, called from inside the per-light `Loop`
+  // below. 🔔 the vertex scan is unrolled as plain `If`s (JS `for`), not a second `Loop` node —
+  // nesting a dynamic `Loop` inside another `Loop` broke badly; nested `If`s are fine.
+  function roomClipFactor(i: THREE.Node<"int">, px: THREE.Node<"float">, pz: THREE.Node<"float">) {
+    const info = roomPolyInfoNode.element(i);
+    const count = info.y.toInt();
+    const inside = int(0).toVar();
+
+    If(count.greaterThan(0), () => {
+      const offset = info.x.toInt();
+      for (let v = 0; v < maxRoomPolyVerts; v++) {
+        If(int(v).lessThan(count), () => {
+          const a = roomPolyVertsNode.element(offset.add(v));
+          const b = roomPolyVertsNode.element(offset.add(int(v).add(1).mod(count)));
+          // horizontal ray from (px, pz) in +x direction — XOR via float comparison
+          const yCross = a.y.greaterThan(pz).toFloat().notEqual(b.y.greaterThan(pz).toFloat());
+          const t = b.x.sub(a.x).mul(pz.sub(a.y)).div(b.y.sub(a.y)).add(a.x);
+          If(yCross.and(px.lessThan(t)), () => {
+            inside.assign(inside.bitXor(int(1)));
+          });
+        });
+      }
+    });
+
+    return count.equal(0).select(float(1), inside.toFloat());
   }
 
   return {
@@ -188,15 +275,35 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
     setTrackedRadius(radius) {
       trackedRadius.value = radius;
     },
-    addLight(point, radius) {
+    setTrackedRoomOutline(roomOutline) {
+      const count = roomOutline ? Math.min(roomOutline.length, maxRoomPolyVerts) : 0;
+      trackedRoomPolyCount.value = count;
+      if (roomOutline) {
+        for (let v = 0; v < count; v++) {
+          trackedRoomPolyVerts[v].set(roomOutline[v].x, roomOutline[v].z);
+        }
+      }
+    },
+    addLight(point, radius, roomOutline) {
       const index = slots.findIndex((s) => s.z === 0);
       if (index === -1) return null;
       slots[index].set(point.x, point.z, 1, radius);
+
+      const offset = index * maxRoomPolyVerts;
+      const count = roomOutline ? Math.min(roomOutline.length, maxRoomPolyVerts) : 0;
+      roomPolyInfo[index].set(offset, count, 0, 0);
+      if (roomOutline) {
+        for (let v = 0; v < count; v++) {
+          roomPolyVerts[offset + v].set(roomOutline[v].x, roomOutline[v].z);
+        }
+      }
+
       recomputeHiWater();
       return index;
     },
     removeLight(index) {
       slots[index].set(0, 0, 0, 0);
+      roomPolyInfo[index].set(0, 0, 0, 0);
       recomputeHiWater();
     },
     findLightNear(bottomXZ, topXZ) {
@@ -205,8 +312,11 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       for (let i = 0; i < slots.length; i++) {
         const s = slots[i];
         if (s.z === 0) continue; // empty slot
-        const dist = distToSegment2D(s.x, s.y, bottomXZ.x, bottomXZ.z, topXZ.x, topXZ.z);
-        if (dist <= s.w && dist < bestDist) {
+        const closest = closestPointOnSegment2D(s.x, s.y, bottomXZ.x, bottomXZ.z, topXZ.x, topXZ.z);
+        const dist = Math.hypot(s.x - closest.x, s.y - closest.z);
+        // also require the click point inside the light's own room-poly clip, else a long-press
+        // just past a wall could "hit" a light whose radius nominally reaches that far but isn't
+        if (dist <= s.w && dist < bestDist && pointInRoomPoly2D(i, closest.x, closest.z)) {
           bestDist = dist;
           bestIndex = i;
         }
@@ -215,35 +325,38 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
     },
     resetLights() {
       for (const s of slots) s.set(0, 0, 0, 0);
+      for (const info of roomPolyInfo) info.set(0, 0, 0, 0);
       hiWater.value = 0;
       trackedActive.value = 0;
     },
     litAmount(sceneDepth) {
       return Fn(() => {
         const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
-        // 🔔 the floor (and any other depthWrite:false transparent surface, see Floor.tsx) never
-        // populates the depth buffer, so sampling depth "through" it just returns the background/
-        // far-plane clear value (viewZ magnitude ~= camFar) — detect that and fall back to the old
-        // plane-projection ray/bottomHeight intersection, exactly correct for a flat floor anyway.
+        // depthWrite:false surfaces (e.g. the floor, see Floor.tsx) never populate the depth
+        // buffer, reading back as far-plane — detect that and fall back to a ray/plane test.
         const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
 
-        // real `If/Else` (not `.select()`): floor regions are large and spatially coherent on
-        // screen, so most GPU warps covering them take ONE branch uniformly and the other branch's
-        // work (the full depth-based reconstruction, or the fallback ray) is genuinely skipped —
-        // unlike `.select()`, which always pays for both regardless of coherence. Divergent warps
-        // (the thin silhouette where floor meets a wall/npc) cost the same either way.
+        // real `If/Else` (not `.select()`): these regions are large and screen-coherent, so most
+        // GPU warps take one branch uniformly and skip the other entirely — `.select()` always
+        // pays for both regardless of coherence.
         const worldXZ = vec2(0, 0).toVar();
         const worldY = float(0).toVar();
 
         If(isBackground, () => {
-          worldXZ.assign(rayXZAt(bottomHeight));
-          worldY.assign(float(bottomHeight));
+          // pick whichever height plane the ray is heading toward (down -> floor @ bottomHeight,
+          // up -> topHeight) rather than assuming floor — matters for any other depthWrite:false
+          // surface at a different height (the ceiling used to need this before it started
+          // writing depth, see Ceiling.tsx)
+          const viewDirPoint = getViewPosition(screenUV, float(0.5), camProjectionMatrixInverse);
+          const worldDir = camWorldMatrix.mul(vec4(viewDirPoint, 0.0)).xyz.normalize();
+          const planeHeight = worldDir.y.lessThan(0).select(float(bottomHeight), float(topHeight));
+          const t = planeHeight.sub(camPosition.y).div(worldDir.y);
+          worldXZ.assign(camPosition.add(worldDir.mul(t)).xz);
+          worldY.assign(planeHeight);
         }).Else(() => {
-          // reconstruct the REAL world position visible at this fragment: convert the log-depth
-          // -derived viewZ to the standard perspective NDC depth getViewPosition expects, then
-          // transform view-space -> world-space. This is what fixes the "npc in front of/behind
-          // the cylinder still lit" bug — the old approach only tested where the camera ray
-          // crossed the bottom/top PLANES, never what was really there.
+          // reconstruct the real world position from depth (log-depth -> NDC -> view -> world) —
+          // fixes lighting an npc that's actually in front of/behind the light's cylinder but
+          // screen-aligned with it, which a plane-only test can't distinguish
           const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
           const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
           const realWorldPos = camWorldMatrix.mul(vec4(viewPos, 1.0)).xyz;
@@ -258,7 +371,8 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         If(trackedActive.notEqual(0), () => {
           const dist = worldXZ.sub(trackedCenter).length();
           const litVal = float(1).sub(dist.sub(trackedRadius).div(falloff).clamp(0, 1));
-          litMax.assign(litMax.max(inHeightRange.select(litVal, float(0))));
+          const roomFactor = trackedRoomClipFactor(worldXZ.x, worldXZ.y);
+          litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
         });
 
         Loop(MAX_POSTPROCESS_LIGHTS, ({ i }) => {
@@ -270,7 +384,8 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
             const dist = worldXZ.sub(l.xy).length();
             // l.w = this light's own radius
             const litVal = float(1).sub(dist.sub(l.w).div(falloff).clamp(0, 1));
-            litMax.assign(litMax.max(inHeightRange.select(litVal, float(0))));
+            const roomFactor = roomClipFactor(i, worldXZ.x, worldXZ.y);
+            litMax.assign(litMax.max(inHeightRange.select(litVal.mul(roomFactor), float(0))));
           });
         });
 

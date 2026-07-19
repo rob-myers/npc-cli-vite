@@ -144,7 +144,7 @@ export default function Ceiling() {
     const opacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores ceiling for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      0.75, // beauty render
+      1, // beauty render
     );
 
     return {
@@ -185,7 +185,8 @@ export default function Ceiling() {
         normalNode={material.normalNode}
         outputNode={material.pickNode}
         opacityNode={material.opacityNode}
-        depthWrite={false}
+        depthWrite // use depth buffer to fix editable lighting
+        alphaTest={0.3}
       />
     </instancedMesh>
   );
