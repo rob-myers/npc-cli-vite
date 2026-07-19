@@ -5,7 +5,14 @@ import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import * as THREE from "three/webgpu";
-import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS, wallHeight } from "../const";
+import {
+  defaultDoorCloseMs,
+  defaultSkinKey,
+  lightRoomFadeMs,
+  lightRoomTransitionRadius,
+  MAX_NPCS,
+  wallHeight,
+} from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -586,7 +593,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.events.next({ key: "spawned-many" });
       },
       switchTrackedNpcRoom(gmRoomId) {
-        w.view.lightPostprocess.setTrackedRoomOutline(w.view.computeRoomOutline(gmRoomId));
+        // shrink light close to npc + swap room-poly clip while small, then grow back
+        const originalRadius = w.view.light.radius;
+        w.view.pulseTrackedRadius(lightRoomTransitionRadius, lightRoomFadeMs, () => {
+          w.view.lightPostprocess.setTrackedRoomOutline(w.view.computeRoomOutline(gmRoomId));
+          w.view.pulseTrackedRadius(originalRadius, lightRoomFadeMs);
+        });
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];

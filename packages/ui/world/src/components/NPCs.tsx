@@ -251,6 +251,8 @@ export default function NPCs() {
         return npc;
       },
       trackNpc(npcKey) {
+        w.view.lightRadiusPulse = null;
+
         if (!npcKey) {
           w.view.light.trackedNpcKey = null;
           w.view.light.targetOverride = null;
@@ -260,6 +262,7 @@ export default function NPCs() {
         }
         const npc = state.get(npcKey);
         w.view.light.trackedNpcKey = npcKey;
+        w.view.light.radius = defaultTargetLightRadius;
         // 🔔 keep a live reference (not a snapshot copy), so `npc.position` continues to be read
         // fresh each tick (via World.tsx's onTick -> w.view.updateLight) and the light tracks the
         // npc automatically as it moves
