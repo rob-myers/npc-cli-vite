@@ -29,6 +29,7 @@ export function PathEditorModal({
       dragging: false,
       filename: "",
       saving: false,
+      positioned: false,
       undoStack: [],
       redoStack: [],
 
@@ -84,6 +85,9 @@ export function PathEditorModal({
       // --- lifecycle ---
 
       reset(initPaths, filename) {
+        // "positioned" = editing an existing on-canvas node's path (transform is non-empty),
+        // as opposed to picking/drawing a shape with no on-canvas position to preserve
+        state.positioned = !!initPaths?.[0]?.transform;
         if (initPaths && initPaths.length > 0) {
           state.paths = initPaths.map((ip) => {
             const poly = geomService.svgPathToPolygon(ip.d);
@@ -163,22 +167,6 @@ export function PathEditorModal({
         }
         if (minX === Infinity) return { x: 0, y: 0, width: 100, height: 100 };
         return { x: minX, y: minY, width: maxX - minX || 100, height: maxY - minY || 100 };
-      },
-      normalizeOrigin() {
-        const pts = state.getPoints();
-        if (pts.length === 0) return;
-        let minX = Infinity,
-          minY = Infinity;
-        for (const p of pts) {
-          minX = Math.min(minX, p.x);
-          minY = Math.min(minY, p.y);
-        }
-        if (minX !== 0 || minY !== 0) {
-          for (const p of pts) {
-            p.x -= minX;
-            p.y -= minY;
-          }
-        }
       },
       pathToD(pathItem) {
         if (pathItem.points.length === 0) return "";
@@ -363,12 +351,21 @@ export function PathEditorModal({
         const b = state.getAllBounds();
         state.clearPersisted();
         onApply(
-          closedPaths.map((p) => ({
-            d: state.pathToD(p),
-            name: p.title || "path",
-            svgWidth: Math.ceil(b.width),
-            svgHeight: Math.ceil(b.height),
-          })),
+          closedPaths.map((p) => {
+            // when positioned, points are absolute (baked in via `reset`) — shift them back to a
+            // local origin and report that origin as `x`/`y`, so the caller can place the node
+            // there instead of re-deriving position from an unrelated (e.g. viewport-centered) transform
+            const local = state.positioned
+              ? { ...p, points: p.points.map((pt) => ({ x: pt.x - b.x, y: pt.y - b.y })) }
+              : p;
+            return {
+              d: state.pathToD(local),
+              name: p.title || "path",
+              svgWidth: Math.ceil(b.width),
+              svgHeight: Math.ceil(b.height),
+              ...(state.positioned && { x: b.x, y: b.y }),
+            };
+          }),
         );
         onOpenChange(false);
       },
@@ -746,6 +743,8 @@ type State = {
   dragging: boolean;
   filename: string;
   saving: boolean;
+  /** Editing an existing on-canvas node's path (vs. picking/drawing with no position to preserve) */
+  positioned: boolean;
   undoStack: MultiSnapshot[];
   redoStack: MultiSnapshot[];
 
@@ -767,7 +766,6 @@ type State = {
   removePath(idx: number): void;
 
   getAllBounds(): { x: number; y: number; width: number; height: number };
-  normalizeOrigin(): void;
   pathToD(pathItem: PathItem): string;
   clientToSvg(svg: SVGSVGElement, clientX: number, clientY: number): Point;
 
