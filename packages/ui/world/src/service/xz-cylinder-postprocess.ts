@@ -108,6 +108,8 @@ const borderWidth = 0.01;
 /** Per-light cap on room-polygon vertices for clipping — matches Debug.tsx's MAX_ROOM_POLY_VERTS */
 const maxRoomPolyVerts = 64;
 const debugLineCount = 8;
+/** World-space width of the soft transition band straddling a room-poly edge (see `roomClipFactor`) */
+const roomEdgeFalloff = 0.3;
 
 /**
  * Post-processing helper for many vertical cylinders (axis along y, from `bottomHeight` to
@@ -221,8 +223,10 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   }
 
   // ray-cast point-in-polygon for a SINGLE light's room outline (single, non-nested Loop — used
-  // by both `tracked` and `preview`, which are each exactly one light). 1 = inside room, or
-  // unclipped (count == 0); 0 = outside.
+  // by both `tracked` and `preview`, which are each exactly one light). Also tracks the nearest
+  // edge distance so the result can fade smoothly across the boundary (see `roomEdgeFalloff`)
+  // instead of an abrupt binary cutoff — reuses the same per-edge scan, so it's nearly free.
+  // 1 = inside room (or beyond the transition band), or unclipped (count == 0); 0 = outside.
   function singleRoomClipFactor(
     polyCount: THREE.UniformNode<"float", number>,
     polyVertsNode: ReturnType<typeof uniformArray<"vec2">>,
@@ -231,6 +235,8 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   ) {
     const count = polyCount.toInt();
     const inside = int(0).toVar();
+    const minEdgeDist = float(1e6).toVar();
+    const p = vec2(px, pz);
 
     If(count.greaterThan(0), () => {
       Loop(maxRoomPolyVerts, ({ i: v }) => {
@@ -245,10 +251,14 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         If(yCross.and(px.lessThan(t)), () => {
           inside.assign(inside.bitXor(int(1)));
         });
+        minEdgeDist.assign(minEdgeDist.min(distToSegment(p, a, b)));
       });
     });
 
-    return count.equal(0).select(float(1), inside.toFloat());
+    // signed distance to the boundary (+ve inside, -ve outside), ramped linearly across
+    // `roomEdgeFalloff` centred on the edge itself
+    const signedDist = inside.toFloat().mul(2).sub(1).mul(minEdgeDist);
+    return count.equal(0).select(float(1), signedDist.div(roomEdgeFalloff).add(0.5).clamp(0, 1));
   }
 
   // Same, but for static light slot `i`'s room outline, called from inside the per-light `Loop`
@@ -258,6 +268,8 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
     const info = roomPolyInfoNode.element(i);
     const count = info.y.toInt();
     const inside = int(0).toVar();
+    const minEdgeDist = float(1e6).toVar();
+    const p = vec2(px, pz);
 
     If(count.greaterThan(0), () => {
       const offset = info.x.toInt();
@@ -271,11 +283,14 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
           If(yCross.and(px.lessThan(t)), () => {
             inside.assign(inside.bitXor(int(1)));
           });
+          minEdgeDist.assign(minEdgeDist.min(distToSegment(p, a, b)));
         });
       }
     });
 
-    return count.equal(0).select(float(1), inside.toFloat());
+    // same soft-edge ramp as `singleRoomClipFactor` — see there for the reasoning
+    const signedDist = inside.toFloat().mul(2).sub(1).mul(minEdgeDist);
+    return count.equal(0).select(float(1), signedDist.div(roomEdgeFalloff).add(0.5).clamp(0, 1));
   }
 
   return {
