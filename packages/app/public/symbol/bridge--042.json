@@ -210,7 +210,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "50f4058b-e508-4b43-8951-5240b220f752",
@@ -420,7 +420,7 @@
         },
         {
           "id": "1707348a-2cb9-49c7-a27f-422df7b239c3",
-          "name": "decor point label=bridge",
+          "name": "decor point label=bridge corridor",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 230, "f": 234},
@@ -511,6 +511,19 @@
           "cssTransform": "matrix(0.5, 0, 0, 0.5, 230, 368)"
         },
         {
+          "id": "d0effc38-d66b-45e9-a0a6-1e8afd30b17d",
+          "name": "decor point label=office",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 84, "f": 396},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 84, 396)"
+        },
+        {
           "id": "78bad6c5-c12d-4ee5-a9f0-afba2c26e2e5",
           "name": "decor quad key=switch",
           "locked": true,
@@ -587,13 +600,13 @@
           "name": "decor point label=stateroom",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 230, "f": 368},
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 390, "f": 370},
           "type": "image",
           "srcType": "decor",
           "srcKey": "label",
           "baseRect": {"width": 40, "height": 15},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 230, 368)"
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 390, 370)"
         },
         {
           "id": "0b640094-ade5-4363-9b4d-5f3c63a20ce3",
