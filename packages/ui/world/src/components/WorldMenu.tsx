@@ -19,7 +19,7 @@ import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
-import { brightnessStorageKey, defaultFov, fovStorageKey, pickOpenDoorsKey } from "../const";
+import { brightnessStorageKey, defaultDesktopFov, fovStorageKey, pickOpenDoorsKey } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
@@ -278,14 +278,14 @@ export function WorldMenu() {
                       <ArrowsOutIcon
                         className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
                         onClick={() => {
-                          w.view.fov = defaultFov;
+                          w.view.fov = defaultDesktopFov;
                           const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
                           if (cam?.isPerspectiveCamera) {
-                            cam.fov = defaultFov;
+                            cam.fov = defaultDesktopFov;
                             cam.updateProjectionMatrix();
                           }
                           w.r3f?.invalidate();
-                          tryLocalStorageSet(fovStorageKey, String(defaultFov));
+                          tryLocalStorageSet(fovStorageKey, String(defaultDesktopFov));
                           w.update();
                         }}
                       />
