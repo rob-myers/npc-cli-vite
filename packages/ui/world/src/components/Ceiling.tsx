@@ -92,7 +92,7 @@ export default function Ceiling() {
         });
         drawPolygons(ct, tops.broad, {
           fillStyle: tc.hull.fill,
-          strokeStyle: "rgba(90, 90, 90, 0.1)",
+          strokeStyle: "rgba(90, 90, 90, 0.4)",
           lineWidth: thickerLineWidth,
         });
 
