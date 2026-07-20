@@ -2,6 +2,7 @@ import { enableDragDropTouch } from "@dragdroptouch/drag-drop-touch";
 
 enableDragDropTouch();
 
+import { queryClientApi } from "@npc-cli/cli/shell/query-client";
 import {
   isHullSymbolImageKey,
   type StarshipSymbolImageKey,
@@ -31,7 +32,6 @@ import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type PointerEvent, useCallback, useContext, useEffect, useMemo } from "react";
 import z from "zod";
-import { queryClientApi } from "../../../cli/src/shell/query-client";
 import {
   type BaseRect,
   type DecorManifest,
@@ -949,14 +949,34 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
         const selection = state.getSelectedNode();
 
-        // Replace selected path node in-place (keep position/transform)
+        // Replace selected path node in-place (keep position, unless the editor reports a new one)
         if (paths.length === 1 && selection?.type === "path") {
           const p = paths[0];
           selection.d = p.d;
           selection.name = p.name;
           selection.baseRect = { width: p.svgWidth, height: p.svgHeight };
+          if (p.x !== undefined && p.y !== undefined) {
+            selection.transform = { a: 1, b: 0, c: 0, d: 1, e: p.x, f: p.y };
+          }
           selection.cssTransform = computeNodeCssTransform(selection);
           state.set({ pickPathOpen: false, editingId: null });
+          return;
+        }
+
+        // Replace selected rect node with a path node at the same position
+        if (paths.length === 1 && selection?.type === "rect") {
+          const p = paths[0];
+          const [, parent] = findNodeById(state.nodes, selection.id);
+          const siblings = parent?.children ?? state.nodes;
+          const index = removeNodeFromParent(siblings, selection.id);
+          const node = state.createNode("path");
+          node.name = p.name;
+          node.d = p.d;
+          node.baseRect = { width: p.svgWidth, height: p.svgHeight };
+          node.transform = { a: 1, b: 0, c: 0, d: 1, e: p.x ?? selection.transform.e, f: p.y ?? selection.transform.f };
+          node.cssTransform = computeNodeCssTransform(node);
+          siblings.splice(index, 0, node);
+          state.set({ selectedIds: new Set([node.id]), pickPathOpen: false, editingId: null });
           return;
         }
 
@@ -973,8 +993,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             b: 0,
             c: 0,
             d: 1,
-            e: center ? center.x - p.svgWidth / 2 : 0,
-            f: center ? center.y - p.svgHeight / 2 : 0,
+            e: p.x ?? (center ? center.x - p.svgWidth / 2 : 0),
+            f: p.y ?? (center ? center.y - p.svgHeight / 2 : 0),
           };
           node.cssTransform = computeNodeCssTransform(node);
           return node;

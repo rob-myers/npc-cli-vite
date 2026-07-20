@@ -11,6 +11,9 @@ export interface ParsedPath {
   name: string;
   svgWidth: number;
   svgHeight: number;
+  /** World position for `d`'s local origin — set only when editing an existing on-canvas node */
+  x?: number;
+  y?: number;
 }
 
 export function PathPickerModal({
