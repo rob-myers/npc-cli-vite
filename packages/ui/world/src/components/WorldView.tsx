@@ -21,9 +21,11 @@ import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
   connectorEntranceHalfDepth,
-  defaultCameraModeDesktop,
-  defaultCameraModeMobile,
-  defaultFov,
+  defaultCameraMode,
+  defaultCardinalDirectionsDesktop,
+  defaultCardinalDirectionsMobile,
+  defaultDesktopFov,
+  defaultMobileFov,
   defaultTargetLightRadius,
   fovStorageKey,
   lightEditingEnabledKey,
@@ -52,10 +54,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   const state = useStateRef(
     (): State => ({
-      cameraMode:
-        tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
-        (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
-      numCardinalDirections: tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ?? 4,
+      cameraMode: tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ?? defaultCameraMode,
+      numCardinalDirections:
+        tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ??
+        (w.touchDevice ? defaultCardinalDirectionsMobile : defaultCardinalDirectionsDesktop),
       canvas: null as any,
       controls: null as any,
       clickIds: [],
@@ -109,7 +111,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         /** Current tracked-light radius, animated via `pulseTrackedRadius`/`updateLightRadiusPulse` */
         radius: defaultTargetLightRadius,
       },
-      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? defaultFov,
+      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)

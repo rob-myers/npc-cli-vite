@@ -72,7 +72,8 @@ export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
-export const defaultFov = 60;
+export const defaultDesktopFov = 60;
+export const defaultMobileFov = 30;
 export const defaultBrightness = 2;
 export const showDebugLightOutlineKey = "world-show-debug-light-outlline";
 export const postProcessingEnabledKey = "world-post-processing-enabled";
@@ -92,8 +93,9 @@ export const lightRoomFadeMs = 150;
 /** Radius the tracked light shrinks to (close around the npc) mid-transition, before growing back */
 export const lightRoomTransitionRadius = 0.5;
 
-export const defaultCameraModeDesktop = "free" satisfies import("./components/CameraControls").CameraModeType;
-export const defaultCameraModeMobile = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCardinalDirectionsDesktop = 8;
+export const defaultCardinalDirectionsMobile = 4;
 
 export const defaultThemeKey = "light-theme";
 
