@@ -133,7 +133,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "72181c75-63b1-45c2-a943-5f49761ebfd8",
@@ -208,6 +208,19 @@
           "cssTransform": "matrix(-1, 0, 0, -1, 65, 58.5)"
         }
       ]
+    },
+    {
+      "id": "21a96795-588d-4567-9183-8a1b9f17513c",
+      "name": "decor point label=fresher",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 80, "f": 36},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 80, 36)"
     },
     {
       "id": "f70fe659-5b9b-4cc9-8524-12d5aa2ac6a3",
