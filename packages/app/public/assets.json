@@ -279,6 +279,7 @@
             "decor": true,
             "point": true,
             "label": "bridge",
+            "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 5.75, 5.85],
             "direction": {"x": 1, "y": 0}
@@ -344,6 +345,20 @@
             "label": "briefing",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[2.6, 9.9], [2.6, 10.0875], [2.1, 10.0875], [2.1, 9.9]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "office",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2.1, 9.9],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -419,14 +434,14 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[6.25, 9.2], [6.25, 9.3875], [5.75, 9.3875], [5.75, 9.2]]
+            [[10.25, 9.25], [10.25, 9.4375], [9.75, 9.4375], [9.75, 9.25]]
           ],
           "meta": {
             "decor": true,
             "point": true,
             "label": "stateroom",
             "img": "label",
-            "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
+            "transform": [0.5, 0, 0, 0.5, 9.75, 9.25],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -520,7 +535,7 @@
           "coordinates": [
             [[4.325, 7.425], [4.325, 7.625], [3.2, 7.625], [3.2, 7.425]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "briefing"}
+          "meta": {"door": true, "slide": [-1, 0], "label": "office"}
         },
         {
           "type": "Polygon",
@@ -529,7 +544,7 @@
             "door": true,
             "slide": [0, -1],
             "backLabel": "briefing",
-            "label": "briefing"
+            "label": "office"
           }
         },
         {
@@ -10549,6 +10564,7 @@
             "decor": true,
             "point": true,
             "label": "bridge",
+            "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 5.75, 5.85],
             "direction": {"x": 1, "y": 0}
@@ -10614,6 +10630,20 @@
             "label": "briefing",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[2.6, 9.9], [2.6, 10.0875], [2.1, 10.0875], [2.1, 9.9]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "office",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2.1, 9.9],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -10689,14 +10719,14 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[6.25, 9.2], [6.25, 9.3875], [5.75, 9.3875], [5.75, 9.2]]
+            [[10.25, 9.25], [10.25, 9.4375], [9.75, 9.4375], [9.75, 9.25]]
           ],
           "meta": {
             "decor": true,
             "point": true,
             "label": "stateroom",
             "img": "label",
-            "transform": [0.5, 0, 0, 0.5, 5.75, 9.2],
+            "transform": [0.5, 0, 0, 0.5, 9.75, 9.25],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -11167,7 +11197,7 @@
           "coordinates": [
             [[4.325, 7.425], [4.325, 7.625], [3.2, 7.625], [3.2, 7.425]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "briefing"}
+          "meta": {"door": true, "slide": [-1, 0], "label": "office"}
         },
         {
           "type": "Polygon",
@@ -11176,7 +11206,7 @@
             "door": true,
             "slide": [0, -1],
             "backLabel": "briefing",
-            "label": "briefing"
+            "label": "office"
           }
         },
         {
@@ -14558,6 +14588,7 @@
             "decor": true,
             "point": true,
             "label": "bridge",
+            "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 14.7625, 7.3625],
             "y": 0.01,
@@ -14671,6 +14702,28 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [11.6125, 11.4125],
+              [11.6125, 11.6],
+              [11.1125, 11.6],
+              [11.1125, 11.4125]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "office",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 11.112499999999999, 11.4125],
+            "y": 0.01,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [13.325, 9.0125],
               [13.325, 8.8625],
               [13.475, 8.8625],
@@ -14766,10 +14819,10 @@
           "type": "Polygon",
           "coordinates": [
             [
-              [15.2625, 10.7125],
-              [15.2625, 10.9],
-              [14.7625, 10.9],
-              [14.7625, 10.7125]
+              [19.2625, 10.7625],
+              [19.2625, 10.95],
+              [18.7625, 10.95],
+              [18.7625, 10.7625]
             ]
           ],
           "meta": {
@@ -14777,7 +14830,7 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
-            "transform": [0.5, 0, 0, 0.5, 14.7625, 10.712499999999999],
+            "transform": [0.5, 0, 0, 0.5, 18.7625, 10.7625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -16660,12 +16713,7 @@
               [12.2125, 8.9375]
             ]
           ],
-          "meta": {
-            "door": true,
-            "slide": [-1, 0],
-            "label": "briefing",
-            "det": 1
-          }
+          "meta": {"door": true, "slide": [-1, 0], "label": "office", "det": 1}
         },
         {
           "type": "Polygon",
@@ -16681,7 +16729,7 @@
             "door": true,
             "slide": [0, -1],
             "backLabel": "briefing",
-            "label": "briefing",
+            "label": "office",
             "det": 1
           }
         },
@@ -29329,6 +29377,7 @@
             "decor": true,
             "point": true,
             "label": "bridge",
+            "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 14.7625, 7.3625],
             "y": 0.01,
@@ -29441,6 +29490,27 @@
           "key": "",
           "meta": {
             "decor": true,
+            "point": true,
+            "label": "office",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 11.112499999999999, 11.4125],
+            "y": 0.01,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds": {"x": 11.1875, "y": 11.3312, "width": 0.35, "height": 0.35},
+          "type": "point",
+          "x": 11.3625,
+          "y": 11.5062,
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 11.112499999999999, 11.4125],
+          "det": 1
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
             "quad": true,
             "key": "switch",
             "img": "switch",
@@ -29532,18 +29602,18 @@
             "point": true,
             "label": "stateroom",
             "img": "label",
-            "transform": [0.5, 0, 0, 0.5, 14.7625, 10.712499999999999],
+            "transform": [0.5, 0, 0, 0.5, 18.7625, 10.7625],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 14.8375, "y": 10.6313, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 18.8375, "y": 10.6812, "width": 0.35, "height": 0.35},
           "type": "point",
-          "x": 15.0125,
-          "y": 10.8063,
+          "x": 19.0125,
+          "y": 10.8562,
           "orient": 0,
-          "transform": [0.5, 0, 0, 0.5, 14.7625, 10.712499999999999],
+          "transform": [0.5, 0, 0, 0.5, 18.7625, 10.7625],
           "det": 1
         },
         {
@@ -31702,7 +31772,7 @@
             "meta": {
               "door": true,
               "slide": [-1, 0],
-              "label": "briefing",
+              "label": "office",
               "det": 1
             }
           },
@@ -31724,7 +31794,7 @@
               "door": true,
               "slide": [0, -1],
               "backLabel": "briefing",
-              "label": "briefing",
+              "label": "office",
               "det": 1
             }
           },
@@ -32883,7 +32953,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [59]
+            "decorIds": [60]
           }
         },
         {
@@ -32926,7 +32996,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [60]
+            "decorIds": [61]
           }
         },
         {
@@ -32969,7 +33039,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [61]
+            "decorIds": [62]
           }
         },
         {
@@ -33012,7 +33082,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [62]
+            "decorIds": [63]
           }
         },
         {
@@ -33214,7 +33284,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [63]
+            "decorIds": [64]
           }
         },
         {
@@ -33261,7 +33331,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [64]
+            "decorIds": [65]
           }
         },
         {
@@ -33308,7 +33378,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [65]
+            "decorIds": [66]
           }
         },
         {
@@ -33355,7 +33425,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [66]
+            "decorIds": [67]
           }
         },
         {
@@ -33402,7 +33472,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [67]
+            "decorIds": [68]
           }
         },
         {
@@ -33449,7 +33519,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [68]
+            "decorIds": [69]
           }
         },
         {
@@ -33496,7 +33566,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [69]
+            "decorIds": [70]
           }
         },
         {
@@ -33543,7 +33613,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [70]
+            "decorIds": [71]
           }
         },
         {
@@ -33590,7 +33660,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [71]
+            "decorIds": [72]
           }
         },
         {
@@ -33637,7 +33707,7 @@
             "inset": 0.025,
             "symKey": "extra--005--chair",
             "origObstacleId": 0,
-            "decorIds": [72]
+            "decorIds": [73]
           }
         },
         {
@@ -33673,7 +33743,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [73]
+            "decorIds": [74]
           }
         },
         {
@@ -33709,7 +33779,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [74]
+            "decorIds": [75]
           }
         },
         {
@@ -33785,7 +33855,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "decorIds": [75]
+            "decorIds": [76]
           }
         },
         {
@@ -33833,7 +33903,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher",
             "origObstacleId": 0,
-            "decorIds": [76]
+            "decorIds": [77]
           }
         },
         {
@@ -33879,7 +33949,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [77]
+            "decorIds": [78]
           }
         },
         {
@@ -33925,7 +33995,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [78]
+            "decorIds": [79]
           }
         },
         {
@@ -34008,7 +34078,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [79]
+            "decorIds": [80]
           }
         },
         {
@@ -34091,7 +34161,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [80]
+            "decorIds": [81]
           }
         },
         {
@@ -34190,7 +34260,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [86]
+            "decorIds": [87]
           }
         },
         {
@@ -34233,7 +34303,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [87]
+            "decorIds": [88]
           }
         },
         {
@@ -34276,7 +34346,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [93]
+            "decorIds": [94]
           }
         },
         {
@@ -34319,7 +34389,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [94]
+            "decorIds": [95]
           }
         },
         {
@@ -34346,7 +34416,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "decorIds": [95]
+            "decorIds": [96]
           }
         },
         {
@@ -34373,7 +34443,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "decorIds": [96]
+            "decorIds": [97]
           }
         },
         {
@@ -34412,7 +34482,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [97]
+            "decorIds": [98]
           }
         },
         {
@@ -34453,7 +34523,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher",
             "origObstacleId": 0,
-            "decorIds": [98]
+            "decorIds": [99]
           }
         },
         {
@@ -34482,7 +34552,7 @@
             "h": 0,
             "symKey": "extra--021--shower",
             "origObstacleId": 0,
-            "decorIds": [99]
+            "decorIds": [100]
           }
         },
         {
@@ -34511,7 +34581,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "decorIds": [106]
+            "decorIds": [107]
           }
         },
         {
@@ -34568,7 +34638,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "decorIds": [113]
+            "decorIds": [114]
           }
         },
         {
@@ -34639,7 +34709,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [119]
+            "decorIds": [120]
           }
         },
         {
@@ -34682,7 +34752,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [120]
+            "decorIds": [121]
           }
         },
         {
@@ -34709,7 +34779,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "decorIds": [121]
+            "decorIds": [122]
           }
         },
         {
@@ -34736,7 +34806,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "decorIds": [122]
+            "decorIds": [123]
           }
         },
         {
@@ -34775,7 +34845,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [123]
+            "decorIds": [124]
           }
         },
         {
@@ -34816,7 +34886,7 @@
             "inset": 0.025,
             "symKey": "extra--001--fresher",
             "origObstacleId": 0,
-            "decorIds": [124]
+            "decorIds": [125]
           }
         },
         {
@@ -34845,7 +34915,7 @@
             "h": 0,
             "symKey": "extra--021--shower",
             "origObstacleId": 0,
-            "decorIds": [125]
+            "decorIds": [126]
           }
         },
         {
@@ -34975,7 +35045,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [131]
+            "decorIds": [132]
           }
         }
       ],
