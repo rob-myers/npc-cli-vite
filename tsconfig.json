@@ -35,6 +35,9 @@
       "path": "./packages/ui/jsh"
     },
     {
+      "path": "./packages/ui/map-edit"
+    },
+    {
       "path": "./packages/ui/tabs"
     },
     {

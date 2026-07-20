@@ -633,6 +633,9 @@ importers:
       '@dragdroptouch/drag-drop-touch':
         specifier: 'catalog:'
         version: 2.0.3
+      '@npc-cli/cli':
+        specifier: workspace:^
+        version: link:../../cli
       '@npc-cli/media':
         specifier: workspace:^
         version: link:../../media
