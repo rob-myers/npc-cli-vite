@@ -1,3 +1,4 @@
+import { Poly, Rect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { drawPolygons, drawRoundedRect } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
@@ -184,17 +185,106 @@ export function drawRoomOutlines(
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
   const insetAmount = 0.75;
+  const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
+  const gridPieceSize = geomorphGridMeters * 2;
+  const gridPieceGap = 0.075;
+  const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
   const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
 
   for (const room of layout.rooms) {
-    // outline looks bad in small rooms
-    if (room.rect.area < 10) continue;
+    if (room.rect.area < 10) continue; // outline looks bad in small rooms
     const noHoles = room.clone().removeHoles();
     pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
     ct.fillStyle = pattern;
-    fillRoundedPolys(ct, geomService.createInset(noHoles, insetAmount), insetAmount);
+    const insetPolys = geomService.createInset(noHoles, insetAmount); // one room can yield several polygons
+    const wholePolys = insetPolys.filter((p) => p.rect.area < splitPolyMinArea);
+    const splitPieces = insetPolys
+      .filter((p) => p.rect.area >= splitPolyMinArea)
+      .flatMap((p) => splitIntoGridPieces(p, gridPieceSize, gridPieceGap, gridSmallPieceFrac));
+    fillRoundedPolys(ct, wholePolys, insetAmount);
+    fillStraightPolys(ct, splitPieces);
   }
   ct.restore();
+}
+
+function fillStraightPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[]) {
+  for (const poly of polys) {
+    if (poly.outline.length < 3) continue;
+    ct.beginPath();
+    poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
+    ct.closePath();
+    ct.stroke();
+    ct.fill();
+  }
+}
+
+type GridCell = { gx: number; gy: number; rect: Rect; area: number };
+
+/** Clip `poly` into a grid of pieces, merging slivers into a neighbour, then gap-shrink each piece */
+function splitIntoGridPieces(poly: Geom.Poly, cellSize: number, gap: number, smallAreaFrac: number): Geom.Poly[] {
+  const cells = computeGridCells(poly, cellSize);
+  const rects = mergeSmallGridCells(cells, cellSize, smallAreaFrac);
+  const pieces: Geom.Poly[] = [];
+  for (const rect of rects) {
+    const shrunk = Poly.fromRect(new Rect(rect.x + gap, rect.y + gap, rect.width - gap * 2, rect.height - gap * 2));
+    pieces.push(...Poly.intersect([poly], [shrunk]).filter((piece) => piece.rect.area > 0.01));
+  }
+  return pieces;
+}
+
+/** Occupied (area > 0) cells of a `cellSize`-spaced grid covering `poly`'s bounds */
+function computeGridCells(poly: Geom.Poly, cellSize: number): GridCell[] {
+  const bounds = poly.rect;
+  const gxMin = Math.floor(bounds.x / cellSize);
+  const gxMax = Math.ceil((bounds.x + bounds.width) / cellSize);
+  const gyMin = Math.floor(bounds.y / cellSize);
+  const gyMax = Math.ceil((bounds.y + bounds.height) / cellSize);
+  const cells: GridCell[] = [];
+  for (let gx = gxMin; gx < gxMax; gx++) {
+    for (let gy = gyMin; gy < gyMax; gy++) {
+      const rect = new Rect(gx * cellSize, gy * cellSize, cellSize, cellSize);
+      const area = Poly.intersect([poly], [Poly.fromRect(rect)]).reduce((sum, p) => sum + p.rect.area, 0);
+      if (area > 0.01) cells.push({ gx, gy, rect, area });
+    }
+  }
+  return cells;
+}
+
+/** Merge each small cell into one orthogonally-adjacent occupied cell, forming a 2-cell rect */
+function mergeSmallGridCells(cells: GridCell[], cellSize: number, smallAreaFrac: number): Rect[] {
+  const key = (gx: number, gy: number) => `${gx},${gy}`;
+  const smallThreshold = cellSize * cellSize * smallAreaFrac;
+  const byKey = new Map(cells.map((c) => [key(c.gx, c.gy), c]));
+  const used = new Set<string>();
+  const rects: Rect[] = [];
+  const neighborOffsets = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ] as const;
+
+  for (const cell of cells) {
+    if (used.has(key(cell.gx, cell.gy)) || cell.area >= smallThreshold) continue;
+    for (const [dx, dy] of neighborOffsets) {
+      const neighbor = byKey.get(key(cell.gx + dx, cell.gy + dy));
+      if (!neighbor || used.has(key(neighbor.gx, neighbor.gy))) continue;
+      used.add(key(cell.gx, cell.gy));
+      used.add(key(neighbor.gx, neighbor.gy));
+      const minGx = Math.min(cell.gx, neighbor.gx);
+      const minGy = Math.min(cell.gy, neighbor.gy);
+      const w = (Math.max(cell.gx, neighbor.gx) - minGx + 1) * cellSize;
+      const h = (Math.max(cell.gy, neighbor.gy) - minGy + 1) * cellSize;
+      rects.push(new Rect(minGx * cellSize, minGy * cellSize, w, h));
+      break;
+    }
+  }
+
+  for (const cell of cells) {
+    if (!used.has(key(cell.gx, cell.gy))) rects.push(cell.rect);
+  }
+
+  return rects;
 }
 
 function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number) {
