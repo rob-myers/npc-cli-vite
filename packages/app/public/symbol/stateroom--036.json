@@ -172,26 +172,6 @@
           "cssTransform": "matrix(1, 0, 0, 1, 60, 241)"
         },
         {
-          "id": "aed85577-ed4b-4cc1-bdc1-ea20bb621789",
-          "name": "decor point label=fresher",
-          "locked": true,
-          "visible": true,
-          "transform": {
-            "a": 0.5,
-            "b": 0,
-            "c": 0,
-            "d": 0.5,
-            "e": 76,
-            "f": 166.5
-          },
-          "type": "image",
-          "srcType": "decor",
-          "srcKey": "label",
-          "baseRect": {"width": 40, "height": 15},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 76, 166.5)"
-        },
-        {
           "id": "c6ba555b-b88b-4c90-a80f-6513a017c7ba",
           "name": "door slide=[1,0]",
           "locked": true,
