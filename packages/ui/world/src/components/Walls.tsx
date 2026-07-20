@@ -48,39 +48,41 @@ export default function Walls() {
         );
       },
       positionTrimInstances() {
-        const { instTrim: ti } = state;
-        if (!ti) return;
+        const { instTrim } = state;
+        if (!instTrim) return;
+
         // const color = new THREE.Color(w.getTheme().walls.color);
         const color = new THREE.Color("#222");
+
         let id = 0;
         for (const [_gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
           for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
             const wallH = typeof meta.h === "number" ? meta.h : wallHeight;
             const wallBase = typeof meta.y === "number" ? meta.y : 0;
-            ti.setMatrixAt(
+            instTrim.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilTrimHeight, wallBase + wallH - ceilTrimHeight),
             );
-            ti.setColorAt(id++, color);
+            instTrim.setColorAt(id++, color);
           }
           for (const { seg } of w.gmsData.byKey[gmKey].doorSegs) {
-            ti.setMatrixAt(
+            instTrim.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
             );
-            ti.setColorAt(id++, color);
+            instTrim.setColorAt(id++, color);
           }
           for (const { seg } of w.gmsData.byKey[gmKey].windowSegs) {
-            ti.setMatrixAt(
+            instTrim.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
             );
-            ti.setColorAt(id++, color);
+            instTrim.setColorAt(id++, color);
           }
         }
-        ti.computeBoundingSphere();
-        ti.instanceMatrix.needsUpdate = true;
-        if (ti.instanceColor) ti.instanceColor.needsUpdate = true;
+        instTrim.computeBoundingSphere();
+        instTrim.instanceMatrix.needsUpdate = true;
+        if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
       },
       positionInstances() {
         const { inst: ws } = state;
@@ -250,7 +252,7 @@ export default function Walls() {
 
       <instancedMesh
         key={`${mat.uuid}-trim`}
-        name="wall-ceil-trim"
+        name="walls-along-ceiling"
         ref={state.ref("instTrim", bootstrapInstanceColor)}
         args={[state.quad, trimMaterial, trimCount]}
         renderOrder={4}
