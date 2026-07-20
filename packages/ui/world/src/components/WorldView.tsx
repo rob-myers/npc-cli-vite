@@ -469,10 +469,35 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return { x: wp.x, z: wp.y };
         });
       },
+      isFullyLitRoom(gmRoomId) {
+        const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
+        if (!roomDecor) return true;
+        let hasLabel = false;
+        for (const d of roomDecor) {
+          if (d.type !== "point" || !d.meta.label) continue;
+          hasLabel = true;
+          if (d.meta.corridor === true || d.meta.label === "fresher") return true;
+        }
+        return !hasLabel;
+      },
       startLightSizing(center) {
         // find the room `center` is in, so the light can be clipped to its world-space outline
         const gmRoomId = w.e.findRoomContaining({ x: center.x, y: center.z }, true);
         const roomOutline = gmRoomId ? state.computeRoomOutline(gmRoomId) : [];
+
+        if (gmRoomId && state.isFullyLitRoom(gmRoomId)) {
+          // corridors light up fully and instantly instead of growing from a small circle —
+          // radius reaches every outline vertex, so (combined with the room-poly clip) the
+          // whole room is lit regardless of where within it the user long-pressed
+          const radius = roomOutline.reduce((max, p) => Math.max(max, Math.hypot(p.x - center.x, p.z - center.z)), 0);
+          const index = state.lightPostprocess.addLight(center, radius, roomOutline);
+          if (index === null) {
+            // all MAX_POSTPROCESS_LIGHTS slots full
+            w.menu?.set({ toastTs: { ...w.menu.toastTs, "lights full": Date.now() } });
+          }
+          state.forceUpdate();
+          return;
+        }
 
         state.lightSizing = {
           center,
@@ -758,7 +783,9 @@ export type State = {
   setLightsEnabled(next?: boolean): void;
   /** World-space outline of `gmRoomId`'s room, outset slightly (see `lightRoomOutset`) — shared by `startLightSizing` and npc-tracking room-transitions */
   computeRoomOutline(gmRoomId: Geomorph.GmRoomId): { x: number; z: number }[];
-  /** Begins a hold-to-grow preview (via the independent `preview` light channel) for a new light being placed at `center` */
+  /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.label === "fresher"` — such rooms light up fully and instantly instead of growing */
+  isFullyLitRoom(gmRoomId: Geomorph.GmRoomId): boolean;
+  /** Begins a hold-to-grow preview (via the independent `preview` light channel) for a new light being placed at `center`, unless it's a corridor (see `isCorridor`) */
   startLightSizing(center: { x: number; z: number }): void;
   /** Grows `lightSizing.radius` based on elapsed hold time — called every frame from `onCameraChange` */
   updateLightSizing(): void;
