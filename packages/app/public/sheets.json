@@ -144,6 +144,11 @@
       "key": "extra--005--chair",
       "rect": {"x": 1508, "y": 3811, "width": 95, "height": 95},
       "sheetId": 0
+    },
+    "extra--018--table": {
+      "key": "extra--018--table",
+      "rect": {"x": 2143, "y": 2931, "width": 95, "height": 95},
+      "sheetId": 0
     }
   },
   "symbolSheetDims": [{"width": 3708, "height": 3914}],
