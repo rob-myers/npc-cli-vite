@@ -1,0 +1,97 @@
+{
+  "filename": "fresher--002.json",
+  "width": 60,
+  "height": 60,
+  "nodes": [
+    {
+      "id": "b489a089-14e8-4189-85fa-52fb796a3bd2",
+      "name": "fresher--002",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "fresher--002",
+      "baseRect": {"width": 64, "height": 66.8},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "2b0e52ba-d35b-417f-b46c-45e69ae8fb5f",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "e56db643-ef78-464d-b3b7-d6aff46a0e24",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 64},
+          "cssTransform": "matrix(1, 0, 0, 1, 58, -2)"
+        },
+        {
+          "id": "b25e984d-fc93-4db2-bd70-2bb157046352",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 64},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "846fdde2-5b70-4166-bc72-fb8bf350f0c6",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "9542a2ed-4ca4-41e0-a841-84601c83e6b7",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 58},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 58)"
+        }
+      ]
+    },
+    {
+      "id": "6a212a62-0df9-42ae-8a12-ff5524b19841",
+      "name": "door slide=[1,0]",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.5, "f": 55},
+      "type": "rect",
+      "baseRect": {"width": 45, "height": 10},
+      "cssTransform": "matrix(1, 0, 0, 1, 7.5, 55)"
+    },
+    {
+      "id": "9ea1bd52-f7c7-4023-b976-4298bd9c42c2",
+      "name": "decor point label=fresher",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 20, "f": 40},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 20, 40)"
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 64, "height": 66.8},
+  "type": "symbol",
+  "key": "fresher--002"
+}

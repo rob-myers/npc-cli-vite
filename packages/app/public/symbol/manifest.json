@@ -386,6 +386,15 @@
       "bounds": {"x": -0.5, "y": -1, "width": 121.4, "height": 13.4},
       "type": "symbol",
       "key": "window--005"
+    },
+    "fresher--002": {
+      "filename": "fresher--002.json",
+      "thumbnailFilename": "fresher--002.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": -2, "y": -2, "width": 64, "height": 66.8},
+      "type": "symbol",
+      "key": "fresher--002"
     }
   }
 }
