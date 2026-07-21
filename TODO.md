@@ -3,16 +3,22 @@
 - new approach to todos i.e. current go into technical and start new section
 
 - ✅ clean fadeSpawn
+- ✅ room labels represented as decor
+  - `w decor.byRoom.0.1 | split | filter 'x => x.meta.label'`
+
+- add "screen" as tilted decor quad
+- can override edit g-301--playground.json in dev
+  - currently can only save as draft
 - prevent bubble fade while paused
 - clean MAX_DOORS_PER_GEOMORPH
   - can use e.g. 64 and no longer in sync with Doors.tsx
 
-- fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
+- ✅ fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
 - fix npc final turn when ends near nav border
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"
-- BUG animation stops sometimes when go idle
+- ✅ BUG animation stops sometimes when go idle
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
   - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
