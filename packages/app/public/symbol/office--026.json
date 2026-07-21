@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "a324b6ac-45ab-405b-8fa2-0c4348abcd63",
@@ -56,7 +56,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "group",
-          "expanded": true,
+          "expanded": false,
           "children": [
             {
               "id": "045ab621-12e8-473a-b771-f8f5d6b6d218",
@@ -79,7 +79,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "069a4047-212e-4e09-b9d5-4cc1da161ac9",
@@ -122,6 +122,19 @@
           "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
         }
       ]
+    },
+    {
+      "id": "1a7a89c8-b14d-45e5-b2f7-258da1809027",
+      "name": "decor point label=office",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 84, "f": 58},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 84, 58)"
     }
   ],
   "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
