@@ -42,6 +42,12 @@
       "width": 500,
       "height": 200
     },
+    "extra--018--table": {
+      "key": "extra--018--table",
+      "group": "extra",
+      "width": 95,
+      "height": 95
+    },
     "extra--019--table": {
       "key": "extra--019--table",
       "group": "extra",

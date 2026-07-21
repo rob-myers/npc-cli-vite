@@ -907,6 +907,25 @@
           "cssTransform": "matrix(1, 0, 0, 1, 360, 658)"
         }
       ]
+    },
+    {
+      "id": "0049c695-35dd-47ce-b233-60edb6003a71",
+      "name": "couch-and-chairs--006 y=0.4",
+      "locked": false,
+      "visible": true,
+      "transform": {
+        "a": 0,
+        "b": -1,
+        "c": 1,
+        "d": 0,
+        "e": 542.0042,
+        "f": 315.9891
+      },
+      "type": "symbol",
+      "srcKey": "couch-and-chairs--006",
+      "baseRect": {"width": 30, "height": 120},
+      "offset": {"x": 1.9958586554998492, "y": -1.9891073946035027},
+      "cssTransform": "matrix(0, -1, 1, 0, 544, 314)"
     }
   ],
   "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},

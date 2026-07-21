@@ -1,0 +1,72 @@
+{
+  "filename": "couch-and-chairs--007.json",
+  "width": 30,
+  "height": 80,
+  "nodes": [
+    {
+      "id": "340dc2a2-6dde-4048-b8e3-63e1125e98ea",
+      "name": "couch-and-chairs--007",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "couch-and-chairs--007",
+      "baseRect": {"width": 33.800000000000004, "height": 83.4},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "8af2305e-09ca-4a7a-9388-2c600891ea43",
+      "name": "symbols",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "6a74cc29-c4c0-44e1-8763-4af2976946bc",
+          "name": "console--051 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -0.9397,
+            "b": 0.342,
+            "c": 0.342,
+            "d": 0.9397,
+            "e": 20.5679,
+            "f": 43.7099
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 1.3623, "y": 0.2901},
+          "cssTransform": "matrix(-0.9396926207859084, 0.3420201433256687, 0.3420201433256687, 0.9396926207859084, 21.9302, 44)"
+        },
+        {
+          "id": "a537b086-5aed-4d21-8795-ec41801017ec",
+          "name": "console--051 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -0.9397,
+            "b": -0.342,
+            "c": 0.342,
+            "d": -0.9397,
+            "e": 20.5,
+            "f": 35
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 1.3622931488337993, "y": -0.29009890837521485},
+          "cssTransform": "matrix(-0.9396926207859084, -0.3420201433256687, 0.3420201433256687, -0.9396926207859084, 21.8623, 34.7099)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 33.8, "height": 83.4},
+  "type": "symbol",
+  "key": "couch-and-chairs--007"
+}

@@ -15,6 +15,7 @@ export const symbolByGroup = {
     "extra--005--chair": true,
     "extra--007--desk": true,
     "extra--010--machine": true,
+    "extra--018--table": true,
     "extra--019--table": true,
     "extra--021--shower": true,
     //

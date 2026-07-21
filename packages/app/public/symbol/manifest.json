@@ -404,6 +404,15 @@
       "bounds": {"x": -0.5, "y": 0, "width": 21.2, "height": 35.6},
       "type": "symbol",
       "key": "extra--022--fresher"
+    },
+    "couch-and-chairs--007": {
+      "filename": "couch-and-chairs--007.json",
+      "thumbnailFilename": "couch-and-chairs--007.thumbnail.png",
+      "width": 30,
+      "height": 80,
+      "bounds": {"x": -2, "y": -2, "width": 33.8, "height": 83.4},
+      "type": "symbol",
+      "key": "couch-and-chairs--007"
     }
   }
 }
