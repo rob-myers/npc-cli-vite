@@ -422,6 +422,15 @@
       "bounds": {"x": 0, "y": 0, "width": 19, "height": 19},
       "type": "symbol",
       "key": "extra--018--table"
+    },
+    "table--009": {
+      "filename": "table--009.json",
+      "thumbnailFilename": "table--009.thumbnail.png",
+      "width": 50,
+      "height": 50,
+      "bounds": {"x": -0.5, "y": -0.5, "width": 51, "height": 50.8},
+      "type": "symbol",
+      "key": "table--009"
     }
   }
 }

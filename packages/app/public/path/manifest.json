@@ -42,6 +42,13 @@
       "width": 100,
       "height": 90
     },
+    "circle-36x36": {
+      "key": "circle-36x36",
+      "filename": "circle-36x36.svg",
+      "pathCount": 1,
+      "width": 38,
+      "height": 38
+    },
     "core-geomorph-hull-walls": {
       "key": "core-geomorph-hull-walls",
       "filename": "core-geomorph-hull-walls.svg",

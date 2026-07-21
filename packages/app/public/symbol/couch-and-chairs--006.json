@@ -18,8 +18,8 @@
     },
     {
       "id": "3fb5d093-76c8-4d34-8f29-3d82617a245a",
-      "name": "obstacle table y=-0.1",
-      "locked": false,
+      "name": "obstacle table y=-0.1 h=0.2",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.5, "f": 2},
       "type": "rect",
@@ -28,8 +28,8 @@
     },
     {
       "id": "ac473c73-170b-430f-aada-562eedf7dbe1",
-      "name": "obstacle table y=-0.1",
-      "locked": false,
+      "name": "obstacle table y=-0.1 h=0.2",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.5, "f": 104},
       "type": "rect",
@@ -38,8 +38,8 @@
     },
     {
       "id": "e824a53e-523b-4d76-8be2-cfc24b47c45a",
-      "name": "obstacle sofa",
-      "locked": false,
+      "name": "obstacle sofa h=0.3",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1, "f": 18},
       "type": "rect",
@@ -49,7 +49,7 @@
     {
       "id": "da661647-9f40-4575-bf62-2f06bc7f178e",
       "name": "decor point do=sit on",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 16, "f": 31.5},
       "type": "image",
@@ -62,7 +62,7 @@
     {
       "id": "45bac6fd-1489-4708-a2fc-e67d21c1aa7b",
       "name": "decor point do=sit on",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 16, "f": 56},
       "type": "image",
@@ -75,7 +75,7 @@
     {
       "id": "7de5ce38-6e5b-4b02-aba9-dd571a98bf4f",
       "name": "decor point do=sit on",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 16, "f": 80.5},
       "type": "image",
