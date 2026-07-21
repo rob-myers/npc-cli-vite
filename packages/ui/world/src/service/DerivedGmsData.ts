@@ -110,6 +110,9 @@ export default class DerivedGmsData {
     for (const [doorId, door] of gm.doors.entries()) {
       drawPolygons(roomCt, [door.poly], { fillStyle: gmHitUtil.encodeDoor(doorId), strokeStyle: null });
     }
+    for (const [windowId, window] of gm.windows.entries()) {
+      drawPolygons(roomCt, [window.poly], { fillStyle: gmHitUtil.encodeWindow(windowId), strokeStyle: null });
+    }
     for (const [roomId, room] of gm.rooms.entries()) {
       drawPolygons(roomCt, [room], { fillStyle: gmHitUtil.encodeRoom(roomId), strokeStyle: null });
     }
@@ -166,6 +169,12 @@ export default class DerivedGmsData {
         return gm.doors[decoded.doorId].roomIds.find((x) => typeof x === "number") ?? null;
       }
     }
+    if (decoded.type === "window") {
+      if (includeDoors) {
+        // choose 1st roomId if exists — same flag as doors, since a window is also just a connector
+        return gm.windows[decoded.windowId].roomIds.find((x) => typeof x === "number") ?? null;
+      }
+    }
     return null;
   }
 }
@@ -193,18 +202,26 @@ const gmHitUtil = {
   // Fix alpha as `1` otherwise get pre-multiplied values.
   /** rgba encoding `(100, 0, doorId, 1)` */
   redForDoor: 100,
+  /** rgba encoding `(150, 0, windowId, 1)` */
+  redForWindow: 150,
   /** rgba encoding `(200, roomId, 0, 1)` */
   redForRoom: 200,
 
   encodeDoor(doorId: number) {
     return `rgba(${gmHitUtil.redForDoor}, 0, ${doorId}, 1)` as const;
   },
+  encodeWindow(windowId: number) {
+    return `rgba(${gmHitUtil.redForWindow}, 0, ${windowId}, 1)` as const;
+  },
   encodeRoom(roomId: number) {
     return `rgba(${gmHitUtil.redForRoom}, ${roomId}, 0, 1)` as const;
   },
-  decode([red, roomId, doorId, _alpha]: [number, number, number, number]) {
+  decode([red, roomId, id, _alpha]: [number, number, number, number]) {
     if (red === gmHitUtil.redForDoor) {
-      return { type: "door", doorId } as const;
+      return { type: "door", doorId: id } as const;
+    }
+    if (red === gmHitUtil.redForWindow) {
+      return { type: "window", windowId: id } as const;
     }
     if (red === gmHitUtil.redForRoom) {
       return { type: "room", roomId } as const;
