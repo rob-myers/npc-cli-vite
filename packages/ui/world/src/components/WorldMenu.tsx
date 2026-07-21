@@ -7,12 +7,18 @@ import {
   ArrowsOutIcon,
   CaretDownIcon,
   CaretRightIcon,
+  EyeIcon,
+  EyeSlashIcon,
   GlobeStandIcon,
+  type Icon,
+  LightbulbFilamentIcon,
   LightbulbIcon,
   MagnifyingGlassIcon,
   PauseIcon,
+  PencilSimpleIcon,
   PlayIcon,
   SunIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
@@ -579,51 +585,53 @@ export function WorldMenu() {
           <Menu.Portal>
             <Menu.Positioner className="z-50" side="right" sideOffset={4} align="start">
               <Menu.Popup
-                className={cn(
-                  "bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 px-2",
-                  big && "py-2 px-3",
-                )}
+                className={cn("bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 w-40", big && "w-48 py-2")}
               >
-                <div className="flex gap-1">
-                  <Menu.Item
-                    className={cn(
-                      "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
-                      big && "text-sm px-3 py-1.5",
-                    )}
-                    onClick={() => w.view.resetAllLights()}
-                  >
-                    clear
-                  </Menu.Item>
-                  <Menu.Item
-                    className={cn(
-                      "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
-                      big && "text-sm px-3 py-1.5",
-                      w.view.lightPostprocess?.lightsEnabled.value === 0 && "opacity-50",
-                    )}
-                    onClick={() => {
-                      w.view.setPostProcessingEnabled(true);
-                      w.view.setLightsEnabled();
-                      state.update();
-                    }}
-                    closeOnClick={false}
-                  >
-                    shown
-                  </Menu.Item>
-                  <Menu.Item
-                    className={cn(
-                      "w-full text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-1 cursor-pointer text-center",
-                      big && "text-sm px-3 py-1.5",
-                      w.view.postProcessing && "opacity-50",
-                    )}
-                    onClick={() => {
-                      w.view.setPostProcessingEnabled();
-                      state.update();
-                    }}
-                    closeOnClick={false}
-                  >
-                    global
-                  </Menu.Item>
-                </div>
+                <LightMenuToggle
+                  big={big}
+                  label="Editing"
+                  hint="long-press icon"
+                  active={w.view.lightEditingEnabled}
+                  onIcon={PencilSimpleIcon}
+                  offIcon={PencilSimpleIcon}
+                  onClick={() => w.view.toggleLightEditing()}
+                />
+                <LightMenuToggle
+                  big={big}
+                  label="Show lights"
+                  active={w.view.lightPostprocess?.lightsEnabled.value === 1}
+                  onIcon={EyeIcon}
+                  offIcon={EyeSlashIcon}
+                  onClick={() => {
+                    w.view.setPostProcessingEnabled(true);
+                    w.view.setLightsEnabled();
+                    state.update();
+                  }}
+                />
+                <LightMenuToggle
+                  big={big}
+                  label="Full bright"
+                  active={!w.view.postProcessing}
+                  onIcon={LightbulbFilamentIcon}
+                  offIcon={LightbulbFilamentIcon}
+                  onClick={() => {
+                    w.view.setPostProcessingEnabled();
+                    state.update();
+                  }}
+                />
+
+                <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
+
+                <Menu.Item
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer text-red-300 hover:bg-red-900/40",
+                    big && "gap-3 px-3 py-2 text-sm",
+                  )}
+                  onClick={() => w.view.resetAllLights()}
+                >
+                  <TrashIcon className={cn("size-4 shrink-0", big && "size-5")} />
+                  <span className="flex-1 text-left">Clear lights</span>
+                </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
@@ -705,6 +713,50 @@ function BrightnessPie({ ratio, onClick, big }: { ratio: number; onClick?: () =>
 /** Map brightness (0.5–2.0) so that 1.0 = 50% pie fill */
 function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
+}
+
+/** One labelled on/off row in the light menu — icon swaps and dims when inactive */
+function LightMenuToggle({
+  label,
+  hint,
+  active,
+  onIcon: OnIcon,
+  offIcon: OffIcon,
+  onClick,
+  big,
+}: {
+  label: string;
+  /** Small sub-label shown under `label` (e.g. an alternate way to trigger this) */
+  hint?: string;
+  active: boolean;
+  onIcon: Icon;
+  offIcon: Icon;
+  onClick: () => void;
+  big?: boolean;
+}) {
+  const IconCmp = active ? OnIcon : OffIcon;
+  return (
+    <Menu.Item
+      className={cn(
+        "flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer hover:bg-slate-700",
+        big && "gap-3 px-3 py-2 text-sm",
+      )}
+      closeOnClick={false}
+      onClick={onClick}
+    >
+      <IconCmp
+        className={cn("size-4 shrink-0", big && "size-5", active ? "text-white" : "text-slate-500")}
+        weight={active ? "fill" : "regular"}
+      />
+      <span className="flex-1 text-left leading-tight">
+        <span className={active ? "text-slate-200" : "text-slate-500"}>{label}</span>
+        {hint && <span className="block text-[10px] text-slate-500">{hint}</span>}
+      </span>
+      <span className={cn("text-[10px] shrink-0", big && "text-xs", active ? "text-green-400" : "text-slate-500")}>
+        {active ? "on" : "off"}
+      </span>
+    </Menu.Item>
+  );
 }
 
 export type State = {
