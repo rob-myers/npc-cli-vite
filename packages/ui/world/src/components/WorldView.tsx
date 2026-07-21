@@ -425,15 +425,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       noLightsInRoom(gmRoomId) {
         const roomDecor = w.decor.byRoom[gmRoomId.gmId][gmRoomId.roomId];
-        if (!roomDecor) return true;
-
-        let hasLabel = false;
-        for (const d of roomDecor) {
-          if (!(d.type === "point" && d.meta.label)) continue;
-          hasLabel = true;
-          if (d.meta.corridor === true) return true;
-        }
-        return !hasLabel;
+        // ≤ 1 or 1st takes precedence
+        const decorLabel = roomDecor
+          ?.values()
+          .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
+        return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
       },
       isFullyLitRoom(gmRoomId) {
         const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
@@ -535,10 +531,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const outsideAmount = float(1).sub(state.lightPostprocess.litAmount(sceneDepth.r));
         let effect = mix(
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-          // tint
-          // sceneColor.rgb.mul(vec3(0.25, 0.5, 0.5)),
-          // sceneColor.rgb.mul(vec3(0.1, 0.7, 0.7)),
-          sceneColor.rgb.mul(vec3(0.1, 0.4, 0.7)),
+          sceneColor.rgb.mul(vec3(0.1, 0.4, 0.7)), // tint
           outsideAmount,
         );
         // 🚧 remove?
