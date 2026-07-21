@@ -99,15 +99,15 @@ export class NpcAnimation {
     }
   }
 
-  playIdleClip(duration = 0.1, idleClip = this.idleClip) {
+  playIdleClip(duration = 0.1, idleClip = this.idleClip, force = false) {
     // fading all clips prevents e.g. sit from continuing
     for (const clip of Object.values(this.npc.clips)) {
       if (clip === idleClip) continue;
       this.mixer.existingAction(clip)?.fadeOut(duration);
     }
 
-    if ((this.mixer.existingAction(idleClip)?.getEffectiveWeight() ?? 0) > 0) {
-      return;
+    if (!force && (this.mixer.existingAction(idleClip)?.getEffectiveWeight() ?? 0) > 0) {
+      return; // avoid re-triggering the animation
     }
 
     this.mixer.clipAction(idleClip).reset().fadeIn(duration).play();
@@ -129,6 +129,8 @@ export class NpcAnimation {
       return;
     }
 
+    const forceIdleFadeIn = this.moving;
+
     const agent = this.npc.agent;
 
     if (agent) {
@@ -145,7 +147,7 @@ export class NpcAnimation {
       this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
     }
 
-    this.playIdleClip(0.3);
+    this.playIdleClip(0.3, this.idleClip, forceIdleFadeIn);
     this.npc.setBubbleHeight(bubbleHeightForClip(this.idleClip.name));
     this.npc.setLabelYShift(labelYShiftForClip(this.idleClip.name));
 
