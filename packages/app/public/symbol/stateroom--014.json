@@ -17,41 +17,6 @@
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     },
     {
-      "id": "4edc1563-e980-44b3-bd2a-954104394c64",
-      "name": "symbols",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-      "type": "group",
-      "expanded": true,
-      "children": [
-        {
-          "id": "cf35bd35-052f-4488-a1bc-b679cf25699b",
-          "name": "bed--003 y=0.5",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 0},
-          "type": "symbol",
-          "srcKey": "bed--003",
-          "baseRect": {"width": 100, "height": 60},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, 1, 0, 0, 0)"
-        },
-        {
-          "id": "746c4b16-e145-4c6d-bd02-e93f42891bc1",
-          "name": "fresher--002",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60.5, "f": 0},
-          "type": "symbol",
-          "srcKey": "fresher--002",
-          "baseRect": {"width": 60, "height": 60},
-          "offset": {"x": -2, "y": -2},
-          "cssTransform": "matrix(1, 0, 0, 1, 58.5, -2)"
-        }
-      ]
-    },
-    {
       "id": "784a741a-a35b-4f50-abc6-f851e4a018e5",
       "name": "decor point label=stateroom",
       "locked": true,
@@ -71,7 +36,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "bd0deac9-37be-464a-bf80-dfd319951bbd",
@@ -108,19 +73,41 @@
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(-1, 0, 0, -1, 64, 118)"
+        }
+      ]
+    },
+    {
+      "id": "4edc1563-e980-44b3-bd2a-954104394c64",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "cf35bd35-052f-4488-a1bc-b679cf25699b",
+          "name": "bed--003 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 0},
+          "type": "symbol",
+          "srcKey": "bed--003",
+          "baseRect": {"width": 100, "height": 60},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 0, 0)"
         },
         {
-          "id": "741c5b42-9cef-4fc4-88cb-d35682e6c968",
-          "name": "decor point label=fresher",
+          "id": "746c4b16-e145-4c6d-bd02-e93f42891bc1",
+          "name": "fresher--002",
           "locked": false,
           "visible": true,
-          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 80, "f": 40},
-          "type": "image",
-          "srcType": "decor",
-          "srcKey": "label",
-          "baseRect": {"width": 40, "height": 15},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 80, 40)"
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60.5, "f": 0},
+          "type": "symbol",
+          "srcKey": "fresher--002",
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": -2, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 58.5, -2)"
         }
       ]
     },
@@ -131,7 +118,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "4a00e238-02af-48dd-b043-6db9a896ccfd",

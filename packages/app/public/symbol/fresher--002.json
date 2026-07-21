@@ -80,6 +80,19 @@
       ]
     },
     {
+      "id": "9ea1bd52-f7c7-4023-b976-4298bd9c42c2",
+      "name": "decor point label=fresher",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 20, "f": 40},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 20, 40)"
+    },
+    {
       "id": "bbe0bcd0-1a9e-4ca6-af55-cc3de3d205ab",
       "name": "doors",
       "locked": true,
@@ -125,19 +138,6 @@
           "cssTransform": "matrix(0, 1, -1, 0, 58, 48)"
         }
       ]
-    },
-    {
-      "id": "9ea1bd52-f7c7-4023-b976-4298bd9c42c2",
-      "name": "decor point label=fresher",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 20, "f": 40},
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.5, 0, 0, 0.5, 20, 40)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 64, "height": 66.8},
