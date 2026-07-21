@@ -6250,7 +6250,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 0.2], [3.1, 1.325], [2.9, 1.325], [2.9, 0.2]]],
-          "meta": {"door": true, "slide": [0, -1]}
+          "meta": {"door": true, "slide": [0, -1], "label": "office"}
         }
       ],
       "obstacles": [],
@@ -8692,7 +8692,7 @@
               [13.2574, 19.4281]
             ]
           ],
-          "meta": {"door": true, "slide": [1, 0], "det": 1}
+          "meta": {"door": true, "slide": [1, 0], "label": "office", "det": 1}
         },
         {
           "type": "Polygon",
@@ -8704,7 +8704,7 @@
               [16.7375, 19.6313]
             ]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "det": -1}
+          "meta": {"door": true, "slide": [-1, 0], "label": "office", "det": -1}
         },
         {
           "type": "Polygon",
@@ -8716,7 +8716,7 @@
               [13.2574, 23.9219]
             ]
           ],
-          "meta": {"door": true, "slide": [1, 0], "det": -1}
+          "meta": {"door": true, "slide": [1, 0], "label": "office", "det": -1}
         },
         {
           "type": "Polygon",
@@ -8728,7 +8728,7 @@
               [16.7375, 24.125]
             ]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "det": 1}
+          "meta": {"door": true, "slide": [-1, 0], "label": "office", "det": 1}
         },
         {
           "type": "Polygon",
@@ -22816,7 +22816,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 0.2], [3.1, 1.325], [2.9, 1.325], [2.9, 0.2]]],
-          "meta": {"door": true, "slide": [0, -1]}
+          "meta": {"door": true, "slide": [0, -1], "label": "office"}
         }
       ],
       "obstacles": [
@@ -25429,7 +25429,7 @@
                 [13.2574, 19.4281]
               ]
             ],
-            "meta": {"door": true, "slide": [1, 0], "det": 1}
+            "meta": {"door": true, "slide": [1, 0], "label": "office", "det": 1}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -25445,7 +25445,12 @@
                 [16.7375, 19.6313]
               ]
             ],
-            "meta": {"door": true, "slide": [-1, 0], "det": -1}
+            "meta": {
+              "door": true,
+              "slide": [-1, 0],
+              "label": "office",
+              "det": -1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -25461,7 +25466,12 @@
                 [13.2574, 23.9219]
               ]
             ],
-            "meta": {"door": true, "slide": [1, 0], "det": -1}
+            "meta": {
+              "door": true,
+              "slide": [1, 0],
+              "label": "office",
+              "det": -1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -25477,7 +25487,12 @@
                 [16.7375, 24.125]
               ]
             ],
-            "meta": {"door": true, "slide": [-1, 0], "det": 1}
+            "meta": {
+              "door": true,
+              "slide": [-1, 0],
+              "label": "office",
+              "det": 1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
