@@ -407,6 +407,56 @@
           "baseRect": {"width": 120, "height": 24},
           "offset": {"x": 0.4582032509020978, "y": 0.8775248035598476},
           "cssTransform": "matrix(0, -1, -1, 0, 840.9582, 240.8775)"
+        },
+        {
+          "id": "0049c695-35dd-47ce-b233-60edb6003a71",
+          "name": "couch-and-chairs--006 y=0.4",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 542.0042,
+            "f": 315.9891
+          },
+          "type": "symbol",
+          "srcKey": "couch-and-chairs--006",
+          "baseRect": {"width": 30, "height": 120},
+          "offset": {"x": 1.9958586554998492, "y": -1.9891073946035027},
+          "cssTransform": "matrix(0, -1, 1, 0, 544, 314)"
+        },
+        {
+          "id": "0c36fe03-0612-4e80-816a-7da262c378d4",
+          "name": "couch-and-chairs--007",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 561.3092,
+            "f": 371.4928
+          },
+          "type": "symbol",
+          "srcKey": "couch-and-chairs--007",
+          "baseRect": {"width": 30, "height": 80},
+          "offset": {"x": -1.309152145434565, "y": 2.5072137244567076},
+          "cssTransform": "matrix(0, -1, 1, 0, 560, 374)"
+        },
+        {
+          "id": "32540503-877a-4ae2-a82d-dc0727aa7644",
+          "name": "table--009",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 724.5, "f": 126.5},
+          "type": "symbol",
+          "srcKey": "table--009",
+          "baseRect": {"width": 50, "height": 50},
+          "offset": {"x": -0.5, "y": -0.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 724, 126)"
         }
       ]
     },
@@ -907,44 +957,6 @@
           "cssTransform": "matrix(1, 0, 0, 1, 360, 658)"
         }
       ]
-    },
-    {
-      "id": "0049c695-35dd-47ce-b233-60edb6003a71",
-      "name": "couch-and-chairs--006 y=0.4",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": 542.0042,
-        "f": 315.9891
-      },
-      "type": "symbol",
-      "srcKey": "couch-and-chairs--006",
-      "baseRect": {"width": 30, "height": 120},
-      "offset": {"x": 1.9958586554998492, "y": -1.9891073946035027},
-      "cssTransform": "matrix(0, -1, 1, 0, 544, 314)"
-    },
-    {
-      "id": "0c36fe03-0612-4e80-816a-7da262c378d4",
-      "name": "couch-and-chairs--007",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": 0,
-        "b": -1,
-        "c": 1,
-        "d": 0,
-        "e": 561.3092,
-        "f": 371.4928
-      },
-      "type": "symbol",
-      "srcKey": "couch-and-chairs--007",
-      "baseRect": {"width": 30, "height": 80},
-      "offset": {"x": -1.309152145434565, "y": 2.5072137244567076},
-      "cssTransform": "matrix(0, -1, 1, 0, 560, 374)"
     }
   ],
   "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},

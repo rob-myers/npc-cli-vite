@@ -1,0 +1,121 @@
+{
+  "filename": "table--009.json",
+  "width": 50,
+  "height": 50,
+  "nodes": [
+    {
+      "id": "eecc6b00-1944-478a-b1df-c16488e744bf",
+      "name": "table--009",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "table--009",
+      "baseRect": {"width": 51, "height": 50.800000000000004},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
+    },
+    {
+      "id": "6e957986-c12c-4015-b19d-d85a951823d6",
+      "name": "symbols",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "808d6435-0b19-4837-8e3e-f1a94dd9e387",
+          "name": "extra--003--chair y=0.3",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0.6428,
+            "b": -0.766,
+            "c": 0.766,
+            "d": 0.6428,
+            "e": 27.3186,
+            "f": 9.8486
+          },
+          "type": "symbol",
+          "srcKey": "extra--003--chair",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": 0.18142973609852803, "y": -0.3835143424426505},
+          "cssTransform": "matrix(0.6427876096865393, -0.7660444431189782, 0.7660444431189782, 0.6427876096865393, 27.5, 9.4651)"
+        },
+        {
+          "id": "01e6b0ca-bcec-4c3c-a563-2ad17f91fc7e",
+          "name": "extra--003--chair y=0.3",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0.6428,
+            "b": 0.766,
+            "c": 0.766,
+            "d": -0.6428,
+            "e": 27.8186,
+            "f": 40.6165
+          },
+          "type": "symbol",
+          "srcKey": "extra--003--chair",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": 0.1814, "y": 0.3835},
+          "cssTransform": "matrix(0.6427876096865393, 0.7660444431189782, 0.7660444431189782, -0.6427876096865393, 28, 41)"
+        },
+        {
+          "id": "5387b1f1-d6a4-4200-8fda-4432375117ec",
+          "name": "extra--003--chair y=0.3",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -0.6428,
+            "b": -0.766,
+            "c": -0.766,
+            "d": 0.6428,
+            "e": 23.358,
+            "f": 10.3486
+          },
+          "type": "symbol",
+          "srcKey": "extra--003--chair",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": -0.1814, "y": -0.3835},
+          "cssTransform": "matrix(-0.6427876096865393, -0.7660444431189782, -0.7660444431189782, 0.6427876096865393, 23.1766, 9.9651)"
+        },
+        {
+          "id": "5ca8f074-602b-46d7-9646-acd75b710baf",
+          "name": "extra--003--chair y=0.3",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -0.6428,
+            "b": 0.766,
+            "c": -0.766,
+            "d": -0.6428,
+            "e": 23.358,
+            "f": 41.1165
+          },
+          "type": "symbol",
+          "srcKey": "extra--003--chair",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": -0.1814, "y": 0.3835},
+          "cssTransform": "matrix(-0.6427876096865393, 0.7660444431189782, -0.7660444431189782, -0.6427876096865393, 23.1766, 41.5)"
+        }
+      ]
+    },
+    {
+      "id": "a123350c-e694-422b-b9de-a6e3b60462bf",
+      "name": "obstacle table y=0.6 h=0.1",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 6, "f": 5.5},
+      "type": "path",
+      "d": "M 19 0.5 L 26.07964 1.90823 L 32.08148 5.91852 L 36.09177 11.92036 L 37.5 19 L 36.09177 26.07964 L 32.08148 32.08148 L 26.07964 36.09177 L 19 37.5 L 11.92036 36.09177 L 5.91852 32.08148 L 1.90823 26.07964 L 0.5 19 L 1.90823 11.92036 L 5.91852 5.91852 L 11.92036 1.90823 Z",
+      "baseRect": {"width": 36, "height": 36},
+      "cssTransform": "matrix(1, 0, 0, 1, 6, 5.5)"
+    }
+  ],
+  "bounds": {"x": -0.5, "y": -0.5, "width": 51, "height": 50.8},
+  "type": "symbol",
+  "key": "table--009"
+}
