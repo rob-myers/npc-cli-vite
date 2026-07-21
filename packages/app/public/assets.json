@@ -6903,6 +6903,36 @@
       "addableWalls": [],
       "hullWalls": [],
       "symbols": []
+    },
+    "extra--022--fresher": {
+      "key": "extra--022--fresher",
+      "isHull": false,
+      "width": 0.5,
+      "height": 0.9,
+      "bounds": {"x": -0.0125, "y": 0, "width": 0.53, "height": 0.89},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.5125, 0], [0.5125, 0.9], [-0.0125, 0.9], [-0.0125, 0]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "toilet": true,
+            "symKey": "extra--022--fresher",
+            "origObstacleId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": [],
+      "hullWalls": [],
+      "symbols": []
     }
   },
   "map": {
@@ -23252,6 +23282,34 @@
       "windows": [],
       "removableDoors": [],
       "addableWalls": []
+    },
+    "extra--022--fresher": {
+      "key": "extra--022--fresher",
+      "isHull": false,
+      "width": 0.5,
+      "height": 0.9,
+      "bounds": {"x": -0.0125, "y": 0, "width": 0.53, "height": 0.89},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.5125, 0], [0.5125, 0.9], [-0.0125, 0.9], [-0.0125, 0]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "toilet": true,
+            "symKey": "extra--022--fresher",
+            "origObstacleId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": []
     }
   },
   "stratifiedSymbolNodes": [
@@ -23280,7 +23338,8 @@
       {"id": "counter--010"},
       {"id": "counter--006"},
       {"id": "window--005"},
-      {"id": "fresher--002"}
+      {"id": "fresher--002"},
+      {"id": "extra--022--fresher"}
     ],
     [
       {"id": "console--019"},
@@ -39301,5 +39360,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 196318599}
+  "hash": {"obstacles": 1742188339}
 }

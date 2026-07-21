@@ -105,6 +105,11 @@
       "rect": {"x": 1928, "y": 3016, "width": 207, "height": 127},
       "sheetId": 0
     },
+    "extra--022--fresher": {
+      "key": "extra--022--fresher",
+      "rect": {"x": 1933, "y": 2806, "width": 106, "height": 178},
+      "sheetId": 0
+    },
     "console--033": {
       "key": "console--033",
       "rect": {"x": 1928, "y": 3151, "width": 134, "height": 161},
@@ -122,7 +127,7 @@
     },
     "extra--001--fresher": {
       "key": "extra--001--fresher",
-      "rect": {"x": 1933, "y": 2806, "width": 137, "height": 117},
+      "rect": {"x": 2047, "y": 2806, "width": 137, "height": 117},
       "sheetId": 0
     },
     "extra--003--chair": {
