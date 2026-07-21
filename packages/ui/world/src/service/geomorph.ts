@@ -241,19 +241,29 @@ export function createLayout(
     const origSymbol = assets.symbol[symbolKey] as Geomorph.Symbol;
     const origPoly = origSymbol.obstacles[o.meta.origObstacleId];
     // o.meta.transform is aggregated in `instantiateFlatSymbol`
-    const transform = (o.meta.transform ?? [1, 0, 0, 1, 0, 0]) as Geom.SixTuple;
+    const transform: Geom.SixTuple = o.meta.transform ?? [1, 0, 0, 1, 0, 0];
     tmpMat1.feedFromArray(transform);
+
+    let heightOffFloor = typeof o.meta.y === "number" ? o.meta.y : 0;
+    // e.g. fix lower apron of window with variable height lintel
+    if (typeof o.meta["force-y"] === "number") heightOffFloor = o.meta["force-y"];
+
+    const meta = deepClone(origPoly.meta);
+    // can set heightAsDimension to be heightOffFloor
+    if (o.meta["max-h"] === true) meta.h = heightOffFloor;
+
     return {
       symbolKey,
       obstacleId: origObstacleId,
       origPoly,
       origSubRect: origPoly.rect.delta(-origSymbol.bounds.x, -origSymbol.bounds.y).precision(2),
-      height: typeof o.meta["force-y"] === "number" ? o.meta["force-y"] : typeof o.meta.y === "number" ? o.meta.y : 0,
+      height: heightOffFloor,
       transform: tmpMat1.feedFromArray(transform).json,
       center: tmpMat1.transformPoint(origPoly.center).precision(2),
-      meta: deepClone(origPoly.meta),
+      meta,
     };
   });
+
   decor.forEach((d, decorId) => {
     const obstacleId = d.meta.obstacleId;
     if (typeof obstacleId === "number") {

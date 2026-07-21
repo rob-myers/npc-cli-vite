@@ -449,7 +449,7 @@
         {
           "id": "32540503-877a-4ae2-a82d-dc0727aa7644",
           "name": "table--009",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 724.5, "f": 126.5},
           "type": "symbol",

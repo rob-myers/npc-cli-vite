@@ -1358,6 +1358,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0
           }
@@ -6456,6 +6457,7 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
+            "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0
           }
@@ -6538,7 +6540,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 1.7], [3.1, 2.825], [2.9, 2.825], [2.9, 1.7]]],
-          "meta": {"door": true, "slide": [0, -1]}
+          "meta": {"door": true, "slide": [0, -1], "label": "stateroom"}
         }
       ],
       "obstacles": [],
@@ -7509,6 +7511,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0
           }
@@ -9267,7 +9270,12 @@
           "coordinates": [
             [[12.1, 7.7], [12.1, 8.825], [11.9, 8.825], [11.9, 7.7]]
           ],
-          "meta": {"door": true, "slide": [0, -1], "det": 1}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "label": "stateroom",
+            "det": 1
+          }
         },
         {
           "type": "Polygon",
@@ -9684,6 +9692,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.5,
@@ -9803,6 +9812,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.5,
@@ -9920,6 +9930,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.5,
@@ -10307,6 +10318,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -10549,6 +10561,7 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
+            "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0,
             "transform": [-1, 0, 0, -1, 12.763138, 16.733142]
@@ -10567,6 +10580,7 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
+            "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0,
             "transform": [-1, 0, 0, -1, 18.725638, 16.745642]
@@ -10776,6 +10790,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -10796,6 +10811,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -10816,6 +10832,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -10843,6 +10860,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -12932,6 +12950,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.4,
@@ -12952,6 +12971,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.4,
@@ -19061,6 +19081,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.4,
@@ -19081,6 +19102,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.4,
@@ -22342,6 +22364,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.5,
@@ -23857,6 +23880,7 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
+            "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0
           }
@@ -24001,7 +24025,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 1.7], [3.1, 2.825], [2.9, 2.825], [2.9, 1.7]]],
-          "meta": {"door": true, "slide": [0, -1]}
+          "meta": {"door": true, "slide": [0, -1], "label": "stateroom"}
         }
       ],
       "obstacles": [
@@ -24118,6 +24142,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -25015,6 +25040,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -25035,6 +25061,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -25055,6 +25082,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -25075,6 +25103,7 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "y": 0.3,
@@ -27032,7 +27061,12 @@
             "coordinates": [
               [[12.1, 7.7], [12.1, 8.825], [11.9, 8.825], [11.9, 7.7]]
             ],
-            "meta": {"door": true, "slide": [0, -1], "det": 1}
+            "meta": {
+              "door": true,
+              "slide": [0, -1],
+              "label": "stateroom",
+              "det": 1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27741,6 +27775,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -27759,8 +27794,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.5,
             "decorIds": [16]
           }
         },
@@ -27976,6 +28013,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -27994,8 +28032,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.5,
             "decorIds": [23]
           }
         },
@@ -28211,6 +28251,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -28229,8 +28270,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.5,
             "decorIds": [30]
           }
         },
@@ -28919,6 +28962,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -28937,8 +28981,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.3,
             "decorIds": [42]
           }
         },
@@ -29392,6 +29438,7 @@
             "meta": {
               "obstacle": true,
               "y": 0.8,
+              "max-h": true,
               "symKey": "window--001",
               "origObstacleId": 0
             }
@@ -29409,8 +29456,10 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
+            "max-h": true,
             "symKey": "window--001",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "h": 0.8
           }
         },
         {
@@ -29430,6 +29479,7 @@
             "meta": {
               "obstacle": true,
               "y": 0.8,
+              "max-h": true,
               "symKey": "window--001",
               "origObstacleId": 0
             }
@@ -29447,8 +29497,10 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
+            "max-h": true,
             "symKey": "window--001",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "h": 0.8
           }
         },
         {
@@ -29797,6 +29849,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -29815,8 +29868,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.3,
             "decorIds": [54]
           }
         },
@@ -29833,6 +29888,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -29851,8 +29907,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.3,
             "decorIds": [55]
           }
         },
@@ -29869,6 +29927,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -29887,8 +29946,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.3,
             "decorIds": [56]
           }
         },
@@ -29905,6 +29966,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -29923,8 +29985,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.3,
             "decorIds": [57]
           }
         }
@@ -36836,6 +36900,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -36854,8 +36919,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.4,
             "decorIds": [75]
           }
         },
@@ -36872,6 +36939,7 @@
               "obstacle": true,
               "chair": true,
               "inset": 0.1,
+              "max-h": true,
               "symKey": "extra--003--chair",
               "origObstacleId": 0
             }
@@ -36890,8 +36958,10 @@
             "obstacle": true,
             "chair": true,
             "inset": 0.1,
+            "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
+            "h": 0.4,
             "decorIds": [76]
           }
         },
@@ -42271,5 +42341,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 317713632}
+  "hash": {"obstacles": 5118446}
 }

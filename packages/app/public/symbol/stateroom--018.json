@@ -134,6 +134,19 @@
       ]
     },
     {
+      "id": "53b149b3-8076-4602-a487-d05517b1e7aa",
+      "name": "decor point label=stateroom",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 71, "f": 86.5},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 71, 86.5)"
+    },
+    {
       "id": "82dfd8a0-e7d4-45da-81c0-98c93686f0e1",
       "name": "doors",
       "locked": true,
@@ -151,19 +164,6 @@
           "type": "rect",
           "baseRect": {"width": 8, "height": 45},
           "cssTransform": "matrix(1, 0, 0, 1, 116, 68)"
-        },
-        {
-          "id": "53b149b3-8076-4602-a487-d05517b1e7aa",
-          "name": "decor point label=stateroom",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 71, "f": 86.5},
-          "type": "image",
-          "srcType": "decor",
-          "srcKey": "label",
-          "baseRect": {"width": 40, "height": 15},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 71, 86.5)"
         }
       ]
     }
