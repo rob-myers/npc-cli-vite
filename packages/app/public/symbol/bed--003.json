@@ -19,7 +19,7 @@
     {
       "id": "82dca272-7b06-4d41-a1e4-2a9f2f92d361",
       "name": "obstacle bed h=0.3",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 24, "f": 10},
       "type": "rect",
@@ -29,7 +29,7 @@
     {
       "id": "cbcd8f96-f9ee-43c0-a4dd-60d74ab0ebb2",
       "name": "decor point do=lie on",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 33, "f": 27},
       "type": "image",
@@ -42,7 +42,7 @@
     {
       "id": "0b4aa3e9-ac14-4473-86d6-3af8b9626e6e",
       "name": "obstacle table y=0.1",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -1},
       "type": "rect",
