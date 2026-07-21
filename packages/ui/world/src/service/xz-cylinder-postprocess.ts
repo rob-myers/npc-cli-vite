@@ -43,19 +43,9 @@ export type XzCylinderPostprocess = {
   update(camera: THREE.Camera): void;
 
   /**
-   * The single "tracked" light — e.g. follows a live reference like `npc.position`. Not managed
-   * via `addLight`/`removeLight`. Pass `null` to deactivate (center/radius left as last known,
-   * harmless while inactive). Omitting `radius` while re-centering keeps the last radius set.
-   */
-  setTracked(center: { x: number; z: number } | null, radius?: number): void;
-  /** Clips the tracked light to this world-space room polygon (or removes clipping if omitted/empty) */
-  setTrackedRoomOutline(roomOutline?: { x: number; z: number }[]): void;
-
-  /**
-   * A second, independent single light — used for the hold-to-grow static-light sizing preview,
-   * so it never competes with the tracked light (e.g. an npc-following light stays visible and
-   * correct while a new static light is simultaneously being sized elsewhere). Same semantics as
-   * `setTracked`.
+   * A single independent light — used for the hold-to-grow static-light sizing preview. Not
+   * managed via `addLight`/`removeLight`. Pass `null` to deactivate (center/radius left as last
+   * known, harmless while inactive). Omitting `radius` while re-centering keeps the last radius set.
    */
   setPreview(center: { x: number; z: number } | null, radius?: number): void;
   /** Clips the preview light to this world-space room polygon (or removes clipping if omitted/empty) */
@@ -89,12 +79,12 @@ export type XzCylinderPostprocess = {
     topXZ: { x: number; z: number },
     groundPoint: { x: number; z: number },
   ): number | null;
-  /** Deactivates every static light (and the tracked light) in one pass */
+  /** Deactivates every static light in one pass */
   resetLights(): void;
 
   /**
-   * `1` inside any active light (tracked or static), fading to `0` over `falloff` — unions all
-   * lights, testing each fragment's reconstructed real world position (see impl. for why).
+   * `1` inside any active light, fading to `0` over `falloff` — unions all lights, testing each
+   * fragment's reconstructed real world position (see impl. for why).
    * @param sceneDepth The scene's depth texture (e.g. `scenePass.getTextureNode("depth")`) — raw
    * logarithmic depth, NOT pre-linearized; this function does its own log-depth inversion.
    */
@@ -113,8 +103,8 @@ const roomEdgeFalloff = 0.3;
 
 /**
  * Post-processing helper for many vertical cylinders (axis along y, from `bottomHeight` to
- * `topHeight`) unioned together: one "tracked" light (position set live, e.g. to follow an npc)
- * plus up to `MAX_POSTPROCESS_LIGHTS` independent "static" lights, each with its own radius.
+ * `topHeight`) unioned together: up to `MAX_POSTPROCESS_LIGHTS` independent "static" lights, each
+ * with its own radius, plus one independent light used for the hold-to-grow sizing preview.
  *
  * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
  * and tests lights against that, not a plane-projected approximation — otherwise anything
@@ -141,15 +131,8 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const showBorder = uniform(opts.showBorder ? 1 : 0);
   const lightsEnabled = uniform(opts.lightsEnabled ?? true ? 1 : 0);
 
-  // the tracked light: vec4(worldX, worldZ, activeFlag, radius) — same layout as static-light slots[i]
-  const tracked = uniform(new THREE.Vector4(0, 0, 0, 1));
-  // room-polygon clip for the tracked light only — single polygon, no per-slot indexing needed
-  const trackedRoomPolyCount = uniform(0);
-  const trackedRoomPolyVerts = Array.from({ length: maxRoomPolyVerts }, () => new THREE.Vector2());
-  const trackedRoomPolyVertsNode = uniformArray<"vec2">(trackedRoomPolyVerts, "vec2");
-
-  // the sizing-preview light — same shape as `tracked`, but fully independent, so the hold-to-grow
-  // static-light preview never competes with (and can't disable) an active tracked light
+  // the sizing-preview light: vec4(worldX, worldZ, activeFlag, radius) — same layout as
+  // static-light slots[i], but fully independent so it never competes with static lights
   const preview = uniform(new THREE.Vector4(0, 0, 0, 1));
   const previewRoomPolyCount = uniform(0);
   const previewRoomPolyVerts = Array.from({ length: maxRoomPolyVerts }, () => new THREE.Vector2());
@@ -223,9 +206,9 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   }
 
   // ray-cast point-in-polygon for a SINGLE light's room outline (single, non-nested Loop — used
-  // by both `tracked` and `preview`, which are each exactly one light). Also tracks the nearest
-  // edge distance so the result can fade smoothly across the boundary (see `roomEdgeFalloff`)
-  // instead of an abrupt binary cutoff — reuses the same per-edge scan, so it's nearly free.
+  // by `preview`, which is exactly one light). Also tracks the nearest edge distance so the
+  // result can fade smoothly across the boundary (see `roomEdgeFalloff`) instead of an abrupt
+  // binary cutoff — reuses the same per-edge scan, so it's nearly free.
   // 1 = inside room (or beyond the transition band), or unclipped (count == 0); 0 = outside.
   function singleRoomClipFactor(
     polyCount: THREE.UniformNode<"float", number>,
@@ -313,22 +296,6 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       camNear.value = perspectiveCam.near;
       camFar.value = perspectiveCam.far;
     },
-    setTracked(center, radius) {
-      if (center === null) {
-        tracked.value.z = 0;
-      } else {
-        tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
-      }
-    },
-    setTrackedRoomOutline(roomOutline) {
-      const count = roomOutline ? Math.min(roomOutline.length, maxRoomPolyVerts) : 0;
-      trackedRoomPolyCount.value = count;
-      if (roomOutline) {
-        for (let v = 0; v < count; v++) {
-          trackedRoomPolyVerts[v].set(roomOutline[v].x, roomOutline[v].z);
-        }
-      }
-    },
     setPreview(center, radius) {
       if (center === null) {
         preview.value.z = 0;
@@ -389,7 +356,6 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       for (const s of slots) s.set(0, 0, 0, 0);
       for (const info of roomPolyInfo) info.set(0, 0, 0, 0);
       hiWater.value = 0;
-      tracked.value.z = 0;
     },
     litAmount(sceneDepth) {
       return Fn(() => {
@@ -429,17 +395,6 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
         const inHeightRange = worldY.greaterThanEqual(float(bottomHeight)).and(worldY.lessThanEqual(float(topHeight)));
 
         const litMax = float(0).toVar();
-
-        If(tracked.z.notEqual(0), () => {
-          const dist = worldXZ.sub(tracked.xy).length();
-          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
-          // skip the room-clip polygon scan unless this fragment is actually within the
-          // light's falloff radius and height range (the overwhelming majority aren't)
-          If(inHeightRange.and(litVal.greaterThan(0)), () => {
-            const roomFactor = singleRoomClipFactor(trackedRoomPolyCount, trackedRoomPolyVertsNode, worldXZ.x, worldXZ.y);
-            litMax.assign(litMax.max(litVal.mul(roomFactor)));
-          });
-        });
 
         If(preview.z.notEqual(0), () => {
           const dist = worldXZ.sub(preview.xy).length();
@@ -493,10 +448,6 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
           }
           onWireframe.assign(onWireframe.max(onLight.select(float(1), float(0))));
         }
-
-        If(tracked.z.notEqual(0), () => {
-          markIfOnWireframe(tracked.xy, tracked.w);
-        });
 
         If(preview.z.notEqual(0), () => {
           markIfOnWireframe(preview.xy, preview.w);

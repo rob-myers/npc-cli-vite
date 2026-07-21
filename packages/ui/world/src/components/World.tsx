@@ -164,10 +164,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const delta = state.timer.getDelta();
         state.door.onTick(delta);
         state.npc.onTick(delta);
-
-        if (state.view.light.targetOverride) {
-          state.view.updateLight(state.view.light.targetOverride);
-        }
       },
       setCanvasFade(on) {
         if (!state.fadeEl) return;

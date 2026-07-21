@@ -42,7 +42,6 @@ import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import {
   defaultIdleAnimationClipKey,
-  defaultTargetLightRadius,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
   idleSeparatingMaxAcceleration,
@@ -250,29 +249,6 @@ export default function NPCs() {
           throw Error(`npc "${npcKey}" does not exist`);
         }
         return npc;
-      },
-      trackNpc(npcKey) {
-        w.view.lightRadiusPulse = null;
-
-        if (!npcKey) {
-          w.view.light.trackedNpcKey = null;
-          w.view.light.targetOverride = null;
-          w.view.lightPostprocess.setTracked(null);
-          w.view.forceUpdate();
-          return;
-        }
-        const npc = state.get(npcKey);
-        w.view.light.trackedNpcKey = npcKey;
-        w.view.light.radius = defaultTargetLightRadius;
-        // 🔔 keep a live reference (not a snapshot copy), so `npc.position` continues to be read
-        // fresh each tick (via World.tsx's onTick -> w.view.updateLight) and the light tracks the
-        // npc automatically as it moves
-        w.view.light.targetOverride = npc.position;
-        w.view.lightPostprocess.setTracked({ x: npc.position.x, z: npc.position.z }, defaultTargetLightRadius);
-        w.view.updateLight(npc.position);
-        const gmRoomId = w.e.findRoomContaining(npc.position, true);
-        w.view.lightPostprocess.setTrackedRoomOutline(gmRoomId ? w.view.computeRoomOutline(gmRoomId) : []);
-        w.view.forceUpdate();
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = helper.groundPointToTuple(helper.parseGroundPoint(targetPos));
@@ -739,8 +715,6 @@ export type State = {
   getSkinIndexBySkinKey(skinKey: string): number;
   getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;
-  /** Follows this npc with a room-aware light (a room-poly clip that refreshes on `"enter-room"`). `null` stops tracking. */
-  trackNpc(npcKey?: string): void;
   move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;
   rawSpawn(opts: {
