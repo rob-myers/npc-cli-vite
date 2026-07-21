@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "d0087126-6111-4f0e-81a2-5c74cbd571d6",
@@ -52,7 +52,7 @@
         {
           "id": "050ae24b-90f3-41d1-960e-a124f4628fa5",
           "name": "extra--007--desk y=0.7-0.01",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 80.7, "f": 0.7},
           "type": "symbol",
@@ -74,6 +74,19 @@
       "baseRect": {"width": 20, "height": 18},
       "offset": {"x": 0, "y": -0.3},
       "cssTransform": "matrix(1, 0, 0, 1, 90, 3.7)"
+    },
+    {
+      "id": "96b6c724-3334-4a03-b83f-6d92c3c087c1",
+      "name": "decor point label=fresher",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 50, "f": 84},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "label",
+      "baseRect": {"width": 40, "height": 15},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 50, 84)"
     },
     {
       "id": "0559f055-40ba-4ed0-ab41-741a15ecfa85",
