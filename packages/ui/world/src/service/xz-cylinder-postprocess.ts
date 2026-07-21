@@ -47,9 +47,9 @@ export type XzCylinderPostprocess = {
    * managed via `addLight`/`removeLight`. Pass `null` to deactivate (center/radius left as last
    * known, harmless while inactive). Omitting `radius` while re-centering keeps the last radius set.
    */
-  setPreview(center: { x: number; z: number } | null, radius?: number): void;
+  setPreview(center: Geom.VectJson | null, radius?: number): void;
   /** Clips the preview light to this world-space room polygon (or removes clipping if omitted/empty) */
-  setPreviewRoomOutline(roomOutline?: { x: number; z: number }[]): void;
+  setPreviewRoomOutline(roomOutline?: Geom.VectJson[]): void;
 
   /**
    * Creates a "static" light at `point` with its own `radius`. Returns its slot index, or `null`
@@ -58,11 +58,7 @@ export type XzCylinderPostprocess = {
    * clipped to this polygon (won't leak into neighbouring rooms) in addition to its own radius.
    * Omit for an unclipped (plain circular) light.
    */
-  addLight(
-    point: { x: number; z: number },
-    radius: number,
-    roomOutline?: { x: number; z: number }[],
-  ): number | null;
+  addLight(point: Geom.VectJson, radius: number, roomOutline?: Geom.VectJson[]): number | null;
   removeLight(index: number): void;
   /**
    * Nearest active static light whose own radius contains the clicked ray's `[bottomXZ, topXZ]`
@@ -74,11 +70,7 @@ export type XzCylinderPostprocess = {
    * clip, so a click that only *passes over* another room's light via the swept segment doesn't
    * falsely register as a hit on it.
    */
-  findLightNear(
-    bottomXZ: { x: number; z: number },
-    topXZ: { x: number; z: number },
-    groundPoint: { x: number; z: number },
-  ): number | null;
+  findLightNear(bottomXZ: Geom.VectJson, topXZ: Geom.VectJson, groundPoint: Geom.VectJson): number | null;
   /** Deactivates every static light in one pass */
   resetLights(): void;
 
@@ -129,7 +121,7 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   const camNear = uniform(0.1);
   const camFar = uniform(1000);
   const showBorder = uniform(opts.showBorder ? 1 : 0);
-  const lightsEnabled = uniform(opts.lightsEnabled ?? true ? 1 : 0);
+  const lightsEnabled = uniform((opts.lightsEnabled ?? true) ? 1 : 0);
 
   // the sizing-preview light: vec4(worldX, worldZ, activeFlag, radius) — same layout as
   // static-light slots[i], but fully independent so it never competes with static lights
@@ -177,12 +169,19 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
   }
 
   // CPU-side mirror of `distToSegment`, for hit-testing clicks against the same segment `litAmount()` uses
-  function closestPointOnSegment2D(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
+  function closestPointOnSegment2D(
+    px: number,
+    py: number,
+    ax: number,
+    ay: number,
+    bx: number,
+    by: number,
+  ): Geom.VectJson {
     const abx = bx - ax;
-    const abz = bz - az;
-    const abLenSq = abx * abx + abz * abz;
-    const t = abLenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * abx + (pz - az) * abz) / abLenSq)) : 0;
-    return { x: ax + abx * t, z: az + abz * t };
+    const aby = by - ay;
+    const abLenSq = abx * abx + aby * aby;
+    const t = abLenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * abx + (py - ay) * aby) / abLenSq)) : 0;
+    return { x: ax + abx * t, y: ay + aby * t };
   }
 
   // CPU-side mirror of `roomClipFactor`'s ray-cast, for hit-testing clicks against the same
@@ -300,7 +299,7 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       if (center === null) {
         preview.value.z = 0;
       } else {
-        preview.value.set(center.x, center.z, 1, radius ?? preview.value.w);
+        preview.value.set(center.x, center.y, 1, radius ?? preview.value.w);
       }
     },
     setPreviewRoomOutline(roomOutline) {
@@ -308,21 +307,21 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       previewRoomPolyCount.value = count;
       if (roomOutline) {
         for (let v = 0; v < count; v++) {
-          previewRoomPolyVerts[v].set(roomOutline[v].x, roomOutline[v].z);
+          previewRoomPolyVerts[v].set(roomOutline[v].x, roomOutline[v].y);
         }
       }
     },
     addLight(point, radius, roomOutline) {
       const index = slots.findIndex((s) => s.z === 0);
       if (index === -1) return null;
-      slots[index].set(point.x, point.z, 1, radius);
+      slots[index].set(point.x, point.y, 1, radius);
 
       const offset = index * maxRoomPolyVerts;
       const count = roomOutline ? Math.min(roomOutline.length, maxRoomPolyVerts) : 0;
       roomPolyInfo[index].set(offset, count, 0, 0);
       if (roomOutline) {
         for (let v = 0; v < count; v++) {
-          roomPolyVerts[offset + v].set(roomOutline[v].x, roomOutline[v].z);
+          roomPolyVerts[offset + v].set(roomOutline[v].x, roomOutline[v].y);
         }
       }
 
@@ -340,12 +339,12 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
       for (let i = 0; i < slots.length; i++) {
         const s = slots[i];
         if (s.z === 0) continue; // empty slot
-        const closest = closestPointOnSegment2D(s.x, s.y, bottomXZ.x, bottomXZ.z, topXZ.x, topXZ.z);
-        const dist = Math.hypot(s.x - closest.x, s.y - closest.z);
+        const closest = closestPointOnSegment2D(s.x, s.y, bottomXZ.x, bottomXZ.y, topXZ.x, topXZ.y);
+        const dist = Math.hypot(s.x - closest.x, s.y - closest.y);
         // the room-poly check uses the actual ground click point, NOT the swept segment's
         // closest-point (an infinite-plane intersection unconstrained by walls, which can sweep
         // through an unrelated room and falsely satisfy that room's own light's clip)
-        if (dist <= s.w && dist < bestDist && pointInRoomPoly2D(i, groundPoint.x, groundPoint.z)) {
+        if (dist <= s.w && dist < bestDist && pointInRoomPoly2D(i, groundPoint.x, groundPoint.y)) {
           bestDist = dist;
           bestIndex = i;
         }
@@ -400,7 +399,12 @@ export function createXzCylinderPostprocess(opts: XzCylinderPostprocessOpts): Xz
           const dist = worldXZ.sub(preview.xy).length();
           const litVal = float(1).sub(dist.sub(preview.w).div(falloff).clamp(0, 1));
           If(inHeightRange.and(litVal.greaterThan(0)), () => {
-            const roomFactor = singleRoomClipFactor(previewRoomPolyCount, previewRoomPolyVertsNode, worldXZ.x, worldXZ.y);
+            const roomFactor = singleRoomClipFactor(
+              previewRoomPolyCount,
+              previewRoomPolyVertsNode,
+              worldXZ.x,
+              worldXZ.y,
+            );
             litMax.assign(litMax.max(litVal.mul(roomFactor)));
           });
         });
