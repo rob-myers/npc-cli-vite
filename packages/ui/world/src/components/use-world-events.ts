@@ -5,14 +5,7 @@ import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import * as THREE from "three/webgpu";
-import {
-  defaultDoorCloseMs,
-  defaultSkinKey,
-  lightRoomFadeMs,
-  lightRoomTransitionRadius,
-  MAX_NPCS,
-  wallHeight,
-} from "../const";
+import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS, wallHeight } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -243,13 +236,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
-
-        if (e.type === "inside" && w.view.light.trackedNpcKey === npc.key) {
-          const door = w.door.byKey[e.meta.gdKey];
-          const gmRoomId = state.npcToRoom.get(npc.key) as Geomorph.GmRoomId;
-          const otherRoomId = w.gmGraph.getOtherGmRoomId(door, gmRoomId.roomId);
-          otherRoomId && state.switchTrackedNpcRoom(otherRoomId);
-        }
       },
       onExitCollider(e, npc) {
         if (e.type === "inside") {
@@ -265,9 +251,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           if (nextGmRoomId.grKey === gmRoomId.grKey) {
             // entered collider then turned around and exited
-            if (w.view.light.trackedNpcKey === npc.key) {
-              state.switchTrackedNpcRoom(nextGmRoomId);
-            }
             return;
           }
 
@@ -586,14 +569,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many" });
       },
-      switchTrackedNpcRoom(gmRoomId) {
-        // shrink light close to npc + swap room-poly clip while small, then grow back
-        const originalRadius = w.view.light.radius;
-        w.view.pulseTrackedRadius(lightRoomTransitionRadius, lightRoomFadeMs, () => {
-          w.view.lightPostprocess.setTrackedRoomOutline(w.view.computeRoomOutline(gmRoomId));
-          w.view.pulseTrackedRadius(originalRadius, lightRoomFadeMs);
-        });
-      },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -719,7 +694,6 @@ export type State = {
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
-  switchTrackedNpcRoom(nextRoomOrDoor: Geomorph.GmRoomId): void;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {

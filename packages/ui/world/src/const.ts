@@ -81,17 +81,12 @@ export const lightEditingEnabledKey = "world-light-editing-enabled";
 export const lightsEnabledKey = "world-lights-enabled";
 /** Radius a long-pressed new light starts at before it grows */
 export const lightSizingStartRadius = 0.5;
-export const defaultTargetLightRadius = 1;
 /** Time (ms) for a long-pressed new light to grow from `lightSizingStartRadius` to `lightSizingMaxRadius` */
 export const lightSizingGrowDurationMs = 2500;
 /** Cap for a long-pressed new light's radius while growing */
 export const lightSizingMaxRadius = 6;
 /** How far (meters) a light's room-polygon clip is outset past the room's inner wall face */
 export const lightRoomOutset = 0.1;
-/** Duration (ms) of each half (shrink, then grow) of the tracked light's radius-pulse transition across a room-poly swap */
-export const lightRoomFadeMs = 150;
-/** Radius the tracked light shrinks to (close around the npc) mid-transition, before growing back */
-export const lightRoomTransitionRadius = 0.5;
 
 export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;
@@ -128,7 +123,7 @@ export const npcScale = 0.7;
 
 export const MAX_NPCS = 256;
 export const MAX_DOOR_LABELS = 32;
-/** Static, right-click-managed post-processing lights (excludes the 1 tracked light) */
+/** Static, right-click-managed post-processing lights */
 export const MAX_POSTPROCESS_LIGHTS = 32;
 
 /** In meters, or equivalently 2 grid squares */
