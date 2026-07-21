@@ -6007,6 +6007,7 @@
             "hull": true,
             "y": 1.1,
             "h": 0.6,
+            "curved": true,
             "auto": true
           }
         }
@@ -23441,6 +23442,7 @@
             "hull": true,
             "y": 1.1,
             "h": 0.6,
+            "curved": true,
             "auto": true
           }
         }
@@ -42145,6 +42147,7 @@
               "hull": true,
               "y": 1.1,
               "h": 0.6,
+              "curved": true,
               "auto": true
             }
           },
