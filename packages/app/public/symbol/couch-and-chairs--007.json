@@ -19,7 +19,7 @@
     {
       "id": "8af2305e-09ca-4a7a-9388-2c600891ea43",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -28,7 +28,7 @@
         {
           "id": "6a74cc29-c4c0-44e1-8763-4af2976946bc",
           "name": "console--051 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -0.9397,
@@ -47,7 +47,7 @@
         {
           "id": "a537b086-5aed-4d21-8795-ec41801017ec",
           "name": "console--051 y=0.5",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -0.9397,
@@ -62,6 +62,18 @@
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 1.3622931488337993, "y": -0.29009890837521485},
           "cssTransform": "matrix(-0.9396926207859084, -0.3420201433256687, 0.3420201433256687, -0.9396926207859084, 21.8623, 34.7099)"
+        },
+        {
+          "id": "a98e37a7-1705-43de-8239-3d29c3d2a819",
+          "name": "extra--018--table y=0.4",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 30},
+          "type": "symbol",
+          "srcKey": "extra--018--table",
+          "baseRect": {"width": 19, "height": 19},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, -2.5, 30)"
         }
       ]
     }
