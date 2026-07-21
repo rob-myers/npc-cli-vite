@@ -177,16 +177,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               const near =
                 bottomHit && topHit
                   ? lightPostprocess.findLightNear(
-                      { x: bottomHit.x, z: bottomHit.z },
-                      { x: topHit.x, z: topHit.z },
-                      { x: e.x, z: e.z },
+                      helper.parseGroundPoint(bottomHit),
+                      helper.parseGroundPoint(topHit),
+                      helper.parseGroundPoint(e),
                     )
                   : null;
               if (near !== null) {
                 lightPostprocess.removeLight(near);
                 w.view.forceUpdate();
               } else {
-                w.view.startLightSizing({ x: e.x, z: e.z });
+                w.view.startLightSizing(helper.parseGroundPoint(e));
               }
             }
             break;
