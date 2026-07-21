@@ -212,6 +212,7 @@ export class Npc {
       }
       this.material.depthWrite = true;
       this.material.needsUpdate = true;
+      this.skinnedMesh.computeBoundingSphere();
     }
   }
 
