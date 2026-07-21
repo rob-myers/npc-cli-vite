@@ -6578,12 +6578,27 @@
       "width": 3,
       "height": 3,
       "bounds": {"x": -0.05, "y": -0.05, "width": 3.17, "height": 3.1},
-      "decor": [],
+      "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[1.75, 2.1], [1.75, 2.2875], [1.25, 2.2875], [1.25, 2.1]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "fresher",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.25, 2.1],
+            "direction": {"x": 1, "y": 0}
+          }
+        }
+      ],
       "doors": [
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 1.7], [3.1, 2.825], [2.9, 2.825], [2.9, 1.7]]],
-          "meta": {"door": true, "slide": [0, -1]}
+          "meta": {"door": true, "slide": [0, -1], "label": "fresher"}
         }
       ],
       "obstacles": [],
@@ -8302,6 +8317,28 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [15.5827, 4.2252],
+              [15.7702, 4.2252],
+              [15.7702, 4.7252],
+              [15.5827, 4.7252]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "fresher",
+            "img": "label",
+            "transform": [0, 0.5, 0.5, 0, 15.58273, 4.22518],
+            "y": 0.01,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [14.2952, 3.4127],
               [14.2952, 3.5627],
               [14.1452, 3.5627],
@@ -8727,7 +8764,12 @@
               [15.1827, 6.0752]
             ]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "det": -1}
+          "meta": {
+            "door": true,
+            "slide": [-1, 0],
+            "label": "fresher",
+            "det": -1
+          }
         }
       ],
       "obstacles": [
@@ -23308,6 +23350,20 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [[1.75, 2.1], [1.75, 2.2875], [1.25, 2.2875], [1.25, 2.1]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "fresher",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.25, 2.1],
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [
               [0.4375, 0.6625],
               [0.5875, 0.6625],
@@ -23349,7 +23405,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 1.7], [3.1, 2.825], [2.9, 2.825], [2.9, 1.7]]],
-          "meta": {"door": true, "slide": [0, -1]}
+          "meta": {"door": true, "slide": [0, -1], "label": "fresher"}
         }
       ],
       "obstacles": [
@@ -24869,6 +24925,27 @@
           "meta": {
             "decor": true,
             "point": true,
+            "label": "fresher",
+            "img": "label",
+            "transform": [0, 0.5, 0.5, 0, 15.58273, 4.22518],
+            "y": 0.01,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds": {"x": 15.5015, "y": 4.3002, "width": 0.35, "height": 0.35},
+          "type": "point",
+          "x": 15.6765,
+          "y": 4.4752,
+          "orient": 90,
+          "transform": [0, 0.5, 0.5, 0, 15.58273, 4.22518],
+          "det": -1
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "point": true,
             "do": "stand",
             "on": true,
             "img": "arrow",
@@ -25448,7 +25525,12 @@
                 [15.1827, 6.0752]
               ]
             ],
-            "meta": {"door": true, "slide": [-1, 0], "det": -1}
+            "meta": {
+              "door": true,
+              "slide": [-1, 0],
+              "label": "fresher",
+              "det": -1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27491,7 +27573,7 @@
             "h": 0,
             "symKey": "extra--021--shower",
             "origObstacleId": 0,
-            "decorIds": [45]
+            "decorIds": [46]
           }
         },
         {
@@ -27537,7 +27619,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [46]
+            "decorIds": [47]
           }
         },
         {

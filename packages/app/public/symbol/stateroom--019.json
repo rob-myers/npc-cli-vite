@@ -19,7 +19,7 @@
     {
       "id": "e6186565-079e-48f4-b67e-4f03a893c68f",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -28,7 +28,7 @@
         {
           "id": "54f768e2-5984-429d-881b-60ecf5a478cc",
           "name": "extra--004--desk y=0.7",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 2.5, "f": 32.5},
           "type": "symbol",
@@ -40,7 +40,7 @@
         {
           "id": "9d15feda-b751-46c9-aebe-6ff6531f5a72",
           "name": "console--051 y=0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0.7071,
@@ -59,7 +59,7 @@
         {
           "id": "315916d8-83e6-4be2-b324-9816b4099f01",
           "name": "bed--003 y=0.6",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 180},
           "type": "symbol",
@@ -86,7 +86,7 @@
     {
       "id": "972822e4-82ad-46dc-a9f1-492312feb253",
       "name": "door slide=[0,-1]",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 115, "f": 67.5},
       "type": "rect",
@@ -96,7 +96,7 @@
     {
       "id": "10840f12-638d-44b9-bc09-2d95d6ebb577",
       "name": "walls",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -105,7 +105,7 @@
         {
           "id": "8e83826f-47f9-4b28-bbd7-b3215ffa2216",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": -2.5},
           "type": "rect",
@@ -115,7 +115,7 @@
         {
           "id": "b22964d4-75d8-4a5c-b5fa-1d642ddcc1a1",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 178},
           "type": "rect",
@@ -125,7 +125,7 @@
         {
           "id": "c808b594-72a6-4ec2-b7e8-8d1c82b78e31",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": -2.5},
           "type": "rect",
