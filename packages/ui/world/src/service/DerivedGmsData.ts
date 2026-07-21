@@ -172,7 +172,7 @@ export default class DerivedGmsData {
     if (decoded.type === "window") {
       if (includeDoors) {
         // choose 1st roomId if exists — same flag as doors, since a window is also just a connector
-        return gm.windows[decoded.windowId].roomIds.find((x) => typeof x === "number") ?? null;
+        return gm.windows[decoded.windowId]?.roomIds.find((x) => typeof x === "number") ?? null;
       }
     }
     return null;
