@@ -395,6 +395,15 @@
       "bounds": {"x": -2, "y": -2, "width": 64, "height": 66.8},
       "type": "symbol",
       "key": "fresher--002"
+    },
+    "extra--022--fresher": {
+      "filename": "extra--022--fresher.json",
+      "thumbnailFilename": "extra--022--fresher.thumbnail.png",
+      "width": 20,
+      "height": 36,
+      "bounds": {"x": -0.5, "y": 0, "width": 21.2, "height": 35.6},
+      "type": "symbol",
+      "key": "extra--022--fresher"
     }
   }
 }

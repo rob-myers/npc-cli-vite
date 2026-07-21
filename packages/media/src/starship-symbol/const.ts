@@ -17,6 +17,8 @@ export const symbolByGroup = {
     "extra--010--machine": true,
     "extra--019--table": true,
     "extra--021--shower": true,
+    //
+    "extra--022--fresher": true,
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
 
   playground: {
@@ -192,6 +194,7 @@ export const symbolByGroup = {
  * Symbols not directly based on some extracted spaceship symbol PNG.
  */
 const extraSymbols = {
+  // from npc-cli-next
   "extra--001--fresher": true,
   "extra--002--fresher": true,
   "extra--003--chair": true,
@@ -213,6 +216,8 @@ const extraSymbols = {
   "extra--019--table": true,
   "extra--020--table": true,
   "extra--021--shower": true,
+  // npc-cli-vite
+  "extra--022--fresher": true,
 } as const;
 
 export const symbolByGroupHash = hashJson(symbolByGroup);
