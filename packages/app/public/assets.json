@@ -6518,7 +6518,22 @@
       "width": 3,
       "height": 4.5,
       "bounds": {"x": -0.05, "y": -0.05, "width": 3.165, "height": 4.6},
-      "decor": [],
+      "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[2.275, 2.1625], [2.275, 2.35], [1.775, 2.35], [1.775, 2.1625]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "stateroom",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.775, 2.1625],
+            "direction": {"x": 1, "y": 0}
+          }
+        }
+      ],
       "doors": [
         {
           "type": "Polygon",
@@ -6571,7 +6586,7 @@
             "e": 0.0175,
             "f": 0.0175
           },
-          "meta": {"bed--003": true, "y": 0.6}
+          "meta": {"bed--003": true, "y": 0.5}
         },
         {
           "symbolKey": "bed--003",
@@ -6585,7 +6600,7 @@
             "e": 0.0175,
             "f": 4.4825
           },
-          "meta": {"bed--003": true, "y": 0.6}
+          "meta": {"bed--003": true, "y": 0.5}
         },
         {
           "symbolKey": "extra--004--desk",
@@ -6599,7 +6614,7 @@
             "e": -0.03011,
             "f": 1.516335
           },
-          "meta": {"extra--004--desk": true, "y": 0.6}
+          "meta": {"extra--004--desk": true, "y": 0.65}
         },
         {
           "symbolKey": "extra--003--chair",
@@ -6613,7 +6628,7 @@
             "e": 0.8425,
             "f": 2.0075
           },
-          "meta": {"extra--003--chair": true, "y": 0.5}
+          "meta": {"extra--003--chair": true, "y": 0.3}
         }
       ]
     },
@@ -8430,6 +8445,23 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [[11.275, 8.1625], [11.275, 8.35], [10.775, 8.35], [10.775, 8.1625]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "stateroom",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 10.775, 8.1625],
+            "y": 0.01,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [
               [9.9925, 6.6925],
               [9.9925, 6.8425],
@@ -8445,7 +8477,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 9.8425, 6.6925],
             "obstacleId": 39,
-            "y": 0.61,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -8469,7 +8501,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 9.8425, 9.807500000000001],
             "obstacleId": 41,
-            "y": 0.61,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -8493,7 +8525,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 10.2175, 8.1825],
             "obstacleId": 44,
-            "y": 0.51,
+            "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -10178,7 +10210,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "y": 0.6,
+            "y": 0.5,
             "transform": [1, 0, 0, 1, 9.0175, 6.0175]
           }
         },
@@ -10195,7 +10227,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.7,
+            "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 1,
             "transform": [1, 0, 0, 1, 9.0175, 6.0175]
@@ -10217,7 +10249,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "y": 0.6,
+            "y": 0.5,
             "transform": [1, 0, 0, -1, 9.0175, 10.4825]
           }
         },
@@ -10234,7 +10266,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.7,
+            "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 1,
             "transform": [1, 0, 0, -1, 9.0175, 10.4825]
@@ -10257,7 +10289,7 @@
             "h": 0.2,
             "symKey": "extra--004--desk",
             "origObstacleId": 0,
-            "y": 0.6,
+            "y": 0.65,
             "transform": [1, 0, 0, 1, 8.96989, 7.516335]
           }
         },
@@ -10277,7 +10309,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "y": 0.5,
+            "y": 0.3,
             "transform": [1, 0, 0, 1, 9.8425, 8.0075]
           }
         },
@@ -23887,6 +23919,20 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [[2.275, 2.1625], [2.275, 2.35], [1.775, 2.35], [1.775, 2.1625]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "stateroom",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 1.775, 2.1625],
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [
               [0.9925, 0.6925],
               [0.9925, 0.8425],
@@ -23903,7 +23949,7 @@
             "transform": [1, 0, 0, 1, 0.8424999999999999, 0.6925],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 0,
-            "y": 0.61
+            "y": 0.51
           }
         },
         {
@@ -23925,7 +23971,7 @@
             "transform": [1, 0, 0, -1, 0.8424999999999999, 3.8075],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 2,
-            "y": 0.61
+            "y": 0.51
           }
         },
         {
@@ -23947,7 +23993,7 @@
             "transform": [-1, 0, 0, 1, 1.2175, 2.1824999999999997],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 5,
-            "y": 0.51
+            "y": 0.31
           }
         }
       ],
@@ -23975,7 +24021,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "y": 0.6,
+            "y": 0.5,
             "transform": [1, 0, 0, 1, 0.0175, 0.0175]
           }
         },
@@ -23992,7 +24038,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.7,
+            "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 1,
             "transform": [1, 0, 0, 1, 0.0175, 0.0175]
@@ -24014,7 +24060,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "y": 0.6,
+            "y": 0.5,
             "transform": [1, 0, 0, -1, 0.0175, 4.4825]
           }
         },
@@ -24031,7 +24077,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
-            "y": 0.7,
+            "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 1,
             "transform": [1, 0, 0, -1, 0.0175, 4.4825]
@@ -24054,7 +24100,7 @@
             "h": 0.2,
             "symKey": "extra--004--desk",
             "origObstacleId": 0,
-            "y": 0.6,
+            "y": 0.65,
             "transform": [1, 0, 0, 1, -0.03011, 1.516335]
           }
         },
@@ -24074,7 +24120,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "y": 0.5,
+            "y": 0.3,
             "transform": [1, 0, 0, 1, 0.8425, 2.0075]
           }
         }
@@ -25988,12 +26034,33 @@
           "meta": {
             "decor": true,
             "point": true,
+            "label": "stateroom",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 10.775, 8.1625],
+            "y": 0.01,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds": {"x": 10.85, "y": 8.0812, "width": 0.35, "height": 0.35},
+          "type": "point",
+          "x": 11.025,
+          "y": 8.2562,
+          "orient": 0,
+          "transform": [0.5, 0, 0, 0.5, 10.775, 8.1625],
+          "det": 1
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "point": true,
             "do": "lie",
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 9.8425, 6.6925],
             "obstacleId": 39,
-            "y": 0.61,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -26016,7 +26083,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 9.8425, 9.807500000000001],
             "obstacleId": 41,
-            "y": 0.61,
+            "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -26039,7 +26106,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 10.2175, 8.1825],
             "obstacleId": 44,
-            "y": 0.51,
+            "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -28658,7 +28725,7 @@
         {
           "symbolKey": "bed--003",
           "obstacleId": 0,
-          "height": 0.6,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -28688,13 +28755,13 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "decorIds": [39]
+            "decorIds": [40]
           }
         },
         {
           "symbolKey": "bed--003",
           "obstacleId": 1,
-          "height": 0.7,
+          "height": 0.6,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -28729,7 +28796,7 @@
         {
           "symbolKey": "bed--003",
           "obstacleId": 0,
-          "height": 0.6,
+          "height": 0.5,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -28759,13 +28826,13 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "decorIds": [40]
+            "decorIds": [41]
           }
         },
         {
           "symbolKey": "bed--003",
           "obstacleId": 1,
-          "height": 0.7,
+          "height": 0.6,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -28800,7 +28867,7 @@
         {
           "symbolKey": "extra--004--desk",
           "obstacleId": 0,
-          "height": 0.6,
+          "height": 0.65,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -28842,7 +28909,7 @@
         {
           "symbolKey": "extra--003--chair",
           "obstacleId": 0,
-          "height": 0.5,
+          "height": 0.3,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -28872,7 +28939,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [41]
+            "decorIds": [42]
           }
         },
         {
@@ -28957,7 +29024,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [43]
+            "decorIds": [44]
           }
         },
         {
@@ -28986,7 +29053,7 @@
             "h": 0.3,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "decorIds": [44]
+            "decorIds": [45]
           }
         },
         {
@@ -29050,7 +29117,7 @@
             "h": 0,
             "symKey": "extra--021--shower",
             "origObstacleId": 0,
-            "decorIds": [46]
+            "decorIds": [47]
           }
         },
         {
@@ -29096,7 +29163,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [47]
+            "decorIds": [48]
           }
         },
         {
@@ -29524,7 +29591,7 @@
             "h": 0.3,
             "symKey": "couch-and-chairs--006",
             "origObstacleId": 2,
-            "decorIds": [48, 49, 50]
+            "decorIds": [49, 50, 51]
           }
         },
         {
@@ -29567,7 +29634,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [51]
+            "decorIds": [52]
           }
         },
         {
@@ -29610,7 +29677,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [52]
+            "decorIds": [53]
           }
         },
         {
@@ -29750,7 +29817,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [53]
+            "decorIds": [54]
           }
         },
         {
@@ -29786,7 +29853,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [54]
+            "decorIds": [55]
           }
         },
         {
@@ -29822,7 +29889,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [55]
+            "decorIds": [56]
           }
         },
         {
@@ -29858,7 +29925,7 @@
             "inset": 0.1,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "decorIds": [56]
+            "decorIds": [57]
           }
         }
       ],
@@ -32960,7 +33027,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
