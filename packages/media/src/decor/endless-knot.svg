@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 144 144" width="200" height="200">
-  <g style="fill: none; stroke: #ffffff; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round">
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 10 10" width="10px" height="10px">
+  <g style="fill: none; stroke: #ffffff; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round" transform="matrix(0.08, 0, 0, 0.08, 24.999999, 24.999999)">
+    <title>px-per-tile=512</title>
     <rect x="62" y="50" width="28" height="100" rx="6"/>
     <rect x="110" y="50" width="28" height="100" rx="6"/>
     <rect x="50" y="62" width="100" height="28" rx="6"/>

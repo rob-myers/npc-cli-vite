@@ -196,9 +196,22 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             debug("[World] assets.json changed: refetching");
             queryClientApi.queryClient.invalidateQueries({ exact: false, queryKey: state.worldQueryPrefix });
           }],
-          [devMessageFromServer.decorSheetsRebuilt, () => {
+          [devMessageFromServer.decorSheetsRebuilt, async () => {
             debug("[World] decor sheets rebuilt: refetching");
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
+            // ensure `state.sheets` reflects the refetch before dependants redraw from it
+            const freshSheets = queryClientApi.queryClient.getQueryData<SheetsType>([
+              ...state.worldQueryPrefix,
+              "sheets",
+            ]);
+            if (freshSheets) state.sheets = freshSheets;
+
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
+
+            state.door?.drawDoorTextures().then(() => {
+              state.door.sendDataToGpu();
+              state.door.update();
+            });
           }],
           [devMessageFromServer.skinSheetsRebuilding, () => {
             state.setNextPending({ skins: true });

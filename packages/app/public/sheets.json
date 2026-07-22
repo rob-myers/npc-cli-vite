@@ -159,86 +159,93 @@
   "symbolSheetDims": [{"width": 3708, "height": 3914}],
   "maxSymbolSheetDim": {"width": 3708, "height": 3914},
   "decor": {
-    "arrow-boxed": {
-      "key": "arrow-boxed",
-      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+    "screen-0": {
+      "key": "screen-0",
+      "rect": {"x": 2, "y": 2, "width": 188, "height": 137},
       "sheetId": 0,
-      "originalWidth": 6,
-      "originalHeight": 6
+      "originalWidth": 44,
+      "originalHeight": 32
     },
-    "arrow": {
-      "key": "arrow",
-      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
+    "label": {
+      "key": "label",
+      "rect": {"x": 2, "y": 141, "width": 171, "height": 64},
       "sheetId": 0,
-      "originalWidth": 6,
-      "originalHeight": 6
-    },
-    "axes-2d": {
-      "key": "axes-2d",
-      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 6,
-      "originalHeight": 6
+      "originalWidth": 40,
+      "originalHeight": 15
     },
     "circle-1": {
       "key": "circle-1",
-      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 192, "y": 2, "width": 128, "height": 128},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "dharma-wheel": {
       "key": "dharma-wheel",
-      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 2, "y": 207, "width": 86, "height": 86},
       "sheetId": 0,
-      "originalWidth": 200,
-      "originalHeight": 200
+      "originalWidth": 10,
+      "originalHeight": 10
     },
     "endless-knot": {
       "key": "endless-knot",
-      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 90, "y": 207, "width": 86, "height": 86},
       "sheetId": 0,
-      "originalWidth": 200,
-      "originalHeight": 200
-    },
-    "icon--warn": {
-      "key": "icon--warn",
-      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 6,
-      "originalHeight": 6
-    },
-    "label": {
-      "key": "label",
-      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
-      "sheetId": 0,
-      "originalWidth": 40,
-      "originalHeight": 15
+      "originalWidth": 10,
+      "originalHeight": 10
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 175, "y": 141, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 220, "y": 132, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
+    "arrow-boxed": {
+      "key": "arrow-boxed",
+      "rect": {"x": 265, "y": 132, "width": 26, "height": 26},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
+    "arrow": {
+      "key": "arrow",
+      "rect": {"x": 293, "y": 132, "width": 26, "height": 26},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
+    "axes-2d": {
+      "key": "axes-2d",
+      "rect": {"x": 265, "y": 160, "width": 26, "height": 26},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
+    "icon--warn": {
+      "key": "icon--warn",
+      "rect": {"x": 293, "y": 160, "width": 26, "height": 26},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
     "switch": {
       "key": "switch",
-      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 220, "y": 177, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 1034, "height": 776}],
-  "maxDecorSheetDim": {"width": 1034, "height": 776},
+  "decorSheetDims": [{"width": 322, "height": 295}],
+  "maxDecorSheetDim": {"width": 322, "height": 295},
   "skin": {
     "human-0": {
       "key": "human-0",

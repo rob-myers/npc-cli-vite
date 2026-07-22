@@ -1,14 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 144 144" width="200" height="200">
-  <!-- Outer and Inner Rims -->
-  <circle cx="100" cy="95" r="50" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <circle cx="100" cy="95" r="16" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <!-- 8 Spokes -->
-  <line x1="100" y1="45" x2="100" y2="79" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="100" y1="111" x2="100" y2="145" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="50" y1="95" x2="84" y2="95" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="116" y1="95" x2="150" y2="95" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="65" y1="60" x2="89" y2="84" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="111" y1="106" x2="135" y2="130" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="65" y1="130" x2="89" y2="106" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
-  <line x1="111" y1="84" x2="135" y2="60" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round" />
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 10 10" width="10px" height="10px">
+  <g transform="matrix(0.08, 0, 0, 0.08, 25.000001, 25.4)" style="">
+    <title>px-per-tile=512</title>
+    <circle cx="100" cy="95" r="50" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round"/>
+    <circle cx="100" cy="95" r="16" style="fill: none; stroke: #ffffff; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round"/>
+    <line x1="100" y1="45" x2="100" y2="79" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="100" y1="111" x2="100" y2="145" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="50" y1="95" x2="84" y2="95" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="116" y1="95" x2="150" y2="95" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="65" y1="60" x2="89" y2="84" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="111" y1="106" x2="135" y2="130" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="65" y1="130" x2="89" y2="106" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+    <line x1="111" y1="84" x2="135" y2="60" style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.44444px;"/>
+  </g>
 </svg>

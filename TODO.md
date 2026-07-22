@@ -2,6 +2,8 @@
 
 - new approach to todos i.e. current go into technical and start new section
 
+- BUG decor hmr onchange decor/foo.svg
+
 - ✅ clean fadeSpawn
 - ✅ room labels represented as decor
   - `w decor.byRoom.0.1 | split | filter 'x => x.meta.label'`
