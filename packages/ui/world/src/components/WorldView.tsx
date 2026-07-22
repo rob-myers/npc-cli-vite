@@ -547,7 +547,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
           initialPosition={state.initial.position}
-          minPanDistance={0}
+          minPanDistance={w.touchDevice ? 0.05 : 0}
           onFrame={state.onCameraChange}
           {...state.ctrlOpts}
         />

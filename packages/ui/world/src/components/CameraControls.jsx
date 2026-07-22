@@ -93,6 +93,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       maxPolarAngle={props.maxPolarAngle}
       minDistance={props.minDistance}
       maxDistance={props.maxDistance}
+      minPanDistance={props.minPanDistance}
       panSpeed={props.panSpeed}
       zoomSpeed={props.zoomSpeed}
       zoomToCursor={props.zoomToCursor}
