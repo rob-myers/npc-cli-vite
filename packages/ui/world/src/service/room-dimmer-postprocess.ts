@@ -128,15 +128,6 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
   const roomDimmedValues = new Array<number>(MAX_GEOMORPH_INSTANCES * maxRoomsPerGm).fill(0);
   const roomDimmed = uniformArray<"float">(roomDimmedValues, "float");
 
-  function rayXZAt(planeHeight: number) {
-    // reconstruct the view ray direction (only direction matters, so depth value is arbitrary)
-    const viewDirPoint = getViewPosition(screenUV, float(0.5), camProjectionMatrixInverse);
-    const worldDir = camWorldMatrix.mul(vec4(viewDirPoint, 0.0)).xyz.normalize();
-    // intersect with y=planeHeight: camPosition.y + t * worldDir.y = planeHeight
-    const t = float(planeHeight).sub(camPosition.y).div(worldDir.y);
-    return camPosition.add(worldDir.mul(t)).xz;
-  }
-
   /** Given a fragment's world XZ, returns `1` if its room is dimmed, else `0` (hard binary, no fade) */
   function sampleRoomDim(worldXZ: THREE.Node<"vec2">): THREE.Node<"float"> {
     const cellX = worldXZ.x.div(gmIdGridDim).floor().sub(gmGridOrigin.x);

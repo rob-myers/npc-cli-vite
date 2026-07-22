@@ -351,7 +351,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               cn(
                 state.getTheme().background,
                 // these stripes can show through floor
-                "bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-size-[8px_8px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-blue-500)_20%,transparent)]",
+                "bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-size-[8px_8px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-gray-500)_20%,transparent)]",
               )
             }
           >
