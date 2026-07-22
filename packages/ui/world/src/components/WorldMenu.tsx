@@ -198,7 +198,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer"
+            className="cursor-pointer outline-2 not-focus:outline-gray-600 focus:outline-gray-200"
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => {
               if (state.dragged) return;
@@ -539,7 +539,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer"
+            className="cursor-pointer outline-2 not-focus:outline-gray-600 focus:outline-gray-200"
             onPointerDown={(e) => {
               e.preventDefault();
               state.dimLongPress = false;
@@ -635,7 +635,7 @@ export function WorldMenu() {
 
         <button
           className={cn(
-            "grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700",
+            "grid place-items-center bg-gray-800 text-white cursor-pointer outline-2 not-focus:outline-gray-600 focus:outline-gray-200 hover:bg-gray-700",
             big ? "size-12" : "size-9",
           )}
           onClick={() => w.setDisabled()}
