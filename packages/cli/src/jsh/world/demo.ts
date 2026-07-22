@@ -69,8 +69,12 @@ export async function demo_auto_nudge(ct: JshCli.RunArg) {
     }),
   });
 
-  // run until killed
-  await api.read().finally(handled.dispose);
+  try {
+    // run until killed
+    await api.sleep(Number.MAX_SAFE_INTEGER).finally(handled.dispose);
+  } finally {
+    handled.dispose();
+  }
 }
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {
