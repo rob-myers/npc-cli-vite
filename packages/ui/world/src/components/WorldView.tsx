@@ -1,7 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { geomService } from "@npc-cli/util/geom-service";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
   testNever,
@@ -25,23 +24,18 @@ import {
   defaultCardinalDirectionsMobile,
   defaultDesktopFov,
   defaultMobileFov,
+  dimmingEnabledKey,
   fovStorageKey,
-  lightEditingEnabledKey,
-  lightRoomOutset,
-  lightSizingGrowDurationMs,
-  lightSizingMaxRadius,
-  lightSizingStartRadius,
-  lightsEnabledKey,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
-  showDebugLightOutlineKey,
+  roomDimEditingEnabledKey,
   wallHeight,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
+import { createRoomDimmerPostprocess, type RoomDimmerPostprocess } from "../service/room-dimmer-postprocess";
 import type { SelectAnyType } from "../service/texture";
-import { createXzCylinderPostprocess, type XzCylinderPostprocess } from "../service/xz-cylinder-postprocess";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -90,15 +84,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      lightPostprocess: createXzCylinderPostprocess({
-        showBorder: tryLocalStorageGetParsed<boolean>(showDebugLightOutlineKey) ?? false,
-        lightsEnabled: tryLocalStorageGetParsed<boolean>(lightsEnabledKey) ?? true,
+      roomDimmer: createRoomDimmerPostprocess({
+        dimmingEnabled: tryLocalStorageGetParsed<boolean>(dimmingEnabledKey) ?? true,
         bottomHeight: 0,
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
-      /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove */
-      lightEditingEnabled: tryLocalStorageGetParsed<boolean>(lightEditingEnabledKey) ?? true,
-      lightSizing: null,
+      /** Toggled via long-press on WorldMenu's dimmer icon; gates long-press room toggling */
+      roomDimEditingEnabled: tryLocalStorageGetParsed<boolean>(roomDimEditingEnabledKey) ?? true,
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
 
       async createRenderer(props) {
@@ -286,9 +278,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
-        if (state.lightSizing) {
-          state.commitLightSizing();
-        }
       },
       onPointerMove(e) {
         state.lastPointer.move.copy(getRelativePointer(e));
@@ -300,10 +289,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.canvas.style.cursor = "";
         e.currentTarget.focus();
 
-        if (state.lightSizing) {
-          state.commitLightSizing();
-          return;
-        }
         if (last.longPress === true) {
           return; // already picked
         }
@@ -380,97 +365,44 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
 
-        // refresh the shared camera matrices on every rendered frame — so every light keeps
+        // refresh the shared camera matrices on every rendered frame — so dimming keeps
         // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms
         const camera = state.controls?.object ?? w.r3f.camera;
-        state.lightPostprocess.update(camera);
-
-        if (state.lightSizing !== null) {
-          state.updateLightSizing();
-          // keep the demand-frameloop render chain alive frame-by-frame while paused, mirroring
-          // the extraZoom tween's self-sustaining invalidate() idiom
-          w.r3f?.invalidate();
-        }
+        state.roomDimmer.update(camera);
       },
-      toggleLightEditing() {
-        state.lightEditingEnabled = !state.lightEditingEnabled;
-        tryLocalStorageSet(lightEditingEnabledKey, String(state.lightEditingEnabled));
+      toggleRoomDimEditing() {
+        state.roomDimEditingEnabled = !state.roomDimEditingEnabled;
+        tryLocalStorageSet(roomDimEditingEnabledKey, String(state.roomDimEditingEnabled));
         w.update();
       },
-      setLightsEnabled(next = state.lightPostprocess.lightsEnabled.value === 0) {
-        state.lightPostprocess.setLightsEnabled(next);
-        tryLocalStorageSet(lightsEnabledKey, String(next));
+      setDimmingEnabled(next = state.roomDimmer.dimmingEnabled.value === 0) {
+        state.roomDimmer.setDimmingEnabled(next);
+        tryLocalStorageSet(dimmingEnabledKey, String(next));
         state.setPostProcessingEnabled(true);
       },
-      computeRoomOutline(gmRoomId) {
-        const gm = w.gms[gmRoomId.gmId];
-        const room = gm.rooms[gmRoomId.roomId];
-        // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
-        // cut off exactly at the room's inner wall face. 🔔 deliberately NOT unioning in adjacent
-        // doorways here: the shader's own soft edge (`roomEdgeFalloff` in
-        // xz-cylinder-postprocess.ts) fades right at this boundary, so it fades through each
-        // doorway instead of extending past it and then cutting off hard at the far side.
-        const outsetRoom = geomService.createOutset(room.clone(), lightRoomOutset);
-        const extended = outsetRoom.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
-        return extended.outline.map((p) => gm.matrix.transformPoint({ x: p.x, y: p.y }));
-      },
-      noLightsInRoom(gmRoomId) {
-        const roomDecor = w.decor.byRoom[gmRoomId.gmId][gmRoomId.roomId];
+      roomDimmingDisallowed(gmRoomId) {
+        const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
         // ≤ 1 or 1st takes precedence
         const decorLabel = roomDecor
           ?.values()
           .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
         return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
       },
-      startLightSizing(groundCenter) {
-        // find the room `center` is in, so the light can be clipped to its world-space outline
+      toggleRoomDimmed(groundCenter) {
         const gmRoomId = w.e.findRoomContaining(groundCenter, true);
-
         if (!gmRoomId) {
           return; // must be in some room
         }
-        if (state.noLightsInRoom(gmRoomId)) {
-          return; // lights aren't permitted in this room
+        if (state.roomDimmingDisallowed(gmRoomId)) {
+          return; // dimming isn't permitted in this room
         }
-
-        const roomOutline = state.computeRoomOutline(gmRoomId);
-
-        // light up fully and instantly instead of growing from a small circle
-        const radius = roomOutline.reduce(
-          (max, p) => Math.max(max, Math.hypot(p.x - groundCenter.x, p.y - groundCenter.y)),
-          0,
-        );
-        const index = state.lightPostprocess.addLight(groundCenter, radius, roomOutline);
-        if (index === null) {
-          // all MAX_POSTPROCESS_LIGHTS slots full
-          w.menu?.set({ toastTs: { ...w.menu.toastTs, "lights full": Date.now() } });
-        }
-        state.forceUpdate();
-        return;
-      },
-      updateLightSizing() {
-        if (!state.lightSizing) return;
-        const elapsedMs = Date.now() - state.lightSizing.startEpochMs;
-        const t = Math.min(1, elapsedMs / lightSizingGrowDurationMs);
-        const radius = lightSizingStartRadius + t * (lightSizingMaxRadius - lightSizingStartRadius);
-        state.lightSizing.radius = radius;
-        state.lightPostprocess.setPreview(state.lightSizing.center, radius);
-      },
-      commitLightSizing() {
-        if (!state.lightSizing) return;
-        const { center, radius, roomOutline } = state.lightSizing;
-        const index = state.lightPostprocess.addLight(center, radius, roomOutline);
-        state.lightPostprocess.setPreview(null);
-        if (state.controls) state.controls.enabled = true;
-        state.lightSizing = null;
-        if (index === null) {
-          // all MAX_POSTPROCESS_LIGHTS slots full
-          w.menu?.set({ toastTs: { ...w.menu.toastTs, "lights full": Date.now() } });
-        }
+        const { gmId, roomId } = gmRoomId;
+        state.roomDimmer.setRoomDimmed(gmId, roomId, !state.roomDimmer.isRoomDimmed(gmId, roomId));
+        state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
-      resetAllLights() {
-        state.lightPostprocess.resetLights();
+      resetAllRooms() {
+        state.roomDimmer.resetAllRooms();
         state.setPostProcessingEnabled(true);
       },
       setCameraMode(mode) {
@@ -492,19 +424,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
         const sceneColor = scenePass.getTextureNode("output");
-        // raw (logarithmic) depth — litAmount() does its own log-depth inversion
+        // raw (logarithmic) depth — dimAmount() does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
 
         const pipeline = new THREE.RenderPipeline(gl);
 
-        const outsideAmount = float(1).sub(state.lightPostprocess.litAmount(sceneDepth.r));
-        let effect = mix(
-          sceneColor.rgb.mul(vec3(0.25, 0.25, 0.25)), // dark
+        const undimmedAmount = float(1).sub(state.roomDimmer.dimAmount(sceneDepth.r));
+        const effect = mix(
+          sceneColor.rgb.mul(vec3(0.25, 0.25, 0.45)), // dark
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-          outsideAmount,
+          undimmedAmount,
         );
-        // 🚧 remove?
-        effect = state.lightPostprocess.drawBorder(effect);
         pipeline.outputNode = vec4(effect, sceneColor.a);
 
         const originalRender = gl.render.bind(gl);
@@ -552,7 +482,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, lightPostprocess: true } },
+    { reset: { ctrlOpts: true, initial: false, roomDimmer: false } },
   );
 
   w.view = state;
@@ -578,6 +508,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
     };
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
+
+  useEffect(() => {
+    w.gms.length > 0 && state.roomDimmer.syncGms(w.gms, w.gmsData);
+  }, [w.hash, w.gmsData]); // gm instances (or their derived per-layout data) changed
 
   return (
     <div className="size-full">
@@ -666,17 +600,9 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
-  lightPostprocess: XzCylinderPostprocess;
-  /** Toggled via long-press on WorldMenu's light icon; gates long-press add/remove in `use-world-events.ts` */
-  lightEditingEnabled: boolean;
-  /** Active while long-pressing to place a NEW light and still holding — grows over time. `null` when idle. */
-  lightSizing: null | {
-    center: Geom.VectJson;
-    startEpochMs: number;
-    radius: number;
-    /** World-space outline of the room `center` is in — empty if none found. For debug rendering. */
-    roomOutline: Geom.VectJson[];
-  };
+  roomDimmer: RoomDimmerPostprocess;
+  /** Toggled via long-press on WorldMenu's dimmer icon; gates long-press room toggling in `use-world-events.ts` */
+  roomDimEditingEnabled: boolean;
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
@@ -693,21 +619,15 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  toggleLightEditing(): void;
-  /** Toggles `lightPostprocess.lightsEnabled` — persisted to localStorage */
-  setLightsEnabled(next?: boolean): void;
-  /** World-space outline of `gmRoomId`'s room, outset slightly (see `lightRoomOutset`) — used by `startLightSizing` */
-  computeRoomOutline(gmRoomId: Geomorph.GmRoomId): Geom.VectJson[];
-  /** No labelled decor point, or a labelled point with `meta.corridor === true` — such rooms don't permit lights at all */
-  noLightsInRoom(gmRoomId: Geomorph.GmRoomId): boolean;
-  /** Begins a hold-to-grow preview (via the independent `preview` light channel) for a new light being placed at `center`, unless lights aren't permitted (see `noLightsInRoom`) or it's fully-lit (see `isFullyLitRoom`) */
-  startLightSizing(groundCenter: Geom.VectJson): void;
-  /** Grows `lightSizing.radius` based on elapsed hold time — called every frame from `onCameraChange` */
-  updateLightSizing(): void;
-  /** Commits the current `lightSizing` preview as a static light (or discards if `lightSizing` is `null`) */
-  commitLightSizing(): void;
-  /** Deactivates every static light */
-  resetAllLights(): void;
+  toggleRoomDimEditing(): void;
+  /** Toggles `roomDimmer.dimmingEnabled` — persisted to localStorage */
+  setDimmingEnabled(next?: boolean): void;
+  /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit dimming at all */
+  roomDimmingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
+  /** Toggles whether `gmRoomId`'s room is dimmed, unless dimming isn't permitted there (see `roomDimmingDisallowed`) */
+  toggleRoomDimmed(groundCenter: Geom.VectJson): void;
+  /** Clears every dimmed room */
+  resetAllRooms(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];

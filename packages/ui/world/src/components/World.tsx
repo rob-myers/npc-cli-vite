@@ -128,7 +128,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       obs: null as any,
       rings: null as any,
       shadows: null as any,
-      view: { lightEditingEnabled: true } as State["view"],
+      view: { roomDimEditingEnabled: true } as State["view"],
       wall: null as any,
       worker: { worker: { postMessage() {} } } as any,
 

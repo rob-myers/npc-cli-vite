@@ -34,6 +34,18 @@ declare namespace Geomorph {
     /** `poly.lineSegs` rather than `connector.seg`  */
     windowSegs: { seg: [Geom.Vect, Geom.Vect] }[];
     roomHitCt: CanvasRenderingContext2D;
+    /**
+     * Room-dimmer mask: R = `roomId + 1` (0 = not-a-room), G = 255 wherever R is set (no fade,
+     * hard binary), baked once per gmKey and uploaded as one GPU texture layer.
+     */
+    dimMaskCt: CanvasRenderingContext2D;
+    /**
+     * Scratch context reused while baking `dimMaskCt`, one room at a time — drawn as a plain white
+     * fill then thresholded, so the final mask is written manually (never trusting `getImageData`
+     * on a canvas-anti-aliased multi-color fill, which corrupts the integer roomId at edge pixels
+     * via premultiplied-alpha rounding once coverage is partial).
+     */
+    dimMaskScratchCt: CanvasRenderingContext2D;
     /** Graph of rooms and doors within geomorph */
     roomGraph: import("./service/room-graph").RoomGraph;
   };
