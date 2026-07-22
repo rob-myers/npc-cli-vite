@@ -84,6 +84,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
+      roomDimColor: uniform(vec3(0.2, 0.6, 0.8)),
       roomDimmer: createRoomDimmerPostprocess({
         dimmingEnabled: tryLocalStorageGetParsed<boolean>(dimmingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -238,10 +239,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       onCreated(rootState) {
         w.threeReady = true;
-        w.r3f = rootState as typeof w.r3f;
+        // override THREE.WebGPURenderer
+        w.r3f = rootState as Omit<typeof rootState, "gl"> as typeof w.r3f;
         // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
         w.texFloor.update();
-        w.update(); // e.g. show stats
+        w.update();
       },
       onResize: debounce(() => {
         w.menu?.onResize();
@@ -420,21 +422,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.forceUpdate();
       },
       setupPostProcessing() {
-        const gl = w.r3f.gl as unknown as THREE.WebGPURenderer;
-        const { scene, camera } = w.r3f;
+        const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
         const sceneColor = scenePass.getTextureNode("output");
-        // raw (logarithmic) depth — dimAmount() does its own log-depth inversion
+        // raw logarithmic depth — dimAmount() does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-
-        const pipeline = new THREE.RenderPipeline(gl);
-
         const undimmedAmount = float(1).sub(state.roomDimmer.dimAmount(sceneDepth.r));
         const effect = mix(
-          sceneColor.rgb.mul(vec3(0.25, 0.25, 0.45)), // dark
+          sceneColor.rgb.mul(state.roomDimColor), // dark
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
           undimmedAmount,
         );
+
+        const pipeline = new THREE.RenderPipeline(gl);
         pipeline.outputNode = vec4(effect, sceneColor.a);
 
         const originalRender = gl.render.bind(gl);
@@ -603,6 +603,7 @@ export type State = {
   roomDimmer: RoomDimmerPostprocess;
   /** Toggled via long-press on WorldMenu's dimmer icon; gates long-press room toggling in `use-world-events.ts` */
   roomDimEditingEnabled: boolean;
+  roomDimColor: THREE.UniformNode<"vec3", THREE.Vector3>;
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;

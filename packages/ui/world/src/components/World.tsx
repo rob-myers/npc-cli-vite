@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
+import type { OverrideProperties } from "type-fest";
 import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
 import {
   assetsJsonChangedEvent,
@@ -368,7 +369,13 @@ export type State = {
   brightness: number;
 
   events: Broadcaster<JshCli.Event>;
-  r3f: RootState & { camera: THREE.PerspectiveCamera };
+  r3f: OverrideProperties<
+    RootState,
+    {
+      camera: THREE.PerspectiveCamera;
+      gl: THREE.WebGPURenderer;
+    }
+  >;
   r3fStore: RootStore;
   reqAnimId: number;
   threeReady: boolean;

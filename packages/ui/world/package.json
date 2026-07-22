@@ -39,6 +39,7 @@
     "short-uuid": "catalog:",
     "three": "catalog:",
     "three-stdlib": "catalog:",
+    "type-fest": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
   },
