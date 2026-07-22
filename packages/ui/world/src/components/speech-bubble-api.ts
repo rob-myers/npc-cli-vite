@@ -17,14 +17,6 @@ export class SpeechBubbleApi {
 
   key: string;
   w: WorldState;
-  words = "Hello, world!!";
-
-  deletion = {
-    opts: null as AutoDeleteOpts | null,
-    remainingMs: null as number | null,
-    timerStartedAt: 0,
-    timer: null as ReturnType<typeof setTimeout> | null,
-  };
 
   drag = {
     active: false,
@@ -64,10 +56,6 @@ export class SpeechBubbleApi {
   }
 
   dispose() {
-    if (this.deletion.timer !== null) {
-      clearTimeout(this.deletion.timer);
-      this.deletion.timer = null;
-    }
     if (this.interact.timer !== null) {
       clearTimeout(this.interact.timer);
       this.interact.timer = null;
@@ -81,8 +69,6 @@ export class SpeechBubbleApi {
   }
 
   fadeAndDelete() {
-    this.deletion.timer = null;
-    this.deletion.remainingMs = null;
     this.setOpacity(0);
     setTimeout(() => this.w?.bubble?.delete(this.key), fadeOutMs);
   }
@@ -118,9 +104,7 @@ export class SpeechBubbleApi {
   }
 
   initializeOpacity() {
-    if (!this.w.view.topDown) {
-      this.setOpacity(1);
-    }
+    this.setOpacity(1);
   }
 
   onDragStart(clientX: number, clientY: number) {
@@ -217,15 +201,6 @@ export class SpeechBubbleApi {
     this.forwardWheelEvents(e);
   };
 
-  pauseAutoDelete() {
-    if (this.deletion.timer === null) return;
-    clearTimeout(this.deletion.timer);
-    this.deletion.timer = null;
-    if (this.deletion.remainingMs !== null) {
-      this.deletion.remainingMs = Math.max(0, this.deletion.remainingMs - (Date.now() - this.deletion.timerStartedAt));
-    }
-  }
-
   pauseInteractiveTimer() {
     if (this.interact.timer === null) return;
     clearTimeout(this.interact.timer);
@@ -258,32 +233,10 @@ export class SpeechBubbleApi {
     this.size.htmlScale = rect && this.size.widthAtStart > 0 ? rect.width / this.size.widthAtStart : 1;
   }
 
-  resumeAutoDelete() {
-    if (this.deletion.remainingMs === null || this.deletion.timer !== null) return;
-    this.deletion.timerStartedAt = Date.now();
-    this.deletion.timer = setTimeout(() => this.fadeAndDelete(), Math.min(this.deletion.remainingMs, 2 ** 31 - 1));
-  }
-
   resumeInteractiveTimer() {
     if (!this.interact.active || this.interact.remainingMs === null || this.interact.timer !== null) return;
     this.interact.timerStartedAt = Date.now();
     this.interact.timer = setTimeout(() => this.deactivateInteractive(), this.interact.remainingMs);
-  }
-
-  scheduleAutoDelete(secs = this.deletion.opts?.secs) {
-    if (this.deletion.timer !== null) {
-      clearTimeout(this.deletion.timer);
-      this.deletion.timer = null;
-    }
-
-    this.deletion.remainingMs = typeof secs === "number" ? secs * 1000 : null;
-
-    if (this.deletion.remainingMs === null || this.w?.disabled === true) {
-      return; // if remainingMs and disabled will trigger on enabled
-    }
-
-    this.deletion.timerStartedAt = Date.now();
-    this.deletion.timer = setTimeout(() => this.fadeAndDelete(), Math.min(this.deletion.remainingMs, 2 ** 31 - 1));
   }
 
   setOpacity(opacity: number) {
@@ -291,25 +244,6 @@ export class SpeechBubbleApi {
     if (rootDiv) {
       rootDiv.style.transition = `opacity ${fadeOutMs}ms`;
       rootDiv.style.opacity = `${opacity}`;
-    }
-  }
-
-  setWords(words: string, secs = this.deletion.opts?.secs) {
-    this.words = words;
-    this.epochMs = Date.now();
-    this.w.bubble.update();
-
-    if (typeof secs === "number") {
-      this.scheduleAutoDelete(secs); // reschedule
-    }
-
-    if (words) {
-      this.w.events.next({
-        key: "speech",
-        npcKey: this.key,
-        words: this.words,
-        epochMs: this.epochMs,
-      });
     }
   }
 
@@ -347,10 +281,8 @@ export class SpeechBubbleApi {
 const tmpVec = new THREE.Vector3();
 const tmpVec2 = new THREE.Vector3();
 const interactiveDurationMs = 5_000;
-const minBubbleWidth = 256;
-const minBubbleHeight = 256;
-const defaultBubbleWidth = 560; // w-140
-const defaultBubbleHeight = 288; // h-72
-const fadeOutMs = 500;
-
-export type AutoDeleteOpts = { secs: number };
+const minBubbleWidth = 200;
+const minBubbleHeight = 72;
+const defaultBubbleWidth = 320; // w-80
+const defaultBubbleHeight = 96; // h-24
+const fadeOutMs = 300;

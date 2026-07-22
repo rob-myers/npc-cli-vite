@@ -3,7 +3,8 @@ import type { RootState } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { forwardRef, useImperativeHandle, useLayoutEffect } from "react";
 import * as ReactDOM from "react-dom/client";
-import * as THREE from "three";
+import * as THREE from "three/webgpu";
+import type { OverrideProperties } from "type-fest";
 
 export const Html3d = forwardRef<State, Props>((props, ref) => {
   const state = useStateRef(
@@ -124,7 +125,7 @@ type Props = Omit<React.HTMLAttributes<HTMLDivElement>, "ref"> & {
   className: string;
   initialCssVars?: Record<string, string>;
   offset: THREE.Vector3Like;
-  r3f: RootState;
+  r3f: OverrideProperties<RootState, { gl: THREE.WebGPURenderer }>;
   position: THREE.Vector3;
   tracked: TrackedObject3D;
   visible: boolean;

@@ -84,7 +84,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      roomDimColor: uniform(vec3(0.2, 0.6, 0.8)),
+      roomDimColor: uniform<"vec3", THREE.Vector3>(vec3(0.2, 0.6, 0.8)),
       roomDimmer: createRoomDimmerPostprocess({
         dimmingEnabled: tryLocalStorageGetParsed<boolean>(dimmingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -247,6 +247,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       onResize: debounce(() => {
         w.menu?.onResize();
+        w.speech?.onResize();
       }, 100),
       onKeyDown(e) {
         const tag = (e.target as HTMLElement).tagName;

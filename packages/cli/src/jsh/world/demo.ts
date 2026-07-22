@@ -90,6 +90,17 @@ export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
+/**
+ * ```sh
+ * demo_npc_ui rob
+ * ```
+ */
+export function demo_npc_ui({ w, args }: JshCli.RunArg) {
+  const [npcKey] = args;
+  const npc = w.npc.get(npcKey);
+  w.bubble.ensure(npc.key);
+}
+
 export async function demo_spawn_many({ w }: JshCli.RunArg) {
   const pointsWithMeta = [] as WithMeta<JshCli.GroundPoint>[];
   for (const [_gmId, gmRooms] of w.decor.byRoom.entries()) {

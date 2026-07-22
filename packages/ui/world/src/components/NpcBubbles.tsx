@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { ArrowDownRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
+import { DotsSixIcon, DotsThreeIcon, ResizeIcon, XIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -25,16 +25,11 @@ export default function NpcBubbles() {
 
           b.dispose();
           delete state.byKey[npcKey];
-
-          const npc = w.n[npcKey];
-          if (!npc) continue;
-          npc.drawLabel({ speaking: false });
-          npc.labelVisible.value = 1;
         }
 
         w.view.forceUpdate();
       },
-      ensure(npcKey, secs?: number) {
+      ensure(npcKey) {
         let b = state.get(npcKey);
         if (b) return b;
 
@@ -46,15 +41,6 @@ export default function NpcBubbles() {
         if (prev?.offset) b.offset = { ...prev.offset };
         if (prev?.cssVars) b.initialCssVars = { ...prev.cssVars };
         delete state.prevData[npcKey];
-
-        b.deletion.opts = typeof secs === "number" ? { secs } : null;
-        b.scheduleAutoDelete();
-
-        if (w.view.topDown) {
-          npc.drawLabel({ speaking: true });
-        } else {
-          npc.labelVisible.value = 0;
-        }
 
         w.view.forceUpdate();
         return b;
@@ -73,44 +59,23 @@ export default function NpcBubbles() {
         switch (e.key) {
           case "disabled":
             for (const bubble of Object.values(state.byKey)) {
-              bubble.pauseAutoDelete();
               bubble.pauseInteractiveTimer();
             }
             break;
 
           case "enabled":
             for (const bubble of Object.values(state.byKey)) {
-              bubble.resumeAutoDelete();
               bubble.resumeInteractiveTimer();
             }
             break;
-
-          case "enter-topdown":
-          case "exit-topdown": {
-            const topDown = e.key === "enter-topdown";
-            for (const bubble of Object.values(state.byKey)) {
-              bubble.setOpacity(topDown ? 0 : 1);
-              const npc = w.n[bubble.key];
-              if (!npc) continue;
-              npc.drawLabel({ speaking: topDown });
-              npc.labelVisible.value = topDown ? 1 : 0;
-            }
-            break;
-          }
         }
       },
       setShown(npcKey: string, shown: boolean) {
-        const npc = w.n[npcKey];
         const bubble = this.get(npcKey);
-        if (!npc || !bubble) {
+        if (!bubble) {
           return;
         }
-
-        const willShow = shown === true && w.view.topDown === false;
-        const targetOpacity = willShow ? 1 : 0;
-        bubble.setOpacity(targetOpacity);
-
-        return willShow;
+        bubble.setOpacity(shown ? 1 : 0);
       },
     }),
   );
@@ -136,12 +101,11 @@ export type State = {
     [npcKey: string]: { offset?: { x: number; y: number; z: number }; cssVars?: Record<string, string> };
   };
   delete(...npcKeys: string[]): void;
-  ensure(npcKey: string, secs?: number): SpeechBubbleApi;
+  ensure(npcKey: string): SpeechBubbleApi;
   get(npcKey: string): null | SpeechBubbleApi;
   handleDevHotReload(): void;
   onEvent(e: JshCli.Event): void;
-  /** forced hidden in topDown view */
-  setShown(npcKey: string, shown: boolean): boolean | undefined;
+  setShown(npcKey: string, shown: boolean): void;
 };
 
 type SpeechBubbleProps = {
@@ -169,53 +133,64 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
     >
       <div
         className={cn(
-          "relative flex flex-col rounded-none cursor-grab active:cursor-grabbing overflow-hidden",
-          "transform-[translate(-50%)] w-(--bubble-width,35rem) h-(--bubble-height,18rem)",
-          b.interact.active && "pointer-events-auto",
+          "relative flex flex-col items-center justify-center rounded-2xl cursor-grab active:cursor-grabbing overflow-hidden",
+          "transform-[translate(-50%)] w-(--bubble-width,20rem) h-(--bubble-height,6rem)",
+          "border-4 border-white/40 bg-black/70 backdrop-blur-sm transition-colors",
+          b.interact.active && "pointer-events-auto border-white/70",
         )}
         onMouseDown={b.onMouseDown}
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        <div className="flex gap-8 justify-center items-center">
+        {b.interact.active && (
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-white/30">
+            <DotsSixIcon className="size-8" weight="bold" />
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 px-5">
           <div
-            className={cn("transition-opacity text-[2.5rem] truncate", !b.interact.active && "select-none opacity-50")}
+            className={cn(
+              "text-[2.2rem] font-medium tracking-wide truncate max-w-52 select-none text-white/90",
+              !b.interact.active && "opacity-70",
+            )}
           >
             {b.key}
           </div>
+
           <div
             className={cn(
-              "pointer-events-auto border-2 border-white/75 p-1 rounded-xl bg-black/0 text-white/80 cursor-pointer",
-              "border-white/25",
+              "pointer-events-auto shrink-0 grid place-items-center size-11 rounded-full border-2 cursor-pointer transition-colors",
+              b.interact.active ? "border-white/70 text-white bg-white/10" : "border-white/25 text-white/60",
             )}
             onClick={b.toggleInteractive.bind(b)}
           >
-            <DotsThreeIcon className="size-10" />
+            <DotsThreeIcon className="size-8" weight="bold" />
+          </div>
+
+          <div
+            className={cn(
+              "pointer-events-auto shrink-0 grid place-items-center size-11 rounded-full border-2 border-white/25 text-white/60 cursor-pointer",
+              "transition-colors hover:border-red-400/70 hover:text-red-300 hover:bg-red-500/10",
+            )}
+            onClick={() => b.fadeAndDelete()}
+          >
+            <XIcon className="size-8" weight="bold" />
           </div>
         </div>
 
-        <div
-          className={cn(
-            "transition-opacity flex flex-1 overflow-hidden text-[#ff99] p-4 text-[3rem] tracking-wider leading-[1.2] text-center select-none",
-            b.interact.active ? "border-white/25" : "opacity-75 border-white/10",
-          )}
-        >
-          <div className="my-auto w-full">
-            {/* main content */}
-            {b.words}
+        {b.interact.active && (
+          <div
+            className={cn(
+              "pointer-events-auto absolute bottom-1.5 right-1.5 grid place-items-center size-9 rounded-lg cursor-nwse-resize",
+              "bg-black/80 border-2 border-white/40 text-white/90",
+            )}
+            onMouseDown={b.onResizeMouseDown}
+            onTouchStart={b.onResizeTouchStart}
+          >
+            <ResizeIcon className="size-6" weight="bold" />
           </div>
-        </div>
-
-        <div
-          className={cn(
-            "absolute bottom-0 right-0 text-white/80 cursor-nwse-resize",
-            b.interact.active ? "opacity-50" : "opacity-0",
-          )}
-          onMouseDown={b.onResizeMouseDown}
-          onTouchStart={b.onResizeTouchStart}
-        >
-          <ArrowDownRightIcon className="size-12" />
-        </div>
+        )}
       </div>
     </Html3d>
   );
