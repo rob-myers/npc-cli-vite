@@ -84,7 +84,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      roomDimColor: uniform<"vec3", THREE.Vector3>(vec3(0.15, 0.55, 0.75)),
+      roomDimColor: uniform<"vec3", THREE.Vector3>(vec3(0.2, 0.2, 0.25)),
       roomDimmer: createRoomDimmerPostprocess({
         dimmingEnabled: tryLocalStorageGetParsed<boolean>(dimmingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -430,8 +430,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneDepth = scenePass.getTextureNode("depth");
         const undimmedAmount = float(1).sub(state.roomDimmer.dimAmount(sceneDepth.r));
         const effect = mix(
-          sceneColor.rgb.mul(state.roomDimColor), // dark
-          colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
+          // fully-lit scaled down by 0.5
+          colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(0.5), sceneColor.a),
+          // darkness
+          sceneColor.rgb.mul(state.roomDimColor),
           undimmedAmount,
         );
 
@@ -511,6 +513,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
 
   useEffect(() => {
+    // 🚧 hmr should not reset lights
     w.gms.length > 0 && state.roomDimmer.syncGms(w.gms, w.gmsData);
   }, [w.hash, w.gmsData]); // gm instances (or their derived per-layout data) changed
 
