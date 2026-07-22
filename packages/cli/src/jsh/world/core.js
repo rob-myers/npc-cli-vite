@@ -613,8 +613,6 @@ export function revoke({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" 
  * say hi npc:rob secs:5
  * say hi npc:rob for:10
  * say hi npc:rob for:Infinity
- * # clear speech
- * say npc:rob
  * ```
  *
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
@@ -625,10 +623,7 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", fo
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
   if (words) {
-    const b = w.bubble.ensure(npc.key, opts.secs);
-    b.setWords(words, opts.secs);
-  } else {
-    w.bubble.get(npc.key)?.fadeAndDelete();
+    w.speech.say(npc.key, words, opts.secs);
   }
 }
 

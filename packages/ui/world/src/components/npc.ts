@@ -207,8 +207,7 @@ export class Npc {
       // guarded in case of re-fade midway
       if (this.anim.fadeState.delta === 0) {
         this.colorScale.value = 1;
-        const willShow = this.w.bubble.setShown(this.key, true);
-        this.labelVisible.value = willShow ? 0 : 1;
+        this.w.bubble.setShown(this.key, true);
       }
       this.material.depthWrite = true;
       this.material.needsUpdate = true;

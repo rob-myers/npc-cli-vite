@@ -48,6 +48,7 @@ import Obstacles from "./Obstacles";
 import useWorldEvents from "./use-world-events";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
+import { WorldSpeech } from "./WorldSpeech";
 import { WorldView } from "./WorldView";
 import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
@@ -129,6 +130,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       obs: null as any,
       rings: null as any,
       shadows: null as any,
+      speech: null as any,
       view: { roomDimEditingEnabled: true } as State["view"],
       wall: null as any,
       worker: { worker: { postMessage() {} } } as any,
@@ -321,7 +323,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     if (state.assets && state.isPlaygroundMap()) return state.setupDraftAssetsSync();
   }, [state.mapKey, state.hash]); // sync drafts when relevant
 
-  useBeforeUnloadOrVisibilityChange(() => state.menu?.persistY());
+  useBeforeUnloadOrVisibilityChange(() => {
+    state.menu?.persistY();
+    state.speech?.persistY();
+  });
 
   return (
     <WorldContext.Provider value={state}>
@@ -353,6 +358,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         <FadeOverlay ref={state.ref("fadeEl")} />
         <WorldWorker />
         <WorldMenu />
+        <WorldSpeech />
       </div>
     </WorldContext.Provider>
   );
@@ -431,6 +437,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
+  speech: UseStateRef<import("./WorldSpeech").State>;
   view: UseStateRef<import("./WorldView").State>;
   wall: UseStateRef<import("./Walls").State>;
   worker: UseStateRef<import("./WorldWorker").State>;

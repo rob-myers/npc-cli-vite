@@ -176,7 +176,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="absolute top-0 left-px z-10 touch-none select-none flex flex-col"
+        className="absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-1"
         style={{ y }}
         drag="y"
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
@@ -198,7 +198,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer outline-none"
+            className="cursor-pointer"
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => {
               if (state.dragged) return;
@@ -539,7 +539,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer outline-none"
+            className="cursor-pointer"
             onPointerDown={(e) => {
               e.preventDefault();
               state.dimLongPress = false;
@@ -633,7 +633,7 @@ export function WorldMenu() {
           </Menu.Portal>
         </Menu.Root>
 
-        <div
+        <button
           className={cn(
             "grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700",
             big ? "size-12" : "size-9",
@@ -645,22 +645,24 @@ export function WorldMenu() {
           ) : (
             <PauseIcon className={cn("size-5", big && "size-6")} weight="bold" />
           )}
-        </div>
+        </button>
 
-        <AnimatePresence>
-          {[...toastKeys, ...toggleToastKeys].map((key) => (
-            <motion.div
-              key={key}
-              className={cn("bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5", big && "text-sm px-3 py-1.5")}
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {key}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        <div>
+          <AnimatePresence>
+            {[...toastKeys, ...toggleToastKeys].map((key) => (
+              <motion.div
+                key={key}
+                className={cn("bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5", big && "text-sm px-3 py-1.5")}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {key}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </motion.div>
 
       <RoomHitModal
