@@ -11,7 +11,6 @@ import {
   EyeSlashIcon,
   GlobeStandIcon,
   type Icon,
-  LightbulbFilamentIcon,
   LightbulbIcon,
   MagnifyingGlassIcon,
   PauseIcon,
@@ -176,7 +175,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-1"
+        className="absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-0.5"
         style={{ y }}
         drag="y"
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
@@ -198,14 +197,14 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer outline-2 not-focus:outline-gray-600 focus:outline-gray-200"
+            className="cursor-pointer"
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => {
               if (state.dragged) return;
               state.set({ menuOpen: !state.menuOpen });
             }}
           >
-            <div className="w-fit grid grid-flow-col items-center bg-gray-800 text-white">
+            <div className="outline-width-1 w-fit grid grid-flow-col items-center bg-gray-800 text-white">
               <div className={cn("grid place-items-center", big ? "size-12" : "size-9")}>
                 <GlobeStandIcon className={cn(big ? "size-6" : "size-5")} weight="bold" />
               </div>
@@ -539,7 +538,7 @@ export function WorldMenu() {
           }}
         >
           <Menu.Trigger
-            className="cursor-pointer outline-2 not-focus:outline-gray-600 focus:outline-gray-200"
+            className="cursor-pointer"
             onPointerDown={(e) => {
               e.preventDefault();
               state.dimLongPress = false;
@@ -558,7 +557,7 @@ export function WorldMenu() {
           >
             <div
               className={cn(
-                "grid place-items-center select-none",
+                "outline-width-1 grid place-items-center select-none",
                 big ? "size-12" : "size-9",
                 w.view.roomDimEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
               )}
@@ -604,17 +603,6 @@ export function WorldMenu() {
                     state.update();
                   }}
                 />
-                <DimMenuToggle
-                  big={big}
-                  label="Full bright"
-                  active={!w.view.postProcessing}
-                  onIcon={LightbulbFilamentIcon}
-                  offIcon={LightbulbFilamentIcon}
-                  onClick={() => {
-                    w.view.setPostProcessingEnabled();
-                    state.update();
-                  }}
-                />
 
                 <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
 
@@ -624,6 +612,7 @@ export function WorldMenu() {
                     big && "gap-3 px-3 py-2 text-sm",
                   )}
                   onClick={() => w.view.resetAllRooms()}
+                  closeOnClick={false}
                 >
                   <TrashIcon className={cn("size-4 shrink-0", big && "size-5")} />
                   <span className="flex-1 text-left">Clear dimming</span>
@@ -635,7 +624,7 @@ export function WorldMenu() {
 
         <button
           className={cn(
-            "grid place-items-center bg-gray-800 text-white cursor-pointer outline-2 not-focus:outline-gray-600 focus:outline-gray-200 hover:bg-gray-700",
+            "outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700",
             big ? "size-12" : "size-9",
           )}
           onClick={() => w.setDisabled()}
