@@ -802,6 +802,9 @@ importers:
       three-stdlib:
         specifier: 'catalog:'
         version: 2.36.1(three@0.184.0)
+      type-fest:
+        specifier: 'catalog:'
+        version: 5.4.2
       zod:
         specifier: 'catalog:'
         version: 4.1.13
