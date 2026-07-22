@@ -176,6 +176,42 @@ export function queryGmIdGrid(grid: Geomorph.GmIdGrid, point: Geom.VectJson): nu
   return grid[`${Math.floor(point.x / gmIdGridDim)},${Math.floor(point.y / gmIdGridDim)}`] ?? null;
 }
 
+/**
+ * Same rasterization as `createGmIdGrid`, but written into a dense RGBA buffer (R = gmId + 1, 0 =
+ * no instance) instead of a sparse object — for uploading as a GPU texture so a post-processing
+ * fragment shader can look up "which gm instance is here" in O(1), no per-instance search.
+ */
+export function createGmIdGridTexture(gms: Geomorph.LayoutInstance[]) {
+  if (gms.length === 0) {
+    return { data: new Uint8Array(4), width: 1, height: 1, originX: 0, originY: 0 };
+  }
+
+  const cellRanges = gms.map(({ gridRect: { x, y, right, bottom } }) => ({
+    x0: Math.floor(x / gmIdGridDim),
+    x1: Math.floor(right / gmIdGridDim),
+    y0: Math.floor(y / gmIdGridDim),
+    y1: Math.floor(bottom / gmIdGridDim),
+  }));
+
+  const originX = Math.min(...cellRanges.map((r) => r.x0));
+  const originY = Math.min(...cellRanges.map((r) => r.y0));
+  const width = Math.max(...cellRanges.map((r) => r.x1)) - originX;
+  const height = Math.max(...cellRanges.map((r) => r.y1)) - originY;
+
+  const data = new Uint8Array(width * height * 4);
+  for (const [gmId, { x0, x1, y0, y1 }] of cellRanges.entries()) {
+    for (let x = x0; x < x1; x++) {
+      for (let y = y0; y < y1; y++) {
+        const idx = ((y - originY) * width + (x - originX)) * 4;
+        data[idx] = gmId + 1;
+        data[idx + 3] = 255;
+      }
+    }
+  }
+
+  return { data, width, height, originX, originY };
+}
+
 //#endregion
 
 const tmpRect = new Rect();

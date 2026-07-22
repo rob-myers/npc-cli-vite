@@ -75,18 +75,12 @@ export const fovStorageKey = `world-fov-value`;
 export const defaultDesktopFov = 60;
 export const defaultMobileFov = 30;
 export const defaultBrightness = 2;
-export const showDebugLightOutlineKey = "world-show-debug-light-outlline";
+export const showDebugDimOutlineKey = "world-show-debug-dim-outline";
 export const postProcessingEnabledKey = "world-post-processing-enabled";
-export const lightEditingEnabledKey = "world-light-editing-enabled";
-export const lightsEnabledKey = "world-lights-enabled";
-/** Radius a long-pressed new light starts at before it grows */
-export const lightSizingStartRadius = 0.5;
-/** Time (ms) for a long-pressed new light to grow from `lightSizingStartRadius` to `lightSizingMaxRadius` */
-export const lightSizingGrowDurationMs = 2500;
-/** Cap for a long-pressed new light's radius while growing */
-export const lightSizingMaxRadius = 6;
-/** How far (meters) a light's room-polygon clip is outset past the room's inner wall face */
-export const lightRoomOutset = 0.1;
+export const roomDimEditingEnabledKey = "world-room-dim-editing-enabled";
+export const dimmingEnabledKey = "world-dimming-enabled";
+/** Per-instance cap on room count, for sizing the `roomDimmed` boolean array */
+export const maxRoomsPerGm = 32;
 
 export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;
@@ -123,8 +117,6 @@ export const npcScale = 0.7;
 
 export const MAX_NPCS = 256;
 export const MAX_DOOR_LABELS = 32;
-/** Static, right-click-managed post-processing lights */
-export const MAX_POSTPROCESS_LIGHTS = 32;
 
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;

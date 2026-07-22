@@ -4,8 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import * as THREE from "three/webgpu";
-import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS, wallHeight } from "../const";
+import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -167,27 +166,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "picked": {
-            const { lastPointer, lightEditingEnabled, lightPostprocess, raycaster, controls } = w.view;
-            if (lightEditingEnabled === true && lastPointer.longPress === true && controls.pointers.length <= 1) {
-              // mirror litAmount()'s per-pixel test: intersect the SAME click ray with the
-              // bottom/top planes (not just the raycast-hit floor point), so removal-detection
-              // matches what's actually visible on screen from an angled camera
-              const bottomHit = raycaster.ray.intersectPlane(bottomLightPlane, tmpBottomXZ);
-              const topHit = raycaster.ray.intersectPlane(topLightPlane, tmpTopXZ);
-              const near =
-                bottomHit && topHit
-                  ? lightPostprocess.findLightNear(
-                      helper.parseGroundPoint(bottomHit),
-                      helper.parseGroundPoint(topHit),
-                      helper.parseGroundPoint(e),
-                    )
-                  : null;
-              if (near !== null) {
-                lightPostprocess.removeLight(near);
-                w.view.forceUpdate();
-              } else {
-                w.view.startLightSizing(helper.parseGroundPoint(e));
-              }
+            const { lastPointer, roomDimEditingEnabled, controls } = w.view;
+            if (roomDimEditingEnabled === true && lastPointer.longPress === true && controls.pointers.length <= 1) {
+              w.view.toggleRoomDimmed(helper.parseGroundPoint(e));
             }
             break;
           }
@@ -717,9 +698,3 @@ export type State = {
 
 const emptySet = new Set();
 const emptyMeta = {};
-
-/** Mirror the light shader's own bottom/top planes, for right-click removal-detection */
-const bottomLightPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0);
-const topLightPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -wallHeight);
-const tmpBottomXZ = new THREE.Vector3();
-const tmpTopXZ = new THREE.Vector3();

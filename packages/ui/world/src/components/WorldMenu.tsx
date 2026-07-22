@@ -47,9 +47,9 @@ export function WorldMenu() {
       gmGraphsOpen: false,
       skinDebugOpen: false,
       menuOpen: false,
-      lightMenuOpen: false,
-      lightLongPress: false,
-      lightLongPressTimer: 0,
+      dimMenuOpen: false,
+      dimLongPress: false,
+      dimLongPressTimer: 0,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
@@ -109,8 +109,6 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
-      case "Focus Outline":
-        return w.view.lightPostprocess?.showBorder.value === 1;
       default:
         return false;
     }
@@ -167,11 +165,6 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
-      case "Focus Outline":
-        w.view.lightPostprocess.setShowBorder(w.view.lightPostprocess.showBorder.value !== 1);
-        w.r3f?.invalidate();
-        state.update();
-        break;
     }
   };
 
@@ -536,12 +529,12 @@ export function WorldMenu() {
         </Menu.Root>
 
         <Menu.Root
-          open={state.lightMenuOpen}
+          open={state.dimMenuOpen}
           onOpenChange={(open, { reason }) => {
             if (open) {
-              state.set({ lightMenuOpen: true });
+              state.set({ dimMenuOpen: true });
             } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
-              state.set({ lightMenuOpen: false });
+              state.set({ dimMenuOpen: false });
             }
           }}
         >
@@ -549,35 +542,35 @@ export function WorldMenu() {
             className="cursor-pointer outline-none"
             onPointerDown={(e) => {
               e.preventDefault();
-              state.lightLongPress = false;
-              clearTimeout(state.lightLongPressTimer);
-              state.lightLongPressTimer = window.setTimeout(() => {
-                state.lightLongPress = true;
-                w.view.toggleLightEditing();
+              state.dimLongPress = false;
+              clearTimeout(state.dimLongPressTimer);
+              state.dimLongPressTimer = window.setTimeout(() => {
+                state.dimLongPress = true;
+                w.view.toggleRoomDimEditing();
               }, 500);
             }}
-            onPointerUp={() => clearTimeout(state.lightLongPressTimer)}
-            onPointerLeave={() => clearTimeout(state.lightLongPressTimer)}
+            onPointerUp={() => clearTimeout(state.dimLongPressTimer)}
+            onPointerLeave={() => clearTimeout(state.dimLongPressTimer)}
             onClick={() => {
-              if (state.dragged || state.lightLongPress) return;
-              state.set({ lightMenuOpen: !state.lightMenuOpen });
+              if (state.dragged || state.dimLongPress) return;
+              state.set({ dimMenuOpen: !state.dimMenuOpen });
             }}
           >
             <div
               className={cn(
                 "grid place-items-center select-none",
                 big ? "size-12" : "size-9",
-                w.view.lightEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
+                w.view.roomDimEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
               )}
               title={
-                w.view.lightEditingEnabled
-                  ? "Light editing on — long-press to disable, click for settings"
-                  : "Light editing off — long-press to enable, click for settings"
+                w.view.roomDimEditingEnabled
+                  ? "Room dim editing on — long-press to disable, click for settings"
+                  : "Room dim editing off — long-press to enable, click for settings"
               }
             >
               <LightbulbIcon
                 className={big ? "size-6" : "size-5"}
-                weight={w.view.lightEditingEnabled ? "fill" : "bold"}
+                weight={w.view.roomDimEditingEnabled ? "fill" : "bold"}
               />
             </div>
           </Menu.Trigger>
@@ -585,30 +578,33 @@ export function WorldMenu() {
           <Menu.Portal>
             <Menu.Positioner className="z-50" side="right" sideOffset={4} align="start">
               <Menu.Popup
-                className={cn("bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 w-40", big && "w-48 py-2")}
+                className={cn(
+                  "bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 w-40",
+                  big && "w-48 py-2",
+                )}
               >
-                <LightMenuToggle
+                <DimMenuToggle
                   big={big}
                   label="Editing"
                   hint="long-press icon"
-                  active={w.view.lightEditingEnabled}
+                  active={w.view.roomDimEditingEnabled}
                   onIcon={PencilSimpleIcon}
                   offIcon={PencilSimpleIcon}
-                  onClick={() => w.view.toggleLightEditing()}
+                  onClick={() => w.view.toggleRoomDimEditing()}
                 />
-                <LightMenuToggle
+                <DimMenuToggle
                   big={big}
-                  label="Show lights"
-                  active={w.view.lightPostprocess?.lightsEnabled.value === 1}
+                  label="Show dimming"
+                  active={w.view.roomDimmer?.dimmingEnabled.value === 1}
                   onIcon={EyeIcon}
                   offIcon={EyeSlashIcon}
                   onClick={() => {
                     w.view.setPostProcessingEnabled(true);
-                    w.view.setLightsEnabled();
+                    w.view.setDimmingEnabled();
                     state.update();
                   }}
                 />
-                <LightMenuToggle
+                <DimMenuToggle
                   big={big}
                   label="Full bright"
                   active={!w.view.postProcessing}
@@ -627,10 +623,10 @@ export function WorldMenu() {
                     "flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer text-red-300 hover:bg-red-900/40",
                     big && "gap-3 px-3 py-2 text-sm",
                   )}
-                  onClick={() => w.view.resetAllLights()}
+                  onClick={() => w.view.resetAllRooms()}
                 >
                   <TrashIcon className={cn("size-4 shrink-0", big && "size-5")} />
-                  <span className="flex-1 text-left">Clear lights</span>
+                  <span className="flex-1 text-left">Clear dimming</span>
                 </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
@@ -715,8 +711,8 @@ function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
 }
 
-/** One labelled on/off row in the light menu — icon swaps and dims when inactive */
-function LightMenuToggle({
+/** One labelled on/off row in the dimmer menu — icon swaps and dims when inactive */
+function DimMenuToggle({
   label,
   hint,
   active,
@@ -765,10 +761,10 @@ export type State = {
   skinDebugOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  lightMenuOpen: boolean;
-  /** Was the current press on the light icon long enough to toggle `lightEditingEnabled` (vs. open the menu)? */
-  lightLongPress: boolean;
-  lightLongPressTimer: number;
+  dimMenuOpen: boolean;
+  /** Was the current press on the dimmer icon long enough to toggle `roomDimEditingEnabled` (vs. open the menu)? */
+  dimLongPress: boolean;
+  dimLongPressTimer: number;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
@@ -801,7 +797,6 @@ const debugItems = [
   "Door Normals",
   "Decor Points",
   "NavMesh",
-  "Focus Outline",
 ] as const;
 
 const getSelectItemClass = (big?: boolean) =>
