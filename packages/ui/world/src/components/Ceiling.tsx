@@ -122,7 +122,8 @@ export default function Ceiling() {
         for (const [gmId, gm] of w.gms.entries()) {
           // biome-ignore format: succinct
           const mat = new Mat({ a: gm.bounds.width, b: 0, c: 0, d: gm.bounds.height, e: gm.bounds.x, f: gm.bounds.y }).postMultiply(gm.matrix);
-          state.inst.setMatrixAt(gmId, embedXZMat4(mat));
+          // fix z-fighting now depthWrite true
+          state.inst.setMatrixAt(gmId, embedXZMat4(mat, { yHeight: gmId * 0.0001 }));
         }
         state.inst.instanceMatrix.needsUpdate = true;
         state.inst.computeBoundingSphere();
