@@ -106,7 +106,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
 
 export const wallHeight = 1.7;
 
-export const MAX_GEOMORPH_INSTANCES = 64;
+export const MAX_GEOMORPH_INSTANCES = 8;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 

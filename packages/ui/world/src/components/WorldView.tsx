@@ -1,6 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { Poly, Vect } from "@npc-cli/util/geom";
+import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
@@ -20,7 +20,6 @@ import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } 
 import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
-  connectorEntranceHalfDepth,
   defaultCameraMode,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
@@ -407,20 +406,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const gm = w.gms[gmRoomId.gmId];
         const room = gm.rooms[gmRoomId.roomId];
         // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
-        // cut off exactly at the room's inner wall face
+        // cut off exactly at the room's inner wall face. 🔔 deliberately NOT unioning in adjacent
+        // doorways here: the shader's own soft edge (`roomEdgeFalloff` in
+        // xz-cylinder-postprocess.ts) fades right at this boundary, so it fades through each
+        // doorway instead of extending past it and then cutting off hard at the far side.
         const outsetRoom = geomService.createOutset(room.clone(), lightRoomOutset);
-        // also union in adjacent doorways, so the light already covers the doorway itself —
-        // avoids a brief "partially dark" moment while an npc is mid-transition through a door
-        // (room-change detection only fires once they've fully crossed to the other side)
-        const doorwayPolys = gm.doors
-          .filter((d) => d.roomIds.includes(gmRoomId.roomId))
-          .map((d) =>
-            d.computeThinPoly(
-              d.meta.hull === true ? 2 * connectorEntranceHalfDepth.hull : 2 * connectorEntranceHalfDepth.nonHull,
-            ),
-          );
-        const merged = Poly.union([...outsetRoom, ...doorwayPolys]);
-        const extended = merged.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
+        const extended = outsetRoom.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
         return extended.outline.map((p) => gm.matrix.transformPoint({ x: p.x, y: p.y }));
       },
       noLightsInRoom(gmRoomId) {
@@ -430,14 +421,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ?.values()
           .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
         return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
-      },
-      isFullyLitRoom(gmRoomId) {
-        const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
-        if (!roomDecor) return false;
-        for (const d of roomDecor) {
-          if (d.type === "point" && d.meta.label === "fresher") return true;
-        }
-        return false;
       },
       startLightSizing(groundCenter) {
         // find the room `center` is in, so the light can be clipped to its world-space outline
@@ -452,31 +435,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const roomOutline = state.computeRoomOutline(gmRoomId);
 
-        if (state.isFullyLitRoom(gmRoomId)) {
-          // light up fully and instantly instead of growing from a small circle
-          const radius = roomOutline.reduce(
-            (max, p) => Math.max(max, Math.hypot(p.x - groundCenter.x, p.y - groundCenter.y)),
-            0,
-          );
-          const index = state.lightPostprocess.addLight(groundCenter, radius, roomOutline);
-          if (index === null) {
-            // all MAX_POSTPROCESS_LIGHTS slots full
-            w.menu?.set({ toastTs: { ...w.menu.toastTs, "lights full": Date.now() } });
-          }
-          state.forceUpdate();
-          return;
+        // light up fully and instantly instead of growing from a small circle
+        const radius = roomOutline.reduce(
+          (max, p) => Math.max(max, Math.hypot(p.x - groundCenter.x, p.y - groundCenter.y)),
+          0,
+        );
+        const index = state.lightPostprocess.addLight(groundCenter, radius, roomOutline);
+        if (index === null) {
+          // all MAX_POSTPROCESS_LIGHTS slots full
+          w.menu?.set({ toastTs: { ...w.menu.toastTs, "lights full": Date.now() } });
         }
-
-        state.lightSizing = {
-          center: groundCenter,
-          startEpochMs: Date.now(),
-          radius: lightSizingStartRadius,
-          roomOutline,
-        };
-        state.lightPostprocess.setPreview(groundCenter, state.lightSizing.radius);
-        state.lightPostprocess.setPreviewRoomOutline(roomOutline);
-        if (state.controls) state.controls.enabled = false; // suppress camera pan/rotate while sizing
         state.forceUpdate();
+        return;
       },
       updateLightSizing() {
         if (!state.lightSizing) return;
@@ -509,9 +479,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.update();
       },
       setNumCardinalDirections(n) {
-        state.numCardinalDirections = n;
         tryLocalStorageSet(numCardinalDirectionsKey, String(n));
-        w.update();
+        state.set({ numCardinalDirections: n });
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
@@ -530,8 +499,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const outsideAmount = float(1).sub(state.lightPostprocess.litAmount(sceneDepth.r));
         let effect = mix(
+          sceneColor.rgb.mul(vec3(0.25, 0.25, 0.25)), // dark
           colorBleeding(sceneColor, uniform(0.0025)).mul(sceneColor.a),
-          sceneColor.rgb.mul(vec3(0.1, 0.4, 0.7)), // tint
           outsideAmount,
         );
         // 🚧 remove?
@@ -731,8 +700,6 @@ export type State = {
   computeRoomOutline(gmRoomId: Geomorph.GmRoomId): Geom.VectJson[];
   /** No labelled decor point, or a labelled point with `meta.corridor === true` — such rooms don't permit lights at all */
   noLightsInRoom(gmRoomId: Geomorph.GmRoomId): boolean;
-  /** A labelled point with `meta.label === "fresher"` — such rooms light up fully and instantly instead of growing */
-  isFullyLitRoom(gmRoomId: Geomorph.GmRoomId): boolean;
   /** Begins a hold-to-grow preview (via the independent `preview` light channel) for a new light being placed at `center`, unless lights aren't permitted (see `noLightsInRoom`) or it's fully-lit (see `isFullyLitRoom`) */
   startLightSizing(groundCenter: Geom.VectJson): void;
   /** Grows `lightSizing.radius` based on elapsed hold time — called every frame from `onCameraChange` */
