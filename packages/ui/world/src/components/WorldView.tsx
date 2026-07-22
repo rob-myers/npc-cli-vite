@@ -84,7 +84,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      roomDimColor: uniform<"vec3", THREE.Vector3>(vec3(0.2, 0.6, 0.8)),
+      roomDimColor: uniform<"vec3", THREE.Vector3>(vec3(0.15, 0.55, 0.75)),
       roomDimmer: createRoomDimmerPostprocess({
         dimmingEnabled: tryLocalStorageGetParsed<boolean>(dimmingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -483,7 +483,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, roomDimmer: false } },
+    { reset: { ctrlOpts: true, initial: false, roomDimColor: true } },
   );
 
   w.view = state;

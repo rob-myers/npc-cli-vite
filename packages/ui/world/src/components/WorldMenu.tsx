@@ -215,12 +215,12 @@ export function WorldMenu() {
           {(extraZoomActive || readyForExtraZoom) && (
             <div
               className={cn(
-                "pointer-events-none flex justify-center rounded p-1 select-none",
-                big && "p-2",
+                "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none",
+                big ? "size-12" : "size-9",
                 extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
               )}
             >
-              <MagnifyingGlassIcon size={big ? 26 : 22} weight="bold" />
+              <MagnifyingGlassIcon className={big ? "size-6" : "size-5"} weight="bold" />
             </div>
           )}
 
