@@ -282,6 +282,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   get readyForExtraZoom() {
     return this._ez.ready;
   }
+
+  minPanDistance = 0;
   //#endregion
 
   constructor(object: PerspectiveCamera, domElement: HTMLElement) {
@@ -952,6 +954,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     v.setFromMatrixColumn(objectMatrix, 0); // get X column of objectMatrix
     v.multiplyScalar(-distance);
 
+    if (Math.abs(distance) < this.minPanDistance) {
+      return;
+    }
+
     this.u.panOffset.add(v);
   }
 
@@ -965,6 +971,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     v.multiplyScalar(distance);
+
+    if (Math.abs(distance) < this.minPanDistance) {
+      return;
+    }
 
     this.u.panOffset.add(v);
   }
