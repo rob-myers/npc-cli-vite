@@ -46,14 +46,14 @@
     "number-one": {
       "key": "number-one",
       "filename": "number-one.svg",
-      "width": 60,
-      "height": 60
+      "width": 10,
+      "height": 10
     },
     "number-zero": {
       "key": "number-zero",
       "filename": "number-zero.svg",
-      "width": 60,
-      "height": 60
+      "width": 10,
+      "height": 10
     },
     "switch": {
       "key": "switch",

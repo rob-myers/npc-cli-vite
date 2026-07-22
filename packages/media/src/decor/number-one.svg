@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
-  <g style="color:white" transform="matrix(0.302083, 0, 0, 0.302083, -8.666656, -8.666656)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+  <g style="color:white" transform="matrix(0.046875, 0, 0, 0.046875, -1, -1)">
     <circle cx="128" cy="128" r="96" opacity="1"/>
     <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="stroke-width: 6.6207px;"/>
     <polyline points="132 176 132 80 108 96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>

@@ -219,15 +219,15 @@
       "key": "number-one",
       "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
-      "originalWidth": 60,
-      "originalHeight": 60
+      "originalWidth": 10,
+      "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
       "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
-      "originalWidth": 60,
-      "originalHeight": 60
+      "originalWidth": 10,
+      "originalHeight": 10
     },
     "switch": {
       "key": "switch",
