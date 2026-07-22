@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { type DecorManifest, DecorManifestEntrySchema, DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
-import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { info, safeJsonCompact, tagsToMeta, textToTags, warn } from "@npc-cli/util/legacy/generic";
 import { Parser } from "htmlparser2";
 import { Canvas, loadImage } from "skia-canvas";
 import type { ViteDevServer } from "vite";
@@ -15,7 +15,8 @@ import { PROJECT_ROOT } from "../const.ts";
 const DECOR_PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public/decor");
 const DECOR_MANIFEST_PATH = path.join(DECOR_PUBLIC_DIR, "manifest.json");
 
-const THUMBNAIL_SIZE = 128;
+// 60sgu ~ 1.5m ~ 256 pixels
+const PIXELS_PER_SGU_TILE = 256;
 
 export function watchDecorSvgs(server: ViteDevServer) {
   fs.mkdirSync(DECOR_PUBLIC_DIR, { recursive: true });
@@ -64,14 +65,13 @@ export async function rebuildDecor() {
     const dims = parseSvgDimensions(content, filename);
     if (!dims) continue;
 
-    byKey[key] = DecorManifestEntrySchema.parse({
+    byKey[key] = DecorManifestEntrySchema.encode({
       key,
       filename,
-      width: dims.width,
-      height: dims.height,
+      ...dims, // width, height, outputWidth, outputHeight
     });
 
-    await generateThumbnail(key, filePath);
+    await generateThumbnail(key, filePath, dims.outputWidth, dims.outputHeight);
   }
 
   const nextManifest: DecorManifest = { byKey };
@@ -88,8 +88,11 @@ export async function rebuildDecor() {
 }
 
 /** width, height overrides viewBox */
-function parseSvgDimensions(svgContent: string, filename: string): { width: number; height: number } | null {
-  const meta = { width: 0, height: 0, depth: 0 };
+function parseSvgDimensions(
+  svgContent: string,
+  filename: string,
+): { width: number; height: number; outputWidth: number; outputHeight: number } | null {
+  const meta = { width: 0, height: 0, depth: 0, tag: "", pxPerTile: PIXELS_PER_SGU_TILE };
   const viewBoxRegex = /^0 0 (\d+) (\d+)$/;
 
   const parser = new Parser({
@@ -111,7 +114,18 @@ function parseSvgDimensions(svgContent: string, filename: string): { width: numb
           }
         }
       }
+
+      meta.tag = name;
       meta.depth++;
+    },
+    ontext(text) {
+      if (meta.depth - 1 === 2 && meta.tag === "title") {
+        // support custom px-per-tile
+        const parsedMeta = tagsToMeta(textToTags(text));
+        if (typeof parsedMeta["px-per-tile"] === "number") {
+          meta.pxPerTile = parsedMeta["px-per-tile"];
+        }
+      }
     },
     onclosetag() {
       meta.depth--;
@@ -125,21 +139,22 @@ function parseSvgDimensions(svgContent: string, filename: string): { width: numb
     warn(`[watch-decor] SVG ${filename} is missing valid width or height. Skipping.`);
     return null;
   }
-  return { width: meta.width, height: meta.height };
+
+  return {
+    width: meta.width,
+    height: meta.height,
+    outputWidth: Math.ceil(meta.width * (meta.pxPerTile / 60)),
+    outputHeight: Math.ceil(meta.height * (meta.pxPerTile / 60)),
+  };
 }
 
-async function generateThumbnail(key: string, svgPath: string) {
+async function generateThumbnail(key: string, svgPath: string, widthPixels: number, heightPixels: number) {
   const pngPath = path.join(DECOR_PUBLIC_DIR, `${key}.thumbnail.png`);
   try {
     const image = await loadImage(svgPath);
-    const canvas = new Canvas(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+    const canvas = new Canvas(widthPixels, heightPixels);
     const ct = canvas.getContext("2d");
-
-    const scale = Math.min(THUMBNAIL_SIZE / image.width, THUMBNAIL_SIZE / image.height);
-    const w = image.width * scale;
-    const h = image.height * scale;
-    ct.drawImage(image, (THUMBNAIL_SIZE - w) / 2, (THUMBNAIL_SIZE - h) / 2, w, h);
-
+    ct.drawImage(image, 0, 0, canvas.width, canvas.height);
     await canvas.toFile(pngPath);
   } catch (e) {
     warn(`[watch-decor] failed to generate thumbnail for ${key}:`, e);

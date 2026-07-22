@@ -187,30 +187,30 @@
       ]
     },
     {
-      "id": "e193c35d-86c2-4155-9f95-524de661285a",
-      "name": "decor quad tint=#ddf y=0.7 h=0.05",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 0.1667, "b": 0, "c": 0, "d": 0.1667, "e": 88, "f": 10},
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "number-one",
-      "baseRect": {"width": 60, "height": 60},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.1667, 0, 0, 0.1667, 88, 10)"
-    },
-    {
-      "id": "417a1d8b-ec23-4d3a-8dc9-1d83f9a996ae",
+      "id": "21987218-1e5b-4b10-9e8f-b07a2141adbb",
       "name": "decor point shown",
       "locked": false,
       "visible": true,
-      "transform": {"a": 0.2, "b": 0, "c": 0, "d": 0.2, "e": 88, "f": 38},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 38},
       "type": "image",
       "srcType": "decor",
       "srcKey": "number-zero",
-      "baseRect": {"width": 60, "height": 60},
+      "baseRect": {"width": 10, "height": 10},
       "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.19999999999999998, 0, 0, 0.19999999999999998, 88, 38)"
+      "cssTransform": "matrix(1, 0, 0, 1, 90, 38)"
+    },
+    {
+      "id": "f85b5fed-f93a-4ffb-9709-138c5c5e3f8b",
+      "name": "decor quad tint=#ddf y=0.7 h=0.05",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 12},
+      "type": "image",
+      "srcType": "decor",
+      "srcKey": "number-one",
+      "baseRect": {"width": 10, "height": 10},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 90, 12)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},

@@ -1548,6 +1548,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     const onRecomputedPathManifest = () => {
       queryClientApi.queryClient.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
     };
+    const onDecorSheetsRebuilt = () => {
+      queryClientApi.queryClient.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+    };
     const onAssetsChanged = () => {
       // onchange assets updating localVersion updates thumbnails
       uiStoreApi.setUiMeta(props.meta.id, (state) => {
@@ -1557,10 +1560,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     };
 
     import.meta.hot.on(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
+    import.meta.hot.on(devMessageFromServer.decorSheetsRebuilt, onDecorSheetsRebuilt);
     import.meta.hot.on(assetsJsonChangedEvent, onAssetsChanged);
 
     return () => {
       import.meta.hot?.off(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
+      import.meta.hot?.off(devMessageFromServer.decorSheetsRebuilt, onDecorSheetsRebuilt);
       import.meta.hot?.off(assetsJsonChangedEvent, onAssetsChanged);
     };
   }, []); // refresh manifests on dev server signal

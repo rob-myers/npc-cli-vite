@@ -4,62 +4,97 @@
       "key": "arrow-boxed",
       "filename": "arrow-boxed.svg",
       "width": 6,
-      "height": 6
+      "height": 6,
+      "outputWidth": 26,
+      "outputHeight": 26
     },
-    "arrow": {"key": "arrow", "filename": "arrow.svg", "width": 6, "height": 6},
+    "arrow": {
+      "key": "arrow",
+      "filename": "arrow.svg",
+      "width": 6,
+      "height": 6,
+      "outputWidth": 26,
+      "outputHeight": 26
+    },
     "axes-2d": {
       "key": "axes-2d",
       "filename": "axes-2d.svg",
       "width": 6,
-      "height": 6
+      "height": 6,
+      "outputWidth": 26,
+      "outputHeight": 26
     },
     "circle-1": {
       "key": "circle-1",
       "filename": "circle-1.svg",
       "width": 60,
-      "height": 60
+      "height": 60,
+      "outputWidth": 128,
+      "outputHeight": 128
     },
     "dharma-wheel": {
       "key": "dharma-wheel",
       "filename": "dharma-wheel.svg",
-      "width": 200,
-      "height": 200
+      "width": 10,
+      "height": 10,
+      "outputWidth": 86,
+      "outputHeight": 86
     },
     "endless-knot": {
       "key": "endless-knot",
       "filename": "endless-knot.svg",
-      "width": 200,
-      "height": 200
+      "width": 10,
+      "height": 10,
+      "outputWidth": 86,
+      "outputHeight": 86
     },
     "icon--warn": {
       "key": "icon--warn",
       "filename": "icon--warn.svg",
       "width": 6,
-      "height": 6
+      "height": 6,
+      "outputWidth": 26,
+      "outputHeight": 26
     },
     "label": {
       "key": "label",
       "filename": "label.svg",
       "width": 40,
-      "height": 15
+      "height": 15,
+      "outputWidth": 171,
+      "outputHeight": 64
     },
     "number-one": {
       "key": "number-one",
       "filename": "number-one.svg",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "outputWidth": 43,
+      "outputHeight": 43
     },
     "number-zero": {
       "key": "number-zero",
       "filename": "number-zero.svg",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "outputWidth": 43,
+      "outputHeight": 43
+    },
+    "screen-0": {
+      "key": "screen-0",
+      "filename": "screen-0.svg",
+      "width": 44,
+      "height": 32,
+      "outputWidth": 188,
+      "outputHeight": 137
     },
     "switch": {
       "key": "switch",
       "filename": "switch.svg",
       "width": 6,
-      "height": 6
+      "height": 6,
+      "outputWidth": 26,
+      "outputHeight": 26
     }
   }
 }

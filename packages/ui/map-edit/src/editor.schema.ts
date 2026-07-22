@@ -152,6 +152,8 @@ export const DecorManifestEntrySchema = z.object({
   filename: z.string(),
   width: z.number(),
   height: z.number(),
+  outputWidth: z.number(),
+  outputHeight: z.number(),
 });
 
 export const DecorManifestSchema = z.object({

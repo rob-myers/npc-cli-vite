@@ -31,8 +31,6 @@ import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
 import { rebuildDecor } from "../service/watch-decor-svgs.ts";
 
-const decorSheetCellSize = 256;
-
 // 1. rebuild thumbnails and manifest
 await rebuildDecor();
 
@@ -48,14 +46,15 @@ if (entries.length === 0) {
 }
 
 // 3. pack thumbnails (all 128×128)
+// 🚧 SVGs should have SGU dimension where 60sgu ~ 1.5m ~ 256 pixels
 const {
   bins,
   width: maxWidth,
   height: maxHeight,
 } = packRectangles<{ key: string; originalWidth: number; originalHeight: number }>(
-  entries.map(({ key, width: originalWidth, height: originalHeight }) => ({
-    width: decorSheetCellSize,
-    height: decorSheetCellSize,
+  entries.map(({ key, width: originalWidth, height: originalHeight, outputWidth, outputHeight }) => ({
+    width: outputWidth,
+    height: outputHeight,
     data: { key, originalWidth, originalHeight },
   })),
   {
@@ -69,9 +68,8 @@ const {
 // 4. update sheets.json
 const sheetsJsonPath = path.resolve(PROJECT_ROOT, "packages/app/public", "sheets.json");
 const prevSheetsRaw = await fs.promises.readFile(sheetsJsonPath, "utf-8").catch(warn);
-const prevSheets = jsonParser
-  .pipe(SheetsSchema.extend({ decor: z.unknown().optional() }))
-  .safeParse(prevSheetsRaw).data ?? emptySheets;
+const prevSheets =
+  jsonParser.pipe(SheetsSchema.extend({ decor: z.unknown().optional() })).safeParse(prevSheetsRaw).data ?? emptySheets;
 
 const sheet = SheetsSchema.encode({
   ...prevSheets,
