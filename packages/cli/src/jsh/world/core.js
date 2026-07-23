@@ -20,6 +20,13 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
 }
 
 /**
+ * @param {JshCli.RunArg} ct
+ */
+export function blur({ w }) {
+  w.npc.trackNpc();
+}
+
+/**
  * Examples:
  * ```sh
  * events
@@ -50,6 +57,19 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
   // get here via ctrl-c or `kill`
   handlers.dispose();
   throw api.getKillError();
+}
+
+/**
+ * Light a single npc.
+ * ```sh
+ * focus npc:rob
+ * ```
+ * @param {JshCli.RunArg} ct
+ * @param {{ npcKey: string }} [opts]
+ */
+export function focus({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+  const npc = w.npc.get(opts.npcKey);
+  w.npc.trackNpc(npc.key);
 }
 
 /**
