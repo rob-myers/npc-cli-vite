@@ -26,13 +26,17 @@ import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
 import {
   brightnessStorageKey,
+  defaultAmbientIntensity,
   defaultDesktopFov,
   defaultRoomLightIntensity,
+  defaultTargetLightRadius,
+  defaultTrackedLightIntensity,
   fovStorageKey,
   pickOpenDoorsKey,
 } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
+import { type AmbientMood, ambientMoods } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export function WorldMenu() {
@@ -41,6 +45,7 @@ export function WorldMenu() {
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
   const themeKeys = Object.keys(w.assets?.theme ?? {});
+  const npcKeys = Object.keys(w.n ?? {});
   /** Bigger touch targets on mobile */
   const big = w.touchDevice;
 
@@ -535,29 +540,15 @@ export function WorldMenu() {
 
         <Menu.Root
           open={state.lightsMenuOpen}
-          onOpenChange={(open, { reason }) => {
-            if (open) {
-              state.set({ lightsMenuOpen: true });
-            } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
+          onOpenChange={(_open, { reason }) => {
+            if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
               state.set({ lightsMenuOpen: false });
             }
           }}
         >
           <Menu.Trigger
             className="cursor-pointer"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              state.lightsLongPress = false;
-              clearTimeout(state.lightsLongPressTimer);
-              state.lightsLongPressTimer = window.setTimeout(() => {
-                state.lightsLongPress = true;
-                w.view.toggleRoomLightEditing();
-              }, 500);
-            }}
-            onPointerUp={() => clearTimeout(state.lightsLongPressTimer)}
-            onPointerLeave={() => clearTimeout(state.lightsLongPressTimer)}
             onClick={() => {
-              if (state.dragged || state.lightsLongPress) return;
               state.set({ lightsMenuOpen: !state.lightsMenuOpen });
             }}
           >
@@ -588,10 +579,10 @@ export function WorldMenu() {
                   big && "w-48 py-2",
                 )}
               >
+                <LightsMenuSectionLabel big={big}>Rooms</LightsMenuSectionLabel>
                 <LightsMenuToggle
                   big={big}
-                  label="Editing"
-                  hint="long-press icon"
+                  label="Edit (long press)"
                   active={w.view.roomLightEditingEnabled}
                   onIcon={PencilSimpleIcon}
                   offIcon={PencilSimpleIcon}
@@ -599,7 +590,7 @@ export function WorldMenu() {
                 />
                 <LightsMenuToggle
                   big={big}
-                  label="Show lighting"
+                  label="Lights shown"
                   active={w.view.roomLight?.roomLightingEnabled.value === 1}
                   onIcon={EyeIcon}
                   offIcon={EyeSlashIcon}
@@ -609,27 +600,12 @@ export function WorldMenu() {
                     state.update();
                   }}
                 />
-
-                <div className={cn("flex items-center gap-2 px-2 py-1.5", big && "gap-3 px-3 py-2")}>
-                  <span className={cn("flex-1 text-xs text-slate-200", big && "text-sm")}>Intensity</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                    onChange={(e) => w.view.setRoomLightIntensity(Number(e.target.value))}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn(
-                      "w-16 accent-white cursor-pointer",
-                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                      big && "w-24",
-                    )}
-                  />
-                </div>
-
-                <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
-
+                <LightsMenuSlider
+                  big={big}
+                  label="Intensity"
+                  value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                  onChange={(next) => w.view.setRoomLightIntensity(next)}
+                />
                 <Menu.Item
                   className={cn(
                     "flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer text-red-300 hover:bg-red-900/40",
@@ -641,6 +617,72 @@ export function WorldMenu() {
                   <TrashIcon className={cn("size-4 shrink-0", big && "size-5")} />
                   <span className="flex-1 text-left">Clear lighting</span>
                 </Menu.Item>
+
+                <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
+
+                <LightsMenuSectionLabel big={big}>Tracked NPC</LightsMenuSectionLabel>
+                <div
+                  className={cn("flex flex-wrap items-center gap-2 px-2 py-1", big && "gap-3 px-3 py-2")}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex-1">
+                    <MenuSelect
+                      big={big}
+                      side="bottom"
+                      className="border rounded"
+                      label={w.view.light?.trackedNpcKey ?? "none"}
+                      value={w.view.light?.trackedNpcKey ?? ""}
+                      items={[{ key: "(none)", value: "" }, ...npcKeys.map((k) => ({ key: k, value: k }))]}
+                      onValueChange={(v) => w.npc.trackNpc(v || undefined)}
+                    />
+                  </div>
+                </div>
+                <div className="flex">
+                  <LightsMenuSlider
+                    big={big}
+                    label="radius"
+                    min={0.2}
+                    max={3}
+                    step={0.1}
+                    value={w.view.light?.radius ?? defaultTargetLightRadius}
+                    onChange={(next) => w.view.setTrackedLightRadius(next)}
+                  />
+                  <LightsMenuSlider
+                    big={big}
+                    label="intensity"
+                    value={w.view.trackedLightIntensity?.value ?? defaultTrackedLightIntensity}
+                    onChange={(next) => w.view.setTrackedLightIntensity(next)}
+                  />
+                </div>
+
+                <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
+
+                <LightsMenuSectionLabel big={big}>Ambient</LightsMenuSectionLabel>
+                <LightsMenuSlider
+                  big={big}
+                  label="Intensity"
+                  value={w.view.ambientIntensity ?? defaultAmbientIntensity}
+                  onChange={(next) => w.view.setAmbientIntensity(next)}
+                />
+                <div className={cn("flex items-center gap-1.5 px-2 py-1.5", big && "gap-2 px-3 py-2")}>
+                  {ambientMoods.map((mood) => (
+                    <button
+                      key={mood}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        w.view.setAmbientMood(mood);
+                      }}
+                      className={cn(
+                        "flex-1 rounded px-1.5 py-1 text-[10px] capitalize border cursor-pointer",
+                        big && "text-xs py-1.5",
+                        w.view.ambientMood === mood ? ambientMoodActiveClass[mood] : ambientMoodInactiveClass,
+                      )}
+                    >
+                      {mood}
+                    </button>
+                  ))}
+                </div>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
@@ -769,6 +811,62 @@ function LightsMenuToggle({
     </Menu.Item>
   );
 }
+
+/** Small uppercase heading separating sections within the lights menu */
+function LightsMenuSectionLabel({ big, children }: React.PropsWithChildren<{ big?: boolean }>) {
+  return (
+    <div className={cn("px-2 pt-1 text-[10px] uppercase tracking-wide text-slate-400", big && "px-3 text-xs")}>
+      {children}
+    </div>
+  );
+}
+
+/** One labelled slider row in the lights menu */
+function LightsMenuSlider({
+  big,
+  label,
+  min = 0,
+  max = 1,
+  step = 0.05,
+  value,
+  onChange,
+}: {
+  big?: boolean;
+  label: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div className={cn("flex flex-col gap-2 px-2 py-1.5", big && "gap-3 px-3 py-2")}>
+      <span className={cn("flex-1 text-xs text-slate-200", big && "text-sm")}>{label}</span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          "w-16 accent-white cursor-pointer",
+          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+          big && "w-24",
+        )}
+      />
+    </div>
+  );
+}
+
+const ambientMoodActiveClass: Record<AmbientMood, string> = {
+  anger: "bg-red-600/80 border-red-400 text-white",
+  greed: "bg-green-600/80 border-green-400 text-white",
+  calm: "bg-blue-600/80 border-blue-400 text-white",
+};
+
+const ambientMoodInactiveClass = "bg-slate-700/50 border-slate-600 text-slate-400 hover:bg-slate-700";
 
 export type State = {
   debugHitOpen: boolean;

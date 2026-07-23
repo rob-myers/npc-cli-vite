@@ -86,8 +86,16 @@ export const defaultRoomLightIntensity = 0.7;
 
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
 export const defaultTargetLightRadius = 1;
+export const trackedLightRadiusKey = "world-tracked-light-radius";
+/** Brightness multiplier (0..1) applied to the tracked light before combining with room lighting */
+export const defaultTrackedLightIntensity = 1;
+export const trackedLightIntensityKey = "world-tracked-light-intensity";
 /** How far (meters) the tracked light's room-polygon clip is outset past the room's inner wall face */
 export const trackedLightRoomOutset = 0.1;
+/** Default magnitude of the world's ambient (unlit-area) tint — see `dimWorldColor` */
+export const defaultAmbientIntensity = 0.4;
+export const ambientIntensityKey = "world-ambient-intensity";
+export const ambientMoodKey = "world-ambient-mood";
 /**
  * When the tracked light switches rooms, a door from the room just left is still merged in (as a
  * reach-slot, plus a bit of directly-lit room around it) if within this distance (meters) of the

@@ -42,7 +42,6 @@ import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import {
   defaultIdleAnimationClipKey,
-  defaultTargetLightRadius,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
   idleSeparatingMaxAcceleration,
@@ -265,14 +264,14 @@ export default function NPCs() {
         }
         const npc = state.get(npcKey);
         w.view.light.trackedNpcKey = npcKey;
-        w.view.light.radius = defaultTargetLightRadius;
         w.view.light.doorCrossGdKey = null;
         w.view.light.doorCrossSign = null;
         // 🔔 keep a live reference (not a snapshot copy), so `npc.position` continues to be read
         // fresh each tick (via World.tsx's onTick -> w.view.updateLight) and the light tracks the
         // npc automatically as it moves
         w.view.light.targetOverride = npc.position;
-        w.view.trackedLight.setTracked({ x: npc.position.x, z: npc.position.z }, defaultTargetLightRadius);
+        // preserve the current (persisted/slider-set) radius, rather than resetting to default
+        w.view.trackedLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
         w.view.updateLight(npc.position);
         const gmRoomId = w.e.findRoomContaining(npc.position, true);
         w.view.light.currentGmRoomId = gmRoomId;
