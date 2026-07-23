@@ -426,11 +426,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           .filter((d) => d.meta.hull === true && d.roomIds.includes(gmRoomId.roomId))
           .map((d) => d.computeThinPoly(0.2));
 
-        const { outline } = hullDoorExtensions.length
-          ? Poly.union([outsetRoom, ...hullDoorExtensions])[0]
-          : outsetRoom.cleanClone(gm.matrix);
+        const merged = hullDoorExtensions.length
+          ? Poly.union([outsetRoom, ...hullDoorExtensions]).reduce((a, b) =>
+              a.outline.length >= b.outline.length ? a : b,
+            )
+          : outsetRoom;
 
-        return outline.map((p) => ({ x: p.x, z: p.y }));
+        return merged.cleanClone(gm.matrix).outline.map((p) => ({ x: p.x, z: p.y }));
       },
       computeRoomDoors(gmRoomId) {
         const gm = w.gms[gmRoomId.gmId];
