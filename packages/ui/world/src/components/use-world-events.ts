@@ -308,6 +308,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (prevGrId !== undefined) {
                 state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
+              if (w.view.light.trackedNpcKey === npc.key) {
+                state.switchTrackedNpcRoom(e.gmRoomId);
+              }
             }
 
             state.npcToRoom.set(npc.key, { ...e.gmRoomId });
