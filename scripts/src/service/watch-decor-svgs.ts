@@ -15,7 +15,8 @@ import { PROJECT_ROOT } from "../const.ts";
 const DECOR_PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public/decor");
 const DECOR_MANIFEST_PATH = path.join(DECOR_PUBLIC_DIR, "manifest.json");
 
-// 60sgu ~ 1.5m ~ 256 pixels
+// Default resolution is 60sgu ~ 1.5m ~ 256 pixels
+// Can change via top-level attribute e.g. `px-per-tile=512` in SVG
 const PIXELS_PER_SGU_TILE = 256;
 
 export function watchDecorSvgs(server: ViteDevServer) {

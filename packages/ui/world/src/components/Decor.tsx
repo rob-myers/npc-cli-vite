@@ -711,7 +711,6 @@ export default function Decor() {
       await pause(100);
 
       // 5. transform instances
-      // state.static.gdKeyToInstanceIds = {};
       state.static.gdKeyToDecorKeys = {};
       state.inst.instanceMatrix.array.fill(0);
       let instanceId = 0;
@@ -764,7 +763,8 @@ export default function Decor() {
           if (decor.type === "quad") {
             tmpMat.setMatrixValue(decor.transform);
 
-            const shouldTilt = decor.meta.tilt === true; // currently only switches
+            // e.g. key=switch and screen
+            const shouldTilt = decor.meta.tilt === true;
             if (shouldTilt) {
               const { a, b, c, d } = tmpMat;
               const det = a * d - b * c;
