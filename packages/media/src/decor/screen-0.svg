@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32.58095" width="44px" height="32px">
-  <g transform="matrix(0.092593, 0, 0, 0.092593, 22, 16.984923)" style="filter: none;">
-    <rect x="-216" y="-167.5" width="432" height="320" rx="32" class="outer-monitor" style="fill: rgb(6, 13, 26); stroke: rgb(0, 240, 255); stroke-linejoin: round; stroke-width: 20;"/>
-    <circle cy="-7.5001" r="100" class="inner-radar" style="fill: none; stroke: rgb(0, 240, 255); stroke-dasharray: 40px, 20px; stroke-width: 14;"/>
-    <circle cy="-7.5001" r="130" stroke="#00f0ff" stroke-width="4" fill="none" stroke-opacity="0.3" style="stroke-width: 4;"/>
+  <g transform="matrix(0.092593, 0, 0, 0.092593, 22, 16.984923)" style="filter: none; pointer-events: none;">
+    <rect x="-216" y="-167.5" width="432" height="320" rx="32" class="outer-monitor" style="fill: rgb(6, 13, 26); stroke-linejoin: round; stroke-width: 20; stroke: rgb(255, 255, 255);"/>
+    <circle cy="-7.5001" r="100" class="inner-radar" style="fill: none; stroke-dasharray: 40px, 20px; stroke-width: 14; stroke: rgb(255, 255, 255);"/>
+    <circle cy="-7.5001" r="130" stroke-width="4" fill="none" stroke-opacity="0.3" style="stroke-width: 4; stroke: rgb(255, 255, 255);"/>
   </g>
 </svg>

@@ -23,7 +23,7 @@ import { DecorManifestSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { type DecorSheetEntry, emptySheets, SheetsSchema } from "@npc-cli/ui__world/assets.schema";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { Canvas, loadImage } from "skia-canvas";
 import z from "zod";
 import { packRectangles } from "../../../scripts/src/service/rects-packer.ts";
@@ -32,6 +32,7 @@ import { loggedSpawn } from "../service/logged-spawn.ts";
 import { rebuildDecor } from "../service/watch-decor-svgs.ts";
 
 // 1. rebuild thumbnails and manifest
+info("[gen-decor-sheets] running...");
 await rebuildDecor();
 
 // 2. read manifest
@@ -41,7 +42,7 @@ const manifest = jsonParser.pipe(DecorManifestSchema).parse(manifestRaw);
 const entries = Object.values(manifest.byKey);
 
 if (entries.length === 0) {
-  console.log("gen-decor-sheets: no decor entries found");
+  warn("[gen-decor-sheets]: no decor entries found");
   process.exit(0);
 }
 
@@ -93,6 +94,8 @@ const sheet = SheetsSchema.encode({
 writeFileSync(sheetsJsonPath, safeJsonCompact(sheet));
 
 // 5. generate sheet PNGs
+// 🔔 skiaCanvas doesn't support filters (e.g. grayscale) applied to <path>,
+// although it does support applying them to <image>
 const sheetDir = path.resolve(PROJECT_ROOT, "packages/app/public/sheet");
 mkdirSync(sheetDir, { recursive: true });
 
