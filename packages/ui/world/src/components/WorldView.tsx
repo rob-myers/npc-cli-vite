@@ -28,6 +28,7 @@ import {
   defaultTargetLightRadius,
   dimmingEnabledKey,
   fovStorageKey,
+  nearbyDoorMergeExtensionDepth,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
   roomDimEditingEnabledKey,
@@ -111,6 +112,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         doorCrossGdKey: null as Geomorph.GmDoorKey | null,
         /** Last known side of `doorCrossGdKey` (index into its `connector.roomIds`), else `null` */
         doorCrossSign: null as 0 | 1 | null,
+        /** Room last passed to `switchTrackedNpcRoom`/set by `w.npc.trackNpc` — lets a room switch
+         * look back at the room just left (see `nearbyDoorMergeDist`), else `null` */
+        currentGmRoomId: null as Geomorph.GmRoomId | null,
       },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
 
@@ -468,6 +472,25 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ];
           });
       },
+      extendRoomOutlineNearDoors(outline, gdKeys, safetyPoint) {
+        if (gdKeys.length === 0) {
+          return outline;
+        }
+        const roomPoly = new Poly(outline.map((p) => new Vect(p.x, p.z)));
+        const doorPolysWorld = gdKeys.map((gdKey) => {
+          const door = w.d[gdKey];
+          const gm = w.gms[door.gmId];
+          return door.connector.computeThinPoly(nearbyDoorMergeExtensionDepth).cleanClone(gm.matrix);
+        });
+        const merged = Poly.union([roomPoly, ...doorPolysWorld]);
+        const extended = merged.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
+        // defensive: unioning several thin door-polys at once (e.g. 3+ doors clustered at a
+        // junction) can occasionally split into disjoint pieces where "largest by vertex count"
+        if (!extended.contains(safetyPoint)) {
+          return outline;
+        }
+        return extended.cleanClone().outline.map((p) => ({ x: p.x, z: p.y }));
+      },
       toggleRoomDimEditing() {
         state.roomDimEditingEnabled = !state.roomDimEditingEnabled;
         tryLocalStorageSet(roomDimEditingEnabledKey, String(state.roomDimEditingEnabled));
@@ -531,8 +554,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const isBright = state.roomDimmer.dimAmount(sceneDepth.r).max(state.trackedLight.litAmount(sceneDepth.r));
         const undimmedAmount = float(1).sub(isBright);
         const effect = mix(
-          // fully-lit scaled down by 0.5
-          colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(0.5), sceneColor.a),
+          // fully-lit scaled down
+          colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(0.6), sceneColor.a),
           // darkness
           sceneColor.rgb.mul(state.roomDimColor),
           undimmedAmount,
@@ -743,6 +766,18 @@ export type State = {
     adjRoomOutline: { x: number; z: number }[];
     instanceId: number;
   }[];
+  /**
+   * Extends a world-space room `outline` by unioning in a thin polygon straddling each of `gdKeys`
+   * (see `nearbyDoorMergeExtensionDepth`) — used so a door very close to the one just crossed (e.g.
+   * meeting it at a right angle) keeps a bit of its own room directly lit, not just reachable via
+   * that door's own reach-slot (see `switchTrackedNpcRoom`/`nearbyDoorMergeDist`). Falls back to
+   * the un-merged `outline` if the result doesn't contain `safetyPoint` (see impl. for why).
+   */
+  extendRoomOutlineNearDoors(
+    outline: { x: number; z: number }[],
+    gdKeys: Geomorph.GmDoorKey[],
+    safetyPoint: Geom.VectJson,
+  ): { x: number; z: number }[];
   toggleRoomDimEditing(): void;
   /** Toggles `roomDimmer.dimmingEnabled` — persisted to localStorage */
   setDimmingEnabled(next?: boolean): void;
@@ -788,6 +823,9 @@ export type LightState = {
   doorCrossGdKey: null | Geomorph.GmDoorKey;
   /** Last known side of `doorCrossGdKey` (index into its `connector.roomIds`), else `null` */
   doorCrossSign: 0 | 1 | null;
+  /** Room last passed to `switchTrackedNpcRoom`/set by `w.npc.trackNpc` — lets a room switch look
+   * back at the room just left (see `nearbyDoorMergeDist`), else `null` */
+  currentGmRoomId: null | Geomorph.GmRoomId;
 };
 
 function PostProcessing() {

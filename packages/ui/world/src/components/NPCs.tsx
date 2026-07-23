@@ -258,6 +258,7 @@ export default function NPCs() {
           w.view.light.doorInstanceIds = [];
           w.view.light.doorCrossGdKey = null;
           w.view.light.doorCrossSign = null;
+          w.view.light.currentGmRoomId = null;
           w.view.trackedLight.setTracked(null);
           w.view.forceUpdate();
           return;
@@ -274,6 +275,7 @@ export default function NPCs() {
         w.view.trackedLight.setTracked({ x: npc.position.x, z: npc.position.z }, defaultTargetLightRadius);
         w.view.updateLight(npc.position);
         const gmRoomId = w.e.findRoomContaining(npc.position, true);
+        w.view.light.currentGmRoomId = gmRoomId;
         w.view.trackedLight.setTrackedRoomOutline(gmRoomId ? w.view.computeRoomOutline(gmRoomId) : []);
         const doors = gmRoomId ? w.view.computeRoomDoors(gmRoomId) : [];
         w.view.trackedLight.setTrackedRoomDoors(doors);
