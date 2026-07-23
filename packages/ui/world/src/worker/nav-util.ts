@@ -169,8 +169,11 @@ export type DoorwayGrid = { [key in `${number},${number}`]: EnrichedDoorway[] };
 
 /** Area IDs below this are reserved (0 = unwalkable, 1 = default walkable flag, etc.) */
 export const DOORS_AREA_START = 10;
-/** Large but in sync with `<Doors>` instancedId encoding */
-const MAX_DOORS_PER_GEOMORPH = 256;
+/**
+ * Encode (gmId, doorId) as `gmId * MAX_DOORS_PER_GEOMORPH + doorId`,
+ * unlike `Doors.tsx` which avoids gaps by maintaining lookup/inverse.
+ */
+const MAX_DOORS_PER_GEOMORPH = 64;
 
 /** `<Doors>` instancedId encoding + `DOORS_AREA_START` */
 export function encodeDoorAreaId(gmId: number, doorId: number): number {
