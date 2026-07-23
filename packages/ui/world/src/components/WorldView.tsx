@@ -82,9 +82,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: 0.3,
       },
       initial: {
-        azimuthal: 0,
-        polar: Math.PI / 8,
-        position: { x: 4, y: 10, z: 4 },
+        azimuthal: w.touchDevice ? 0 : Math.PI / 4,
+        polar: Math.PI / 4,
+        position: { x: 4, y: w.touchDevice ? 10 : 16, z: 4 },
       },
       lastPointer: {
         epochMs: 0,
