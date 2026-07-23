@@ -187,7 +187,7 @@ export function drawRoomOutlines(
   const insetAmount = 0.75;
   const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
   const gridPieceSize = geomorphGridMeters * 2;
-  const gridPieceGap = 0.15;
+  const gridPieceGap = 0.05;
   const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
   const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
 
