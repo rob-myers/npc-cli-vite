@@ -91,7 +91,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      dimWorldColor: uniform<"vec3", THREE.Vector3>(vec3(0.2, 0.2, 0.25)),
+      dimWorldColor: uniform<"vec3", THREE.Vector3>(vec3(0.4, 0.4, 0.45)),
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -567,7 +567,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const unlitAmount = float(1).sub(isBright);
         const effect = mix(
           // fully-lit scaled down
-          colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(0.6), sceneColor.a),
+          colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a),
           // darkness
           sceneColor.rgb.mul(state.dimWorldColor),
           unlitAmount,
