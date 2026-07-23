@@ -88,10 +88,10 @@
       "name": "door slide=[0,-1]",
       "locked": true,
       "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 115, "f": 67.5},
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116.5, "f": 67.5},
       "type": "rect",
-      "baseRect": {"width": 10, "height": 45},
-      "cssTransform": "matrix(1, 0, 0, 1, 115, 67.5)"
+      "baseRect": {"width": 7, "height": 45},
+      "cssTransform": "matrix(1, 0, 0, 1, 116.5, 67.5)"
     },
     {
       "id": "10840f12-638d-44b9-bc09-2d95d6ebb577",
@@ -119,7 +119,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": 178},
           "type": "rect",
-          "baseRect": {"width": 125, "height": 5},
+          "baseRect": {"width": 124.5, "height": 5},
           "cssTransform": "matrix(1, 0, 0, 1, -2.5, 178)"
         },
         {
@@ -129,7 +129,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2.5, "f": -2.5},
           "type": "rect",
-          "baseRect": {"width": 125, "height": 5},
+          "baseRect": {"width": 124.5, "height": 5},
           "cssTransform": "matrix(1, 0, 0, 1, -2.5, -2.5)"
         },
         {
@@ -137,10 +137,10 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 117.5, "f": -2.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": -2.5},
           "type": "rect",
-          "baseRect": {"width": 5, "height": 182.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 117.5, -2.5)"
+          "baseRect": {"width": 4, "height": 182.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, -2.5)"
         }
       ]
     }

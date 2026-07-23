@@ -147,6 +147,37 @@ export function createTrackedLightPostprocess(opts: TrackedLightPostprocessOpts)
     return count.equal(0).select(float(1), inside.toFloat());
   }
 
+  // does the straight segment (px,pz)-(lx,lz) cross ANY edge of the current room's polygon? Used
+  // to require actual line-of-sight within the room, not just "inside the polygon" — a fragment
+  // can test as inside a non-convex room (e.g. L-shaped) while sitting around a wall corner the
+  // light can't actually see past; `roomClipFactor` alone can't distinguish that from a genuinely
+  // visible fragment, since both are equally "inside". Mirrors the door-crossing test's use of
+  // `segmentsCross`, just against every edge of the room's own outline instead of a single door.
+  function crossesRoomBoundary(
+    px: THREE.Node<"float">,
+    pz: THREE.Node<"float">,
+    lx: THREE.Node<"float">,
+    lz: THREE.Node<"float">,
+  ) {
+    const count = roomPolyCount.toInt();
+    const blocked = int(0).toVar();
+
+    If(count.greaterThan(0), () => {
+      Loop(maxRoomPolyVerts, ({ i: v }) => {
+        If(v.greaterThanEqual(count), () => {
+          Break();
+        });
+        const a = roomPolyVertsNode.element(v);
+        const b = roomPolyVertsNode.element(v.add(1).mod(count));
+        If(segmentsCross(px, pz, lx, lz, a.x, a.y, b.x, b.y), () => {
+          blocked.assign(int(1));
+        });
+      });
+    });
+
+    return blocked.toFloat();
+  }
+
   // doors bordering the light's current room: vec4(ax, az, bx, bz) per slot, plus each slot's
   // live openness (0 = closed, 1 = fully open) — a fragment outside the room polygon can still be
   // lit if the segment from it to the light crosses one of these, weighted by that door's ratio.
@@ -358,9 +389,20 @@ export function createTrackedLightPostprocess(opts: TrackedLightPostprocessOpts)
 
           If(litVal.greaterThan(0), () => {
             const inRoom = roomClipFactor(worldXZ.x, worldXZ.y);
-            const reached = inRoom.toVar();
+            const reached = float(0).toVar();
 
-            // outside the room polygon: still lit if a straight line to the light crosses one of
+            // being inside the room polygon isn't enough on its own — a non-convex room (e.g.
+            // L-shaped) can have a fragment test as "inside" while sitting around a wall corner
+            // the light can't actually see past. Require an unobstructed straight line to the
+            // light too (same segment-crossing test used for doors, just against the room's own
+            // boundary edges), so the lit area actually follows the room's true shape.
+            If(inRoom.greaterThan(0), () => {
+              const blocked = crossesRoomBoundary(worldXZ.x, worldXZ.y, tracked.x, tracked.y);
+              reached.assign(blocked.equal(0).select(float(1), float(0)));
+            });
+
+            // no direct line of sight within the room (whether outside the polygon entirely, or
+            // blocked by a wall corner): still lit if a straight line to the light crosses one of
             // the room's own doors AND the fragment is actually inside that door's adjacent room
             // (not merely along the line-of-sight — otherwise light can appear to shine through
             // an unrelated wall), weighted by that door's live openness (0 = closed).
@@ -377,7 +419,7 @@ export function createTrackedLightPostprocess(opts: TrackedLightPostprocessOpts)
             // is basically at the doorway" reach instead of losing it — without ever granting
             // unconditional full-room access the way a plain distance threshold would.
             const npcInRoom = roomClipFactor(tracked.x, tracked.y).greaterThan(0);
-            If(inRoom.equal(0), () => {
+            If(reached.equal(0), () => {
               for (let slot = 0; slot < maxTrackedDoors; slot++) {
                 If(int(slot).lessThan(doorCount.toInt()), () => {
                   const seg = doorSegsNode.element(int(slot));
