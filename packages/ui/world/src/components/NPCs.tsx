@@ -412,24 +412,6 @@ export default function NPCs() {
 
           const { x, y, z } = npc.position;
           positions.push(npc.bodyUid, x, y, z);
-
-          // // 🚧 for tracked npc only
-          // const { inside: insideGdKey } = w.e.npcToDoors[npc.key];
-          // if (insideGdKey !== null) {
-          //   const door = w.door.byKey[insideGdKey];
-          //   const dist = geomService.getPerpendicularDistanceSeg(door.src, door.dst, { x, y: z });
-          //   if (dist < 0.15) {
-          //     if (!state.foo) {
-          //       console.log("enter");
-          //       const gmRoomId = w.gmGraph.getOtherGmRoomId(door, w.e.npcToRoom.get(npc.key)!.roomId);
-          //       gmRoomId && w.e.switchTrackedNpcRoom(gmRoomId);
-          //     }
-          //     state.foo = true;
-          //   } else {
-          //     state.foo && console.log("exit");
-          //     state.foo = false;
-          //   }
-          // }
         }
 
         // Float32Array caused issues: decode failed

@@ -72,7 +72,7 @@ export type TrackedLightPostprocess = {
 /** Cap on room-polygon vertices for clipping — matches Debug.tsx's MAX_ROOM_POLY_VERTS */
 const maxRoomPolyVerts = 64;
 /** Cap on doors considered for the "lit through an open door" test, per tracked room */
-const maxTrackedDoors = 8;
+const maxTrackedDoors = 12; // 🚧 unfinished 101 attains this bound
 /**
  * Cap on vertices of each candidate door's adjacent-room polygon — matches `maxRoomPolyVerts`
  * (same kind of data, a processed room outline via `geomService.createOutset`, which unions in a
