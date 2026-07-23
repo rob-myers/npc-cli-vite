@@ -78,56 +78,62 @@ magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
 
 # Gotchas
 
-### `pnpm gen-assets-json --force` recomputes stratification in case out-of-sync
+## Graphics
 
-### Shaders can have at most 8 vertex attributes -- check console for errors
+`skia-canvas` function `loadImage` sporadically supports filters inside SVGs
+  - seems to work for data-url `<image>` in skins
+  - does not seem to work for decor with SVG paths even when rasterized as `<image>`
 
-### Hull doors can have navRectId -1 if hull walls not properly aligned
+Shaders can have at most 8 vertex attributes -- check console for errors
 
-#### In VSCode can manually reconnect to mcp server via `/mcp` then click button
+Height related MapEdit symbol file dimensions are already in meters e.g. y=1, h=1
 
-#### Height related MapEdit symbol file dimensions are already in meters e.g. y=1, h=1
+BoxySVG cut circle from square empty when circle radius matches square half-width
 
-#### BoxySVG cut circle from square empty when circle radius matches square half-width
+Boxy: transformed shapes may not be rendered correctly by `skia-canvas`.
+- Convert to path and reduce transform seem to fix it.
 
-#### packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+## Scripts
 
-Must have original image size (no scale down).
+`pnpm gen-assets-json --force` recomputes stratification in case out-of-sync
 
-Must have offset matching symbol in assets.json
+packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+
+- Must have original image size (no scale down).
+- Must have offset matching symbol in assets.json
 > e.g. bridge--042 symbol has large offset
 
-#### packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+- Using BoxySVG we can convert to shape (if needed) and then Transform > Reduce.
 
-Using BoxySVG we can convert to shape (if needed) and then Transform > Reduce.
+The starship-symbol spritesheet will draw "leaf nodes" in the assets.json stratifiedSymbolNodes
+This means WIP composite symbols should have at least one sub-symbol.
 
-#### Worker modules should be disjoint from other ui/world modules
+In Node script saw "Could not find a declaration file for module" on try import from js path
 
+## Geometry
+
+Hull doors can have navRectId -1 if hull walls not properly aligned
+
+## General
+
+In VSCode can manually reconnect to mcp server via `/mcp` then click button
+
+Worker modules should be disjoint from other ui/world modules
 Otherwise vite HMR can happen multiple times breaking worker re-intialization.
 
-#### TTY needs both WORLD_KEY and CACHE_SHORTCUTS to connect to world
-
+TTY needs both WORLD_KEY and CACHE_SHORTCUTS to connect to world
 ```sh
 # for example
 WORLD_KEY=world-0
 CACHE_SHORTCUTS="{ w: 'WORLD_KEY' }"
 ```
 
-#### Sometimes worth playing World to debug out-of-sync updates
+Sometimes worth playing World to debug out-of-sync updates
 
-#### The starship-symbol spritesheet will draw "leaf nodes" in the assets.json stratifiedSymbolNodes
+Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
 
-This means WIP composite symbols should have at least one sub-symbol.
-
-#### Boxy: transformed shapes may not be rendered correctly by `skia-canvas`.
-
-Convert to path and reduce transform seem to fix it.
-
-#### Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
-
-#### Blockbench import GLTF seems to cache file unless you "X it and rechoose"
-
-#### In Node script saw "Could not find a declaration file for module" on try import from js path
+Blockbench import GLTF seems to cache file unless you "X it and rechoose"
 
 ```sh
 # example solution
@@ -135,12 +141,12 @@ cd packages/util/src/legacy
 npx tsc generic.js --declaration --allowJs --emitDeclarationOnly
 ```
 
-#### Hot module reload can yield unreachable malformed state on add library.
+Hot module reload can yield unreachable malformed state on add library.
 
-#### pnpm approve-builds
+`pnpm approve-builds`
+- Needed for `skia-canvas`.
+  > https://www.npmjs.com/package/skia-canvas
 
-Needed for `skia-canvas`.
-> https://www.npmjs.com/package/skia-canvas
 
 # Blockbench
 
