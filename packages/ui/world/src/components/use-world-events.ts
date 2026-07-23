@@ -185,6 +185,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             w.bubble.delete(...e.npcKeys);
 
+            const { trackedNpcKey } = w.view.light;
+            if (trackedNpcKey !== null && e.npcKeys.includes(trackedNpcKey)) {
+              w.npc.trackNpc();
+            }
+
             break;
           }
           case "requested-physics": {
