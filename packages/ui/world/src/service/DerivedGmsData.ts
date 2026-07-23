@@ -131,15 +131,15 @@ export default class DerivedGmsData {
       ];
     }
 
-    // room-dimmer mask: R = roomId+1 (0 = not-a-room), G always 255 wherever R is set — no fade,
+    // room-light mask: R = roomId+1 (0 = not-a-room), G always 255 wherever R is set — no fade,
     // hard binary per room. Each room's territory is its own outset shape unioned with adjacent
     // doorways, so a doorway between two rooms is unambiguously owned by (at least) one of them —
-    // if either is dimmed, the doorway itself reads as fully dark too, instead of a bright gap.
+    // if either is lit, the doorway itself reads as fully lit too, instead of a dark gap.
     // (A doorway pixel can only belong to one room's id, so whichever of its two rooms is later in
     // `gm.rooms` wins the overlap — harmless, just an arbitrary tie-break.)
     //
-    // the final RGBA buffer is assembled by hand (via `dimData`/`putImageData`), never by
-    // `drawPolygons` + `getImageData` straight onto `dimCt`: canvas anti-aliases polygon edges,
+    // the final RGBA buffer is assembled by hand (via `maskData`/`putImageData`), never by
+    // `drawPolygons` + `getImageData` straight onto `roomMaskCt`: canvas anti-aliases polygon edges,
     // and at partial-coverage edge pixels the browser stores a premultiplied-alpha color then
     // un-premultiplies it back on `getImageData` — for low R values (small roomId+1) at low
     // coverage this rounds to a completely different integer, corrupting the decoded roomId right
@@ -147,43 +147,43 @@ export default class DerivedGmsData {
     // room is instead drawn alone, in white, onto a scratch canvas and its coverage is thresholded
     // (>=128 alpha) before writing the *exact* intended color into the output buffer — so every
     // written pixel is either fully in or fully out, no blended/corrupted values ever reach the texture.
-    const dimCt = gmData.dimMaskCt;
-    const dimW = roomCt.canvas.width;
-    const dimH = roomCt.canvas.height;
-    dimCt.canvas.width = dimW;
-    dimCt.canvas.height = dimH;
-    dimCt.resetTransform();
-    dimCt.clearRect(0, 0, dimW, dimH);
+    const roomMaskCt = gmData.roomMaskCt;
+    const maskW = roomCt.canvas.width;
+    const maskH = roomCt.canvas.height;
+    roomMaskCt.canvas.width = maskW;
+    roomMaskCt.canvas.height = maskH;
+    roomMaskCt.resetTransform();
+    roomMaskCt.clearRect(0, 0, maskW, maskH);
 
-    const scratchCt = gmData.dimMaskScratchCt;
-    scratchCt.canvas.width = dimW;
-    scratchCt.canvas.height = dimH;
+    const scratchCt = gmData.roomMaskScratchCt;
+    scratchCt.canvas.width = maskW;
+    scratchCt.canvas.height = maskH;
 
-    const dimData = new Uint8ClampedArray(dimW * dimH * 4);
+    const maskData = new Uint8ClampedArray(maskW * maskH * 4);
 
     for (const [roomId, room] of gm.rooms.entries()) {
       const doorPolys = gm.doors.filter((d) => d.roomIds.includes(roomId)).map((d) => d.poly);
       const territory = Poly.union([room.clone(), ...doorPolys]);
 
       scratchCt.resetTransform();
-      scratchCt.clearRect(0, 0, dimW, dimH);
+      scratchCt.clearRect(0, 0, maskW, maskH);
       scratchCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
       // stroke on top of the fill, same solid color: a plain fill leaves a ring of partial-coverage
       // (anti-aliased) pixels right at the path — the stroke repaints that ring at full coverage,
       // pushing the boundary to a cleaner, more consistent edge before thresholding below.
       drawPolygons(scratchCt, territory, { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
 
-      const { data: coverage } = scratchCt.getImageData(0, 0, dimW, dimH);
+      const { data: coverage } = scratchCt.getImageData(0, 0, maskW, maskH);
       for (let i = 0; i < coverage.length; i += 4) {
         if (coverage[i + 3] >= 128) {
-          dimData[i] = roomId + 1;
-          dimData[i + 1] = 255;
-          dimData[i + 3] = 255;
+          maskData[i] = roomId + 1;
+          maskData[i + 1] = 255;
+          maskData[i + 3] = 255;
         }
       }
     }
 
-    dimCt.putImageData(new ImageData(dimData, dimW, dimH), 0, 0);
+    roomMaskCt.putImageData(new ImageData(maskData, maskW, maskH), 0, 0);
 
     gmData.roomGraph = RoomGraph.from(gm, `${gm.key}: `);
 
@@ -245,8 +245,8 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     polyDecals: [],
     tops: { broad: [], hullDoor: [], hullWall: [], nonHullDoor: [], nonHullWall: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
-    dimMaskCt: getContext2d(`room-dim-mask-${gmKey}`, { willReadFrequently: true }),
-    dimMaskScratchCt: getContext2d(`room-dim-mask-scratch-${gmKey}`, { willReadFrequently: true }),
+    roomMaskCt: getContext2d(`room-mask-${gmKey}`, { willReadFrequently: true }),
+    roomMaskScratchCt: getContext2d(`room-mask-scratch-${gmKey}`, { willReadFrequently: true }),
     roomGraph: new RoomGraph(),
   };
 }

@@ -25,20 +25,22 @@ import {
   defaultCardinalDirectionsMobile,
   defaultDesktopFov,
   defaultMobileFov,
+  defaultRoomLightIntensity,
   defaultTargetLightRadius,
-  dimmingEnabledKey,
   fovStorageKey,
   nearbyDoorMergeExtensionDepth,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
-  roomDimEditingEnabledKey,
+  roomLightEditingEnabledKey,
+  roomLightIntensityKey,
+  roomLightingEnabledKey,
   trackedLightRoomOutset,
   wallHeight,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
-import { createRoomDimmerPostprocess, type RoomDimmerPostprocess } from "../service/room-dimmer-postprocess";
+import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
 import type { SelectAnyType } from "../service/texture";
 import { createTrackedLightPostprocess, type TrackedLightPostprocess } from "../service/tracked-light-postprocess";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -89,14 +91,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      roomDimColor: uniform<"vec3", THREE.Vector3>(vec3(0.2, 0.2, 0.25)),
-      roomDimmer: createRoomDimmerPostprocess({
-        dimmingEnabled: tryLocalStorageGetParsed<boolean>(dimmingEnabledKey) ?? true,
+      dimWorldColor: uniform<"vec3", THREE.Vector3>(vec3(0.2, 0.2, 0.25)),
+      roomLight: createRoomLightPostprocess({
+        roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
-      /** Toggled via long-press on WorldMenu's dimmer icon; gates long-press room toggling */
-      roomDimEditingEnabled: tryLocalStorageGetParsed<boolean>(roomDimEditingEnabledKey) ?? true,
+      roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
+      /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling */
+      roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       trackedLight: createTrackedLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
       light: {
         displayCenter: new THREE.Vector3(),
@@ -392,11 +395,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
 
-        // refresh the shared camera matrices on every rendered frame — so dimming/lighting keep
-        // rendering correctly (rather than with stale matrices) as the camera pans/rotates/zooms,
-        // even while paused (when `updateLight` isn't advancing `light.displayCenter`)
+        // refresh the shared camera matrices on every rendered frame — so lighting keeps rendering
+        // correctly (rather than with stale matrices) as the camera pans/rotates/zooms, even while
+        // paused (when `updateLight` isn't advancing `light.displayCenter`)
         const camera = state.controls?.object ?? w.r3f.camera;
-        state.roomDimmer.update(camera);
+        state.roomLight.update(camera);
         state.trackedLight.update(camera);
 
         // only push a center-refresh while genuinely tracking a target — `setTracked` with a
@@ -491,17 +494,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
         return extended.cleanClone().outline.map((p) => ({ x: p.x, z: p.y }));
       },
-      toggleRoomDimEditing() {
-        state.roomDimEditingEnabled = !state.roomDimEditingEnabled;
-        tryLocalStorageSet(roomDimEditingEnabledKey, String(state.roomDimEditingEnabled));
+      toggleRoomLightEditing() {
+        state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
+        tryLocalStorageSet(roomLightEditingEnabledKey, String(state.roomLightEditingEnabled));
         w.update();
       },
-      setDimmingEnabled(next = state.roomDimmer.dimmingEnabled.value === 0) {
-        state.roomDimmer.setDimmingEnabled(next);
-        tryLocalStorageSet(dimmingEnabledKey, String(next));
+      setRoomLightingEnabled(next = state.roomLight.roomLightingEnabled.value === 0) {
+        state.roomLight.setRoomLightingEnabled(next);
+        tryLocalStorageSet(roomLightingEnabledKey, String(next));
         state.setPostProcessingEnabled(true);
       },
-      roomDimmingDisallowed(gmRoomId) {
+      setRoomLightIntensity(next) {
+        state.roomLightIntensity.value = next;
+        tryLocalStorageSet(roomLightIntensityKey, String(next));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      roomLightingDisallowed(gmRoomId) {
         const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
         // ≤ 1 or 1st takes precedence
         const decorLabel = roomDecor
@@ -509,21 +518,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
         return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
       },
-      toggleRoomDimmed(groundCenter) {
+      toggleRoomLit(groundCenter) {
         const gmRoomId = w.e.findRoomContaining(groundCenter, true);
         if (!gmRoomId) {
           return; // must be in some room
         }
-        if (state.roomDimmingDisallowed(gmRoomId)) {
-          return; // dimming isn't permitted in this room
+        if (state.roomLightingDisallowed(gmRoomId)) {
+          return; // lighting isn't permitted in this room
         }
         const { gmId, roomId } = gmRoomId;
-        state.roomDimmer.setRoomDimmed(gmId, roomId, !state.roomDimmer.isRoomDimmed(gmId, roomId));
+        state.roomLight.setRoomLit(gmId, roomId, !state.roomLight.isRoomLit(gmId, roomId));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
       resetAllRooms() {
-        state.roomDimmer.resetAllRooms();
+        state.roomLight.resetAllRooms();
         state.setPostProcessingEnabled(true);
       },
       setCameraMode(mode) {
@@ -544,21 +553,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
         const sceneColor = scenePass.getTextureNode("output");
-        // raw logarithmic depth — dimAmount()/litAmount() do their own log-depth inversion
+        // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-        // "bright" if EITHER the room is dimmed (see roomDimColor's inverted convention — a
-        // dimmed room reads as the brighter branch below) OR the tracked light reaches here —
-        // combine via max BEFORE inverting, not after: `1 - dimAmount()` is already 1 (this
-        // formula's "dark" ceiling) everywhere the room isn't dimmed, so maxing further with
-        // litAmount() afterward was a no-op — the tracked light could never brighten anything.
-        const isBright = state.roomDimmer.dimAmount(sceneDepth.r).max(state.trackedLight.litAmount(sceneDepth.r));
-        const undimmedAmount = float(1).sub(isBright);
+        // "bright" if a lit room's own (scaled-down) brightness OR the tracked light reaches here —
+        // combine via max BEFORE inverting, not after: this way a lit room whose own intensity is
+        // below 1 still lets the tracked light stand out above it, instead of one flattening the other.
+        const isBright = state.roomLight
+          .litAmount(sceneDepth.r)
+          .mul(state.roomLightIntensity)
+          .max(state.trackedLight.litAmount(sceneDepth.r));
+        const unlitAmount = float(1).sub(isBright);
         const effect = mix(
           // fully-lit scaled down
           colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(0.6), sceneColor.a),
           // darkness
-          sceneColor.rgb.mul(state.roomDimColor),
-          undimmedAmount,
+          sceneColor.rgb.mul(state.dimWorldColor),
+          unlitAmount,
         );
 
         const pipeline = new THREE.RenderPipeline(gl);
@@ -609,7 +619,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, roomDimColor: true, trackedLight: true } },
+    { reset: { ctrlOpts: true, initial: false, dimWorldColor: true, trackedLight: true } },
   );
 
   w.view = state;
@@ -638,7 +648,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   useEffect(() => {
     // 🚧 hmr should not reset lights
-    w.gms.length > 0 && state.roomDimmer.syncGms(w.gms, w.gmsData);
+    w.gms.length > 0 && state.roomLight.syncGms(w.gms, w.gmsData);
   }, [w.hash, w.gmsData]); // gm instances (or their derived per-layout data) changed
 
   return (
@@ -728,10 +738,12 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
-  roomDimmer: RoomDimmerPostprocess;
-  /** Toggled via long-press on WorldMenu's dimmer icon; gates long-press room toggling in `use-world-events.ts` */
-  roomDimEditingEnabled: boolean;
-  roomDimColor: THREE.UniformNode<"vec3", THREE.Vector3>;
+  roomLight: RoomLightPostprocess;
+  /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling in `use-world-events.ts` */
+  roomLightEditingEnabled: boolean;
+  /** Persisted, user-controlled brightness of a lit room (0..1) — see `defaultRoomLightIntensity` */
+  roomLightIntensity: THREE.UniformNode<"float", number>;
+  dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
   trackedLight: TrackedLightPostprocess;
   light: LightState;
   fov: number;
@@ -778,14 +790,16 @@ export type State = {
     gdKeys: Geomorph.GmDoorKey[],
     safetyPoint: Geom.VectJson,
   ): { x: number; z: number }[];
-  toggleRoomDimEditing(): void;
-  /** Toggles `roomDimmer.dimmingEnabled` — persisted to localStorage */
-  setDimmingEnabled(next?: boolean): void;
-  /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit dimming at all */
-  roomDimmingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
-  /** Toggles whether `gmRoomId`'s room is dimmed, unless dimming isn't permitted there (see `roomDimmingDisallowed`) */
-  toggleRoomDimmed(groundCenter: Geom.VectJson): void;
-  /** Clears every dimmed room */
+  toggleRoomLightEditing(): void;
+  /** Toggles `roomLight.roomLightingEnabled` — persisted to localStorage */
+  setRoomLightingEnabled(next?: boolean): void;
+  /** Sets the persisted room-light intensity (0..1) — see `defaultRoomLightIntensity` */
+  setRoomLightIntensity(next: number): void;
+  /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit lighting at all */
+  roomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
+  /** Toggles whether `gmRoomId`'s room is lit, unless lighting isn't permitted there (see `roomLightingDisallowed`) */
+  toggleRoomLit(groundCenter: Geom.VectJson): void;
+  /** Clears every lit room */
   resetAllRooms(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;

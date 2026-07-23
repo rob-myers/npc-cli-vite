@@ -24,7 +24,13 @@ import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
-import { brightnessStorageKey, defaultDesktopFov, fovStorageKey, pickOpenDoorsKey } from "../const";
+import {
+  brightnessStorageKey,
+  defaultDesktopFov,
+  defaultRoomLightIntensity,
+  fovStorageKey,
+  pickOpenDoorsKey,
+} from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { WorldContext } from "./world-context";
@@ -46,9 +52,9 @@ export function WorldMenu() {
       gmGraphsOpen: false,
       skinDebugOpen: false,
       menuOpen: false,
-      dimMenuOpen: false,
-      dimLongPress: false,
-      dimLongPressTimer: 0,
+      lightsMenuOpen: false,
+      lightsLongPress: false,
+      lightsLongPressTimer: 0,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
@@ -528,12 +534,12 @@ export function WorldMenu() {
         </Menu.Root>
 
         <Menu.Root
-          open={state.dimMenuOpen}
+          open={state.lightsMenuOpen}
           onOpenChange={(open, { reason }) => {
             if (open) {
-              state.set({ dimMenuOpen: true });
+              state.set({ lightsMenuOpen: true });
             } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
-              state.set({ dimMenuOpen: false });
+              state.set({ lightsMenuOpen: false });
             }
           }}
         >
@@ -541,35 +547,35 @@ export function WorldMenu() {
             className="cursor-pointer"
             onPointerDown={(e) => {
               e.preventDefault();
-              state.dimLongPress = false;
-              clearTimeout(state.dimLongPressTimer);
-              state.dimLongPressTimer = window.setTimeout(() => {
-                state.dimLongPress = true;
-                w.view.toggleRoomDimEditing();
+              state.lightsLongPress = false;
+              clearTimeout(state.lightsLongPressTimer);
+              state.lightsLongPressTimer = window.setTimeout(() => {
+                state.lightsLongPress = true;
+                w.view.toggleRoomLightEditing();
               }, 500);
             }}
-            onPointerUp={() => clearTimeout(state.dimLongPressTimer)}
-            onPointerLeave={() => clearTimeout(state.dimLongPressTimer)}
+            onPointerUp={() => clearTimeout(state.lightsLongPressTimer)}
+            onPointerLeave={() => clearTimeout(state.lightsLongPressTimer)}
             onClick={() => {
-              if (state.dragged || state.dimLongPress) return;
-              state.set({ dimMenuOpen: !state.dimMenuOpen });
+              if (state.dragged || state.lightsLongPress) return;
+              state.set({ lightsMenuOpen: !state.lightsMenuOpen });
             }}
           >
             <div
               className={cn(
                 "outline-width-1 grid place-items-center select-none",
                 big ? "size-12" : "size-9",
-                w.view.roomDimEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
+                w.view.roomLightEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
               )}
               title={
-                w.view.roomDimEditingEnabled
-                  ? "Room dim editing on — long-press to disable, click for settings"
-                  : "Room dim editing off — long-press to enable, click for settings"
+                w.view.roomLightEditingEnabled
+                  ? "Room light editing on — long-press to disable, click for settings"
+                  : "Room light editing off — long-press to enable, click for settings"
               }
             >
               <LightbulbIcon
                 className={big ? "size-6" : "size-5"}
-                weight={w.view.roomDimEditingEnabled ? "fill" : "bold"}
+                weight={w.view.roomLightEditingEnabled ? "fill" : "bold"}
               />
             </div>
           </Menu.Trigger>
@@ -582,27 +588,45 @@ export function WorldMenu() {
                   big && "w-48 py-2",
                 )}
               >
-                <DimMenuToggle
+                <LightsMenuToggle
                   big={big}
                   label="Editing"
                   hint="long-press icon"
-                  active={w.view.roomDimEditingEnabled}
+                  active={w.view.roomLightEditingEnabled}
                   onIcon={PencilSimpleIcon}
                   offIcon={PencilSimpleIcon}
-                  onClick={() => w.view.toggleRoomDimEditing()}
+                  onClick={() => w.view.toggleRoomLightEditing()}
                 />
-                <DimMenuToggle
+                <LightsMenuToggle
                   big={big}
-                  label="Show dimming"
-                  active={w.view.roomDimmer?.dimmingEnabled.value === 1}
+                  label="Show lighting"
+                  active={w.view.roomLight?.roomLightingEnabled.value === 1}
                   onIcon={EyeIcon}
                   offIcon={EyeSlashIcon}
                   onClick={() => {
                     w.view.setPostProcessingEnabled(true);
-                    w.view.setDimmingEnabled();
+                    w.view.setRoomLightingEnabled();
                     state.update();
                   }}
                 />
+
+                <div className={cn("flex items-center gap-2 px-2 py-1.5", big && "gap-3 px-3 py-2")}>
+                  <span className={cn("flex-1 text-xs text-slate-200", big && "text-sm")}>Intensity</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                    onChange={(e) => w.view.setRoomLightIntensity(Number(e.target.value))}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "w-16 accent-white cursor-pointer",
+                      "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+                      big && "w-24",
+                    )}
+                  />
+                </div>
 
                 <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
 
@@ -615,7 +639,7 @@ export function WorldMenu() {
                   closeOnClick={false}
                 >
                   <TrashIcon className={cn("size-4 shrink-0", big && "size-5")} />
-                  <span className="flex-1 text-left">Clear dimming</span>
+                  <span className="flex-1 text-left">Clear lighting</span>
                 </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>
@@ -702,8 +726,8 @@ function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
 }
 
-/** One labelled on/off row in the dimmer menu — icon swaps and dims when inactive */
-function DimMenuToggle({
+/** One labelled on/off row in the lights menu — icon swaps and dims when inactive */
+function LightsMenuToggle({
   label,
   hint,
   active,
@@ -752,10 +776,10 @@ export type State = {
   skinDebugOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  dimMenuOpen: boolean;
-  /** Was the current press on the dimmer icon long enough to toggle `roomDimEditingEnabled` (vs. open the menu)? */
-  dimLongPress: boolean;
-  dimLongPressTimer: number;
+  lightsMenuOpen: boolean;
+  /** Was the current press on the lights icon long enough to toggle `roomLightEditingEnabled` (vs. open the menu)? */
+  lightsLongPress: boolean;
+  lightsLongPressTimer: number;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;

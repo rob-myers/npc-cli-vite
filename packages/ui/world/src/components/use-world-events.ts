@@ -166,9 +166,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "picked": {
-            const { lastPointer, roomDimEditingEnabled, controls } = w.view;
-            if (roomDimEditingEnabled === true && lastPointer.longPress === true && controls.pointers.length <= 1) {
-              w.view.toggleRoomDimmed(helper.parseGroundPoint(e));
+            const { lastPointer, roomLightEditingEnabled, controls } = w.view;
+            if (roomLightEditingEnabled === true && lastPointer.longPress === true && controls.pointers.length <= 1) {
+              w.view.toggleRoomLit(helper.parseGroundPoint(e));
             }
             break;
           }

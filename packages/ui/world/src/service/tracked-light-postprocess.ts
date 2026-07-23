@@ -93,8 +93,8 @@ const doorHalfDepth = 0.5;
 /**
  * Post-processing helper for a single vertical cylinder (axis along y, from `bottomHeight` to
  * `topHeight`) that follows a live target — e.g. `w.npc.trackNpc`. Independent of, and layered
- * alongside, the room-dimmer system (`room-dimmer-postprocess.ts`): the dimmer decides whether a
- * room is dark, this decides whether a fragment is inside the tracked light's reach regardless.
+ * alongside, the room-light system (`room-light-postprocess.ts`): that decides whether a room is
+ * lit, this decides whether a fragment is inside the tracked light's reach regardless.
  *
  * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
  * and tests the light against that, not a plane-projected approximation — otherwise anything
