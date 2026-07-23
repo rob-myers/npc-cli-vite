@@ -2,17 +2,19 @@
 
 - new approach to todos i.e. current go into technical and start new section
 
-- BUG decor hmr onchange decor/foo.svg
+- ✅ BUG decor hmr onchange decor/foo.svg
 
 - ✅ clean fadeSpawn
 - ✅ room labels represented as decor
   - `w decor.byRoom.0.1 | split | filter 'x => x.meta.label'`
 
-- add "screen" as tilted decor quad
+- 🚧 add "screen" as tilted decor quad
+  - ✅ add decor image
+
 - can override edit g-301--playground.json in dev
   - currently can only save as draft
-- prevent bubble fade while paused
-- clean MAX_DOORS_PER_GEOMORPH
+- ❌ prevent bubble fade while paused
+- ✅ clean MAX_DOORS_PER_GEOMORPH comment
   - can use e.g. 64 and no longer in sync with Doors.tsx
 
 - ✅ fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
