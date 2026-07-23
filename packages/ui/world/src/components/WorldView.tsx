@@ -20,7 +20,6 @@ import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } 
 import * as THREE from "three/webgpu";
 import {
   cameraModeStorageKey,
-  connectorEntranceHalfDepth,
   defaultCameraMode,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
@@ -410,36 +409,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.light.displayCenter.copy(rawTarget);
         w.e.checkTrackedDoorCrossing();
       },
+      // 🚧 precompute these
       computeRoomOutline(gmRoomId) {
         const gm = w.gms[gmRoomId.gmId];
         const room = gm.rooms[gmRoomId.roomId];
-        // outset a little (`.clone()` — createOutset mutates its input) so the light doesn't
-        // cut off exactly at the room's inner wall face
-        // const outsetRoom = geomService.createOutset(room.clone(), trackedLightRoomOutset);
-        // const outsetRoom = [room.clone()];
-        const outsetRoom = geomService.createOutset(room.clone(), 0.05);
-        // also union in adjacent doorways, so the light already covers the doorway itself — avoids
-        // a brief "dark" moment while the npc is physically standing inside the doorway threshold
-        // (room-change detection only fires once they've fully crossed to the other side).
-        // Reaching further, into the room beyond an open door, is handled separately by the
-        // ray-through-door test (see `computeRoomDoors`/`tracked-light-postprocess.ts`).
-        const doorwayPolys = gm.doors
-          .filter((d) => d.roomIds.includes(gmRoomId.roomId))
-          .map((d) =>
-            d.computeThinPoly(
-              // d.meta.hull === true ? 2 * connectorEntranceHalfDepth.hull : 2 * connectorEntranceHalfDepth.nonHull,
-              // d.meta.hull === true ? 0.5 * connectorEntranceHalfDepth.hull : 0.5 * connectorEntranceHalfDepth.nonHull,
-              d.meta.hull === true ? 0 * connectorEntranceHalfDepth.hull : 0 * connectorEntranceHalfDepth.nonHull,
-            ),
-          );
-        const merged = Poly.union([...outsetRoom, ...doorwayPolys]);
-        const extended = merged.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
-        // 🔔 `Poly.union`'s output orientation isn't guaranteed — `cleanClone` (clone + applyMatrix
-        // + fixOrientation, the same idiom used elsewhere in this codebase after a union/transform)
-        // both applies `gm.matrix` and normalizes winding, which `roomClipFactor`'s ray-cast
-        // point-in-polygon test in `tracked-light-postprocess.ts` relies on being consistent
-        const world = extended.cleanClone(gm.matrix);
-        return world.outline.map((p) => ({ x: p.x, z: p.y }));
+        const [outsetRoom] = geomService.createOutset(room.clone(), 0.05);
+
+        const hullDoorExtensions = gm.doors
+          .filter((d) => d.meta.hull === true && d.roomIds.includes(gmRoomId.roomId))
+          .map((d) => d.computeThinPoly(0.2));
+
+        const { outline } = hullDoorExtensions.length
+          ? Poly.union([outsetRoom, ...hullDoorExtensions])[0]
+          : outsetRoom.cleanClone(gm.matrix);
+
+        return outline.map((p) => ({ x: p.x, z: p.y }));
       },
       computeRoomDoors(gmRoomId) {
         const gm = w.gms[gmRoomId.gmId];
