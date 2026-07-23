@@ -19,7 +19,10 @@ import { colorBleeding } from "three/addons/tsl/display/CRT.js";
 import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
+  ambientIntensityKey,
+  ambientMoodKey,
   cameraModeStorageKey,
+  defaultAmbientIntensity,
   defaultCameraMode,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
@@ -27,6 +30,7 @@ import {
   defaultMobileFov,
   defaultRoomLightIntensity,
   defaultTargetLightRadius,
+  defaultTrackedLightIntensity,
   fovStorageKey,
   nearbyDoorMergeExtensionDepth,
   numCardinalDirectionsKey,
@@ -34,6 +38,8 @@ import {
   roomLightEditingEnabledKey,
   roomLightIntensityKey,
   roomLightingEnabledKey,
+  trackedLightIntensityKey,
+  trackedLightRadiusKey,
   trackedLightRoomOutset,
   wallHeight,
 } from "../const";
@@ -41,7 +47,7 @@ import type { CameraControls as BaseCameraControls } from "../service/camera-con
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
-import type { SelectAnyType } from "../service/texture";
+import { type AmbientMood, computeDimWorldColor, type SelectAnyType } from "../service/texture";
 import { createTrackedLightPostprocess, type TrackedLightPostprocess } from "../service/tracked-light-postprocess";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
@@ -50,6 +56,8 @@ import { WorldContext } from "./world-context";
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
   const { uiStoreApi } = useContext(UiContext);
   const w = useContext(WorldContext);
+  const initialAmbientIntensity = tryLocalStorageGetParsed<number>(ambientIntensityKey) ?? defaultAmbientIntensity;
+  const initialAmbientMood = tryLocalStorageGetParsed<AmbientMood>(ambientMoodKey) ?? null;
 
   const state = useStateRef(
     (): State => ({
@@ -91,13 +99,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      dimWorldColor: uniform<"vec3", THREE.Vector3>(vec3(0.4, 0.4, 0.45)),
+      dimWorldColor: uniform(computeDimWorldColor(initialAmbientIntensity, initialAmbientMood)),
+      ambientIntensity: initialAmbientIntensity,
+      ambientMood: initialAmbientMood,
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
+      trackedLightIntensity: uniform(
+        tryLocalStorageGetParsed<number>(trackedLightIntensityKey) ?? defaultTrackedLightIntensity,
+      ),
       /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling */
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       trackedLight: createTrackedLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
@@ -107,8 +120,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         targetOverride: null as null | { x: number; y: number; z: number },
         /** Set by `w.npc.trackNpc`; lets the `"enter-room"` handler know which npc's room-transitions should refresh the tracked light's room-poly clip */
         trackedNpcKey: null as string | null,
-        /** Tracked-light radius, set once by `w.npc.trackNpc` */
-        radius: defaultTargetLightRadius,
+        /** Tracked-light radius — persisted, settable via `w.view.setTrackedLightRadius` */
+        radius: tryLocalStorageGetParsed<number>(trackedLightRadiusKey) ?? defaultTargetLightRadius,
         /** Encoded (gmId, doorId) of each door bordering the tracked room, for per-frame live open-ratio reads (see `onCameraChange`) — same order as last passed to `trackedLight.setTrackedRoomDoors` */
         doorInstanceIds: [] as number[],
         /** Door whose "inside" sensor zone `checkTrackedDoorCrossing` is currently pinned to, else `null` */
@@ -512,6 +525,35 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
+      setTrackedLightRadius(next) {
+        state.light.radius = next;
+        if (state.light.targetOverride !== null) {
+          state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
+        }
+        tryLocalStorageSet(trackedLightRadiusKey, String(next));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setTrackedLightIntensity(next) {
+        state.trackedLightIntensity.value = next;
+        tryLocalStorageSet(trackedLightIntensityKey, String(next));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setAmbientIntensity(next) {
+        state.ambientIntensity = next;
+        state.dimWorldColor.value.copy(computeDimWorldColor(next, state.ambientMood));
+        tryLocalStorageSet(ambientIntensityKey, String(next));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setAmbientMood(next) {
+        state.ambientMood = state.ambientMood === next ? null : next;
+        state.dimWorldColor.value.copy(computeDimWorldColor(state.ambientIntensity, state.ambientMood));
+        tryLocalStorageSet(ambientMoodKey, JSON.stringify(state.ambientMood));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
       roomLightingDisallowed(gmRoomId) {
         const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
         // ≤ 1 or 1st takes precedence
@@ -563,7 +605,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const isBright = state.roomLight
           .litAmount(sceneDepth.r)
           .mul(state.roomLightIntensity)
-          .max(state.trackedLight.litAmount(sceneDepth.r));
+          .max(state.trackedLight.litAmount(sceneDepth.r).mul(state.trackedLightIntensity));
         const unlitAmount = float(1).sub(isBright);
         const effect = mix(
           // fully-lit scaled down
@@ -745,7 +787,13 @@ export type State = {
   roomLightEditingEnabled: boolean;
   /** Persisted, user-controlled brightness of a lit room (0..1) — see `defaultRoomLightIntensity` */
   roomLightIntensity: THREE.UniformNode<"float", number>;
+  /** Persisted brightness multiplier (0..1) on the tracked light — see `defaultTrackedLightIntensity` */
+  trackedLightIntensity: THREE.UniformNode<"float", number>;
   dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
+  /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
+  ambientIntensity: number;
+  /** Persisted mood tint backing `dimWorldColor`, else `null` (neutral) */
+  ambientMood: AmbientMood | null;
   trackedLight: TrackedLightPostprocess;
   light: LightState;
   fov: number;
@@ -797,6 +845,14 @@ export type State = {
   setRoomLightingEnabled(next?: boolean): void;
   /** Sets the persisted room-light intensity (0..1) — see `defaultRoomLightIntensity` */
   setRoomLightIntensity(next: number): void;
+  /** Sets the tracked light's radius (persisted) — updates the live uniform if tracking is active */
+  setTrackedLightRadius(next: number): void;
+  /** Sets the tracked light's brightness multiplier (0..1, persisted) — see `defaultTrackedLightIntensity` */
+  setTrackedLightIntensity(next: number): void;
+  /** Sets the world's ambient tint magnitude (persisted) — see `defaultAmbientIntensity` */
+  setAmbientIntensity(next: number): void;
+  /** Sets (or clears, if already active) the world's ambient mood tint (persisted) */
+  setAmbientMood(next: Exclude<AmbientMood, null>): void;
   /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit lighting at all */
   roomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
   /** Toggles whether `gmRoomId`'s room is lit, unless lighting isn't permitted there (see `roomLightingDisallowed`) */

@@ -572,3 +572,20 @@ export function drawFloorGrid(
     }
   }
 }
+
+export const ambientMoods = ["anger", "greed", "calm"] as const;
+
+export type AmbientMood = (typeof ambientMoods)[number];
+
+/** Direction (unscaled) of the world's ambient tint per mood — multiplied by `ambientIntensity` */
+export const ambientMoodDirection: Record<AmbientMood, THREE.Vector3> = {
+  anger: new THREE.Vector3(1.3, 0.8, 0.8),
+  greed: new THREE.Vector3(0.8, 1.3, 0.8),
+  calm: new THREE.Vector3(0.85, 0.95, 1.3),
+};
+export const neutralAmbientDirection = new THREE.Vector3(1, 1, 1.125);
+
+export function computeDimWorldColor(intensity: number, mood: AmbientMood | null): THREE.Vector3 {
+  const dir = mood === null ? neutralAmbientDirection : ambientMoodDirection[mood];
+  return new THREE.Vector3(dir.x * intensity, dir.y * intensity, dir.z * intensity);
+}
