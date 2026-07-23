@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
+import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS, nearbyDoorMergeDist } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -591,10 +591,41 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // instant refresh — no pop to hide (unlike the old room-polygon-only clip, the door-list
         // swap has no visible discontinuity of its own, since reaching an adjacent room now
         // depends on a live ray-through-door test, not a baked-in polygon shape)
-        w.view.trackedLight.setTrackedRoomOutline(w.view.computeRoomOutline(gmRoomId));
+        const prevGmRoomId = w.view.light.currentGmRoomId;
+        w.view.light.currentGmRoomId = gmRoomId;
+
+        let outline = w.view.computeRoomOutline(gmRoomId);
         const doors = w.view.computeRoomDoors(gmRoomId);
-        w.view.trackedLight.setTrackedRoomDoors(doors);
-        w.view.light.doorInstanceIds = doors.map((d) => d.instanceId);
+
+        // a door from the room just left, close enough to the npc, is still merged in — else it
+        // can go dark instantly (e.g. it meets the just-crossed door at a right angle, so reaching
+        // its own far room now needs two door-hops, which the tracked light doesn't support)
+        const npcKey = w.view.light.trackedNpcKey;
+        const npc = npcKey === null ? null : w.npc.npc[npcKey];
+        const extraDoors =
+          npc !== null && prevGmRoomId !== null && prevGmRoomId.grKey !== gmRoomId.grKey
+            ? w.view
+                .computeRoomDoors(prevGmRoomId)
+                .filter((d) => !doors.some((newDoor) => newDoor.instanceId === d.instanceId))
+                .filter((d) => {
+                  const midX = (d.a.x + d.b.x) / 2;
+                  const midZ = (d.a.z + d.b.z) / 2;
+                  return Math.hypot(npc.position.x - midX, npc.position.z - midZ) < nearbyDoorMergeDist;
+                })
+            : [];
+
+        if (npc !== null && extraDoors.length > 0) {
+          outline = w.view.extendRoomOutlineNearDoors(
+            outline,
+            extraDoors.map((d) => w.door.fromInstanceId[d.instanceId].gdKey),
+            { x: npc.position.x, y: npc.position.z },
+          );
+        }
+
+        const allDoors = [...doors, ...extraDoors];
+        w.view.trackedLight.setTrackedRoomOutline(outline);
+        w.view.trackedLight.setTrackedRoomDoors(allDoors);
+        w.view.light.doorInstanceIds = allDoors.map((d) => d.instanceId);
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];

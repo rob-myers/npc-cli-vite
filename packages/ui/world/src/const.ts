@@ -86,6 +86,26 @@ export const maxRoomsPerGm = 32;
 export const defaultTargetLightRadius = 1;
 /** How far (meters) the tracked light's room-polygon clip is outset past the room's inner wall face */
 export const trackedLightRoomOutset = 0.1;
+/**
+ * When the tracked light switches rooms, a door from the room just left is still merged in (as a
+ * reach-slot, plus a bit of directly-lit room around it) if within this distance (meters) of the
+ * npc — e.g. two doors meeting at a right-angle corner, where the 2nd door would otherwise go
+ * dark immediately (it no longer borders the new current room, and reaching its far room would
+ * need two door-hops, which the tracked light doesn't support).
+ */
+export const nearbyDoorMergeDist = 2;
+/**
+ * Depth (meters) of the thin polygon merged into the tracked light's room clip around each
+ * "nearby" door from the room just left (see `nearbyDoorMergeDist`) — split `±half` across the
+ * door's line, so part of it reaches into that room, keeping a small part of it directly lit
+ * rather than only reachable via that door's own reach-slot. Kept generous (bigger than it looks
+ * like it needs to be) so it clearly overlaps both the current room's own outline and any other
+ * nearby door's thin polygon (e.g. 3 doors meeting at a T) — a shallow depth can leave pieces
+ * merely touching rather than overlapping, which can make `Poly.union` split them into disjoint
+ * rings instead of one connected shape (`WorldView.tsx`'s `extendRoomOutlineNearDoors` falls back
+ * safely if that still happens, but a bigger margin avoids needing that fallback in the first place).
+ */
+export const nearbyDoorMergeExtensionDepth = 1.5;
 
 export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;
