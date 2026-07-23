@@ -550,6 +550,52 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many" });
       },
+      checkTrackedDoorCrossing() {
+        const npcKey = w.view.light.trackedNpcKey;
+        if (npcKey === null) {
+          return;
+        }
+
+        const gdKey = state.npcToDoors[npcKey]?.inside ?? null;
+        if (gdKey === null) {
+          w.view.light.doorCrossGdKey = null;
+          w.view.light.doorCrossSign = null;
+          return;
+        }
+
+        const door = w.d[gdKey];
+        const npc = w.npc.npc[npcKey];
+        const dp = (npc.position.x - door.src.x) * door.normal.x + (npc.position.z - door.src.y) * door.normal.y;
+        const sign: 0 | 1 = dp > 0 ? 0 : 1;
+
+        if (w.view.light.doorCrossGdKey !== gdKey) {
+          // just entered this door's sensor zone — establish baseline, don't switch yet
+          w.view.light.doorCrossGdKey = gdKey;
+          w.view.light.doorCrossSign = sign;
+          return;
+        }
+
+        if (sign !== w.view.light.doorCrossSign) {
+          w.view.light.doorCrossSign = sign;
+          const roomId = door.connector.roomIds[sign];
+          const gmRoomId =
+            roomId !== null
+              ? helper.getGmRoomId(door.gmId, roomId)
+              : w.gmGraph.getOtherGmRoomId(door, door.connector.roomIds[1 - sign] as number);
+          if (gmRoomId !== null) {
+            state.switchTrackedNpcRoom(gmRoomId);
+          }
+        }
+      },
+      switchTrackedNpcRoom(gmRoomId) {
+        // instant refresh — no pop to hide (unlike the old room-polygon-only clip, the door-list
+        // swap has no visible discontinuity of its own, since reaching an adjacent room now
+        // depends on a live ray-through-door test, not a baked-in polygon shape)
+        w.view.trackedLight.setTrackedRoomOutline(w.view.computeRoomOutline(gmRoomId));
+        const doors = w.view.computeRoomDoors(gmRoomId);
+        w.view.trackedLight.setTrackedRoomDoors(doors);
+        w.view.light.doorInstanceIds = doors.map((d) => d.instanceId);
+      },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -655,6 +701,13 @@ export type State = {
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
   checkNpcTargetUnreachable(npc: Npc): null | Graph.GmRoomGraphNodeDoor;
+  /**
+   * Precisely detects the tracked npc crossing a door's own dividing line — while it occupies
+   * that door's "inside" sensor zone (see `npcToDoors`) — and calls `switchTrackedNpcRoom`
+   * immediately, in either direction (including a mid-doorway reversal). Called every tick from
+   * `WorldView`'s `updateLight`.
+   */
+  checkTrackedDoorCrossing(): void;
   findPath(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
@@ -675,6 +728,7 @@ export type State = {
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
+  switchTrackedNpcRoom(nextRoomOrDoor: Geomorph.GmRoomId): void;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {

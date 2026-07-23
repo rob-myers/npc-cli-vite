@@ -82,6 +82,11 @@ export const dimmingEnabledKey = "world-dimming-enabled";
 /** Per-instance cap on room count, for sizing the `roomDimmed` boolean array */
 export const maxRoomsPerGm = 32;
 
+/** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
+export const defaultTargetLightRadius = 1;
+/** How far (meters) the tracked light's room-polygon clip is outset past the room's inner wall face */
+export const trackedLightRoomOutset = 0.1;
+
 export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;
 export const defaultCardinalDirectionsMobile = 4;
