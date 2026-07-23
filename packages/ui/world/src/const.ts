@@ -75,12 +75,14 @@ export const fovStorageKey = `world-fov-value`;
 export const defaultDesktopFov = 40;
 export const defaultMobileFov = 60;
 export const defaultBrightness = 2;
-export const showDebugDimOutlineKey = "world-show-debug-dim-outline";
 export const postProcessingEnabledKey = "world-post-processing-enabled";
-export const roomDimEditingEnabledKey = "world-room-dim-editing-enabled";
-export const dimmingEnabledKey = "world-dimming-enabled";
-/** Per-instance cap on room count, for sizing the `roomDimmed` boolean array */
+export const roomLightEditingEnabledKey = "world-room-light-editing-enabled";
+export const roomLightingEnabledKey = "world-room-lighting-enabled";
+/** Per-instance cap on room count, for sizing the `roomLit` boolean array */
 export const maxRoomsPerGm = 32;
+export const roomLightIntensityKey = "world-room-light-intensity";
+/** Default brightness of a lit room (long-press), scaling `RoomLightPostprocess.litAmount()` */
+export const defaultRoomLightIntensity = 0.7;
 
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
 export const defaultTargetLightRadius = 1;

@@ -26,19 +26,19 @@ import type DerivedGmsData from "./DerivedGmsData";
 import { createGmIdGridTexture } from "./grid";
 import { worldToCanvas } from "./texture";
 
-export type RoomDimmerPostprocessOpts = {
-  /** World-space height (y) dimming applies from. Default `0` */
+export type RoomLightPostprocessOpts = {
+  /** World-space height (y) lighting applies from. Default `0` */
   bottomHeight?: number;
-  /** World-space height (y) dimming applies up to */
+  /** World-space height (y) lighting applies up to */
   topHeight: number;
-  /** Is the dimming effect active at all? Default `true`. Toggle later via `setDimmingEnabled`. */
-  dimmingEnabled?: boolean;
+  /** Is the room-lighting effect active at all? Default `true`. Toggle later via `setRoomLightingEnabled`. */
+  roomLightingEnabled?: boolean;
 };
 
-export type RoomDimmerPostprocess = {
-  /** `0` or `1`. When `0`, `dimAmount()` always returns `0` (nothing dimmed). Toggle via `setDimmingEnabled`. */
-  dimmingEnabled: THREE.UniformNode<"float", number>;
-  setDimmingEnabled(enabled: boolean): void;
+export type RoomLightPostprocess = {
+  /** `0` or `1`. When `0`, `litAmount()` always returns `0` (nothing lit). Toggle via `setRoomLightingEnabled`. */
+  roomLightingEnabled: THREE.UniformNode<"float", number>;
+  setRoomLightingEnabled(enabled: boolean): void;
   /** Feed the real scene camera (not the internal post-processing quad camera) */
   update(camera: THREE.Camera): void;
 
@@ -46,29 +46,29 @@ export type RoomDimmerPostprocess = {
    * Rebuilds every piece of per-instance/per-layout GPU state from the current gm instances: the
    * world-space "which gm instance is here" grid texture, each instance's inverse transform, and
    * (lazily, once per unique gmKey) uploads that layout's baked room-mask texture layer. Also
-   * clears all dimmed rooms (a new set of instances means old room indices are meaningless).
+   * clears every lit room (a new set of instances means old room indices are meaningless).
    */
   syncGms(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
-  setRoomDimmed(gmId: number, roomId: number, dimmed: boolean): void;
-  isRoomDimmed(gmId: number, roomId: number): boolean;
-  /** Clears every dimmed room in one pass */
+  setRoomLit(gmId: number, roomId: number, lit: boolean): void;
+  isRoomLit(gmId: number, roomId: number): boolean;
+  /** Clears every lit room in one pass */
   resetAllRooms(): void;
 
   /**
-   * `1` inside a dimmed room, `0` elsewhere (hard binary, no fade) — two texture samples (which gm
+   * `1` inside a lit room, `0` elsewhere (hard binary, no fade) — two texture samples (which gm
    * instance, then which room within it) plus a boolean lookup, independent of how many rooms are
-   * currently dimmed.
+   * currently lit.
    * @param sceneDepth The scene's depth texture (e.g. `scenePass.getTextureNode("depth")`) — raw
    * logarithmic depth, NOT pre-linearized; this function does its own log-depth inversion.
    */
-  dimAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
+  litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
 };
 
 /** Resolution (px) of the baked per-gmKey room-mask texture — matches `DerivedGmsData`'s `roomHitCt` */
 const roomMaskDim = Math.round(floorTextureDimension * roomHitTextureScaleDown);
 
 /**
- * Post-processing helper for dimming whole rooms. A room is either dimmed or not (no radius, no
+ * Post-processing helper for lighting whole rooms. A room is either lit or not (no radius, no
  * growth) — so instead of per-fragment polygon ray-casting against baked light shapes, this
  * samples two small baked textures:
  *
@@ -77,24 +77,24 @@ const roomMaskDim = Math.round(floorTextureDimension * roomHitTextureScaleDown);
  *    "which gm instance is here" in O(1), nearest-filtered.
  * 2. `texRoomMask` — one layer per unique geomorph layout (not per instance — shared across every
  *    instance of that layout), R = `roomId + 1` (see `DerivedGmsData.computeGmKey`), nearest-filtered
- *    (hard binary dimming — no fade, so no need for bilinear blending between adjacent room ids).
+ *    (hard binary lighting — no fade, so no need for bilinear blending between adjacent room ids).
  *
- * `dimAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
+ * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
  * (as before — this part is unchanged and still the most expensive part of the function, see
  * CONVERSATIONS.md "Lighting Performance"), then does those two texture samples plus a direct
- * `roomDimmed` boolean-array lookup — no loop over rooms, lights, or gm instances at all.
+ * `roomLit` boolean-array lookup — no loop over rooms, lights, or gm instances at all.
  */
-export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): RoomDimmerPostprocess {
+export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): RoomLightPostprocess {
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
 
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
   const camWorldMatrix = uniform(new THREE.Matrix4());
   const camPosition = uniform(new THREE.Vector3());
-  // needed to invert the real scene's logarithmic depth back into a world position (see dimAmount)
+  // needed to invert the real scene's logarithmic depth back into a world position (see litAmount)
   const camNear = uniform(0.1);
   const camFar = uniform(1000);
-  const dimmingEnabled = uniform((opts.dimmingEnabled ?? true) ? 1 : 0);
+  const roomLightingEnabled = uniform((opts.roomLightingEnabled ?? true) ? 1 : 0);
 
   // "which gm instance is here" — one texel per gmIdGridDim-sized cell, R = gmId + 1 (0 = none).
   // 🔔 fixed-size buffer, never resized after creation — swapping `.image` for a differently-sized
@@ -125,17 +125,17 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
   const gmInv2 = uniformArray<"vec4">(gmInv2Values, "vec4");
   const gmLayoutIdx = uniformArray<"float">(gmLayoutIdxValues, "float");
 
-  const roomDimmedValues = new Array<number>(MAX_GEOMORPH_INSTANCES * maxRoomsPerGm).fill(0);
-  const roomDimmed = uniformArray<"float">(roomDimmedValues, "float");
+  const roomLitValues = new Array<number>(MAX_GEOMORPH_INSTANCES * maxRoomsPerGm).fill(0);
+  const roomLit = uniformArray<"float">(roomLitValues, "float");
 
-  /** Given a fragment's world XZ, returns `1` if its room is dimmed, else `0` (hard binary, no fade) */
-  function sampleRoomDim(worldXZ: THREE.Node<"vec2">): THREE.Node<"float"> {
+  /** Given a fragment's world XZ, returns `1` if its room is lit, else `0` (hard binary, no fade) */
+  function sampleRoomLit(worldXZ: THREE.Node<"vec2">): THREE.Node<"float"> {
     const cellX = worldXZ.x.div(gmIdGridDim).floor().sub(gmGridOrigin.x);
     const cellY = worldXZ.y.div(gmIdGridDim).floor().sub(gmGridOrigin.y);
     const gridUv = vec2(cellX.add(0.5).div(gmGridMaxDim), cellY.add(0.5).div(gmGridMaxDim));
     const gmId = texture(texGmId, gridUv).r.mul(255).round().sub(1).toInt();
 
-    const dimmedOut = float(0).toVar();
+    const litOut = float(0).toVar();
 
     If(gmId.greaterThanEqual(0), () => {
       const inv1 = gmInv1.element(gmId); // (a, b, c, d)
@@ -146,7 +146,7 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
       const localX = inv1.x.mul(worldXZ.x).add(inv1.z.mul(worldXZ.y)).add(inv2.x);
       const localY = inv1.y.mul(worldXZ.x).add(inv1.w.mul(worldXZ.y)).add(inv2.y);
 
-      // local -> room-mask uv, mirroring DerivedGmsData's roomHitCt/dimMaskCt transform.
+      // local -> room-mask uv, mirroring DerivedGmsData's roomHitCt/roomMaskCt transform.
       // 🔔 divide by `floorTextureDimension`, NOT `roomMaskDim` — canvasPixel = (local-bounds) *
       // (roomHitTextureScaleDown * worldToCanvas), canvasSize = floorTextureDimension *
       // roomHitTextureScaleDown, so uv = canvasPixel/canvasSize = (local-bounds) * worldToCanvas
@@ -161,12 +161,12 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
       const roomId = roomSample.r.mul(255).round().sub(1).toInt();
 
       If(roomId.greaterThanEqual(0), () => {
-        const dimIdx = gmId.mul(int(maxRoomsPerGm)).add(roomId);
-        dimmedOut.assign(roomDimmed.element(dimIdx));
+        const litIdx = gmId.mul(int(maxRoomsPerGm)).add(roomId);
+        litOut.assign(roomLit.element(litIdx));
       });
     });
 
-    return dimmedOut;
+    return litOut;
   }
 
   function uploadRoomMaskLayer(layoutIndex: number, ct: CanvasRenderingContext2D) {
@@ -176,9 +176,9 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
   }
 
   return {
-    dimmingEnabled,
-    setDimmingEnabled(isEnabled) {
-      dimmingEnabled.value = isEnabled ? 1 : 0;
+    roomLightingEnabled,
+    setRoomLightingEnabled(isEnabled) {
+      roomLightingEnabled.value = isEnabled ? 1 : 0;
     },
     update(camera) {
       // ensure matrixWorld reflects this frame's position/orientation, not last frame's
@@ -198,7 +198,7 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
       const copyH = Math.min(grid.height, gmGridMaxDim);
       if (grid.width > gmGridMaxDim || grid.height > gmGridMaxDim) {
         console.warn(
-          `room-dimmer: gm-id grid (${grid.width}x${grid.height}) exceeds max ${gmGridMaxDim}x${gmGridMaxDim} — clamped`,
+          `room-light: gm-id grid (${grid.width}x${grid.height}) exceeds max ${gmGridMaxDim}x${gmGridMaxDim} — clamped`,
         );
       }
       for (let y = 0; y < copyH; y++) {
@@ -225,23 +225,23 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
         if (layoutIndex === undefined) {
           layoutIndex = gmKeyToLayoutIndex.size;
           gmKeyToLayoutIndex.set(gm.key, layoutIndex);
-          uploadRoomMaskLayer(layoutIndex, gmsData.byKey[gm.key].dimMaskCt);
+          uploadRoomMaskLayer(layoutIndex, gmsData.byKey[gm.key].roomMaskCt);
         }
         gmLayoutIdxValues[i] = layoutIndex;
       }
 
-      roomDimmedValues.fill(0);
+      roomLitValues.fill(0);
     },
-    setRoomDimmed(gmId, roomId, dimmed) {
-      roomDimmedValues[gmId * maxRoomsPerGm + roomId] = dimmed ? 1 : 0;
+    setRoomLit(gmId, roomId, lit) {
+      roomLitValues[gmId * maxRoomsPerGm + roomId] = lit ? 1 : 0;
     },
-    isRoomDimmed(gmId, roomId) {
-      return roomDimmedValues[gmId * maxRoomsPerGm + roomId] === 1;
+    isRoomLit(gmId, roomId) {
+      return roomLitValues[gmId * maxRoomsPerGm + roomId] === 1;
     },
     resetAllRooms() {
-      roomDimmedValues.fill(0);
+      roomLitValues.fill(0);
     },
-    dimAmount(sceneDepth) {
+    litAmount(sceneDepth) {
       return Fn(() => {
         const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
         // depthWrite:false surfaces (e.g. the floor, see Floor.tsx) never populate the depth
@@ -267,7 +267,7 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
           worldY.assign(planeHeight);
         }).Else(() => {
           // reconstruct the real world position from depth (log-depth -> NDC -> view -> world) —
-          // fixes dimming an npc that's actually in front of/behind the room's floor but
+          // fixes lighting an npc that's actually in front of/behind the room's floor but
           // screen-aligned with it, which a plane-only test can't distinguish
           const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
           const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
@@ -280,11 +280,11 @@ export function createRoomDimmerPostprocess(opts: RoomDimmerPostprocessOpts): Ro
 
         const result = float(0).toVar();
         If(inHeightRange, () => {
-          result.assign(sampleRoomDim(worldXZ));
+          result.assign(sampleRoomLit(worldXZ));
         });
 
-        // when dimming is disabled, pretend no room is ever dimmed
-        return dimmingEnabled.equal(0).select(float(0), result);
+        // when room-lighting is disabled, pretend no room is ever lit
+        return roomLightingEnabled.equal(0).select(float(0), result);
       })();
     },
   };
