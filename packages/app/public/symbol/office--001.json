@@ -119,19 +119,19 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "365b8f25-b0ec-47f0-a6ec-a013a4b3552c",
           "name": "console--019",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0},
           "type": "symbol",
           "srcKey": "console--019",
           "baseRect": {"width": 120, "height": 120},
           "offset": {"x": -0.7, "y": -0.7},
-          "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
+          "cssTransform": "matrix(1, 0, 0, 1, -0.2, -0.7)"
         }
       ]
     },
