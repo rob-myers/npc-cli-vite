@@ -30,7 +30,8 @@ export function getPhysicsDoorsPayload(gms: Geomorph.LayoutInstance[]): WW.Physi
     gm.doors.map((door, doorId) => ({
       gdKey: helper.getGmDoorKey(gmId, doorId),
       center: gm.matrix.transformPoint(door.center.clone()),
-      angle: gm.matrix.transformAngle(door.angle),
+      // 🔔 rapier has reverse angular convention
+      angle: -gm.matrix.transformAngle(door.angle),
       baseWidth: door.baseRect.width,
       baseHeight: door.baseRect.height,
     })),
