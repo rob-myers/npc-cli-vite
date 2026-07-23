@@ -71,7 +71,7 @@ export async function demo_auto_nudge(ct: JshCli.RunArg) {
 
   try {
     // run until killed
-    await api.sleep(Number.MAX_SAFE_INTEGER).finally(handled.dispose);
+    await api.sleep(Number.MAX_SAFE_INTEGER);
   } finally {
     handled.dispose();
   }
