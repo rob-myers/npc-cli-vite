@@ -41,7 +41,8 @@ export function DebugPhysicsColliders({
           geometry={boxGeometry}
           position={[position.x, colliderHeight / 2 + zFightDelta * i, position.z]}
           scale={[userData.width + zFightDelta, colliderHeight, userData.depth + zFightDelta]}
-          rotation={[0, userData.angle, 0]}
+          // 🔔 rapier has reverse angular convention
+          rotation={[0, -userData.angle, 0]}
           renderOrder={toColliderMeta[parsedKey[0]]?.renderOrder ?? 3}
         >
           <meshStandardNodeMaterial
