@@ -260,7 +260,7 @@ export default function NPCs() {
           w.view.light.doorCrossSign = null;
           w.view.light.currentGmRoomId = null;
           w.view.trackedLight.setTracked(null);
-          w.view.raycastLight.setTracked(null);
+          w.view.dynamicLight.setTracked(null);
           w.view.forceUpdate();
           return;
         }
@@ -274,7 +274,7 @@ export default function NPCs() {
         w.view.light.targetOverride = npc.position;
         // preserve the current (persisted/slider-set) radius, rather than resetting to default
         w.view.trackedLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
-        w.view.raycastLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
+        w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
         w.view.updateLight(npc.position);
         const gmRoomId = w.e.findRoomContaining(npc.position, true);
         w.view.light.currentGmRoomId = gmRoomId;
@@ -289,8 +289,8 @@ export default function NPCs() {
           const gm = w.gms[gmRoomId.gmId];
           const layout = w.assets.layout[gm.key];
           if (layout) {
-            w.view.raycastLight.setGmWalls(gm.key, layout.walls, layout.bounds);
-            w.view.raycastLight.setActiveGm(gm.key, gm.matrix);
+            w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
+            w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
             const activeGmDoors = layout.doors.map((connector, doorId) => {
               const doorState = w.d[`g${gmRoomId.gmId}d${doorId}` as Geomorph.GmDoorKey];
               return {
@@ -299,7 +299,7 @@ export default function NPCs() {
                 instanceId: doorState.instanceId,
               };
             });
-            w.view.raycastLight.setActiveGmDoors(activeGmDoors);
+            w.view.dynamicLight.setActiveGmDoors(activeGmDoors);
             w.view.light.activeGmDoorInstanceIds = activeGmDoors.map((d) => d.instanceId);
           }
         }

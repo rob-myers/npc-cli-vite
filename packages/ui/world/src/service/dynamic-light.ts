@@ -319,6 +319,7 @@ export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts)
               const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t));
               maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
               If(maxOccupancy.greaterThanEqual(0.75), () => {
+                maxOccupancy.assign(1);
                 Break();
               });
             });
