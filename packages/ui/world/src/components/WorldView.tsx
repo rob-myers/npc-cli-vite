@@ -22,6 +22,7 @@ import {
   ambientIntensityKey,
   ambientMoodKey,
   cameraModeStorageKey,
+  cameraPositionStorageKey,
   defaultAmbientIntensity,
   defaultCameraMode,
   defaultCardinalDirectionsDesktop,
@@ -38,6 +39,7 @@ import {
   roomLightEditingEnabledKey,
   roomLightIntensityKey,
   roomLightingEnabledKey,
+  roomLitStorageKeyPrefix,
   trackedLightIntensityKey,
   trackedLightRadiusKey,
   trackedLightRoomOutset,
@@ -81,11 +83,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
       },
-      initial: {
+      initial: tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? {
         azimuthal: w.touchDevice ? 0 : Math.PI / 4,
         polar: Math.PI / 4,
         position: { x: 4, y: w.touchDevice ? 10 : 16, z: 4 },
       },
+      lastCameraReading: { azimuthal: 0, polar: 0, position: { x: 0, y: 0, z: 0 } },
       lastPointer: {
         epochMs: 0,
         longPressTimer: 0,
@@ -408,22 +411,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
         }
 
-        // refresh the shared camera matrices on every rendered frame — so lighting keeps rendering
-        // correctly (rather than with stale matrices) as the camera pans/rotates/zooms, even while
-        // paused (when `updateLight` isn't advancing `light.displayCenter`)
         const camera = state.controls?.object ?? w.r3f.camera;
         state.roomLight.update(camera);
         state.trackedLight.update(camera);
 
-        // only push a center-refresh while genuinely tracking a target — `setTracked` with a
-        // non-null center always sets active=1, so this must not fire once tracking is turned off
-        // (radius omitted -> keeps whatever `trackNpc` set it to)
         if (state.light.targetOverride !== null) {
           state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
-          // live per-door openness, read fresh every frame (cheap — a handful of float reads) so
-          // the "lit through an open door" reach fades smoothly as a door actually slides open
+          // "lit through an open door" fades smoothly as a door actually slides open
           state.trackedLight.setDoorOpenRatios(state.light.doorInstanceIds.map((id) => w.door.openRatioArray[id]));
         }
+      },
+      onCameraEnd() {
+        state.lastCameraReading.azimuthal = state.controls.spherical.theta;
+        state.lastCameraReading.polar = state.controls.spherical.phi;
+        state.lastCameraReading.position.x = state.controls.target.x;
+        state.lastCameraReading.position.y = state.controls.spherical.radius;
+        state.lastCameraReading.position.z = state.controls.target.z;
+        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(state.lastCameraReading));
       },
       updateLight(rawTarget) {
         state.light.displayCenter.copy(rawTarget);
@@ -572,11 +576,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
         const { gmId, roomId } = gmRoomId;
         state.roomLight.setRoomLit(gmId, roomId, !state.roomLight.isRoomLit(gmId, roomId));
+        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
       resetAllRooms() {
         state.roomLight.resetAllRooms();
+        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify([]));
         state.setPostProcessingEnabled(true);
       },
       setCameraMode(mode) {
@@ -691,9 +697,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
 
   useEffect(() => {
+    if (w.gms.length === 0) {
+      return;
+    }
     // 🚧 hmr should not reset lights
-    w.gms.length > 0 && state.roomLight.syncGms(w.gms, w.gmsData);
-  }, [w.hash, w.gmsData]); // gm instances (or their derived per-layout data) changed
+    state.roomLight.syncGms(w.gms, w.gmsData);
+    const savedLitRooms = tryLocalStorageGetParsed<[number, number][]>(`${roomLitStorageKeyPrefix}:${w.mapKey}`);
+    if (savedLitRooms) {
+      state.roomLight.setRoomLitPairs(savedLitRooms);
+    }
+    state.setPostProcessingEnabled(true);
+  }, [w.hash, w.gmsData, w.mapKey]); // gm instances (or their derived per-layout data) changed
 
   return (
     <div className="size-full">
@@ -730,6 +744,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           initialPosition={state.initial.position}
           minPanDistance={w.touchDevice ? 0.05 : 0}
           onFrame={state.onCameraChange}
+          onEnd={state.onCameraEnd}
           {...state.ctrlOpts}
         />
 
@@ -768,6 +783,8 @@ export type State = {
   topDown: boolean;
   ctrlOpts: MapControlsProps & { extraZoom?: number };
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
+  /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
+  lastCameraReading: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   lastPointer: {
     epochMs: number;
     longPress: boolean;
@@ -812,6 +829,8 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
+  /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
+  onCameraEnd(): void;
   /** Advances `light.displayCenter` from a live target — called every tick from `World`'s `onTick` while `light.targetOverride` is set (see `w.npc.trackNpc`) */
   updateLight(rawTarget: { x: number; y: number; z: number }): void;
   /** World-space outline of `gmRoomId`'s room, outset slightly (see `trackedLightRoomOutset`), unioned with adjacent doorways */

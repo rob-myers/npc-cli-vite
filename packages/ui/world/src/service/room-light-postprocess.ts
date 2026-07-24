@@ -53,6 +53,10 @@ export type RoomLightPostprocess = {
   isRoomLit(gmId: number, roomId: number): boolean;
   /** Clears every lit room in one pass */
   resetAllRooms(): void;
+  /** Every currently-lit `[gmId, roomId]` pair — e.g. for persisting elsewhere */
+  getLitRoomPairs(): [number, number][];
+  /** Clears existing lit rooms, then lights exactly the given `[gmId, roomId]` pairs */
+  setRoomLitPairs(pairs: [number, number][]): void;
 
   /**
    * `1` inside a lit room, `0` elsewhere (hard binary, no fade) — two texture samples (which gm
@@ -240,6 +244,21 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
     },
     resetAllRooms() {
       roomLitValues.fill(0);
+    },
+    getLitRoomPairs() {
+      const pairs: [number, number][] = [];
+      roomLitValues.forEach((lit, i) => {
+        if (lit === 1) {
+          pairs.push([Math.floor(i / maxRoomsPerGm), i % maxRoomsPerGm]);
+        }
+      });
+      return pairs;
+    },
+    setRoomLitPairs(pairs) {
+      roomLitValues.fill(0);
+      for (const [gmId, roomId] of pairs) {
+        roomLitValues[gmId * maxRoomsPerGm + roomId] = 1;
+      }
     },
     litAmount(sceneDepth) {
       return Fn(() => {
