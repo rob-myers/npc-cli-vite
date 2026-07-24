@@ -634,6 +634,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.trackedLight.setTrackedRoomOutline(outline);
         w.view.trackedLight.setTrackedRoomDoors(allDoors);
         w.view.light.doorInstanceIds = allDoors.map((d) => d.instanceId);
+
+        // parallel raycast-light system (Phase A: walls only) — bake this gm instance's walls
+        // once (no-op if already baked) and mark it as the currently-active one for sampling
+        const gm = w.gms[gmRoomId.gmId];
+        const layout = w.assets.layout[gm.key];
+        if (layout) {
+          w.view.raycastLight.setGmWalls(gm.key, layout.walls, layout.bounds);
+          w.view.raycastLight.setActiveGm(gm.key, gm.matrix);
+        }
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];

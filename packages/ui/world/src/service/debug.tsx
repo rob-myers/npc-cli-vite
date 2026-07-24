@@ -1,4 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog";
+import { geomorphKeys } from "@npc-cli/media/starship-symbol";
 import { cn } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
@@ -419,6 +420,84 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
               </div>
             ))}
             {entries.length === 0 && <span className="text-sm text-slate-500">No skins loaded</span>}
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+export function LightMapModal({ open, onOpenChange, container }: DebugModalProps) {
+  const w = useContext(WorldContext);
+  // 🔔 `w.view.raycastLight` can be stale-undefined right after HMR adds this field to an
+  // already-running `useStateRef` instance (it doesn't re-run the initializer for existing state)
+  const debug = w.view.raycastLight?.debug;
+  const wallTex = debug?.wallTex;
+  const bakedGmKeys = debug?.bakedGmKeys() ?? [];
+  const activeGmKey = debug?.activeGmKey() ?? null;
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal container={container}>
+        <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
+        <Dialog.Popup
+          className={cn(
+            "absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
+            "max-w-3xl w-[90%] max-h-[90%] flex flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+            <Dialog.Title className="text-sm font-semibold text-slate-200">
+              Raycast Light — Wall Masks ({bakedGmKeys.length} baked)
+            </Dialog.Title>
+            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
+              <XIcon className="size-5 text-slate-400" />
+            </Dialog.Close>
+          </div>
+          <div className="px-4 pt-3 text-xs text-slate-400">
+            Active gmKey (currently sampled for occlusion):{" "}
+            <span className="text-emerald-400 font-mono">{activeGmKey ?? "(none)"}</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 flex flex-wrap justify-center gap-4">
+            {bakedGmKeys.map((gmKey) => {
+              const layerIndex = geomorphKeys.indexOf(gmKey);
+              return (
+                <div key={gmKey} className="flex flex-col items-center gap-1">
+                  <span
+                    className={cn("text-xs font-mono", gmKey === activeGmKey ? "text-emerald-400" : "text-slate-400")}
+                  >
+                    {gmKey}
+                    {gmKey === activeGmKey && " (active)"}
+                  </span>
+                  <canvas
+                    width={wallTex.opts.width}
+                    height={wallTex.opts.height}
+                    className={cn(
+                      "w-64 h-64 border",
+                      gmKey === activeGmKey ? "border-emerald-400" : "border-slate-700",
+                    )}
+                    style={{ imageRendering: "pixelated" }}
+                    ref={(el) => {
+                      if (!el || layerIndex === -1) return;
+                      const ct = el.getContext("2d");
+                      if (!ct) return;
+                      const data = wallTex.tex.image.data as Uint8Array;
+                      const { width: tw, height: th } = wallTex.opts;
+                      const layerSize = tw * th * 4;
+                      const slice = new Uint8ClampedArray(
+                        data.slice(layerIndex * layerSize, (layerIndex + 1) * layerSize).buffer,
+                      );
+                      const imageData = new ImageData(slice, tw, th);
+                      ct.putImageData(imageData, 0, 0);
+                    }}
+                  />
+                </div>
+              );
+            })}
+            {bakedGmKeys.length === 0 && (
+              <span className="text-sm text-slate-500">No wall masks baked yet — track an npc first</span>
+            )}
           </div>
         </Dialog.Popup>
       </Dialog.Portal>

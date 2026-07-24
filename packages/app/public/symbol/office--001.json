@@ -226,7 +226,7 @@
     {
       "id": "2de24072-a090-41d1-8893-b3ea8f56ef71",
       "name": "decor quad screen y=1.4 tilt",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {
         "a": 0.7071,
