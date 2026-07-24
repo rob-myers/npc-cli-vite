@@ -19,8 +19,6 @@ const FlatBaseUiMetaSchema = z.looseObject({
   id: z.string(),
   /** Should UI render UiInstanceMenu instead? */
   customUiInstanceMenu: z.boolean().optional(),
-  /** Position of UiInstanceMenu */
-  menuPosition: z.enum(["left", "right"]).optional(),
   /** For pausing */
   disabled: z.boolean().optional(),
   /** Force UI initially disabled */
