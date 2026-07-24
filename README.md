@@ -115,6 +115,8 @@ In Node script saw "Could not find a declaration file for module" on try import 
 
 Hull doors can have navRectId -1 if hull walls not properly aligned
 
+`gmId` detection issue: map transfoms must be aligned to (15 * n, 15 * n)
+
 ## General
 
 In VSCode can manually reconnect to mcp server via `/mcp` then click button
