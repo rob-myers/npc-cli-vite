@@ -40,7 +40,7 @@ export type DynamicLightPostprocessOpts = {
   topHeight: number;
   /** World-space distance over which the light fades out, starting at its own radius. Default `0.6` */
   falloff?: number;
-  /** Side length (px) of each gmKey's baked wall-occupancy texture layer. Default `256`. */
+  /** Side length (px) of each gmKey's baked wall-occupancy texture layer. Default `512`. */
   wallTexSize?: number;
   /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.1`. */
   doorHalfDepth?: number;
@@ -419,6 +419,9 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
                 maxOccupancy.assign(1);
                 Break();
               });
+              // If(maxOccupancy.greaterThanEqual(1), () => {
+              //   Break();
+              // });
             });
 
             litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));

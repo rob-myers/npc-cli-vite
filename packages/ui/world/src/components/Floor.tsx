@@ -75,6 +75,13 @@ export default function Floor() {
         // room outlines
         drawRoomOutlines(ct, layout, w.getTheme().floor);
 
+        // fix curved walls aliasing 🚧 prefer meta.curved
+        drawPolygons(
+          ct,
+          gm.walls.filter((x) => x.meta.broad),
+          { fillStyle: null, strokeStyle: "#000", lineWidth: 0.1 },
+        );
+
         // draw nav mesh (gmId specific)
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
