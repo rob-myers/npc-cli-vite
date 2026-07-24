@@ -336,11 +336,13 @@ export default function Decor() {
       },
       queryPoint(center, opts) {
         const groundPoint = helper.parseGroundPoint(center);
-        const smallRadius = 0.05;
-        tmpRect.x = groundPoint.x - smallRadius;
-        tmpRect.y = groundPoint.y - smallRadius;
-        tmpRect.width = smallRadius * 2;
-        tmpRect.height = smallRadius * 2;
+        const radius = opts?.radius ?? 0.05;
+        tmpRect.x = groundPoint.x - radius;
+        tmpRect.y = groundPoint.y - radius;
+        tmpRect.width = radius * 2;
+        tmpRect.height = radius * 2;
+
+        // return d.bounds.contains(groundPoint);
 
         const results = queryDecorGridRect(state.grid, tmpRect, opts).filter((d) => {
           switch (d.type) {
@@ -1005,6 +1007,7 @@ export type State = {
     opts?: Geomorph.DecorGridQueryOpts & {
       /** Restrict to closest to supplied height (meters)? */
       desiredHeight?: number;
+      radius?: number;
     },
   ) => Geomorph.Decor[];
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
