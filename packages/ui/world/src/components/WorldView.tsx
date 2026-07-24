@@ -113,6 +113,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       dynamicLight: createDynamicLightPostprocess({
         bottomHeight: 0,
         topHeight: wallHeight - 0.01, // avoid ceiling aliasing
+        marchSteps: w.touchDevice ? 48 : 96,
       }),
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
 
