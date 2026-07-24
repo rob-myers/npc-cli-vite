@@ -44,6 +44,10 @@ export type DynamicLightPostprocessOpts = {
   wallTexSize?: number;
   /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.1`. */
   doorHalfDepth?: number;
+  /** Radius used while the tracked npc is near a hull door (see `setNearHullDoor`). Default `0.8`. */
+  hullDoorwayRadius?: number;
+  /** Per-second lerp speed for animating towards/away from `hullDoorwayRadius`. Default `4`. */
+  hullDoorwayLerpSpeed?: number;
 };
 
 export type DynamicLightPostprocess = {
@@ -71,6 +75,17 @@ export type DynamicLightPostprocess = {
 
   /** Sets the persisted brightness multiplier */
   setIntensity(next: number): void;
+
+  /**
+   * Shrinks (or restores) the effective radius, animated — call with `true` when the tracked npc
+   * is near ANY hull door (only one gm instance is ever "active" for occlusion, so a full-size
+   * light near a hull door can otherwise leak into an adjacent, unoccluded gm instance), `false`
+   * once it's no longer near any (not necessarily the same door it entered near).
+   */
+  setNearHullDoor(near: boolean): void;
+
+  /** Advances the hull-doorway radius animation. Call every tick (e.g. from `World.onTick`). */
+  tick(deltaSeconds: number): void;
 
   /** Bakes `gmKey`'s wall polygons (local space) into an occupancy texture layer, once. */
   setGmWalls(
@@ -124,6 +139,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   const wallTexSize = opts.wallTexSize ?? 512;
   const marchSteps = opts.marchSteps;
   const doorHalfDepth = opts.doorHalfDepth ?? 0.1;
+  const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
+  const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
 
   // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
   const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
@@ -137,6 +154,9 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
 
   // vec4(worldX, worldZ, activeFlag, radius)
   const tracked = uniform(new THREE.Vector4(0, 0, 0, 1));
+  // animated towards (near a hull door ? min(radius, hullDoorwayRadius) : radius) each tick
+  let effectiveRadius = initialRadius;
+  let nearHullDoor = false;
 
   // one occupancy layer per gmKey, baked once (walls are static)
   const wallTexArray = new TexArray({
@@ -253,18 +273,36 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         tracked.value.z = 0;
       } else {
         tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
+        if (radius !== undefined) {
+          effectiveRadius = radius;
+        }
       }
     },
     setRadius(next) {
       this.radius = next;
       tryLocalStorageSet(dynamicLightRadiusKey, String(next));
       if (this.target !== null) {
-        this.setTracked({ x: this.displayCenter.x, z: this.displayCenter.z }, next);
+        // instant, not animated — a slider drag should feel responsive; hull-door capping still applies
+        this.setTracked(
+          { x: this.displayCenter.x, z: this.displayCenter.z },
+          nearHullDoor ? Math.min(next, hullDoorwayRadius) : next,
+        );
       }
     },
     setIntensity(next) {
       this.intensity.value = next;
       tryLocalStorageSet(dynamicLightIntensityKey, String(next));
+    },
+    setNearHullDoor(near) {
+      nearHullDoor = near;
+    },
+    tick(deltaSeconds) {
+      const targetRadius = Math.min(this.radius, nearHullDoor ? hullDoorwayRadius : this.radius);
+      const lerpAmt = Math.min(1, deltaSeconds * hullDoorwayLerpSpeed);
+      effectiveRadius += (targetRadius - effectiveRadius) * lerpAmt;
+      if (this.target !== null) {
+        tracked.value.w = effectiveRadius;
+      }
     },
     setGmWalls(gmKey, wallPolys, bounds) {
       if (bakedGmKeys.has(gmKey)) {
