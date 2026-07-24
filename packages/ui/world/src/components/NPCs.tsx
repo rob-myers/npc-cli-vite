@@ -258,35 +258,36 @@ export default function NPCs() {
           w.view.forceUpdate();
           return;
         }
+
         const npc = state.get(npcKey);
+        const gmRoomId = w.e.findRoomContaining(npc.position, true);
+
+        if (!gmRoomId) {
+          throw Error(`npc ${npc.key} must be in some room`);
+        }
+
         w.view.dynamicLight.trackedNpcKey = npcKey;
-        // 🔔 keep a live reference (not a snapshot copy), so `npc.position` continues to be read
-        // fresh each tick (via World.tsx's onTick -> w.view.updateDynamicLight) and the light
-        // tracks the npc automatically as it moves
         w.view.dynamicLight.target = npc.position;
-        // preserve the current (persisted/slider-set) radius, rather than resetting to default
+        // preserve the current radius, rather than resetting to default
         w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.dynamicLight.radius);
         w.view.updateDynamicLight(npc.position);
-        const gmRoomId = w.e.findRoomContaining(npc.position, true);
-        // bake this gm instance's walls once (no-op if already baked), mark it as the currently-
+
+        // bake this gm instance's walls once, mark it as the currently-
         // active one for sampling, and register ALL of its doors (not just room-bordering ones)
-        if (gmRoomId) {
-          const gm = w.gms[gmRoomId.gmId];
-          const layout = w.assets.layout[gm.key];
-          if (layout) {
-            w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
-            w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
-            const activeGmDoors = layout.doors.map((connector, doorId) => {
-              const doorState = w.d[`g${gmRoomId.gmId}d${doorId}` as Geomorph.GmDoorKey];
-              return {
-                seg: connector.seg,
-                gapAtHighLambda: doorState.gapAtHighLambda,
-                instanceId: doorState.instanceId,
-              };
-            });
-            w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
-          }
-        }
+        const gm = w.gms[gmRoomId.gmId];
+        const layout = w.assets.layout[gm.key] as Geomorph.Layout;
+        w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
+        w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
+        const activeGmDoors = layout.doors.map((connector, doorId) => {
+          const gdKey: Geomorph.GmDoorKey = `g${gmRoomId.gmId}d${doorId}`;
+          const doorState = w.d[gdKey];
+          return {
+            seg: connector.seg,
+            gapAtHighLambda: doorState.gapAtHighLambda,
+            instanceId: doorState.instanceId,
+          };
+        });
+        w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
         w.view.forceUpdate();
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {

@@ -88,11 +88,7 @@ export type DynamicLightPostprocess = {
   tick(deltaSeconds: number): void;
 
   /** Bakes `gmKey`'s wall polygons (local space) into an occupancy texture layer, once. */
-  setGmWalls(
-    gmKey: StarShipGeomorphKey,
-    wallPolys: { outline: { x: number; y: number }[] }[],
-    bounds: Geom.RectJson,
-  ): void;
+  setGmWalls(gmKey: StarShipGeomorphKey, wallPolys: Geom.Poly[], bounds: Geom.RectJson): void;
 
   /**
    * Sets which gm instance the tracked npc currently occupies. Call on room change.
@@ -308,21 +304,27 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
       if (bakedGmKeys.has(gmKey)) {
         return;
       }
-      bakedGmKeys.add(gmKey);
-      boundsByGmKey.set(gmKey, bounds);
 
-      const layerIndex = geomorphKeys.indexOf(gmKey);
-      if (layerIndex === -1) {
+      const texIndex = geomorphKeys.indexOf(gmKey);
+      if (texIndex === -1) {
         return;
       }
+
+      bakedGmKeys.add(gmKey);
+      boundsByGmKey.set(gmKey, bounds);
 
       const { ct } = wallTexArray;
       ct.resetTransform();
       ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
       const scale = gmToTexScale(bounds);
       ct.setTransform(scale, 0, 0, scale, -bounds.x * scale, -bounds.y * scale);
-      drawPolygons(ct, wallPolys as Geom.Poly[], { fillStyle: "white", strokeStyle: null });
-      wallTexArray.updateIndex(layerIndex);
+
+      drawPolygons(ct, wallPolys, { fillStyle: "white", strokeStyle: null });
+      // drawPolygons(ct, wallPolys.flatMap((poly) =>
+      //   poly.meta.broad ? geomService.createInset(poly, 0.05) : poly,
+      // ), { fillStyle: "white", strokeStyle: null });
+
+      wallTexArray.updateIndex(texIndex);
       combinedTex.textureNeedsUpdate = true;
     },
     setActiveGm(gmKey, matrix) {
