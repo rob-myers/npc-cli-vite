@@ -283,7 +283,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
       ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
       const scale = gmToTexScale(bounds);
       ct.setTransform(scale, 0, 0, scale, -bounds.x * scale, -bounds.y * scale);
-      drawPolygons(ct, wallPolys as Geom.Poly[], { fillStyle: "white" });
+      drawPolygons(ct, wallPolys as Geom.Poly[], { fillStyle: "white", strokeStyle: null });
       wallTexArray.updateIndex(layerIndex);
       combinedTex.textureNeedsUpdate = true;
     },
