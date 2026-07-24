@@ -95,6 +95,8 @@ export const defaultTrackedLightIntensity = 1;
 export const trackedLightIntensityKey = "world-tracked-light-intensity";
 /** How far (meters) the tracked light's room-polygon clip is outset past the room's inner wall face */
 export const trackedLightRoomOutset = 0.1;
+/** Toggles between the room-based tracked light and the parallel raycast-based one (see `light-test.ts`) */
+export const raycastLightEnabledKey = "world-raycast-light-enabled";
 /** Default magnitude of the world's ambient (unlit-area) tint — see `dimWorldColor` */
 export const defaultAmbientIntensity = 0.4;
 export const ambientIntensityKey = "world-ambient-intensity";

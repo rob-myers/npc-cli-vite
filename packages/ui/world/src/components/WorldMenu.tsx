@@ -34,7 +34,7 @@ import {
   fovStorageKey,
   pickOpenDoorsKey,
 } from "../const";
-import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { GeomorphGraphsModal, LightMapModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { type AmbientMood, ambientMoods } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -56,6 +56,7 @@ export function WorldMenu() {
       dragged: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
+      lightMapOpen: false,
       menuOpen: false,
       lightsMenuOpen: false,
       lightsLongPress: false,
@@ -142,6 +143,9 @@ export function WorldMenu() {
         break;
       case "Skins":
         state.set({ menuOpen: false, skinDebugOpen: true });
+        break;
+      case "Light Map":
+        state.set({ menuOpen: false, lightMapOpen: true });
         break;
       case "Colliders":
         w.debug?.showPhysicsColliders();
@@ -654,6 +658,17 @@ export function WorldMenu() {
                     onChange={(next) => w.view.setTrackedLightIntensity(next)}
                   />
                 </div>
+                <LightsMenuToggle
+                  big={big}
+                  label="Raycast mode"
+                  active={w.view.raycastLightEnabled?.value === 1}
+                  onIcon={EyeIcon}
+                  offIcon={EyeSlashIcon}
+                  onClick={() => {
+                    w.view.setRaycastLightEnabled();
+                    state.update();
+                  }}
+                />
 
                 <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
 
@@ -737,6 +752,11 @@ export function WorldMenu() {
           container={w.rootEl}
         />
       )}
+      <LightMapModal
+        open={state.lightMapOpen}
+        onOpenChange={(open) => state.set({ lightMapOpen: open })}
+        container={w.rootEl}
+      />
     </>
   );
 }
@@ -872,6 +892,7 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
+  lightMapOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   lightsMenuOpen: boolean;
@@ -903,6 +924,7 @@ const debugItems = [
   "Room Hit",
   "Graphs",
   "Skins",
+  "Light Map",
   "Colliders",
   "Grid",
   "Room Lights",

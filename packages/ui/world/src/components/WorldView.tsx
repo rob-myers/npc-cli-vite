@@ -36,6 +36,7 @@ import {
   nearbyDoorMergeExtensionDepth,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
+  raycastLightEnabledKey,
   roomLightEditingEnabledKey,
   roomLightIntensityKey,
   roomLightingEnabledKey,
@@ -47,6 +48,7 @@ import {
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
+import { createRaycastLightPostprocess, type RaycastLightPostprocess } from "../service/light-test";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
 import { type AmbientMood, computeDimWorldColor, type SelectAnyType } from "../service/texture";
@@ -117,6 +119,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling */
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       trackedLight: createTrackedLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
+      raycastLight: createRaycastLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
+      raycastLightEnabled: uniform((tryLocalStorageGetParsed<boolean>(raycastLightEnabledKey) ?? false) ? 1 : 0),
       light: {
         displayCenter: new THREE.Vector3(),
         /** Set by `w.npc.trackNpc`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
@@ -414,11 +418,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const camera = state.controls?.object ?? w.r3f.camera;
         state.roomLight.update(camera);
         state.trackedLight.update(camera);
+        state.raycastLight.update(camera);
 
         if (state.light.targetOverride !== null) {
           state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
           // "lit through an open door" fades smoothly as a door actually slides open
           state.trackedLight.setDoorOpenRatios(state.light.doorInstanceIds.map((id) => w.door.openRatioArray[id]));
+          // fed alongside `trackedLight` regardless of which system is currently toggled on —
+          // cheap, and avoids needing to re-sync on every toggle flip
+          state.raycastLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
         }
       },
       onCameraEnd() {
@@ -523,6 +531,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(roomLightingEnabledKey, String(next));
         state.setPostProcessingEnabled(true);
       },
+      setRaycastLightEnabled(next = state.raycastLightEnabled.value === 0) {
+        state.raycastLightEnabled.value = next ? 1 : 0;
+        tryLocalStorageSet(raycastLightEnabledKey, String(next));
+        state.setPostProcessingEnabled(true);
+      },
       setRoomLightIntensity(next) {
         state.roomLightIntensity.value = next;
         tryLocalStorageSet(roomLightIntensityKey, String(next));
@@ -608,10 +621,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // "bright" if a lit room's own (scaled-down) brightness OR the tracked light reaches here —
         // combine via max BEFORE inverting, not after: this way a lit room whose own intensity is
         // below 1 still lets the tracked light stand out above it, instead of one flattening the other.
+        // `trackedLight` and `raycastLight` are alternative npc-following systems (see
+        // `raycastLightEnabled`, toggled in WorldMenu's light submenu) — the disabled one's
+        // contribution is zeroed via the complementary factor, so flipping the toggle needs no
+        // other change here.
         const isBright = state.roomLight
           .litAmount(sceneDepth.r)
           .mul(state.roomLightIntensity)
-          .max(state.trackedLight.litAmount(sceneDepth.r).mul(state.trackedLightIntensity));
+          .max(
+            state.trackedLight
+              .litAmount(sceneDepth.r)
+              .mul(state.trackedLightIntensity)
+              .mul(float(1).sub(state.raycastLightEnabled)),
+          )
+          .max(
+            state.raycastLight.litAmount(sceneDepth.r).mul(state.trackedLightIntensity).mul(state.raycastLightEnabled),
+          );
         const unlitAmount = float(1).sub(isBright);
         const effect = mix(
           // fully-lit scaled down
@@ -669,7 +694,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, dimWorldColor: true, trackedLight: true } },
+    { reset: { ctrlOpts: true, initial: false, dimWorldColor: true, raycastLight: true } },
   );
 
   w.view = state;
@@ -812,6 +837,9 @@ export type State = {
   /** Persisted mood tint backing `dimWorldColor`, else `null` (neutral) */
   ambientMood: AmbientMood | null;
   trackedLight: TrackedLightPostprocess;
+  raycastLight: RaycastLightPostprocess;
+  /** `1` when the raycast light system is active instead of `trackedLight` — see `setRaycastLightEnabled` */
+  raycastLightEnabled: THREE.UniformNode<"float", number>;
   light: LightState;
   fov: number;
 
@@ -862,6 +890,8 @@ export type State = {
   toggleRoomLightEditing(): void;
   /** Toggles `roomLight.roomLightingEnabled` — persisted to localStorage */
   setRoomLightingEnabled(next?: boolean): void;
+  /** Toggles `raycastLightEnabled` — persisted to localStorage; mutually exclusive with `trackedLight`'s contribution in `setupPostProcessing` */
+  setRaycastLightEnabled(next?: boolean): void;
   /** Sets the persisted room-light intensity (0..1) — see `defaultRoomLightIntensity` */
   setRoomLightIntensity(next: number): void;
   /** Sets the tracked light's radius (persisted) — updates the live uniform if tracking is active */

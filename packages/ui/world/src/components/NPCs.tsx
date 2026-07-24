@@ -259,6 +259,7 @@ export default function NPCs() {
           w.view.light.doorCrossSign = null;
           w.view.light.currentGmRoomId = null;
           w.view.trackedLight.setTracked(null);
+          w.view.raycastLight.setTracked(null);
           w.view.forceUpdate();
           return;
         }
@@ -272,6 +273,7 @@ export default function NPCs() {
         w.view.light.targetOverride = npc.position;
         // preserve the current (persisted/slider-set) radius, rather than resetting to default
         w.view.trackedLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
+        w.view.raycastLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
         w.view.updateLight(npc.position);
         const gmRoomId = w.e.findRoomContaining(npc.position, true);
         w.view.light.currentGmRoomId = gmRoomId;
@@ -279,6 +281,16 @@ export default function NPCs() {
         const doors = gmRoomId ? w.view.computeRoomDoors(gmRoomId) : [];
         w.view.trackedLight.setTrackedRoomDoors(doors);
         w.view.light.doorInstanceIds = doors.map((d) => d.instanceId);
+        // parallel raycast-light system (Phase A: walls only) — bake this gm instance's walls
+        // once (no-op if already baked) and mark it as the currently-active one for sampling
+        if (gmRoomId) {
+          const gm = w.gms[gmRoomId.gmId];
+          const layout = w.assets.layout[gm.key];
+          if (layout) {
+            w.view.raycastLight.setGmWalls(gm.key, layout.walls, layout.bounds);
+            w.view.raycastLight.setActiveGm(gm.key, gm.matrix);
+          }
+        }
         w.view.forceUpdate();
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
