@@ -608,6 +608,7 @@ export function WorldMenu() {
                   big={big}
                   label="Intensity"
                   value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                  defaultValue={defaultRoomLightIntensity}
                   onChange={(next) => w.view.setRoomLightIntensity(next)}
                 />
                 <Menu.Item
@@ -649,12 +650,14 @@ export function WorldMenu() {
                     max={3}
                     step={0.1}
                     value={w.view.light?.radius ?? defaultTargetLightRadius}
+                    defaultValue={defaultTargetLightRadius}
                     onChange={(next) => w.view.setTrackedLightRadius(next)}
                   />
                   <LightsMenuSlider
                     big={big}
                     label="intensity"
                     value={w.view.trackedLightIntensity?.value ?? defaultTrackedLightIntensity}
+                    defaultValue={defaultTrackedLightIntensity}
                     onChange={(next) => w.view.setTrackedLightIntensity(next)}
                   />
                 </div>
@@ -677,6 +680,7 @@ export function WorldMenu() {
                   big={big}
                   label="Intensity"
                   value={w.view.ambientIntensity ?? defaultAmbientIntensity}
+                  defaultValue={defaultAmbientIntensity}
                   onChange={(next) => w.view.setAmbientIntensity(next)}
                 />
                 <div className={cn("flex items-center gap-1.5 px-2 py-1.5", big && "gap-2 px-3 py-2")}>
@@ -849,6 +853,7 @@ function LightsMenuSlider({
   max = 1,
   step = 0.05,
   value,
+  defaultValue,
   onChange,
 }: {
   big?: boolean;
@@ -857,11 +862,27 @@ function LightsMenuSlider({
   max?: number;
   step?: number;
   value: number;
+  defaultValue?: number;
   onChange: (next: number) => void;
 }) {
   return (
     <div className={cn("flex flex-col gap-2 px-2 py-1.5", big && "gap-3 px-3 py-2")}>
-      <span className={cn("flex-1 text-xs text-slate-200", big && "text-sm")}>{label}</span>
+      <span
+        className={cn(
+          "flex-1 text-xs text-slate-200",
+          big && "text-sm",
+          defaultValue !== undefined && "cursor-pointer hover:underline",
+        )}
+        onClick={(e) => {
+          if (defaultValue === undefined) {
+            return;
+          }
+          e.stopPropagation();
+          onChange(defaultValue);
+        }}
+      >
+        {label}
+      </span>
       <input
         type="range"
         min={min}
