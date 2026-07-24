@@ -119,7 +119,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling */
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       trackedLight: createTrackedLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
-      raycastLight: createRaycastLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
+      // capped at wallHeight (not +0.5 like trackedLight) — the extra margin reached into the
+      // ceiling geometry, causing aliasing when looking down at it (the "background"/no-depth
+      // fallback in litAmount() projects onto the topHeight plane, which didn't line up with
+      // the actual ceiling surface once it extended past wallHeight)
+      raycastLight: createRaycastLightPostprocess({ bottomHeight: 0, topHeight: wallHeight - 0.01 }),
       raycastLightEnabled: uniform((tryLocalStorageGetParsed<boolean>(raycastLightEnabledKey) ?? false) ? 1 : 0),
       light: {
         displayCenter: new THREE.Vector3(),
@@ -131,6 +135,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         radius: tryLocalStorageGetParsed<number>(trackedLightRadiusKey) ?? defaultTargetLightRadius,
         /** Encoded (gmId, doorId) of each door bordering the tracked room, for per-frame live open-ratio reads (see `onCameraChange`) — same order as last passed to `trackedLight.setTrackedRoomDoors` */
         doorInstanceIds: [] as number[],
+        /** Encoded (gmId, doorId) of EVERY door in the tracked npc's current gm instance, for per-frame live open-ratio reads — same order as last passed to `raycastLight.setActiveGmDoors` */
+        activeGmDoorInstanceIds: [] as number[],
         /** Door whose "inside" sensor zone `checkTrackedDoorCrossing` is currently pinned to, else `null` */
         doorCrossGdKey: null as Geomorph.GmDoorKey | null,
         /** Last known side of `doorCrossGdKey` (index into its `connector.roomIds`), else `null` */
@@ -427,6 +433,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // fed alongside `trackedLight` regardless of which system is currently toggled on —
           // cheap, and avoids needing to re-sync on every toggle flip
           state.raycastLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
+          state.raycastLight.setActiveGmDoorRatios(
+            state.light.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
+          );
         }
       },
       onCameraEnd() {
@@ -546,6 +555,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.light.radius = next;
         if (state.light.targetOverride !== null) {
           state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
+          state.raycastLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
         }
         tryLocalStorageSet(trackedLightRadiusKey, String(next));
         state.setPostProcessingEnabled(true);
@@ -940,6 +950,8 @@ export type LightState = {
   radius: number;
   /** Encoded (gmId, doorId) of each door bordering the tracked room, for per-frame live open-ratio reads (see `onCameraChange`) — same order as last passed to `trackedLight.setTrackedRoomDoors` */
   doorInstanceIds: number[];
+  /** Encoded (gmId, doorId) of EVERY door in the tracked npc's current gm instance (not just room-bordering ones), for per-frame live open-ratio reads — same order as last passed to `raycastLight.setActiveGmDoors` */
+  activeGmDoorInstanceIds: number[];
   /** Door whose "inside" sensor zone `checkTrackedDoorCrossing` is currently pinned to, else `null` */
   doorCrossGdKey: null | Geomorph.GmDoorKey;
   /** Last known side of `doorCrossGdKey` (index into its `connector.roomIds`), else `null` */
