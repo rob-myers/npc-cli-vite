@@ -431,7 +431,7 @@ export function LightMapModal({ open, onOpenChange, container }: DebugModalProps
   const w = useContext(WorldContext);
   // 🔔 `w.view.raycastLight` can be stale-undefined right after HMR adds this field to an
   // already-running `useStateRef` instance (it doesn't re-run the initializer for existing state)
-  const debug = w.view.raycastLight?.debug;
+  const debug = w.view.dynamicLight?.debug;
   const wallTex = debug?.wallTex;
   const bakedGmKeys = debug?.bakedGmKeys() ?? [];
   const activeGmKey = debug?.activeGmKey() ?? null;

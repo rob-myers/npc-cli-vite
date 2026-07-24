@@ -641,13 +641,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const gm = w.gms[gmRoomId.gmId];
         const layout = w.assets.layout[gm.key];
         if (layout) {
-          w.view.raycastLight.setGmWalls(gm.key, layout.walls, layout.bounds);
-          w.view.raycastLight.setActiveGm(gm.key, gm.matrix);
+          w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
+          w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
           const activeGmDoors = layout.doors.map((connector, doorId) => {
             const doorState = w.d[`g${gmRoomId.gmId}d${doorId}` as Geomorph.GmDoorKey];
             return { seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId };
           });
-          w.view.raycastLight.setActiveGmDoors(activeGmDoors);
+          w.view.dynamicLight.setActiveGmDoors(activeGmDoors);
           w.view.light.activeGmDoorInstanceIds = activeGmDoors.map((d) => d.instanceId);
         }
       },

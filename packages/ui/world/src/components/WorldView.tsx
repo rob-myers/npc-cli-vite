@@ -123,7 +123,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // ceiling geometry, causing aliasing when looking down at it (the "background"/no-depth
       // fallback in litAmount() projects onto the topHeight plane, which didn't line up with
       // the actual ceiling surface once it extended past wallHeight)
-      raycastLight: createDynamicLightPostprocess({ bottomHeight: 0, topHeight: wallHeight - 0.01 }),
+      dynamicLight: createDynamicLightPostprocess({
+        bottomHeight: 0,
+        topHeight: wallHeight - 0.01, // avoid ceiling aliasing
+      }),
       raycastLightEnabled: uniform((tryLocalStorageGetParsed<boolean>(raycastLightEnabledKey) ?? false) ? 1 : 0),
       light: {
         displayCenter: new THREE.Vector3(),
@@ -424,16 +427,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const camera = state.controls?.object ?? w.r3f.camera;
         state.roomLight.update(camera);
         state.trackedLight.update(camera);
-        state.raycastLight.update(camera);
+        state.dynamicLight.update(camera);
 
+        // 🚧 ?
         if (state.light.targetOverride !== null) {
           state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
           // "lit through an open door" fades smoothly as a door actually slides open
           state.trackedLight.setDoorOpenRatios(state.light.doorInstanceIds.map((id) => w.door.openRatioArray[id]));
           // fed alongside `trackedLight` regardless of which system is currently toggled on —
           // cheap, and avoids needing to re-sync on every toggle flip
-          state.raycastLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
-          state.raycastLight.setActiveGmDoorRatios(
+          state.dynamicLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
+          state.dynamicLight.setActiveGmDoorRatios(
             state.light.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
           );
         }
@@ -555,7 +559,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.light.radius = next;
         if (state.light.targetOverride !== null) {
           state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
-          state.raycastLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
+          state.dynamicLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
         }
         tryLocalStorageSet(trackedLightRadiusKey, String(next));
         state.setPostProcessingEnabled(true);
@@ -633,6 +637,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (savedLitRooms) {
           state.roomLight.setRoomLitPairs(savedLitRooms);
         }
+
+        // 🚧 restore radius
+        // state.setTrackedLightRadius();
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -671,7 +678,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
               .mul(float(1).sub(state.raycastLightEnabled)),
           )
           .max(
-            state.raycastLight.litAmount(sceneDepth.r).mul(state.trackedLightIntensity).mul(state.raycastLightEnabled),
+            state.dynamicLight.litAmount(sceneDepth.r).mul(state.trackedLightIntensity).mul(state.raycastLightEnabled),
           );
         const unlitAmount = float(1).sub(isBright);
         const effect = mix(
@@ -730,7 +737,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, dimWorldColor: true, raycastLight: true } },
+    { reset: { ctrlOpts: true, initial: false, dimWorldColor: true, dynamicLight: true } },
   );
 
   w.view = state;
@@ -848,7 +855,7 @@ export type State = {
   /** Persisted mood tint backing `dimWorldColor`, else `null` (neutral) */
   ambientMood: AmbientMood | null;
   trackedLight: TrackedLightPostprocess;
-  raycastLight: RaycastLightPostprocess;
+  dynamicLight: RaycastLightPostprocess;
   /** `1` when the raycast light system is active instead of `trackedLight` — see `setRaycastLightEnabled` */
   raycastLightEnabled: THREE.UniformNode<"float", number>;
   light: LightState;
