@@ -32,6 +32,8 @@ import {
 import { TexArray } from "./tex-array";
 
 export type DynamicLightPostprocessOpts = {
+  /** Fixed number of samples along the npc-to-fragment line when testing wall occlusion. Default `24`. */
+  marchSteps: number;
   /** World-space height (y) the light applies from. Default `0` */
   bottomHeight?: number;
   /** World-space height (y) the light applies up to */
@@ -40,8 +42,6 @@ export type DynamicLightPostprocessOpts = {
   falloff?: number;
   /** Side length (px) of each gmKey's baked wall-occupancy texture layer. Default `256`. */
   wallTexSize?: number;
-  /** Fixed number of samples along the npc-to-fragment line when testing wall occlusion. Default `24`. */
-  marchSteps?: number;
   /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.1`. */
   doorHalfDepth?: number;
 };
@@ -122,7 +122,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
-  const marchSteps = opts.marchSteps ?? 48;
+  const marchSteps = opts.marchSteps;
   const doorHalfDepth = opts.doorHalfDepth ?? 0.1;
 
   // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
