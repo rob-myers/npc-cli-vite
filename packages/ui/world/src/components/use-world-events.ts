@@ -639,7 +639,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const door = w.door.byKey[gdKey];
 
         // clear if already closed and no npc colliding with "inside" collider
-        opts.clear = door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
+        opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
 
         const path = opts.npcIntention ?? [];
         const intersects = path.some(
