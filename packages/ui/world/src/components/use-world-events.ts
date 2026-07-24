@@ -222,6 +222,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
+        if (e.type === "nearby" && w.d[e.meta.gdKey].hull && w.view.dynamicLight.trackedNpcKey === npc.key) {
+          const inside = state.npcToDoors[npc.key]?.inside ?? null;
+          if (inside === null) {
+            // shrink on approach
+            w.view.dynamicLight.setNearHullDoor(true);
+          }
+        }
       },
       onExitCollider(e, npc) {
         if (e.type === "inside") {
@@ -257,6 +264,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // if auto and none nearby, try close
             state.tryCloseDoor(e.meta.gdKey);
           }
+
+          if (door.hull && w.view.dynamicLight.trackedNpcKey === npc.key) {
+            // grow back once clear of every nearby hull door — but not while inside a threshold sensor
+            // (that case grows via the "enter-room" gmId-change branch instead, see onNpcEvent)
+            const inside = state.npcToDoors[npc.key]?.inside ?? null;
+            const stillNearHull = [...(state.npcToDoors[npc.key]?.nearby ?? [])].some((gdKey) => w.d[gdKey].hull);
+            if (inside === null && !stillNearHull) {
+              w.view.dynamicLight.setNearHullDoor(false);
+            }
+          }
         }
       },
       onNpcEvent(e) {
@@ -287,6 +304,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             if (w.view.dynamicLight.trackedNpcKey === npc.key && gmRoomId?.gmId !== e.gmRoomId.gmId) {
               state.switchTrackedNpcGm(e.gmRoomId.gmId);
+              w.view.dynamicLight.setNearHullDoor(false); // just crossed into the new gm
             }
 
             break;
@@ -319,6 +337,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               }
               if (w.view.dynamicLight.trackedNpcKey === npc.key && prevGrId?.gmId !== e.gmRoomId.gmId) {
                 state.switchTrackedNpcGm(e.gmRoomId.gmId);
+                w.view.dynamicLight.setNearHullDoor(false);
               }
             }
 
