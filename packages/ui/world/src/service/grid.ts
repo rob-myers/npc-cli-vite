@@ -1,4 +1,5 @@
 import { Rect, Vect } from "@npc-cli/util/geom";
+import { warn } from "@npc-cli/util/legacy/generic";
 import { decorGridSize, gmIdGridDim } from "../const";
 
 //#region decor grid
@@ -161,9 +162,14 @@ export function createGmIdGrid(gms: Geomorph.LayoutInstance[]): Geomorph.GmIdGri
   for (const [
     gmId,
     {
+      key: gmKey,
       gridRect: { x: gx, y: gy, right, bottom },
     },
   ] of gms.entries()) {
+    if (gx % gmIdGridDim !== 0 || gy % gmIdGridDim !== 0) {
+      warn(`${"createGmIdGrid"}: ${gmKey} gridRect should be aligned to ${gmIdGridDim}x${gmIdGridDim} grid`);
+    }
+
     for (let x = Math.floor(gx / gmIdGridDim); x < Math.floor(right / gmIdGridDim); x++)
       for (let y = Math.floor(gy / gmIdGridDim); y < Math.floor(bottom / gmIdGridDim); y++)
         gmIdGrid[`${x},${y}`] = gmId;

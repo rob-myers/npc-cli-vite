@@ -41,7 +41,7 @@
       "thumbnailFilename": "101-only.thumbnail.png",
       "width": 1200,
       "height": 1200,
-      "bounds": {"x": -6, "y": -6, "width": 1206, "height": 1206},
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1205.5, "height": 1205.5},
       "type": "map",
       "key": "101-only"
     },
