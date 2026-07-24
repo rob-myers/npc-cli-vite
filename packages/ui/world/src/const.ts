@@ -70,6 +70,7 @@ export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
+export const cameraPositionStorageKey = "world-camera-position";
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
 export const defaultDesktopFov = 40;
@@ -78,6 +79,8 @@ export const defaultBrightness = 2;
 export const postProcessingEnabledKey = "world-post-processing-enabled";
 export const roomLightEditingEnabledKey = "world-room-light-editing-enabled";
 export const roomLightingEnabledKey = "world-room-lighting-enabled";
+/** Prefix for the per-map lit-rooms localStorage key — actual key is `${roomLitStorageKeyPrefix}:${mapKey}` */
+export const roomLitStorageKeyPrefix = "world-room-lit";
 /** Per-instance cap on room count, for sizing the `roomLit` boolean array */
 export const maxRoomsPerGm = 32;
 export const roomLightIntensityKey = "world-room-light-intensity";
