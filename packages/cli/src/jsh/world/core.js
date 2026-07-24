@@ -68,7 +68,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * @param {{ npcKey: string }} [opts]
  */
 export function focus({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
-  const npc = w.npc.get(opts.npcKey);
+  const npc = w.npc.get(opts.npcKey ?? Object.values(w.n)[0]?.key);
   w.npc.trackNpc(npc.key);
 }
 
