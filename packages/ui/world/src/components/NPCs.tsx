@@ -84,7 +84,7 @@ export default function NPCs() {
 
       configureCrowd() {
         // improve initial path accuracy
-        state.crowd.quickSearchIterations = 50;
+        state.crowd.quickSearchIterations = 64;
       },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
