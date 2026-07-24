@@ -47,8 +47,8 @@ import {
   wallHeight,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
+import { createDynamicLightPostprocess, type RaycastLightPostprocess } from "../service/dynamic-light";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
-import { createRaycastLightPostprocess, type RaycastLightPostprocess } from "../service/light-test";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
 import { type AmbientMood, computeDimWorldColor, type SelectAnyType } from "../service/texture";
@@ -123,7 +123,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // ceiling geometry, causing aliasing when looking down at it (the "background"/no-depth
       // fallback in litAmount() projects onto the topHeight plane, which didn't line up with
       // the actual ceiling surface once it extended past wallHeight)
-      raycastLight: createRaycastLightPostprocess({ bottomHeight: 0, topHeight: wallHeight - 0.01 }),
+      raycastLight: createDynamicLightPostprocess({ bottomHeight: 0, topHeight: wallHeight - 0.01 }),
       raycastLightEnabled: uniform((tryLocalStorageGetParsed<boolean>(raycastLightEnabledKey) ?? false) ? 1 : 0),
       light: {
         displayCenter: new THREE.Vector3(),
@@ -174,7 +174,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return renderer;
       },
       forceUpdate(delta = 0) {
-        w.npc.onTick(delta);
+        w.npc?.onTick(delta);
         w.r3f?.invalidate();
         w.update();
       },
@@ -608,6 +608,32 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify([]));
         state.setPostProcessingEnabled(true);
       },
+      setupDom() {
+        // only trigger when visible
+        const ro = new ResizeObserver(([entry]) => {
+          entry.contentRect.width && state.onResize();
+        });
+        ro.observe(w.rootEl);
+
+        const { onKeyDown } = state;
+        w.rootEl.addEventListener("keydown", onKeyDown);
+
+        const onExtraZoomChange = (_e: Event) => w.update();
+        w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
+
+        return () => {
+          ro.disconnect();
+          w.rootEl?.removeEventListener("keydown", onKeyDown);
+          w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
+        };
+      },
+      setupLights() {
+        state.roomLight.syncGms(w.gms, w.gmsData);
+        const savedLitRooms = tryLocalStorageGetParsed<[number, number][]>(`${roomLitStorageKeyPrefix}:${w.mapKey}`);
+        if (savedLitRooms) {
+          state.roomLight.setRoomLitPairs(savedLitRooms);
+        }
+      },
       setCameraMode(mode) {
         state.cameraMode = mode;
         tryLocalStorageSet(cameraModeStorageKey, mode);
@@ -710,39 +736,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   w.view = state;
 
   useEffect(() => {
-    if (!w.rootEl) return;
-
-    // only trigger when visible
-    const ro = new ResizeObserver(([entry]) => {
-      entry.contentRect.width && state.onResize();
-    });
-    ro.observe(w.rootEl);
-
-    const { onKeyDown } = state;
-    w.rootEl.addEventListener("keydown", onKeyDown);
-
-    const onExtraZoomChange = (_e: Event) => w.update();
-    w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
-
-    return () => {
-      ro.disconnect();
-      w.rootEl?.removeEventListener("keydown", onKeyDown);
-      w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
-    };
-  }, [w.rootEl, state.onKeyDown]); // debounced resize + key events
+    if (w.rootEl) {
+      return state.setupDom();
+    }
+  }, [w.rootEl, state.onKeyDown]);
 
   useEffect(() => {
-    if (w.gms.length === 0) {
-      return;
-    }
-    // 🚧 hmr should not reset lights
-    state.roomLight.syncGms(w.gms, w.gmsData);
-    const savedLitRooms = tryLocalStorageGetParsed<[number, number][]>(`${roomLitStorageKeyPrefix}:${w.mapKey}`);
-    if (savedLitRooms) {
-      state.roomLight.setRoomLitPairs(savedLitRooms);
-    }
-    state.setPostProcessingEnabled(true);
-  }, [w.hash, w.gmsData, w.mapKey]); // gm instances (or their derived per-layout data) changed
+    state.setupLights();
+  }, [w.hash, w.gmsData, w.mapKey]);
 
   return (
     <div className="size-full">
@@ -918,6 +919,9 @@ export type State = {
   toggleRoomLit(groundCenter: Geom.VectJson): void;
   /** Clears every lit room */
   resetAllRooms(): void;
+  /** Debounced resize + key events */
+  setupDom(): () => void;
+  setupLights(): void;
   setCameraMode(mode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
