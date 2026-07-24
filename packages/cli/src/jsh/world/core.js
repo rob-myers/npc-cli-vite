@@ -161,11 +161,10 @@ export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc
  * meta [1.5,4.5]
  * meta at:[1.5,4.5]
  * meta all:[1.5,4.5]
- * # 🚧 top bunk bed
  * meta at:[1.5,2,4.5]
  * ```
  * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {{ [key in 'all' | 'at']?: JshCli.PointAnyFormat; }} [opts]
+ * @param {{ all?: JshCli.PointAnyFormat; at?: JshCli.PointAnyFormat; radius?: number }} [opts]
  */
 export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
   const inputPoint = opts.all ?? opts.at ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
@@ -174,11 +173,13 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
   }
 
   const groundPoint = w.helper.parseGroundPoint(inputPoint);
-  const results = w.decor.queryPoint(
-    groundPoint,
+  const radius = opts.radius ?? 1.5 / 2;
+
+  const results = w.decor.queryPoint(groundPoint, {
     // when we don't request all, results.length ≤ 1 via closest 3D height-off-ground
-    { desiredHeight: !opts.all ? (w.helper.parse3dHeight(inputPoint) ?? npcHeight) : undefined },
-  );
+    desiredHeight: !opts.all ? (w.helper.parse3dHeight(inputPoint) ?? npcHeight / 2) : undefined,
+    radius,
+  });
 
   if (opts.all) {
     return results;
