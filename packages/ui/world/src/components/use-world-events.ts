@@ -635,13 +635,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.trackedLight.setTrackedRoomDoors(allDoors);
         w.view.light.doorInstanceIds = allDoors.map((d) => d.instanceId);
 
-        // parallel raycast-light system (Phase A: walls only) — bake this gm instance's walls
-        // once (no-op if already baked) and mark it as the currently-active one for sampling
+        // parallel raycast-light system — bake this gm instance's walls once (no-op if already
+        // baked), mark it as the currently-active one for sampling, and register ALL of its doors
+        // (not just room-bordering ones — Phase B occludes per gm instance, not per room)
         const gm = w.gms[gmRoomId.gmId];
         const layout = w.assets.layout[gm.key];
         if (layout) {
           w.view.raycastLight.setGmWalls(gm.key, layout.walls, layout.bounds);
           w.view.raycastLight.setActiveGm(gm.key, gm.matrix);
+          const activeGmDoors = layout.doors.map((connector, doorId) => {
+            const doorState = w.d[`g${gmRoomId.gmId}d${doorId}` as Geomorph.GmDoorKey];
+            return { seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId };
+          });
+          w.view.raycastLight.setActiveGmDoors(activeGmDoors);
+          w.view.light.activeGmDoorInstanceIds = activeGmDoors.map((d) => d.instanceId);
         }
       },
       toggleDoor(gdKey, opts = {}) {

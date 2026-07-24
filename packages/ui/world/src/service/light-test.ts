@@ -17,7 +17,7 @@ import {
   viewZToPerspectiveDepth,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { TexArray } from "./tex-array";
+import { getContext2d, TexArray } from "./tex-array";
 
 export type RaycastLightPostprocessOpts = {
   /** World-space height (y) the light applies from. Default `0` */
@@ -30,6 +30,8 @@ export type RaycastLightPostprocessOpts = {
   wallTexSize?: number;
   /** Fixed number of samples along the npc-to-fragment line when testing wall occlusion. Default `24`. */
   marchSteps?: number;
+  /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.1`. */
+  doorHalfDepth?: number;
 };
 
 export type RaycastLightPostprocess = {
@@ -64,6 +66,25 @@ export type RaycastLightPostprocess = {
   setActiveGm(gmKey: StarShipGeomorphKey, matrix: Mat): void;
 
   /**
+   * Registers the doors belonging to the currently-active gm instance (LOCAL space, same as
+   * `setGmWalls`/`setActiveGm`) — geometry only, no open ratio yet (see `setActiveGmDoorRatios`).
+   * Call alongside `setActiveGm` whenever the active instance changes. `gapAtHighLambda` says
+   * which end of `seg` the passable gap grows from (`true` — grows back from `seg[1]`; `false` —
+   * grows from `seg[0]`), matching `Doors.tsx`'s own `inGap` convention.
+   */
+  setActiveGmDoors(
+    doors: { seg: [{ x: number; y: number }, { x: number; y: number }]; gapAtHighLambda: boolean }[],
+  ): void;
+
+  /**
+   * Live 0..1 open ratio for each door registered via `setActiveGmDoors` (same order) — call every
+   * frame, mirroring `Doors.tsx`'s `openRatioArray`. Only redraws the door-occlusion mask when a
+   * ratio actually changed enough to matter, so an idle scene with no doors mid-animation costs
+   * almost nothing here.
+   */
+  setActiveGmDoorRatios(ratios: number[]): void;
+
+  /**
    * `1` inside the light, fading to `0` over `falloff`; `0` if inactive, too far away, or if a
    * fixed-step march from the light to this fragment hits a wall texel first — tests each
    * fragment's reconstructed real world position (see impl. for why).
@@ -80,6 +101,8 @@ export type RaycastLightPostprocess = {
     bakedGmKeys(): StarShipGeomorphKey[];
     /** gmKey currently active for sampling (see `setActiveGm`), else `null` if never set */
     activeGmKey(): StarShipGeomorphKey | null;
+    /** Live door-occlusion mask canvas for the active gm instance (see `setActiveGmDoorRatios`) */
+    doorMaskCanvas: HTMLCanvasElement;
   };
 };
 
@@ -93,12 +116,14 @@ type RectLike = { x: number; y: number; width: number; height: number };
  * world-space texture rather than any per-frame polygon upload. Toggle between the two in
  * `WorldView.tsx`'s `setupPostProcessing` (mutually exclusive via `raycastLightEnabled`).
  *
- * Phase A (this file, current state): walls only, doors ignored (always "open"). Wall shape is
- * baked ONCE per gmKey (never re-baked — walls are static) into a binary occupancy `TexArray`
- * layer; `litAmount()` marches a fixed number of steps from the tracked position toward each
- * fragment, sampling that texture, and is occluded if any step lands on a wall texel. No JFA/SDF
- * yet (see `setGmWalls`'s doc) — a straightforward, lower-risk first cut to validate the toggle
- * and the overall texture-based approach before layering in doors and a proper distance field.
+ * Phase A: walls only, doors ignored (always "open"). Wall shape is baked ONCE per gmKey (never
+ * re-baked — walls are static) into a binary-ish occupancy `TexArray` layer; `litAmount()` marches
+ * a fixed number of steps from the tracked position toward each fragment, sampling that texture
+ * continuously (not thresholded), taking the max seen along the way.
+ *
+ * Phase B (this file, current state): doors. Unlike walls, a door's open ratio is per gm INSTANCE
+ * and changes continuously, so its occlusion data can't be baked once — see `setActiveGmDoors`/
+ * `setActiveGmDoorRatios`'s docs for how it's kept live without uploading per-frame polygon data.
  */
 export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts): RaycastLightPostprocess {
   const falloff = opts.falloff ?? 0.6;
@@ -106,6 +131,7 @@ export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts)
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
   const marchSteps = opts.marchSteps ?? 48;
+  const doorHalfDepth = opts.doorHalfDepth ?? 0.1;
 
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
   const camWorldMatrix = uniform(new THREE.Matrix4());
@@ -129,6 +155,23 @@ export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts)
   const bakedGmKeys = new Set<StarShipGeomorphKey>();
   const boundsByGmKey = new Map<StarShipGeomorphKey, RectLike>();
 
+  // door-occlusion mask for the CURRENTLY-active gm instance only — a plain (non-array) canvas
+  // texture, not a `TexArray`: unlike walls, only one instance's doors are ever relevant at a
+  // time (see `setActiveGm`'s single-active-instance limitation, which this inherits), so there's
+  // no need for a layer per instance. Redrawn live by `setActiveGmDoorRatios` as doors animate.
+  const doorMaskCt = getContext2d("raycast-light-doors", { width: wallTexSize, height: wallTexSize });
+  const doorMaskTex = new THREE.CanvasTexture(doorMaskCt.canvas);
+  doorMaskTex.colorSpace = THREE.NoColorSpace;
+  // 🔔 `CanvasTexture` defaults `flipY = true` (image convention), but `wallTexArray.tex` (a
+  // `DataArrayTexture`, populated via raw `ImageData` with no row-reversal) effectively has
+  // `flipY = false` — sampling both with the SAME `v` coordinate would read opposite rows unless
+  // this is forced to match
+  doorMaskTex.flipY = false;
+  let activeDoors: { seg: [{ x: number; y: number }, { x: number; y: number }]; gapAtHighLambda: boolean }[] = [];
+  // last ratios the mask was actually drawn with — `-1` sentinel (never a real ratio) forces a
+  // redraw the first time `setActiveGmDoorRatios` runs after `setActiveGmDoors` changes the list
+  let lastDoorRatios: number[] = [];
+
   // which gm instance's wall layer/space is currently "active" (see `setActiveGm`'s doc re Phase
   // A's single-active-instance limitation)
   const activeLayer = uniform(0);
@@ -142,25 +185,68 @@ export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts)
   let activeGmKeySet: StarShipGeomorphKey | null = null;
 
   // uniform (aspect-preserving) scale fitting `bounds` within a `wallTexSize` square — shared by
-  // both the bake (`setGmWalls`) and the sample (`sampleWallOccupied`) so they stay consistent
+  // both the bake (`setGmWalls`) and the sample (`sampleOccupancy`) so they stay consistent
   function gmToTexScale(bounds: RectLike) {
     return Math.min(wallTexSize / bounds.width, wallTexSize / bounds.height);
   }
 
-  // continuous (0..1) wall occupancy at world position (wx, wz), per the currently-active gm
-  // instance's baked layer — deliberately NOT thresholded to a hard 0/1: the canvas bake already
-  // anti-aliases each wall's edge over ~1 texel, and bilinear texture sampling smooths that
-  // further, so keeping the raw value (rather than `.greaterThan(0.5)`) is what actually softens
-  // the shadow edge instead of collapsing it back to a jagged binary cutoff. Out-of-bounds
+  // redraws `doorMaskTex` from `activeDoors`/`lastDoorRatios` — each door's currently CLOSED
+  // portion (the part acting as a wall right now, per its live ratio and `gapAtHighLambda`) is
+  // stroked in white; the passable gap is left blank. This is a "moving wall": the door's
+  // occluding SHAPE changes as it opens, rather than some fixed shape fading in opacity.
+  function redrawDoorMask() {
+    doorMaskCt.resetTransform();
+    doorMaskCt.clearRect(0, 0, doorMaskCt.canvas.width, doorMaskCt.canvas.height);
+    const bounds = activeGmKeySet ? boundsByGmKey.get(activeGmKeySet) : undefined;
+    if (bounds) {
+      const scale = gmToTexScale(bounds);
+      doorMaskCt.setTransform(scale, 0, 0, scale, -bounds.x * scale, -bounds.y * scale);
+      doorMaskCt.strokeStyle = "white";
+      doorMaskCt.lineWidth = doorHalfDepth * 2;
+      for (let i = 0; i < activeDoors.length; i++) {
+        // `-1` sentinel (set by `setActiveGmDoors`, before any real ratio is known) — treat as
+        // "unknown yet", not "closed": drawing it would extrapolate `t` outside [0,1], stroking a
+        // segment well past the door's real extent
+        const ratio = lastDoorRatios[i];
+        if (ratio === undefined || ratio < 0 || ratio >= 1) {
+          continue; // unknown, or fully open — no closed portion to draw
+        }
+        const { seg, gapAtHighLambda } = activeDoors[i];
+        const [a, b] = seg;
+        // param along (a,b) where the closed portion ends (gapAtHighLambda, gap grows back from
+        // b) or starts (else, gap grows from a) — matches `Doors.tsx`'s `inGap` convention
+        const t = gapAtHighLambda ? 1 - ratio : ratio;
+        const cx = a.x + (b.x - a.x) * t;
+        const cy = a.y + (b.y - a.y) * t;
+        doorMaskCt.beginPath();
+        if (gapAtHighLambda) {
+          doorMaskCt.moveTo(a.x, a.y);
+          doorMaskCt.lineTo(cx, cy);
+        } else {
+          doorMaskCt.moveTo(cx, cy);
+          doorMaskCt.lineTo(b.x, b.y);
+        }
+        doorMaskCt.stroke();
+      }
+    }
+    doorMaskTex.needsUpdate = true;
+  }
+
+  // continuous (0..1) occupancy (wall OR currently-closed door) at world position (wx, wz), per
+  // the currently-active gm instance — deliberately NOT thresholded to a hard 0/1: the canvas
+  // bakes/draws already anti-alias each edge over ~1 texel, and bilinear texture sampling smooths
+  // that further, so keeping the raw value (rather than `.greaterThan(0.5)`) is what actually
+  // softens the shadow edge instead of collapsing it back to a jagged binary cutoff. Out-of-bounds
   // (outside the active instance, or the unused margin of a non-square gmKey) reads as `0` (no
-  // wall) — see `setActiveGm`'s doc.
-  function sampleWallOccupancy(wx: THREE.Node<"float">, wz: THREE.Node<"float">) {
+  // occlusion) — see `setActiveGm`'s doc.
+  function sampleOccupancy(wx: THREE.Node<"float">, wz: THREE.Node<"float">) {
     const local = activeInverseTransform.mul(vec3(wx, wz, 1));
     const u = local.x.sub(activeOriginScale.x).mul(activeOriginScale.z).div(wallTexSize);
     const v = local.y.sub(activeOriginScale.y).mul(activeOriginScale.z).div(wallTexSize);
     const inBounds = u.greaterThanEqual(0).and(u.lessThanEqual(1)).and(v.greaterThanEqual(0)).and(v.lessThanEqual(1));
-    const occupancy = texture(wallTexArray.tex, vec2(u, v)).depth(activeLayer).r;
-    return inBounds.select(occupancy, float(0));
+    const wallOccupancy = texture(wallTexArray.tex, vec2(u, v)).depth(activeLayer).r;
+    const doorOccupancy = texture(doorMaskTex, vec2(u, v)).r;
+    return inBounds.select(wallOccupancy.max(doorOccupancy), float(0));
   }
 
   return {
@@ -217,6 +303,25 @@ export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts)
       activeInverseTransform.value.set(inv.a, inv.c, inv.e, inv.b, inv.d, inv.f, 0, 0, 1);
       activeGmKeySet = gmKey;
     },
+    setActiveGmDoors(doors) {
+      activeDoors = doors;
+      // `-1` never matches a real ratio, forcing the next `setActiveGmDoorRatios` call to redraw
+      lastDoorRatios = doors.map(() => -1);
+      // clear immediately rather than waiting a frame — avoids briefly showing the PREVIOUS
+      // active instance's stale door shapes against the new instance's wall layer/bounds
+      redrawDoorMask();
+    },
+    setActiveGmDoorRatios(ratios) {
+      let changed = ratios.length !== lastDoorRatios.length;
+      for (let i = 0; i < activeDoors.length && !changed; i++) {
+        changed = Math.abs((ratios[i] ?? 0) - lastDoorRatios[i]) > 0.01;
+      }
+      if (!changed) {
+        return;
+      }
+      lastDoorRatios = activeDoors.map((_, i) => ratios[i] ?? 0);
+      redrawDoorMask();
+    },
     litAmount(sceneDepth) {
       return Fn(() => {
         const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
@@ -258,17 +363,17 @@ export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts)
 
           If(litVal.greaterThan(0), () => {
             // fixed-step march from the tracked position toward this fragment, taking the
-            // MAXIMUM (continuous) wall occupancy seen along the way rather than a binary
-            // hit/miss (see `sampleWallOccupancy`'s doc) — using a fixed fractional step count
-            // (not a fixed world-space step size) keeps sample positions continuous
-            // frame-to-frame; tying step size to world-space distance instead caused visible
-            // jitter, since the exact positions then shifted discontinuously as distance changed.
+            // MAXIMUM (continuous) wall-or-door occupancy seen along the way rather than a binary
+            // hit/miss (see `sampleOccupancy`'s doc) — using a fixed fractional step count (not a
+            // fixed world-space step size) keeps sample positions continuous frame-to-frame; tying
+            // step size to world-space distance instead caused visible jitter, since the exact
+            // positions then shifted discontinuously as distance changed.
             const maxOccupancy = float(0).toVar();
             Loop(marchSteps, ({ i }) => {
               const t = float(i).add(1).div(float(marchSteps));
               const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t));
               const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t));
-              maxOccupancy.assign(maxOccupancy.max(sampleWallOccupancy(stepX, stepZ)));
+              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
             });
 
             litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
@@ -282,6 +387,7 @@ export function createRaycastLightPostprocess(opts: RaycastLightPostprocessOpts)
       wallTex: wallTexArray,
       bakedGmKeys: () => Array.from(bakedGmKeys),
       activeGmKey: () => activeGmKeySet,
+      doorMaskCanvas: doorMaskCt.canvas,
     },
   };
 }

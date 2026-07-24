@@ -499,6 +499,19 @@ export function LightMapModal({ open, onOpenChange, container }: DebugModalProps
               <span className="text-sm text-slate-500">No wall masks baked yet — track an npc first</span>
             )}
           </div>
+          {debug && (
+            <div className="px-4 pb-4 flex flex-col items-center gap-1 border-t border-slate-700 pt-3">
+              <span className="text-xs text-slate-400">Door mask (active gm instance's doors, live)</span>
+              <div
+                className="*:w-64 *:h-64 *:border *:border-emerald-400"
+                style={{ imageRendering: "pixelated" }}
+                ref={(el) => {
+                  if (!el) return;
+                  el.replaceChildren(debug.doorMaskCanvas);
+                }}
+              />
+            </div>
+          )}
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

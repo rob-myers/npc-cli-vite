@@ -255,6 +255,7 @@ export default function NPCs() {
           w.view.light.trackedNpcKey = null;
           w.view.light.targetOverride = null;
           w.view.light.doorInstanceIds = [];
+          w.view.light.activeGmDoorInstanceIds = [];
           w.view.light.doorCrossGdKey = null;
           w.view.light.doorCrossSign = null;
           w.view.light.currentGmRoomId = null;
@@ -281,14 +282,25 @@ export default function NPCs() {
         const doors = gmRoomId ? w.view.computeRoomDoors(gmRoomId) : [];
         w.view.trackedLight.setTrackedRoomDoors(doors);
         w.view.light.doorInstanceIds = doors.map((d) => d.instanceId);
-        // parallel raycast-light system (Phase A: walls only) — bake this gm instance's walls
-        // once (no-op if already baked) and mark it as the currently-active one for sampling
+        // parallel raycast-light system — bake this gm instance's walls once (no-op if already
+        // baked), mark it as the currently-active one for sampling, and register ALL of its doors
+        // (not just room-bordering ones — Phase B occludes per gm instance, not per room)
         if (gmRoomId) {
           const gm = w.gms[gmRoomId.gmId];
           const layout = w.assets.layout[gm.key];
           if (layout) {
             w.view.raycastLight.setGmWalls(gm.key, layout.walls, layout.bounds);
             w.view.raycastLight.setActiveGm(gm.key, gm.matrix);
+            const activeGmDoors = layout.doors.map((connector, doorId) => {
+              const doorState = w.d[`g${gmRoomId.gmId}d${doorId}` as Geomorph.GmDoorKey];
+              return {
+                seg: connector.seg,
+                gapAtHighLambda: doorState.gapAtHighLambda,
+                instanceId: doorState.instanceId,
+              };
+            });
+            w.view.raycastLight.setActiveGmDoors(activeGmDoors);
+            w.view.light.activeGmDoorInstanceIds = activeGmDoors.map((d) => d.instanceId);
           }
         }
         w.view.forceUpdate();
