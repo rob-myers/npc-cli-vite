@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS, nearbyDoorMergeDist } from "../const";
+import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -185,7 +185,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             w.bubble.delete(...e.npcKeys);
 
-            const { trackedNpcKey } = w.view.light;
+            const { trackedNpcKey } = w.view.dynamicLight;
             if (trackedNpcKey !== null && e.npcKeys.includes(trackedNpcKey)) {
               w.npc.trackNpc();
             }
@@ -285,6 +285,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.npcToRoom.set(npc.key, e.gmRoomId);
             (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
 
+            if (w.view.dynamicLight.trackedNpcKey === npc.key && gmRoomId?.gmId !== e.gmRoomId.gmId) {
+              state.switchTrackedNpcGm(e.gmRoomId.gmId);
+            }
+
             break;
           }
           case "exit-collider": {
@@ -313,8 +317,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (prevGrId !== undefined) {
                 state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
-              if (w.view.light.trackedNpcKey === npc.key) {
-                state.switchTrackedNpcRoom(e.gmRoomId);
+              if (w.view.dynamicLight.trackedNpcKey === npc.key && prevGrId?.gmId !== e.gmRoomId.gmId) {
+                state.switchTrackedNpcGm(e.gmRoomId.gmId);
               }
             }
 
@@ -558,98 +562,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many" });
       },
-      checkTrackedDoorCrossing() {
-        const npcKey = w.view.light.trackedNpcKey;
-        if (npcKey === null) {
-          return;
-        }
-
-        const gdKey = state.npcToDoors[npcKey]?.inside ?? null;
-        if (gdKey === null) {
-          w.view.light.doorCrossGdKey = null;
-          w.view.light.doorCrossSign = null;
-          return;
-        }
-
-        const door = w.d[gdKey];
-        const npc = w.npc.npc[npcKey];
-        const dp = (npc.position.x - door.src.x) * door.normal.x + (npc.position.z - door.src.y) * door.normal.y;
-        const sign: 0 | 1 = dp > 0 ? 0 : 1;
-
-        if (w.view.light.doorCrossGdKey !== gdKey) {
-          // just entered this door's sensor zone — establish baseline, don't switch yet
-          w.view.light.doorCrossGdKey = gdKey;
-          w.view.light.doorCrossSign = sign;
-          return;
-        }
-
-        if (sign !== w.view.light.doorCrossSign) {
-          w.view.light.doorCrossSign = sign;
-          const roomId = door.connector.roomIds[sign];
-          const gmRoomId =
-            roomId !== null
-              ? helper.getGmRoomId(door.gmId, roomId)
-              : w.gmGraph.getOtherGmRoomId(door, door.connector.roomIds[1 - sign] as number);
-          if (gmRoomId !== null) {
-            state.switchTrackedNpcRoom(gmRoomId);
-          }
-        }
-      },
-      switchTrackedNpcRoom(gmRoomId) {
-        // instant refresh — no pop to hide (unlike the old room-polygon-only clip, the door-list
-        // swap has no visible discontinuity of its own, since reaching an adjacent room now
-        // depends on a live ray-through-door test, not a baked-in polygon shape)
-        const prevGmRoomId = w.view.light.currentGmRoomId;
-        w.view.light.currentGmRoomId = gmRoomId;
-
-        let outline = w.view.computeRoomOutline(gmRoomId);
-        const doors = w.view.computeRoomDoors(gmRoomId);
-
-        // a door from the room just left, close enough to the npc, is still merged in — else it
-        // can go dark instantly (e.g. it meets the just-crossed door at a right angle, so reaching
-        // its own far room now needs two door-hops, which the tracked light doesn't support)
-        const npcKey = w.view.light.trackedNpcKey;
-        const npc = npcKey === null ? null : w.npc.npc[npcKey];
-        const extraDoors =
-          npc !== null && prevGmRoomId !== null && prevGmRoomId.grKey !== gmRoomId.grKey
-            ? w.view
-                .computeRoomDoors(prevGmRoomId)
-                .filter((d) => !doors.some((newDoor) => newDoor.instanceId === d.instanceId))
-                .filter((d) => {
-                  const midX = (d.a.x + d.b.x) / 2;
-                  const midZ = (d.a.z + d.b.z) / 2;
-                  return Math.hypot(npc.position.x - midX, npc.position.z - midZ) < nearbyDoorMergeDist;
-                })
-            : [];
-
-        if (npc !== null && extraDoors.length > 0) {
-          outline = w.view.extendRoomOutlineNearDoors(
-            outline,
-            extraDoors.map((d) => w.door.fromInstanceId[d.instanceId].gdKey),
-            { x: npc.position.x, y: npc.position.z },
-          );
-        }
-
-        const allDoors = [...doors, ...extraDoors];
-        w.view.trackedLight.setTrackedRoomOutline(outline);
-        w.view.trackedLight.setTrackedRoomDoors(allDoors);
-        w.view.light.doorInstanceIds = allDoors.map((d) => d.instanceId);
-
-        // parallel raycast-light system — bake this gm instance's walls once (no-op if already
-        // baked), mark it as the currently-active one for sampling, and register ALL of its doors
-        // (not just room-bordering ones — Phase B occludes per gm instance, not per room)
-        const gm = w.gms[gmRoomId.gmId];
+      switchTrackedNpcGm(gmId) {
+        const gm = w.gms[gmId];
         const layout = w.assets.layout[gm.key];
-        if (layout) {
-          w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
-          w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
-          const activeGmDoors = layout.doors.map((connector, doorId) => {
-            const doorState = w.d[`g${gmRoomId.gmId}d${doorId}` as Geomorph.GmDoorKey];
-            return { seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId };
-          });
-          w.view.dynamicLight.setActiveGmDoors(activeGmDoors);
-          w.view.light.activeGmDoorInstanceIds = activeGmDoors.map((d) => d.instanceId);
+        if (!layout) {
+          return;
         }
+        w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
+        w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
+        const activeGmDoors = layout.doors.map((connector, doorId) => {
+          const doorState = w.d[`g${gmId}d${doorId}` as Geomorph.GmDoorKey];
+          return { seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId };
+        });
+        w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
@@ -756,13 +681,6 @@ export type State = {
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
   checkNpcTargetUnreachable(npc: Npc): null | Graph.GmRoomGraphNodeDoor;
-  /**
-   * Precisely detects the tracked npc crossing a door's own dividing line — while it occupies
-   * that door's "inside" sensor zone (see `npcToDoors`) — and calls `switchTrackedNpcRoom`
-   * immediately, in either direction (including a mid-doorway reversal). Called every tick from
-   * `WorldView`'s `updateLight`.
-   */
-  checkTrackedDoorCrossing(): void;
   findPath(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
@@ -783,7 +701,8 @@ export type State = {
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
-  switchTrackedNpcRoom(nextRoomOrDoor: Geomorph.GmRoomId): void;
+  /** Refreshes dynamicLight's active gm instance (walls/doors) — call whenever the tracked npc's `gmId` changes */
+  switchTrackedNpcGm(gmId: number): void;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {

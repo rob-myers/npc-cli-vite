@@ -168,8 +168,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.door.onTick(delta);
         state.npc.onTick(delta);
 
-        if (state.view.light.targetOverride) {
-          state.view.updateLight(state.view.light.targetOverride);
+        if (state.view.dynamicLight.target) {
+          state.view.updateDynamicLight(state.view.dynamicLight.target);
         }
       },
       setCanvasFade(on) {
