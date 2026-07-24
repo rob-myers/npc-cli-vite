@@ -252,39 +252,24 @@ export default function NPCs() {
       },
       trackNpc(npcKey) {
         if (!npcKey) {
-          w.view.light.trackedNpcKey = null;
-          w.view.light.targetOverride = null;
-          w.view.light.doorInstanceIds = [];
-          w.view.light.activeGmDoorInstanceIds = [];
-          w.view.light.doorCrossGdKey = null;
-          w.view.light.doorCrossSign = null;
-          w.view.light.currentGmRoomId = null;
-          w.view.trackedLight.setTracked(null);
+          w.view.dynamicLight.trackedNpcKey = null;
+          w.view.dynamicLight.target = null;
           w.view.dynamicLight.setTracked(null);
           w.view.forceUpdate();
           return;
         }
         const npc = state.get(npcKey);
-        w.view.light.trackedNpcKey = npcKey;
-        w.view.light.doorCrossGdKey = null;
-        w.view.light.doorCrossSign = null;
+        w.view.dynamicLight.trackedNpcKey = npcKey;
         // 🔔 keep a live reference (not a snapshot copy), so `npc.position` continues to be read
-        // fresh each tick (via World.tsx's onTick -> w.view.updateLight) and the light tracks the
-        // npc automatically as it moves
-        w.view.light.targetOverride = npc.position;
+        // fresh each tick (via World.tsx's onTick -> w.view.updateDynamicLight) and the light
+        // tracks the npc automatically as it moves
+        w.view.dynamicLight.target = npc.position;
         // preserve the current (persisted/slider-set) radius, rather than resetting to default
-        w.view.trackedLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
-        w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.light.radius);
-        w.view.updateLight(npc.position);
+        w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.dynamicLight.radius);
+        w.view.updateDynamicLight(npc.position);
         const gmRoomId = w.e.findRoomContaining(npc.position, true);
-        w.view.light.currentGmRoomId = gmRoomId;
-        w.view.trackedLight.setTrackedRoomOutline(gmRoomId ? w.view.computeRoomOutline(gmRoomId) : []);
-        const doors = gmRoomId ? w.view.computeRoomDoors(gmRoomId) : [];
-        w.view.trackedLight.setTrackedRoomDoors(doors);
-        w.view.light.doorInstanceIds = doors.map((d) => d.instanceId);
-        // parallel raycast-light system — bake this gm instance's walls once (no-op if already
-        // baked), mark it as the currently-active one for sampling, and register ALL of its doors
-        // (not just room-bordering ones — Phase B occludes per gm instance, not per room)
+        // bake this gm instance's walls once (no-op if already baked), mark it as the currently-
+        // active one for sampling, and register ALL of its doors (not just room-bordering ones)
         if (gmRoomId) {
           const gm = w.gms[gmRoomId.gmId];
           const layout = w.assets.layout[gm.key];
@@ -299,8 +284,7 @@ export default function NPCs() {
                 instanceId: doorState.instanceId,
               };
             });
-            w.view.dynamicLight.setActiveGmDoors(activeGmDoors);
-            w.view.light.activeGmDoorInstanceIds = activeGmDoors.map((d) => d.instanceId);
+            w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
           }
         }
         w.view.forceUpdate();

@@ -88,39 +88,15 @@ export const roomLightIntensityKey = "world-room-light-intensity";
 export const defaultRoomLightIntensity = 0.7;
 
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
-export const defaultTargetLightRadius = 1;
-export const trackedLightRadiusKey = "world-tracked-light-radius";
-/** Brightness multiplier (0..1) applied to the tracked light before combining with room lighting */
-export const defaultTrackedLightIntensity = 1;
-export const trackedLightIntensityKey = "world-tracked-light-intensity";
-/** How far (meters) the tracked light's room-polygon clip is outset past the room's inner wall face */
-export const trackedLightRoomOutset = 0.1;
-/** Toggles between the room-based tracked light and the parallel raycast-based one (see `light-test.ts`) */
-export const raycastLightEnabledKey = "world-raycast-light-enabled";
+export const defaultDynamicLightRadius = 1;
+export const dynamicLightRadiusKey = "world-tracked-light-radius";
+/** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
+export const defaultDynamicLightIntensity = 1;
+export const dynamicLightIntensityKey = "world-tracked-light-intensity";
 /** Default magnitude of the world's ambient (unlit-area) tint — see `dimWorldColor` */
 export const defaultAmbientIntensity = 0.4;
 export const ambientIntensityKey = "world-ambient-intensity";
 export const ambientMoodKey = "world-ambient-mood";
-/**
- * When the tracked light switches rooms, a door from the room just left is still merged in (as a
- * reach-slot, plus a bit of directly-lit room around it) if within this distance (meters) of the
- * npc — e.g. two doors meeting at a right-angle corner, where the 2nd door would otherwise go
- * dark immediately (it no longer borders the new current room, and reaching its far room would
- * need two door-hops, which the tracked light doesn't support).
- */
-export const nearbyDoorMergeDist = 2;
-/**
- * Depth (meters) of the thin polygon merged into the tracked light's room clip around each
- * "nearby" door from the room just left (see `nearbyDoorMergeDist`) — split `±half` across the
- * door's line, so part of it reaches into that room, keeping a small part of it directly lit
- * rather than only reachable via that door's own reach-slot. Kept generous (bigger than it looks
- * like it needs to be) so it clearly overlaps both the current room's own outline and any other
- * nearby door's thin polygon (e.g. 3 doors meeting at a T) — a shallow depth can leave pieces
- * merely touching rather than overlapping, which can make `Poly.union` split them into disjoint
- * rings instead of one connected shape (`WorldView.tsx`'s `extendRoomOutlineNearDoors` falls back
- * safely if that still happens, but a bigger margin avoids needing that fallback in the first place).
- */
-export const nearbyDoorMergeExtensionDepth = 1.5;
 
 export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;

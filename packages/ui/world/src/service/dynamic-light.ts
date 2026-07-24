@@ -1,5 +1,6 @@
 import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import type { Mat } from "@npc-cli/util/geom";
+import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import {
   Break,
@@ -22,9 +23,15 @@ import {
   viewZToPerspectiveDepth,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import {
+  defaultDynamicLightIntensity,
+  defaultDynamicLightRadius,
+  dynamicLightIntensityKey,
+  dynamicLightRadiusKey,
+} from "../const";
 import { TexArray } from "./tex-array";
 
-export type RaycastLightPostprocessOpts = {
+export type DynamicLightPostprocessOpts = {
   /** World-space height (y) the light applies from. Default `0` */
   bottomHeight?: number;
   /** World-space height (y) the light applies up to */
@@ -39,12 +46,31 @@ export type RaycastLightPostprocessOpts = {
   doorHalfDepth?: number;
 };
 
-export type RaycastLightPostprocess = {
+export type DynamicLightPostprocess = {
+  /** Live reference of the world position this light follows; `null` deactivates it */
+  displayCenter: THREE.Vector3;
+  /** Set by `w.npc.trackNpc`; a live reference (e.g. `npc.position`), not a snapshot. `null` means off. */
+  target: null | { x: number; y: number; z: number };
+  /** Set by `w.npc.trackNpc`; lets `"enter-room"`/`"spawned"` know which npc's gm-transitions should refresh this light */
+  trackedNpcKey: null | string;
+  /** Persisted radius, settable via `setRadius` */
+  radius: number;
+  /** Encoded (gmId, doorId) of every door in the tracked npc's current gm instance, written by `setActiveGmDoors` */
+  activeGmDoorInstanceIds: number[];
+  /** Persisted brightness multiplier uniform */
+  intensity: THREE.UniformNode<"float", number>;
+
   /** Feed the real scene camera (not the internal post-processing quad camera) */
   update(camera: THREE.Camera): void;
 
   /** Positions the light (e.g. follows `npc.position`). `null` deactivates. */
   setTracked(center: { x: number; z: number } | null, radius?: number): void;
+
+  /** Sets the persisted radius; pushes it to `setTracked` immediately if currently tracking */
+  setRadius(next: number): void;
+
+  /** Sets the persisted brightness multiplier */
+  setIntensity(next: number): void;
 
   /** Bakes `gmKey`'s wall polygons (local space) into an occupancy texture layer, once. */
   setGmWalls(
@@ -60,11 +86,17 @@ export type RaycastLightPostprocess = {
   setActiveGm(gmKey: StarShipGeomorphKey, matrix: Mat): void;
 
   /**
-   * Registers the active instance's doors (local space, geometry only). `gapAtHighLambda`:
-   * gap grows back from `seg[1]` if `true`, from `seg[0]` if `false` (matches `Doors.tsx`).
+   * Registers the active instance's doors (local space, geometry only), cached per `gmKey` (a
+   * no-op if `gmKey` is already active). `gapAtHighLambda`: gap grows back from `seg[1]` if
+   * `true`, from `seg[0]` if `false` (matches `Doors.tsx`).
    */
   setActiveGmDoors(
-    doors: { seg: [{ x: number; y: number }, { x: number; y: number }]; gapAtHighLambda: boolean }[],
+    gmKey: StarShipGeomorphKey,
+    doors: {
+      seg: [{ x: number; y: number }, { x: number; y: number }];
+      gapAtHighLambda: boolean;
+      instanceId: number;
+    }[],
   ): void;
 
   /** Live open ratio per door from `setActiveGmDoors` (same order). Call every frame. */
@@ -84,18 +116,18 @@ export type RaycastLightPostprocess = {
   };
 };
 
-/**
- * Parallel alternative to `tracked-light-postprocess.ts`: ignores rooms, occludes only against
- * baked wall/door textures via a fixed-step march. Toggled via `raycastLightEnabled` in
- * `WorldView.tsx`'s `setupPostProcessing`.
- */
-export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts): RaycastLightPostprocess {
+/** Ignores rooms, occludes only against baked wall/door textures via a fixed-step march. */
+export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts): DynamicLightPostprocess {
   const falloff = opts.falloff ?? 0.5;
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
   const marchSteps = opts.marchSteps ?? 48;
   const doorHalfDepth = opts.doorHalfDepth ?? 0.1;
+
+  // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
+  const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
+  const initialIntensity = tryLocalStorageGetParsed<number>(dynamicLightIntensityKey) ?? defaultDynamicLightIntensity;
 
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
   const camWorldMatrix = uniform(new THREE.Matrix4());
@@ -129,6 +161,8 @@ export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts)
   let activeDoorCount = 0;
   // last ratios actually pushed to the GPU, for the "did anything change enough" check
   let lastDoorRatios: number[] = new Array(maxActiveDoors).fill(-1);
+  // gmKey last passed to setActiveGmDoors — re-orienting/resetting is a no-op if unchanged
+  let lastActiveDoorsGmKey: StarShipGeomorphKey | null = null;
 
   // (bounds.x, bounds.y, uniformScale, layerIndex) — uniform scale keeps non-square gmKeys unstretched
   const activeOrigin = uniform(new THREE.Vector4());
@@ -198,6 +232,13 @@ export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts)
   }
 
   return {
+    displayCenter: new THREE.Vector3(),
+    target: null,
+    trackedNpcKey: null,
+    radius: initialRadius,
+    activeGmDoorInstanceIds: [],
+    intensity: uniform(initialIntensity),
+
     update(camera) {
       camera.updateMatrixWorld();
       camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
@@ -213,6 +254,17 @@ export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts)
       } else {
         tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
       }
+    },
+    setRadius(next) {
+      this.radius = next;
+      tryLocalStorageSet(dynamicLightRadiusKey, String(next));
+      if (this.target !== null) {
+        this.setTracked({ x: this.displayCenter.x, z: this.displayCenter.z }, next);
+      }
+    },
+    setIntensity(next) {
+      this.intensity.value = next;
+      tryLocalStorageSet(dynamicLightIntensityKey, String(next));
     },
     setGmWalls(gmKey, wallPolys, bounds) {
       if (bakedGmKeys.has(gmKey)) {
@@ -248,7 +300,11 @@ export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts)
       activeGmKeySet = gmKey;
       combinedTex.textureNeedsUpdate = true;
     },
-    setActiveGmDoors(doors) {
+    setActiveGmDoors(gmKey, doors) {
+      if (gmKey === lastActiveDoorsGmKey) {
+        return; // door list for a gmKey is static — nothing changed
+      }
+      lastActiveDoorsGmKey = gmKey;
       activeDoorCount = Math.min(doors.length, maxActiveDoors);
       for (let i = 0; i < activeDoorCount; i++) {
         const { seg, gapAtHighLambda } = doors[i];
@@ -259,6 +315,7 @@ export function createDynamicLightPostprocess(opts: RaycastLightPostprocessOpts)
       // -1 marks every slot inactive until the next setActiveGmDoorRatios call
       doorOpenRatioValues.fill(-1);
       lastDoorRatios = new Array(maxActiveDoors).fill(-1);
+      this.activeGmDoorInstanceIds = doors.slice(0, activeDoorCount).map((d) => d.instanceId);
       combinedTex.textureNeedsUpdate = true;
     },
     setActiveGmDoorRatios(ratios) {

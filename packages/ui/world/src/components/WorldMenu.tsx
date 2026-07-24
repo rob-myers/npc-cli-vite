@@ -28,9 +28,9 @@ import {
   brightnessStorageKey,
   defaultAmbientIntensity,
   defaultDesktopFov,
+  defaultDynamicLightIntensity,
+  defaultDynamicLightRadius,
   defaultRoomLightIntensity,
-  defaultTargetLightRadius,
-  defaultTrackedLightIntensity,
   fovStorageKey,
   pickOpenDoorsKey,
 } from "../const";
@@ -635,8 +635,8 @@ export function WorldMenu() {
                       big={big}
                       side="bottom"
                       className="border rounded"
-                      label={w.view.light?.trackedNpcKey ?? "none"}
-                      value={w.view.light?.trackedNpcKey ?? ""}
+                      label={w.view.dynamicLight?.trackedNpcKey ?? "none"}
+                      value={w.view.dynamicLight?.trackedNpcKey ?? ""}
                       items={[{ key: "(none)", value: "" }, ...npcKeys.map((k) => ({ key: k, value: k }))]}
                       onValueChange={(v) => w.npc.trackNpc(v || undefined)}
                     />
@@ -649,29 +649,18 @@ export function WorldMenu() {
                     min={0.2}
                     max={3}
                     step={0.1}
-                    value={w.view.light?.radius ?? defaultTargetLightRadius}
-                    defaultValue={defaultTargetLightRadius}
-                    onChange={(next) => w.view.setTrackedLightRadius(next)}
+                    value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
+                    defaultValue={defaultDynamicLightRadius}
+                    onChange={(next) => w.view.setDynamicLightRadius(next)}
                   />
                   <LightsMenuSlider
                     big={big}
                     label="intensity"
-                    value={w.view.trackedLightIntensity?.value ?? defaultTrackedLightIntensity}
-                    defaultValue={defaultTrackedLightIntensity}
-                    onChange={(next) => w.view.setTrackedLightIntensity(next)}
+                    value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
+                    defaultValue={defaultDynamicLightIntensity}
+                    onChange={(next) => w.view.setDynamicLightIntensity(next)}
                   />
                 </div>
-                <LightsMenuToggle
-                  big={big}
-                  label="Raycast mode"
-                  active={w.view.raycastLightEnabled?.value === 1}
-                  onIcon={EyeIcon}
-                  offIcon={EyeSlashIcon}
-                  onClick={() => {
-                    w.view.setRaycastLightEnabled();
-                    state.update();
-                  }}
-                />
 
                 <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
 

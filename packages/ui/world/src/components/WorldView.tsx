@@ -1,7 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { Poly, Vect } from "@npc-cli/util/geom";
-import { geomService } from "@npc-cli/util/geom-service";
+import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
   testNever,
@@ -30,29 +29,21 @@ import {
   defaultDesktopFov,
   defaultMobileFov,
   defaultRoomLightIntensity,
-  defaultTargetLightRadius,
-  defaultTrackedLightIntensity,
   fovStorageKey,
-  nearbyDoorMergeExtensionDepth,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
-  raycastLightEnabledKey,
   roomLightEditingEnabledKey,
   roomLightIntensityKey,
   roomLightingEnabledKey,
   roomLitStorageKeyPrefix,
-  trackedLightIntensityKey,
-  trackedLightRadiusKey,
-  trackedLightRoomOutset,
   wallHeight,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
-import { createDynamicLightPostprocess, type RaycastLightPostprocess } from "../service/dynamic-light";
+import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
 import { type AmbientMood, computeDimWorldColor, type SelectAnyType } from "../service/texture";
-import { createTrackedLightPostprocess, type TrackedLightPostprocess } from "../service/tracked-light-postprocess";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -113,13 +104,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
-      trackedLightIntensity: uniform(
-        tryLocalStorageGetParsed<number>(trackedLightIntensityKey) ?? defaultTrackedLightIntensity,
-      ),
       /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling */
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
-      trackedLight: createTrackedLightPostprocess({ bottomHeight: 0, topHeight: wallHeight + 0.5 }),
-      // capped at wallHeight (not +0.5 like trackedLight) — the extra margin reached into the
+      // capped at wallHeight (not +0.5 like roomLight) — the extra margin reached into the
       // ceiling geometry, causing aliasing when looking down at it (the "background"/no-depth
       // fallback in litAmount() projects onto the topHeight plane, which didn't line up with
       // the actual ceiling surface once it extended past wallHeight)
@@ -127,27 +114,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         bottomHeight: 0,
         topHeight: wallHeight - 0.01, // avoid ceiling aliasing
       }),
-      raycastLightEnabled: uniform((tryLocalStorageGetParsed<boolean>(raycastLightEnabledKey) ?? false) ? 1 : 0),
-      light: {
-        displayCenter: new THREE.Vector3(),
-        /** Set by `w.npc.trackNpc`; a live reference, so a moving target (e.g. `npc.position`) is tracked */
-        targetOverride: null as null | { x: number; y: number; z: number },
-        /** Set by `w.npc.trackNpc`; lets the `"enter-room"` handler know which npc's room-transitions should refresh the tracked light's room-poly clip */
-        trackedNpcKey: null as string | null,
-        /** Tracked-light radius — persisted, settable via `w.view.setTrackedLightRadius` */
-        radius: tryLocalStorageGetParsed<number>(trackedLightRadiusKey) ?? defaultTargetLightRadius,
-        /** Encoded (gmId, doorId) of each door bordering the tracked room, for per-frame live open-ratio reads (see `onCameraChange`) — same order as last passed to `trackedLight.setTrackedRoomDoors` */
-        doorInstanceIds: [] as number[],
-        /** Encoded (gmId, doorId) of EVERY door in the tracked npc's current gm instance, for per-frame live open-ratio reads — same order as last passed to `raycastLight.setActiveGmDoors` */
-        activeGmDoorInstanceIds: [] as number[],
-        /** Door whose "inside" sensor zone `checkTrackedDoorCrossing` is currently pinned to, else `null` */
-        doorCrossGdKey: null as Geomorph.GmDoorKey | null,
-        /** Last known side of `doorCrossGdKey` (index into its `connector.roomIds`), else `null` */
-        doorCrossSign: null as 0 | 1 | null,
-        /** Room last passed to `switchTrackedNpcRoom`/set by `w.npc.trackNpc` — lets a room switch
-         * look back at the room just left (see `nearbyDoorMergeDist`), else `null` */
-        currentGmRoomId: null as Geomorph.GmRoomId | null,
-      },
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
 
       async createRenderer(props) {
@@ -426,21 +392,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const camera = state.controls?.object ?? w.r3f.camera;
         state.roomLight.update(camera);
-        state.trackedLight.update(camera);
         state.dynamicLight.update(camera);
-
-        // 🚧 ?
-        if (state.light.targetOverride !== null) {
-          state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
-          // "lit through an open door" fades smoothly as a door actually slides open
-          state.trackedLight.setDoorOpenRatios(state.light.doorInstanceIds.map((id) => w.door.openRatioArray[id]));
-          // fed alongside `trackedLight` regardless of which system is currently toggled on —
-          // cheap, and avoids needing to re-sync on every toggle flip
-          state.dynamicLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z });
-          state.dynamicLight.setActiveGmDoorRatios(
-            state.light.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
-          );
-        }
       },
       onCameraEnd() {
         state.lastCameraReading.azimuthal = state.controls.spherical.theta;
@@ -450,89 +402,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.lastCameraReading.position.z = state.controls.target.z;
         tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(state.lastCameraReading));
       },
-      updateLight(rawTarget) {
-        state.light.displayCenter.copy(rawTarget);
-        w.e.checkTrackedDoorCrossing();
-      },
-      // 🚧 precompute these
-      computeRoomOutline(gmRoomId) {
-        const gm = w.gms[gmRoomId.gmId];
-        const room = gm.rooms[gmRoomId.roomId];
-        const [outsetRoom] = geomService.createOutset(room.clone(), 0.05);
-
-        const hullDoorExtensions = gm.doors
-          .filter((d) => d.meta.hull === true && d.roomIds.includes(gmRoomId.roomId))
-          .map((d) => d.computeThinPoly(0.2));
-
-        const merged = hullDoorExtensions.length
-          ? Poly.union([outsetRoom, ...hullDoorExtensions]).reduce((a, b) =>
-              a.outline.length >= b.outline.length ? a : b,
-            )
-          : outsetRoom;
-
-        return merged.cleanClone(gm.matrix).outline.map((p) => ({ x: p.x, z: p.y }));
-      },
-      computeRoomDoors(gmRoomId) {
-        const gm = w.gms[gmRoomId.gmId];
-        return gm.doors
-          .map((d, doorId) => ({ d, doorId }))
-          .filter(({ d }) => d.roomIds.includes(gmRoomId.roomId))
-          .flatMap(({ d, doorId }) => {
-            const a = gm.matrix.transformPoint({ x: d.seg[0].x, y: d.seg[0].y });
-            const b = gm.matrix.transformPoint({ x: d.seg[1].x, y: d.seg[1].y });
-
-            // find the room on the OTHER side of this door — same gm for a non-hull door, a
-            // different gm instance (via the gm-graph) for a hull door
-            let otherGm = gm;
-            let otherRoomId: number | null = null;
-            if (d.meta.hull === true) {
-              const adj = w.gmGraph.getAdjacentRoomCtxt(gmRoomId.gmId, doorId);
-              if (adj !== null) {
-                otherGm = w.gms[adj.adjGmId];
-                otherRoomId = adj.adjRoomId;
-              }
-            } else {
-              otherRoomId = d.roomIds.find((id) => id !== null && id !== gmRoomId.roomId) ?? null;
-            }
-            if (otherRoomId === null) {
-              return []; // e.g. a hull door at the map edge, nothing on the other side
-            }
-
-            const outsetOtherRoom = geomService.createOutset(
-              otherGm.rooms[otherRoomId].clone(),
-              trackedLightRoomOutset,
-            );
-            const extendedOther = outsetOtherRoom.reduce((x, y) => (x.outline.length >= y.outline.length ? x : y));
-            const otherRoomWorld = extendedOther.cleanClone(otherGm.matrix);
-
-            return [
-              {
-                a: { x: a.x, z: a.y },
-                b: { x: b.x, z: b.y },
-                adjRoomOutline: otherRoomWorld.outline.map((p) => ({ x: p.x, z: p.y })),
-                instanceId: w.door.encodeGmDoorId(gmRoomId.gmId, doorId),
-              },
-            ];
-          });
-      },
-      extendRoomOutlineNearDoors(outline, gdKeys, safetyPoint) {
-        if (gdKeys.length === 0) {
-          return outline;
-        }
-        const roomPoly = new Poly(outline.map((p) => new Vect(p.x, p.z)));
-        const doorPolysWorld = gdKeys.map((gdKey) => {
-          const door = w.d[gdKey];
-          const gm = w.gms[door.gmId];
-          return door.connector.computeThinPoly(nearbyDoorMergeExtensionDepth).cleanClone(gm.matrix);
-        });
-        const merged = Poly.union([roomPoly, ...doorPolysWorld]);
-        const extended = merged.reduce((a, b) => (a.outline.length >= b.outline.length ? a : b));
-        // defensive: unioning several thin door-polys at once (e.g. 3+ doors clustered at a
-        // junction) can occasionally split into disjoint pieces where "largest by vertex count"
-        if (!extended.contains(safetyPoint)) {
-          return outline;
-        }
-        return extended.cleanClone().outline.map((p) => ({ x: p.x, z: p.y }));
+      updateDynamicLight(rawTarget) {
+        state.dynamicLight.displayCenter.copy(rawTarget);
+        state.dynamicLight.setTracked({ x: state.dynamicLight.displayCenter.x, z: state.dynamicLight.displayCenter.z });
+        state.dynamicLight.setActiveGmDoorRatios(
+          state.dynamicLight.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
+        );
       },
       toggleRoomLightEditing() {
         state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
@@ -544,30 +419,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(roomLightingEnabledKey, String(next));
         state.setPostProcessingEnabled(true);
       },
-      setRaycastLightEnabled(next = state.raycastLightEnabled.value === 0) {
-        state.raycastLightEnabled.value = next ? 1 : 0;
-        tryLocalStorageSet(raycastLightEnabledKey, String(next));
-        state.setPostProcessingEnabled(true);
-      },
       setRoomLightIntensity(next) {
         state.roomLightIntensity.value = next;
         tryLocalStorageSet(roomLightIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
-      setTrackedLightRadius(next) {
-        state.light.radius = next;
-        if (state.light.targetOverride !== null) {
-          state.trackedLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
-          state.dynamicLight.setTracked({ x: state.light.displayCenter.x, z: state.light.displayCenter.z }, next);
-        }
-        tryLocalStorageSet(trackedLightRadiusKey, String(next));
+      setDynamicLightRadius(next) {
+        state.dynamicLight.setRadius(next);
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
-      setTrackedLightIntensity(next) {
-        state.trackedLightIntensity.value = next;
-        tryLocalStorageSet(trackedLightIntensityKey, String(next));
+      setDynamicLightIntensity(next) {
+        state.dynamicLight.setIntensity(next);
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
@@ -637,9 +501,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (savedLitRooms) {
           state.roomLight.setRoomLitPairs(savedLitRooms);
         }
-
-        // 🚧 restore radius
-        // state.setTrackedLightRadius();
       },
       setCameraMode(mode) {
         state.cameraMode = mode;
@@ -661,25 +522,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-        // "bright" if a lit room's own (scaled-down) brightness OR the tracked light reaches here —
+        // "bright" if a lit room's own (scaled-down) brightness OR the dynamic light reaches here —
         // combine via max BEFORE inverting, not after: this way a lit room whose own intensity is
-        // below 1 still lets the tracked light stand out above it, instead of one flattening the other.
-        // `trackedLight` and `raycastLight` are alternative npc-following systems (see
-        // `raycastLightEnabled`, toggled in WorldMenu's light submenu) — the disabled one's
-        // contribution is zeroed via the complementary factor, so flipping the toggle needs no
-        // other change here.
+        // below 1 still lets the dynamic light stand out above it, instead of one flattening the other.
         const isBright = state.roomLight
           .litAmount(sceneDepth.r)
           .mul(state.roomLightIntensity)
-          .max(
-            state.trackedLight
-              .litAmount(sceneDepth.r)
-              .mul(state.trackedLightIntensity)
-              .mul(float(1).sub(state.raycastLightEnabled)),
-          )
-          .max(
-            state.dynamicLight.litAmount(sceneDepth.r).mul(state.trackedLightIntensity).mul(state.raycastLightEnabled),
-          );
+          .max(state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity));
         const unlitAmount = float(1).sub(isBright);
         const effect = mix(
           // fully-lit scaled down
@@ -847,18 +696,12 @@ export type State = {
   roomLightEditingEnabled: boolean;
   /** Persisted, user-controlled brightness of a lit room (0..1) — see `defaultRoomLightIntensity` */
   roomLightIntensity: THREE.UniformNode<"float", number>;
-  /** Persisted brightness multiplier (0..1) on the tracked light — see `defaultTrackedLightIntensity` */
-  trackedLightIntensity: THREE.UniformNode<"float", number>;
   dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
   /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
   ambientIntensity: number;
   /** Persisted mood tint backing `dimWorldColor`, else `null` (neutral) */
   ambientMood: AmbientMood | null;
-  trackedLight: TrackedLightPostprocess;
-  dynamicLight: RaycastLightPostprocess;
-  /** `1` when the raycast light system is active instead of `trackedLight` — see `setRaycastLightEnabled` */
-  raycastLightEnabled: THREE.UniformNode<"float", number>;
-  light: LightState;
+  dynamicLight: DynamicLightPostprocess;
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
@@ -877,45 +720,17 @@ export type State = {
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
-  /** Advances `light.displayCenter` from a live target — called every tick from `World`'s `onTick` while `light.targetOverride` is set (see `w.npc.trackNpc`) */
-  updateLight(rawTarget: { x: number; y: number; z: number }): void;
-  /** World-space outline of `gmRoomId`'s room, outset slightly (see `trackedLightRoomOutset`), unioned with adjacent doorways */
-  computeRoomOutline(gmRoomId: Geomorph.GmRoomId): { x: number; z: number }[];
-  /**
-   * World-space segments of the doors bordering `gmRoomId`'s room, each with the outline of the
-   * room on its OTHER side (so a fragment must be inside that room, not merely along the line of
-   * sight, to be lit through that door) and its encoded (gmId, doorId) instance id — feeds
-   * `trackedLight.setTrackedRoomDoors`/`light.doorInstanceIds`
-   */
-  computeRoomDoors(gmRoomId: Geomorph.GmRoomId): {
-    a: { x: number; z: number };
-    b: { x: number; z: number };
-    adjRoomOutline: { x: number; z: number }[];
-    instanceId: number;
-  }[];
-  /**
-   * Extends a world-space room `outline` by unioning in a thin polygon straddling each of `gdKeys`
-   * (see `nearbyDoorMergeExtensionDepth`) — used so a door very close to the one just crossed (e.g.
-   * meeting it at a right angle) keeps a bit of its own room directly lit, not just reachable via
-   * that door's own reach-slot (see `switchTrackedNpcRoom`/`nearbyDoorMergeDist`). Falls back to
-   * the un-merged `outline` if the result doesn't contain `safetyPoint` (see impl. for why).
-   */
-  extendRoomOutlineNearDoors(
-    outline: { x: number; z: number }[],
-    gdKeys: Geomorph.GmDoorKey[],
-    safetyPoint: Geom.VectJson,
-  ): { x: number; z: number }[];
+  /** Advances `dynamicLight.displayCenter` from a live target — called every tick from `World`'s `onTick` while `dynamicLight.target` is set (see `w.npc.trackNpc`) */
+  updateDynamicLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleRoomLightEditing(): void;
   /** Toggles `roomLight.roomLightingEnabled` — persisted to localStorage */
   setRoomLightingEnabled(next?: boolean): void;
-  /** Toggles `raycastLightEnabled` — persisted to localStorage; mutually exclusive with `trackedLight`'s contribution in `setupPostProcessing` */
-  setRaycastLightEnabled(next?: boolean): void;
   /** Sets the persisted room-light intensity (0..1) — see `defaultRoomLightIntensity` */
   setRoomLightIntensity(next: number): void;
-  /** Sets the tracked light's radius (persisted) — updates the live uniform if tracking is active */
-  setTrackedLightRadius(next: number): void;
-  /** Sets the tracked light's brightness multiplier (0..1, persisted) — see `defaultTrackedLightIntensity` */
-  setTrackedLightIntensity(next: number): void;
+  /** Sets the dynamic light's radius (persisted) — updates the live uniform if tracking is active */
+  setDynamicLightRadius(next: number): void;
+  /** Sets the dynamic light's brightness multiplier (0..1, persisted) */
+  setDynamicLightIntensity(next: number): void;
   /** Sets the world's ambient tint magnitude (persisted) — see `defaultAmbientIntensity` */
   setAmbientIntensity(next: number): void;
   /** Sets (or clears, if already active) the world's ambient mood tint (persisted) */
@@ -944,32 +759,6 @@ export type State = {
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
-};
-
-/**
- * The tracked light drawn in post-processing (see `tracked-light-postprocess.ts`). Off until a
- * target is set via `w.npc.trackNpc`; once set, tracked every tick from `World`'s `onTick`. A
- * live reference (e.g. `npc.position`) is tracked automatically as it moves.
- */
-export type LightState = {
-  displayCenter: THREE.Vector3;
-  /** Set by `w.npc.trackNpc`; `null` means off. A live reference — not a snapshot. */
-  targetOverride: null | { x: number; y: number; z: number };
-  /** Set by `w.npc.trackNpc`; lets `"enter-room"` know which npc's room-transitions should refresh the tracked light's room-poly clip */
-  trackedNpcKey: null | string;
-  /** Tracked-light radius, set once by `w.npc.trackNpc` */
-  radius: number;
-  /** Encoded (gmId, doorId) of each door bordering the tracked room, for per-frame live open-ratio reads (see `onCameraChange`) — same order as last passed to `trackedLight.setTrackedRoomDoors` */
-  doorInstanceIds: number[];
-  /** Encoded (gmId, doorId) of EVERY door in the tracked npc's current gm instance (not just room-bordering ones), for per-frame live open-ratio reads — same order as last passed to `raycastLight.setActiveGmDoors` */
-  activeGmDoorInstanceIds: number[];
-  /** Door whose "inside" sensor zone `checkTrackedDoorCrossing` is currently pinned to, else `null` */
-  doorCrossGdKey: null | Geomorph.GmDoorKey;
-  /** Last known side of `doorCrossGdKey` (index into its `connector.roomIds`), else `null` */
-  doorCrossSign: 0 | 1 | null;
-  /** Room last passed to `switchTrackedNpcRoom`/set by `w.npc.trackNpc` — lets a room switch look
-   * back at the room just left (see `nearbyDoorMergeDist`), else `null` */
-  currentGmRoomId: null | Geomorph.GmRoomId;
 };
 
 function PostProcessing() {
