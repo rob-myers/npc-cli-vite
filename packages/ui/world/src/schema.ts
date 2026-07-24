@@ -14,8 +14,6 @@ export const WorldUiSchema = z.object({
   worldKey: z.templateLiteral(["world-", z.number()]),
   mapKey: z.string().default(defaultMapKey),
   themeKey: z.string().default(defaultThemeKey),
-  // prefer left because performance tool on right
-  menuPosition: BaseUiMetaSchema.shape.menuPosition.default("left"),
 });
 
 export type WorldUiMeta = z.infer<typeof WorldUiSchema>;
