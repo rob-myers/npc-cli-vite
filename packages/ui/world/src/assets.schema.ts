@@ -167,6 +167,13 @@ export const WorldThemeSchema = z.object({
       opacity: z.number().min(0).max(1).default(0.5),
     })
     .default({ color: "#000000", opacity: 0.5 }),
+  lights: z
+    .object({
+      ambientIntensity: z.number(),
+    })
+    .default({
+      ambientIntensity: 0.4 satisfies typeof import("./const.ts").defaultAmbientIntensity,
+    }),
 });
 export type WorldTheme = z.infer<typeof WorldThemeSchema>;
 

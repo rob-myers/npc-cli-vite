@@ -112,6 +112,9 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   },
   floor: { hullFill: "#111", navStroke: "#000c", patternFill: "#222", tileStroke: "#0001" },
   walls: { color: "#000000", opacity: 0.5 },
+  lights: {
+    ambientIntensity: defaultAmbientIntensity,
+  },
 };
 
 export const wallHeight = 1.7;
