@@ -119,6 +119,16 @@ export type DynamicLightPostprocess = {
    */
   litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
 
+  /**
+   * Like `litAmount`, but always evaluated at the camera ray's intersection with the floor plane
+   * (`bottomHeight`) rather than real per-pixel depth — a smooth, ground-only function of screen
+   * position with no discontinuities from obstacles/npcs/doors. Still occlusion-aware, though: if
+   * `sceneDepth` says something real is nearer than that floor point along the same camera ray
+   * (e.g. an obstacle standing in front of it), this returns `0` there instead of drawing through it.
+   * @param sceneDepth Raw logarithmic depth (not pre-linearized).
+   */
+  groundLitAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
+
   /** Debug inspection only (see WorldMenu's "Light Map" modal) */
   debug: {
     wallTex: TexArray;
@@ -422,6 +432,55 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
               // If(maxOccupancy.greaterThanEqual(1), () => {
               //   Break();
               // });
+            });
+
+            litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
+          });
+        });
+
+        return litOut;
+      })();
+    },
+    groundLitAmount(sceneDepth) {
+      return Fn(() => {
+        // always the floor-plane intersection — no per-pixel depth reconstruction, so this is a
+        // smooth, continuous function of screen position with no discontinuities from obstacles
+        const viewDirPoint = getViewPosition(screenUV, float(0.5), camProjectionMatrixInverse);
+        const worldDir = camWorldMatrix.mul(vec4(viewDirPoint, 0.0)).xyz.normalize();
+        const t = float(bottomHeight).sub(camPosition.y).div(worldDir.y);
+        const worldXZ = camPosition.add(worldDir.mul(t)).xz;
+
+        // still occlusion-aware: if something REAL (depth-writing) is nearer along this same ray
+        // than the floor point, it's standing in front of it — don't draw through it. Comparing
+        // distance-from-camera (not raw depth) works because both `t` and `viewPos.length()` are
+        // measured along the same normalized ray, so lengths are directly comparable.
+        const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
+        const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
+        const occludedByReal = float(0).toVar();
+        If(isBackground.not(), () => {
+          const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
+          const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
+          If(viewPos.length().lessThan(t), () => {
+            occludedByReal.assign(1);
+          });
+        });
+
+        const litOut = float(0).toVar();
+        If(tracked.z.notEqual(0).and(occludedByReal.equal(0)), () => {
+          const dist = worldXZ.sub(tracked.xy).length();
+          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
+
+          If(litVal.greaterThan(0), () => {
+            const maxOccupancy = float(0).toVar();
+            Loop(marchSteps, ({ i }) => {
+              const t2 = float(i).add(1).div(float(marchSteps));
+              const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t2));
+              const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t2));
+              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
+              If(maxOccupancy.greaterThanEqual(0.75), () => {
+                maxOccupancy.assign(1);
+                Break();
+              });
             });
 
             litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
