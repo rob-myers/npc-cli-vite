@@ -4,8 +4,12 @@
 
 - ✅ switch light-theme and dark-theme
   - default dark-theme
-- 🚧 theme also sets intensity
-- light theme suppresses lighting
+- 🚧 light-theme changes lights
+  - ✅ forces intensity 1, restore on dark-theme
+  - ✅ suppresses lighting ui
+- improve transition dark-theme -> light-theme
+- light-theme can show dynamicLight
+
 - 🚧 improve room light outlines
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`

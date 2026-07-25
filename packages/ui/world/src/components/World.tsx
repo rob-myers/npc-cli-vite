@@ -146,6 +146,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
+      isLightTheme() {
+        return helper.isLightTheme(state.themeKey);
+      },
       isPlaygroundMap() {
         if (state.mapKey.endsWith("-playground")) return true;
         const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
@@ -255,7 +258,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   state.disabled = meta.disabled;
   state.mapKey = meta.mapKey;
-  state.themeKey = meta.themeKey;
+  if (state.themeKey !== meta.themeKey) {
+    state.themeKey = meta.themeKey;
+    state.events.next({ key: "change-theme" });
+  }
 
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
@@ -471,6 +477,7 @@ export type State = {
   setupDevAssetsSync(): () => void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
+  isLightTheme(): boolean;
   /** Either playground map or mentions a playground hull-symbol */
   isPlaygroundMap(): boolean;
   isReady(connectionKey?: string): boolean;
