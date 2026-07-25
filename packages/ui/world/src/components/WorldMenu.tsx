@@ -11,7 +11,6 @@ import {
   EyeSlashIcon,
   GlobeStandIcon,
   type Icon,
-  LightbulbIcon,
   MagnifyingGlassIcon,
   PauseIcon,
   PencilSimpleIcon,
@@ -36,7 +35,6 @@ import {
 } from "../const";
 import { GeomorphGraphsModal, LightMapModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
-import { type AmbientMood, ambientMoods } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export function WorldMenu() {
@@ -58,9 +56,7 @@ export function WorldMenu() {
       skinDebugOpen: false,
       lightMapOpen: false,
       menuOpen: false,
-      lightsMenuOpen: false,
-      lightsLongPress: false,
-      lightsLongPressTimer: 0,
+      lightsOpen: tryLocalStorageGetParsed(lightsOpenStorageKey) === true,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
@@ -478,6 +474,121 @@ export function WorldMenu() {
                     </button>
                   </>
                 )}
+
+                <div
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
+                    big && "gap-2 px-3 py-2 text-sm",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    state.lightsOpen = !state.lightsOpen;
+                    tryLocalStorageSet(lightsOpenStorageKey, String(state.lightsOpen));
+                    state.update();
+                  }}
+                >
+                  {state.lightsOpen ? (
+                    <CaretDownIcon className={cn("size-3", big && "size-4")} />
+                  ) : (
+                    <CaretRightIcon className={cn("size-3", big && "size-4")} />
+                  )}
+                  lights
+                </div>
+                {state.lightsOpen && (
+                  <>
+                    <LightsMenuSectionLabel big={big}>Tracked NPC</LightsMenuSectionLabel>
+                    <div
+                      className={cn("flex flex-wrap items-center gap-2 px-2 py-0.5", big && "gap-3 px-3 py-1")}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex-1">
+                        <MenuSelect
+                          big={big}
+                          side="bottom"
+                          className="border rounded"
+                          label={w.view.dynamicLight?.trackedNpcKey ?? "none"}
+                          value={w.view.dynamicLight?.trackedNpcKey ?? ""}
+                          items={[{ key: "(none)", value: "" }, ...npcKeys.map((k) => ({ key: k, value: k }))]}
+                          onValueChange={(v) => w.npc.trackNpc(v || undefined)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex">
+                      <LightsMenuSlider
+                        big={big}
+                        label="radius"
+                        min={0.2}
+                        max={3}
+                        step={0.1}
+                        value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
+                        defaultValue={defaultDynamicLightRadius}
+                        onChange={(next) => w.view.setDynamicLightRadius(next)}
+                      />
+                      <LightsMenuSlider
+                        big={big}
+                        label="intensity"
+                        value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
+                        defaultValue={defaultDynamicLightIntensity}
+                        onChange={(next) => w.view.setDynamicLightIntensity(next)}
+                      />
+                    </div>
+
+                    <div className={cn("my-0.5 border-t border-slate-700", big && "my-1")} />
+
+                    <div className="flex gap-2">
+                      <div className="flex-1 min-w-0">
+                        <LightsMenuSectionLabel big={big}>Rooms</LightsMenuSectionLabel>
+                        <LightsMenuSlider
+                          big={big}
+                          label="Intensity"
+                          value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                          defaultValue={defaultRoomLightIntensity}
+                          onChange={(next) => w.view.setRoomLightIntensity(next)}
+                        />
+                        <div className={cn("flex items-center gap-1 px-2 py-0.5", big && "gap-1.5 px-3 py-1")}>
+                          <LightsIconButton
+                            big={big}
+                            active={w.view.roomLightEditingEnabled}
+                            icon={PencilSimpleIcon}
+                            title="Edit (long press)"
+                            onClick={() => w.view.toggleRoomLightEditing()}
+                          />
+                          <LightsIconButton
+                            big={big}
+                            active={w.view.roomLight?.roomLightingEnabled.value === 1}
+                            icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
+                            title="Lights shown"
+                            onClick={() => {
+                              w.view.setPostProcessingEnabled(true);
+                              w.view.setRoomLightingEnabled();
+                              state.update();
+                            }}
+                          />
+                          <div className="flex-1" />
+                          <LightsIconButton
+                            big={big}
+                            danger
+                            icon={TrashIcon}
+                            title="Clear lighting"
+                            onClick={() => w.view.resetAllRooms()}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <LightsMenuSectionLabel big={big}>Ambient</LightsMenuSectionLabel>
+                        <LightsMenuSlider
+                          big={big}
+                          label="Intensity"
+                          value={w.view.ambientIntensity ?? defaultAmbientIntensity}
+                          defaultValue={defaultAmbientIntensity}
+                          onChange={(next) => w.view.setAmbientIntensity(next)}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div
                   className={cn(
                     "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
@@ -537,160 +648,6 @@ export function WorldMenu() {
                     </button>
                   </>
                 )}
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
-
-        <Menu.Root
-          open={state.lightsMenuOpen}
-          onOpenChange={(_open, { reason }) => {
-            if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
-              state.set({ lightsMenuOpen: false });
-            }
-          }}
-        >
-          <Menu.Trigger
-            className="cursor-pointer"
-            onClick={() => {
-              state.set({ lightsMenuOpen: !state.lightsMenuOpen });
-            }}
-          >
-            <div
-              className={cn(
-                "outline-width-1 grid place-items-center select-none",
-                big ? "size-12" : "size-9",
-                w.view.roomLightEditingEnabled ? "bg-gray-800/90" : "bg-gray-800/50 text-gray-400",
-              )}
-              title={
-                w.view.roomLightEditingEnabled
-                  ? "Room light editing on — long-press to disable, click for settings"
-                  : "Room light editing off — long-press to enable, click for settings"
-              }
-            >
-              <LightbulbIcon
-                className={big ? "size-6" : "size-5"}
-                weight={w.view.roomLightEditingEnabled ? "fill" : "bold"}
-              />
-            </div>
-          </Menu.Trigger>
-
-          <Menu.Portal>
-            <Menu.Positioner className="z-50" side="right" sideOffset={4} align="start">
-              <Menu.Popup
-                className={cn(
-                  "bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 w-40",
-                  big && "w-48 py-2",
-                )}
-              >
-                <LightsMenuSectionLabel big={big}>Rooms</LightsMenuSectionLabel>
-                <LightsMenuToggle
-                  big={big}
-                  label="Edit (long press)"
-                  active={w.view.roomLightEditingEnabled}
-                  onIcon={PencilSimpleIcon}
-                  offIcon={PencilSimpleIcon}
-                  onClick={() => w.view.toggleRoomLightEditing()}
-                />
-                <LightsMenuToggle
-                  big={big}
-                  label="Lights shown"
-                  active={w.view.roomLight?.roomLightingEnabled.value === 1}
-                  onIcon={EyeIcon}
-                  offIcon={EyeSlashIcon}
-                  onClick={() => {
-                    w.view.setPostProcessingEnabled(true);
-                    w.view.setRoomLightingEnabled();
-                    state.update();
-                  }}
-                />
-                <LightsMenuSlider
-                  big={big}
-                  label="Intensity"
-                  value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                  defaultValue={defaultRoomLightIntensity}
-                  onChange={(next) => w.view.setRoomLightIntensity(next)}
-                />
-                <Menu.Item
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer text-red-300 hover:bg-red-900/40",
-                    big && "gap-3 px-3 py-2 text-sm",
-                  )}
-                  onClick={() => w.view.resetAllRooms()}
-                  closeOnClick={false}
-                >
-                  <TrashIcon className={cn("size-4 shrink-0", big && "size-5")} />
-                  <span className="flex-1 text-left">Clear lighting</span>
-                </Menu.Item>
-
-                <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
-
-                <LightsMenuSectionLabel big={big}>Tracked NPC</LightsMenuSectionLabel>
-                <div
-                  className={cn("flex flex-wrap items-center gap-2 px-2 py-1", big && "gap-3 px-3 py-2")}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex-1">
-                    <MenuSelect
-                      big={big}
-                      side="bottom"
-                      className="border rounded"
-                      label={w.view.dynamicLight?.trackedNpcKey ?? "none"}
-                      value={w.view.dynamicLight?.trackedNpcKey ?? ""}
-                      items={[{ key: "(none)", value: "" }, ...npcKeys.map((k) => ({ key: k, value: k }))]}
-                      onValueChange={(v) => w.npc.trackNpc(v || undefined)}
-                    />
-                  </div>
-                </div>
-                <div className="flex">
-                  <LightsMenuSlider
-                    big={big}
-                    label="radius"
-                    min={0.2}
-                    max={3}
-                    step={0.1}
-                    value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
-                    defaultValue={defaultDynamicLightRadius}
-                    onChange={(next) => w.view.setDynamicLightRadius(next)}
-                  />
-                  <LightsMenuSlider
-                    big={big}
-                    label="intensity"
-                    value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
-                    defaultValue={defaultDynamicLightIntensity}
-                    onChange={(next) => w.view.setDynamicLightIntensity(next)}
-                  />
-                </div>
-
-                <div className={cn("my-1 border-t border-slate-700", big && "my-1.5")} />
-
-                <LightsMenuSectionLabel big={big}>Ambient</LightsMenuSectionLabel>
-                <LightsMenuSlider
-                  big={big}
-                  label="Intensity"
-                  value={w.view.ambientIntensity ?? defaultAmbientIntensity}
-                  defaultValue={defaultAmbientIntensity}
-                  onChange={(next) => w.view.setAmbientIntensity(next)}
-                />
-                <div className={cn("flex items-center gap-1.5 px-2 py-1.5", big && "gap-2 px-3 py-2")}>
-                  {ambientMoods.map((mood) => (
-                    <button
-                      key={mood}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        w.view.setAmbientMood(mood);
-                      }}
-                      className={cn(
-                        "flex-1 rounded px-1.5 py-1 text-[10px] capitalize border cursor-pointer",
-                        big && "text-xs py-1.5",
-                        w.view.ambientMood === mood ? ambientMoodActiveClass[mood] : ambientMoodInactiveClass,
-                      )}
-                    >
-                      {mood}
-                    </button>
-                  ))}
-                </div>
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
@@ -781,54 +738,50 @@ function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
 }
 
-/** One labelled on/off row in the lights menu — icon swaps and dims when inactive */
-function LightsMenuToggle({
-  label,
-  hint,
+/** Small square icon button used to pack several toggles/actions into one row in the lights menu */
+function LightsIconButton({
   active,
-  onIcon: OnIcon,
-  offIcon: OffIcon,
+  danger,
+  icon: IconCmp,
+  title,
   onClick,
   big,
 }: {
-  label: string;
-  /** Small sub-label shown under `label` (e.g. an alternate way to trigger this) */
-  hint?: string;
-  active: boolean;
-  onIcon: Icon;
-  offIcon: Icon;
+  active?: boolean;
+  /** Styles as a destructive action (e.g. clear) instead of an on/off toggle */
+  danger?: boolean;
+  icon: Icon;
+  title: string;
   onClick: () => void;
   big?: boolean;
 }) {
-  const IconCmp = active ? OnIcon : OffIcon;
   return (
-    <Menu.Item
+    <button
+      type="button"
+      title={title}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer hover:bg-slate-700",
-        big && "gap-3 px-3 py-2 text-sm",
+        "grid place-items-center rounded cursor-pointer size-6",
+        big && "size-7",
+        danger
+          ? "text-red-300 hover:bg-red-900/40"
+          : active
+            ? "bg-slate-700 text-white"
+            : "text-slate-500 hover:bg-slate-700",
       )}
-      closeOnClick={false}
-      onClick={onClick}
     >
-      <IconCmp
-        className={cn("size-4 shrink-0", big && "size-5", active ? "text-white" : "text-slate-500")}
-        weight={active ? "fill" : "regular"}
-      />
-      <span className="flex-1 text-left leading-tight">
-        <span className={active ? "text-slate-200" : "text-slate-500"}>{label}</span>
-        {hint && <span className="block text-[10px] text-slate-500">{hint}</span>}
-      </span>
-      <span className={cn("text-[10px] shrink-0", big && "text-xs", active ? "text-green-400" : "text-slate-500")}>
-        {active ? "on" : "off"}
-      </span>
-    </Menu.Item>
+      <IconCmp className={cn("size-3.5", big && "size-4")} weight={active ? "fill" : "regular"} />
+    </button>
   );
 }
 
 /** Small uppercase heading separating sections within the lights menu */
 function LightsMenuSectionLabel({ big, children }: React.PropsWithChildren<{ big?: boolean }>) {
   return (
-    <div className={cn("px-2 pt-1 text-[10px] uppercase tracking-wide text-slate-400", big && "px-3 text-xs")}>
+    <div className={cn("px-2 text-[10px] uppercase tracking-wide text-slate-400", big && "px-3 text-xs")}>
       {children}
     </div>
   );
@@ -855,10 +808,10 @@ function LightsMenuSlider({
   onChange: (next: number) => void;
 }) {
   return (
-    <div className={cn("flex flex-col gap-2 px-2 py-1.5", big && "gap-3 px-3 py-2")}>
+    <div className={cn("flex items-center justify-between gap-2 px-2 py-0.5", big && "gap-3 px-3 py-1")}>
       <span
         className={cn(
-          "flex-1 text-xs text-slate-200",
+          "text-xs text-slate-200",
           big && "text-sm",
           defaultValue !== undefined && "cursor-pointer hover:underline",
         )}
@@ -881,22 +834,14 @@ function LightsMenuSlider({
         onChange={(e) => onChange(Number(e.target.value))}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "w-16 accent-white cursor-pointer",
+          "w-14 accent-white cursor-pointer",
           "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-          big && "w-24",
+          big && "w-20",
         )}
       />
     </div>
   );
 }
-
-const ambientMoodActiveClass: Record<AmbientMood, string> = {
-  anger: "bg-red-600/80 border-red-400 text-white",
-  greed: "bg-green-600/80 border-green-400 text-white",
-  calm: "bg-blue-600/80 border-blue-400 text-white",
-};
-
-const ambientMoodInactiveClass = "bg-slate-700/50 border-slate-600 text-slate-400 hover:bg-slate-700";
 
 export type State = {
   debugHitOpen: boolean;
@@ -905,10 +850,8 @@ export type State = {
   lightMapOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  lightsMenuOpen: boolean;
-  /** Was the current press on the lights icon long enough to toggle `roomLightEditingEnabled` (vs. open the menu)? */
-  lightsLongPress: boolean;
-  lightsLongPressTimer: number;
+  /** Collapsible "lights" section within the main menu */
+  lightsOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
@@ -926,6 +869,7 @@ export type State = {
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
+const lightsOpenStorageKey = "world-lights-section-open";
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
 const cardinalDirItems = [1, 2, 4, 8].map((n) => ({ key: String(n), value: String(n) }));
 const debugItems = [
