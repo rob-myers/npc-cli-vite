@@ -19,6 +19,15 @@ class ExtraZoom {
     this._ctrl = ctrl;
   }
 
+  clearTimers() {
+    clearTimeout(this._activeTimer);
+    clearTimeout(this._normalZoomTimer);
+    clearTimeout(this._cooldownTimer);
+    this._activeTimer = undefined;
+    this._normalZoomTimer = undefined;
+    this._cooldownTimer = undefined;
+  }
+
   get minR() {
     const c = this._ctrl;
     return this.active ? c.minDistance / c.extraZoom : c.minDistance;
@@ -313,7 +322,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.addEventListener("contextmenu", this.onContextMenu);
     this.domElement.addEventListener("pointerdown", this.onPointerDown);
     this.domElement.addEventListener("pointercancel", this.onPointerUp);
+    // fires whenever pointer capture is released for ANY reason (including a browser/OS gesture
+    // stealing the pointer, or losing window focus mid-drag) — pointerup/pointercancel alone can
+    // silently miss these, leaving a "ghost" pointer stuck forever in `this.pointers`
+    this.domElement.addEventListener("lostpointercapture", this.onLostPointerCapture);
     this.domElement.addEventListener("wheel", this.onMouseWheel);
+    // window losing focus mid-drag (e.g. alt-tab) may never deliver pointerup/pointercancel/
+    // lostpointercapture at all — force a full reset so no gesture can get stuck
+    window.addEventListener("blur", this.onWindowBlur);
   }
 
   clampDistance(dist: number) {
@@ -325,9 +341,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.removeEventListener("contextmenu", this.onContextMenu);
     this.domElement.removeEventListener("pointerdown", this.onPointerDown);
     this.domElement.removeEventListener("pointercancel", this.onPointerUp);
+    this.domElement.removeEventListener("lostpointercapture", this.onLostPointerCapture);
     this.domElement.removeEventListener("wheel", this.onMouseWheel);
     this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
+    window.removeEventListener("blur", this.onWindowBlur);
+    this._ez.clearTimers();
   }
 
   dollyIn(dollyScale: number) {
@@ -808,6 +827,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     this.addPointer(event);
+    // ensures this pointer keeps delivering events to domElement (and fires "lostpointercapture"
+    // if that guarantee is ever broken) even if released outside it or capture is stolen
+    this.domElement.setPointerCapture(event.pointerId);
 
     if (event.pointerType === "touch") {
       this.onTouchStart(event);
@@ -860,6 +882,33 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     this._ez.onPointerUp();
 
+    this.dispatchEvent(endEvent);
+    this.state = this.STATE.NONE;
+  };
+
+  /** Catches releases that pointerup/pointercancel can miss (see `connect`) */
+  onLostPointerCapture = (event: PointerEvent) => {
+    if (this.pointers.some((p) => p.pointerId === event.pointerId)) {
+      this.onPointerUp(event);
+    }
+  };
+
+  /** Window losing focus mid-gesture may never deliver any pointer-release event at all */
+  onWindowBlur = () => {
+    if (this.pointers.length === 0) {
+      return;
+    }
+    for (const p of this.pointers) {
+      this.domElement.releasePointerCapture(p.pointerId);
+    }
+    this.pointers = [];
+    this.pointerPositions = {};
+    this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
+    this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
+    this.rotateAxis = "none";
+    this.twoFinger.gesture = "undecided";
+    this.snapAzimuth.animating = false;
+    this._ez.onPointerUp();
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
   };
