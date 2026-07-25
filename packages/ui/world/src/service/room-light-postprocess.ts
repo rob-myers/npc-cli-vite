@@ -72,21 +72,18 @@ export type RoomLightPostprocess = {
 const roomMaskDim = Math.round(floorTextureDimension * roomHitTextureScaleDown);
 
 /**
- * Post-processing helper for lighting whole rooms. A room is either lit or not (no radius, no
- * growth) — so instead of per-fragment polygon ray-casting against baked light shapes, this
- * samples two small baked textures:
+ * Post-processing helper for lighting whole rooms.
+ * A room is either lit or not via two small baked textures:
  *
  * 1. `texGmId` — one texel per `gmIdGridDim`-sized world cell (mirrors `service/grid.ts`'s
  *    `createGmIdGrid`/`queryGmIdGrid`, baked as a texture instead of a sparse JS object), giving
  *    "which gm instance is here" in O(1), nearest-filtered.
- * 2. `texRoomMask` — one layer per unique geomorph layout (not per instance — shared across every
- *    instance of that layout), R = `roomId + 1` (see `DerivedGmsData.computeGmKey`), nearest-filtered
- *    (hard binary lighting — no fade, so no need for bilinear blending between adjacent room ids).
+ * 2. `texRoomMask` — one layer per unique geomorph layout (not per instance),
+ *     where R = `roomId + 1` (see `DerivedGmsData.computeGmKey`), nearest-filtered
+ *     (hard binary lighting — no fade, so no need for bilinear blending between adjacent room ids).
  *
  * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
- * (as before — this part is unchanged and still the most expensive part of the function, see
- * CONVERSATIONS.md "Lighting Performance"), then does those two texture samples plus a direct
- * `roomLit` boolean-array lookup — no loop over rooms, lights, or gm instances at all.
+ * (see CONVERSATIONS.md "Lighting Performance"), does two texture samples plus `roomLit` boolean-array lookup.
  */
 export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): RoomLightPostprocess {
   const bottomHeight = opts.bottomHeight ?? 0;
