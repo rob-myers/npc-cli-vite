@@ -1,6 +1,16 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
-import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, uv, vec4 } from "three/tsl";
+import {
+  attribute,
+  cameraProjectionMatrix,
+  cameraViewMatrix,
+  float,
+  max,
+  positionLocal,
+  uniform,
+  vec2,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale } from "../const";
 import { createXzQuad } from "../service/geometry";
@@ -11,48 +21,59 @@ export default function NpcShadows() {
 
   const state = useStateRef(
     (): State => ({
-      ...createShadowResources(w.view.objectPick),
+      shadow: createShadowResources(w.view.objectPick),
       onTick() {
+        const { xzoData, xzoAttr, geo, light } = state.shadow;
+
         let i = 0;
         for (const npc of Object.values(w.n)) {
-          state.xzoData[i * 3] = npc.position.x;
-          state.xzoData[i * 3 + 1] = npc.position.z;
-          // state.xzoData[i * 3 + 2] = npc.opacityScale.value;
-          state.xzoData[i * 3 + 2] = 1;
+          xzoData[i * 3] = npc.position.x;
+          xzoData[i * 3 + 1] = npc.position.z;
+          xzoData[i * 3 + 2] = 1;
           i++;
         }
-        state.geo.instanceCount = i;
-        state.xzoAttr.needsUpdate = true;
+        geo.instanceCount = i;
+        xzoAttr.needsUpdate = true;
+
+        // (x, z, active, radius) of the npc-follow light
+        const dl = w.view.dynamicLight;
+        if (dl.target !== null) {
+          light.value.set(dl.displayCenter.x, dl.displayCenter.z, 1, dl.radius);
+        } else {
+          light.value.z = 0;
+        }
       },
     }),
+    { reset: { shadow: false } },
   );
 
   useEffect(() => {
     w.shadows = state;
     return () => {
-      state.geo.dispose();
-      state.mat.dispose();
+      state.shadow.geo.dispose();
+      state.shadow.mat.dispose();
     };
   }, []);
 
-  return <primitive object={state.mesh} />;
+  return <primitive object={state.shadow.mesh} />;
 }
 
 export type State = {
-  geo: THREE.InstancedBufferGeometry;
-  mat: THREE.MeshBasicNodeMaterial;
-  mesh: THREE.Mesh;
-  xzoData: Float32Array;
-  xzoAttr: THREE.InstancedBufferAttribute;
+  shadow: ReturnType<typeof createShadowResources>;
   onTick(): void;
 };
+
+/** How far (in radii) a shadow shifts away from the light at the edge of its radius */
+const maxShadowOffset = 0.5;
+const shadowRadius = npcScale / 2;
 
 function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
+  const quadSide = shadowRadius * 2 * (maxShadowOffset + 1); // room for the max offset, any direction
   for (let i = 0; i < pos.count; i++) {
-    pos.setX(i, (pos.getX(i) - 0.5) * npcScale);
-    pos.setZ(i, (pos.getZ(i) - 0.5) * npcScale);
+    pos.setX(i, (pos.getX(i) - 0.5) * quadSide);
+    pos.setZ(i, (pos.getZ(i) - 0.5) * quadSide);
   }
   const geo = new THREE.InstancedBufferGeometry();
   geo.setAttribute("position", pos);
@@ -63,11 +84,27 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   geo.setAttribute("shadowXZO", xzoAttr);
   geo.instanceCount = 0;
 
+  const light = uniform(new THREE.Vector4(0, 0, 0, 1));
   const xzo = attribute<"vec3">("shadowXZO", "vec3");
+
   const worldPos = vec4(positionLocal.x.add(xzo.x), 0.01, positionLocal.z.add(xzo.y), 1.0);
   const clipPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos));
-  const center = uv().sub(0.5);
-  const baseAlpha = float(1).sub(center.dot(center).mul(4)).clamp(0, 1).mul(0.6).mul(xzo.z);
+
+  // shift the shadow circle away from the light, farther near the edge of its radius
+  const rel = vec2(xzo.x, xzo.y).sub(light.xy);
+  const dist = rel.length();
+  const proximity = light.z.mul(dist.div(max(light.w, 0.001)).clamp(0, 1));
+  const offsetAmount = proximity.mul(maxShadowOffset).mul(shadowRadius);
+  const offset = dist.greaterThan(0.05).select(rel.div(max(dist, 0.05)).mul(offsetAmount), vec2(0, 0));
+
+  // plain circle, recentred at (npc + offset), solid out to (radius - edgeSoftness) then a thin fade
+  const distToCenter = vec2(positionLocal.x, positionLocal.z).sub(offset).length();
+  const edgeSoftness = shadowRadius * 0.2;
+  const baseAlpha = float(1)
+    .sub(distToCenter.sub(shadowRadius - edgeSoftness).div(edgeSoftness))
+    .clamp(0, 1)
+    .mul(0.25)
+    .mul(xzo.z);
   const alpha = objectPick.notEqual(0).select(float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   mat.vertexNode = clipPos;
@@ -76,5 +113,5 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
 
-  return { geo, mat, mesh, xzoData, xzoAttr };
+  return { geo, mat, mesh, xzoData, xzoAttr, light };
 }
