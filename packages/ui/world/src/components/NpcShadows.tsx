@@ -7,6 +7,7 @@ import {
   float,
   max,
   positionLocal,
+  select,
   uniform,
   vec2,
   vec4,
@@ -14,6 +15,7 @@ import {
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale } from "../const";
 import { createXzQuad } from "../service/geometry";
+import type { SelectAnyType, SelectFloatType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function NpcShadows() {
@@ -95,7 +97,11 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const dist = rel.length();
   const proximity = light.z.mul(dist.div(max(light.w, 0.001)).clamp(0, 1));
   const offsetAmount = proximity.mul(maxShadowOffset).mul(shadowRadius);
-  const offset = dist.greaterThan(0.05).select(rel.div(max(dist, 0.05)).mul(offsetAmount), vec2(0, 0));
+  const offset = (select as SelectAnyType)(
+    dist.greaterThan(0.05),
+    rel.div(max(dist, 0.05)).mul(offsetAmount),
+    vec2(0, 0),
+  ) as THREE.Node<"vec2">;
 
   // plain circle, recentred at (npc + offset), solid out to (radius - edgeSoftness) then a thin fade
   const distToCenter = vec2(positionLocal.x, positionLocal.z).sub(offset).length();
@@ -105,7 +111,7 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
     .clamp(0, 1)
     .mul(0.25)
     .mul(xzo.z);
-  const alpha = objectPick.notEqual(0).select(float(0), baseAlpha);
+  const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   mat.vertexNode = clipPos;
   mat.colorNode = vec4(0, 0, 0, alpha);

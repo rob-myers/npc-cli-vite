@@ -104,12 +104,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         topHeight: wallHeight + 0.5, // cover npc on top-bunk
       }),
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
-      /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling */
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
-      // capped at wallHeight (not +0.5 like roomLight) — the extra margin reached into the
-      // ceiling geometry, causing aliasing when looking down at it (the "background"/no-depth
-      // fallback in litAmount() projects onto the topHeight plane, which didn't line up with
-      // the actual ceiling surface once it extended past wallHeight)
       dynamicLight: createDynamicLightPostprocess({
         bottomHeight: 0,
         topHeight: wallHeight - 0.01, // avoid ceiling aliasing
@@ -260,6 +255,33 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
+      isRoomLightingDisallowed(gmRoomId) {
+        const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
+        // ≤ 1 or 1st takes precedence
+        const decorLabel = roomDecor
+          ?.values()
+          .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
+        return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
+      },
+      onCameraChange(spherical: THREE.Spherical, _target: THREE.Vector3) {
+        const topDown = spherical.phi <= 2 * (Math.PI / 18);
+        if (topDown !== state.topDown) {
+          state.topDown = topDown;
+          w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
+        }
+
+        const camera = state.controls?.object ?? w.r3f.camera;
+        state.roomLight.update(camera);
+        state.dynamicLight.update(camera);
+      },
+      onCameraEnd() {
+        state.lastCameraReading.azimuthal = state.controls.spherical.theta;
+        state.lastCameraReading.polar = state.controls.spherical.phi;
+        state.lastCameraReading.position.x = state.controls.target.x;
+        state.lastCameraReading.position.y = state.controls.spherical.radius;
+        state.lastCameraReading.position.z = state.controls.target.z;
+        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(state.lastCameraReading));
+      },
       onCreated(rootState) {
         w.threeReady = true;
         // override THREE.WebGPURenderer
@@ -384,102 +406,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ...point, // can provide as point with meta
         });
       },
-      onCameraChange(spherical: THREE.Spherical, _target: THREE.Vector3) {
-        const topDown = spherical.phi <= 2 * (Math.PI / 18);
-        if (topDown !== state.topDown) {
-          state.topDown = topDown;
-          w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
-        }
-
-        const camera = state.controls?.object ?? w.r3f.camera;
-        state.roomLight.update(camera);
-        state.dynamicLight.update(camera);
-      },
-      onCameraEnd() {
-        state.lastCameraReading.azimuthal = state.controls.spherical.theta;
-        state.lastCameraReading.polar = state.controls.spherical.phi;
-        state.lastCameraReading.position.x = state.controls.target.x;
-        state.lastCameraReading.position.y = state.controls.spherical.radius;
-        state.lastCameraReading.position.z = state.controls.target.z;
-        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(state.lastCameraReading));
-      },
-      updateDynamicLight(rawTarget) {
-        state.dynamicLight.displayCenter.copy(rawTarget);
-        state.dynamicLight.setTracked({ x: state.dynamicLight.displayCenter.x, z: state.dynamicLight.displayCenter.z });
-        state.dynamicLight.setActiveGmDoorRatios(
-          state.dynamicLight.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
-        );
-      },
-      toggleRoomLightEditing() {
-        state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
-        tryLocalStorageSet(roomLightEditingEnabledKey, String(state.roomLightEditingEnabled));
-        w.update();
-      },
-      setRoomLightingEnabled(next = state.roomLight.roomLightingEnabled.value === 0) {
-        state.roomLight.setRoomLightingEnabled(next);
-        tryLocalStorageSet(roomLightingEnabledKey, String(next));
-        state.setPostProcessingEnabled(true);
-      },
-      setRoomLightIntensity(next) {
-        state.roomLightIntensity.value = next;
-        tryLocalStorageSet(roomLightIntensityKey, String(next));
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
-      setDynamicLightRadius(next) {
-        state.dynamicLight.setRadius(next);
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
-      setDynamicLightIntensity(next) {
-        state.dynamicLight.setIntensity(next);
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
-      setAmbientIntensity(next) {
-        state.ambientIntensity = next;
-        state.dimWorldColor.value.copy(computeDimWorldColor(next, state.ambientMood));
-        tryLocalStorageSet(ambientIntensityKey, String(next));
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
-      setAmbientMood(next) {
-        state.ambientMood = state.ambientMood === next ? null : next;
-        state.dimWorldColor.value.copy(computeDimWorldColor(state.ambientIntensity, state.ambientMood));
-        tryLocalStorageSet(ambientMoodKey, JSON.stringify(state.ambientMood));
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
-      roomLightingDisallowed(gmRoomId) {
-        const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
-        // ≤ 1 or 1st takes precedence
-        const decorLabel = roomDecor
-          ?.values()
-          .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
-        return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
-      },
-      toggleRoomLit(groundCenter) {
-        const gmRoomId = w.e.findRoomContaining(groundCenter, true);
-        if (!gmRoomId) {
-          return; // must be in some room
-        }
-        if (state.roomLightingDisallowed(gmRoomId)) {
-          return; // lighting isn't permitted in this room
-        }
-        const { gmId, roomId } = gmRoomId;
-        state.roomLight.setRoomLit(gmId, roomId, !state.roomLight.isRoomLit(gmId, roomId));
-        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
       resetAllRooms() {
         state.roomLight.resetAllRooms();
         tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify([]));
         state.setPostProcessingEnabled(true);
       },
       setupDom() {
-        // only trigger when visible
         const ro = new ResizeObserver(([entry]) => {
+          // only trigger when visible
           entry.contentRect.width && state.onResize();
         });
         ro.observe(w.rootEl);
@@ -503,10 +437,44 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.roomLight.setRoomLitPairs(savedLitRooms);
         }
       },
-      setCameraMode(mode) {
-        state.cameraMode = mode;
-        tryLocalStorageSet(cameraModeStorageKey, mode);
-        w.update();
+      setAmbientIntensity(next) {
+        state.ambientIntensity = next;
+        state.dimWorldColor.value.copy(computeDimWorldColor(next, state.ambientMood));
+        tryLocalStorageSet(ambientIntensityKey, String(next));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setAmbientMood(next) {
+        state.ambientMood = state.ambientMood === next ? null : next;
+        state.dimWorldColor.value.copy(computeDimWorldColor(state.ambientIntensity, state.ambientMood));
+        tryLocalStorageSet(ambientMoodKey, JSON.stringify(state.ambientMood));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setCameraMode(cameraMode) {
+        tryLocalStorageSet(cameraModeStorageKey, cameraMode);
+        state.set({ cameraMode });
+      },
+      setDynamicLightIntensity(next) {
+        state.dynamicLight.setIntensity(next);
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setDynamicLightRadius(next) {
+        state.dynamicLight.setRadius(next);
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      setRoomLightingEnabled(next = state.roomLight.roomLightingEnabled.value === 0) {
+        state.roomLight.setRoomLightingEnabled(next);
+        tryLocalStorageSet(roomLightingEnabledKey, String(next));
+        state.setPostProcessingEnabled(true);
+      },
+      setRoomLightIntensity(next) {
+        state.roomLightIntensity.value = next;
+        tryLocalStorageSet(roomLightIntensityKey, String(next));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
       },
       setNumCardinalDirections(n) {
         tryLocalStorageSet(numCardinalDirectionsKey, String(n));
@@ -569,6 +537,32 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.set({ frameloop: "always" });
           return "always";
         }
+      },
+      toggleRoomLightEditing() {
+        state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
+        tryLocalStorageSet(roomLightEditingEnabledKey, String(state.roomLightEditingEnabled));
+        w.update();
+      },
+      toggleRoomLit(groundPoint) {
+        const gmRoomId = w.e.findRoomContaining(groundPoint, true);
+        if (!gmRoomId) {
+          return;
+        }
+        if (state.isRoomLightingDisallowed(gmRoomId)) {
+          return;
+        }
+        const { gmId, roomId } = gmRoomId;
+        state.roomLight.setRoomLit(gmId, roomId, !state.roomLight.isRoomLit(gmId, roomId));
+        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
+      updateDynamicLight(rawTarget) {
+        state.dynamicLight.displayCenter.copy(rawTarget);
+        state.dynamicLight.setTracked({ x: state.dynamicLight.displayCenter.x, z: state.dynamicLight.displayCenter.z });
+        state.dynamicLight.setActiveGmDoorRatios(
+          state.dynamicLight.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
+        );
       },
       withPickOutput(typeId, forceAlpha) {
         const idx = float(instanceIndex);
@@ -737,7 +731,7 @@ export type State = {
   /** Sets (or clears, if already active) the world's ambient mood tint (persisted) */
   setAmbientMood(next: Exclude<AmbientMood, null>): void;
   /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit lighting at all */
-  roomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
+  isRoomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
   /** Toggles whether `gmRoomId`'s room is lit, unless lighting isn't permitted there (see `roomLightingDisallowed`) */
   toggleRoomLit(groundCenter: Geom.VectJson): void;
   /** Clears every lit room */
@@ -745,7 +739,7 @@ export type State = {
   /** Debounced resize + key events */
   setupDom(): () => void;
   setupLights(): void;
-  setCameraMode(mode: CameraModeType): void;
+  setCameraMode(cameraMode: CameraModeType): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
   /**
