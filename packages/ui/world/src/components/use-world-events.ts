@@ -200,6 +200,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.tryCloseDoor(e.gdKey);
             break;
           }
+          case "change-theme":
           case "disabled":
           case "door-locked":
           case "door-unlocked":

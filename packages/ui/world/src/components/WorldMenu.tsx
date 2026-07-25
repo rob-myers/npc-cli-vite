@@ -197,6 +197,7 @@ export function WorldMenu() {
           requestAnimationFrame(() => (state.dragged = false));
         }}
       >
+        {/* main menu */}
         <Menu.Root
           open={state.menuOpen}
           onOpenChange={(open, { reason }) => {
@@ -377,8 +378,9 @@ export function WorldMenu() {
                   closeOnClick={false}
                   onClick={() => {
                     const currentIdx = themeKeys.indexOf(w.themeKey);
-                    const nextIdx = (currentIdx + 1) % themeKeys.length;
-                    uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = themeKeys[nextIdx]));
+                    const nextThemeKey = themeKeys[(currentIdx + 1) % themeKeys.length];
+                    uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
+                    w.events.next({ key: "change-theme", nextThemeKey });
                   }}
                 >
                   {w.themeKey}
@@ -653,6 +655,7 @@ export function WorldMenu() {
           </Menu.Portal>
         </Menu.Root>
 
+        {/* play/pause */}
         <button
           className={cn(
             "outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700",
