@@ -496,7 +496,7 @@ export function WorldMenu() {
                   lights
                 </div>
                 {state.lightsOpen && (
-                  <div className={cn(w.isLightTheme() && "pointer-events-none brightness-50")}>
+                  <>
                     <LightsMenuSectionLabel big={big}>Tracked NPC</LightsMenuSectionLabel>
                     <div
                       className={cn("flex flex-wrap items-center gap-2 px-2 py-0.5", big && "gap-3 px-3 py-1")}
@@ -576,7 +576,7 @@ export function WorldMenu() {
                         </div>
                       </div>
 
-                      <div className="flex-1 min-w-0">
+                      <div className={cn("flex-1 min-w-0", w.isLightTheme() && "pointer-events-none brightness-50")}>
                         <LightsMenuSectionLabel big={big}>Ambient</LightsMenuSectionLabel>
                         <LightsMenuSlider
                           big={big}
@@ -587,7 +587,7 @@ export function WorldMenu() {
                         />
                       </div>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 <div
