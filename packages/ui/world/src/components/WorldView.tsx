@@ -15,7 +15,7 @@ import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
+import { Fn, float, If, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   ambientIntensityKey,
@@ -38,6 +38,7 @@ import {
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
+import { createEdgeContourEffect } from "../service/edge-contour-effect";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import * as persisted from "../service/get-persisted";
 import { decodePick } from "../service/pick";
@@ -94,6 +95,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
       dimWorldColor: uniform(computeDimWorldColor(persisted.getAmbientIntensity(w.themeKey))),
       ambientIntensity: persisted.getAmbientIntensity(w.themeKey),
+      // light-theme barely dims unlit areas, so the tracked light needs its own visible overlay there
+      lightThemeAmount: uniform(w.isLightTheme() ? 1 : 0),
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -436,6 +439,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setAmbientIntensity(next, persist = true) {
         state.ambientIntensity = next;
         state.dimWorldColor.value.copy(computeDimWorldColor(next));
+        state.lightThemeAmount.value = w.isLightTheme() ? 1 : 0;
         persist && tryLocalStorageSet(ambientIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
@@ -480,20 +484,31 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-        // "bright" if a lit room's own (scaled-down) brightness OR the dynamic light reaches here —
-        // combine via max BEFORE inverting, not after: this way a lit room whose own intensity is
-        // below 1 still lets the dynamic light stand out above it, instead of one flattening the other.
-        const isBright = state.roomLight
-          .litAmount(sceneDepth.r)
-          .mul(state.roomLightIntensity)
-          .max(state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity));
-        const unlitAmount = float(1).sub(isBright);
+        // light-theme's dimWorldColor is near-white, so skip the dimming raymarch there entirely
+        const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
+        const litEffect = Fn(() => {
+          const out = vec3(0, 0, 0).toVar();
+          If(state.lightThemeAmount.greaterThan(0), () => {
+            out.assign(brightColor);
+          }).Else(() => {
+            const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
+            // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
+            const isBright = state.roomLight
+              .litAmount(sceneDepth.r)
+              .mul(state.roomLightIntensity)
+              .max(dynamicLitAmount);
+            const unlitAmount = float(1).sub(isBright);
+            out.assign(mix(brightColor, sceneColor.rgb.mul(state.dimWorldColor), unlitAmount));
+          });
+          return out;
+        })();
+        // "Splinter Cell" edge-detection contour: a glowing neon outline tracing the boundary of
+        // the tracked dynamic light, restricted to the ground plane — see edge-contour-effect.ts
+        const edgeContour = createEdgeContourEffect();
         const effect = mix(
-          // fully-lit scaled down
-          colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a),
-          // darkness
-          sceneColor.rgb.mul(state.dimWorldColor),
-          unlitAmount,
+          litEffect,
+          edgeContour.color,
+          edgeContour.amount(state.dynamicLight, sceneDepth.r, state.lightThemeAmount),
         );
 
         const pipeline = new THREE.RenderPipeline(gl);
@@ -683,6 +698,8 @@ export type State = {
   dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
   /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
   ambientIntensity: number;
+  /** `1` in light-theme (else `0`) — gates the dynamic light's overlay, kept in sync in `setAmbientIntensity` */
+  lightThemeAmount: THREE.UniformNode<"float", number>;
   dynamicLight: DynamicLightPostprocess;
   fov: number;
 

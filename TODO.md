@@ -4,11 +4,18 @@
 
 - ✅ switch light-theme and dark-theme
   - default dark-theme
-- 🚧 light-theme changes lights
+- ✅ light-theme changes lights
   - ✅ forces intensity 1, restore on dark-theme
   - ✅ suppresses lighting ui
-- improve transition dark-theme -> light-theme
-- light-theme can show dynamicLight
+- ✅ light-theme can show dynamicLight
+- ✅ light-mode and dark-mode switch postprocessing shaders for dynamicLight
+  - partition
+  - simplify new shader
+
+- cover up curved room raymarching woes
+  - maybe can use `Walls` if can vary opacity
+  - provide additional wall-segments via e.g. `meta.poly`
+
 
 - 🚧 improve room light outlines
 - replace `meta` by `decor` i.e. decor queries by rect
@@ -32,6 +39,9 @@
 
 - ✅ fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
 
+- BUG door open wrong way around during raycast of dynamicLight
+  - sporadic due to hmr?
+- improve transition dark-theme -> light-theme
 - fix npc final turn when ends near nav border
 - can override edit g-301--playground.json in dev
   - currently can only save as draft
