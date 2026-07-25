@@ -42598,7 +42598,7 @@
     }
   },
   "theme": {
-    "dark-theme": {
+    "light-theme": {
       "background": "bg-white",
       "ceiling": {
         "hull": {"fill": "#0006", "stroke": "#6662"},
@@ -42612,7 +42612,7 @@
       },
       "walls": {"color": "#000000", "opacity": 0.5}
     },
-    "light-theme": {
+    "dark-theme": {
       "background": "bg-[#000]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
