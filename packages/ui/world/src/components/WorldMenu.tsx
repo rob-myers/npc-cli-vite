@@ -380,7 +380,6 @@ export function WorldMenu() {
                     const currentIdx = themeKeys.indexOf(w.themeKey);
                     const nextThemeKey = themeKeys[(currentIdx + 1) % themeKeys.length];
                     uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
-                    w.events.next({ key: "change-theme", nextThemeKey });
                   }}
                 >
                   {w.themeKey}
@@ -497,7 +496,7 @@ export function WorldMenu() {
                   lights
                 </div>
                 {state.lightsOpen && (
-                  <>
+                  <div className={cn(w.isLightTheme() && "pointer-events-none brightness-50")}>
                     <LightsMenuSectionLabel big={big}>Tracked NPC</LightsMenuSectionLabel>
                     <div
                       className={cn("flex flex-wrap items-center gap-2 px-2 py-0.5", big && "gap-3 px-3 py-1")}
@@ -588,7 +587,7 @@ export function WorldMenu() {
                         />
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 <div

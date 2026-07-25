@@ -19,10 +19,8 @@ import { float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } 
 import * as THREE from "three/webgpu";
 import {
   ambientIntensityKey,
-  ambientMoodKey,
   cameraModeStorageKey,
   cameraPositionStorageKey,
-  defaultAmbientIntensity,
   defaultCameraMode,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
@@ -41,9 +39,10 @@ import {
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
+import * as persisted from "../service/get-persisted";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
-import { type AmbientMood, computeDimWorldColor, type SelectAnyType } from "../service/texture";
+import { computeDimWorldColor, type SelectAnyType } from "../service/texture";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -51,8 +50,6 @@ import { WorldContext } from "./world-context";
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
   const { uiStoreApi } = useContext(UiContext);
   const w = useContext(WorldContext);
-  const initialAmbientIntensity = tryLocalStorageGetParsed<number>(ambientIntensityKey) ?? defaultAmbientIntensity;
-  const initialAmbientMood = tryLocalStorageGetParsed<AmbientMood>(ambientMoodKey) ?? null;
 
   const state = useStateRef(
     (): State => ({
@@ -95,9 +92,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      dimWorldColor: uniform(computeDimWorldColor(initialAmbientIntensity, initialAmbientMood)),
-      ambientIntensity: initialAmbientIntensity,
-      ambientMood: initialAmbientMood,
+      dimWorldColor: uniform(computeDimWorldColor(persisted.getAmbientIntensity(w.themeKey))),
+      ambientIntensity: persisted.getAmbientIntensity(w.themeKey),
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -437,17 +433,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.roomLight.setRoomLitPairs(savedLitRooms);
         }
       },
-      setAmbientIntensity(next) {
+      setAmbientIntensity(next, persist = true) {
         state.ambientIntensity = next;
-        state.dimWorldColor.value.copy(computeDimWorldColor(next, state.ambientMood));
-        tryLocalStorageSet(ambientIntensityKey, String(next));
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
-      },
-      setAmbientMood(next) {
-        state.ambientMood = state.ambientMood === next ? null : next;
-        state.dimWorldColor.value.copy(computeDimWorldColor(state.ambientIntensity, state.ambientMood));
-        tryLocalStorageSet(ambientMoodKey, JSON.stringify(state.ambientMood));
+        state.dimWorldColor.value.copy(computeDimWorldColor(next));
+        persist && tryLocalStorageSet(ambientIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
@@ -694,8 +683,6 @@ export type State = {
   dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
   /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
   ambientIntensity: number;
-  /** Persisted mood tint backing `dimWorldColor`, else `null` (neutral) */
-  ambientMood: AmbientMood | null;
   dynamicLight: DynamicLightPostprocess;
   fov: number;
 
@@ -727,9 +714,7 @@ export type State = {
   /** Sets the dynamic light's brightness multiplier (0..1, persisted) */
   setDynamicLightIntensity(next: number): void;
   /** Sets the world's ambient tint magnitude (persisted) — see `defaultAmbientIntensity` */
-  setAmbientIntensity(next: number): void;
-  /** Sets (or clears, if already active) the world's ambient mood tint (persisted) */
-  setAmbientMood(next: Exclude<AmbientMood, null>): void;
+  setAmbientIntensity(next: number, persist?: boolean): void;
   /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit lighting at all */
   isRoomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
   /** Toggles whether `gmRoomId`'s room is lit, unless lighting isn't permitted there (see `roomLightingDisallowed`) */

@@ -57,6 +57,10 @@ export const helper = {
     return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
 
+  isLightTheme(themeKey: string) {
+    return themeKey === "light-theme";
+  },
+
   isPointAnyFormat(input: any): input is JshCli.PointAnyFormat {
     return !!input && Array.isArray(input)
       ? input.length >= 2 && input.every(Number.isFinite)

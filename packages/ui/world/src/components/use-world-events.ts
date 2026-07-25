@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
+import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -143,6 +144,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return state.onNpcEvent(e);
         }
         switch (e.key) {
+          case "change-theme": {
+            if (w.isLightTheme()) {
+              w.view.setAmbientIntensity(1, false); // do not persist
+            } else {
+              w.view.setAmbientIntensity(persisted.getAmbientIntensity(w.themeKey));
+            }
+            break;
+          }
           case "door-open":
             state.doorOpen[e.gdKey] = true;
             break;
@@ -200,7 +209,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.tryCloseDoor(e.gdKey);
             break;
           }
-          case "change-theme":
           case "disabled":
           case "door-locked":
           case "door-unlocked":
