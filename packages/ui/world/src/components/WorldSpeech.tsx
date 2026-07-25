@@ -1,8 +1,7 @@
-import { Menu } from "@base-ui/react/menu";
 import { cn, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { ChatCircleTextIcon, TrashIcon } from "@phosphor-icons/react";
-import { AnimatePresence, motion, useMotionValue } from "motion/react";
+import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext } from "react";
 import { WorldContext } from "./world-context";
 
@@ -20,6 +19,9 @@ export function WorldSpeech() {
       nextId: 0,
       toasts: [],
       y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
+      historyHeight: tryLocalStorageGetParsed<number>(heightStorageKey(w.id)) ?? (big ? 384 : 288),
+      historyWidth: tryLocalStorageGetParsed<number>(widthStorageKey(w.id)) ?? (big ? 320 : 288),
+      resizing: false,
 
       clear() {
         state.history = [];
@@ -31,12 +33,78 @@ export function WorldSpeech() {
       getClampedY(y: number) {
         return Math.min(state.getMaxY(), Math.max(state.minY, y));
       },
+      getMaxHistoryHeight() {
+        return Math.max(minHistoryHeight, (w.rootEl?.clientHeight ?? Infinity) - 160);
+      },
+      getClampedHistoryHeight(height: number) {
+        return Math.min(state.getMaxHistoryHeight(), Math.max(minHistoryHeight, height));
+      },
+      getMaxHistoryWidth() {
+        return Math.max(minHistoryWidth, (w.rootEl?.clientWidth ?? Infinity) - 32);
+      },
+      getClampedHistoryWidth(width: number) {
+        return Math.min(state.getMaxHistoryWidth(), Math.max(minHistoryWidth, width));
+      },
       onResize() {
         y.set(state.getClampedY(y.get()));
+        state.historyHeight = state.getClampedHistoryHeight(state.historyHeight);
+        state.historyWidth = state.getClampedHistoryWidth(state.historyWidth);
         state.update();
+      },
+      onResizeMouseDown(e) {
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = state.historyWidth;
+        const startHeight = state.historyHeight;
+        state.resizing = true;
+        const onMove = (ev: MouseEvent) => {
+          // panel is right-anchored, so dragging the corner left (negative dx) widens it
+          state.historyWidth = state.getClampedHistoryWidth(startWidth - (ev.clientX - startX));
+          state.historyHeight = state.getClampedHistoryHeight(startHeight + (ev.clientY - startY));
+          state.update();
+        };
+        const onUp = () => {
+          state.resizing = false;
+          state.persistHistorySize();
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+        };
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      },
+      onResizeTouchStart(e) {
+        e.stopPropagation();
+        const t = e.touches[0];
+        if (!t) return;
+        const startX = t.clientX;
+        const startY = t.clientY;
+        const startWidth = state.historyWidth;
+        const startHeight = state.historyHeight;
+        state.resizing = true;
+        const onMove = (ev: TouchEvent) => {
+          const t2 = ev.touches[0];
+          if (t2) {
+            state.historyWidth = state.getClampedHistoryWidth(startWidth - (t2.clientX - startX));
+            state.historyHeight = state.getClampedHistoryHeight(startHeight + (t2.clientY - startY));
+            state.update();
+          }
+        };
+        const onEnd = () => {
+          state.resizing = false;
+          state.persistHistorySize();
+          document.removeEventListener("touchmove", onMove, { capture: true });
+          document.removeEventListener("touchend", onEnd, { capture: true });
+        };
+        document.addEventListener("touchmove", onMove, { capture: true });
+        document.addEventListener("touchend", onEnd, { capture: true });
       },
       persistY() {
         tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
+      },
+      persistHistorySize() {
+        tryLocalStorageSet(heightStorageKey(w.id), `${state.historyHeight}`);
+        tryLocalStorageSet(widthStorageKey(w.id), `${state.historyWidth}`);
       },
       say(npcKey, words, secs) {
         const epochMs = Date.now();
@@ -62,55 +130,51 @@ export function WorldSpeech() {
   w.speech = state;
 
   const y = useMotionValue(state.getClampedY(state.y));
+  const dragControls = useDragControls();
 
   return (
-    <motion.div
-      className="absolute top-0 right-px z-10 touch-none select-none flex flex-col items-end"
-      style={{ y }}
-      drag="y"
-      dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
-      dragMomentum={false}
-      onDragStart={() => (state.dragged = true)}
-      onDragEnd={() => {
-        state.persistY();
-        requestAnimationFrame(() => (state.dragged = false));
-      }}
-    >
-      <Menu.Root
-        open={state.panelOpen}
-        onOpenChange={(open, { reason }) => {
-          if (open) {
-            state.set({ panelOpen: true });
-          } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
-            state.set({ panelOpen: false });
-          }
+    <>
+      {/* history toggle — only the icon starts a drag, so scrolling the panel below never fights it */}
+      <motion.div
+        className="absolute top-0 right-px z-10 select-none flex flex-col items-end"
+        style={{ y }}
+        drag="y"
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
+        dragMomentum={false}
+        onDragStart={() => (state.dragged = true)}
+        onDragEnd={() => {
+          state.persistY();
+          requestAnimationFrame(() => (state.dragged = false));
         }}
       >
-        <Menu.Trigger
-          className="cursor-pointer outline-none"
-          onPointerDown={(e) => e.preventDefault()}
+        <div
+          className={cn(
+            "grid touch-none place-items-center cursor-pointer bg-gray-800 text-white",
+            big ? "size-12" : "size-9",
+          )}
+          onPointerDown={(e) => dragControls.start(e)}
           onClick={() => {
             if (state.dragged) return;
             state.set({ panelOpen: !state.panelOpen });
           }}
         >
-          <div
-            className={cn(
-              "grid place-items-center bg-gray-800 text-white",
-              big ? "size-12" : "size-9",
-            )}
-          >
-            <ChatCircleTextIcon className={big ? "size-6" : "size-5"} weight="bold" />
-          </div>
-        </Menu.Trigger>
+          <ChatCircleTextIcon className={big ? "size-6" : "size-5"} weight="bold" />
+        </div>
 
-        <Menu.Portal>
-          <Menu.Positioner className="z-50" side="left" sideOffset={4} align="start">
-            <Menu.Popup
+        <AnimatePresence>
+          {state.panelOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 8 }}
+              transition={{ duration: 0.15 }}
               className={cn(
-                "flex flex-col bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 w-72",
-                big && "w-80 py-2",
+                "relative mt-1 flex flex-col bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1",
+                big && "py-2",
               )}
+              style={{ width: state.historyWidth }}
             >
               <div
                 className={cn(
@@ -119,21 +183,23 @@ export function WorldSpeech() {
                 )}
               >
                 <span>speech history</span>
-                <TrashIcon
-                  className={cn(
-                    "size-4 cursor-pointer text-slate-500 hover:text-red-300",
-                    big && "size-5",
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    state.clear();
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <TrashIcon
+                    className={cn("size-4 cursor-pointer text-slate-500 hover:text-red-300", big && "size-5")}
+                    onClick={() => state.clear()}
+                  />
+                  <XIcon
+                    className={cn("size-4 cursor-pointer text-slate-500 hover:text-slate-300", big && "size-5")}
+                    onClick={() => state.set({ panelOpen: false })}
+                  />
+                </div>
               </div>
 
-              <div className={cn("flex flex-col gap-1 px-2 pb-2 max-h-72 overflow-y-auto", big && "max-h-96")}>
+              <div className="flex flex-col gap-1 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
                 {state.history.length === 0 && (
-                  <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>nothing said yet</div>
+                  <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>
+                    nothing said yet
+                  </div>
                 )}
                 {state.history
                   .slice()
@@ -151,30 +217,47 @@ export function WorldSpeech() {
                     </div>
                   ))}
               </div>
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
 
-      <AnimatePresence>
-        {state.toasts.map(({ id, npcKey, words }) => (
-          <motion.div
-            key={id}
-            className={cn(
-              "flex gap-2 bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5 max-w-72",
-              big && "text-sm px-3 py-1.5 max-w-80",
-            )}
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <span className="shrink-0 font-medium text-sky-300">{npcKey}:</span>
-            <span className="break-words">{words}</span>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </motion.div>
+              {/* drag to resize the panel — bottom-left corner, since the panel is right-anchored */}
+              <div
+                className="absolute bottom-0 left-0 size-5 touch-none cursor-nesw-resize"
+                onMouseDown={state.onResizeMouseDown}
+                onTouchStart={state.onResizeTouchStart}
+              >
+                <div
+                  className={cn(
+                    "absolute bottom-1 left-1 size-2.5 border-b-2 border-l-2 border-slate-600 rounded-bl",
+                    state.resizing && "border-slate-400",
+                  )}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* toasts — bottom-center, where subtitles usually go; non-interactive so they don't block World */}
+      <div className="absolute bottom-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col items-center gap-1 pointer-events-none">
+        <AnimatePresence>
+          {state.toasts.map(({ id, npcKey, words }) => (
+            <motion.div
+              key={id}
+              className={cn(
+                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5 max-w-md text-center",
+                big && "text-sm px-3 py-1.5 max-w-lg",
+              )}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <span className="shrink-0 font-medium text-sky-300">{npcKey}:</span>
+              <span className="break-words">{words}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }
 
@@ -193,14 +276,30 @@ export type State = {
   nextId: number;
   toasts: SpeechEntry[];
   y: number;
+  /** Height (px) of the scrollable history list — resizable, persisted */
+  historyHeight: number;
+  /** Width (px) of the whole history panel — resizable, persisted */
+  historyWidth: number;
+  resizing: boolean;
   clear(): void;
   getMaxY(): number;
   getClampedY(y: number): number;
+  getMaxHistoryHeight(): number;
+  getClampedHistoryHeight(height: number): number;
+  getMaxHistoryWidth(): number;
+  getClampedHistoryWidth(width: number): number;
   onResize(): void;
+  onResizeMouseDown(e: React.MouseEvent): void;
+  onResizeTouchStart(e: React.TouchEvent): void;
   persistY(): void;
+  persistHistorySize(): void;
   say(npcKey: string, words: string, secs?: number): void;
 };
 
 const storageKey = (id: string) => `world-speech-y-${id}`;
+const heightStorageKey = (id: string) => `world-speech-history-height-${id}`;
+const widthStorageKey = (id: string) => `world-speech-history-width-${id}`;
+const minHistoryHeight = 120;
+const minHistoryWidth = 200;
 const maxHistory = 200;
 const defaultToastMs = 4000;
