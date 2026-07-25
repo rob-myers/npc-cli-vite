@@ -640,18 +640,18 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "521acaa7-0ee2-4731-9d08-26982a7961b6",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1.5},
           "type": "path",
           "d": "M 63.2 63 L 68.6 68.6 L 62.2 75.2 L 37.2 106.2 L 16.8 144.2 L 5.08 178.4 L 482 178.4 L 482 182.6 L -3.2 182.08 L 9.8 142 L 23.2 115.2 L 36.6 93.6 L 56.4 70 L 63.2 63 Z",
           "baseRect": {"width": 480, "height": 540},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 1)"
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 1.5)"
         },
         {
           "id": "3f85148c-9013-4d38-b52d-dde422123af7",
