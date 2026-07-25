@@ -193,22 +193,18 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       camFar.value = perspectiveCam.far;
     },
     syncGms(gms, gmsData) {
+      // gmIds as texture for lookup in shader
       const grid = createGmIdGridTexture(gms);
       texGmIdData.fill(0);
-      const copyW = Math.min(grid.width, gmGridMaxDim);
-      const copyH = Math.min(grid.height, gmGridMaxDim);
-      if (grid.width > gmGridMaxDim || grid.height > gmGridMaxDim) {
-        console.warn(
-          `room-light: gm-id grid (${grid.width}x${grid.height}) exceeds max ${gmGridMaxDim}x${gmGridMaxDim} — clamped`,
-        );
-      }
-      for (let y = 0; y < copyH; y++) {
-        const src = grid.data.subarray(y * grid.width * 4, y * grid.width * 4 + copyW * 4);
+      for (let y = 0; y < grid.height; y++) {
+        const src = grid.data.subarray(y * grid.width * 4, y * grid.width * 4 + grid.width * 4);
         texGmIdData.set(src, y * gmGridMaxDim * 4);
       }
       texGmId.needsUpdate = true;
       gmGridOrigin.value.set(grid.originX, grid.originY);
 
+      // room outlines as texture for lookup in shader
+      // - precomputed in `gmsData.byKey[gm.key].roomMaskCt`
       for (let i = 0; i < MAX_GEOMORPH_INSTANCES; i++) {
         const gm = gms[i];
         if (!gm) {
