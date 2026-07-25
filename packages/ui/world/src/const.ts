@@ -102,7 +102,7 @@ export const defaultCameraMode = "cardinal" satisfies import("./components/Camer
 export const defaultCardinalDirectionsDesktop = 8;
 export const defaultCardinalDirectionsMobile = 4;
 
-export const defaultThemeKey = "light-theme";
+export const defaultThemeKey = "dark-theme";
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   background: "bg-[#000]", // seeing initial flicker

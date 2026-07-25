@@ -3,7 +3,7 @@ import z from "zod";
 
 // Avoid HMR issue
 const defaultMapKey: typeof import("./const").defaultMapKey = "301-only";
-const defaultThemeKey: typeof import("./const").defaultThemeKey = "light-theme";
+const defaultThemeKey: typeof import("./const").defaultThemeKey = "dark-theme";
 
 export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,

@@ -2,6 +2,17 @@
 
 - new approach to todos i.e. current go into technical and start new section
 
+- ✅ switch light-theme and dark-theme
+  - default dark-theme
+- 🚧 theme also sets intensity
+- light theme suppresses lighting
+- 🚧 improve room light outlines
+- replace `meta` by `decor` i.e. decor queries by rect
+  - `decor at:...`
+  - `decor near:...`
+- auto unlocked door cannot close on npc just exit doorway
+  - does not happen if we move again
+
 - ✅ BUG decor hmr onchange decor/foo.svg
 
 - ✅ clean fadeSpawn
@@ -17,10 +28,7 @@
 
 - ✅ fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
 
-- 🚧 replace `meta` by `decor` i.e. decor queries by rect
-
 - fix npc final turn when ends near nav border
-
 - can override edit g-301--playground.json in dev
   - currently can only save as draft
 - obstacle resizing can be confusing
