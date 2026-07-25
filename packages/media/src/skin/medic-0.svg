@@ -165,7 +165,7 @@
       <title>right</title>
     </rect>
   </g>
-  <g style="visibility: hidden;">
+  <g style="">
     <title>body</title>
     <rect width="32" height="48" style="fill: rgb(255, 255, 255); filter: url(&quot;#inner-shadow-filter-0&quot;); mix-blend-mode: darken; opacity: 0.67;" y="80" x="128">
       <title>back</title>
