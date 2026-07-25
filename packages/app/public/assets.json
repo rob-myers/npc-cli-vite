@@ -42599,7 +42599,7 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-black",
+      "background": "bg-white",
       "ceiling": {
         "hull": {"fill": "#0006", "stroke": "#6662"},
         "nonHull": {"fill": "#000", "stroke": "#fff1"}
