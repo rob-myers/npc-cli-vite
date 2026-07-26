@@ -891,7 +891,7 @@ export default function Decor() {
 
       state.ready = true;
       w.setNextPending({ decor: false });
-      w.setCanvasFade(false);
+      w.setCanvasOpacity(1);
 
       return {
         static: [plainBlackMaterial, texMat],
