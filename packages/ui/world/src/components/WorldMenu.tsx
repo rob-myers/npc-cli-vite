@@ -363,9 +363,9 @@ export function WorldMenu() {
                     value={w.mapKey}
                     items={mapKeys.map((key) => ({ key, value: key }))}
                     side="bottom"
-                    onValueChange={(key) => {
+                    onValueChange={async (key) => {
                       if (!key || key === w.mapKey) return;
-                      w.setCanvasFade(true);
+                      await w.setCanvasOpacity(0);
                       uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
                     }}
                   />
@@ -626,9 +626,11 @@ export function WorldMenu() {
             "outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700",
             big ? "size-12" : "size-9",
           )}
-          onClick={() => {
+          onClick={async () => {
             const nextThemeKey = w.isLightTheme() ? "dark-theme" : "light-theme";
+            await w.setCanvasOpacity(0);
             uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
+            await w.setCanvasOpacity(1);
           }}
         >
           {w.isLightTheme() ? (

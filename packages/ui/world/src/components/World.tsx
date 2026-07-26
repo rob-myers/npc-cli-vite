@@ -137,6 +137,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       helper,
 
+      canvasOpacity: 0,
       fadeEl: null,
       rootEl: null as any,
 
@@ -176,10 +177,24 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           state.view.updateDynamicLight(state.view.dynamicLight.target);
         }
       },
-      setCanvasFade(on) {
-        if (!state.fadeEl) return;
-        state.fadeEl.style.transitionDuration = on ? "0.3s" : "0.75s";
-        state.fadeEl.style.opacity = on ? "1" : "0";
+      setCanvasOpacity(opacity) {
+        return new Promise((resolve) => {
+          const el = state.fadeEl;
+          const prevOverlayOpacity = 1 - state.canvasOpacity;
+          state.canvasOpacity = opacity;
+          if (!el) return resolve();
+          const nextOverlayOpacity = 1 - opacity;
+          if (nextOverlayOpacity === prevOverlayOpacity) return resolve();
+          // getting darker (more overlay) is a quick cover; getting lighter is a slower reveal
+          el.style.transitionDuration = nextOverlayOpacity > prevOverlayOpacity ? "0.3s" : "0.75s";
+          el.style.opacity = String(nextOverlayOpacity);
+          const onEnd = (e: TransitionEvent) => {
+            if (e.propertyName !== "opacity") return;
+            el.removeEventListener("transitionend", onEnd);
+            resolve();
+          };
+          el.addEventListener("transitionend", onEnd);
+        });
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -470,8 +485,15 @@ export type State = {
 
   rootEl: HTMLDivElement;
   fadeEl: HTMLDivElement | null;
+  /** Current scene visibility set via `setCanvasOpacity`, tracked so the next call knows its start value */
+  canvasOpacity: number;
 
-  setCanvasFade(on: boolean): void;
+  /**
+   * Fades the canvas to the given scene visibility (`1` = fully visible, `0` = fully covered by a
+   * black overlay); resolves once the transition finishes (e.g. await fade-out, switch something,
+   * fade back in).
+   */
+  setCanvasOpacity(opacity: number): Promise<void>;
   setDisabled(nextDisabled?: boolean): void;
   setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
   setupDevAssetsSync(): () => void;
@@ -516,7 +538,7 @@ function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
     <div
       ref={props.ref}
       // initially faded
-      className="absolute inset-0 z-5 bg-zinc-900 pointer-events-none transition-opacity opacity-100 duration-100"
+      className="absolute inset-0 z-5 bg-black pointer-events-none transition-opacity opacity-100 duration-100"
     />
   );
 }
