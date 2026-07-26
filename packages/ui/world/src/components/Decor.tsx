@@ -679,6 +679,8 @@ export default function Decor() {
           metaPoint.meta = emptyMeta;
           const gmRoomId = w.e.findRoomContaining(metaPoint, true);
 
+          Object.assign(obs.meta, gmRoomId); // store in obstacle too
+
           tmpMat.setMatrixValue(obs.transform).postMultiply(gm.transform);
           /** Refined outline for decor grid containment testing */
           const refinedOutline = obs.origPoly.outline.map((p) => tmpMat.transformPoint(p.clone()).precision(2));
@@ -890,8 +892,8 @@ export default function Decor() {
       );
 
       state.ready = true;
+      // fade-in happens centrally in World.tsx once all pending keys clear (see setCanvasOpacity)
       w.setNextPending({ decor: false });
-      w.setCanvasOpacity(1);
 
       return {
         static: [plainBlackMaterial, texMat],

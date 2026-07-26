@@ -698,7 +698,7 @@ export function WorldMenu() {
             const nextThemeKey = w.isLightTheme() ? "dark-theme" : "light-theme";
             await w.setCanvasOpacity(0);
             uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
-            await w.setCanvasOpacity(1);
+            // fade-in happens centrally in World.tsx once floor/ceiling/decor finish redrawing
           }}
         >
           {w.isLightTheme() ? (

@@ -42,12 +42,14 @@ export default function Floor() {
         uvDimensions.needsUpdate = true;
       },
       async draw() {
+        w.setNextPending({ floor: true });
         // one texture per gmId = texId (nav tris can change near hull doors)
         for (const [gmId] of w.gms.entries()) {
           state.drawGm(gmId);
           w.texFloor.updateIndex(gmId);
           await pause();
         }
+        w.setNextPending({ floor: false });
       },
       drawGm(gmId) {
         const { ct } = w.texFloor;

@@ -292,6 +292,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     return () => state.stopTick();
   }, [state.disabled, state.npc]); // pause/resume
 
+  // fade the canvas back in once nothing is pending, and stays that way for 300ms
+  useEffect(() => {
+    if (Object.keys(state.pending).length > 0) return;
+    const timer = setTimeout(() => state.setCanvasOpacity(1), 300);
+    return () => clearTimeout(timer);
+  }, [Object.keys(state.pending).join(",")]);
+
   state.sheets =
     useQuery({
       queryKey: [...state.worldQueryPrefix, "sheets"],
@@ -536,7 +543,7 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
   }
 });
 
-type PendingKey = "assets" | "decor" | "nav" | "obstacles" | "skins";
+type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "nav" | "obstacles" | "skins";
 
 function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
   return (
