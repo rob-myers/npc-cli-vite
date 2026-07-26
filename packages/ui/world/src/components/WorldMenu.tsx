@@ -12,6 +12,7 @@ import {
   GlobeStandIcon,
   type Icon,
   MagnifyingGlassIcon,
+  MoonIcon,
   PauseIcon,
   PencilSimpleIcon,
   PlayIcon,
@@ -42,7 +43,6 @@ export function WorldMenu() {
 
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
-  const themeKeys = Object.keys(w.assets?.theme ?? {});
   const npcKeys = Object.keys(w.n ?? {});
   /** Bigger touch targets on mobile */
   const big = w.touchDevice;
@@ -370,20 +370,6 @@ export function WorldMenu() {
                     }}
                   />
                 </div>
-                <Menu.Item
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer",
-                    big && "gap-3 px-3 py-2 text-sm",
-                  )}
-                  closeOnClick={false}
-                  onClick={() => {
-                    const currentIdx = themeKeys.indexOf(w.themeKey);
-                    const nextThemeKey = themeKeys[(currentIdx + 1) % themeKeys.length];
-                    uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
-                  }}
-                >
-                  {w.themeKey}
-                </Menu.Item>
                 {import.meta.env.DEV && (
                   <>
                     <div
@@ -422,27 +408,6 @@ export function WorldMenu() {
                             state.saveThemeDev();
                           }}
                         />
-                        <button
-                          type="button"
-                          className="cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const name = prompt("Theme name:");
-                            if (!name || !w.assets) return;
-                            const theme = structuredClone(w.getTheme());
-                            const res = await fetch(`/api/assets/theme/${encodeURIComponent(name)}`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify(theme),
-                            });
-                            if (!res.ok) return console.warn("Failed to save theme:", await res.text());
-                            w.assets.theme ??= {};
-                            w.assets.theme[name] = theme;
-                            w.update();
-                          }}
-                        >
-                          add theme
-                        </button>
                       </div>
                     )}
 
@@ -653,6 +618,25 @@ export function WorldMenu() {
             </Menu.Positioner>
           </Menu.Portal>
         </Menu.Root>
+
+        {/* theme toggle */}
+        <button
+          type="button"
+          className={cn(
+            "outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700",
+            big ? "size-12" : "size-9",
+          )}
+          onClick={() => {
+            const nextThemeKey = w.isLightTheme() ? "dark-theme" : "light-theme";
+            uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
+          }}
+        >
+          {w.isLightTheme() ? (
+            <SunIcon className={cn("size-5", big && "size-6")} weight="bold" />
+          ) : (
+            <MoonIcon className={cn("size-5", big && "size-6")} weight="bold" />
+          )}
+        </button>
 
         {/* play/pause */}
         <button
