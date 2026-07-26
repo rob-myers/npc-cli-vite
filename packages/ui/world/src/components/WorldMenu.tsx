@@ -45,8 +45,6 @@ export function WorldMenu() {
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
   const npcKeys = Object.keys(w.n ?? {});
-  /** Bigger touch targets on mobile */
-  const big = w.touchDevice;
 
   const state = useStateRef(
     (): State => ({
@@ -63,8 +61,8 @@ export function WorldMenu() {
       themeEditorRef: null as any,
       toastTs: {} as Record<string, number>,
       y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
-      menuWidth: tryLocalStorageGetParsed<number>(menuWidthStorageKey(w.id)) ?? (big ? 320 : 288),
-      menuHeight: tryLocalStorageGetParsed<number>(menuHeightStorageKey(w.id)) ?? (big ? 384 : 288),
+      menuWidth: tryLocalStorageGetParsed<number>(menuWidthStorageKey(w.id)) ?? 288,
+      menuHeight: tryLocalStorageGetParsed<number>(menuHeightStorageKey(w.id)) ?? 288,
       resizing: false,
 
       getMaxY() {
@@ -287,10 +285,10 @@ export function WorldMenu() {
             }}
           >
             <div className="outline-width-1 w-fit grid grid-flow-col items-center bg-gray-800 text-white">
-              <div className={cn("grid place-items-center", big ? "size-12" : "size-9")}>
-                <GlobeStandIcon className={cn(big ? "size-6" : "size-5")} weight="bold" />
+              <div className="grid place-items-center size-9">
+                <GlobeStandIcon className="size-5" weight="bold" />
               </div>
-              {pendingKeys.length > 0 && <Spinner className={cn("mr-2", big ? "size-5" : "size-4")} />}
+              {pendingKeys.length > 0 && <Spinner className="mr-2 size-4" />}
             </div>
           </Menu.Trigger>
 
@@ -302,10 +300,7 @@ export function WorldMenu() {
               align="start"
             >
               <Menu.Popup
-                className={cn(
-                  "relative select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1",
-                  big && "py-2",
-                )}
+                className="relative select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1"
                 style={{ width: state.menuWidth }}
               >
                 <div
@@ -316,15 +311,9 @@ export function WorldMenu() {
                   )}
                   style={{ maxHeight: state.menuHeight, scrollbarWidth: "thin" }}
                 >
-                  <div className={cn("flex flex-wrap", big ? "max-w-72" : "max-w-52")}>
-                    <div
-                      className={cn(
-                        "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                        big && "gap-3 px-3 py-2 text-sm",
-                      )}
-                    >
+                  <div className="flex flex-wrap max-w-52">
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
                       <BrightnessPie
-                        big={big}
                         ratio={brightnessToRatio(w.brightness)}
                         onClick={() => {
                           const brightness = 2;
@@ -344,24 +333,14 @@ export function WorldMenu() {
                           tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "w-16 accent-white cursor-pointer",
-                          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                          big &&
-                            "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
-                        )}
+                        className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                       />
                     </div>
 
                     {w.view && (
-                      <div
-                        className={cn(
-                          "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                          big && "gap-3 px-3 py-2 text-sm",
-                        )}
-                      >
+                      <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
                         <ArrowsOutIcon
-                          className={cn("size-4 text-white cursor-pointer shrink-0", big && "size-5")}
+                          className="size-4 text-white cursor-pointer shrink-0"
                           onClick={() => {
                             w.view.fov = defaultDesktopFov;
                             const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
@@ -393,22 +372,14 @@ export function WorldMenu() {
                             w.update();
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className={cn(
-                            "w-16 accent-white cursor-pointer",
-                            "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-                            big &&
-                              "w-24 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
-                          )}
+                          className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                         />
                       </div>
                     )}
                   </div>
                   {w.view && (
                     <Menu.Item
-                      className={cn(
-                        "flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer",
-                        big && "gap-3 px-3 py-2 text-sm",
-                      )}
+                      className="flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer"
                       closeOnClick={false}
                       onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
                     >
@@ -418,7 +389,6 @@ export function WorldMenu() {
                         className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}
                       >
                         <MenuSelect
-                          big={big}
                           side="bottom"
                           value={String(w.view.numCardinalDirections)}
                           items={cardinalDirItems}
@@ -433,7 +403,6 @@ export function WorldMenu() {
                   <div className="flex">
                     <div className="text-white text-xs flex items-center px-2">map:</div>
                     <MenuSelect
-                      big={big}
                       label={w.mapKey}
                       value={w.mapKey}
                       items={mapKeys.map((key) => ({ key, value: key }))}
@@ -489,10 +458,7 @@ export function WorldMenu() {
                   )}
 
                   <div
-                    className={cn(
-                      "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
-                      big && "gap-2 px-3 py-2 text-sm",
-                    )}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
                     onClick={(e) => {
                       e.stopPropagation();
                       state.lightsOpen = !state.lightsOpen;
@@ -500,22 +466,17 @@ export function WorldMenu() {
                       state.update();
                     }}
                   >
-                    {state.lightsOpen ? (
-                      <CaretDownIcon className={cn("size-3", big && "size-4")} />
-                    ) : (
-                      <CaretRightIcon className={cn("size-3", big && "size-4")} />
-                    )}
+                    {state.lightsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
                     lights
                   </div>
 
                   {state.lightsOpen && (
                     <div
-                      className={cn("max-w-80 flex flex-wrap items-end gap-1 px-2 py-1", big && "gap-2 px-3 py-1.5")}
+                      className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className={cn("w-20", w.isLightTheme() && "pointer-events-none brightness-50")}>
                         <LightsMenuSlider
-                          big={big}
                           label="Ambient"
                           value={w.view.ambientIntensity ?? defaultAmbientIntensity}
                           defaultValue={defaultAmbientIntensity}
@@ -525,7 +486,6 @@ export function WorldMenu() {
 
                       <div className="w-24 flex items-stretch">
                         <MenuSelect
-                          big={big}
                           side="bottom"
                           className="border rounded-l border-white/30 border-r-0"
                           label={truncateLabel(w.view.dynamicLight?.trackedNpcKey ?? "no npc", 10)}
@@ -536,10 +496,7 @@ export function WorldMenu() {
                         <button
                           type="button"
                           title="Cycle tracked npc"
-                          className={cn(
-                            "grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700",
-                            big && "px-2",
-                          )}
+                          className="grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700"
                           onClick={(e) => {
                             e.stopPropagation();
                             const current = w.view.dynamicLight?.trackedNpcKey;
@@ -547,13 +504,12 @@ export function WorldMenu() {
                             w.npc.trackNpc(npcKeys[currentIdx + 1]);
                           }}
                         >
-                          <CaretRightIcon className={cn("size-3", big && "size-3.5")} />
+                          <CaretRightIcon className="size-3" />
                         </button>
                       </div>
 
                       <div className="w-20">
                         <LightsMenuSlider
-                          big={big}
                           label="npc radius"
                           min={0.2}
                           max={3}
@@ -565,7 +521,6 @@ export function WorldMenu() {
                       </div>
                       <div className="w-20">
                         <LightsMenuSlider
-                          big={big}
                           label="npc lit"
                           value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
                           defaultValue={defaultDynamicLightIntensity}
@@ -574,7 +529,6 @@ export function WorldMenu() {
                       </div>
                       <div className="w-20">
                         <LightsMenuSlider
-                          big={big}
                           label="Rooms"
                           value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
                           defaultValue={defaultRoomLightIntensity}
@@ -582,16 +536,14 @@ export function WorldMenu() {
                         />
                       </div>
 
-                      <div className={cn("flex gap-1", big && "gap-1.5 py-1")}>
+                      <div className="flex gap-1">
                         <LightsIconButton
-                          big={big}
                           active={w.view.roomLightEditingEnabled}
                           icon={PencilSimpleIcon}
                           title="Edit (long press)"
                           onClick={() => w.view.toggleRoomLightEditing()}
                         />
                         <LightsIconButton
-                          big={big}
                           active={w.view.roomLight?.roomLightingEnabled.value === 1}
                           icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
                           title="Lights shown"
@@ -602,7 +554,6 @@ export function WorldMenu() {
                           }}
                         />
                         <LightsIconButton
-                          big={big}
                           danger
                           icon={TrashIcon}
                           title="Clear lighting"
@@ -613,10 +564,7 @@ export function WorldMenu() {
                   )}
 
                   <div
-                    className={cn(
-                      "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
-                      big && "gap-2 px-3 py-2 text-sm",
-                    )}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
                     onClick={(e) => {
                       e.stopPropagation();
                       state.debugOpen = !state.debugOpen;
@@ -624,24 +572,19 @@ export function WorldMenu() {
                       state.update();
                     }}
                   >
-                    {state.debugOpen ? (
-                      <CaretDownIcon className={cn("size-3", big && "size-4")} />
-                    ) : (
-                      <CaretRightIcon className={cn("size-3", big && "size-4")} />
-                    )}
+                    {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
                     debug
                   </div>
 
                   {state.debugOpen && (
                     <>
-                      <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", big && "gap-1.5")}>
+                      <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
                         {debugItems.map((item) => (
                           <button
                             key={item}
                             type="button"
                             className={cn(
                               "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                              big && "text-sm px-2 py-1.5",
                               isDebugActive(item)
                                 ? "text-green-400 bg-slate-700"
                                 : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
@@ -658,10 +601,7 @@ export function WorldMenu() {
 
                       <button
                         type="button"
-                        className={cn(
-                          "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
-                          big && "text-sm px-3 py-1.5",
-                        )}
+                        className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
                         onClick={(e) => {
                           e.stopPropagation();
                           w.debug.logGPUInfo = true;
@@ -675,15 +615,11 @@ export function WorldMenu() {
 
                   {import.meta.env.DEV && (
                     <>
-                      <div className={cn("my-0.5 border-t border-slate-700", big && "my-1")} />
+                      <div className="my-0.5 border-t border-slate-700" />
 
                       <button
                         type="button"
-                        className={cn(
-                          "w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs",
-                          "bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded px-2 py-1",
-                          big && "text-sm px-3 py-1.5",
-                        )}
+                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded px-2 py-1"
                         onClick={async (e) => {
                           e.stopPropagation();
                           w.setNextPending({ obstacles: true });
@@ -706,17 +642,13 @@ export function WorldMenu() {
                           }
                         }}
                       >
-                        <ArrowsClockwiseIcon className={cn("size-3.5", big && "size-4")} />
+                        <ArrowsClockwiseIcon className="size-3.5" />
                         update obstacles
                       </button>
 
                       <button
                         type="button"
-                        className={cn(
-                          "w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs",
-                          "bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded px-2 py-1",
-                          big && "text-sm px-3 py-1.5",
-                        )}
+                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded px-2 py-1"
                         onClick={async (e) => {
                           e.stopPropagation();
                           try {
@@ -733,7 +665,7 @@ export function WorldMenu() {
                           }
                         }}
                       >
-                        <ArrowsClockwiseIcon className={cn("size-3.5", big && "size-4")} />
+                        <ArrowsClockwiseIcon className="size-3.5" />
                         update assets
                       </button>
                     </>
@@ -761,10 +693,7 @@ export function WorldMenu() {
         {/* theme toggle */}
         <button
           type="button"
-          className={cn(
-            "outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700",
-            big ? "size-12" : "size-9",
-          )}
+          className="outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700 size-9"
           onClick={async () => {
             const nextThemeKey = w.isLightTheme() ? "dark-theme" : "light-theme";
             await w.setCanvasOpacity(0);
@@ -773,36 +702,28 @@ export function WorldMenu() {
           }}
         >
           {w.isLightTheme() ? (
-            <SunIcon className={cn("size-5", big && "size-6")} weight="bold" />
+            <SunIcon className="size-5" weight="bold" />
           ) : (
-            <MoonIcon className={cn("size-5", big && "size-6")} weight="bold" />
+            <MoonIcon className="size-5" weight="bold" />
           )}
         </button>
 
         {/* play/pause */}
         <button
-          className={cn(
-            "outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700",
-            big ? "size-12" : "size-9",
-          )}
+          className="outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
           onClick={() => w.setDisabled()}
         >
-          {w.disabled ? (
-            <PlayIcon className={cn("size-5", big && "size-6")} weight="bold" />
-          ) : (
-            <PauseIcon className={cn("size-5", big && "size-6")} weight="bold" />
-          )}
+          {w.disabled ? <PlayIcon className="size-5" weight="bold" /> : <PauseIcon className="size-5" weight="bold" />}
         </button>
 
         {(extraZoomActive || readyForExtraZoom) && (
           <div
             className={cn(
-              "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none",
-              big ? "size-12" : "size-9",
+              "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none size-9",
               extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
             )}
           >
-            <MagnifyingGlassIcon className={big ? "size-6" : "size-5"} weight="bold" />
+            <MagnifyingGlassIcon className="size-5" weight="bold" />
           </div>
         )}
 
@@ -811,10 +732,7 @@ export function WorldMenu() {
             {[...toastKeys, ...toggleToastKeys].map((key) => (
               <motion.div
                 key={key}
-                className={cn(
-                  "bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5 wrap-break-word",
-                  big && "text-sm px-3 py-1.5",
-                )}
+                className="bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5 wrap-break-word"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -854,13 +772,13 @@ export function WorldMenu() {
 }
 
 /** Sun icon wi\th a pie-chart fill showing brightness ratio (0–1) */
-function BrightnessPie({ ratio, onClick, big }: { ratio: number; onClick?: () => void; big?: boolean }) {
+function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void }) {
   const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
   return (
-    <div className={cn("relative size-4 cursor-pointer", big && "size-6")} onClick={onClick}>
-      <SunIcon className={cn("size-4 text-white", big && "size-6")} />
+    <div className="relative size-4 cursor-pointer" onClick={onClick}>
+      <SunIcon className="size-4 text-white" />
       {ratio > 0 && (
-        <svg className={cn("absolute inset-0 size-4", big && "size-6")} viewBox="0 0 16 16">
+        <svg className="absolute inset-0 size-4" viewBox="0 0 16 16">
           <path
             d={
               ratio >= 1
@@ -887,7 +805,6 @@ function LightsIconButton({
   icon: IconCmp,
   title,
   onClick,
-  big,
 }: {
   active?: boolean;
   /** Styles as a destructive action (e.g. clear) instead of an on/off toggle */
@@ -895,7 +812,6 @@ function LightsIconButton({
   icon: Icon;
   title: string;
   onClick: () => void;
-  big?: boolean;
 }) {
   return (
     <button
@@ -907,7 +823,6 @@ function LightsIconButton({
       }}
       className={cn(
         "grid place-items-center rounded cursor-pointer size-6",
-        big && "size-7",
         danger
           ? "text-red-300 hover:bg-red-900/40"
           : active
@@ -915,17 +830,13 @@ function LightsIconButton({
             : "text-slate-500 hover:bg-slate-700",
       )}
     >
-      <IconCmp
-        className={cn("size-3.5", big && "size-4", danger && "scale-110")}
-        weight={active ? "fill" : "regular"}
-      />
+      <IconCmp className={cn("size-3.5", danger && "scale-110")} weight={active ? "fill" : "regular"} />
     </button>
   );
 }
 
 /** One labelled slider row in the lights menu */
 function LightsMenuSlider({
-  big,
   label,
   min = 0,
   max = 1,
@@ -934,7 +845,6 @@ function LightsMenuSlider({
   defaultValue,
   onChange,
 }: {
-  big?: boolean;
   label: string;
   min?: number;
   max?: number;
@@ -944,13 +854,9 @@ function LightsMenuSlider({
   onChange: (next: number) => void;
 }) {
   return (
-    <div className={cn("flex flex-col gap-0.5 px-2 py-0.5", big && "px-3 py-1")}>
+    <div className="flex flex-col gap-0.5 px-2 py-0.5">
       <span
-        className={cn(
-          "text-[10px] text-slate-400",
-          big && "text-xs",
-          defaultValue !== undefined && "cursor-pointer hover:underline",
-        )}
+        className={cn("text-[10px] text-slate-400", defaultValue !== undefined && "cursor-pointer hover:underline")}
         onClick={(e) => {
           if (defaultValue === undefined) {
             return;
@@ -969,11 +875,7 @@ function LightsMenuSlider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         onClick={(e) => e.stopPropagation()}
-        className={cn(
-          "w-14 accent-white cursor-pointer",
-          "appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
-          big && "w-20",
-        )}
+        className="w-14 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
       />
     </div>
   );
@@ -1043,15 +945,12 @@ const debugItems = [
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
 
-const getSelectItemClass = (big?: boolean) =>
-  cn(
-    "px-2 py-1 text-xs cursor-pointer text-slate-300",
-    "data-highlighted:bg-slate-700 data-selected:text-green-400",
-    big && "px-3 py-2 text-sm",
-  );
+const selectItemClassName = cn(
+  "px-2 py-1 text-xs cursor-pointer text-slate-300",
+  "data-highlighted:bg-slate-700 data-selected:text-green-400",
+);
 
 function MenuSelect<T extends string>({
-  big,
   className,
   items,
   label,
@@ -1059,7 +958,6 @@ function MenuSelect<T extends string>({
   value,
   onValueChange,
 }: {
-  big?: boolean;
   className?: string;
   items: { key: string; value: T }[];
   /** Defaults to value */
@@ -1075,7 +973,6 @@ function MenuSelect<T extends string>({
       <Select.Trigger
         className={cn(
           "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full min-w-0",
-          big && "gap-2 px-3 py-2 text-sm",
           className,
         )}
       >
@@ -1092,15 +989,10 @@ function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup
-            className={cn(
-              "bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto",
-              big && "max-h-80",
-            )}
-          >
+          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
               {items.map(({ key, value }) => (
-                <Select.Item key={key} value={value} className={getSelectItemClass(big)}>
+                <Select.Item key={key} value={value} className={selectItemClassName}>
                   <Select.ItemText>{key}</Select.ItemText>
                 </Select.Item>
               ))}
