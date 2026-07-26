@@ -272,7 +272,6 @@ export default function NPCs() {
         w.view.dynamicLight.target = npc.position;
         // preserve the current radius, rather than resetting to default
         w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.dynamicLight.radius);
-        w.view.updateDynamicLight(npc.position);
 
         // bake this gm instance's walls once, mark it as the currently-
         // active one for sampling, and register ALL of its doors (not just room-bordering ones)
@@ -290,6 +289,8 @@ export default function NPCs() {
           };
         });
         w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
+        // immediate update so works while paused
+        w.view.updateDynamicLight(npc.position);
         w.view.forceUpdate();
       },
       getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
