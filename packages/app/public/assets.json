@@ -25591,7 +25591,6 @@
   },
   "stratifiedSymbolNodes": [
     [
-      {"id": "bed--003"},
       {"id": "console--033"},
       {"id": "console--051"},
       {"id": "extra--003--chair"},
@@ -25619,17 +25618,14 @@
       {"id": "extra--018--table"}
     ],
     [
+      {"id": "bed--003"},
       {"id": "console--019"},
-      {"id": "stateroom--012"},
-      {"id": "stateroom--019"},
       {"id": "bed--004"},
       {"id": "console--031"},
       {"id": "misc-stellar-cartography--023"},
       {"id": "table--004"},
-      {"id": "stateroom--020"},
       {"id": "g-302--xboat-repair-bay"},
       {"id": "console--011"},
-      {"id": "stateroom--018"},
       {"id": "fresher--020"},
       {"id": "fresher--002"},
       {"id": "couch-and-chairs--007"},
@@ -25638,9 +25634,13 @@
     [
       {"id": "bridge--042"},
       {"id": "office--001"},
+      {"id": "stateroom--012"},
       {"id": "stateroom--014"},
+      {"id": "stateroom--019"},
       {"id": "stateroom--036"},
-      {"id": "office--026"}
+      {"id": "stateroom--020"},
+      {"id": "office--026"},
+      {"id": "stateroom--018"}
     ],
     [{"id": "g-101--multipurpose"}, {"id": "g-301--bridge"}]
   ],
@@ -43121,7 +43121,7 @@
   },
   "theme": {
     "light-theme": {
-      "background": "bg-[#fff]",
+      "background": "bg-[#ccc]",
       "ceiling": {
         "hull": {"fill": "#000c", "stroke": "#6662"},
         "nonHull": {"fill": "#000", "stroke": "#000"}
