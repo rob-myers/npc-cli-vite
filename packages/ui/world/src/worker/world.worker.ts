@@ -118,6 +118,8 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       break;
     }
     case "send-npc-positions": {
+      if (msg.positions.length === 0) break;
+
       // set kinematic body positions
       let npcBodyKey = "" as WW.PhysicsBodyKey;
       const position = {} as { x: number; y: number; z: number };
