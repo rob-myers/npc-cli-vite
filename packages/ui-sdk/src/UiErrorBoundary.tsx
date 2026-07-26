@@ -28,6 +28,9 @@ export class UiErrorBoundary extends Component<
           <pre className="px-4 py-2 whitespace-pre-wrap font-sans text-sm text-red-400 leading-relaxed tracking-wide">
             {this.state.error.message}
           </pre>
+          <pre className="px-4 py-2 max-h-20 overflow-auto whitespace-pre-wrap font-sans text-sm text-red-400 leading-relaxed tracking-wide">
+            {this.state.error.stack}
+          </pre>
           <pre className="px-4 py-2 whitespace-pre-wrap font-mono text-xs text-amber-200 leading-relaxed tracking-wide">
             {safeJsonCompact(this.props.meta)}
           </pre>
