@@ -44,12 +44,14 @@ export default function Ceiling() {
         uvTextureIds.needsUpdate = true;
       },
       async draw() {
+        w.setNextPending({ ceiling: true });
         // texture per gmKey (unlike floor)
         for (const gmKey of w.seenGmKeys) {
           state.drawGm(gmKey);
           w.texCeil.updateIndex(w.getGmKeyTexId(gmKey));
           await pause();
         }
+        w.setNextPending({ ceiling: false });
       },
       drawGm(gmKey) {
         const layout = w.assets.layout[gmKey];
@@ -187,7 +189,7 @@ export default function Ceiling() {
         outputNode={material.pickNode}
         opacityNode={material.opacityNode}
         depthWrite // use depth buffer to fix editable lighting
-        alphaTest={0.3}
+        alphaTest={0.1}
       />
     </instancedMesh>
   );
