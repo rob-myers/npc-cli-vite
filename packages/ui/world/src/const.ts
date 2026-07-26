@@ -132,7 +132,7 @@ export const MAX_DECOR_QUAD_INSTANCES = 1024;
 
 /** Meters */
 export const npcHeight = 1.2;
-export const npcScale = 0.7;
+export const npcScale = 0.65;
 
 export const MAX_NPCS = 256;
 export const MAX_DOOR_LABELS = 32;
