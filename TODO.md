@@ -11,6 +11,9 @@
 - ✅ light-mode and dark-mode switch postprocessing shaders for dynamicLight
   - partition
   - simplify new shader
+- ✅ npc skins have meta.brightness as pair `[lightBrightness, darkBrightness]`
+
+- BUG npc position after change map
 
 - cover up curved room raymarching woes
   - maybe can use `Walls` if can vary opacity

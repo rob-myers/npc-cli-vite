@@ -91,7 +91,8 @@ export default function NPCs() {
         const pickIdNode = uniform(pickId);
         const colorScale = uniform(1);
         const labelVisible = uniform(1, "float");
-        const brightness = uniform(1);
+        // static per-skin (light, dark) values
+        const brightnessPair = uniform(new THREE.Vector2(1, 1));
 
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
@@ -108,6 +109,7 @@ export default function NPCs() {
 
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
+        const brightness = mix(brightnessPair.y, brightnessPair.x, w.view.lightThemeAmount);
         const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(brightness);
         const mainColor = vec4(
           mix(vec3(0.4, 1, 1).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),
@@ -143,7 +145,7 @@ export default function NPCs() {
 
         return {
           alphaTest,
-          brightness,
+          brightnessPair,
           colorScale,
           labelVisible,
           labelYShiftUniform: labelYShift,
@@ -708,7 +710,13 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "alphaTest" | "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
+    | "alphaTest"
+    | "brightnessPair"
+    | "colorScale"
+    | "labelVisible"
+    | "labelYShiftUniform"
+    | "skinIndexUniform"
+    | "material"
   >;
   determineSpawnedAngle(opts: {
     /** Spawn destination */
