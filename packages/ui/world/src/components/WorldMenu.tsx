@@ -224,18 +224,6 @@ export function WorldMenu() {
             </div>
           </Menu.Trigger>
 
-          {(extraZoomActive || readyForExtraZoom) && (
-            <div
-              className={cn(
-                "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none",
-                big ? "size-12" : "size-9",
-                extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
-              )}
-            >
-              <MagnifyingGlassIcon className={big ? "size-6" : "size-5"} weight="bold" />
-            </div>
-          )}
-
           <Menu.Portal>
             <Menu.Positioner className="z-50" side="right" sideOffset={4} align="start">
               <Menu.Popup
@@ -654,6 +642,18 @@ export function WorldMenu() {
             <PauseIcon className={cn("size-5", big && "size-6")} weight="bold" />
           )}
         </button>
+
+        {(extraZoomActive || readyForExtraZoom) && (
+          <div
+            className={cn(
+              "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none",
+              big ? "size-12" : "size-9",
+              extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
+            )}
+          >
+            <MagnifyingGlassIcon className={big ? "size-6" : "size-5"} weight="bold" />
+          </div>
+        )}
 
         <div>
           <AnimatePresence>

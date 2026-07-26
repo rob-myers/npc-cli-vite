@@ -39,7 +39,8 @@ export class Npc {
   skinnedMesh: THREE.SkinnedMesh;
 
   alphaTest: THREE.UniformNode<"float", number>;
-  brightness: THREE.UniformNode<"float", number>;
+  /** Static per-skin (light, dark) brightness pair; the live theme mix happens in the shader (see `NPCs.tsx`) */
+  brightnessPair: THREE.UniformNode<"vec2", THREE.Vector2>;
   colorScale: THREE.UniformNode<"float", number>;
   /** points into ArrayTexture */
   labelLayerIndex: number;
@@ -109,7 +110,7 @@ export class Npc {
     // Object.assign(this, init);
     this.key = init.key;
     this.alphaTest = init.alphaTest;
-    this.brightness = init.brightness;
+    this.brightnessPair = init.brightnessPair;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
@@ -140,9 +141,12 @@ export class Npc {
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
+    // ct.strokeStyle = "black";
+    // ct.lineWidth = 2;
 
     const labelText = this.labelStyle.speaking ? `[ ${this.key} ]` : this.key;
     ct.fillText(labelText, width / 2, height / 2);
+    // ct.strokeText(labelText, width / 2, height / 2);
 
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
@@ -274,7 +278,13 @@ export class Npc {
 
     const skinKey = this.w.npc.getSkinKeyBySkinIndex(this.skinIndex) ?? defaultSkinKey;
     const skinMeta = this.w.npc.getSkinMeta(skinKey);
-    this.brightness.value = typeof skinMeta?.brightness === "number" ? skinMeta.brightness : 1;
+    const brightnessMeta = skinMeta?.brightness;
+    const [lightBrightness, darkBrightness] = Array.isArray(brightnessMeta)
+      ? (brightnessMeta as [number, number])
+      : typeof brightnessMeta === "number"
+        ? [brightnessMeta, brightnessMeta]
+        : [0.8, 0.4];
+    this.brightnessPair.value.set(lightBrightness, darkBrightness);
   }
 
   isMoving() {
@@ -390,7 +400,7 @@ export class Npc {
 export type NpcInit = {
   key: string;
   alphaTest: THREE.UniformNode<"float", number>;
-  brightness: THREE.UniformNode<"float", number>;
+  brightnessPair: THREE.UniformNode<"vec2", THREE.Vector2>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
