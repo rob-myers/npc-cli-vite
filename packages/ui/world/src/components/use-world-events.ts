@@ -148,7 +148,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (w.isLightTheme()) {
               w.view.setAmbientIntensity(1, false); // do not persist
             } else {
-              w.view.setAmbientIntensity(persisted.getAmbientIntensity(w.themeKey));
+              // dark-theme
+              if (w.view.dynamicLight.trackedNpcKey === null) {
+                w.view.setAmbientIntensity(0.4);
+              } else {
+                w.view.setAmbientIntensity(persisted.getAmbientIntensity(w.themeKey));
+              }
             }
             break;
           }
