@@ -102,6 +102,9 @@ export function watchAssetsPlugin(): Plugin {
         if (req.url === "/api/gen-starship-sheets" && req.method === "POST") {
           return handleGenStarshipSheets(res);
         }
+        if (req.url === "/api/gen-assets-json" && req.method === "POST") {
+          return handleGenAssetsJson(res);
+        }
         const themeMatch = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
         if (themeMatch && req.method === "POST") {
           return handleAssetsTheme(req, res, themeMatch[1]);
@@ -127,6 +130,23 @@ async function handleGenStarshipSheets(res: ServerResponse) {
     res.writeHead(200).end();
   } catch (err) {
     console.error("[gen-starship-sheets] failed:", err);
+    res.writeHead(500).end();
+  }
+}
+
+async function handleGenAssetsJson(res: ServerResponse) {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const proc = childProcess.spawn("pnpm", ["gen-assets-json"], {
+        cwd: PROJECT_ROOT,
+        stdio: "inherit",
+      });
+      proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
+      proc.on("error", reject);
+    });
+    res.writeHead(200).end();
+  } catch (err) {
+    console.error("[gen-assets-json] failed:", err);
     res.writeHead(500).end();
   }
 }
