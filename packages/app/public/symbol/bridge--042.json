@@ -210,7 +210,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "e9847770-fa35-4290-8310-23c701cf5ca6",
@@ -384,6 +384,19 @@
           "baseRect": {"width": 40, "height": 15},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0.5, 0, 0, 0.5, 140, 162)"
+        },
+        {
+          "id": "d39b91b3-81ed-4549-aa43-809614835025",
+          "name": "decor point label=locker",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 320, "f": 162},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 320, 162)"
         },
         {
           "id": "011f2cee-8016-49eb-bfa9-f47113f8fad9",
