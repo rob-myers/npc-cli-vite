@@ -447,6 +447,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setCameraMode(cameraMode) {
         tryLocalStorageSet(cameraModeStorageKey, cameraMode);
         state.set({ cameraMode });
+        w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
       },
       setDynamicLightIntensity(next) {
         state.dynamicLight.setIntensity(next);
@@ -472,6 +473,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setNumCardinalDirections(n) {
         tryLocalStorageSet(numCardinalDirectionsKey, String(n));
         state.set({ numCardinalDirections: n });
+        w.update();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
