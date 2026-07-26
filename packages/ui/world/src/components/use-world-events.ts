@@ -139,22 +139,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
+      onBootstrapEvents() {
+        state.onChangeTheme();
+      },
+      onChangeTheme() {
+        if (w.isLightTheme()) {
+          w.view.setAmbientIntensity(1, false); // do not persist
+        } else {
+          w.view.setAmbientIntensity(
+            w.view.dynamicLight.trackedNpcKey === null ? 0.4 : persisted.getAmbientIntensity(w.themeKey),
+          );
+        }
+      },
       onEvent(e) {
         if ("npcKey" in e) {
           return state.onNpcEvent(e);
         }
         switch (e.key) {
           case "change-theme": {
-            if (w.isLightTheme()) {
-              w.view.setAmbientIntensity(1, false); // do not persist
-            } else {
-              // dark-theme
-              if (w.view.dynamicLight.trackedNpcKey === null) {
-                w.view.setAmbientIntensity(0.4);
-              } else {
-                w.view.setAmbientIntensity(persisted.getAmbientIntensity(w.themeKey));
-              }
-            }
+            state.onChangeTheme();
             break;
           }
           case "door-open":
@@ -613,6 +616,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return { seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId };
         });
         w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
+        // fix initial lighting whilst paused
+        w.view.updateDynamicLight(w.view.dynamicLight.target as { x: number; y: number; z: number });
+        w.view.forceUpdate();
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
@@ -686,9 +692,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
   useEffect(() => {
     // 🔔 internal because it can synchronously invoke `w.events.next`
     const sub = w.events.subscribe({ next: state.onEvent }, { internal: true });
-    return () => {
-      sub.unsubscribe();
-    };
+    return () => void sub.unsubscribe();
   }, []);
 }
 
@@ -729,6 +733,8 @@ export type State = {
   fixInaccessibleTarget(npc: Npc): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
+  onBootstrapEvents(): void;
+  onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;

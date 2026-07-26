@@ -341,6 +341,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       }
       state.gmsData.computeRoot(state.gms);
 
+      if (state.hash === 0) {
+        // first load only
+        state.e.onBootstrapEvents();
+      }
+
       state.hash = hashJson(state.assets);
       state.gmsHash = hashJson(state.gms);
 
