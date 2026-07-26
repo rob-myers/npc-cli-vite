@@ -426,6 +426,28 @@ export function WorldMenu() {
                     >
                       update obstacles
                     </button>
+
+                    <button
+                      type="button"
+                      className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const res = await fetch("/api/gen-assets-json", {
+                            method: "POST",
+                          });
+                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          await queryClientApi.queryClient.invalidateQueries({
+                            exact: false,
+                            queryKey: w.worldQueryPrefix,
+                          });
+                        } catch (err) {
+                          console.error("Failed to update assets:", err);
+                        }
+                      }}
+                    >
+                      update assets
+                    </button>
                   </>
                 )}
 
