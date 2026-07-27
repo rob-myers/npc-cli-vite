@@ -652,6 +652,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
+        if (!door) {
+          return; // onchange map
+        }
         w.door.cancelClose(door);
         door.closeTimeoutId = window.setTimeout(() => {
           if (w.disabled === true) {
