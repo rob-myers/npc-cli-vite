@@ -228,7 +228,7 @@ export default function Walls() {
     }
 
     w.update(); // 🔔 must sync onchange theme
-  }, [w.mapKey, w.hash, w.themeKey, w.decor.ready]);
+  }, [w.mapKey, w.hash, w.decor.ready]);
 
   return wallCount ? (
     <>

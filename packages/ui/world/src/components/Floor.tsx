@@ -174,7 +174,7 @@ export default function Floor() {
     state.addUvs();
     // render initially or once decor has gmRoomIds
     (w.decor.ready || !w.isReady()) && state.draw().then(() => w.update());
-  }, [w.hash, w.nav, w.gmsData, w.themeKey, w.decor.ready]);
+  }, [w.hash, w.nav, w.gmsData, w.decor.ready]);
 
   return (
     <instancedMesh

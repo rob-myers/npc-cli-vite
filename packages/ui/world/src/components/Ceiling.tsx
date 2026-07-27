@@ -164,7 +164,7 @@ export default function Ceiling() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.nav, w.gmsData, w.themeKey]);
+  }, [w.hash, w.nav, w.gmsData]);
 
   return (
     <instancedMesh

@@ -15,7 +15,7 @@ import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { Fn, float, If, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
+import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   ambientIntensityKey,
@@ -38,7 +38,6 @@ import {
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
-import { createEdgeContourEffect } from "../service/edge-contour-effect";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import * as persisted from "../service/get-persisted";
 import { decodePick } from "../service/pick";
@@ -90,10 +89,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      dimWorldColor: uniform(computeDimWorldColor(persisted.getAmbientIntensity(w.themeKey))),
-      ambientIntensity: persisted.getAmbientIntensity(w.themeKey),
-      // light-theme barely dims unlit areas, so the tracked light needs its own visible overlay there
-      lightThemeAmount: uniform(w.isLightTheme() ? 1 : 0),
+      dimWorldColor: uniform(computeDimWorldColor(persisted.getAmbientIntensity())),
+      ambientIntensity: persisted.getAmbientIntensity(),
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -255,9 +252,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
       isRoomLightingDisallowed(gmRoomId) {
-        if (w.isLightTheme()) {
-          return true; // room lighting can only be toggled in dark-theme
-        }
         const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
         // ≤ 1 or 1st takes precedence
         const decorLabel = roomDecor
@@ -438,11 +432,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (savedLitRooms) {
           state.roomLight.setRoomLitPairs(savedLitRooms);
         }
+        if (state.dynamicLightTarget !== null && w.npc.npc[state.dynamicLightTarget.npcKey]) {
+          w.npc.trackNpc(state.dynamicLightTarget.npcKey);
+        }
       },
       setAmbientIntensity(next, persist = true) {
         state.ambientIntensity = next;
         state.dimWorldColor.value.copy(computeDimWorldColor(next));
-        state.lightThemeAmount.value = w.isLightTheme() ? 1 : 0;
         persist && tryLocalStorageSet(ambientIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
@@ -522,35 +518,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-        // light-theme's dimWorldColor is near-white, so skip the dimming raymarch there entirely
         const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
         const litEffect = Fn(() => {
-          const out = vec3(0, 0, 0).toVar();
-          If(state.lightThemeAmount.greaterThan(0), () => {
-            out.assign(brightColor);
-          }).Else(() => {
-            const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
-            // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
-            const isBright = state.roomLight
-              .litAmount(sceneDepth.r)
-              .mul(state.roomLightIntensity)
-              .max(dynamicLitAmount);
-            const unlitAmount = float(1).sub(isBright);
-            out.assign(mix(brightColor, sceneColor.rgb.mul(state.dimWorldColor), unlitAmount));
-          });
-          return out;
+          const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
+          // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
+          const isBright = state.roomLight.litAmount(sceneDepth.r).mul(state.roomLightIntensity).max(dynamicLitAmount);
+          const unlitAmount = float(1).sub(isBright);
+          return mix(brightColor, sceneColor.rgb.mul(state.dimWorldColor), unlitAmount);
         })();
-        // "Splinter Cell" edge-detection contour: a glowing neon outline tracing the boundary of
-        // the tracked dynamic light, restricted to the ground plane — see edge-contour-effect.ts
-        const edgeContour = createEdgeContourEffect();
-        const effect = mix(
-          litEffect,
-          edgeContour.color,
-          edgeContour.amount(state.dynamicLight, sceneDepth.r, state.lightThemeAmount),
-        );
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = vec4(effect, sceneColor.a);
+        pipeline.outputNode = vec4(litEffect, sceneColor.a);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -730,8 +708,6 @@ export type State = {
   dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
   /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
   ambientIntensity: number;
-  /** `1` in light-theme (else `0`) — gates the dynamic light's overlay, kept in sync in `setAmbientIntensity` */
-  lightThemeAmount: THREE.UniformNode<"float", number>;
   dynamicLight: DynamicLightPostprocess;
   /** Set by `w.npc.trackNpc`; `position` is a live reference (e.g. `npc.position`), not a snapshot. `null` means off. Lives outside `dynamicLight` so it survives that object's HMR reset (see the re-hydration effect in `WorldView`). */
   dynamicLightTarget: null | { npcKey: string; position: { x: number; y: number; z: number } };

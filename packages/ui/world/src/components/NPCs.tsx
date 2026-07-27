@@ -109,7 +109,7 @@ export default function NPCs() {
 
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
-        const brightness = mix(brightnessPair.y, brightnessPair.x, w.view.lightThemeAmount);
+        const brightness = brightnessPair.x;
         const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(brightness);
         const mainColor = vec4(
           mix(vec3(0.4, 1, 1).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),

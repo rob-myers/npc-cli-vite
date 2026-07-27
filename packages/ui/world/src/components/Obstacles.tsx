@@ -20,6 +20,7 @@ import {
   positionWorld,
   texture,
   transformNormalToView,
+  uniform,
   uniformArray,
   uv,
   vec3,
@@ -42,6 +43,7 @@ export default function Obstacles(_props: Props) {
 
       quad: createTwoSidedXzQuad(), // 2-sided handles flipped obstacles
       skirtQuad: createTwoSidedXyQuad(),
+      brightnessNode: uniform(1),
 
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
@@ -125,6 +127,9 @@ export default function Obstacles(_props: Props) {
         const obstacle = gm.obstacles[id];
         return { gmId, obstacleId: id, ...obstacle.meta };
       },
+      setBrightness(next) {
+        state.brightnessNode.value = next;
+      },
       sendDataToGpu() {
         state.quad.getAttribute("uvOffsets").needsUpdate = true;
         state.quad.getAttribute("uvDimensions").needsUpdate = true;
@@ -205,7 +210,7 @@ export default function Obstacles(_props: Props) {
     const texNodeFinal = texNode.depth(uvTexIds);
     const normalNode = transformNormalToView(vec3(0, 1, 0));
     return {
-      colorNode: texNodeFinal,
+      colorNode: texNodeFinal.mul(vec3(state.brightnessNode), 1),
       normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),
@@ -347,6 +352,7 @@ export type State = {
   skirtInst: THREE.InstancedMesh;
   quad: THREE.BufferGeometry;
   skirtQuad: THREE.BufferGeometry;
+  brightnessNode: THREE.UniformNode<"float", number>;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
@@ -355,6 +361,7 @@ export type State = {
   draw(): Promise<void>;
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
   decodeInstanceId(instanceId: number): Meta<{ gmId: number; obstacleId: number }>;
+  setBrightness(next: number): void;
   transformAndColorObstacles(): void;
   transformAndColorSkirts(): void;
   sendDataToGpu(): void;
