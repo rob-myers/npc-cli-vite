@@ -81,8 +81,10 @@ const roomMaskDim = Math.round(floorTextureDimension * roomHitTextureScaleDown);
  * 2. `texRoomMask` — one layer per unique geomorph layout (not per instance), nearest-filtered
  *     (hard binary lighting — no fade, so no need for bilinear blending between adjacent room
  *     ids). Disjoint on G (see `DerivedGmsData.computeGmKey`): a plain room-interior pixel is
- *     `(roomId+1, 0, 0)`; a door pixel is `(roomA+1, doorId+1, roomB+1)` — `G === 0` means "read R
- *     as the room id", `G > 0` means "this is a door, read both R and B as candidate room ids".
+ *     `(roomId+1, 0, 0)`; a door pixel is `(roomA+1, 1, roomB+1)`; a window pixel is `(roomA+1, 2,
+ *     roomB+1)` — `G === 0` means "read R as the room id", `G > 0` means "this is a door/window,
+ *     read both R and B as candidate room ids" (the shader never needs to tell doors and windows
+ *     apart, only whether G is zero — G is a category tag here, not an id).
  *
  * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
  * (see CONVERSATIONS.md "Lighting Performance"), does two texture samples plus `roomLit` boolean-array lookup.
@@ -162,14 +164,15 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
 
       const roomSample = texture(texRoomMask, roomUv).depth(layoutIdx);
       const roomIdA = roomSample.r.mul(255).round().sub(1).toInt();
-      const doorFlag = roomSample.g.mul(255).round().toInt(); // 0 = plain room pixel, >0 = doorId+1
+      // 0 = plain room pixel, >0 = a door/window pixel (which one doesn't matter here)
+      const connectorFlag = roomSample.g.mul(255).round().toInt();
 
       If(roomIdA.greaterThanEqual(0), () => {
         const litIdxA = gmId.mul(int(MAX_ROOMS_PER_GM)).add(roomIdA);
         litOut.assign(roomLit.element(litIdxA));
       });
 
-      If(doorFlag.greaterThan(0), () => {
+      If(connectorFlag.greaterThan(0), () => {
         const roomIdB = roomSample.b.mul(255).round().sub(1).toInt();
         If(roomIdB.greaterThanEqual(0), () => {
           const litIdxB = gmId.mul(int(MAX_ROOMS_PER_GM)).add(roomIdB);
