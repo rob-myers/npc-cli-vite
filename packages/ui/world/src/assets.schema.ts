@@ -161,12 +161,6 @@ export const WorldThemeSchema = z.object({
       tileStroke: z.string().default("#0001"),
     })
     .default({ hullFill: "#111", navStroke: "#000c", patternFill: "#222", tileStroke: "#0001" }),
-  walls: z
-    .object({
-      color: z.string().default("#000000"),
-      opacity: z.number().min(0).max(1).default(0.5),
-    })
-    .default({ color: "#000000", opacity: 0.5 }),
   lights: z
     .object({
       ambientIntensity: z.number(),
@@ -174,6 +168,26 @@ export const WorldThemeSchema = z.object({
     .default({
       ambientIntensity: 0.4 satisfies typeof import("./const.ts").defaultAmbientIntensity,
     }),
+  obstacles: z
+    .object({
+      brightness: z.number(),
+    })
+    .default({
+      brightness: 1,
+    }),
+  doors: z
+    .object({
+      brightness: z.number(),
+    })
+    .default({
+      brightness: 1,
+    }),
+  walls: z
+    .object({
+      color: z.string().default("#000000"),
+      opacity: z.number().min(0).max(1).default(0.5),
+    })
+    .default({ color: "#000000", opacity: 0.5 }),
 });
 export type WorldTheme = z.infer<typeof WorldThemeSchema>;
 

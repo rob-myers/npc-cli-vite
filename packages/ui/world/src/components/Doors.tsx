@@ -3,7 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
-import { attribute, float, lights, positionLocal, texture, uv, vec2, vec3 } from "three/tsl";
+import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
@@ -19,6 +19,7 @@ export default function Doors() {
     (): State => ({
       animTargets: new Map(),
       box: createDoorBox(),
+      brightnessNode: uniform(1),
       byKey: {},
       labelToLayer: new Map(),
 
@@ -318,6 +319,9 @@ export default function Doors() {
 
         inst.computeBoundingSphere();
       },
+      setBrightness(next) {
+        state.brightnessNode.value = next;
+      },
       sendDataToGpu() {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         const openRatioAttr = state.box.getAttribute("openRatio");
@@ -439,12 +443,12 @@ export default function Doors() {
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
 
-    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y)).depth(
-      (select as SelectAnyType)(notFlipped, texLayer, backTexLayer),
-    );
-    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y)).depth(
-      (select as SelectAnyType)(notFlipped, backTexLayer, texLayer),
-    );
+    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
+      .depth((select as SelectAnyType)(notFlipped, texLayer, backTexLayer))
+      .mul(vec3(state.brightnessNode));
+    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
+      .depth((select as SelectAnyType)(notFlipped, backTexLayer, texLayer))
+      .mul(vec3(state.brightnessNode));
 
     // only 3 groups in door box
     const output = [edge, front, back];
@@ -481,6 +485,7 @@ export default function Doors() {
 export type State = {
   animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
+  brightnessNode: THREE.UniformNode<"float", number>;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
   inst: null | THREE.InstancedMesh;
   /** Total number of doors across all `w.gms`; also the InstancedMesh's instance count */
@@ -517,6 +522,8 @@ export type State = {
   onDoorChanged: (instanceId: number, target: number) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
+  /** Sets `brightnessNode`'s value — called by `onChangeTheme` (see `use-world-events.ts`), never `.value` directly */
+  setBrightness: (next: number) => void;
   sendDataToGpu: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;

@@ -13,7 +13,6 @@ import {
   GlobeStandIcon,
   type Icon,
   MagnifyingGlassIcon,
-  MoonIcon,
   PauseIcon,
   PencilSimpleIcon,
   PlayIcon,
@@ -477,7 +476,7 @@ export function WorldMenu() {
                       className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className={cn("w-20", w.isLightTheme() && "pointer-events-none brightness-50")}>
+                      <div className="w-20">
                         <LightsMenuSlider
                           label="Ambient"
                           value={w.view.ambientIntensity ?? defaultAmbientIntensity}
@@ -692,25 +691,7 @@ export function WorldMenu() {
           </Menu.Portal>
         </Menu.Root>
 
-        {/* theme toggle */}
-        <button
-          type="button"
-          className="outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointer hover:bg-gray-700 size-9"
-          onClick={async () => {
-            const nextThemeKey = w.isLightTheme() ? "dark-theme" : "light-theme";
-            await w.setCanvasOpacity(0);
-            uiStoreApi.setUiMeta(w.id, (draft) => (draft.themeKey = nextThemeKey));
-            // fade-in happens centrally in World.tsx once floor/ceiling/decor finish redrawing
-          }}
-        >
-          {w.isLightTheme() ? (
-            <SunIcon className="size-5" weight="bold" />
-          ) : (
-            <MoonIcon className="size-5" weight="bold" />
-          )}
-        </button>
-
-        {w.view && !w.isLightTheme() && (
+        {w.view && (
           <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
             <SunIcon className="size-4 shrink-0" />
             <input

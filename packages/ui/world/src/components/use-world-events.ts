@@ -143,13 +143,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.onChangeTheme();
       },
       onChangeTheme() {
-        if (w.isLightTheme()) {
-          w.view.setAmbientIntensity(1, false); // do not persist
-        } else {
-          w.view.setAmbientIntensity(
-            w.view.dynamicLightTarget === null ? 0.4 : persisted.getAmbientIntensity(w.themeKey),
-          );
-        }
+        w.view.setAmbientIntensity(w.view.dynamicLightTarget === null ? 0.4 : persisted.getAmbientIntensity());
+        w.obs.setBrightness(w.getTheme().obstacles.brightness);
+        w.door.setBrightness(w.getTheme().doors.brightness);
       },
       onEvent(e) {
         if ("npcKey" in e) {
