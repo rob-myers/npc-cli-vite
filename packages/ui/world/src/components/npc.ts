@@ -39,8 +39,7 @@ export class Npc {
   skinnedMesh: THREE.SkinnedMesh;
 
   alphaTest: THREE.UniformNode<"float", number>;
-  /** Static per-skin (light, dark) brightness pair; the live theme mix happens in the shader (see `NPCs.tsx`) */
-  brightnessPair: THREE.UniformNode<"vec2", THREE.Vector2>;
+  brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   /** points into ArrayTexture */
   labelLayerIndex: number;
@@ -110,7 +109,7 @@ export class Npc {
     // Object.assign(this, init);
     this.key = init.key;
     this.alphaTest = init.alphaTest;
-    this.brightnessPair = init.brightnessPair;
+    this.brightness = init.brightness;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
@@ -279,12 +278,7 @@ export class Npc {
     const skinKey = this.w.npc.getSkinKeyBySkinIndex(this.skinIndex) ?? defaultSkinKey;
     const skinMeta = this.w.npc.getSkinMeta(skinKey);
     const brightnessMeta = skinMeta?.brightness;
-    const [lightBrightness, darkBrightness] = Array.isArray(brightnessMeta)
-      ? (brightnessMeta as [number, number])
-      : typeof brightnessMeta === "number"
-        ? [brightnessMeta, brightnessMeta]
-        : [0.8, 0.4];
-    this.brightnessPair.value.set(lightBrightness, darkBrightness);
+    this.brightness.value = typeof brightnessMeta === "number" ? brightnessMeta : 0.4;
   }
 
   isMoving() {
@@ -400,7 +394,7 @@ export class Npc {
 export type NpcInit = {
   key: string;
   alphaTest: THREE.UniformNode<"float", number>;
-  brightnessPair: THREE.UniformNode<"vec2", THREE.Vector2>;
+  brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
