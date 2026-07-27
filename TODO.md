@@ -13,17 +13,15 @@
   - simplify new shader
 - ✅ npc skins have meta.brightness as pair `[lightBrightness, darkBrightness]`
 
-- BUG npc position after change map
+- ✅ improve room light outlines
+  - ❌ in light-theme show outlines (not lit)
+    - modify dark-theme via top-level slider instead
+  - ✅ outlines include all doors
 
-- cover up curved room raymarching woes
-  - maybe can use `Walls` if can vary opacity
-  - provide additional wall-segments via e.g. `meta.poly`
-
-
-- 🚧 improve room light outlines
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`
   - `decor near:...`
+  - can specify exact e.g. check obstacle outline contains
 - auto unlocked door cannot close on npc just exit doorway
   - does not happen if we move again
 
@@ -42,6 +40,11 @@
 
 - ✅ fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
 
+
+- could cover up curved room raymarching woes
+  - maybe `Walls` can vary opacity
+  - provide additional Walls in MapEdit
+- BUG npc position after change map
 - BUG door open wrong way around during raycast of dynamicLight
   - sporadic due to hmr?
 - improve transition dark-theme -> light-theme
