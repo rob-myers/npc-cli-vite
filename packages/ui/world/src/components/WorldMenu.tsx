@@ -490,8 +490,8 @@ export function WorldMenu() {
                         <MenuSelect
                           side="bottom"
                           className="border rounded-l border-white/30 border-r-0"
-                          label={truncateLabel(w.view.dynamicLight?.trackedNpcKey ?? "no npc", 10)}
-                          value={w.view.dynamicLight?.trackedNpcKey ?? ""}
+                          label={truncateLabel(w.view.dynamicLightTarget?.npcKey ?? "no npc", 10)}
+                          value={w.view.dynamicLightTarget?.npcKey ?? ""}
                           items={[{ key: "no tracked npc", value: "" }, ...npcKeys.map((k) => ({ key: k, value: k }))]}
                           onValueChange={(v) => w.npc.trackNpc(v || undefined)}
                         />
@@ -501,7 +501,7 @@ export function WorldMenu() {
                           className="grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const current = w.view.dynamicLight?.trackedNpcKey;
+                            const current = w.view.dynamicLightTarget?.npcKey;
                             const currentIdx = current ? npcKeys.indexOf(current) : -1;
                             w.npc.trackNpc(npcKeys[currentIdx + 1]);
                           }}

@@ -39,7 +39,7 @@ export default function NpcShadows() {
 
         // (x, z, active, radius) of the npc-follow light
         const dl = w.view.dynamicLight;
-        if (dl.target !== null) {
+        if (w.view.dynamicLightTarget !== null) {
           light.value.set(dl.displayCenter.x, dl.displayCenter.z, 1, dl.radius);
         } else {
           light.value.z = 0;

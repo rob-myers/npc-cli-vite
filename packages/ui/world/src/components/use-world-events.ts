@@ -147,7 +147,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.setAmbientIntensity(1, false); // do not persist
         } else {
           w.view.setAmbientIntensity(
-            w.view.dynamicLight.trackedNpcKey === null ? 0.4 : persisted.getAmbientIntensity(w.themeKey),
+            w.view.dynamicLightTarget === null ? 0.4 : persisted.getAmbientIntensity(w.themeKey),
           );
         }
       },
@@ -202,8 +202,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             w.bubble.delete(...e.npcKeys);
 
-            const { trackedNpcKey } = w.view.dynamicLight;
-            if (trackedNpcKey !== null && e.npcKeys.includes(trackedNpcKey)) {
+            const trackedNpcKey = w.view.dynamicLightTarget?.npcKey;
+            if (trackedNpcKey !== undefined && e.npcKeys.includes(trackedNpcKey)) {
               w.npc.trackNpc();
             }
 
@@ -239,7 +239,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
-        if (e.type === "nearby" && w.d[e.meta.gdKey].hull && w.view.dynamicLight.trackedNpcKey === npc.key) {
+        if (e.type === "nearby" && w.d[e.meta.gdKey].hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
           const inside = state.npcToDoors[npc.key]?.inside ?? null;
           if (inside === null) {
             // shrink on approach
@@ -282,7 +282,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.tryCloseDoor(e.meta.gdKey);
           }
 
-          if (door.hull && w.view.dynamicLight.trackedNpcKey === npc.key) {
+          if (door.hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
             // grow back once clear of every nearby hull door — but not while inside a threshold sensor
             // (that case grows via the "enter-room" gmId-change branch instead, see onNpcEvent)
             const inside = state.npcToDoors[npc.key]?.inside ?? null;
@@ -319,7 +319,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.npcToRoom.set(npc.key, e.gmRoomId);
             (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
 
-            if (w.view.dynamicLight.trackedNpcKey === npc.key && gmRoomId?.gmId !== e.gmRoomId.gmId) {
+            if (w.view.dynamicLightTarget?.npcKey === npc.key && gmRoomId?.gmId !== e.gmRoomId.gmId) {
               state.switchTrackedNpcGm(e.gmRoomId.gmId);
               w.view.dynamicLight.setNearHullDoor(false); // just crossed into the new gm
             }
@@ -352,7 +352,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (prevGrId !== undefined) {
                 state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
-              if (w.view.dynamicLight.trackedNpcKey === npc.key && prevGrId?.gmId !== e.gmRoomId.gmId) {
+              if (w.view.dynamicLightTarget?.npcKey === npc.key && prevGrId?.gmId !== e.gmRoomId.gmId) {
                 state.switchTrackedNpcGm(e.gmRoomId.gmId);
                 w.view.dynamicLight.setNearHullDoor(false);
               }
@@ -612,7 +612,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         });
         w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
         // fix initial lighting whilst paused
-        w.view.updateDynamicLight(w.view.dynamicLight.target as { x: number; y: number; z: number });
+        w.view.updateDynamicLight(w.view.dynamicLightTarget?.position as { x: number; y: number; z: number });
         w.view.forceUpdate();
       },
       toggleDoor(gdKey, opts = {}) {

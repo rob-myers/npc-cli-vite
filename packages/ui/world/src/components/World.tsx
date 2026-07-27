@@ -173,8 +173,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.npc.onTick(delta);
         state.view.dynamicLight.tick(delta);
 
-        if (state.view.dynamicLight.target) {
-          state.view.updateDynamicLight(state.view.dynamicLight.target);
+        if (state.view.dynamicLightTarget) {
+          state.view.updateDynamicLight(state.view.dynamicLightTarget.position);
         }
       },
       setCanvasOpacity(opacity) {
