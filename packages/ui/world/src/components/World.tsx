@@ -521,7 +521,9 @@ export type State = {
   stopTick(): void;
 };
 
-extend({ MeshStandardNodeMaterial: THREE.MeshStandardNodeMaterial });
+extend({
+  MeshStandardNodeMaterial: THREE.MeshStandardNodeMaterial,
+});
 
 declare module "@react-three/fiber" {
   interface ThreeElements {

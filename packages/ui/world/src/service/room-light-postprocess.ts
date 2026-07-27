@@ -19,7 +19,7 @@ import {
   floorTextureDimension,
   gmIdGridDim,
   MAX_GEOMORPH_INSTANCES,
-  maxRoomsPerGm,
+  MAX_ROOMS_PER_GM,
   roomHitTextureScaleDown,
 } from "../const";
 import type DerivedGmsData from "./DerivedGmsData";
@@ -126,7 +126,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
   const gmInv2 = uniformArray<"vec4">(gmInv2Values, "vec4");
   const gmLayoutIdx = uniformArray<"float">(gmLayoutIdxValues, "float");
 
-  const roomLitValues = new Array<number>(MAX_GEOMORPH_INSTANCES * maxRoomsPerGm).fill(0);
+  const roomLitValues = new Array<number>(MAX_GEOMORPH_INSTANCES * MAX_ROOMS_PER_GM).fill(0);
   const roomLit = uniformArray<"float">(roomLitValues, "float");
 
   /** Given a fragment's world XZ, returns `1` if its room is lit, else `0` (hard binary, no fade) */
@@ -162,7 +162,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       const roomId = roomSample.r.mul(255).round().sub(1).toInt();
 
       If(roomId.greaterThanEqual(0), () => {
-        const litIdx = gmId.mul(int(maxRoomsPerGm)).add(roomId);
+        const litIdx = gmId.mul(int(MAX_ROOMS_PER_GM)).add(roomId);
         litOut.assign(roomLit.element(litIdx));
       });
     });
@@ -230,10 +230,10 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       roomLitValues.fill(0);
     },
     setRoomLit(gmId, roomId, lit) {
-      roomLitValues[gmId * maxRoomsPerGm + roomId] = lit ? 1 : 0;
+      roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = lit ? 1 : 0;
     },
     isRoomLit(gmId, roomId) {
-      return roomLitValues[gmId * maxRoomsPerGm + roomId] === 1;
+      return roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] === 1;
     },
     resetAllRooms() {
       roomLitValues.fill(0);
@@ -242,7 +242,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       const pairs: [number, number][] = [];
       roomLitValues.forEach((lit, i) => {
         if (lit === 1) {
-          pairs.push([Math.floor(i / maxRoomsPerGm), i % maxRoomsPerGm]);
+          pairs.push([Math.floor(i / MAX_ROOMS_PER_GM), i % MAX_ROOMS_PER_GM]);
         }
       });
       return pairs;
@@ -250,7 +250,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
     setRoomLitPairs(pairs) {
       roomLitValues.fill(0);
       for (const [gmId, roomId] of pairs) {
-        roomLitValues[gmId * maxRoomsPerGm + roomId] = 1;
+        roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = 1;
       }
     },
     litAmount(sceneDepth) {

@@ -82,7 +82,7 @@ export const roomLightingEnabledKey = "world-room-lighting-enabled";
 /** Prefix for the per-map lit-rooms localStorage key — actual key is `${roomLitStorageKeyPrefix}:${mapKey}` */
 export const roomLitStorageKeyPrefix = "world-room-lit";
 /** Per-instance cap on room count, for sizing the `roomLit` boolean array */
-export const maxRoomsPerGm = 32;
+export const MAX_ROOMS_PER_GM = 32;
 export const roomLightIntensityKey = "world-room-light-intensity";
 /** Default brightness of a lit room (long-press), scaling `RoomLightPostprocess.litAmount()` */
 export const defaultRoomLightIntensity = 0.7;
