@@ -131,25 +131,13 @@ export default class DerivedGmsData {
       ];
     }
 
-    // room-light mask: R = roomId+1 (0 = not-a-room), G always 255 wherever R is set — no fade,
-    // hard binary per room. Each room's territory is its own outset shape unioned with adjacent
-    // doorways, so a doorway between two rooms is unambiguously owned by (at least) one of them —
-    // if either is lit, the doorway itself reads as fully lit too, instead of a dark gap.
-    // (A doorway pixel can only belong to one room's id, so whichever of its two rooms is later in
-    // `gm.rooms` wins the overlap — harmless, just an arbitrary tie-break.)
-    //
-    // the final RGBA buffer is assembled by hand (via `maskData`/`putImageData`), never by
-    // `drawPolygons` + `getImageData` straight onto `roomMaskCt`: canvas anti-aliases polygon edges,
-    // and at partial-coverage edge pixels the browser stores a premultiplied-alpha color then
-    // un-premultiplies it back on `getImageData` — for low R values (small roomId+1) at low
-    // coverage this rounds to a completely different integer, corrupting the decoded roomId right
-    // at the boundary (visible as an antialiasing-looking fringe/flicker at every room edge). Each
-    // room is instead drawn alone, in white, onto a scratch canvas and its coverage is thresholded
-    // (>=128 alpha) before writing the *exact* intended color into the output buffer — so every
-    // written pixel is either fully in or fully out, no blended/corrupted values ever reach the texture.
+    /**
+     * room-light mask
+     * - room-interior pixel RGB (roomId+1, 0, 0)
+     * - door pixel RGB (roomIds[0]+1, doorId+1, roomIds[1]+1) where `null` ~ `0`
+     */
     const roomMaskCt = gmData.roomMaskCt;
-    const maskW = roomCt.canvas.width;
-    const maskH = roomCt.canvas.height;
+    const { width: maskW, height: maskH } = roomCt.canvas;
     roomMaskCt.canvas.width = maskW;
     roomMaskCt.canvas.height = maskH;
     roomMaskCt.resetTransform();
@@ -162,22 +150,39 @@ export default class DerivedGmsData {
     const maskData = new Uint8ClampedArray(maskW * maskH * 4);
 
     for (const [roomId, room] of gm.rooms.entries()) {
-      const doorPolys = gm.doors.filter((d) => d.roomIds.includes(roomId)).map((d) => d.poly);
-      const territory = Poly.union([room.clone(), ...doorPolys]);
-
       scratchCt.resetTransform();
       scratchCt.clearRect(0, 0, maskW, maskH);
       scratchCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
       // stroke on top of the fill, same solid color: a plain fill leaves a ring of partial-coverage
       // (anti-aliased) pixels right at the path — the stroke repaints that ring at full coverage,
       // pushing the boundary to a cleaner, more consistent edge before thresholding below.
-      drawPolygons(scratchCt, territory, { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
+      drawPolygons(scratchCt, [room], { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
 
       const { data: coverage } = scratchCt.getImageData(0, 0, maskW, maskH);
       for (let i = 0; i < coverage.length; i += 4) {
         if (coverage[i + 3] >= 128) {
-          maskData[i] = roomId + 1;
-          maskData[i + 1] = 255;
+          maskData[i + 0] = roomId + 1;
+          maskData[i + 3] = 255;
+        }
+      }
+    }
+
+    // door pass: runs after all rooms
+    for (const [doorId, door] of gm.doors.entries()) {
+      const thinPoly = door.computeThinPoly(door.meta.hull === true ? 2 * 0.05 : 0.05);
+
+      scratchCt.resetTransform();
+      scratchCt.clearRect(0, 0, maskW, maskH);
+      scratchCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
+      drawPolygons(scratchCt, [thinPoly], { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
+
+      const [roomIdA, roomIdB] = door.roomIds;
+      const { data: coverage } = scratchCt.getImageData(0, 0, maskW, maskH);
+      for (let i = 0; i < coverage.length; i += 4) {
+        if (coverage[i + 3] >= 128) {
+          maskData[i + 0] = (roomIdA ?? -1) + 1;
+          maskData[i + 1] = doorId + 1;
+          maskData[i + 2] = (roomIdB ?? -1) + 1;
           maskData[i + 3] = 255;
         }
       }

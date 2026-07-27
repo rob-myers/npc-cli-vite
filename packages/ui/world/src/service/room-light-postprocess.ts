@@ -78,9 +78,11 @@ const roomMaskDim = Math.round(floorTextureDimension * roomHitTextureScaleDown);
  * 1. `texGmId` — one texel per `gmIdGridDim`-sized world cell (mirrors `service/grid.ts`'s
  *    `createGmIdGrid`/`queryGmIdGrid`, baked as a texture instead of a sparse JS object), giving
  *    "which gm instance is here" in O(1), nearest-filtered.
- * 2. `texRoomMask` — one layer per unique geomorph layout (not per instance),
- *     where R = `roomId + 1` (see `DerivedGmsData.computeGmKey`), nearest-filtered
- *     (hard binary lighting — no fade, so no need for bilinear blending between adjacent room ids).
+ * 2. `texRoomMask` — one layer per unique geomorph layout (not per instance), nearest-filtered
+ *     (hard binary lighting — no fade, so no need for bilinear blending between adjacent room
+ *     ids). Disjoint on G (see `DerivedGmsData.computeGmKey`): a plain room-interior pixel is
+ *     `(roomId+1, 0, 0)`; a door pixel is `(roomA+1, doorId+1, roomB+1)` — `G === 0` means "read R
+ *     as the room id", `G > 0` means "this is a door, read both R and B as candidate room ids".
  *
  * `litAmount()` reconstructs each fragment's REAL world position from the scene's depth buffer
  * (see CONVERSATIONS.md "Lighting Performance"), does two texture samples plus `roomLit` boolean-array lookup.
@@ -159,11 +161,20 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       );
 
       const roomSample = texture(texRoomMask, roomUv).depth(layoutIdx);
-      const roomId = roomSample.r.mul(255).round().sub(1).toInt();
+      const roomIdA = roomSample.r.mul(255).round().sub(1).toInt();
+      const doorFlag = roomSample.g.mul(255).round().toInt(); // 0 = plain room pixel, >0 = doorId+1
 
-      If(roomId.greaterThanEqual(0), () => {
-        const litIdx = gmId.mul(int(MAX_ROOMS_PER_GM)).add(roomId);
-        litOut.assign(roomLit.element(litIdx));
+      If(roomIdA.greaterThanEqual(0), () => {
+        const litIdxA = gmId.mul(int(MAX_ROOMS_PER_GM)).add(roomIdA);
+        litOut.assign(roomLit.element(litIdxA));
+      });
+
+      If(doorFlag.greaterThan(0), () => {
+        const roomIdB = roomSample.b.mul(255).round().sub(1).toInt();
+        If(roomIdB.greaterThanEqual(0), () => {
+          const litIdxB = gmId.mul(int(MAX_ROOMS_PER_GM)).add(roomIdB);
+          litOut.assign(litOut.max(roomLit.element(litIdxB)));
+        });
       });
     });
 
@@ -277,6 +288,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
         gmInv1Values[i].set(a, b, c, d);
         gmInv2Values[i].set(e, f, gm.bounds.x, gm.bounds.y);
 
+        // check cache
         let layoutIndex = gmKeyToLayoutIndex.get(gm.key);
         if (layoutIndex === undefined) {
           layoutIndex = gmKeyToLayoutIndex.size;
@@ -288,7 +300,6 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
 
       roomLitValues.fill(0);
     },
-
     update(camera) {
       // ensure matrixWorld reflects this frame's position/orientation, not last frame's
       camera.updateMatrixWorld();
