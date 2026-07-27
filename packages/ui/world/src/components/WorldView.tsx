@@ -255,6 +255,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
       isRoomLightingDisallowed(gmRoomId) {
+        if (w.isLightTheme()) {
+          return true; // room lighting can only be toggled in dark-theme
+        }
         const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
         // ≤ 1 or 1st takes precedence
         const decorLabel = roomDecor
@@ -558,7 +561,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return;
         }
         const { gmId, roomId } = gmRoomId;
-        state.roomLight.setRoomLit(gmId, roomId, !state.roomLight.isRoomLit(gmId, roomId));
+        const nextLit = !state.roomLight.isRoomLit(gmId, roomId);
+        state.roomLight.setRoomLit(gmId, roomId, nextLit);
         tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();

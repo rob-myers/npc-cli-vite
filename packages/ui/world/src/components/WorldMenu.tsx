@@ -708,6 +708,24 @@ export function WorldMenu() {
           )}
         </button>
 
+        {w.view && !w.isLightTheme() && (
+          <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
+            <SunIcon className="size-4 shrink-0" />
+            <input
+              type="range"
+              {...{ orient: "vertical" }}
+              min="0"
+              max="1"
+              step="0.05"
+              value={w.view.ambientIntensity ?? defaultAmbientIntensity}
+              onChange={(e) => w.view.setAmbientIntensity(Number(e.target.value))}
+              onPointerDownCapture={(e) => e.stopPropagation()}
+              style={{ WebkitAppearance: "slider-vertical" }}
+              className="h-20 w-4 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+            />
+          </div>
+        )}
+
         {/* play/pause */}
         <button
           className="outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
