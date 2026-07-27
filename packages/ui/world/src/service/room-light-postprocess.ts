@@ -178,66 +178,6 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
 
   return {
     roomLightingEnabled,
-    setRoomLightingEnabled(isEnabled) {
-      roomLightingEnabled.value = isEnabled ? 1 : 0;
-    },
-    update(camera) {
-      // ensure matrixWorld reflects this frame's position/orientation, not last frame's
-      camera.updateMatrixWorld();
-      camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
-      camWorldMatrix.value.copy(camera.matrixWorld);
-      camPosition.value.copy(camera.position);
-      // assumes a perspective camera (always true in this project) — needed to invert log depth
-      const perspectiveCam = camera as THREE.PerspectiveCamera;
-      camNear.value = perspectiveCam.near;
-      camFar.value = perspectiveCam.far;
-    },
-    syncGms(gms, gmsData) {
-      // gmIds as texture for lookup in shader
-      const grid = createGmIdGridTexture(gms);
-      texGmIdData.fill(0);
-      for (let y = 0; y < grid.height; y++) {
-        const src = grid.data.subarray(y * grid.width * 4, y * grid.width * 4 + grid.width * 4);
-        texGmIdData.set(src, y * gmGridMaxDim * 4);
-      }
-      texGmId.needsUpdate = true;
-      gmGridOrigin.value.set(grid.originX, grid.originY);
-
-      // room outlines as texture for lookup in shader
-      // - precomputed in `gmsData.byKey[gm.key].roomMaskCt`
-      for (let i = 0; i < MAX_GEOMORPH_INSTANCES; i++) {
-        const gm = gms[i];
-        if (!gm) {
-          gmInv1Values[i].set(1, 0, 0, 1);
-          gmInv2Values[i].set(0, 0, 0, 0);
-          gmLayoutIdxValues[i] = 0;
-          continue;
-        }
-
-        const { a, b, c, d, e, f } = gm.inverseMatrix;
-        gmInv1Values[i].set(a, b, c, d);
-        gmInv2Values[i].set(e, f, gm.bounds.x, gm.bounds.y);
-
-        let layoutIndex = gmKeyToLayoutIndex.get(gm.key);
-        if (layoutIndex === undefined) {
-          layoutIndex = gmKeyToLayoutIndex.size;
-          gmKeyToLayoutIndex.set(gm.key, layoutIndex);
-          uploadRoomMaskLayer(layoutIndex, gmsData.byKey[gm.key].roomMaskCt);
-        }
-        gmLayoutIdxValues[i] = layoutIndex;
-      }
-
-      roomLitValues.fill(0);
-    },
-    setRoomLit(gmId, roomId, lit) {
-      roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = lit ? 1 : 0;
-    },
-    isRoomLit(gmId, roomId) {
-      return roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] === 1;
-    },
-    resetAllRooms() {
-      roomLitValues.fill(0);
-    },
     getLitRoomPairs() {
       const pairs: [number, number][] = [];
       roomLitValues.forEach((lit, i) => {
@@ -247,11 +187,8 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       });
       return pairs;
     },
-    setRoomLitPairs(pairs) {
-      roomLitValues.fill(0);
-      for (const [gmId, roomId] of pairs) {
-        roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = 1;
-      }
+    isRoomLit(gmId, roomId) {
+      return roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] === 1;
     },
     litAmount(sceneDepth) {
       return Fn(() => {
@@ -298,6 +235,70 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
         // when room-lighting is disabled, pretend no room is ever lit
         return roomLightingEnabled.equal(0).select(float(0), result);
       })();
+    },
+    resetAllRooms() {
+      roomLitValues.fill(0);
+    },
+    setRoomLightingEnabled(isEnabled) {
+      roomLightingEnabled.value = isEnabled ? 1 : 0;
+    },
+    setRoomLit(gmId, roomId, lit) {
+      roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = lit ? 1 : 0;
+    },
+    setRoomLitPairs(pairs) {
+      roomLitValues.fill(0);
+      for (const [gmId, roomId] of pairs) {
+        roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = 1;
+      }
+    },
+    syncGms(gms, gmsData) {
+      // gmIds as texture for lookup in shader
+      const grid = createGmIdGridTexture(gms);
+      texGmIdData.fill(0);
+      for (let y = 0; y < grid.height; y++) {
+        const src = grid.data.subarray(y * grid.width * 4, y * grid.width * 4 + grid.width * 4);
+        texGmIdData.set(src, y * gmGridMaxDim * 4);
+      }
+      texGmId.needsUpdate = true;
+      gmGridOrigin.value.set(grid.originX, grid.originY);
+
+      // room outlines as texture for lookup in shader
+      // - precomputed in `gmsData.byKey[gm.key].roomMaskCt`
+      for (let i = 0; i < MAX_GEOMORPH_INSTANCES; i++) {
+        const gm = gms[i];
+        if (!gm) {
+          gmInv1Values[i].set(1, 0, 0, 1);
+          gmInv2Values[i].set(0, 0, 0, 0);
+          gmLayoutIdxValues[i] = 0;
+          continue;
+        }
+
+        const { a, b, c, d, e, f } = gm.inverseMatrix;
+        gmInv1Values[i].set(a, b, c, d);
+        gmInv2Values[i].set(e, f, gm.bounds.x, gm.bounds.y);
+
+        let layoutIndex = gmKeyToLayoutIndex.get(gm.key);
+        if (layoutIndex === undefined) {
+          layoutIndex = gmKeyToLayoutIndex.size;
+          gmKeyToLayoutIndex.set(gm.key, layoutIndex);
+          uploadRoomMaskLayer(layoutIndex, gmsData.byKey[gm.key].roomMaskCt);
+        }
+        gmLayoutIdxValues[i] = layoutIndex;
+      }
+
+      roomLitValues.fill(0);
+    },
+
+    update(camera) {
+      // ensure matrixWorld reflects this frame's position/orientation, not last frame's
+      camera.updateMatrixWorld();
+      camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
+      camWorldMatrix.value.copy(camera.matrixWorld);
+      camPosition.value.copy(camera.position);
+      // assumes a perspective camera (always true in this project) — needed to invert log depth
+      const perspectiveCam = camera as THREE.PerspectiveCamera;
+      camNear.value = perspectiveCam.near;
+      camFar.value = perspectiveCam.far;
     },
   };
 }

@@ -496,6 +496,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(postProcessingEnabledKey, String(next));
         state.forceUpdate();
       },
+      setRoomLit(groundPoint, next) {
+        const gmRoomId = w.e.findRoomContaining(groundPoint, true);
+        if (!gmRoomId) {
+          return;
+        }
+        if (state.isRoomLightingDisallowed(gmRoomId)) {
+          return;
+        }
+
+        const { gmId, roomId } = gmRoomId;
+        const nextLit = next ?? !state.roomLight.isRoomLit(gmId, roomId);
+        state.roomLight.setRoomLit(gmId, roomId, nextLit);
+
+        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
@@ -564,21 +581,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
         tryLocalStorageSet(roomLightEditingEnabledKey, String(state.roomLightEditingEnabled));
         w.update();
-      },
-      toggleRoomLit(groundPoint) {
-        const gmRoomId = w.e.findRoomContaining(groundPoint, true);
-        if (!gmRoomId) {
-          return;
-        }
-        if (state.isRoomLightingDisallowed(gmRoomId)) {
-          return;
-        }
-        const { gmId, roomId } = gmRoomId;
-        const nextLit = !state.roomLight.isRoomLit(gmId, roomId);
-        state.roomLight.setRoomLit(gmId, roomId, nextLit);
-        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
-        state.setPostProcessingEnabled(true);
-        state.forceUpdate();
       },
       updateDynamicLight(rawTarget) {
         state.dynamicLight.displayCenter.copy(rawTarget);
@@ -754,7 +756,7 @@ export type State = {
   /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit lighting at all */
   isRoomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
   /** Toggles whether `gmRoomId`'s room is lit, unless lighting isn't permitted there (see `roomLightingDisallowed`) */
-  toggleRoomLit(groundCenter: Geom.VectJson): void;
+  setRoomLit(groundCenter: Geom.VectJson, next?: boolean): void;
   /** Clears every lit room */
   resetAllRooms(): void;
   /** Debounced resize + key events */
