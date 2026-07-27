@@ -97,7 +97,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
-        topHeight: wallHeight + 0.05,
+        topHeight: wallHeight - 0.01,
       }),
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
@@ -606,7 +606,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, dimWorldColor: false, roomLight: true, dynamicLight: false } },
+    { reset: { ctrlOpts: true, initial: false, dimWorldColor: false, roomLight: true, dynamicLight: true } },
   );
 
   w.view = state;
