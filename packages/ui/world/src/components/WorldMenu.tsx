@@ -384,18 +384,20 @@ export function WorldMenu() {
                       onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
                     >
                       <div>camera: {w.view.cameraMode}</div>
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}
-                      >
-                        <MenuSelect
-                          side="bottom"
-                          value={String(w.view.numCardinalDirections)}
-                          items={cardinalDirItems}
-                          onValueChange={(v) => {
-                            if (v) w.view.setNumCardinalDirections(Number(v));
-                          }}
-                        />
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
+                          <MenuSelect
+                            side="bottom"
+                            value={String(w.view.numCardinalDirections)}
+                            items={cardinalDirItems}
+                            onValueChange={(v) => {
+                              if (v) w.view.setNumCardinalDirections(Number(v));
+                            }}
+                          />
+                        </div>
+                        <span title="reset camera" onClick={() => w.view.resetCamera()}>
+                          <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
+                        </span>
                       </div>
                     </Menu.Item>
                   )}

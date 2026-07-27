@@ -74,11 +74,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
       },
-      initial: tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? {
-        azimuthal: w.touchDevice ? 0 : Math.PI / 4,
-        polar: Math.PI / 4,
-        position: { x: 4, y: w.touchDevice ? 10 : 16, z: 4 },
-      },
+      initial:
+        tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? defaultInitialCamera(w.touchDevice),
       lastCameraReading: { azimuthal: 0, polar: 0, position: { x: 0, y: 0, z: 0 } },
       lastPointer: {
         epochMs: 0,
@@ -452,6 +449,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.set({ cameraMode });
         w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
       },
+      resetCamera() {
+        const initial = defaultInitialCamera(w.touchDevice);
+        state.initial = initial;
+        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(initial));
+        if (state.controls) {
+          state.controls.target.set(initial.position.x, 0, initial.position.z);
+          const delta = new THREE.Vector3().setFromSphericalCoords(
+            initial.position.y,
+            initial.polar,
+            initial.azimuthal,
+          );
+          state.controls.object.position.copy(state.controls.target).add(delta);
+          state.controls.update();
+          w.r3f?.invalidate();
+        }
+      },
       setDynamicLightIntensity(next) {
         state.dynamicLight.setIntensity(next);
         state.setPostProcessingEnabled(true);
@@ -748,6 +761,8 @@ export type State = {
   setupDom(): () => void;
   setupLights(): void;
   setCameraMode(cameraMode: CameraModeType): void;
+  /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
+  resetCamera(): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
   /**
@@ -763,6 +778,14 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
+
+function defaultInitialCamera(touchDevice: boolean): State["initial"] {
+  return {
+    azimuthal: touchDevice ? 0 : Math.PI / 4,
+    polar: Math.PI / 4,
+    position: { x: 4, y: touchDevice ? 10 : 16, z: 4 },
+  };
+}
 
 function PostProcessing() {
   const w = useContext(WorldContext);
