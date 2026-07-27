@@ -139,7 +139,7 @@ export type DynamicLightPostprocess = {
 
 /** Ignores rooms, occludes only against baked wall/door textures via a fixed-step march. */
 export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts): DynamicLightPostprocess {
-  const falloff = opts.falloff ?? 0.5;
+  const falloff = opts.falloff ?? 0.7;
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
@@ -258,6 +258,11 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   }
 
   return {
+    debug: {
+      wallTex: wallTexArray,
+      bakedGmKeys: () => Array.from(bakedGmKeys),
+      activeGmKey: () => activeGmKeySet,
+    },
     displayCenter: new THREE.Vector3(),
     target: null,
     trackedNpcKey: null,
@@ -265,126 +270,54 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
     activeGmDoorInstanceIds: [],
     intensity: uniform(initialIntensity),
 
-    update(camera) {
-      camera.updateMatrixWorld();
-      camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
-      camWorldMatrix.value.copy(camera.matrixWorld);
-      camPosition.value.copy(camera.position);
-      const perspectiveCam = camera as THREE.PerspectiveCamera;
-      camNear.value = perspectiveCam.near;
-      camFar.value = perspectiveCam.far;
-    },
-    setTracked(center, radius) {
-      if (center === null) {
-        tracked.value.z = 0;
-      } else {
-        tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
-        if (radius !== undefined) {
-          effectiveRadius = radius;
-        }
-      }
-    },
-    setRadius(next) {
-      this.radius = next;
-      tryLocalStorageSet(dynamicLightRadiusKey, String(next));
-      if (this.target !== null) {
-        // instant, not animated — a slider drag should feel responsive; hull-door capping still applies
-        this.setTracked(
-          { x: this.displayCenter.x, z: this.displayCenter.z },
-          nearHullDoor ? Math.min(next, hullDoorwayRadius) : next,
-        );
-      }
-    },
-    setIntensity(next) {
-      this.intensity.value = next;
-      tryLocalStorageSet(dynamicLightIntensityKey, String(next));
-    },
-    setNearHullDoor(near) {
-      nearHullDoor = near;
-    },
-    tick(deltaSeconds) {
-      const targetRadius = Math.min(this.radius, nearHullDoor ? hullDoorwayRadius : this.radius);
-      const lerpAmt = Math.min(1, deltaSeconds * hullDoorwayLerpSpeed);
-      effectiveRadius += (targetRadius - effectiveRadius) * lerpAmt;
-      if (this.target !== null) {
-        tracked.value.w = effectiveRadius;
-      }
-    },
-    setGmWalls(gmKey, wallPolys, bounds) {
-      if (bakedGmKeys.has(gmKey)) {
-        return;
-      }
+    groundLitAmount(sceneDepth) {
+      return Fn(() => {
+        // always the floor-plane intersection — no per-pixel depth reconstruction, so this is a
+        // smooth, continuous function of screen position with no discontinuities from obstacles
+        const viewDirPoint = getViewPosition(screenUV, float(0.5), camProjectionMatrixInverse);
+        const worldDir = camWorldMatrix.mul(vec4(viewDirPoint, 0.0)).xyz.normalize();
+        const t = float(bottomHeight).sub(camPosition.y).div(worldDir.y);
+        const worldXZ = camPosition.add(worldDir.mul(t)).xz;
 
-      const texIndex = geomorphKeys.indexOf(gmKey);
-      if (texIndex === -1) {
-        return;
-      }
+        // still occlusion-aware: if something REAL (depth-writing) is nearer along this same ray
+        // than the floor point, it's standing in front of it — don't draw through it. Comparing
+        // distance-from-camera (not raw depth) works because both `t` and `viewPos.length()` are
+        // measured along the same normalized ray, so lengths are directly comparable.
+        const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
+        const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
+        const occludedByReal = float(0).toVar();
+        If(isBackground.not(), () => {
+          const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
+          const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
+          If(viewPos.length().lessThan(t), () => {
+            occludedByReal.assign(1);
+          });
+        });
 
-      bakedGmKeys.add(gmKey);
-      boundsByGmKey.set(gmKey, bounds);
+        const litOut = float(0).toVar();
+        If(tracked.z.notEqual(0).and(occludedByReal.equal(0)), () => {
+          const dist = worldXZ.sub(tracked.xy).length();
+          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
 
-      const { ct } = wallTexArray;
-      ct.resetTransform();
-      ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-      const scale = gmToTexScale(bounds);
-      ct.setTransform(scale, 0, 0, scale, -bounds.x * scale, -bounds.y * scale);
+          If(litVal.greaterThan(0), () => {
+            const maxOccupancy = float(0).toVar();
+            Loop(marchSteps, ({ i }) => {
+              const t2 = float(i).add(1).div(float(marchSteps));
+              const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t2));
+              const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t2));
+              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
+              If(maxOccupancy.greaterThanEqual(0.75), () => {
+                maxOccupancy.assign(1);
+                Break();
+              });
+            });
 
-      drawPolygons(ct, wallPolys, { fillStyle: "white", strokeStyle: null });
-      // drawPolygons(ct, wallPolys.flatMap((poly) =>
-      //   poly.meta.broad ? geomService.createInset(poly, 0.05) : poly,
-      // ), { fillStyle: "white", strokeStyle: null });
+            litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
+          });
+        });
 
-      wallTexArray.updateIndex(texIndex);
-      combinedTex.textureNeedsUpdate = true;
-    },
-    setActiveGm(gmKey, matrix) {
-      const layerIndex = geomorphKeys.indexOf(gmKey);
-      const bounds = boundsByGmKey.get(gmKey);
-      if (layerIndex === -1 || !bounds) {
-        return; // not yet baked
-      }
-      activeOrigin.value.set(bounds.x, bounds.y, gmToTexScale(bounds), layerIndex);
-      const inv = matrix.getInverseMatrix();
-      // biome-ignore format: row-major (a,c,e / b,d,f / 0,0,1)
-      activeInverseTransform.value.set(inv.a, inv.c, inv.e, inv.b, inv.d, inv.f, 0, 0, 1);
-      activeGmKeySet = gmKey;
-      combinedTex.textureNeedsUpdate = true;
-    },
-    setActiveGmDoors(gmKey, doors) {
-      if (gmKey === lastActiveDoorsGmKey) {
-        return; // door list for a gmKey is static — nothing changed
-      }
-      lastActiveDoorsGmKey = gmKey;
-      activeDoorCount = Math.min(doors.length, maxActiveDoors);
-      for (let i = 0; i < activeDoorCount; i++) {
-        const { seg, gapAtHighLambda } = doors[i];
-        // orient so the passable gap always grows a->b
-        const [a, b] = gapAtHighLambda ? [seg[1], seg[0]] : [seg[0], seg[1]];
-        doorSegs[i].set(a.x, a.y, b.x, b.y);
-      }
-      // -1 marks every slot inactive until the next setActiveGmDoorRatios call
-      doorOpenRatioValues.fill(-1);
-      lastDoorRatios = new Array(maxActiveDoors).fill(-1);
-      this.activeGmDoorInstanceIds = doors.slice(0, activeDoorCount).map((d) => d.instanceId);
-      combinedTex.textureNeedsUpdate = true;
-    },
-    setActiveGmDoorRatios(ratios) {
-      let changed = false;
-      for (let i = 0; i < activeDoorCount; i++) {
-        if (Math.abs((ratios[i] ?? 0) - lastDoorRatios[i]) > 0.01) {
-          changed = true;
-          break;
-        }
-      }
-      if (!changed) {
-        return;
-      }
-      for (let i = 0; i < activeDoorCount; i++) {
-        const ratio = ratios[i] ?? 0;
-        lastDoorRatios[i] = ratio;
-        doorOpenRatioValues[i] = ratio;
-      }
-      combinedTex.textureNeedsUpdate = true;
+        return litOut;
+      })();
     },
     litAmount(sceneDepth) {
       return Fn(() => {
@@ -441,59 +374,126 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         return litOut;
       })();
     },
-    groundLitAmount(sceneDepth) {
-      return Fn(() => {
-        // always the floor-plane intersection — no per-pixel depth reconstruction, so this is a
-        // smooth, continuous function of screen position with no discontinuities from obstacles
-        const viewDirPoint = getViewPosition(screenUV, float(0.5), camProjectionMatrixInverse);
-        const worldDir = camWorldMatrix.mul(vec4(viewDirPoint, 0.0)).xyz.normalize();
-        const t = float(bottomHeight).sub(camPosition.y).div(worldDir.y);
-        const worldXZ = camPosition.add(worldDir.mul(t)).xz;
-
-        // still occlusion-aware: if something REAL (depth-writing) is nearer along this same ray
-        // than the floor point, it's standing in front of it — don't draw through it. Comparing
-        // distance-from-camera (not raw depth) works because both `t` and `viewPos.length()` are
-        // measured along the same normalized ray, so lengths are directly comparable.
-        const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
-        const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
-        const occludedByReal = float(0).toVar();
-        If(isBackground.not(), () => {
-          const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
-          const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
-          If(viewPos.length().lessThan(t), () => {
-            occludedByReal.assign(1);
-          });
-        });
-
-        const litOut = float(0).toVar();
-        If(tracked.z.notEqual(0).and(occludedByReal.equal(0)), () => {
-          const dist = worldXZ.sub(tracked.xy).length();
-          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
-
-          If(litVal.greaterThan(0), () => {
-            const maxOccupancy = float(0).toVar();
-            Loop(marchSteps, ({ i }) => {
-              const t2 = float(i).add(1).div(float(marchSteps));
-              const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t2));
-              const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t2));
-              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
-              If(maxOccupancy.greaterThanEqual(0.75), () => {
-                maxOccupancy.assign(1);
-                Break();
-              });
-            });
-
-            litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
-          });
-        });
-
-        return litOut;
-      })();
+    setActiveGm(gmKey, matrix) {
+      const layerIndex = geomorphKeys.indexOf(gmKey);
+      const bounds = boundsByGmKey.get(gmKey);
+      if (layerIndex === -1 || !bounds) {
+        return; // not yet baked
+      }
+      activeOrigin.value.set(bounds.x, bounds.y, gmToTexScale(bounds), layerIndex);
+      const inv = matrix.getInverseMatrix();
+      // biome-ignore format: row-major (a,c,e / b,d,f / 0,0,1)
+      activeInverseTransform.value.set(inv.a, inv.c, inv.e, inv.b, inv.d, inv.f, 0, 0, 1);
+      activeGmKeySet = gmKey;
+      combinedTex.textureNeedsUpdate = true;
     },
-    debug: {
-      wallTex: wallTexArray,
-      bakedGmKeys: () => Array.from(bakedGmKeys),
-      activeGmKey: () => activeGmKeySet,
+    setActiveGmDoors(gmKey, doors) {
+      if (gmKey === lastActiveDoorsGmKey) {
+        return; // door list for a gmKey is static — nothing changed
+      }
+      lastActiveDoorsGmKey = gmKey;
+      activeDoorCount = Math.min(doors.length, maxActiveDoors);
+      for (let i = 0; i < activeDoorCount; i++) {
+        const { seg, gapAtHighLambda } = doors[i];
+        // orient so the passable gap always grows a->b
+        const [a, b] = gapAtHighLambda ? [seg[1], seg[0]] : [seg[0], seg[1]];
+        doorSegs[i].set(a.x, a.y, b.x, b.y);
+      }
+      // -1 marks every slot inactive until the next setActiveGmDoorRatios call
+      doorOpenRatioValues.fill(-1);
+      lastDoorRatios = new Array(maxActiveDoors).fill(-1);
+      this.activeGmDoorInstanceIds = doors.slice(0, activeDoorCount).map((d) => d.instanceId);
+      combinedTex.textureNeedsUpdate = true;
+    },
+    setActiveGmDoorRatios(ratios) {
+      let changed = false;
+      for (let i = 0; i < activeDoorCount; i++) {
+        if (Math.abs((ratios[i] ?? 0) - lastDoorRatios[i]) > 0.01) {
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) {
+        return;
+      }
+      for (let i = 0; i < activeDoorCount; i++) {
+        const ratio = ratios[i] ?? 0;
+        lastDoorRatios[i] = ratio;
+        doorOpenRatioValues[i] = ratio;
+      }
+      combinedTex.textureNeedsUpdate = true;
+    },
+    setGmWalls(gmKey, wallPolys, bounds) {
+      if (bakedGmKeys.has(gmKey)) {
+        return;
+      }
+
+      const texIndex = geomorphKeys.indexOf(gmKey);
+      if (texIndex === -1) {
+        return;
+      }
+
+      bakedGmKeys.add(gmKey);
+      boundsByGmKey.set(gmKey, bounds);
+
+      const { ct } = wallTexArray;
+      ct.resetTransform();
+      ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+      const scale = gmToTexScale(bounds);
+      ct.setTransform(scale, 0, 0, scale, -bounds.x * scale, -bounds.y * scale);
+
+      drawPolygons(ct, wallPolys, { fillStyle: "white", strokeStyle: null });
+      // drawPolygons(ct, wallPolys.flatMap((poly) =>
+      //   poly.meta.broad ? geomService.createInset(poly, 0.05) : poly,
+      // ), { fillStyle: "white", strokeStyle: null });
+
+      wallTexArray.updateIndex(texIndex);
+      combinedTex.textureNeedsUpdate = true;
+    },
+    setIntensity(next) {
+      this.intensity.value = next;
+      tryLocalStorageSet(dynamicLightIntensityKey, String(next));
+    },
+    setNearHullDoor(near) {
+      nearHullDoor = near;
+    },
+    setRadius(next) {
+      this.radius = next;
+      tryLocalStorageSet(dynamicLightRadiusKey, String(next));
+      if (this.target !== null) {
+        // instant, not animated — a slider drag should feel responsive; hull-door capping still applies
+        this.setTracked(
+          { x: this.displayCenter.x, z: this.displayCenter.z },
+          nearHullDoor ? Math.min(next, hullDoorwayRadius) : next,
+        );
+      }
+    },
+    setTracked(center, radius) {
+      if (center === null) {
+        tracked.value.z = 0;
+      } else {
+        tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
+        if (radius !== undefined) {
+          effectiveRadius = radius;
+        }
+      }
+    },
+    tick(deltaSeconds) {
+      const targetRadius = Math.min(this.radius, nearHullDoor ? hullDoorwayRadius : this.radius);
+      const lerpAmt = Math.min(1, deltaSeconds * hullDoorwayLerpSpeed);
+      effectiveRadius += (targetRadius - effectiveRadius) * lerpAmt;
+      if (this.target !== null) {
+        tracked.value.w = effectiveRadius;
+      }
+    },
+    update(camera) {
+      camera.updateMatrixWorld();
+      camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
+      camWorldMatrix.value.copy(camera.matrixWorld);
+      camPosition.value.copy(camera.position);
+      const perspectiveCam = camera as THREE.PerspectiveCamera;
+      camNear.value = perspectiveCam.near;
+      camFar.value = perspectiveCam.far;
     },
   };
 }
