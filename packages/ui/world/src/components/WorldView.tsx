@@ -106,6 +106,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         topHeight: wallHeight - 0.01, // avoid ceiling aliasing
         marchSteps: w.touchDevice ? 48 : 96,
       }),
+      // lives outside `dynamicLight` (not in the `reset` config below) so it survives that
+      // object's HMR-triggered reset — re-applied via the effect right after this component's state
+      dynamicLightTarget: null,
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
 
       async createRenderer(props) {
@@ -621,6 +624,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     state.setupLights();
   }, [w.hash, w.gmsData, w.mapKey]);
 
+  useEffect(() => {
+    // `dynamicLight` is fully rebuilt on HMR (see `reset` below) — `dynamicLightTarget` survives
+    // that reset (it's not listed there), so re-apply tracking onto the freshly-built instance.
+    if (state.dynamicLightTarget !== null) {
+      w.npc.trackNpc(state.dynamicLightTarget.npcKey);
+    }
+  }, [state.dynamicLight]);
+
   return (
     <div className="size-full">
       <Canvas
@@ -722,6 +733,8 @@ export type State = {
   /** `1` in light-theme (else `0`) — gates the dynamic light's overlay, kept in sync in `setAmbientIntensity` */
   lightThemeAmount: THREE.UniformNode<"float", number>;
   dynamicLight: DynamicLightPostprocess;
+  /** Set by `w.npc.trackNpc`; `position` is a live reference (e.g. `npc.position`), not a snapshot. `null` means off. Lives outside `dynamicLight` so it survives that object's HMR reset (see the re-hydration effect in `WorldView`). */
+  dynamicLightTarget: null | { npcKey: string; position: { x: number; y: number; z: number } };
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
@@ -740,7 +753,7 @@ export type State = {
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
-  /** Advances `dynamicLight.displayCenter` from a live target — called every tick from `World`'s `onTick` while `dynamicLight.target` is set (see `w.npc.trackNpc`) */
+  /** Advances `dynamicLight.displayCenter` from a live target — called every tick from `World`'s `onTick` while `dynamicLightTarget` is set (see `w.npc.trackNpc`) */
   updateDynamicLight(rawTarget: { x: number; y: number; z: number }): void;
   toggleRoomLightEditing(): void;
   /** Toggles `roomLight.roomLightingEnabled` — persisted to localStorage */

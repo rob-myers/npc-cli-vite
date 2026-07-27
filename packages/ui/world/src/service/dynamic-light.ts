@@ -53,10 +53,6 @@ export type DynamicLightPostprocessOpts = {
 export type DynamicLightPostprocess = {
   /** Live reference of the world position this light follows; `null` deactivates it */
   displayCenter: THREE.Vector3;
-  /** Set by `w.npc.trackNpc`; a live reference (e.g. `npc.position`), not a snapshot. `null` means off. */
-  target: null | { x: number; y: number; z: number };
-  /** Set by `w.npc.trackNpc`; lets `"enter-room"`/`"spawned"` know which npc's gm-transitions should refresh this light */
-  trackedNpcKey: null | string;
   /** Persisted radius, settable via `setRadius` */
   radius: number;
   /** Encoded (gmId, doorId) of every door in the tracked npc's current gm instance, written by `setActiveGmDoors` */
@@ -139,7 +135,7 @@ export type DynamicLightPostprocess = {
 
 /** Ignores rooms, occludes only against baked wall/door textures via a fixed-step march. */
 export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts): DynamicLightPostprocess {
-  const falloff = opts.falloff ?? 0.7;
+  const falloff = opts.falloff ?? 0.6;
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
@@ -264,8 +260,6 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
       activeGmKey: () => activeGmKeySet,
     },
     displayCenter: new THREE.Vector3(),
-    target: null,
-    trackedNpcKey: null,
     radius: initialRadius,
     activeGmDoorInstanceIds: [],
     intensity: uniform(initialIntensity),
@@ -460,7 +454,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
     setRadius(next) {
       this.radius = next;
       tryLocalStorageSet(dynamicLightRadiusKey, String(next));
-      if (this.target !== null) {
+      if (tracked.value.z !== 0) {
         // instant, not animated — a slider drag should feel responsive; hull-door capping still applies
         this.setTracked(
           { x: this.displayCenter.x, z: this.displayCenter.z },
@@ -482,7 +476,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
       const targetRadius = Math.min(this.radius, nearHullDoor ? hullDoorwayRadius : this.radius);
       const lerpAmt = Math.min(1, deltaSeconds * hullDoorwayLerpSpeed);
       effectiveRadius += (targetRadius - effectiveRadius) * lerpAmt;
-      if (this.target !== null) {
+      if (tracked.value.z !== 0) {
         tracked.value.w = effectiveRadius;
       }
     },

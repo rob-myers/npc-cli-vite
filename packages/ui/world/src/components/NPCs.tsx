@@ -541,8 +541,7 @@ export default function NPCs() {
       },
       trackNpc(npcKey) {
         if (!npcKey) {
-          w.view.dynamicLight.trackedNpcKey = null;
-          w.view.dynamicLight.target = null;
+          w.view.dynamicLightTarget = null;
           w.view.dynamicLight.setTracked(null);
           w.view.forceUpdate();
           return;
@@ -555,8 +554,7 @@ export default function NPCs() {
           throw Error(`npc ${npc.key} must be in some room`);
         }
 
-        w.view.dynamicLight.trackedNpcKey = npcKey;
-        w.view.dynamicLight.target = npc.position;
+        w.view.dynamicLightTarget = { npcKey, position: npc.position };
         // preserve the current radius, rather than resetting to default
         w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.dynamicLight.radius);
 
