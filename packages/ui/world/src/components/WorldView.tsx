@@ -103,7 +103,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       }),
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
-      unlitFactor: uniform(persisted.getAmbientIntensity()),
+      unlitScale: uniform(persisted.getAmbientIntensity()),
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -427,7 +427,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setAmbientIntensity(next, persist = true) {
         state.ambientIntensity = next;
-        state.unlitFactor.value = next;
+        state.unlitScale.value = next;
         persist && tryLocalStorageSet(ambientIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
@@ -504,13 +504,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-        const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
+        const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(
+          vec3(1, 1, 0.8), // slightly yellow
+          sceneColor.a,
+        );
         const litEffect = Fn(() => {
           const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
           // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
           const isBright = state.roomLight.litAmount(sceneDepth.r).mul(state.roomLightIntensity).max(dynamicLitAmount);
-          const unlitAmount = float(1).sub(isBright);
-          return mix(brightColor, sceneColor.rgb.mul(state.unlitFactor), unlitAmount);
+          const unlitAmount = isBright.oneMinus();
+          return mix(brightColor, sceneColor.rgb.mul(state.unlitScale), unlitAmount);
         })();
 
         const pipeline = new THREE.RenderPipeline(gl);
@@ -690,7 +693,7 @@ export type State = {
   roomLightEditingEnabled: boolean;
   /** Persisted, user-controlled brightness of a lit room (0..1) — see `defaultRoomLightIntensity` */
   roomLightIntensity: THREE.UniformNode<"float", number>;
-  unlitFactor: THREE.UniformNode<"float", number>;
+  unlitScale: THREE.UniformNode<"float", number>;
   /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
   ambientIntensity: number;
   dynamicLight: DynamicLightPostprocess;

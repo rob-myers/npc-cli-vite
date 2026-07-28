@@ -68,7 +68,7 @@ export type RoomLightPostprocess = {
   litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
 };
 
-/** Resolution (px) of the baked per-gmKey room-mask texture — matches `DerivedGmsData`'s `roomHitCt` */
+/** Resolution of baked per-gmKey room-mask texture (same as `roomHitCt`) */
 const roomMaskDim = Math.round(floorTextureDimension * roomHitTextureScaleDown);
 
 /**
@@ -102,7 +102,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
   const roomLightingEnabled = uniform((opts.roomLightingEnabled ?? true) ? 1 : 0);
 
   // "which gm instance is here" — one texel per gmIdGridDim-sized cell, R = gmId + 1 (0 = none).
-  // 🔔 fixed-size buffer, never resized after creation — swapping `.image` for a differently-sized
+  // fixed-size buffer, never resized after creation — swapping `.image` for a differently-sized
   // one does NOT reallocate the underlying GPU texture (causes a "touches outside of texture"
   // WriteTexture error), so instead we always write into a subregion of one generously-sized
   // (64x64 cells, ~960m per side at gmIdGridDim=15m) fixed buffer, same idiom as `texRoomMask`.
@@ -133,7 +133,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
   const roomLitValues = new Array<number>(MAX_GEOMORPH_INSTANCES * MAX_ROOMS_PER_GM).fill(0);
   const roomLit = uniformArray<"float">(roomLitValues, "float");
 
-  /** Given a fragment's world XZ, returns `1` if its room is lit, else `0` (hard binary, no fade) */
+  /** Given a fragment's world XZ, returns `1` iff room is lit */
   function sampleRoomLit(worldXZ: THREE.Node<"vec2">): THREE.Node<"float"> {
     const cellX = worldXZ.x.div(gmIdGridDim).floor().sub(gmGridOrigin.x);
     const cellY = worldXZ.y.div(gmIdGridDim).floor().sub(gmGridOrigin.y);
@@ -152,7 +152,7 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
       const localY = inv1.y.mul(worldXZ.x).add(inv1.w.mul(worldXZ.y)).add(inv2.y);
 
       // local -> room-mask uv, mirroring DerivedGmsData's roomHitCt/roomMaskCt transform.
-      // 🔔 divide by `floorTextureDimension`, NOT `roomMaskDim` — canvasPixel = (local-bounds) *
+      // divide by `floorTextureDimension`, NOT `roomMaskDim` — canvasPixel = (local-bounds) *
       // (roomHitTextureScaleDown * worldToCanvas), canvasSize = floorTextureDimension *
       // roomHitTextureScaleDown, so uv = canvasPixel/canvasSize = (local-bounds) * worldToCanvas
       // / floorTextureDimension once `roomHitTextureScaleDown` cancels — dividing by `roomMaskDim`
@@ -253,8 +253,8 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
     resetAllRooms() {
       roomLitValues.fill(0);
     },
-    setRoomLightingEnabled(isEnabled) {
-      roomLightingEnabled.value = isEnabled ? 1 : 0;
+    setRoomLightingEnabled(next) {
+      roomLightingEnabled.value = next ? 1 : 0;
     },
     setRoomLit(gmId, roomId, lit) {
       roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] = lit ? 1 : 0;
