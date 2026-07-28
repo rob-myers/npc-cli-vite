@@ -146,8 +146,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
 
   // darker thin rings overlaid on the light's falloff, so it doesn't read as a flat uniform disc
   const ringFrequency = 3; // rings per meter-ish — tune after viewing in-browser
-  const ringSharpness = 6; // higher = thinner dark bands
-  const ringStrength = 0.25; // max darkening at a ring's center (0 = no effect, 1 = fully black there)
+  const ringSharpness = 60; // higher = thinner dark bands
+  const ringStrength = 0.5; // max darkening at a ring's center (0 = no effect, 1 = fully black there)
 
   // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
   const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
@@ -226,8 +226,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   // so the light reads as textured/uneven rather than a flat uniform disc
   function applyRings(litVal: THREE.Node<"float">, dist: THREE.Node<"float">) {
     // 1 exactly at each ring center (dist * ringFrequency = kπ), falling off between rings
-    // const proximity = dist.mul(ringFrequency).sin().abs().oneMinus();
-    const proximity = dist.mul(ringFrequency).sin().abs();
+    const proximity = dist.mul(ringFrequency).sin().abs().oneMinus();
+    // const proximity = dist.mul(ringFrequency).sin().abs();
     const ringDarkness = proximity.max(0).pow(ringSharpness).mul(ringStrength);
     return litVal.mul(float(1).sub(ringDarkness));
   }
