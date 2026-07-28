@@ -504,10 +504,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
-        const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(
-          vec3(1, 1, 0.8), // slightly yellow
-          sceneColor.a,
-        );
+        const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
         const litEffect = Fn(() => {
           const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
           // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
