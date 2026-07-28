@@ -572,13 +572,3 @@ export function drawFloorGrid(
     }
   }
 }
-
-export const neutralAmbientDirection = new THREE.Vector3(1, 1, 1.125);
-
-export function computeDimWorldColor(intensity: number): THREE.Vector3 {
-  return new THREE.Vector3(
-    neutralAmbientDirection.x * intensity,
-    neutralAmbientDirection.y * intensity,
-    neutralAmbientDirection.z * intensity,
-  );
-}

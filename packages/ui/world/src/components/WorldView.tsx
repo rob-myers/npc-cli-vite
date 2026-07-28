@@ -42,7 +42,7 @@ import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geome
 import * as persisted from "../service/get-persisted";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
-import { computeDimWorldColor, type SelectAnyType } from "../service/texture";
+import type { SelectAnyType } from "../service/texture";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -53,14 +53,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   const state = useStateRef(
     (): State => ({
-      cameraMode: tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ?? defaultCameraMode,
-      numCardinalDirections:
+      ambientIntensity: persisted.getAmbientIntensity(),
+      canvas: null as any,
+      cameraDirections:
         tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ??
         (w.touchDevice ? defaultCardinalDirectionsMobile : defaultCardinalDirectionsDesktop),
-      canvas: null as any,
-      controls: null as any,
+      cameraMode: tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ?? defaultCameraMode,
       clickIds: [],
-      topDown: false,
+      controls: null as any,
       ctrlOpts: {
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
@@ -73,9 +73,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
       },
+      dynamicLight: createDynamicLightPostprocess({
+        bottomHeight: 0,
+        topHeight: wallHeight - 0.01, // avoid ceiling aliasing
+        marchSteps: w.touchDevice ? 48 : 96,
+      }),
+      dynamicLightTarget: null,
+      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
       initial:
         tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? defaultInitialCamera(w.touchDevice),
-      lastCameraReading: { azimuthal: 0, polar: 0, position: { x: 0, y: 0, z: 0 } },
       lastPointer: {
         epochMs: 0,
         longPressTimer: 0,
@@ -84,29 +90,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         down: new Vect(),
         rightPress: false,
       },
-      pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
-      raycaster: new THREE.Raycaster(),
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
+      pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      dimWorldColor: uniform(computeDimWorldColor(persisted.getAmbientIntensity())),
-      ambientIntensity: persisted.getAmbientIntensity(),
+      raycaster: new THREE.Raycaster(),
+      topDown: false,
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
         topHeight: wallHeight - 0.01,
       }),
-      roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
-      dynamicLight: createDynamicLightPostprocess({
-        bottomHeight: 0,
-        topHeight: wallHeight - 0.01, // avoid ceiling aliasing
-        marchSteps: w.touchDevice ? 48 : 96,
-      }),
-      // lives outside `dynamicLight` (not in the `reset` config below) so it survives that
-      // object's HMR-triggered reset — re-applied via the effect right after this component's state
-      dynamicLightTarget: null,
-      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
+      roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
+      unlitFactor: uniform(persisted.getAmbientIntensity()),
 
       async createRenderer(props) {
         // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
@@ -263,12 +260,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.dynamicLight.update(camera);
       },
       onCameraEnd() {
-        state.lastCameraReading.azimuthal = state.controls.spherical.theta;
-        state.lastCameraReading.polar = state.controls.spherical.phi;
-        state.lastCameraReading.position.x = state.controls.target.x;
-        state.lastCameraReading.position.y = state.controls.spherical.radius;
-        state.lastCameraReading.position.z = state.controls.target.z;
-        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(state.lastCameraReading));
+        const lastCameraReading: State["initial"] = {
+          azimuthal: state.controls.spherical.theta,
+          polar: state.controls.spherical.phi,
+          position: { x: state.controls.target.x, y: state.controls.spherical.radius, z: state.controls.target.z },
+        };
+        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(lastCameraReading));
       },
       onCreated(rootState) {
         w.threeReady = true;
@@ -430,7 +427,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setAmbientIntensity(next, persist = true) {
         state.ambientIntensity = next;
-        state.dimWorldColor.value.copy(computeDimWorldColor(next));
+        state.unlitFactor.value = next;
         persist && tryLocalStorageSet(ambientIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
@@ -479,7 +476,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setNumCardinalDirections(n) {
         tryLocalStorageSet(numCardinalDirectionsKey, String(n));
-        state.set({ numCardinalDirections: n });
+        state.set({ cameraDirections: n });
         w.update();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
@@ -513,7 +510,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
           const isBright = state.roomLight.litAmount(sceneDepth.r).mul(state.roomLightIntensity).max(dynamicLitAmount);
           const unlitAmount = float(1).sub(isBright);
-          return mix(brightColor, sceneColor.rgb.mul(state.dimWorldColor), unlitAmount);
+          return mix(brightColor, sceneColor.rgb.mul(state.unlitFactor), unlitAmount);
         })();
 
         const pipeline = new THREE.RenderPipeline(gl);
@@ -576,7 +573,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, dimWorldColor: false, roomLight: true, dynamicLight: true } },
+    { reset: { ctrlOpts: true, initial: false, roomLight: true, dynamicLight: true } },
   );
 
   w.view = state;
@@ -627,7 +624,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         <CameraControls
           ref={state.ref("controls")}
           cameraMode={state.cameraMode}
-          numCardinalDirections={state.numCardinalDirections}
+          numCardinalDirections={state.cameraDirections}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -666,7 +663,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
 export type State = {
   cameraMode: CameraModeType;
-  numCardinalDirections: number;
+  cameraDirections: number;
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -674,7 +671,6 @@ export type State = {
   ctrlOpts: MapControlsProps & { extraZoom?: number };
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
-  lastCameraReading: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   lastPointer: {
     epochMs: number;
     longPress: boolean;
@@ -694,7 +690,7 @@ export type State = {
   roomLightEditingEnabled: boolean;
   /** Persisted, user-controlled brightness of a lit room (0..1) — see `defaultRoomLightIntensity` */
   roomLightIntensity: THREE.UniformNode<"float", number>;
-  dimWorldColor: THREE.UniformNode<"vec3", THREE.Vector3>;
+  unlitFactor: THREE.UniformNode<"float", number>;
   /** Persisted magnitude backing `dimWorldColor` — see `defaultAmbientIntensity` */
   ambientIntensity: number;
   dynamicLight: DynamicLightPostprocess;
