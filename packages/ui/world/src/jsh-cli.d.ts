@@ -7,7 +7,6 @@ declare namespace JshCli {
     | ({ key: "door-locked" | "door-unlocked"; locked: boolean } & ReturnType<
         import("./components/Doors").State["decodeInstanceId"]
       >)
-    | { key: "change-theme" }
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
