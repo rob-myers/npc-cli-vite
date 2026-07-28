@@ -34,15 +34,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (closeNpcs === undefined) {
           return true;
         } else if (closeNpcs.inside.size > 0) {
-          return [...closeNpcs.inside].some((npcKey) => {
-            const distance = geomService.getPerpendicularDistanceSeg(door.src, door.dst, w.n[npcKey].point);
-            // console.log({ distance });
-            return distance > 0.2; // npc(s) using doorway
-          });
+          return false;
+        } else if (door.locked === true) {
+          return true; // can close when nothing inside
         } else if (closeNpcs.nearby.size === 0) {
-          return true;
-        } else if (door.auto === true && door.locked === false) {
-          return false; // nope: npc(s) trigger sensor
+          return true; // can close when nothing nearby
         }
         return true;
       },
