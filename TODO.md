@@ -22,7 +22,8 @@
   - `decor at:...`
   - `decor near:...`
   - can specify exact e.g. check obstacle outline contains
-- auto unlocked door cannot close on npc just exit doorway
+
+- ✅ auto unlocked door cannot close on npc just exit doorway
   - does not happen if we move again
 
 - ✅ BUG decor hmr onchange decor/foo.svg
