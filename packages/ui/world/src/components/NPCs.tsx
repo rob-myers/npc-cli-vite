@@ -318,7 +318,6 @@ export default function NPCs() {
 
         npc.anim.startMoving(groundPoint, result, arrive);
 
-        // w.events.next({ key: "started-moving", npcKey });
         state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
 
         try {

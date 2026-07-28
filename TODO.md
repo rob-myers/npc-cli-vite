@@ -18,6 +18,11 @@
     - modify dark-theme via top-level slider instead
   - ✅ outlines include all doors
 
+- 🚧 refine unreachable nav via locked door
+  - ✅ do not go right up to locked door
+  - ✅ more robust: fallback to centroid
+  - avoid jerky animation when immediately fail
+
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`
   - `decor near:...`
