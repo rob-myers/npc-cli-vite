@@ -106,6 +106,13 @@ export function WorldSpeech() {
         tryLocalStorageSet(heightStorageKey(w.id), `${state.historyHeight}`);
         tryLocalStorageSet(widthStorageKey(w.id), `${state.historyWidth}`);
       },
+      onTick(delta) {
+        // ticks only advance while the world is unpaused (see World.tsx), so this doesn't drain
+        // away in real-time while paused
+        const n = state.toasts.length;
+        state.toasts = state.toasts.filter((t) => (t.secs -= delta) > 0);
+        if (state.toasts.length !== n) state.update();
+      },
       say(npcKey, words, secs) {
         const epochMs = Date.now();
         const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs };
@@ -113,14 +120,8 @@ export function WorldSpeech() {
         state.history.push(entry);
         if (state.history.length > maxHistory) state.history.shift();
 
-        state.toasts.push(entry);
+        state.toasts.push({ ...entry, secs: secs ?? defaultToastSecs });
         state.update();
-
-        const delayMs = typeof secs === "number" ? secs * 1000 : defaultToastMs;
-        setTimeout(() => {
-          state.toasts = state.toasts.filter(({ id }) => id !== entry.id);
-          state.update();
-        }, delayMs);
 
         w.events.next({ key: "speech", npcKey, words, epochMs });
       },
@@ -243,7 +244,7 @@ export function WorldSpeech() {
             <motion.div
               key={id}
               className={cn(
-                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5 max-w-md text-center",
+                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-sm p-3 py-1.5 max-w-md text-center",
                 big && "text-sm px-3 py-1.5 max-w-lg",
               )}
               initial={{ opacity: 0, y: 8 }}
@@ -252,7 +253,7 @@ export function WorldSpeech() {
               transition={{ duration: 0.2 }}
             >
               <span className="shrink-0 font-medium text-sky-300">{npcKey}:</span>
-              <span className="break-words">{words}</span>
+              <span className="wrap-break-word">{words}</span>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -274,7 +275,8 @@ export type State = {
   history: SpeechEntry[];
   minY: number;
   nextId: number;
-  toasts: SpeechEntry[];
+  /** `secs` ticks down in `onTick` (see `World`'s `onTick`) — only while the world is unpaused */
+  toasts: (SpeechEntry & { secs: number })[];
   y: number;
   /** Height (px) of the scrollable history list — resizable, persisted */
   historyHeight: number;
@@ -288,6 +290,8 @@ export type State = {
   getClampedHistoryHeight(height: number): number;
   getMaxHistoryWidth(): number;
   getClampedHistoryWidth(width: number): number;
+  /** Ticks down each toast's `secs`, removing expired ones — called from `World`'s `onTick` while unpaused */
+  onTick(delta: number): void;
   onResize(): void;
   onResizeMouseDown(e: React.MouseEvent): void;
   onResizeTouchStart(e: React.TouchEvent): void;
@@ -302,4 +306,4 @@ const widthStorageKey = (id: string) => `world-speech-history-width-${id}`;
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
-const defaultToastMs = 4000;
+const defaultToastSecs = 4;
