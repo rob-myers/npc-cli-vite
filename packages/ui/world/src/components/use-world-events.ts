@@ -154,10 +154,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       onBootstrapEvents() {
-        state.onChangeTheme();
-      },
-      onChangeTheme() {
-        w.view.setAmbientIntensity(w.view.dynamicLightTarget === null ? 0.4 : persisted.getAmbientIntensity());
+        w.view.setAmbientIntensity(
+          w.view.dynamicLightTarget === null
+            ? Math.max(persisted.getAmbientIntensity(), 0.4)
+            : persisted.getAmbientIntensity(),
+        );
         w.obs.setBrightness(w.getTheme().obstacles.brightness);
         w.door.setBrightness(w.getTheme().doors.brightness);
       },
@@ -166,10 +167,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return state.onNpcEvent(e);
         }
         switch (e.key) {
-          case "change-theme": {
-            state.onChangeTheme();
-            break;
-          }
           case "door-open":
             state.doorOpen[e.gdKey] = true;
             break;
@@ -742,7 +739,6 @@ export type State = {
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   onBootstrapEvents(): void;
-  onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
