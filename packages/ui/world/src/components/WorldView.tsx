@@ -251,14 +251,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
-      isRoomLightingDisallowed(gmRoomId) {
-        const roomDecor = w.decor.byRoom[gmRoomId.gmId]?.[gmRoomId.roomId];
-        // ≤ 1 or 1st takes precedence
-        const decorLabel = roomDecor
-          ?.values()
-          .find((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.label === "string");
-        return decorLabel === undefined || decorLabel.meta.label === "corridor" || decorLabel.meta.unlit === true;
-      },
       onCameraChange(spherical: THREE.Spherical, _target: THREE.Vector3) {
         const topDown = spherical.phi <= 2 * (Math.PI / 18);
         if (topDown !== state.topDown) {
@@ -500,9 +492,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (!gmRoomId) {
           return;
         }
-        if (state.isRoomLightingDisallowed(gmRoomId)) {
-          return;
-        }
 
         const { gmId, roomId } = gmRoomId;
         const nextLit = next ?? !state.roomLight.isRoomLit(gmId, roomId);
@@ -742,8 +731,6 @@ export type State = {
   setDynamicLightIntensity(next: number): void;
   /** Sets the world's ambient tint magnitude (persisted) — see `defaultAmbientIntensity` */
   setAmbientIntensity(next: number, persist?: boolean): void;
-  /** No labelled decor point, or a labelled point with `meta.corridor === true` / `meta.unlit === true` — such rooms don't permit lighting at all */
-  isRoomLightingDisallowed(gmRoomId: Geomorph.GmRoomId): boolean;
   /** Toggles whether `gmRoomId`'s room is lit, unless lighting isn't permitted there (see `roomLightingDisallowed`) */
   setRoomLit(groundCenter: Geom.VectJson, next?: boolean): void;
   /** Clears every lit room */
