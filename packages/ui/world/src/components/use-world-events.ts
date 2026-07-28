@@ -51,18 +51,35 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         const npcResult = state.findPath(grId.grKey, dstGrId.grKey, { npcKey: npc.key });
-        if (npcResult.success) {
+        if (npcResult.success === true) {
           return null;
         }
 
         // when astar fails find a good prefix
         const unblockedResult = state.findPath(grId.grKey, dstGrId.grKey);
-        const firstBadDoor = unblockedResult.path.find(
-          (node): node is Graph.GmRoomGraphNodeDoor =>
-            node.type === "door" && state.npcCanAccess(npc.key, node.gdKey) === false,
+        const firstBadDoorIndex = unblockedResult.path.findIndex(
+          (node) => node.type === "door" && state.npcCanAccess(npc.key, node.gdKey) === false,
         );
 
-        return firstBadDoor ?? null;
+        if (firstBadDoorIndex <= 0) {
+          return null; // no bad door or already in doorway
+        }
+
+        const firstBadDoorNode = unblockedResult.path[firstBadDoorIndex] as Graph.GmRoomGraphNodeDoor;
+        const lastGoodRoomNode = unblockedResult.path[firstBadDoorIndex - 1] as Graph.GmRoomGraphNodeRoom;
+        const door = w.d[firstBadDoorNode.gdKey];
+        const indexOfRoomId = door.connector.roomIds.indexOf(lastGoodRoomNode.roomId);
+
+        if (indexOfRoomId === -1) {
+          return { blockingGdKey: door.gdKey, nearbyPoint: firstBadDoorNode.astar.centroid.clone() };
+        }
+
+        return {
+          blockingGdKey: door.gdKey,
+          nearbyPoint: firstBadDoorNode.astar.centroid
+            .clone()
+            .addScaled(door.normal, 0.5 * (indexOfRoomId === 0 ? 1 : -1)),
+        };
       },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
@@ -102,18 +119,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       fixInaccessibleTarget(npc) {
         // avoid walking to other-side-of-wall of inaccessible room
-        const blockingDoorNode = state.checkNpcTargetUnreachable(npc);
-        if (blockingDoorNode === null || npc.agentId == null) {
+        const unreachableResult = state.checkNpcTargetUnreachable(npc);
+        if (unreachableResult === null || npc.agentId == null) {
           return;
         }
 
         // walk along prefix
-        const result = w.npc.getClosestPoly(blockingDoorNode.astar.centroid); // center?
+        // 🚧 ...
+        const result = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
         crowdApi.requestMoveTarget(
           w.npc.crowd,
           npc.agentId,
           result.nodeRef,
-          helper.groundPointToTuple(blockingDoorNode.astar.centroid),
+          helper.groundPointToTuple(unreachableResult.nearbyPoint),
         );
       },
       getPoint(npcKey) {
@@ -712,7 +730,7 @@ export type State = {
    *   and the room is inaccessible (e.g. locked doors) we want to avoid
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
-  checkNpcTargetUnreachable(npc: Npc): null | Graph.GmRoomGraphNodeDoor;
+  checkNpcTargetUnreachable(npc: Npc): null | { blockingGdKey: Geomorph.GmDoorKey; nearbyPoint: Geom.VectJson };
   findPath(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
