@@ -387,7 +387,7 @@ export function WorldMenu() {
                         <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
                           <MenuSelect
                             side="bottom"
-                            value={String(w.view.numCardinalDirections)}
+                            value={String(w.view.cameraDirections)}
                             items={cardinalDirItems}
                             onValueChange={(v) => {
                               if (v) w.view.setNumCardinalDirections(Number(v));
