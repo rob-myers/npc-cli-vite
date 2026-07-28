@@ -168,6 +168,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const delta = state.timer.getDelta();
         state.door.onTick(delta);
         state.npc.onTick(delta);
+        state.speech?.onTick(delta);
         state.view.dynamicLight.tick(delta);
 
         if (state.view.dynamicLightTarget) {
