@@ -72,7 +72,7 @@ export default function Floor() {
         drawPolygons(ct, hullFloor, { fillStyle: w.getTheme().floor.hullFill, strokeStyle: null });
 
         // wall bases
-        drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: "#333", lineWidth: 0.05 });
+        drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
         // room outlines
         drawRoomOutlines(ct, layout, w.getTheme().floor);
