@@ -208,18 +208,20 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
  * @param {Omit<JshCli.MoveOpts, 'to'> & { to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
-  const npc = w.npc.get(opts.npcKey);
+  // opts.npcKey is either literal or points to a literal relative to CWD
+  const getNpc = () => w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
 
   const { dispose } = api.handleStatus({
-    cleanups: (killed) => killed && npc.rejectAll(new Error("killed")),
+    cleanups: (killed) => killed && getNpc()?.rejectAll(new Error("killed")),
   });
 
   try {
     if (opts.to) {
       // move to point or smoothly along points
+      const npc = getNpc();
       const points = expectArrayOfPoints(opts.to) ? opts.to : [opts.to];
       for (const [index, point] of points.entries()) {
-        await w.npc.move({ npcKey: opts.npcKey, to: point, arrive: index === points.length - 1, fast: opts.fast });
+        await w.npc.move({ npcKey: npc.key, to: point, arrive: index === points.length - 1, fast: opts.fast });
       }
       return;
     } else if (api.isTtyAt(0)) {
@@ -229,7 +231,8 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     if (!opts.along) {
       // move immediately to lastest destination
       while ((datum = await api.read()) !== api.eof) {
-        w.npc.move({ npcKey: opts.npcKey, to: datum, fast: opts.fast });
+        const npc = getNpc();
+        w.npc.move({ npcKey: npc.key, to: datum, fast: opts.fast });
       }
       return;
     }
@@ -242,7 +245,10 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
 
       datum = next;
       pendingRead = api.read();
-      const movePromise = w.npc.move({ npcKey: opts.npcKey, to: datum, fast: opts.fast }).catch((e) => {
+
+      const npc = getNpc();
+
+      const movePromise = w.npc.move({ npcKey: npc.key, to: datum, fast: opts.fast }).catch((e) => {
         if (e instanceof Error && e.message === "not navigable") {
           return; // ignore non-navigable stdin
         }

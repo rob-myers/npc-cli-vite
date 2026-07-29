@@ -139,6 +139,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
   useBeforeUnloadOrVisibilityChange(() => {
     sessionApi.persistHistory(props.sessionKey);
     sessionApi.persistHome(props.sessionKey);
+    sessionApi.persistShared();
   });
 
   return (

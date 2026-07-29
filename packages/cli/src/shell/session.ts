@@ -144,6 +144,9 @@ export const sessionApi = {
   getSession(sessionKey: string) {
     return useSession.getState().session[sessionKey];
   },
+  getShared() {
+    return useSession.getState().shared;
+  },
   getVar<T = any>(meta: JSh.BaseMeta, varName: string): T {
     const process = sessionApi.getProcess(meta);
     if (process !== undefined && varName in process.localVar) {
@@ -160,10 +163,12 @@ export const sessionApi = {
   getVarDeep(meta: JSh.BaseMeta, varPath: string): any | undefined {
     const session = sessionApi.getSession(meta.sessionKey);
     /**
-     * Can deep get /home/* and /etc/*
-     * TODO support deep get of local vars?
+     * File system:
+     * - /home/*
+     * - /etc/*
+     * - /shared/*
      */
-    const root = { home: session.var, etc: session.etc };
+    const root = { home: session.var, etc: session.etc, shared: sessionApi.getShared() };
     const parts = computeNormalizedParts(varPath, sessionApi.getVar(meta, "PWD") as string);
     return Function("__", `return ${JSON.stringify(parts)}.reduce((agg, x) => agg[x], __)`)(root);
   },
@@ -268,18 +273,19 @@ export const sessionApi = {
       .ttyLink[opts.lineText]?.find((x) => x.linkStartIndex === opts.linkStartIndex && x.linkText === opts.linkText)
       ?.callback(opts.lineNumber);
   },
-  persistHome(sessionKey: string) {
-    const { PWD, OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } = sessionApi.getSession(sessionKey).var;
-
-    tryLocalStorageSet(`var@session-${sessionKey}`, jsStringify(persistedVarLookup, false, true));
-  },
   persistHistory(sessionKey: string) {
     const { ttyShell } = sessionApi.getSession(sessionKey);
     tryLocalStorageSet(`history@session-${sessionKey}`, JSON.stringify(ttyShell.getHistory()));
   },
+  persistHome(sessionKey: string) {
+    const { PWD, OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } = sessionApi.getSession(sessionKey).var;
+    tryLocalStorageSet(`var@session-${sessionKey}`, jsStringify(persistedVarLookup, false, true));
+  },
+  persistShared() {
+    tryLocalStorageSet(`var@shared`, jsStringify(sessionApi.getShared(), false, true));
+  },
   rehydrate(sessionKey: string) {
     let storedHistory = null as null | string[];
-    let storedVar = null as null | Record<string, any>;
 
     try {
       storedHistory = JSON.parse(tryLocalStorageGet(`history@session-${sessionKey}`) || "null");
@@ -289,16 +295,16 @@ export const sessionApi = {
       ttyError(e);
     }
 
-    const prevValue = tryLocalStorageGet(`var@session-${sessionKey}`) || "null";
+    let storedHome = null as null | Record<string, any>;
+    const prevHome = tryLocalStorageGet(`var@session-${sessionKey}`) || "null";
     try {
-      storedVar = restoreFromPersistedJsStringify(prevValue);
+      storedHome = restoreFromPersistedJsStringify(prevHome);
     } catch (e) {
-      // Can fail in CodeSandbox in Chrome Incognito
-      ttyError(`${sessionKey}: rehydrate variables failed: ${prevValue}`);
+      ttyError(`${sessionKey}: rehydrate /home failed: ${prevHome}`);
       ttyError(e);
     }
 
-    return { history: storedHistory, var: storedVar };
+    return { history: storedHistory, var: storedHome };
   },
   removeDevice(deviceKey: string) {
     delete useSession.getState().device[deviceKey];
@@ -376,11 +382,11 @@ export const sessionApi = {
       root = queryClientApi.get([session.var[cacheShortcuts[parts[0]]]] as any) as Record<string, any>;
       normalParts = parts.slice(1);
     } else {
-      root = { home: session.var };
+      root = { home: session.var, shared: sessionApi.getShared() };
       normalParts = computeNormalizedParts(varPath, sessionApi.getVar(meta, "PWD") as string);
 
-      if (!(normalParts[0] === "home" && normalParts.length > 1)) {
-        throw new ShError("only the home directory is writable", 1);
+      if (!((normalParts[0] === "home" || normalParts[0] === "shared") && normalParts.length > 1)) {
+        throw new ShError("only /home and /shared are writable", 1);
       }
     }
 
@@ -399,14 +405,28 @@ export const sessionApi = {
 
 export const useSession = create<State>()(
   (_set, _get): State => ({
-    session: {},
     device: {},
+    session: {},
+    shared: rehydrateShared(),
   }),
 );
 
+function rehydrateShared() {
+  let rehydratedShared = {} as Record<string, any>;
+  const prevShared = tryLocalStorageGet(`var@shared`) || "{ rehydration_failed: true }";
+  try {
+    rehydratedShared = restoreFromPersistedJsStringify(prevShared);
+  } catch (e) {
+    ttyError(`rehydrate /shared failed: ${prevShared}`);
+    ttyError(e);
+  }
+  return rehydratedShared;
+}
+
 export type State = {
-  session: KeyedLookup<Session>;
   device: KeyedLookup<Device>;
+  session: KeyedLookup<Session>;
+  shared: Record<string, any>;
 };
 
 export type Session = {
