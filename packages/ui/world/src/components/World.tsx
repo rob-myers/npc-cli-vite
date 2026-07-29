@@ -344,7 +344,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       if (state.hash === 0) {
         // first load only
-        state.e.onBootstrapEvents();
+        state.e.onBootstrap();
       }
 
       state.hash = hashJson(state.assets);

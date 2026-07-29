@@ -709,7 +709,7 @@ export function WorldMenu() {
               style={{ WebkitAppearance: "slider-vertical" }}
               className="h-20 w-4 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
             />
-            {w.view.roomLightEditingEnabled ? (
+            {w.view.roomLightEditingEnabled && w.view.ambientIntensity < 0.9 ? (
               <PencilSimpleIcon
                 className="size-4 shrink-0 cursor-pointer"
                 weight="fill"
@@ -719,7 +719,7 @@ export function WorldMenu() {
               <PencilSimpleSlashIcon
                 className="size-4 shrink-0 cursor-pointer text-red-400"
                 weight="regular"
-                onClick={() => w.view.toggleRoomLightEditing()}
+                onClick={() => w.view.ambientIntensity < 0.9 && w.view.toggleRoomLightEditing()}
               />
             )}
           </div>
