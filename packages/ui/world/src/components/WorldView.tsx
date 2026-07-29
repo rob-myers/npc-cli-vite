@@ -428,8 +428,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setAmbientIntensity(next, persist = true) {
         state.ambientIntensity = next;
         state.unlitScale.value = next;
-        persist && tryLocalStorageSet(ambientIntensityKey, String(next));
         state.setPostProcessingEnabled(true);
+        state.setRoomLightingEnabled(state.ambientIntensity < 0.9);
+
+        persist && tryLocalStorageSet(ambientIntensityKey, String(next));
+
         state.forceUpdate();
       },
       setCameraMode(cameraMode) {
@@ -465,6 +468,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setRoomLightingEnabled(next = state.roomLight.roomLightingEnabled.value === 0) {
         state.roomLight.setRoomLightingEnabled(next);
+        state.roomLightEditingEnabled = next;
         tryLocalStorageSet(roomLightingEnabledKey, String(next));
         state.setPostProcessingEnabled(true);
       },
