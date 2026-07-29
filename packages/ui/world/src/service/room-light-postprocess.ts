@@ -291,13 +291,9 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
         gmInv1Values[i].set(a, b, c, d);
         gmInv2Values[i].set(e, f, gm.bounds.x, gm.bounds.y);
 
-        // check cache
-        let layoutIndex = gmKeyToLayoutIndex.get(gm.key);
-        if (layoutIndex === undefined) {
-          layoutIndex = gmKeyToLayoutIndex.size;
-          gmKeyToLayoutIndex.set(gm.key, layoutIndex);
-          uploadRoomMaskLayer(layoutIndex, gmsData.byKey[gm.key].roomMaskCt);
-        }
+        // recomputed on hmr
+        const layoutIndex = gms.findIndex((other) => other.key === gm.key);
+        uploadRoomMaskLayer(layoutIndex, gmsData.byKey[gm.key].roomMaskCt);
         gmLayoutIdxValues[i] = layoutIndex;
       }
 
