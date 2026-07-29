@@ -429,9 +429,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.ambientIntensity = next;
         state.unlitScale.value = next;
         state.setPostProcessingEnabled(true);
-        state.setRoomLightingEnabled(state.ambientIntensity < 0.9);
-
         persist && tryLocalStorageSet(ambientIntensityKey, String(next));
+
+        state.setRoomLightingEnabled(state.ambientIntensity < 0.9);
 
         state.forceUpdate();
       },

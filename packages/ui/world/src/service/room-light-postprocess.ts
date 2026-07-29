@@ -53,6 +53,7 @@ export type RoomLightPostprocess = {
   isRoomLit(gmId: number, roomId: number): boolean;
   /** Clears every lit room in one pass */
   resetAllRooms(): void;
+  getLitRoomCount(): number;
   /** Every currently-lit `[gmId, roomId]` pair — e.g. for persisting elsewhere */
   getLitRoomPairs(): [number, number][];
   /** Clears existing lit rooms, then lights exactly the given `[gmId, roomId]` pairs */
@@ -120,7 +121,6 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
   const texRoomMask = new THREE.DataArrayTexture(texRoomMaskData, roomMaskDim, roomMaskDim, geomorphKeys.length);
   texRoomMask.magFilter = THREE.NearestFilter;
   texRoomMask.minFilter = THREE.NearestFilter;
-  const gmKeyToLayoutIndex = new Map<string, number>();
 
   // per-instance state, mirrored in plain JS (same idiom as Walls.tsx's light0Values/light1Values)
   const gmInv1Values = Array.from({ length: MAX_GEOMORPH_INSTANCES }, () => new THREE.Vector4(1, 0, 0, 1));
@@ -192,14 +192,13 @@ export function createRoomLightPostprocess(opts: RoomLightPostprocessOpts): Room
 
   return {
     roomLightingEnabled,
+    getLitRoomCount() {
+      return roomLitValues.reduce((sum, lit) => sum + (lit === 1 ? 1 : 0), 0);
+    },
     getLitRoomPairs() {
-      const pairs: [number, number][] = [];
-      roomLitValues.forEach((lit, i) => {
-        if (lit === 1) {
-          pairs.push([Math.floor(i / MAX_ROOMS_PER_GM), i % MAX_ROOMS_PER_GM]);
-        }
-      });
-      return pairs;
+      return roomLitValues.flatMap((lit, i) =>
+        lit === 1 ? [[Math.floor(i / MAX_ROOMS_PER_GM), i % MAX_ROOMS_PER_GM]] : [],
+      );
     },
     isRoomLit(gmId, roomId) {
       return roomLitValues[gmId * MAX_ROOMS_PER_GM + roomId] === 1;
