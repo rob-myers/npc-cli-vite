@@ -711,7 +711,7 @@ export function WorldMenu() {
 
         {/* play/pause */}
         <button
-          className="outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
+          className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
           onClick={() => w.setDisabled()}
         >
           {w.disabled ? <PlayIcon className="size-5" weight="bold" /> : <PauseIcon className="size-5" weight="bold" />}
