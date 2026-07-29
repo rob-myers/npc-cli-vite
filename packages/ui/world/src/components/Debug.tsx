@@ -336,7 +336,7 @@ export function Debug() {
     meshOrLines.forEach(child => {
       const material = child.material as THREE.MeshBasicMaterial | THREE.LineBasicMaterial;
       material.transparent = true;
-      material.opacityNode = select(w.view.objectPick.greaterThan(0), 0, 0.5)
+      material.opacityNode = select(w.view.objectPick.greaterThan(0), 0, 0.1)
     });
 
     state.set({ navMeshHelper });
