@@ -504,13 +504,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
+
         const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
+
         const litEffect = Fn(() => {
           const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
-          // combine via max BEFORE inverting, so a dim lit room still lets the dynamic light stand out
-          const isBright = state.roomLight.litAmount(sceneDepth.r).mul(state.roomLightIntensity).max(dynamicLitAmount);
-          const unlitAmount = isBright.oneMinus();
-          return mix(brightColor, sceneColor.rgb.mul(state.unlitScale), unlitAmount);
+
+          const isBright = state.roomLight
+            .litAmount(sceneDepth.r)
+            // lit rooms start darkening when intensity low
+            .mul(select(state.unlitScale.lessThan(0.25), state.unlitScale.div(0.25), 1))
+            .mul(state.roomLightIntensity)
+            .max(dynamicLitAmount);
+          return mix(sceneColor.rgb.mul(state.unlitScale), brightColor, isBright);
         })();
 
         const pipeline = new THREE.RenderPipeline(gl);
