@@ -15,6 +15,7 @@ import {
   MagnifyingGlassIcon,
   PauseIcon,
   PencilSimpleIcon,
+  PencilSimpleSlashIcon,
   PlayIcon,
   SunIcon,
   TrashIcon,
@@ -699,13 +700,26 @@ export function WorldMenu() {
               {...{ orient: "vertical" }}
               min="0"
               max="1"
-              step="0.05"
-              value={w.view.ambientIntensity ?? defaultAmbientIntensity}
-              onChange={(e) => w.view.setAmbientIntensity(Number(e.target.value))}
+              step="0.01"
+              value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
+              onChange={(e) => w.view.setAmbientIntensity(ambientSliderPosToValue(Number(e.target.value)))}
               onPointerDownCapture={(e) => e.stopPropagation()}
               style={{ WebkitAppearance: "slider-vertical" }}
               className="h-20 w-4 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
             />
+            {w.view.roomLightEditingEnabled ? (
+              <PencilSimpleIcon
+                className="size-4 shrink-0 cursor-pointer"
+                weight="fill"
+                onClick={() => w.view.toggleRoomLightEditing()}
+              />
+            ) : (
+              <PencilSimpleSlashIcon
+                className="size-4 shrink-0 cursor-pointer text-red-400"
+                weight="regular"
+                onClick={() => w.view.toggleRoomLightEditing()}
+              />
+            )}
           </div>
         )}
 
@@ -797,6 +811,25 @@ function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void
 /** Map brightness (0.5–2.0) so that 1.0 = 50% pie fill */
 function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
+}
+
+// non-uniform ambient slider: the bottom 1/3 of the value range takes up 2/3 of the slider's
+// travel, so low (dim) values are finer-grained to adjust than high ones
+const ambientSliderBreak = 2 / 3;
+const ambientValueBreak = 1 / 3;
+
+/** Slider position (0..1, uniform) -> actual ambient value (0..1, non-uniform) */
+function ambientSliderPosToValue(pos: number) {
+  return pos <= ambientSliderBreak
+    ? (pos / ambientSliderBreak) * ambientValueBreak
+    : ambientValueBreak + ((pos - ambientSliderBreak) / (1 - ambientSliderBreak)) * (1 - ambientValueBreak);
+}
+
+/** Inverse of `ambientSliderPosToValue` — actual ambient value -> slider position */
+function ambientValueToSliderPos(value: number) {
+  return value <= ambientValueBreak
+    ? (value / ambientValueBreak) * ambientSliderBreak
+    : ambientSliderBreak + ((value - ambientValueBreak) / (1 - ambientValueBreak)) * (1 - ambientSliderBreak);
 }
 
 /** Small square icon button used to pack several toggles/actions into one row in the lights menu */
