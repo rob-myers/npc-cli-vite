@@ -250,12 +250,11 @@ class CmdService {
 
     generateSelector,
 
-    get(args: string[]) {
-      const badIndex = args.findIndex((x) => typeof x !== "string");
-      if (badIndex >= 0) {
-        throw new ShError(`cannot get non-string value: ${JSON.stringify(args[badIndex])}`, 1);
+    get(path: string) {
+      if (typeof path !== "string") {
+        throw new ShError(`cannot get non-string value: ${JSON.stringify(path)}`, 1);
       }
-      return cmdService.get(this.node, args);
+      return cmdService.get(this.node, [path])[0];
     },
 
     getCached,
@@ -394,9 +393,10 @@ class CmdService {
     const cacheShortcuts = session.var.CACHE_SHORTCUTS ?? {};
     return new Proxy(
       {
-        home: session.var, // see NPC.RunArg['home']
         etc: session.etc,
+        home: session.var, // see NPC.RunArg['home']
         lib: session.modules, // see NPC.RunArg['lib']
+        shared: sessionApi.getShared(),
       },
       {
         get: (target, key) => {
@@ -1275,9 +1275,10 @@ export type HandleStatusReturns = ReturnType<CmdService["handleStatus"]>;
 export type ProcessApi = CmdService["processApi"];
 
 export type ProcessContext = {
-  home: Session["var"]; // see RunArg['home']
   etc: Session["etc"];
+  home: Session["var"]; // see RunArg['home']
   lib: Session["modules"]; // see RunArg['lib']
+  shared: Record<string, any>;
 } & {
   set args(args: string[]);
   get api(): ProcessApi;

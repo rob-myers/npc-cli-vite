@@ -23,6 +23,12 @@
   - ✅ more robust: fallback to centroid
   - avoid jerky animation when immediately fail
 
+- ✅ tty supports `/shared`
+  - `echo 'Hello, world!' > /shared/msg`
+  - persisted and rehydrated
+- 🚧 `move` support paths to `npcKey` rather than only literal
+  - e.g. `npcKey` or `~/npcKey`
+
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`
   - `decor near:...`
