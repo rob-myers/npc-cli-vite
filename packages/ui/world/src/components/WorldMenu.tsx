@@ -617,12 +617,10 @@ export function WorldMenu() {
                   )}
 
                   {import.meta.env.DEV && (
-                    <>
-                      <div className="my-0.5 border-t border-slate-700" />
-
+                    <div className="flex mt-2">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded px-2 py-1"
+                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
                         onClick={async (e) => {
                           e.stopPropagation();
                           w.setNextPending({ obstacles: true });
@@ -645,13 +643,13 @@ export function WorldMenu() {
                           }
                         }}
                       >
+                        obstacles
                         <ArrowsClockwiseIcon className="size-3.5" />
-                        update obstacles
                       </button>
 
                       <button
                         type="button"
-                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded px-2 py-1"
+                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
                         onClick={async (e) => {
                           e.stopPropagation();
                           try {
@@ -668,10 +666,10 @@ export function WorldMenu() {
                           }
                         }}
                       >
+                        assets
                         <ArrowsClockwiseIcon className="size-3.5" />
-                        update assets
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
 
