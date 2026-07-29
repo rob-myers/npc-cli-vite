@@ -144,11 +144,6 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
   const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
 
-  // darker thin rings overlaid on the light's falloff, so it doesn't read as a flat uniform disc
-  const ringFrequency = 3; // rings per meter-ish — tune after viewing in-browser
-  const ringSharpness = 60; // higher = thinner dark bands
-  const ringStrength = 0.5; // max darkening at a ring's center (0 = no effect, 1 = fully black there)
-
   // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
   const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
   const initialIntensity = tryLocalStorageGetParsed<number>(dynamicLightIntensityKey) ?? defaultDynamicLightIntensity;
@@ -220,16 +215,6 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
       .div(abx.mul(abx).add(abz.mul(abz)))
       .clamp(0, 1);
     return { x: ax.add(abx.mul(t)), z: az.add(abz.mul(t)) };
-  }
-
-  // darkens `litVal` in thin periodic bands as a function of `dist` (distance from light center),
-  // so the light reads as textured/uneven rather than a flat uniform disc
-  function applyRings(litVal: THREE.Node<"float">, dist: THREE.Node<"float">) {
-    // 1 exactly at each ring center (dist * ringFrequency = kπ), falling off between rings
-    const proximity = dist.mul(ringFrequency).sin().abs().oneMinus();
-    // const proximity = dist.mul(ringFrequency).sin().abs();
-    const ringDarkness = proximity.max(0).pow(ringSharpness).mul(ringStrength);
-    return litVal.mul(float(1).sub(ringDarkness));
   }
 
   // renders the wall layer + live doors into one texture, sampled per march step (see combinedTex)
@@ -306,7 +291,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         const litOut = float(0).toVar();
         If(tracked.z.notEqual(0).and(occludedByReal.equal(0)), () => {
           const dist = worldXZ.sub(tracked.xy).length();
-          const litVal = applyRings(float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1)), dist);
+          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
 
           If(litVal.greaterThan(0), () => {
             const maxOccupancy = float(0).toVar();
@@ -357,7 +342,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         const litOut = float(0).toVar();
         If(tracked.z.notEqual(0).and(inHeightRange), () => {
           const dist = worldXZ.sub(tracked.xy).length();
-          const litVal = applyRings(float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1)), dist);
+          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
 
           If(litVal.greaterThan(0), () => {
             // fixed step COUNT (not step size) — keeps sample positions continuous frame-to-frame
