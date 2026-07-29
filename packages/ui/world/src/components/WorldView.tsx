@@ -95,7 +95,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
       raycaster: new THREE.Raycaster(),
-      topDown: false,
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
         bottomHeight: 0,
@@ -103,6 +102,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       }),
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
+      topDown: false,
       unlitScale: uniform(persisted.getAmbientIntensity()),
 
       async createRenderer(props) {
