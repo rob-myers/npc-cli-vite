@@ -1151,7 +1151,7 @@ class CmdService {
 
     let resolve = emptyResolve;
     let reject = emptyReject;
-    let durationMs = 1000 * seconds;
+    let durationMs = Math.min(1000 * seconds, 2 ** 31 - 1);
     let startedAt = 0;
     let timeoutId = 0;
 
