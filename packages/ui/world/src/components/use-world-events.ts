@@ -31,16 +31,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       canCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
-        if (closeNpcs === undefined) {
-          return true;
-        } else if (closeNpcs.inside.size > 0) {
-          return false;
-        } else if (door.locked === true) {
-          return true; // can close when nothing inside
-        } else if (closeNpcs.nearby.size === 0) {
-          return true; // can close when nothing nearby
-        }
-        return true;
+        return closeNpcs === undefined || closeNpcs.inside.size === 0;
       },
       checkNpcTargetUnreachable(npc) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
@@ -668,8 +659,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // do not close whilst paused; recheck in {ms}
             state.tryCloseDoor(gdKey);
           } else if (door.open === true) {
-            const clear = state.canCloseDoor(door);
-            state.toggleDoor(gdKey, { clear, close: true });
+            state.toggleDoor(gdKey, { clear: state.canCloseDoor(door), close: true });
           } else {
             // closed
             delete door.closeTimeoutId;
