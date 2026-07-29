@@ -315,5 +315,3 @@ const gmHitUtil = {
     return null;
   },
 } as const;
-
-1;
