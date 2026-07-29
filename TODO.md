@@ -26,8 +26,9 @@
 - ✅ tty supports `/shared`
   - `echo 'Hello, world!' > /shared/msg`
   - persisted and rehydrated
-- 🚧 `move` support paths to `npcKey` rather than only literal
-  - e.g. `npcKey` or `~/npcKey`
+- ✅ `move` support paths to `npcKey` rather than only literal
+  - ✅ local path `npcKey` or `~/npcKey` or `/shared/npcKey`
+  - `pick | move npc:/shared/npcKey to:$( pick 1 )`
 
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`
