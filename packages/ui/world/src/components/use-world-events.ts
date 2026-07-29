@@ -144,10 +144,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
-      onBootstrapEvents() {
+      onBootstrap() {
         w.view.setAmbientIntensity(
           w.view.dynamicLightTarget === null
-            ? Math.max(persisted.getAmbientIntensity(), 0.4)
+            ? Math.max(persisted.getAmbientIntensity(), w.touchDevice ? 1 : 0.4)
             : persisted.getAmbientIntensity(),
         );
         w.obs.setBrightness(w.getTheme().obstacles.brightness);
@@ -728,7 +728,7 @@ export type State = {
   fixInaccessibleTarget(npc: Npc): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
-  onBootstrapEvents(): void;
+  onBootstrap(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
