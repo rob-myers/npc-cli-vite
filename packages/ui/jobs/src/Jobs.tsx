@@ -32,20 +32,21 @@ export default function Jobs() {
 
   const state = useStateRef(
     (): State => ({
-      processes: [],
+      debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
+      disconnectSession: null,
       ordered: [],
+      processes: [],
       sessionKey: null,
       sessionSelectEl: null,
       ttyMeta: null,
-      debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
-      disconnectSession: null,
 
       changeProcess(e) {
-        if (state.sessionKey === null) return;
-
+        if (state.sessionKey === null) {
+          return;
+        }
         const pid = Number(e.currentTarget.dataset.pid);
-        const act = /** @type {'pause' | 'resume' | 'kill' | 'reboot'} */ (e.currentTarget.dataset.act);
-        // console.log({act,pid});
+        const act = e.currentTarget.dataset.act as "pause" | "resume" | "kill" | "reboot";
+
         switch (act) {
           case "kill":
             if (pid === 0) {
@@ -61,8 +62,7 @@ export default function Jobs() {
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, CONT: true });
             break;
           case "reboot": {
-            // 🚧
-            // sessionApi.reboot(state.sessionKey, pid, true);
+            sessionApi.rebootProcess(state.sessionKey, pid, true);
             break;
           }
           default:
@@ -227,7 +227,7 @@ export default function Jobs() {
                   </div>
                   <div className="flex items-stretch gap-1 text-white">
                     <div
-                      className={cn(controlCss, killed && disabledControlCss)}
+                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
                       onClick={!killed ? state.changeProcess : undefined}
                       data-act={paused ? "resume" : "pause"}
                       data-pid={p.pid}
@@ -239,23 +239,21 @@ export default function Jobs() {
                       )}
                     </div>
                     <div
-                      className={cn(controlCss, "text-[#faa]", killed && disabledControlCss)}
+                      className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
                       onClick={!killed ? state.changeProcess : undefined}
                       data-act="kill"
                       data-pid={p.pid}
                     >
                       <XIcon alt="kill" className="size-4" />
                     </div>
-                    {p.bootable && (
-                      <div
-                        className={cn(controlCss, killed && disabledControlCss)}
-                        onClick={state.changeProcess}
-                        data-act="reboot"
-                        data-pid={p.pid}
-                      >
-                        <ArrowClockwiseIcon alt="reboot" weight="thin" className="size-3" />
-                      </div>
-                    )}
+                    <div
+                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                      onClick={state.changeProcess}
+                      data-act="reboot"
+                      data-pid={p.pid}
+                    >
+                      <ArrowClockwiseIcon alt="reboot" weight="thin" className="size-3" />
+                    </div>
                   </div>
                 </div>
                 <div
@@ -282,7 +280,6 @@ export default function Jobs() {
 }
 
 const controlCss = "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer";
-const disabledControlCss = "cursor-auto text-[#777]";
 
 type State = {
   /** We use an array to represent mapping `pid -> processLeader` */

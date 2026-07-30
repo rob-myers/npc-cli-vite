@@ -981,7 +981,9 @@ class CmdService {
             const process = sessionApi.getProcess(meta);
             process.reboot = {
               apply() {
-                if (this.applying === true) return warn(`already rebooting process ${process.key}: ${process.src}`);
+                if (this.applying === true) {
+                  return warn(`already rebooting process ${process.key}: ${process.src}`);
+                }
                 this.applying = true;
                 const removed = process.cleanups.splice(this.cleanupId, process.cleanups.length - this.cleanupId);
                 removed.forEach((cleanup) => void cleanup());
