@@ -31,7 +31,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       canCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
-        return closeNpcs === undefined || closeNpcs.inside.size === 0;
+        return closeNpcs === undefined || (door.locked ? closeNpcs.inside.size === 0 : closeNpcs.nearby.size === 0);
       },
       checkNpcTargetUnreachable(npc) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
