@@ -10,7 +10,7 @@ import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { ArrowClockwiseIcon, ArrowsClockwiseIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
 import type React from "react";
 import { useContext, useEffect } from "react";
@@ -45,7 +45,7 @@ export default function Jobs() {
           return;
         }
         const pid = Number(e.currentTarget.dataset.pid);
-        const act = e.currentTarget.dataset.act as "pause" | "resume" | "kill" | "reboot";
+        const act = e.currentTarget.dataset.act as "pause" | "resume" | "kill";
 
         switch (act) {
           case "kill":
@@ -61,10 +61,6 @@ export default function Jobs() {
           case "resume":
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, CONT: true });
             break;
-          case "reboot": {
-            sessionApi.rebootProcess(state.sessionKey, pid, true);
-            break;
-          }
           default:
         }
       },
@@ -246,14 +242,6 @@ export default function Jobs() {
                     >
                       <XIcon alt="kill" className="size-4" />
                     </div>
-                    <div
-                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
-                      onClick={state.changeProcess}
-                      data-act="reboot"
-                      data-pid={p.pid}
-                    >
-                      <ArrowClockwiseIcon alt="reboot" weight="thin" className="size-3" />
-                    </div>
                   </div>
                 </div>
                 <div
@@ -303,17 +291,13 @@ type ProcessLeader = {
   src: string;
   status: ProcessStatus;
   ptagsText: string;
-  bootable: boolean;
 };
 
-function processMetaToProcessLeader({ key: pid, sessionKey, src, status, ptags }: ProcessMeta): ProcessLeader {
-  const group = sessionApi.getProcesses(sessionKey, pid);
-  const bootable = group.some((p) => p.reboot !== undefined);
+function processMetaToProcessLeader({ key: pid, src, status, ptags }: ProcessMeta): ProcessLeader {
   return {
     pid,
     src,
     status,
     ptagsText: getPtagsPreview(ptags).join(""),
-    bootable,
   };
 }

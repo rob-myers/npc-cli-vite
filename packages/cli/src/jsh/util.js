@@ -172,16 +172,7 @@ export async function* map(ct) {
   let count = 0;
 
   if (isNativeCode === false) {
-    let rejectLoop = /** @param {any} _e */ (_e) => {};
-    /** In case we're waiting for read, provide escape hatch if reboot process */
-    const rebootRejecter = new Promise((_, reject) => (rejectLoop = reject));
-    api.handleStatus({
-      cleanups() {
-        rejectLoop(api.getKillError());
-      },
-    });
-
-    while ((datum = await Promise.race([api.read(true), rebootRejecter])) !== api.eof) {
+    while ((datum = await api.read(true)) !== api.eof) {
       try {
         if (api.isDataChunk(datum) === true) {
           if (isAsync === false) {

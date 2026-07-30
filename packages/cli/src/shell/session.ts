@@ -284,16 +284,6 @@ export const sessionApi = {
   persistShared() {
     tryLocalStorageSet(`var@shared`, jsStringify(sessionApi.getShared(), false, true));
   },
-  rebootProcess(sessionKey: string, pid: number, group?: boolean) {
-    const process = sessionApi.getProcess({ sessionKey, pid });
-    if (group === true) {
-      const { pgid } = process;
-      const processes = sessionApi.getProcesses(sessionKey, pgid);
-      processes.forEach((p) => p.reboot?.apply());
-    } else {
-      process.reboot?.apply();
-    }
-  },
   rehydrate(sessionKey: string) {
     let storedHistory = null as null | string[];
 
@@ -491,21 +481,8 @@ export type ProcessMeta = {
    * Executed:
    * - on process finished
    * - on Ctrl-C or `kill`
-   * - on reboot builtin
    */
   cleanups: ((SIGINT?: boolean) => void)[];
-  /**
-   * Processes with src:
-   * > `run {moduleKey} {fnKey} ...`
-   *
-   * can be rebooted, to avoid stale JavaScript on hot module reload.
-   */
-  reboot?: {
-    apply(): void;
-    applying: boolean;
-    /** Each `cleanups[i]` where `i ≥ cleanupId` will be invoked. */
-    cleanupId: number;
-  };
   /**
    * Executed on suspend, without clearing `true` returners.
    * The latter should be idempotent, e.g. unsubscribe, pause.
