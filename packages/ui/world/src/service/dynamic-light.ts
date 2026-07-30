@@ -133,6 +133,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   const doorHalfDepth = opts.doorHalfDepth ?? 0.1;
   const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
   const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
+  // soft-shadow softness for the occlusion march below — higher = harder-edged shadows
+  const occSharpness = 2;
 
   // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
   const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
@@ -287,19 +289,25 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
 
           If(litVal.greaterThan(0), () => {
             // fixed step COUNT (not step size) — keeps sample positions continuous frame-to-frame
-            const maxOccupancy = float(0).toVar();
+            // Íñigo Quílez–style soft-shadow march: track a running MINIMUM visibility across steps
+            // (`res = min(res, ...)`, https://iquilezles.org/articles/rmshadows) rather than
+            // jumping straight to fully-occluded the first time occupancy crosses a threshold —
+            // produces a soft penumbra as the ray grazes a wall's edge, instead of a hard cutoff.
+            const visibility = float(1).toVar();
             Loop(marchSteps, ({ i }) => {
               const t = float(i).add(1).div(float(marchSteps));
               const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t));
               const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t));
-              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
-              If(maxOccupancy.greaterThanEqual(0.5), () => {
-                maxOccupancy.assign(1);
+              const occ = sampleOccupancy(stepX, stepZ);
+              // occSharpness: how strongly one occupied sample darkens visibility (iq's shadow-softness `k`)
+              visibility.assign(visibility.min(float(1).sub(occ.mul(occSharpness)).clamp(0, 1)));
+              If(visibility.lessThanEqual(0.02), () => {
+                visibility.assign(0);
                 Break();
               });
             });
 
-            litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
+            litOut.assign(litVal.mul(visibility));
           });
         });
 
