@@ -10,7 +10,7 @@ export default function Template(_props: { meta: TemplateUiMeta }) {
           "leading-4 transition-transform hover:scale-125 cursor-pointer",
         )}
       >
-        Template Component
+        Jobs Component
       </div>
     </div>
   );
