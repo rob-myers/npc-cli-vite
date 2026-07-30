@@ -284,6 +284,16 @@ export const sessionApi = {
   persistShared() {
     tryLocalStorageSet(`var@shared`, jsStringify(sessionApi.getShared(), false, true));
   },
+  rebootProcess(sessionKey: string, pid: number, group?: boolean) {
+    const process = sessionApi.getProcess({ sessionKey, pid });
+    if (group === true) {
+      const { pgid } = process;
+      const processes = sessionApi.getProcesses(sessionKey, pgid);
+      processes.forEach((p) => p.reboot?.apply());
+    } else {
+      process.reboot?.apply();
+    }
+  },
   rehydrate(sessionKey: string) {
     let storedHistory = null as null | string[];
 

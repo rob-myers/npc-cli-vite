@@ -16,7 +16,10 @@
     - `pick | move npc:rob &`
   - ✅ ensure message send on kill
     - `sleep 3 &`
-  - avoid recompute `state.ordered`
+  - ✅ implement `reset`
+    - process.reboot not defined until after start so always show reset buttons
+  - 🚧 avoid recompute `state.ordered`
+  - clean component
   - extend component so can save/re-run
 
 - ✅ remove `packages/ui/demo`
