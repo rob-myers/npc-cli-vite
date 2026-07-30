@@ -18,14 +18,15 @@
     - `sleep 3 &`
   - ✅ implement `reboot`
     - process.reboot not defined until after start so always show reset buttons
-  - 🚧 remove `reboot`
+  - ✅ remove `reboot`
     - too complex yet not complex enough to handle future desires which should sit in JS world
   - 🚧 avoid recompute `state.ordered`
   - clean component
-  - extend component so can save/re-run
+  - extend component so can re-run and combine scripts
 
-- clarify pause of `move`
-  - could we stop and resume previous target?
+- 🚧 can pause/resume `move`
+  - rewrite so that immediate pause/resume are possible
+  - all variants use `queue` which we can insert into
 
 - ✅ remove `packages/ui/demo`
 
