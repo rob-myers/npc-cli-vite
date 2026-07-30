@@ -11,7 +11,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/ui__blog": "workspace:^",
-    "@npc-cli/ui__demo": "workspace:^",
+    "@npc-cli/ui__jobs": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/ui__tabs": "workspace:^",
