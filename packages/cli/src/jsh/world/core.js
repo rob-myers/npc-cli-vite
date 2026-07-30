@@ -209,7 +209,13 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
   // opts.npcKey is either literal or points to a literal relative to CWD
-  const getNpc = () => w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
+  const getNpc = () => {
+    try {
+      return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
+    } catch {
+      throw Error(`npc not found: ${opts.npcKey}`);
+    }
+  };
 
   const { dispose } = api.handleStatus({
     cleanups(killed) {
