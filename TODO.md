@@ -2,6 +2,17 @@
 
 - 🚧 new approach to todos i.e. current go into technical and start new section
   - 🚧 final few before switch to blog
+  - current -> docs/todo_engine.md
+
+- 🚧 easier to run scripts
+  - ℹ️ e.g. spawn, focus, pick-to-move
+  - ℹ️ will need to connect to a tty
+  - ✅ create `packages/ui/jobs` via `pnpm gen-ui`
+  - hook up to ui.store
+  - 🚧 copy over `PsList` from npc-cli-next and get it working
+  - extend component so can save/re-run
+
+- remove `packages/ui/demo`
 
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`
@@ -13,7 +24,6 @@
   - ✅ more robust: fallback to centroid
   - 🚧 avoid jerky animation when immediately fail
     - also for very close target
-
 
 - could cover up curved room raymarching woes
   - maybe `Walls` can vary opacity

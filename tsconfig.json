@@ -51,6 +51,9 @@
     },
     {
       "path": "./packages/ui/demo"
+    },
+    {
+      "path": "./packages/ui/jobs"
     }
   ]
 }
