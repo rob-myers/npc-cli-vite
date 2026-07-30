@@ -1,5 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
+import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -21,7 +22,7 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
-import { AnimatePresence, motion, useMotionValue } from "motion/react";
+import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
@@ -164,6 +165,7 @@ export function WorldMenu() {
   w.menu = state;
 
   const y = useMotionValue(state.getClampedY(state.y));
+  const dragControls = useDragControls();
 
   const isDebugActive = (item: string) => {
     switch (item) {
@@ -256,9 +258,15 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="outline-none absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-0.5 max-w-full overflow-x-hidden"
+        className={cn(
+          "outline-none absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-0.5 max-w-full overflow-x-hidden",
+          w.touchDevice && "scale-125",
+        )}
         style={{ y }}
         drag="y"
+        dragListener={false}
+        dragControls={dragControls}
+        onPointerDown={(e) => dragControls.start(e)}
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
         dragMomentum={false}
         onDragStart={() => (state.dragged = true)}
@@ -697,18 +705,24 @@ export function WorldMenu() {
             <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
               <SunIcon className="size-4 shrink-0" />
             </button>
-            <input
-              type="range"
-              {...{ orient: "vertical" }}
-              min="0"
-              max="1"
-              step="0.01"
+            <Slider.Root
+              orientation="vertical"
+              min={0}
+              max={1}
+              step={0.01}
               value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
-              onChange={(e) => w.view.setAmbientIntensity(ambientSliderPosToValue(Number(e.target.value)))}
-              onPointerDownCapture={(e) => e.stopPropagation()}
-              style={{ WebkitAppearance: "slider-vertical" }}
-              className="h-20 w-4 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-            />
+              onValueChange={(v) => w.view.setAmbientIntensity(ambientSliderPosToValue(v))}
+            >
+              <Slider.Control
+                className="h-20 w-4 flex justify-center cursor-pointer touch-none"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <Slider.Track className="relative w-1 h-full rounded-full bg-white/50">
+                  <Slider.Indicator className="rounded-full bg-white" />
+                  <Slider.Thumb className="size-3.5 rounded-full bg-white outline-none" />
+                </Slider.Track>
+              </Slider.Control>
+            </Slider.Root>
             <div className="relative">
               {w.view.roomLightEditingEnabled ? (
                 <PencilSimpleIcon
