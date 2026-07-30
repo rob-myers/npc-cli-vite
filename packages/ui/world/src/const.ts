@@ -89,6 +89,8 @@ export const defaultRoomLightIntensity = 0.7;
 
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
 export const defaultDynamicLightRadius = 1;
+/** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
+export const maxDynamicLightRadius = 6;
 export const dynamicLightRadiusKey = "world-tracked-light-radius";
 /** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
 export const defaultDynamicLightIntensity = 1;
