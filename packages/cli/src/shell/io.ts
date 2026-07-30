@@ -471,8 +471,8 @@ export type ExternalMessageProcessLeader = {
   key: "process-leader";
   pid: number;
   act: "started" | "paused" | "resumed" | "ended";
-  /** Pid `0` only */
-  profileRunning?: true;
+  /** Is profile running? Pid `0` only. */
+  profile: boolean;
 };
 
 //#region data chunk
