@@ -11,7 +11,8 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
 import { ArrowClockwiseIcon, ArrowsClockwiseIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 /**
@@ -154,7 +155,7 @@ export default function Jobs() {
     { deps: [ttyMetas] },
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     const sessionKeys = ttyMetas.map((x) => x.sessionKey);
     if (ttyMetas.length === 0) {
       state.sessionKey = null;
@@ -168,13 +169,13 @@ export default function Jobs() {
     }
   }, [ttyMetas]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // sync onchange session or hmr session
     if (state.processes.length > 0) {
       state.refreshProcessLeaders();
     }
     // }, [state.ttyMeta?.ttyBootedAt]);
-  }, []);
+  }, [state.ttyMeta]);
 
   const sessionsExist = ttyMetas.length > 0;
 
@@ -201,7 +202,7 @@ export default function Jobs() {
                 </option>
               ))}
             </select>
-            <button className="px-2 bg-[#222]" onClick={state.refreshProcessLeaders}>
+            <button className="cursor-pointer px-2 bg-[#222]" onClick={state.refreshProcessLeaders}>
               <ArrowsClockwiseIcon alt="refresh" className="size-3" />
             </button>
           </div>
