@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./bootstrap": "./src/bootstrap.tsx"
+    "./schema": "./src/schema.ts"
   },
   "scripts": {},
   "dependencies": {

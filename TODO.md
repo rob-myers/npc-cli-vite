@@ -9,7 +9,9 @@
   - ℹ️ will need to connect to a tty
   - ✅ create `packages/ui/jobs` via `pnpm gen-ui`
   - ✅ hook up to ui.store
-  - 🚧 copy over `PsList` from npc-cli-next and get it working
+  - ✅ copy over `PsList` from npc-cli-next and get it working
+  - 🚧 ensure messages are being sent by session
+    - i.e. get it working again
   - extend component so can save/re-run
 
 - ✅ remove `packages/ui/demo`

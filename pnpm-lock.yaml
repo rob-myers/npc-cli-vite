@@ -576,12 +576,24 @@ importers:
 
   packages/ui/jobs:
     dependencies:
+      '@npc-cli/cli':
+        specifier: workspace:^
+        version: link:../../cli
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
+      '@npc-cli/ui__jsh':
+        specifier: workspace:^
+        version: link:../jsh
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../../util
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      debounce:
+        specifier: 'catalog:'
+        version: 3.0.0
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -591,6 +603,9 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.1.13
+      zustand:
+        specifier: 'catalog:'
+        version: 5.0.9(@types/react@19.2.14)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
 
   packages/ui/jsh:
     dependencies:
