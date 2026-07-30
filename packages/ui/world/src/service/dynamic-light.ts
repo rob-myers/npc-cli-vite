@@ -44,7 +44,7 @@ export type DynamicLightPostprocessOpts = {
   bottomHeight?: number;
   /** World-space height (y) the light applies up to */
   topHeight: number;
-  /** World-space distance over which the light fades out, starting at its own radius. Default `0.6` */
+  /** World-space distance over which the light fades out, starting at its own radius. Default `0.9` */
   falloff?: number;
   /** Side length (px) of each gmKey's baked wall-occupancy texture layer. Default `512`. */
   wallTexSize?: number;
@@ -142,6 +142,10 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   // wavy/bumpy shadow edges near the light's outer radius).
   const marchStepSize = (maxDynamicLightRadius + falloff) / marchSteps;
   const doorHalfDepth = opts.doorHalfDepth ?? 0.08; // small enough to light
+  // the march must stop this far short of the fragment itself — otherwise a fragment ON a door's
+  // own surface (which sits right on that door's own occlusion segment) always self-samples its own
+  // occlusion stroke and reads as fully occluded regardless of the light's radius/falloff.
+  const marchSurfaceBias = doorHalfDepth;
   const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
   const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
 
@@ -304,13 +308,16 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
             // itself scales with `dist` (capped at `marchSteps`) so the effective step size stays
             // ~`marchStepSize` regardless of distance from the light, fixing the original wavy/bumpy
             // shadow edges without introducing light-centered ring artifacts.
-            const effectiveSteps = dist.div(marchStepSize).ceil().clamp(1, marchSteps);
+            // never sample all the way to the fragment itself — see `marchSurfaceBias`
+            const marchTargetDist = dist.sub(marchSurfaceBias).max(0);
+            const targetFrac = marchTargetDist.div(dist.max(0.0001));
+            const effectiveSteps = marchTargetDist.div(marchStepSize).ceil().clamp(1, marchSteps);
             const maxOccupancy = float(0).toVar();
             Loop(marchSteps, ({ i }) => {
               If(float(i).greaterThanEqual(effectiveSteps), () => {
                 Break();
               });
-              const t = float(i).add(1).div(effectiveSteps);
+              const t = float(i).add(1).div(effectiveSteps).mul(targetFrac);
               const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t));
               const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t));
               maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
