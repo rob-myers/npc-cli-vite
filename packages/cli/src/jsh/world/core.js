@@ -222,10 +222,12 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       killed && getNpc()?.rejectAll(new Error("killed"));
     },
     onResumes() {
-      // 🚧 continue?
+      // 🚧 continue
+      return true;
     },
     onSuspends: () => {
-      // 🚧 stop and remember?
+      // 🚧 stop moving and remember where we were going
+      return true;
     },
   });
 
@@ -270,7 +272,6 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
           // ignore all pending reads when stuck
           api.flush();
           pendingRead = api.read();
-          // api.writeError(`move: ${e.message}`);
           return;
         }
         throw e;

@@ -100,11 +100,11 @@ export class FifoDevice implements Device {
   async readData(exactlyOnce?: boolean, chunks?: boolean): Promise<ReadResult> {
     this.readerStatus = this.readerStatus || "Connected";
 
-    if (this.buffer.length) {
+    if (this.buffer.length > 0) {
       this.writerResolver?.(); // Unblock writer
       this.writerResolver = null;
 
-      if (exactlyOnce) {
+      if (exactlyOnce === true) {
         if (isDataChunk(this.buffer[0]) === false) {
           // Standard case
           return { data: this.buffer.shift() };

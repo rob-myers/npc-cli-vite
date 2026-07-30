@@ -180,34 +180,34 @@ export default function Jobs() {
   const sessionsExist = ttyMetas.length > 0;
 
   return (
-    <div className="p-2 h-full overflow-auto text-white min-h-[50px]">
-      <div className="flex justify-between items-stretch">
+    <div className="p-2 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
+      {!sessionsExist && (
         <h2 className="flex gap-3 items-baseline self-end text-[#ccc] font-mono text-base pb-0.5">
-          Processes
-          {!sessionsExist && <div className="text-[#999]">{`[No sessions]`}</div>}
+          {/* Processes */}
+          <div className="text-[#999]">{`[No sessions]`}</div>
         </h2>
+      )}
 
-        {sessionsExist && (
-          <div className="flex">
-            <select
-              ref={state.ref("sessionSelectEl")}
-              onChange={state.onChangeSessionKey}
-              title="sessionKey"
-              // 🔔 text-align-last fixes safari
-              className="py-0.5 text-[0.9rem] font-mono bg-black [text-align-last:center]"
-            >
-              {ttyMetas.map(({ sessionKey: key }) => (
-                <option key={key} value={key}>
-                  {key}
-                </option>
-              ))}
-            </select>
-            <button className="cursor-pointer px-2 bg-[#222]" onClick={state.refreshProcessLeaders}>
-              <ArrowsClockwiseIcon alt="refresh" className="size-3" />
-            </button>
-          </div>
-        )}
-      </div>
+      {sessionsExist && (
+        <div className="flex">
+          <select
+            ref={state.ref("sessionSelectEl")}
+            onChange={state.onChangeSessionKey}
+            title="sessionKey"
+            // 🔔 text-align-last fixes safari
+            className="p-1 text-md font-mono bg-black"
+          >
+            {ttyMetas.map(({ sessionKey: key }) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
+          </select>
+          <button className="cursor-pointer px-2 bg-[#222]" onClick={state.refreshProcessLeaders}>
+            <ArrowsClockwiseIcon alt="refresh" className="size-3" />
+          </button>
+        </div>
+      )}
 
       {sessionsExist && (
         <div className="flex flex-row flex-wrap items-stretch gap-1 text-base text-white">
