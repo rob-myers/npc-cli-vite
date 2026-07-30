@@ -1,57 +1,18 @@
 # TODO
 
-- new approach to todos i.e. current go into technical and start new section
-
-- ✅ switch light-theme and dark-theme
-  - default dark-theme
-- ✅ light-theme changes lights
-  - ✅ forces intensity 1, restore on dark-theme
-  - ✅ suppresses lighting ui
-- ✅ light-theme can show dynamicLight
-- ✅ light-mode and dark-mode switch postprocessing shaders for dynamicLight
-  - partition
-  - simplify new shader
-- ✅ npc skins have meta.brightness as pair `[lightBrightness, darkBrightness]`
-
-- ✅ improve room light outlines
-  - ❌ in light-theme show outlines (not lit)
-    - modify dark-theme via top-level slider instead
-  - ✅ outlines include all doors
-
-- 🚧 refine unreachable nav via locked door
-  - ✅ do not go right up to locked door
-  - ✅ more robust: fallback to centroid
-  - avoid jerky animation when immediately fail
-
-- ✅ tty supports `/shared`
-  - `echo 'Hello, world!' > /shared/msg`
-  - persisted and rehydrated
-- ✅ `move` support paths to `npcKey` rather than only literal
-  - ✅ local path `npcKey` or `~/npcKey` or `/shared/npcKey`
-  - `pick | move npc:/shared/npcKey to:$( pick 1 )`
+- 🚧 new approach to todos i.e. current go into technical and start new section
+  - 🚧 final few before switch to blog
 
 - replace `meta` by `decor` i.e. decor queries by rect
   - `decor at:...`
   - `decor near:...`
   - can specify exact e.g. check obstacle outline contains
 
-- ✅ auto unlocked door cannot close on npc just exit doorway
-  - does not happen if we move again
-
-- ✅ BUG decor hmr onchange decor/foo.svg
-
-- ✅ clean fadeSpawn
-- ✅ room labels represented as decor
-  - `w decor.byRoom.0.1 | split | filter 'x => x.meta.label'`
-
-- ✅ add "screen" as tilted decor quad
-  - ✅ add decor image
-
-- ❌ prevent bubble fade while paused
-- ✅ clean MAX_DOORS_PER_GEOMORPH comment
-  - can use e.g. 64 and no longer in sync with Doors.tsx
-
-- ✅ fix npc bounds i.e. on Lie and complete animation recompute bounding sphere
+- 🚧 refine unreachable nav via locked door
+  - ✅ do not go right up to locked door
+  - ✅ more robust: fallback to centroid
+  - 🚧 avoid jerky animation when immediately fail
+    - also for very close target
 
 
 - could cover up curved room raymarching woes
@@ -67,21 +28,10 @@
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"
-- ✅ BUG animation stops sometimes when go idle
 - BUG assets.json decor orient changing for no apparent reason?
   - mostly in 101 so maybe needs re-save?
   - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
 - BUG npc arms through locked door
-- ✅ go thru skins
-  - ✅ fix medic-0 foot texturing
-  - ❌ improve general-0
-  - ✅ add a couple more
-- ✅ remove shuffle-back animation
-- ✅ npc: unify state.lookAtPoint and updateLookAt
-  - now have `npc.look` and `npc.anim.lookTick`
-- ❌ BUG locked door opens when npc close enough to nearby sensor
-  - `w e.toggleLock g0d31`
-- ✅ abstract npc animation logic into class
 - BUG on save shell.ts terminal profile does not run
 - idle-left with left-leg forward
 - idle-right with right-leg forward
@@ -93,19 +43,12 @@
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
 - onchange map sealed doors are staying sealed
-- ❌ change lighting from "loop thru radii in shaders" to "multiply by texture"
-  - the lighting was already efficient i.e. precomputes two relative light sources per instance
-- ✅ on idle should pin in front otherwise npc "slides back"
 - skin remapping
   - currently only have skinIndex
-- ❌ world context menu?
 - try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
-- ❌ check glsl fallback e.g. incognito or force
-  - Walls and Doors don't draw i.e. too many
 - fix precision in `assets.json`
 - start generating documentation in README.md
-- ✅ support deleting maps from MapEdit
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
 - ℹ️ minecraft skin templates
@@ -133,36 +76,5 @@
 
 - 🚧 extend existing symbols with missing obstacles
 
-- ✅ extend existing symbols with missing decor
-  - ✅ stateroom-012 has decor key=switch
-  - ✅ BUG thumbnail wrong for transformed decor: origin?
-    - packages/app/public/symbol/stateroom--012--2x2.thumbnail.png
-
-- ✅ do not recompute all symbols when only edit a hull symbol (DEV)
-  - ✅ done in prod for hull-symbols
-  - ✅ use sub-stratification
-  - ❌ could do client-side and ignore server update
-  - ❌ createLayout optimization
-    - saw `48ms`
-
-- ✅ ISSUE obstacle sprite-sheet when polygon aabb overlap
-  - e.g. bridge--042: curved window vs. adjacent desk
-    - when adjacent can fix via same height
-  - technically can fix by creating an "extra symbol"
-
-- ❌ try deform limbs of blockbench model, saving as separate file
-
 - move path parsing code out of vite plugin file, to support hmr
 - warn if symbols "above" walls in symbol
-
-- ✅ shell refinement
-  - ✅ finish migrating semantics
-  - ✅ provide `modules` so can `import util`
-  - ✅ fix ctrl-C for `poll`
-  - ❌ BUG `echo foo | map 'x\n=>x'`
-    - technically string does not define a valid js function so is interpreted as a string
-  - ✅ Tty has /etc/{util.sh,util.js.sh}
-  - ✅ STOP bug: appears initially in e.g. 3rd tty
-    - seen profile fail to load too
-  - ❌ improve `[undefined, undefined, undefined]` output of `call '() => document.documentElement.childNodes' | map Array.from | log`
-  - sometimes on hot reload need to ctrl-c
