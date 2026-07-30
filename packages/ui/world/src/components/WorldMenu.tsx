@@ -33,6 +33,7 @@ import {
   defaultDynamicLightRadius,
   defaultRoomLightIntensity,
   fovStorageKey,
+  maxDynamicLightRadius,
   pickOpenDoorsKey,
 } from "../const";
 import { GeomorphGraphsModal, LightMapModal, RoomHitModal, SkinsModal } from "../service/debug";
@@ -515,7 +516,7 @@ export function WorldMenu() {
                         <LightsMenuSlider
                           label="npc radius"
                           min={0.2}
-                          max={3}
+                          max={maxDynamicLightRadius}
                           step={0.1}
                           value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
                           defaultValue={defaultDynamicLightRadius}

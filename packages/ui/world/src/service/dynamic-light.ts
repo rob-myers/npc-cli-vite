@@ -28,11 +28,17 @@ import {
   defaultDynamicLightRadius,
   dynamicLightIntensityKey,
   dynamicLightRadiusKey,
+  maxDynamicLightRadius,
 } from "../const";
 import { TexArray } from "./tex-array";
 
 export type DynamicLightPostprocessOpts = {
-  /** Fixed number of samples along the npc-to-fragment line when testing wall occlusion. Default `24`. */
+  /**
+   * Maximum number of samples along the npc-to-fragment line when testing wall occlusion,
+   * calibrated against the worst-case light-to-fragment distance (max slider radius `3` + `falloff`)
+   * to derive a fixed world-space step size — closer fragments take fewer, not smaller, steps.
+   * Default `24`.
+   */
   marchSteps: number;
   /** World-space height (y) the light applies from. Default `0` */
   bottomHeight?: number;
@@ -42,7 +48,7 @@ export type DynamicLightPostprocessOpts = {
   falloff?: number;
   /** Side length (px) of each gmKey's baked wall-occupancy texture layer. Default `512`. */
   wallTexSize?: number;
-  /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.1`. */
+  /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.05`. */
   doorHalfDepth?: number;
   /** Radius used while the tracked npc is near a hull door (see `setNearHullDoor`). Default `0.8`. */
   hullDoorwayRadius?: number;
@@ -130,11 +136,14 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
   const marchSteps = opts.marchSteps;
-  const doorHalfDepth = opts.doorHalfDepth ?? 0.1;
+  // worst-case light-to-fragment distance ever marched (max slider radius + falloff) — used to
+  // derive a fixed world-space step size so sampling density no longer degrades with distance from
+  // the light (a fixed step COUNT alone spreads over a longer `dist` far from the light, causing
+  // wavy/bumpy shadow edges near the light's outer radius).
+  const marchStepSize = (maxDynamicLightRadius + falloff) / marchSteps;
+  const doorHalfDepth = opts.doorHalfDepth ?? 0.08; // small enough to light
   const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
   const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
-  // soft-shadow softness for the occlusion march below — higher = harder-edged shadows
-  const occSharpness = 2;
 
   // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
   const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
@@ -288,26 +297,30 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
           const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
 
           If(litVal.greaterThan(0), () => {
-            // fixed step COUNT (not step size) — keeps sample positions continuous frame-to-frame
-            // Íñigo Quílez–style soft-shadow march: track a running MINIMUM visibility across steps
-            // (`res = min(res, ...)`, https://iquilezles.org/articles/rmshadows) rather than
-            // jumping straight to fully-occluded the first time occupancy crosses a threshold —
-            // produces a soft penumbra as the ray grazes a wall's edge, instead of a hard cutoff.
-            const visibility = float(1).toVar();
+            // step positions stay a FRACTION of this ray's own `dist` (like the original fixed-count
+            // march) rather than fixed absolute distances from the light — sampling at fixed absolute
+            // distances put every ray's samples on the same set of concentric circles around the
+            // light, which showed up as ridges banding across walls/doors. Instead the STEP COUNT
+            // itself scales with `dist` (capped at `marchSteps`) so the effective step size stays
+            // ~`marchStepSize` regardless of distance from the light, fixing the original wavy/bumpy
+            // shadow edges without introducing light-centered ring artifacts.
+            const effectiveSteps = dist.div(marchStepSize).ceil().clamp(1, marchSteps);
+            const maxOccupancy = float(0).toVar();
             Loop(marchSteps, ({ i }) => {
-              const t = float(i).add(1).div(float(marchSteps));
+              If(float(i).greaterThanEqual(effectiveSteps), () => {
+                Break();
+              });
+              const t = float(i).add(1).div(effectiveSteps);
               const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t));
               const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t));
-              const occ = sampleOccupancy(stepX, stepZ);
-              // occSharpness: how strongly one occupied sample darkens visibility (iq's shadow-softness `k`)
-              visibility.assign(visibility.min(float(1).sub(occ.mul(occSharpness)).clamp(0, 1)));
-              If(visibility.lessThanEqual(0.02), () => {
-                visibility.assign(0);
+              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
+              If(maxOccupancy.greaterThanEqual(0.5), () => {
+                maxOccupancy.assign(1);
                 Break();
               });
             });
 
-            litOut.assign(litVal.mul(visibility));
+            litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
           });
         });
 
