@@ -212,7 +212,15 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
   const getNpc = () => w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
 
   const { dispose } = api.handleStatus({
-    cleanups: (killed) => killed && getNpc()?.rejectAll(new Error("killed")),
+    cleanups(killed) {
+      killed && getNpc()?.rejectAll(new Error("killed"));
+    },
+    onResumes() {
+      // 🚧 continue?
+    },
+    onSuspends: () => {
+      // 🚧 stop and remember?
+    },
   });
 
   try {

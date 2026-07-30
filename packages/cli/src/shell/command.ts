@@ -15,7 +15,6 @@ import {
   safeJsStringify,
   tagsToMeta,
   truncateOneLine,
-  warn,
 } from "@npc-cli/util/legacy/generic";
 import cliColumns from "cli-columns";
 import { ansi, EOF, type ProcessStatus, toProcessStatus } from "./const";
@@ -976,51 +975,19 @@ class CmdService {
           const ct = this.provideProcessCtxt(node, args.slice(1));
 
           if (args[0] in ct.lib) {
-            // 🔔 support process hot-reloading
-            // ℹ️ e.g. call '({ api }) => api.getProcess({ sessionKey: "tty-0", pid: 11 }).reboot.apply()'
-            const process = sessionApi.getProcess(meta);
-            process.reboot = {
-              apply() {
-                if (this.applying === true) {
-                  return warn(`already rebooting process ${process.key}: ${process.src}`);
-                }
-                this.applying = true;
-                const removed = process.cleanups.splice(this.cleanupId, process.cleanups.length - this.cleanupId);
-                removed.forEach((cleanup) => void cleanup());
-              },
-              applying: false,
-              cleanupId: process.cleanups.length,
-            };
             meta.stack.push(`${args[0]}.${args[1]}`);
 
-            const ignoreThrow = args[2] === "--force";
+            const func = (ct.lib as any)[args[0]]?.[args[1]];
+            if (func === undefined) {
+              throw Error(`not found`);
+            }
 
-            while (true) {
-              try {
-                const func = (ct.lib as any)[args[0]]?.[args[1]];
-                if (func === undefined) {
-                  throw Error(`not found`);
-                }
+            ct.args = args.slice(2); // discard e.g. "core spawn"
 
-                ct.args = args.slice(2); // discard e.g. "core spawn"
-
-                if (functionOrAsync.includes(func.constructor.name)) {
-                  yield await func(ct); // support all sh/src/* functions
-                } else {
-                  yield* func(ct);
-                }
-
-                break;
-              } catch (e) {
-                if (ignoreThrow) {
-                  return;
-                }
-                // 🔔 distinguish hot-reload from error
-                if (process.reboot.applying === false || process.status === toProcessStatus.Killed) {
-                  throw e;
-                }
-                process.reboot.applying = false;
-              }
+            if (functionOrAsync.includes(func.constructor.name)) {
+              yield await func(ct); // support all sh/src/* functions
+            } else {
+              yield* func(ct);
             }
           } else {
             // Function provided as argument

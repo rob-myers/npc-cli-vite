@@ -476,7 +476,7 @@ export class JShSemantics {
           }
           await device.writeData(item);
         } catch (e) {
-          // reachable e.g. on twice reboot `poll` while paused
+          // reachable?
           await generator.throw(e);
         }
       }
