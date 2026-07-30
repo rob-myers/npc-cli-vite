@@ -1,6 +1,7 @@
 import {
   type ExternalMessageProcessLeader,
   getPtagsPreview,
+  type ProcessMeta,
   type ProcessStatus,
   sessionApi,
   toProcessStatus,
@@ -36,6 +37,8 @@ export default function Jobs() {
       sessionKey: null,
       sessionSelectEl: null,
       ttyMeta: null,
+      debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
+      disconnectSession: null,
 
       changeProcess(e) {
         if (state.sessionKey === null) return;
@@ -68,30 +71,20 @@ export default function Jobs() {
       connectSession() {
         try {
           state.disconnectSession?.();
-          const { sessionKey } = state;
 
-          if (sessionKey === null) return;
-          const session = sessionApi.getSession(sessionKey);
+          const session = sessionApi.getSession(state.sessionKey ?? "");
           if (session === undefined) {
-            // sessionKey could be empty string
             state.processes = state.ordered = [];
             return;
           }
 
           const leaders = Object.values(session.process).filter((p) => p.key === p.pgid);
 
-          state.processes = leaders.reduce((agg, { key: pid, src, status, ptags }) => {
-            const group = sessionApi.getProcesses(sessionKey, pid);
-            const bootable = group.some((p) => p.reboot !== undefined);
-            agg[pid] = {
-              pid,
-              src,
-              status,
-              ptagsText: getPtagsPreview(ptags).join(""),
-              bootable,
-            };
-            return agg;
-          }, [] as ProcessLeader[]);
+          //
+          state.processes = leaders.reduce(
+            (agg, meta) => ((agg[meta.key] = processMetaToProcessLeader(meta)), agg),
+            [] as ProcessLeader[],
+          );
 
           // order by pid=0, tags, src
           state.ordered = state.processes.slice().sort((p, q) => {
@@ -108,38 +101,48 @@ export default function Jobs() {
           error(e);
         }
       },
-      debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
-      disconnectSession: null,
       handleLeaderMessage(msg) {
-        // console.log(msg);
-        const process = state.processes[msg.pid];
-        if (!process) {
+        if (state.sessionKey === null) {
           return;
         }
+
+        const process = sessionApi.getProcess({ sessionKey: state.sessionKey, pid: msg.pid });
+        if (msg.act !== "ended" && process === undefined) {
+          return;
+        }
+
+        // console.log(msg);
+        const item = (state.processes[msg.pid] ??= processMetaToProcessLeader(process));
+
         switch (msg.act) {
           case "ended": {
-            process.status = toProcessStatus.Killed;
+            item.status = toProcessStatus.Killed;
             msg.pid === 0 ? state.debouncedUpdate() : state.update();
             break;
           }
           case "paused":
-            process.status = toProcessStatus.Suspended;
+            item.status = toProcessStatus.Suspended;
             state.update();
             break;
           case "resumed":
-            process.status = toProcessStatus.Running;
+            item.status = toProcessStatus.Running;
             state.update();
             break;
           case "started": {
-            // 🔔 currently only session leader gets here (fired too early otherwise)
-            if (state.sessionKey === null) return;
-            process.status = toProcessStatus.Running;
-            const session = sessionApi.getSession(state.sessionKey);
-            process.src = session.process[msg.pid]?.src ?? process.src;
+            item.status = toProcessStatus.Running;
+            item.src = process.src;
             msg.pid === 0 ? state.debouncedUpdate() : state.update();
+            // state.debouncedUpdate();
             break;
           }
         }
+
+        // 🚧 avoid recomputing
+        state.ordered = state.processes.slice().sort((p, q) => {
+          if (p.pid === 0) return -1;
+          if (q.pid === 0) return +1;
+          return p.ptagsText < q.ptagsText || p.src < q.src ? -1 : +1;
+        });
       },
       onChangeSessionKey(e) {
         const { value } = e.currentTarget;
@@ -158,14 +161,15 @@ export default function Jobs() {
   useEffect(() => {
     const sessionKeys = ttyMetas.map((x) => x.sessionKey);
     if (ttyMetas.length === 0) {
-      state.sessionKey = null;
-      state.ttyMeta = null;
+      state.set({ sessionKey: null, ttyMeta: null });
     } else if (state.sessionKey === null || !sessionKeys.includes(state.sessionKey)) {
-      state.sessionKey = (state.sessionSelectEl?.value as `tty-${number}`) ?? sessionKeys[0];
-      state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)];
+      state.set({
+        sessionKey: (state.sessionSelectEl?.value as `tty-${number}`) ?? sessionKeys[0],
+        ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)],
+      });
     } else {
       // Must sync
-      state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)];
+      state.set({ ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] });
     }
   }, [ttyMetas]);
 
@@ -209,7 +213,7 @@ export default function Jobs() {
         )}
       </div>
 
-      {sessionsExist === true && (
+      {sessionsExist && (
         <div className="flex flex-row flex-wrap items-stretch gap-1 text-base text-white">
           {state.ordered.map((p) => {
             const killed = p.status === toProcessStatus.Killed;
@@ -281,6 +285,7 @@ const controlCss = "flex items-center justify-center w-7 px-2 py-0.5 border bord
 const disabledControlCss = "cursor-auto text-[#777]";
 
 type State = {
+  /** We use an array to represent mapping `pid -> processLeader` */
   processes: ProcessLeader[];
   /**  Re-ordered `processes` */
   ordered: ProcessLeader[];
@@ -303,3 +308,15 @@ type ProcessLeader = {
   ptagsText: string;
   bootable: boolean;
 };
+
+function processMetaToProcessLeader({ key: pid, sessionKey, src, status, ptags }: ProcessMeta): ProcessLeader {
+  const group = sessionApi.getProcesses(sessionKey, pid);
+  const bootable = group.some((p) => p.reboot !== undefined);
+  return {
+    pid,
+    src,
+    status,
+    ptagsText: getPtagsPreview(ptags).join(""),
+    bootable,
+  };
+}

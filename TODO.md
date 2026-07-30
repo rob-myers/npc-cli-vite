@@ -12,7 +12,11 @@
   - ✅ copy over `PsList` from npc-cli-next and get it working
   - ✅ ensure messages are being sent by session
     - i.e. get it working again
-  - 🚧 spawning background process should auto-update `Jobs`
+  - ✅ spawning background process should auto-update `Jobs`
+    - `pick | move npc:rob &`
+  - ✅ ensure message send on kill
+    - `sleep 3 &`
+  - avoid recompute `state.ordered`
   - extend component so can save/re-run
 
 - ✅ remove `packages/ui/demo`

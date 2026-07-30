@@ -351,7 +351,7 @@ export class TtyShell implements Device {
             key: "process-leader",
             pid: meta.pid,
             act: "started",
-            profileRunning: this.profileFinished === false ? true : undefined,
+            profile: this.profileFinished === false,
             // src: process.src,
           },
         });
@@ -363,7 +363,7 @@ export class TtyShell implements Device {
             key: "process-leader",
             pid: meta.pid,
             act: "paused",
-            profileRunning: this.profileFinished === false ? true : undefined,
+            profile: this.profileFinished === false,
           },
         });
         return true;
@@ -376,7 +376,7 @@ export class TtyShell implements Device {
             key: "process-leader",
             pid: meta.pid,
             act: "resumed",
-            profileRunning: this.profileFinished === false ? true : undefined,
+            profile: this.profileFinished === false,
           },
         });
         return true;
@@ -399,7 +399,7 @@ export class TtyShell implements Device {
         // possibly via preProcessWrite
         ttyError(`${meta.sessionKey}${meta.pgid ? " (background)" : ""}: ${meta.pid}: SIGKILL`);
         // Ctrl-C code is 130 unless overridden
-        term.exitCode = e.exitCode ?? 130; // 🚧 or 137?
+        term.exitCode = e.exitCode ?? 130; // or 137?
       } else if (e instanceof ShError) {
         term.exitCode = e.exitCode;
       }
@@ -419,7 +419,7 @@ export class TtyShell implements Device {
               key: "process-leader",
               pid: meta.pid,
               act: "ended",
-              profileRunning: this.profileFinished === false ? true : undefined,
+              profile: this.profileFinished === false,
             },
           });
 
