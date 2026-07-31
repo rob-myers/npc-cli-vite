@@ -190,6 +190,8 @@ export async function meta(
   return results[0];
 }
 
+// 🚧 split into move_const, move_next, move_lazy
+
 /**
  * Usage
  * ```sh
@@ -213,9 +215,7 @@ export async function move(
     along: boolean;
   } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  /**
-   * `opts.npcKey` either literal or path to literal relative to CWD
-   */
+  /** `opts.npcKey` is either literal string or path to literal string */
   const getNpc = () => {
     try {
       return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
@@ -228,12 +228,16 @@ export async function move(
 
   const { dispose } = api.handleStatus({
     cleanups(killed) {
-      killed && getNpc().rejectAll(new Error("killed"));
+      try {
+        killed && getNpc().rejectAll(new Error("killed"));
+      } catch {}
     },
     onSuspends: () => {
-      const npc = getNpc();
-      if (npc.isMoving()) pendings.unshift(npc.last.dst);
-      npc.rejectAll(Error("paused"));
+      try {
+        const npc = getNpc();
+        if (npc.isMoving()) pendings.unshift(npc.last.dst);
+        npc.rejectAll(Error("paused"));
+      } catch {}
       return true;
     },
   });
