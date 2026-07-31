@@ -24,9 +24,9 @@
   - clean component
   - extend component so can re-run and combine scripts
 
-- 🚧 can pause/resume `move`
+- ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
-  - all variants use `queue` which we can insert into
+  - all variants use `pendings` which we can insert into
 
 - ✅ remove `packages/ui/demo`
 
