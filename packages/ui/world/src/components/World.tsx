@@ -545,7 +545,7 @@ function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
     <div
       ref={props.ref}
       // initially faded
-      className="absolute inset-0 z-5 bg-black pointer-events-none transition-opacity opacity-100 duration-100"
+      className="absolute inset-0 z-5 bg-zinc-800 pointer-events-none transition-opacity opacity-100 duration-100"
     />
   );
 }

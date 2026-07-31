@@ -1,3 +1,6 @@
+/**
+ * 🔔 extended in packages/ui/world/src/jsh-cli.d.ts
+ */
 declare namespace JshCli {
   type ProcessApi = import("../shell/command").ProcessApi;
   type ProcessContext = import("../shell/command").ProcessContext;
@@ -19,6 +22,4 @@ declare namespace JshCli {
 
     datum: Datum;
   }
-
-  // 🔔 extended in packages/ui/world/src/jsh-cli.d.ts
 }

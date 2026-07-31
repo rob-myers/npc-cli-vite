@@ -593,7 +593,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     if (w.rootEl) {
       return state.setupDom();
     }
-  }, [w.rootEl, state.onKeyDown]);
+  }, [w.rootEl]);
 
   useEffect(() => {
     state.setupLights();
