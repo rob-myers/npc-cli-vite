@@ -29,7 +29,7 @@ export class UiErrorBoundary extends Component<
             {this.state.error.message}
           </pre>
           <div className="px-4 py-2">
-            <pre className="max-h-20 overflow-auto border border-white p-2 whitespace-pre-wrap font-sans text-green-600 text-sm leading-relaxed tracking-wide">
+            <pre className="max-h-20 overflow-auto border border-white/50 p-2 whitespace-pre-wrap font-sans text-green-600 text-sm leading-relaxed tracking-wide">
               {this.state.error.stack}
             </pre>
           </div>
