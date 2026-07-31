@@ -46,6 +46,7 @@ export default function Jobs() {
         state.update();
       }, 200),
       confirmClear: false,
+      confirmClearTimeoutId: 0,
       foldInteractive: true,
       history: [],
       ordered: [],
@@ -68,9 +69,14 @@ export default function Jobs() {
         }
       },
       clearHistory() {
+        window.clearTimeout(state.confirmClearTimeoutId);
+
         if (state.confirmClear === false) {
-          return state.set({ confirmClear: true }); // 🔔 click again to confirm
+          // 🔔 click again to confirm, else we forget
+          state.confirmClearTimeoutId = window.setTimeout(() => state.set({ confirmClear: false }), confirmClearMs);
+          return state.set({ confirmClear: true });
         }
+
         if (state.sessionKey !== null) {
           tryLocalStorageRemove(getHistoryKey(state.sessionKey));
         }
@@ -231,7 +237,10 @@ export default function Jobs() {
 
   useEffect(() => {
     const intervalId = setInterval(state.cleanupDead, cleanupDeadMs);
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      window.clearTimeout(state.confirmClearTimeoutId);
+    };
   }, []);
 
   useEffect(() => {
@@ -271,17 +280,6 @@ export default function Jobs() {
           </div>
         ) : (
           <div className="text-[#999]">{`[No sessions]`}</div>
-        )}
-
-        {state.history.length > 0 && (
-          <button
-            type="button"
-            title="clear history"
-            className={cn("cursor-pointer px-2 py-1 text-sm", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
-            onClick={state.clearHistory}
-          >
-            {state.confirmClear ? "confirm" : "clear"}
-          </button>
         )}
       </div>
 
@@ -352,7 +350,17 @@ export default function Jobs() {
 
       {sessionsExist && state.history.length > 0 && (
         <div className="flex flex-col gap-1 font-mono text-sm">
-          <div className="text-[#999]">history</div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[#999]">history</div>
+            <button
+              type="button"
+              title="clear history"
+              className={cn("cursor-pointer", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
+              onClick={state.clearHistory}
+            >
+              {state.confirmClear ? "confirm" : "clear"}
+            </button>
+          </div>
           <div className="flex flex-col gap-1 max-h-40 overflow-auto p-1 bg-black border border-[#505050] rounded">
             {interactiveHistory.length > 0 && (
               <button
@@ -393,6 +401,8 @@ const controlCss = "flex items-center justify-center w-7 px-2 py-0.5 border bord
 
 /** How often killed processes move into `history` */
 const cleanupDeadMs = 3000;
+/** How long "clear history" awaits confirmation */
+const confirmClearMs = 3000;
 /** Max number of `history` entries, dropping oldest */
 const maxHistory = 100;
 
@@ -412,6 +422,8 @@ type State = {
   foldInteractive: boolean;
   /** Has "clear history" been clicked once i.e. awaiting confirmation? */
   confirmClear: boolean;
+  /** Forgets `confirmClear` after `confirmClearMs` */
+  confirmClearTimeoutId: number;
   clearHistory: () => void;
   /** Append to history and persist */
   addHistory: (items: ProcessLeader[]) => void;
