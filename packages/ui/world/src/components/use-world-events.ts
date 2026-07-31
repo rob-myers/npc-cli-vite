@@ -150,6 +150,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ? Math.max(persisted.getAmbientIntensity(), w.touchDevice ? 1 : 0.4)
             : persisted.getAmbientIntensity(),
         );
+        state.onChangeTheme();
+      },
+      onChangeTheme() {
         w.obs.setBrightness(w.getTheme().obstacles.brightness);
         w.door.setBrightness(w.getTheme().doors.brightness);
       },
@@ -729,6 +732,7 @@ export type State = {
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   onBootstrap(): void;
+  onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;

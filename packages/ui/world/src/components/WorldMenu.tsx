@@ -455,10 +455,11 @@ export function WorldMenu() {
                             onClick={(e) => e.stopPropagation()}
                             onChange={() => {
                               const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                              if (!parsed.success || !w.assets) return;
-                              w.assets.theme ??= {};
-                              w.assets.theme[w.themeKey] = parsed.data;
-                              state.saveThemeDevDebounced();
+                              if (parsed.success && w.assets) {
+                                (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                                w.e.onChangeTheme();
+                                state.saveThemeDevDebounced();
+                              }
                             }}
                             onBlur={() => {
                               state.saveThemeDev();

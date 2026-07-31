@@ -297,8 +297,7 @@ export default function Obstacles(_props: Props) {
       }
     }
 
-    state.draw().then(async () => {
-      // await pause(60); // avoid mismatched instances/uvs
+    state.draw().then(() => {
       state.sendDataToGpu();
       w.update();
     });
