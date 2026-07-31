@@ -155,8 +155,8 @@ export type UiStoreState = {
   persistedPanes: PersistedPanesLayout;
 };
 
-export type UiStoreByIdEntry = {
-  meta: UiInstanceMeta;
+export type UiStoreByIdEntry<T extends UiInstanceMeta = UiInstanceMeta> = {
+  meta: T;
   portal: HtmlPortalWrapper;
   everSeen: boolean;
 };

@@ -31,9 +31,7 @@ export default function Jobs() {
 
   const ttyMetas = uiStore(
     useShallow(({ byId }) =>
-      Object.values(byId)
-        .map((x) => x.meta)
-        .filter((meta): meta is JshUiMeta => meta.uiKey === "Jsh"),
+      Object.values(byId).flatMap(({ meta }) => (meta.uiKey === "Jsh" ? (meta as JshUiMeta) : [])),
     ),
   );
 
@@ -233,7 +231,7 @@ export default function Jobs() {
       // Must sync
       state.set({ ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] });
     }
-  }, [ttyMetas]);
+  }, [ttyMetas, state.sessionSelectEl?.value]);
 
   useEffect(() => {
     const intervalId = setInterval(state.cleanupDead, cleanupDeadMs);
@@ -297,43 +295,44 @@ export default function Jobs() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex flex-col gap-2 flex-1 p-1 rounded bg-[#222] text-[#0f0] font-mono"
+                  className="flex items-stretch gap-1 grow min-w-64 max-w-[400px] p-1 rounded bg-[#222] text-[#0f0] font-mono"
                 >
-                  <div className="flex items-stretch flex-wrap gap-2">
-                    <div className="flex justify-between bg-black border border-[#aaca]">
-                      <div className="px-1 text-[#ff9]">{p.pid}</div>
-                      {p.ptagsText && <div className="px-1 bg-[#222]">{p.ptagsText}</div>}
-                    </div>
-                    <div className="flex items-stretch gap-1 text-white">
-                      <div
-                        className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
-                        onClick={!killed ? state.changeProcess : undefined}
-                        data-act={paused ? "resume" : "pause"}
-                        data-pid={p.pid}
-                      >
-                        {paused ? (
-                          <PlayIcon alt="resume" className="size-3" />
-                        ) : (
-                          <PauseIcon alt="pause" className="size-3" />
-                        )}
-                      </div>
-                      <div
-                        className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
-                        onClick={!killed ? state.changeProcess : undefined}
-                        data-act="kill"
-                        data-pid={p.pid}
-                      >
-                        <XIcon alt="kill" className="size-4" />
-                      </div>
-                    </div>
+                  <div className="flex shrink-0 bg-black border border-[#aaca]">
+                    <div className="px-1 text-[#ff9]">{p.pid}</div>
+                    {p.ptagsText && <div className="px-1 bg-[#222]">{p.ptagsText}</div>}
                   </div>
+
                   <div
+                    title={p.src}
                     className={cn(
-                      "grow px-2 py-1 bg-black border border-[#505050] text-sm overflow-auto max-h-20",
+                      "grow min-w-0 truncate px-2 py-1 bg-black border border-[#505050] text-sm",
                       killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
                     )}
                   >
                     {p.src || "[empty]"}
+                  </div>
+
+                  <div className="flex shrink-0 items-stretch gap-1 text-white">
+                    <div
+                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                      onClick={!killed ? state.changeProcess : undefined}
+                      data-act={paused ? "resume" : "pause"}
+                      data-pid={p.pid}
+                    >
+                      {paused ? (
+                        <PlayIcon alt="resume" className="size-3" />
+                      ) : (
+                        <PauseIcon alt="pause" className="size-3" />
+                      )}
+                    </div>
+                    <div
+                      className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
+                      onClick={!killed ? state.changeProcess : undefined}
+                      data-act="kill"
+                      data-pid={p.pid}
+                    >
+                      <XIcon alt="kill" className="size-4" />
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -341,8 +340,8 @@ export default function Jobs() {
           </AnimatePresence>
 
           {state.ordered.length === 0 && (
-            <div className="w-full p-4 text-sm text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
-              Refresh to track current processes.
+            <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
+              Switch to tab "{state.ttyMeta?.title}" to mount it
             </div>
           )}
         </div>
