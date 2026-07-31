@@ -208,36 +208,68 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
  * @param {Omit<JshCli.MoveOpts, 'to'> & { to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
 export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
-  // opts.npcKey is either literal or points to a literal relative to CWD
   const getNpc = () => {
     try {
+      // opts.npcKey either literal or path to literal
       return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
     } catch {
       throw Error(`npc not found: ${opts.npcKey}`);
     }
   };
 
+  // 🚧
+  const pendings = /** @type {JshCli.PointAnyFormat[]} */ ([]);
+
   const { dispose } = api.handleStatus({
     cleanups(killed) {
-      killed && getNpc()?.rejectAll(new Error("killed"));
-    },
-    onResumes() {
-      // 🚧 continue
-      return true;
+      killed && getNpc().rejectAll(new Error("killed"));
     },
     onSuspends: () => {
-      // 🚧 stop moving and remember where we were going
+      const npc = getNpc();
+      if (npc.isMoving()) pendings.unshift(npc.last.dst);
+      npc.rejectAll(Error("paused"));
       return true;
     },
   });
 
+  /**
+   * @param {*} e
+   * @returns {Promise<void>}
+   */
+  function handlePausedError(e) {
+    if (e instanceof Error && e.message === "paused") {
+      return api.awaitResume();
+    }
+    throw e;
+  }
+
+  /**
+   * Awaiting a move surfaces errors the destination itself caused,
+   * which shouldn't stop us reading further destinations.
+   * @param {*} e
+   * @returns {Promise<void>}
+   */
+  function handleMoveError(e) {
+    if (e instanceof Error && ["not navigable", "occupied", "stuck"].includes(e.message)) {
+      return Promise.resolve();
+    }
+    return handlePausedError(e);
+  }
+
+  let next = /** @type {undefined | JshCli.PointAnyFormat} */ (undefined);
+
   try {
     if (opts.to) {
-      // move to point or smoothly along points
       const npc = getNpc();
-      const points = expectArrayOfPoints(opts.to) ? opts.to : [opts.to];
-      for (const [index, point] of points.entries()) {
-        await w.npc.move({ npcKey: npc.key, to: point, arrive: index === points.length - 1, fast: opts.fast });
+      /**
+       * move to point or smoothly along points
+       * e.g. `move npc:rob to:$( pick 3 )`
+       */
+      pendings.push(...(expectArrayOfPoints(opts.to) ? opts.to : [opts.to]));
+      while ((next = pendings.shift())) {
+        await w.npc
+          .move({ npcKey: npc.key, to: next, arrive: pendings.length === 0, fast: opts.fast })
+          .catch(handlePausedError);
       }
       return;
     } else if (api.isTtyAt(0)) {
@@ -245,10 +277,14 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     }
 
     if (!opts.along) {
-      // move immediately to lastest destination
-      while ((datum = await api.read()) !== api.eof) {
+      /**
+       * move immediately to latest destination
+       */
+      let pendingRead = api.read();
+      while ((next = pendings.shift() ?? (await pendingRead)) !== api.eof && next) {
         const npc = getNpc();
-        w.npc.move({ npcKey: npc.key, to: datum, fast: opts.fast });
+        const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
+        await Promise.race([movePromise, (pendingRead = api.read())]);
       }
       return;
     }
