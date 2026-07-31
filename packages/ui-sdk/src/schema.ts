@@ -17,8 +17,6 @@ const mirrored: Record<UiRegistryKey, true> = {
 const FlatBaseUiMetaSchema = z.looseObject({
   /** Layout id */
   id: z.string(),
-  /** Should UI render UiInstanceMenu instead? */
-  customUiInstanceMenu: z.boolean().optional(),
   /** For pausing */
   disabled: z.boolean().optional(),
   /** Force UI initially disabled */

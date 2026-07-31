@@ -13,6 +13,7 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "debounce": "catalog:",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:",
