@@ -16,7 +16,15 @@ import {
   tryLocalStorageRemove,
   tryLocalStorageSet,
 } from "@npc-cli/util/legacy/generic";
-import { ArrowsClockwiseIcon, CaretRightIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowsClockwiseIcon,
+  CaretRightIcon,
+  CheckIcon,
+  CopyIcon,
+  PauseIcon,
+  PlayIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
@@ -45,7 +53,9 @@ export default function Jobs() {
       }, 200),
       confirmClear: false,
       confirmClearTimeoutId: 0,
-      foldInteractive: true,
+      copiedSrc: null,
+      copiedTimeoutId: 0,
+      folded: { interactive: true, background: true },
       history: [],
       ordered: [],
       processes: [],
@@ -54,14 +64,12 @@ export default function Jobs() {
       ttyMeta: null,
 
       addHistory(items) {
-        const bySrc = new Map(state.history.map((p) => [p.src, p]));
-        for (const item of items) {
-          // one entry per src, moved to the end with its most recent pid
-          bySrc.delete(item.src);
-          bySrc.set(item.src, item);
-        }
-
-        state.history = Array.from(bySrc.values()).slice(-maxHistory);
+        // 🔔 one entry per src, appended with its most recent pid
+        const bySrc = new Map(items.map((p) => [p.src, p]));
+        state.history = state.history
+          .filter((p) => !bySrc.has(p.src))
+          .concat(Array.from(bySrc.values()))
+          .slice(-maxHistory);
         if (state.sessionKey !== null) {
           tryLocalStorageSet(getHistoryKey(state.sessionKey), JSON.stringify(state.history));
         }
@@ -205,8 +213,19 @@ export default function Jobs() {
         const restored = tryLocalStorageGetParsed<ProcessLeader[]>(getHistoryKey(state.sessionKey));
         return Array.isArray(restored) ? restored.slice(-maxHistory) : [];
       },
-      toggleFoldInteractive() {
-        state.set({ foldInteractive: !state.foldInteractive });
+      copySrc(src) {
+        window.clearTimeout(state.copiedTimeoutId);
+        navigator.clipboard
+          .writeText(src)
+          .then(() => {
+            state.set({ copiedSrc: src });
+            state.copiedTimeoutId = window.setTimeout(() => state.set({ copiedSrc: null }), copiedMs);
+          })
+          .catch(error);
+      },
+      toggleFold(key) {
+        state.folded[key] = !state.folded[key];
+        state.update();
       },
       onChangeSessionKey(e) {
         const { value } = e.currentTarget;
@@ -238,6 +257,7 @@ export default function Jobs() {
     return () => {
       clearInterval(intervalId);
       window.clearTimeout(state.confirmClearTimeoutId);
+      window.clearTimeout(state.copiedTimeoutId);
     };
   }, []);
 
@@ -246,8 +266,10 @@ export default function Jobs() {
   }, [state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
-  const interactiveHistory = state.history.filter((p) => p.pid === 0);
-  const otherHistory = state.history.filter((p) => p.pid !== 0);
+  const historyGroups: { key: HistoryGroupKey; items: ProcessLeader[] }[] = [
+    { key: "interactive", items: state.history.filter((p) => p.pid === 0) },
+    { key: "background", items: state.history.filter((p) => p.pid !== 0) },
+  ];
 
   return (
     <div className="p-2 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
@@ -282,7 +304,7 @@ export default function Jobs() {
       </div>
 
       {sessionsExist && (
-        <div className="flex flex-row flex-wrap items-stretch gap-1 text-base text-white">
+        <div className="flex flex-row flex-wrap items-stretch gap-x-1 gap-y-0.5 text-base text-white">
           <AnimatePresence initial={false}>
             {state.ordered.map((p) => {
               const killed = p.status === toProcessStatus.Killed;
@@ -295,11 +317,19 @@ export default function Jobs() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex items-stretch gap-1 grow min-w-64 max-w-[400px] p-1 rounded bg-[#222] text-[#0f0] font-mono"
+                  className="flex items-stretch grow min-w-64 max-w-[400px] p-1 rounded bg-[#222] text-[#0f0] font-mono"
                 >
-                  <div className="flex shrink-0 bg-black border border-[#aaca]">
-                    <div className="px-1 text-[#ff9]">{p.pid}</div>
-                    {p.ptagsText && <div className="px-1 bg-[#222]">{p.ptagsText}</div>}
+                  {/* 🔔 fixed width so cards align */}
+                  <div className="relative flex shrink-0 bg-black border border-[#aaca]">
+                    <div className="w-12 px-1 text-center text-[#ff9]">{p.pid}</div>
+                    {p.ptagsText && (
+                      <div
+                        title={p.ptagsText}
+                        className="absolute bottom-0 right-0 px-1 py-0.5 rounded-tl bg-[#333] text-[#ccc] text-xs leading-none"
+                      >
+                        {p.ptagsText}
+                      </div>
+                    )}
                   </div>
 
                   <div
@@ -312,7 +342,7 @@ export default function Jobs() {
                     {p.src || "[empty]"}
                   </div>
 
-                  <div className="flex shrink-0 items-stretch gap-1 text-white">
+                  <div className="flex shrink-0 items-stretch text-white">
                     <div
                       className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
                       onClick={!killed ? state.changeProcess : undefined}
@@ -349,7 +379,7 @@ export default function Jobs() {
 
       {sessionsExist && state.history.length > 0 && (
         <div className="flex flex-col gap-1 font-mono text-sm">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 pl-1">
             <div className="text-[#999]">history</div>
             <button
               type="button"
@@ -360,34 +390,17 @@ export default function Jobs() {
               {state.confirmClear ? "confirm" : "clear"}
             </button>
           </div>
-          <div className="flex flex-col gap-1 max-h-40 overflow-auto p-1 bg-black border border-[#505050] rounded">
-            {interactiveHistory.length > 0 && (
-              <button
-                type="button"
-                className="flex items-center gap-1 cursor-pointer text-[#999]"
-                onClick={state.toggleFoldInteractive}
-              >
-                <CaretRightIcon
-                  alt={state.foldInteractive ? "unfold" : "fold"}
-                  className={cn("size-3", !state.foldInteractive && "rotate-90")}
-                />
-                {`interactive (${interactiveHistory.length})`}
-              </button>
-            )}
-            {!state.foldInteractive &&
-              interactiveHistory.map((p, i) => (
-                <div key={`interactive@${i}`} className="flex gap-2 pl-4">
-                  {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
-                  <div className="truncate text-white">{p.src || "[empty]"}</div>
-                </div>
-              ))}
-
-            {otherHistory.map((p, i) => (
-              <div key={`${p.pid}@${i}`} className="flex gap-2">
-                <div className="shrink-0 text-[#ff9]">{p.pid}</div>
-                {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
-                <div className="truncate text-white">{p.src || "[empty]"}</div>
-              </div>
+          <div className="flex flex-col gap-0.5 max-h-40 overflow-auto [scrollbar-width:thin] p-1 bg-black border border-[#505050] rounded">
+            {historyGroups.map(({ key, items }) => (
+              <HistoryGroup
+                key={key}
+                groupKey={key}
+                items={items}
+                folded={state.folded[key]}
+                onToggle={state.toggleFold}
+                copiedSrc={state.copiedSrc}
+                onCopy={state.copySrc}
+              />
             ))}
           </div>
         </div>
@@ -398,10 +411,70 @@ export default function Jobs() {
 
 const controlCss = "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer";
 
+/** A foldable group of historical processes, each line copyable */
+function HistoryGroup({
+  groupKey,
+  items,
+  folded,
+  onToggle,
+  copiedSrc,
+  onCopy,
+}: {
+  groupKey: HistoryGroupKey;
+  items: ProcessLeader[];
+  folded: boolean;
+  onToggle: (key: HistoryGroupKey) => void;
+  copiedSrc: null | string;
+  onCopy: (src: string) => void;
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="flex items-center gap-1 cursor-pointer text-[#999]"
+        onClick={() => onToggle(groupKey)}
+      >
+        <CaretRightIcon alt={folded ? "unfold" : "fold"} className={cn("size-3", !folded && "rotate-90")} />
+        {`${groupKey} (${items.length})`}
+      </button>
+
+      {!folded &&
+        items.map((p, i) => (
+          <div key={`${groupKey}@${i}`} className="flex items-center gap-2">
+            {/* 🔔 interactive is always pid 0 */}
+            {groupKey === "background" && <div className="shrink-0 text-[#ff9]">{p.pid}</div>}
+            {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
+            <div className="grow min-w-0 truncate text-white" title={p.src}>
+              {p.src || "[empty]"}
+            </div>
+            <button
+              type="button"
+              title="copy"
+              className="shrink-0 cursor-pointer text-[#777] hover:text-white"
+              onClick={() => onCopy(p.src)}
+            >
+              {copiedSrc === p.src ? (
+                <CheckIcon alt="copied" className="size-3 text-[#0f0]" />
+              ) : (
+                <CopyIcon alt="copy" className="size-3" />
+              )}
+            </button>
+          </div>
+        ))}
+    </>
+  );
+}
+
 /** How often killed processes move into `history` */
 const cleanupDeadMs = 3000;
 /** How long "clear history" awaits confirmation */
 const confirmClearMs = 3000;
+/** How long a copied `src` is indicated */
+const copiedMs = 1000;
 /** Max number of `history` entries, dropping oldest */
 const maxHistory = 100;
 
@@ -417,8 +490,14 @@ type State = {
   ordered: ProcessLeader[];
   /** Killed processes, most recent last */
   history: ProcessLeader[];
-  /** Are historical interactive (pid 0) commands folded away? */
-  foldInteractive: boolean;
+  /** Which `history` groups are folded away? */
+  folded: Record<HistoryGroupKey, boolean>;
+  /** Most recently copied `src`, briefly indicated in `history` */
+  copiedSrc: null | string;
+  /** Forgets `copiedSrc` after `copiedMs` */
+  copiedTimeoutId: number;
+  copySrc: (src: string) => void;
+  toggleFold: (key: HistoryGroupKey) => void;
   /** Has "clear history" been clicked once i.e. awaiting confirmation? */
   confirmClear: boolean;
   /** Forgets `confirmClear` after `confirmClearMs` */
@@ -429,7 +508,6 @@ type State = {
   /** Move killed processes from `processes` into `history` */
   cleanupDead: () => void;
   restoreHistory: () => ProcessLeader[];
-  toggleFoldInteractive: () => void;
   sessionKey: null | `tty-${number}`;
   sessionSelectEl: null | HTMLSelectElement;
   ttyMeta: null | JshUiMeta;
@@ -442,6 +520,8 @@ type State = {
   /** Recompute `ordered`, at most once per 200ms */
   reorder: () => void;
 };
+
+type HistoryGroupKey = "interactive" | "background";
 
 type ProcessLeader = {
   pid: number;
