@@ -4,7 +4,7 @@
   - 🚧 final few before switch to blog
   - current -> docs/todo_engine.md
 
-- 🚧 easier to run scripts
+- ✅ easier to run scripts
   - ℹ️ e.g. spawn, focus, pick-to-move
   - ℹ️ will need to connect to a tty
   - ✅ create `packages/ui/jobs` via `pnpm gen-ui`
@@ -25,10 +25,11 @@
   - ✅ extend component
     - ✅ tidy dead processes
     - ✅ historical record of source code
-  - sometimes interactive process 0 shows green although killed
-  - can re-run and combine scripts
 
-- Jobs: indicate when tty-{i} is not mounted
+- Jobs
+  - indicate when tty-{i} is not mounted
+  - can re-run and combine scripts
+  - sometimes interactive process 0 shows green although killed
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
