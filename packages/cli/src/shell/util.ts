@@ -1,5 +1,5 @@
 import type { JSh } from "@npc-cli/parse-sh";
-import { last } from "@npc-cli/util/legacy/generic";
+import { error, last, warn } from "@npc-cli/util/legacy/generic";
 import type * as GetOpts from "getopts";
 import { ansi, ProcessTagPreview, toProcessStatus } from "./const";
 import type { ProcessMeta, Ptags } from "./session";
@@ -108,7 +108,12 @@ export function killProcess(p: ProcessMeta, SIGINT?: boolean) {
   // console.log('KILLING', p.key, p.src);
   p.status = toProcessStatus.Killed;
   for (const cleanup of p.cleanups) {
-    cleanup(SIGINT);
+    try {
+      cleanup(SIGINT);
+    } catch (e) {
+      warn(`killProcess [${p.key}] cleanup threw: ${p.src}`);
+      error(e);
+    }
   }
   p.cleanups.length = 0;
 }

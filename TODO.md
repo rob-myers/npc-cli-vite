@@ -26,10 +26,17 @@
     - ✅ tidy dead processes
     - ✅ historical record of source code
 
-- Jobs
-  - indicate when tty-{i} is not mounted
-  - can re-run and combine scripts
-  - sometimes interactive process 0 shows green although killed
+- 🚧 Jobs
+  - ✅ indicate when tty-{i} is not mounted
+  - ✅ can copy old scripts
+  - ✅ BUG can kill `pick | move npc:abe along &` immediately in Jobs
+    - ✅ try-catch every cleanup with logging
+    - ✅ try-catch every pause with logging
+    - ✅ try-catch every resume with logging
+    - ✅ fix `move` cleanup/pause/resume
+  - 🚧 split `move` into `move_const`, `move_next`, `move_lazy`
+  - BUG sometimes interactive process 0 shows green although killed
+  - lib
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible

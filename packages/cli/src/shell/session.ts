@@ -2,6 +2,7 @@ import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import {
   addToLookup,
   deepClone,
+  error,
   jsStringify,
   type KeyedLookup,
   removeFromLookup,
@@ -221,12 +222,28 @@ export const sessionApi = {
     } else if (opts.STOP === true) {
       const byPtags = !!opts.byPtags;
       for (const p of processes) {
-        p.onSuspends = p.onSuspends.filter((onSuspend) => onSuspend(byPtags));
+        p.onSuspends = p.onSuspends.filter((onSuspend) => {
+          try {
+            return onSuspend(byPtags);
+          } catch (e) {
+            warn(`killProcesses [${p.key}] onSuspend threw: ${p.src}`);
+            error(e);
+            return false;
+          }
+        });
         p.status = toProcessStatus.Suspended;
       }
     } else if (opts.CONT === true) {
       for (const p of processes) {
-        p.onResumes = p.onResumes.filter((onResume) => onResume());
+        p.onResumes = p.onResumes.filter((onResume) => {
+          try {
+            return onResume();
+          } catch (e) {
+            warn(`killProcesses [${p.key}] onResume threw: ${p.src}`);
+            error(e);
+            return false;
+          }
+        });
         p.status = toProcessStatus.Running;
       }
     }
