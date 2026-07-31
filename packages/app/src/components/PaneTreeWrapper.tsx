@@ -48,12 +48,13 @@ export function PaneTreeWrapper({
         });
       } else {
         const itemId = `ui-${crypto.randomUUID()}`;
-        const uiMeta = {
-          id: itemId,
-          title: uiStoreApi.getDefaultTitle(uiRegistryKey),
-          uiKey: uiRegistryKey,
-        };
-        state.overrideContextMenuOpts?.addItem({ uiMeta });
+        state.overrideContextMenuOpts?.addItem({
+          uiMeta: {
+            id: itemId,
+            title: uiStoreApi.getDefaultTitle(uiRegistryKey),
+            uiKey: uiRegistryKey,
+          },
+        });
       }
     },
     closeContextMenu() {

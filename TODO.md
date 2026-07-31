@@ -21,8 +21,14 @@
   - ✅ remove `reboot`
     - too complex yet not complex enough to handle future desires which should sit in JS world
   - ✅ avoid recompute `state.ordered`
-  - 🚧 clean component
-  - extend component so can re-run and combine scripts
+  - ✅ clean component
+  - ✅ extend component
+    - ✅ tidy dead processes
+    - ✅ historical record of source code
+  - sometimes interactive process 0 shows green although killed
+  - can re-run and combine scripts
+
+- Jobs: indicate when tty-{i} is not mounted
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible

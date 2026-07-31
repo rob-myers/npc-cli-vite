@@ -17,10 +17,14 @@
 import { Tty } from "@npc-cli/cli";
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { useContext } from "react";
 import type { JshUiMeta } from "./schema";
 import { shellFunctionFiles } from "./sources";
 
 export default function Jsh(props: { meta: JshUiMeta }) {
+  const { uiStoreApi } = useContext(UiContext);
+
   return (
     <Tty
       sessionKey={props.meta.sessionKey}
@@ -33,6 +37,9 @@ export default function Jsh(props: { meta: JshUiMeta }) {
           : ("default_profile" satisfies ProfileKey)
       }
       shFiles={shellFunctionFiles} // JS wrapped as shell functions
+      onBooted={() =>
+        uiStoreApi.setUiMeta(props.meta.id, (draft) => ((draft as JshUiMeta).sessionBootedAt = Date.now()))
+      }
     />
   );
 }

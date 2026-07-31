@@ -6,6 +6,7 @@ export const JshUiSchema = z.object({
   // enabled initially and on rehydrate
   disabled: BaseUiMetaSchema.shape.disabled.default(false),
   enableOnRehydrate: BaseUiMetaSchema.shape.enableOnRehydrate.default(true),
+  sessionBootedAt: z.number().optional(),
   sessionKey: z.templateLiteral(["tty-", z.number()]),
   env: z.record(z.string(), z.unknown()).default({}),
 });

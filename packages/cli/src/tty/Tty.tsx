@@ -7,7 +7,6 @@ import debounce from "debounce";
 import React from "react";
 import useMeasure from "react-use-measure";
 import { toProcessStatus } from "../shell/const";
-// import type { BaseTabProps } from '../tabs/tab-factory';
 import type { ExternalMessage, ExternalMessageProcessLeader } from "../shell/io";
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
@@ -111,8 +110,7 @@ export function Tty(props: Props) {
         state.update();
       },
       reboot() {
-        state.booted = false;
-        state.update();
+        state.set({ booted: false });
       },
       async resize() {
         if (baseRef.current) state.fitDebounced();
@@ -264,12 +262,7 @@ export function Tty(props: Props) {
       const { xterm, session } = baseRef.current as BaseTtyState;
       xterm.initialise();
       state.booted = true;
-
-      // // distinguish this instance of sessionKey from hot reloads
-      // props.updateTabMeta({
-      //   key: /** @type {Key.TabId} */ (props.sessionKey),
-      //   ttyBootedAt: Date.now(),
-      // });
+      props.onBooted();
 
       session.ttyShell.initialise(xterm).then(async () => {
         await state.storeAndSourceFuncs();
@@ -301,7 +294,9 @@ export function Tty(props: Props) {
   );
 }
 
-export interface Props extends BaseTabProps {
+export interface Props {
+  disabled?: boolean;
+
   sessionKey: `tty-${number}`;
   /**
    * Provided during Jsh bootstrap.
@@ -321,36 +316,9 @@ export interface Props extends BaseTabProps {
    * They are spread into `/etc`.
    */
   shFiles: Record<string, string>;
+
+  onBooted(): void;
 }
-
-export interface BaseTabProps {
-  /**
-   * A Tab is disabled if either:
-   * - Tabs disabled (all tabs disabled)
-   * - Tab is hidden (behind another tab).
-   *
-   * In the future we may permit disabling a visible Tab whilst Tabs enabled.
-   */
-  disabled?: boolean;
-  // /**
-  //  * Components can update their meta in tabs.store.
-  //  * For example, Tty can update ttyBootedAt to distinguish
-  //  * hot-reloaded sessions.
-  //  */
-  // updateTabMeta(meta: TabStoreTabMeta): void;
-}
-
-// interface TabStoreTabMeta {
-//   key: string;
-//   disabled?: boolean;
-
-//   /**
-//    * TTY tab only: last recorded value of home.WORLD_KEY,
-//    * either via `awaitWorld` or clicking it in `Manage`.
-//    */
-//   ttyWorldKey?: string;
-//   ttyBootedAt?: number;
-// }
 
 const profilesLookup = { ...profiles };
 function isProfileKey(key: any): key is ProfileKey {

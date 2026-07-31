@@ -18,6 +18,7 @@ import {
 } from "@npc-cli/util/legacy/generic";
 import { ArrowsClockwiseIcon, CaretRightIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
+import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useContext, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -127,7 +128,7 @@ export default function Jobs() {
           const session = sessionApi.getSession(state.sessionKey ?? "");
           if (session === undefined) {
             state.set({ processes: [], ordered: [], history: [] });
-            return;
+            return false;
           }
 
           const leaders = Object.values(session.process).filter((p) => p.key === p.pgid);
@@ -146,8 +147,10 @@ export default function Jobs() {
           );
 
           state.update();
+          return true;
         } catch (e) {
           error(e);
+          return false;
         }
       },
       handleLeaderMessage(msg) {
@@ -232,10 +235,8 @@ export default function Jobs() {
   }, []);
 
   useEffect(() => {
-    if (state.processes.length > 0) {
-      state.connectSession();
-    }
-  }, [state.ttyMeta]); // sync onchange session
+    state.connectSession();
+  }, [state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
   const interactiveHistory = state.history.filter((p) => p.pid === 0);
@@ -245,7 +246,7 @@ export default function Jobs() {
     <div className="p-2 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2 font-mono">
         {sessionsExist ? (
-          <div className="flex">
+          <div className="flex gap-2">
             <select
               ref={state.ref("sessionSelectEl")}
               onChange={state.onChangeSessionKey}
@@ -286,50 +287,60 @@ export default function Jobs() {
 
       {sessionsExist && (
         <div className="flex flex-row flex-wrap items-stretch gap-1 text-base text-white">
-          {state.ordered.map((p) => {
-            const killed = p.status === toProcessStatus.Killed;
-            const paused = p.status === toProcessStatus.Suspended;
-            return (
-              <div key={p.pid} className="flex flex-col gap-2 flex-1 p-1 rounded bg-[#222] text-[#0f0] font-mono">
-                <div className="flex items-stretch flex-wrap gap-2">
-                  <div className="flex justify-between bg-black border border-[#aaca]">
-                    <div className="px-1 text-[#ff9]">{p.pid}</div>
-                    {p.ptagsText && <div className="px-1 bg-[#222]">{p.ptagsText}</div>}
-                  </div>
-                  <div className="flex items-stretch gap-1 text-white">
-                    <div
-                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
-                      onClick={!killed ? state.changeProcess : undefined}
-                      data-act={paused ? "resume" : "pause"}
-                      data-pid={p.pid}
-                    >
-                      {paused ? (
-                        <PlayIcon alt="resume" className="size-3" />
-                      ) : (
-                        <PauseIcon alt="pause" className="size-3" />
-                      )}
-                    </div>
-                    <div
-                      className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
-                      onClick={!killed ? state.changeProcess : undefined}
-                      data-act="kill"
-                      data-pid={p.pid}
-                    >
-                      <XIcon alt="kill" className="size-4" />
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className={cn(
-                    "grow px-2 py-1 bg-black border border-[#505050] text-sm overflow-auto max-h-20",
-                    killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
-                  )}
+          <AnimatePresence initial={false}>
+            {state.ordered.map((p) => {
+              const killed = p.status === toProcessStatus.Killed;
+              const paused = p.status === toProcessStatus.Suspended;
+              return (
+                <motion.div
+                  key={p.pid}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-2 flex-1 p-1 rounded bg-[#222] text-[#0f0] font-mono"
                 >
-                  {p.src || "[empty]"}
-                </div>
-              </div>
-            );
-          })}
+                  <div className="flex items-stretch flex-wrap gap-2">
+                    <div className="flex justify-between bg-black border border-[#aaca]">
+                      <div className="px-1 text-[#ff9]">{p.pid}</div>
+                      {p.ptagsText && <div className="px-1 bg-[#222]">{p.ptagsText}</div>}
+                    </div>
+                    <div className="flex items-stretch gap-1 text-white">
+                      <div
+                        className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                        onClick={!killed ? state.changeProcess : undefined}
+                        data-act={paused ? "resume" : "pause"}
+                        data-pid={p.pid}
+                      >
+                        {paused ? (
+                          <PlayIcon alt="resume" className="size-3" />
+                        ) : (
+                          <PauseIcon alt="pause" className="size-3" />
+                        )}
+                      </div>
+                      <div
+                        className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
+                        onClick={!killed ? state.changeProcess : undefined}
+                        data-act="kill"
+                        data-pid={p.pid}
+                      >
+                        <XIcon alt="kill" className="size-4" />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      "grow px-2 py-1 bg-black border border-[#505050] text-sm overflow-auto max-h-20",
+                      killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
+                    )}
+                  >
+                    {p.src || "[empty]"}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
 
           {state.ordered.length === 0 && (
             <div className="w-full p-4 text-sm text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
@@ -360,7 +371,7 @@ export default function Jobs() {
               interactiveHistory.map((p, i) => (
                 <div key={`interactive@${i}`} className="flex gap-2 pl-4">
                   {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
-                  <div className="truncate text-[#f99]">{p.src || "[empty]"}</div>
+                  <div className="truncate text-white">{p.src || "[empty]"}</div>
                 </div>
               ))}
 
@@ -368,7 +379,7 @@ export default function Jobs() {
               <div key={`${p.pid}@${i}`} className="flex gap-2">
                 <div className="shrink-0 text-[#ff9]">{p.pid}</div>
                 {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
-                <div className="truncate text-[#f99]">{p.src || "[empty]"}</div>
+                <div className="truncate text-white">{p.src || "[empty]"}</div>
               </div>
             ))}
           </div>
@@ -412,7 +423,7 @@ type State = {
   sessionSelectEl: null | HTMLSelectElement;
   ttyMeta: null | JshUiMeta;
   changeProcess: (e: React.PointerEvent<HTMLDivElement>) => void;
-  connectSession: () => void;
+  connectSession: () => boolean;
   debouncedUpdate: () => void;
   disconnectSession: null | (() => void);
   handleLeaderMessage: (msg: ExternalMessageProcessLeader) => void;
