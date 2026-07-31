@@ -9,7 +9,7 @@ import {
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import { error } from "@npc-cli/util/legacy/generic";
+import { error, throttle } from "@npc-cli/util/legacy/generic";
 import { ArrowsClockwiseIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
 import type React from "react";
@@ -34,6 +34,10 @@ export default function Jobs() {
     (): State => ({
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       disconnectSession: null,
+      reorder: throttle(() => {
+        state.ordered = state.processes.slice().sort(compareProcessLeaders);
+        state.update();
+      }, 200),
       ordered: [],
       processes: [],
       sessionKey: null,
@@ -70,29 +74,25 @@ export default function Jobs() {
 
           const session = sessionApi.getSession(state.sessionKey ?? "");
           if (session === undefined) {
-            state.processes = state.ordered = [];
+            state.set({ processes: [], ordered: [] });
             return;
           }
 
           const leaders = Object.values(session.process).filter((p) => p.key === p.pgid);
 
-          //
           state.processes = leaders.reduce(
             (agg, meta) => ((agg[meta.key] = processMetaToProcessLeader(meta)), agg),
             [] as ProcessLeader[],
           );
 
-          // order by pid=0, tags, src
-          state.ordered = state.processes.slice().sort((p, q) => {
-            if (p.pid === 0) return -1;
-            if (q.pid === 0) return +1;
-            return p.ptagsText < q.ptagsText || p.src < q.src ? -1 : +1;
-          });
+          state.ordered = state.processes.slice().sort(compareProcessLeaders);
 
           // listen for leading process status
           state.disconnectSession = session.ttyShell.io.handleWriters(
             (msg) => msg?.key === "external" && msg.msg.key === "process-leader" && state.handleLeaderMessage(msg.msg),
           );
+
+          state.update();
         } catch (e) {
           error(e);
         }
@@ -133,21 +133,12 @@ export default function Jobs() {
           }
         }
 
-        // 🚧 avoid recomputing
-        state.ordered = state.processes.slice().sort((p, q) => {
-          if (p.pid === 0) return -1;
-          if (q.pid === 0) return +1;
-          return p.ptagsText < q.ptagsText || p.src < q.src ? -1 : +1;
-        });
+        state.reorder();
       },
       onChangeSessionKey(e) {
         const { value } = e.currentTarget;
         state.sessionKey = value as `tty-${number}`;
         state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)];
-        state.update();
-      },
-      refreshProcessLeaders() {
-        state.connectSession();
         state.update();
       },
     }),
@@ -168,14 +159,6 @@ export default function Jobs() {
       state.set({ ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] });
     }
   }, [ttyMetas]);
-
-  useEffect(() => {
-    // sync onchange session or hmr session
-    if (state.processes.length > 0) {
-      state.refreshProcessLeaders();
-    }
-    // }, [state.ttyMeta?.ttyBootedAt]);
-  }, [state.ttyMeta]);
 
   const sessionsExist = ttyMetas.length > 0;
 
@@ -203,7 +186,7 @@ export default function Jobs() {
               </option>
             ))}
           </select>
-          <button className="cursor-pointer px-2 bg-[#222]" onClick={state.refreshProcessLeaders}>
+          <button className="cursor-pointer px-2 bg-[#222]" onClick={state.connectSession}>
             <ArrowsClockwiseIcon alt="refresh" className="size-3" />
           </button>
         </div>
@@ -283,7 +266,8 @@ type State = {
   disconnectSession: null | (() => void);
   handleLeaderMessage: (msg: ExternalMessageProcessLeader) => void;
   onChangeSessionKey: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  refreshProcessLeaders: () => void;
+  /** Recompute `ordered`, at most once per 200ms */
+  reorder: () => void;
 };
 
 type ProcessLeader = {
@@ -292,6 +276,13 @@ type ProcessLeader = {
   status: ProcessStatus;
   ptagsText: string;
 };
+
+/** Order by pid=0, tags, src */
+function compareProcessLeaders(p: ProcessLeader, q: ProcessLeader) {
+  if (p.pid === 0) return -1;
+  if (q.pid === 0) return +1;
+  return p.ptagsText < q.ptagsText || p.src < q.src ? -1 : +1;
+}
 
 function processMetaToProcessLeader({ key: pid, src, status, ptags }: ProcessMeta): ProcessLeader {
   return {

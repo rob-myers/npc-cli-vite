@@ -632,6 +632,35 @@ export function testNever(x, opts) {
 }
 
 /**
+ * Invoke `fn` immediately, then at most once per `ms`.
+ *
+ * Unlike `debounce(fn, ms, { immediate: true })` a trailing call
+ * ensures the final invocation isn't dropped.
+ * @param {() => void} fn
+ * @param {number} ms
+ */
+export function throttle(fn, ms) {
+  /** @type {undefined | ReturnType<typeof setTimeout>} */
+  let timeoutId;
+  let pending = false;
+
+  return function invoke() {
+    if (timeoutId !== undefined) {
+      pending = true;
+      return;
+    }
+    fn();
+    timeoutId = setTimeout(() => {
+      timeoutId = undefined;
+      if (pending === true) {
+        pending = false;
+        invoke();
+      }
+    }, ms);
+  };
+}
+
+/**
  * @param {number} number
  * @param {number} [decimalPlaces] default 2
  */
