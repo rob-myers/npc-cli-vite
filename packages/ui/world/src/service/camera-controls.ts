@@ -276,6 +276,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   snapAzimuth = {
     target: 0,
+    /** Cardinal direction we were at when the current gesture began */
+    start: 0,
+    /** `0` -> `1` as the snap animation eases in */
+    ramp: 0,
     animating: false,
     committed: false,
   };
@@ -824,6 +828,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.pointerFirstDown.y = event.clientY;
       this.rotateAxis = "none";
       this.snapAzimuth.committed = false;
+      this.snapAzimuth.start = this.snapAzimuth.animating
+        ? this.snapAzimuth.target
+        : this.nearestSnapAngle(this.spherical.theta);
     }
 
     this.addPointer(event);
@@ -868,14 +875,23 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     if (this.params.snapAzimuth && !this.snapAzimuth.committed && !this.snapAzimuth.animating) {
-      // Snap to nearest compass direction on release
-      const snapStep = (2 * Math.PI) / this.params.numCardinalDirections;
-      const nearest = normalizeAngle(Math.round(this.spherical.theta / snapStep) * snapStep);
-      const remaining = deltaAngle(this.spherical.theta, nearest);
-      if (Math.abs(remaining) > 0.005) {
-        this.snapAzimuth.target = nearest;
+      // Snap to a compass direction on release
+      const snapStep = twoPI / this.params.numCardinalDirections;
+      const { start } = this.snapAzimuth;
+      const dragged = deltaAngle(start, this.spherical.theta);
+      let target: number;
+      if (Math.abs(dragged) < snapStep / 4) {
+        target = start; // too small to count — return to where we started
+      } else {
+        target = this.nearestSnapAngle(this.spherical.theta);
+        if (Math.abs(deltaAngle(start, target)) < 1e-6) {
+          target = normalizeAngle(start + Math.sign(dragged) * snapStep); // dragged a quarter step — go prev/next
+        }
+      }
+      if (Math.abs(deltaAngle(this.spherical.theta, target)) > 0.005) {
+        this.snapAzimuth.target = target;
         this.snapAzimuth.animating = true;
-        this.sphericalDelta.theta = remaining;
+        this.snapAzimuth.ramp = 0;
       }
     }
     this.rotateAxis = "none";
@@ -1049,12 +1065,18 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.state = this.STATE.NONE;
   }
 
+  /** Nearest cardinal direction to `theta` — see `snapAzimuthOffset` */
+  nearestSnapAngle(theta: number) {
+    const snapStep = twoPI / this.params.numCardinalDirections;
+    return normalizeAngle(Math.round((theta - snapAzimuthOffset) / snapStep) * snapStep + snapAzimuthOffset);
+  }
+
   snapAzimuthBy(delta: number) {
     if (this.snapAzimuth.animating || Math.abs(delta) < 0.01) return;
     this.snapAzimuth.target = normalizeAngle(this.snapAzimuth.target + delta);
     this.snapAzimuth.animating = true;
     this.snapAzimuth.committed = true;
-    this.sphericalDelta.theta = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
+    this.snapAzimuth.ramp = 0;
   }
 
   rotateLeft(angle: number) {
@@ -1141,7 +1163,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         this.snapAzimuth.animating = false;
         this.snapAzimuth.committed = false;
       } else {
-        this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08);
+        // ease the speed in, else a partial rotation lurches towards its cardinal angle on release
+        this.snapAzimuth.ramp = Math.min(1, this.snapAzimuth.ramp + this.azimuthalDampingFactor * snapAzimuthEaseIn);
+        const r = this.snapAzimuth.ramp;
+        const eased = r * r * (3 - 2 * r);
+        this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08) * eased;
+        this.dispatchEvent(changeEvent); // keep frame chain alive through the slow start
       }
     }
 
@@ -1222,6 +1249,10 @@ const endEvent = { type: "end" } as const;
 const changeEvent = { type: "change" } as const;
 
 const defaultDampingFactor = 0.05;
+/** Shifts cardinal snapping onto the diagonals ne, se, sw, nw */
+const snapAzimuthOffset = Math.PI / 4;
+/** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
+const snapAzimuthEaseIn = 2;
 const twoFingerMinMove = 8;
 const twoFingerSameDirThreshold = 0.7;
 const twoFingerStopThreshold = 0.3;
