@@ -9,8 +9,14 @@ import {
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import { error, throttle } from "@npc-cli/util/legacy/generic";
-import { ArrowsClockwiseIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
+import {
+  error,
+  throttle,
+  tryLocalStorageGetParsed,
+  tryLocalStorageRemove,
+  tryLocalStorageSet,
+} from "@npc-cli/util/legacy/generic";
+import { ArrowsClockwiseIcon, CaretRightIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
 import type React from "react";
 import { useContext, useEffect } from "react";
@@ -35,14 +41,60 @@ export default function Jobs() {
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       disconnectSession: null,
       reorder: throttle(() => {
-        state.ordered = state.processes.slice().sort(compareProcessLeaders);
+        state.ordered = toOrdered(state.processes);
         state.update();
       }, 200),
+      confirmClear: false,
+      foldInteractive: true,
+      history: [],
       ordered: [],
       processes: [],
       sessionKey: null,
       sessionSelectEl: null,
       ttyMeta: null,
+
+      addHistory(items) {
+        const bySrc = new Map(state.history.map((p) => [p.src, p]));
+        for (const item of items) {
+          // one entry per src, moved to the end with its most recent pid
+          bySrc.delete(item.src);
+          bySrc.set(item.src, item);
+        }
+
+        state.history = Array.from(bySrc.values()).slice(-maxHistory);
+        if (state.sessionKey !== null) {
+          tryLocalStorageSet(getHistoryKey(state.sessionKey), JSON.stringify(state.history));
+        }
+      },
+      clearHistory() {
+        if (state.confirmClear === false) {
+          return state.set({ confirmClear: true }); // 🔔 click again to confirm
+        }
+        if (state.sessionKey !== null) {
+          tryLocalStorageRemove(getHistoryKey(state.sessionKey));
+        }
+        state.set({ confirmClear: false, history: [] });
+      },
+      cleanupDead() {
+        const dead = [] as ProcessLeader[];
+        const alive = [] as ProcessLeader[];
+
+        // `processes` is sparse i.e. indexed by pid
+        state.processes.forEach((p) => {
+          if (isDeadAndNonInteractive(p)) {
+            dead.push(p);
+          } else {
+            alive[p.pid] = p;
+          }
+        });
+
+        if (dead.length === 0) {
+          return;
+        }
+
+        state.addHistory(dead);
+        state.set({ processes: alive, ordered: toOrdered(alive) });
+      },
 
       changeProcess(e) {
         if (state.sessionKey === null) {
@@ -74,7 +126,7 @@ export default function Jobs() {
 
           const session = sessionApi.getSession(state.sessionKey ?? "");
           if (session === undefined) {
-            state.set({ processes: [], ordered: [] });
+            state.set({ processes: [], ordered: [], history: [] });
             return;
           }
 
@@ -85,7 +137,8 @@ export default function Jobs() {
             [] as ProcessLeader[],
           );
 
-          state.ordered = state.processes.slice().sort(compareProcessLeaders);
+          state.ordered = toOrdered(state.processes);
+          state.history = state.restoreHistory();
 
           // listen for leading process status
           state.disconnectSession = session.ttyShell.io.handleWriters(
@@ -125,15 +178,28 @@ export default function Jobs() {
             state.update();
             break;
           case "started": {
+            if (msg.pid === 0 && item.src) {
+              // interactive process never removed
+              state.addHistory([{ ...item, status: toProcessStatus.Killed }]);
+            }
             item.status = toProcessStatus.Running;
             item.src = process.src;
-            msg.pid === 0 ? state.debouncedUpdate() : state.update();
-            // state.debouncedUpdate();
+            state.debouncedUpdate();
             break;
           }
         }
 
         state.reorder();
+      },
+      restoreHistory() {
+        if (state.sessionKey === null) {
+          return [];
+        }
+        const restored = tryLocalStorageGetParsed<ProcessLeader[]>(getHistoryKey(state.sessionKey));
+        return Array.isArray(restored) ? restored.slice(-maxHistory) : [];
+      },
+      toggleFoldInteractive() {
+        state.set({ foldInteractive: !state.foldInteractive });
       },
       onChangeSessionKey(e) {
         const { value } = e.currentTarget;
@@ -160,37 +226,63 @@ export default function Jobs() {
     }
   }, [ttyMetas]);
 
+  useEffect(() => {
+    const intervalId = setInterval(state.cleanupDead, cleanupDeadMs);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (state.processes.length > 0) {
+      state.connectSession();
+    }
+  }, [state.ttyMeta]); // sync onchange session
+
   const sessionsExist = ttyMetas.length > 0;
+  const interactiveHistory = state.history.filter((p) => p.pid === 0);
+  const otherHistory = state.history.filter((p) => p.pid !== 0);
 
   return (
     <div className="p-2 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
-      {!sessionsExist && (
-        <h2 className="flex gap-3 items-baseline self-end text-[#ccc] font-mono text-base pb-0.5">
-          {/* Processes */}
+      <div className="flex items-center justify-between gap-2 font-mono">
+        {sessionsExist ? (
+          <div className="flex">
+            <select
+              ref={state.ref("sessionSelectEl")}
+              onChange={state.onChangeSessionKey}
+              title="sessionKey"
+              // 🔔 text-align-last fixes safari
+              className="p-1 text-md bg-black"
+            >
+              {ttyMetas.map(({ sessionKey: key }) => (
+                <option key={key} value={key}>
+                  {key}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              title="refresh"
+              className="cursor-pointer px-2 bg-[#222]"
+              onClick={state.connectSession}
+            >
+              <ArrowsClockwiseIcon alt="refresh" className="size-3" />
+            </button>
+          </div>
+        ) : (
           <div className="text-[#999]">{`[No sessions]`}</div>
-        </h2>
-      )}
+        )}
 
-      {sessionsExist && (
-        <div className="flex">
-          <select
-            ref={state.ref("sessionSelectEl")}
-            onChange={state.onChangeSessionKey}
-            title="sessionKey"
-            // 🔔 text-align-last fixes safari
-            className="p-1 text-md font-mono bg-black"
+        {state.history.length > 0 && (
+          <button
+            type="button"
+            title="clear history"
+            className={cn("cursor-pointer px-2 py-1 text-sm", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
+            onClick={state.clearHistory}
           >
-            {ttyMetas.map(({ sessionKey: key }) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-          <button className="cursor-pointer px-2 bg-[#222]" onClick={state.connectSession}>
-            <ArrowsClockwiseIcon alt="refresh" className="size-3" />
+            {state.confirmClear ? "confirm" : "clear"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {sessionsExist && (
         <div className="flex flex-row flex-wrap items-stretch gap-1 text-base text-white">
@@ -246,17 +338,76 @@ export default function Jobs() {
           )}
         </div>
       )}
+
+      {sessionsExist && state.history.length > 0 && (
+        <div className="flex flex-col gap-1 font-mono text-sm">
+          <div className="text-[#999]">history</div>
+          <div className="flex flex-col gap-1 max-h-40 overflow-auto p-1 bg-black border border-[#505050] rounded">
+            {interactiveHistory.length > 0 && (
+              <button
+                type="button"
+                className="flex items-center gap-1 cursor-pointer text-[#999]"
+                onClick={state.toggleFoldInteractive}
+              >
+                <CaretRightIcon
+                  alt={state.foldInteractive ? "unfold" : "fold"}
+                  className={cn("size-3", !state.foldInteractive && "rotate-90")}
+                />
+                {`interactive (${interactiveHistory.length})`}
+              </button>
+            )}
+            {!state.foldInteractive &&
+              interactiveHistory.map((p, i) => (
+                <div key={`interactive@${i}`} className="flex gap-2 pl-4">
+                  {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
+                  <div className="truncate text-[#f99]">{p.src || "[empty]"}</div>
+                </div>
+              ))}
+
+            {otherHistory.map((p, i) => (
+              <div key={`${p.pid}@${i}`} className="flex gap-2">
+                <div className="shrink-0 text-[#ff9]">{p.pid}</div>
+                {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
+                <div className="truncate text-[#f99]">{p.src || "[empty]"}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 const controlCss = "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer";
 
+/** How often killed processes move into `history` */
+const cleanupDeadMs = 3000;
+/** Max number of `history` entries, dropping oldest */
+const maxHistory = 100;
+
+/** per session persisted history  */
+function getHistoryKey(sessionKey: `tty-${number}`) {
+  return `jobs-history:${sessionKey}`;
+}
+
 type State = {
   /** We use an array to represent mapping `pid -> processLeader` */
   processes: ProcessLeader[];
   /**  Re-ordered `processes` */
   ordered: ProcessLeader[];
+  /** Killed processes, most recent last */
+  history: ProcessLeader[];
+  /** Are historical interactive (pid 0) commands folded away? */
+  foldInteractive: boolean;
+  /** Has "clear history" been clicked once i.e. awaiting confirmation? */
+  confirmClear: boolean;
+  clearHistory: () => void;
+  /** Append to history and persist */
+  addHistory: (items: ProcessLeader[]) => void;
+  /** Move killed processes from `processes` into `history` */
+  cleanupDead: () => void;
+  restoreHistory: () => ProcessLeader[];
+  toggleFoldInteractive: () => void;
   sessionKey: null | `tty-${number}`;
   sessionSelectEl: null | HTMLSelectElement;
   ttyMeta: null | JshUiMeta;
@@ -276,6 +427,16 @@ type ProcessLeader = {
   status: ProcessStatus;
   ptagsText: string;
 };
+
+/** 🔔 the interactive process (pid 0) stays put, even when killed */
+function isDeadAndNonInteractive(p: ProcessLeader) {
+  return p.status === toProcessStatus.Killed && p.pid !== 0;
+}
+
+/** Densify sparse `processes` (indexed by pid) and order it */
+function toOrdered(processes: ProcessLeader[]) {
+  return processes.filter(Boolean).sort(compareProcessLeaders);
+}
 
 /** Order by pid=0, tags, src */
 function compareProcessLeaders(p: ProcessLeader, q: ProcessLeader) {
