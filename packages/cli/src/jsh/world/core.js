@@ -204,10 +204,10 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
  * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
  * move npc:rob fast to:$( pick 1 )
  * ```
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
+ * @param {JshCli.RunArg} ct
  * @param {Omit<JshCli.MoveOpts, 'to'> & { to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
-export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
   const getNpc = () => {
     try {
       // opts.npcKey either literal or path to literal
@@ -217,7 +217,6 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     }
   };
 
-  // 🚧
   const pendings = /** @type {JshCli.PointAnyFormat[]} */ ([]);
 
   const { dispose } = api.handleStatus({
@@ -256,8 +255,6 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     return handlePausedError(e);
   }
 
-  let next = /** @type {undefined | JshCli.PointAnyFormat} */ (undefined);
-
   try {
     if (opts.to) {
       const npc = getNpc();
@@ -266,6 +263,8 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
        * e.g. `move npc:rob to:$( pick 3 )`
        */
       pendings.push(...(expectArrayOfPoints(opts.to) ? opts.to : [opts.to]));
+      let next = /** @type {undefined | JshCli.PointAnyFormat} */ (undefined);
+
       while ((next = pendings.shift())) {
         await w.npc
           .move({ npcKey: npc.key, to: next, arrive: pendings.length === 0, fast: opts.fast })
@@ -279,8 +278,11 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
     if (!opts.along) {
       /**
        * move immediately to latest destination
+       * e.g. `pick | move npc:rob`
        */
       let pendingRead = api.read();
+      let next = /** @type {undefined | JshCli.PointAnyFormat} */ (undefined);
+
       while ((next = pendings.shift() ?? (await pendingRead)) !== api.eof && next) {
         const npc = getNpc();
         const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
@@ -289,28 +291,30 @@ export async function move({ api, args, w, datum }, opts = api.jsArg(args, { npc
       return;
     }
 
-    // move smoothly along lazily supplied path
+    /**
+     * move smoothly along lazily supplied path
+     * e.g. `pick | move npc:rob along`
+     */
     let pendingRead = api.read();
     while (true) {
-      const next = await pendingRead;
-      if (next === api.eof) break;
-
-      datum = next;
-      pendingRead = api.read();
+      const shouldRead = pendings.length === 0;
+      const dst = pendings.shift() ?? (await pendingRead);
+      if (dst === api.eof) break;
+      if (shouldRead) pendingRead = api.read();
 
       const npc = getNpc();
 
-      const movePromise = w.npc.move({ npcKey: npc.key, to: datum, fast: opts.fast }).catch((e) => {
+      const movePromise = w.npc.move({ npcKey: npc.key, to: dst, fast: opts.fast }).catch((e) => {
         if (e instanceof Error && e.message === "not navigable") {
           return; // ignore non-navigable stdin
         }
         if (e instanceof Error && e.message === "stuck") {
-          // ignore all pending reads when stuck
+          // ignore all pending destinations when stuck
           api.flush();
-          pendingRead = api.read();
+          pendings.length = 0;
           return;
         }
-        throw e;
+        return handlePausedError(e);
       });
 
       await Promise.race([movePromise, pendingRead.then(() => npc.preventArrival())]);
