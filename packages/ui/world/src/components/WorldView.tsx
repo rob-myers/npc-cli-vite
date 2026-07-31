@@ -17,6 +17,7 @@ import { useContext, useEffect } from "react";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
 import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import type { WorldTheme } from "../assets.schema";
 import {
   ambientIntensityKey,
   cameraModeStorageKey,
@@ -610,7 +611,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     <div className="size-full">
       <Canvas
         className={props.className}
-        style={{ filter: `brightness(${w.brightness})` }}
+        style={{
+          filter: `brightness(${w.brightness})`,
+          backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
+        }}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
@@ -762,6 +766,11 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
+
+function getBackgroundColor(theme: WorldTheme, ambientIntensity: number) {
+  const color = theme.background.match(/^bg-\[(.+)\]$/)?.[1];
+  return color === undefined ? undefined : `color-mix(in srgb-linear, ${color} ${ambientIntensity * 100}%, #000)`;
+}
 
 function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
