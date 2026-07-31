@@ -46,7 +46,7 @@ export default function NpcShadows() {
         }
       },
     }),
-    { reset: { shadow: false } },
+    { reset: { shadow: true } },
   );
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export type State = {
 
 /** How far (in radii) a shadow shifts away from the light at the edge of its radius */
 const maxShadowOffset = 0.5;
-const shadowRadius = npcScale / 2;
+const shadowRadius = npcScale / 2.5;
 
 function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const base = createXzQuad();
@@ -109,7 +109,7 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const baseAlpha = float(1)
     .sub(distToCenter.sub(shadowRadius - edgeSoftness).div(edgeSoftness))
     .clamp(0, 1)
-    .mul(0.25)
+    .mul(0.3)
     .mul(xzo.z);
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
