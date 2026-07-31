@@ -20,8 +20,8 @@
     - process.reboot not defined until after start so always show reset buttons
   - ✅ remove `reboot`
     - too complex yet not complex enough to handle future desires which should sit in JS world
-  - 🚧 avoid recompute `state.ordered`
-  - clean component
+  - ✅ avoid recompute `state.ordered`
+  - 🚧 clean component
   - extend component so can re-run and combine scripts
 
 - ✅ can pause/resume `move`
