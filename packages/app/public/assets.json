@@ -42811,7 +42811,7 @@
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},
-      "obstacles": {"brightness": 1},
+      "obstacles": {"brightness": 1.5},
       "doors": {"brightness": 1},
       "walls": {"color": "#000", "opacity": 0.35}
     }
