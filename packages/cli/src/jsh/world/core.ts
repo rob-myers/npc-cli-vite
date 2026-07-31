@@ -4,10 +4,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { localBoundary } from "navcat/blocks";
 
-/**
- * @param {JshCli.RunArg} ct
- */
-export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
+export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   if (typeof WORLD_KEY !== "string") {
     throw Error("WORLD_KEY not a string");
   }
@@ -19,10 +16,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }) {
   }
 }
 
-/**
- * @param {JshCli.RunArg} ct
- */
-export function blur({ w }) {
+export function blur({ w }: JshCli.RunArg) {
   w.npc.trackNpc();
 }
 
@@ -36,11 +30,11 @@ export function blur({ w }) {
  * events where:'e => e.key === "picked"'
  * events /-collider/ | map meta
  * ```
- * @template {JshCli.Event} [T=JshCli.Event]
- * @param {JshCli.RunArg} ct
- * @param {{ where?(e: JshCli.Event): e is T }} [opts]
  */
-export async function* events({ api, args, w }, opts = api.jsArg(args)) {
+export async function* events<T extends JshCli.Event = JshCli.Event>(
+  { api, args, w }: JshCli.RunArg,
+  opts: { where?(e: JshCli.Event): e is T } = api.jsArg(args),
+) {
   const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
@@ -51,7 +45,7 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
 
   for await (const event of asyncIterable) {
     if (filter === undefined || filter(event)) {
-      yield/** @type {T} */ (event);
+      yield event as T;
     }
   }
   // get here via ctrl-c or `kill`
@@ -64,10 +58,8 @@ export async function* events({ api, args, w }, opts = api.jsArg(args)) {
  * ```sh
  * focus npc:rob
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string }} [opts]
  */
-export function focus({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export function focus({ api, args, w }: JshCli.RunArg, opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" })) {
   const npc = w.npc.get(opts.npcKey ?? Object.values(w.n)[0]?.key);
   w.npc.trackNpc(npc.key);
   w.view.forceUpdate();
@@ -79,10 +71,11 @@ export function focus({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }
  * grant npc:rob g0d{0..5}
  * grant npc:rob all
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
  */
-export function grant({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export function grant(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args, { npc: "npcKey" }),
+) {
   const operands = api.getJsOperands(args, opts);
   const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
 
@@ -99,10 +92,11 @@ export function grant({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }
  * label npc:rob color:#33f
  * label npc:rob
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; } & Partial<JshCli.NpcLabelStyle>} [opts]
  */
-export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export function label(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string } & Partial<JshCli.NpcLabelStyle> = api.jsArg(args, { npc: "npcKey" }),
+) {
   const npc = w.npc.get(opts.npcKey);
   npc.labelStyle.color = opts.color ?? "#fff7";
   npc.labelStyle.speaking = opts.speaking ?? false;
@@ -115,10 +109,11 @@ export function label({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" }
  * lock g0d29 g0d30
  * lock doors:['g0d29','g0d30']
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
  */
-export async function lock({ api, args, w }, opts = api.jsArg(args)) {
+export async function lock(
+  { api, args, w }: JshCli.RunArg,
+  opts: { all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args),
+) {
   const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
   for (const gdKey of inputs) {
     if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { lock: true });
@@ -133,10 +128,15 @@ export async function lock({ api, args, w }, opts = api.jsArg(args)) {
  * pick | look npc:rob
  * look npc:rob at:kate
  * ```
- * @param {JshCli.RunArg<string | JshCli.PointAnyFormat>} ct
- * @param {{ npcKey: string; at: string | JshCli.PointAnyFormat }} [opts]
  */
-export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc: "npcKey", to: "at", face: "at" })) {
+export async function look(
+  { api, args, w, datum }: JshCli.RunArg<string | JshCli.PointAnyFormat>,
+  opts: { npcKey: string; at: string | JshCli.PointAnyFormat } = api.jsArg(args, {
+    npc: "npcKey",
+    to: "at",
+    face: "at",
+  }),
+) {
   const npc = w.npc.get(opts.npcKey);
 
   const { dispose } = api.handleStatus({
@@ -164,10 +164,11 @@ export async function look({ api, args, w, datum }, opts = api.jsArg(args, { npc
  * meta all:[1.5,4.5]
  * meta at:[1.5,2,4.5]
  * ```
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {{ all?: JshCli.PointAnyFormat; at?: JshCli.PointAnyFormat; radius?: number }} [opts]
  */
-export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
+export async function meta(
+  { api, args, w, datum: _ }: JshCli.RunArg<JshCli.PointAnyFormat>,
+  opts: { all?: JshCli.PointAnyFormat; at?: JshCli.PointAnyFormat; radius?: number } = api.jsArg(args),
+) {
   const inputPoint = opts.all ?? opts.at ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
   if (!w.helper.isPointAnyFormat(inputPoint)) {
     throw Error("expected point");
@@ -204,20 +205,26 @@ export async function meta({ api, args, w, datum: _ }, opts = api.jsArg(args)) {
  * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
  * move npc:rob fast to:$( pick 1 )
  * ```
- * @param {JshCli.RunArg} ct
- * @param {Omit<JshCli.MoveOpts, 'to'> & { to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[]; along: boolean }} [opts]
  */
-export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function move(
+  { api, args, w }: JshCli.RunArg,
+  opts: Omit<JshCli.MoveOpts, "to"> & {
+    to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
+    along: boolean;
+  } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  /**
+   * `opts.npcKey` either literal or path to literal relative to CWD
+   */
   const getNpc = () => {
     try {
-      // opts.npcKey either literal or path to literal
       return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
     } catch {
       throw Error(`npc not found: ${opts.npcKey}`);
     }
   };
 
-  const pendings = /** @type {JshCli.PointAnyFormat[]} */ ([]);
+  const pendings: JshCli.PointAnyFormat[] = [];
 
   const { dispose } = api.handleStatus({
     cleanups(killed) {
@@ -231,11 +238,7 @@ export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
     },
   });
 
-  /**
-   * @param {*} e
-   * @returns {Promise<void>}
-   */
-  function handlePausedError(e) {
+  function handlePausedError(e: any): Promise<void> {
     if (e instanceof Error && e.message === "paused") {
       return api.awaitResume();
     }
@@ -245,10 +248,8 @@ export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   /**
    * Awaiting a move surfaces errors the destination itself caused,
    * which shouldn't stop us reading further destinations.
-   * @param {*} e
-   * @returns {Promise<void>}
    */
-  function handleMoveError(e) {
+  function handleMoveError(e: any): Promise<void> {
     if (e instanceof Error && ["not navigable", "occupied", "stuck"].includes(e.message)) {
       return Promise.resolve();
     }
@@ -263,7 +264,7 @@ export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
        * e.g. `move npc:rob to:$( pick 3 )`
        */
       pendings.push(...(expectArrayOfPoints(opts.to) ? opts.to : [opts.to]));
-      let next = /** @type {undefined | JshCli.PointAnyFormat} */ (undefined);
+      let next: undefined | JshCli.PointAnyFormat;
 
       while ((next = pendings.shift())) {
         await w.npc
@@ -281,7 +282,7 @@ export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
        * e.g. `pick | move npc:rob`
        */
       let pendingRead = api.read();
-      let next = /** @type {undefined | JshCli.PointAnyFormat} */ (undefined);
+      let next: undefined | JshCli.PointAnyFormat;
 
       while ((next = pendings.shift() ?? (await pendingRead)) !== api.eof && next) {
         const npc = getNpc();
@@ -331,10 +332,14 @@ export async function move({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
  * nudge npc:kate src:rob
  * nudge npc:kate src:$( pick 1 ) by:1
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; src?: string |JshCli.PointAnyFormat; by?: number }} opts
  */
-export async function nudge(ct, opts = ct.api.jsArg(ct.args, { npc: "npcKey", from: "src" })) {
+export async function nudge(
+  ct: JshCli.RunArg,
+  opts: { npcKey: string; src?: string | JshCli.PointAnyFormat; by?: number } = ct.api.jsArg(ct.args, {
+    npc: "npcKey",
+    from: "src",
+  }),
+) {
   const { w } = ct;
   const npc = w.npc.get(opts.npcKey);
 
@@ -363,10 +368,11 @@ export async function nudge(ct, opts = ct.api.jsArg(ct.args, { npc: "npcKey", fr
  * pad npc:kate
  * pad npc:kate by:1
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; by?: number }} opts
  */
-export async function pad({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function pad(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; by?: number } = api.jsArg(args, { npc: "npcKey" }),
+) {
   const npc = w.npc.get(opts.npcKey);
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
@@ -392,10 +398,11 @@ export async function pad({ api, args, w }, opts = api.jsArg(args, { npc: "npcKe
  * ```sh
  * park npc:kate
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string }} opts
  */
-export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function park(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
   const npc = w.npc.get(opts.npcKey);
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
@@ -441,10 +448,7 @@ export async function park({ api, args, w }, opts = api.jsArg(args, { npc: "npcK
   }
 }
 
-/**
- * @param {JshCli.RunArg} ct
- */
-export function pause({ w }) {
+export function pause({ w }: JshCli.RunArg) {
   w.setDisabled(true);
 }
 
@@ -471,10 +475,8 @@ export function pause({ w }) {
  * - given two `pick`s execution order wins
  * - `pick m` always executes before `pick`
  * - on execute `pick m --fifo` it defers priority
- *
- * @param {JshCli.RunArg} ct
  */
-export async function* pick(ct) {
+export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
 
   const { opts, operands } = ct.api.getOpts(args, {
@@ -519,11 +521,10 @@ export async function* pick(ct) {
     .map((filterDef) => api.generateSelector(api.parseFnOrStr(filterDef), [ct]));
 
   // support jsArg as:foo.bar.baz (apply selector)
-  const jsOpts = /** @type {{ as?: string }} */ (api.jsArg(args));
+  const jsOpts = api.jsArg(args) as { as?: string };
   const selector = jsOpts.as ? api.generateSelector(api.parseFnOrStr(jsOpts.as)) : undefined;
 
-  /** @type {import('@npc-cli/util').BasicSubscription} */
-  let eventsSub;
+  let eventsSub: import("@npc-cli/util").BasicSubscription;
 
   // suspend/resume handled by `api.isRunning()` below
   const handlers = api.handleStatus({
@@ -544,27 +545,25 @@ export async function* pick(ct) {
         // `pick 5` but not `pick 5 --fifo`
         w.view.clickIds.unshift({ id: clickId, blocking: true });
       }
-      const output = await /** @type {Promise<JshCli.PickEvent>} */ (
-        new Promise((resolve, reject) => {
-          eventsSub = w.events.subscribe({
-            next(e) {
-              if (e.key !== "picked") {
-                return;
-              } else if (api.isRunning() === false) {
-                return;
-              } else if (e.clickId !== undefined && clickId === undefined) {
-                return; // `pick {n}` overrides `pick`
-              } else if (e.clickId !== undefined && clickId !== e.clickId) {
-                return; // ignore other picks (possibly started after this one)
-              }
+      const output = await new Promise<JshCli.PickEvent>((resolve, reject) => {
+        eventsSub = w.events.subscribe({
+          next(e) {
+            if (e.key !== "picked") {
+              return;
+            } else if (api.isRunning() === false) {
+              return;
+            } else if (e.clickId !== undefined && clickId === undefined) {
+              return; // `pick {n}` overrides `pick`
+            } else if (e.clickId !== undefined && clickId !== e.clickId) {
+              return; // ignore other picks (possibly started after this one)
+            }
 
-              resolve(e); // Must resolve before tear-down induced by unsubscribe
-              eventsSub.unsubscribe();
-            },
-          });
-          eventsSub.add(() => reject(api.getKillError()));
-        })
-      );
+            resolve(e); // Must resolve before tear-down induced by unsubscribe
+            eventsSub.unsubscribe();
+          },
+        });
+        eventsSub.add(() => reject(api.getKillError()));
+      });
 
       if (
         (opts.left === true && output.rightDown === true) ||
@@ -593,10 +592,7 @@ export async function* pick(ct) {
   }
 }
 
-/**
- * @param {JshCli.RunArg} ct
- */
-export function play({ w }) {
+export function play({ w }: JshCli.RunArg) {
   w.setDisabled(false);
 }
 
@@ -611,14 +607,18 @@ export function play({ w }) {
  * ray detail from:kate to:will
  * ray detail src:rob dst:$( pick 1 )
  * ```
- * @param {JshCli.RunArg} ct
- * @param {object} [opts]
- * @param {JshCli.PointAnyFormat | string} opts.src
- * @param {JshCli.PointAnyFormat | string} opts.dst
- * @param {boolean} [opts.point] Output point.
- * @param {boolean} [opts.detail] Output detailed result.
  */
-export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src", to: "dst" })) {
+export async function ray(
+  { api, args, w }: JshCli.RunArg,
+  opts: {
+    src: JshCli.PointAnyFormat | string;
+    dst: JshCli.PointAnyFormat | string;
+    /** Output point. */
+    point?: boolean;
+    /** Output detailed result. */
+    detail?: boolean;
+  } = api.jsArg(args, { from: "src", to: "dst" }),
+) {
   const src = typeof opts.src === "string" ? w.e.getPoint(opts.src) : opts.src;
   const dst = typeof opts.dst === "string" ? w.e.getPoint(opts.dst) : opts.dst;
   const result = await w.e.raycast(src, dst);
@@ -650,9 +650,8 @@ export async function ray({ api, args, w }, opts = api.jsArg(args, { from: "src"
  * # remove runtime decor and an npc
  * remove test-decor-point will
  * ```
- * @param {JshCli.RunArg} ct
  */
-export async function remove({ w, args }) {
+export async function remove({ w, args }: JshCli.RunArg) {
   if (args.length === 1) {
     if (args[0] === "npcs") {
       return w.e.removeNpcs(...Object.keys(w.n));
@@ -674,10 +673,11 @@ export async function remove({ w, args }) {
  * revoke npc:rob g0d{0..5}
  * revoke npc:rob all
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
  */
-export function revoke({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export function revoke(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args, { npc: "npcKey" }),
+) {
   const operands = api.getJsOperands(args, opts);
   const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
 
@@ -697,11 +697,11 @@ export function revoke({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" 
  * say hi npc:rob for:10
  * say hi npc:rob for:Infinity
  * ```
- *
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {{ npcKey: string; words?: string; secs?: number; }} [opts]
  */
-export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", for: "secs" })) {
+export function say(
+  { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
+  opts: { npcKey: string; words?: string; secs?: number } = api.jsArg(args, { npc: "npcKey", for: "secs" }),
+) {
   const npc = w.npc.get(opts.npcKey);
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
@@ -715,10 +715,11 @@ export function say({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey", fo
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; as?: string }} [opts]
  */
-export function skin({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export function skin(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; as?: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
   const npc = w.npc.get(opts.npcKey);
   const skinKey = opts.as ?? (api.getJsOperands(args, opts)[0] || "medic-0");
 
@@ -749,19 +750,22 @@ export function skin({ api, args, w }, opts = api.jsArg(args, { npc: "npcKey" })
  * # ignore errors when not reading from stdin: non placable or doable
  * pick | spawn force npc:rob-
  * ```
- * @param {JshCli.RunArg<JshCli.PointAnyFormat>} ct
- * @param {JshCli.SpawnOpts & { force?: boolean }} [opts]
  */
 export async function spawn(
-  { api, args, w, datum },
-  opts = api.jsArg(args, { npc: "npcKey", to: "at", skin: "as", towards: "facing", look: "facing" }),
+  { api, args, w, datum }: JshCli.RunArg<JshCli.PointAnyFormat>,
+  opts: JshCli.SpawnOpts & { force?: boolean } = api.jsArg(args, {
+    npc: "npcKey",
+    to: "at",
+    skin: "as",
+    towards: "facing",
+    look: "facing",
+  }),
 ) {
   if (api.isTtyAt(0)) {
     return await w.npc.spawn(opts);
   }
 
-  /** @param {unknown} e */
-  function ignoreSpawnErrors(e) {
+  function ignoreSpawnErrors(e: unknown) {
     if (opts.force && e instanceof Error && (e.message === "not placable" || e.message === "not doable")) {
       numSpawns--;
       return;
@@ -794,10 +798,11 @@ export async function spawn(
  * unlock g0d29 g0d30
  * unlock doors:['g0d29','g0d30']
  * ```
- * @param {JshCli.RunArg} ct
- * @param {{ all?: boolean; doors?: Geomorph.GmDoorKey[] }} [opts]
  */
-export async function unlock({ api, args, w }, opts = api.jsArg(args)) {
+export async function unlock(
+  { api, args, w }: JshCli.RunArg,
+  opts: { all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args),
+) {
   const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
   for (const gdKey of inputs) {
     if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { unlock: true });
@@ -821,10 +826,8 @@ export async function unlock({ api, args, w }, opts = api.jsArg(args)) {
  *
  * - can always `ctrl-c`, even without cleaning up ongoing computations
  * - can read stdin via hyphen arg
- *
- * @param {JshCli.RunArg} ct
  */
-export async function* w(ct) {
+export async function* w(ct: JshCli.RunArg) {
   const { api, args, w } = ct;
 
   // support piped inputs via hyphen args -
@@ -832,14 +835,13 @@ export async function* w(ct) {
   const stdinInputChar = "-";
   const readStdin = !ct.api.isTtyAt(0) && args.slice(1).some((arg) => arg === stdinInputChar);
 
-  let reject = /** @param {*} _e */ (_e) => {};
+  let reject = (_e: any) => {};
   const handlers = api.handleStatus({
     cleanups() {
       reject(new Error("potential ongoing computation"));
     },
   });
-  /** @param {any} value */
-  async function awaitOrIgnore(value) {
+  async function awaitOrIgnore(value: any) {
     // handle non-promise or promise
     return Promise.race([value, new Promise((_, rej) => (reject = rej))]).finally(() => {
       reject(null);
@@ -853,7 +855,7 @@ export async function* w(ct) {
     return;
   }
 
-  /** @type {*} */ let datum;
+  let datum: any;
   while ((datum = await api.read()) !== api.eof) {
     const func = api.generateSelector(
       api.parseFnOrStr(args[0]),
@@ -868,19 +870,14 @@ export async function* w(ct) {
   }
 }
 
-/**
- * @param {JshCli.RunArg} ct
- * @param {{ npcKey: string; to: MaybeMeta<JshCli.PointAnyFormat> }} [opts]
- */
-export async function warp({ w, api, args }, opts = api.jsArg(args, { npc: "npcKey" })) {
+export async function warp(
+  { w, api, args }: JshCli.RunArg,
+  opts: { npcKey: string; to: MaybeMeta<JshCli.PointAnyFormat> } = api.jsArg(args, { npc: "npcKey" }),
+) {
   const npc = w.npc.get(opts.npcKey);
   await npc.fadeSpawn({ at: opts.to });
 }
 
-/**
- * @param {unknown} x
- * @returns {x is JshCli.PointAnyFormat[]}
- */
-function expectArrayOfPoints(x) {
+function expectArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
 }
