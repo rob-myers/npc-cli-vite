@@ -520,28 +520,30 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       dy0 = pos0.y - start0.y;
     const dx1 = pos1.x - start1.x,
       dy1 = pos1.y - start1.y;
-    const len0 = Math.hypot(dx0, dy0);
-    const len1 = Math.hypot(dx1, dy1);
-
-    const minMove = this.twoFinger.gesture === "undecided" ? twoFingerMinMove : 1;
-    if (len0 < minMove || len1 < minMove) return;
-
-    const dot = (dx0 * dx1 + dy0 * dy1) / (len0 * len1);
+    // a pinch changes the spread, a drag moves the centroid.
+    // Comparing them (rather than each finger's own displacement) also detects
+    // a pinch where one finger stays anchored.
+    const spread = Math.abs(
+      Math.hypot(pos1.x - pos0.x, pos1.y - pos0.y) - Math.hypot(start1.x - start0.x, start1.y - start0.y),
+    );
+    const centroid = Math.hypot((dx0 + dx1) / 2, (dy0 + dy1) / 2);
 
     if (this.twoFinger.gesture === "undecided") {
-      if (dot > twoFingerSameDirThreshold) {
-        this.twoFinger.gesture = "rotate";
-        this.handleTouchStartRotate();
-      } else if (dot < -twoFingerSameDirThreshold) {
+      if (Math.max(spread, centroid) < twoFingerMinMove) return;
+
+      if (spread > centroid) {
         this.twoFinger.gesture = "zoom";
         this.handleTouchStartDolly();
+      } else {
+        this.twoFinger.gesture = "rotate";
+        this.handleTouchStartRotate();
       }
       return;
     }
 
+    // the other gesture must dominate before we reconsider
     const directionChanged =
-      (this.twoFinger.gesture === "rotate" && dot < twoFingerStopThreshold) ||
-      (this.twoFinger.gesture === "zoom" && dot > twoFingerZoomStopThreshold);
+      this.twoFinger.gesture === "rotate" ? spread > centroid * twoFingerSwitch : centroid > spread * twoFingerSwitch;
 
     if (directionChanged) {
       this.twoFinger.gesture = "undecided";
@@ -1253,10 +1255,10 @@ const defaultDampingFactor = 0.05;
 const snapAzimuthOffset = Math.PI / 4;
 /** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
 const snapAzimuthEaseIn = 2;
-const twoFingerMinMove = 8;
-const twoFingerSameDirThreshold = 0.7;
-const twoFingerStopThreshold = 0.3;
-const twoFingerZoomStopThreshold = 0.5;
+/** Pixels of spread/centroid change before a two-finger gesture is classified */
+const twoFingerMinMove = 4;
+/** Factor by which the other gesture must dominate before we reclassify */
+const twoFingerSwitch = 2;
 const twoFingerZoomBoost = 3.0;
 
 const twoPI = 2 * Math.PI;
