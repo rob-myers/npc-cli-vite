@@ -437,13 +437,14 @@ export async function nudge(
  * ```sh
  * pad npc:kate
  * pad npc:kate by:1
+ * pad kate
  * ```
  */
 export async function pad(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; by?: number } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  const npc = w.npc.get(opts.npcKey);
+  const npc = w.npc.get(opts.npcKey ?? args[0]);
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
 
@@ -467,13 +468,14 @@ export async function pad(
 /**
  * ```sh
  * park npc:kate
+ * park kate
  * ```
  */
 export async function park(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  const npc = w.npc.get(opts.npcKey);
+  const npc = w.npc.get(opts.npcKey ?? args[0]);
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
 
@@ -498,7 +500,7 @@ export async function park(
 
   const currentPoint = npc.point;
 
-  // assume 1st segment closest (seg.d minimal)
+  // assume 1st segment closest i.e. `seg.d` minimal
   const closest = geomService.getClosestOnSeg(
     currentPoint,
     { x: seg.s[0 + 0], y: seg.s[0 + 2] },
