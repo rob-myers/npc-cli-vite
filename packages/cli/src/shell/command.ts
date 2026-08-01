@@ -249,11 +249,18 @@ class CmdService {
 
     generateSelector,
 
-    get(path: string) {
-      if (typeof path !== "string") {
-        throw new ShError(`cannot get non-string value: ${JSON.stringify(path)}`, 1);
+    get(path: string, suppressThrow?: boolean) {
+      try {
+        if (typeof path !== "string") {
+          throw new ShError(`cannot get non-string value: ${JSON.stringify(path)}`, 1);
+        }
+        return cmdService.get(this.node, [path])[0];
+      } catch (e) {
+        if (suppressThrow === true) {
+          return undefined;
+        }
+        throw e;
       }
-      return cmdService.get(this.node, [path])[0];
     },
 
     getCached,

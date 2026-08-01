@@ -190,7 +190,61 @@ export async function meta(
   return results[0];
 }
 
-// 🚧 split into move_const, move_next, move_lazy
+/**
+ * Generic machinary for pausing any motion in progress,
+ * storing the unreached target at the front of `pendings`.
+ *
+ * `npcKey` is a literal string or a path to a literal string relative to CWD.
+ */
+function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
+  const getNpcOrUndefined = (): undefined | JshCli.Npc => w.n[npcKey in w.n ? npcKey : api.get(npcKey, true)];
+
+  function getNpcOrThrow() {
+    try {
+      return w.npc.get(npcKey in w.n ? npcKey : api.get(npcKey));
+    } catch {
+      throw Error(`npc not found: ${npcKey}`);
+    }
+  }
+
+  const pendings: JshCli.PointAnyFormat[] = [];
+
+  return {
+    pendings,
+    getNpcOrUndefined,
+    getNpcOrThrow,
+    handleStatus: () =>
+      api.handleStatus({
+        cleanups(killed) {
+          killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
+        },
+        onSuspends: () => {
+          const npc = getNpcOrUndefined();
+          if (npc) {
+            if (npc.isMoving()) pendings.unshift(npc.last.dst);
+            npc.rejectAll(Error("paused"));
+          }
+          return true;
+        },
+      }),
+    handlePausedError(e: any) {
+      if (e instanceof Error && e.message === "paused") {
+        return api.awaitResume();
+      }
+      throw e;
+    },
+    /**
+     * Awaiting a move surfaces errors the destination itself caused,
+     * which shouldn't stop us reading further destinations.
+     */
+    handleMoveError(e: any) {
+      if (e instanceof Error && ["not navigable", "occupied", "stuck"].includes(e.message)) {
+        return Promise.resolve();
+      }
+      return this.handlePausedError(e);
+    },
+  };
+}
 
 /**
  * Usage
@@ -209,60 +263,27 @@ export async function meta(
  * ```
  */
 export async function move(
-  { api, args, w }: JshCli.RunArg,
+  ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> & {
     to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
     along: boolean;
-  } = api.jsArg(args, { npc: "npcKey" }),
+  } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  /** `opts.npcKey` is either literal string or path to literal string */
-  const getNpc = () => {
-    try {
-      return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
-    } catch {
-      throw Error(`npc not found: ${opts.npcKey}`);
-    }
-  };
+  const { api, w } = ct;
 
-  const pendings: JshCli.PointAnyFormat[] = [];
+  // 🚧 split into move_const, move_next, move_lazy
+  // - each invoking `moveHandlingFactory`
 
-  const { dispose } = api.handleStatus({
-    cleanups(killed) {
-      try {
-        killed && getNpc().rejectAll(new Error("killed"));
-      } catch {}
-    },
-    onSuspends: () => {
-      try {
-        const npc = getNpc();
-        if (npc.isMoving()) pendings.unshift(npc.last.dst);
-        npc.rejectAll(Error("paused"));
-      } catch {}
-      return true;
-    },
-  });
-
-  function handlePausedError(e: any): Promise<void> {
-    if (e instanceof Error && e.message === "paused") {
-      return api.awaitResume();
-    }
-    throw e;
-  }
-
-  /**
-   * Awaiting a move surfaces errors the destination itself caused,
-   * which shouldn't stop us reading further destinations.
-   */
-  function handleMoveError(e: any): Promise<void> {
-    if (e instanceof Error && ["not navigable", "occupied", "stuck"].includes(e.message)) {
-      return Promise.resolve();
-    }
-    return handlePausedError(e);
-  }
+  const { getNpcOrThrow, pendings, handleStatus, handleMoveError, handlePausedError } = moveHandlingFactory(
+    ct,
+    opts.npcKey,
+  );
+  const { dispose } = handleStatus();
 
   try {
     if (opts.to) {
-      const npc = getNpc();
+      const npc = getNpcOrThrow();
+
       /**
        * move to point or smoothly along points
        * e.g. `move npc:rob to:$( pick 3 )`
@@ -289,7 +310,7 @@ export async function move(
       let next: undefined | JshCli.PointAnyFormat;
 
       while ((next = pendings.shift() ?? (await pendingRead)) !== api.eof && next) {
-        const npc = getNpc();
+        const npc = getNpcOrThrow();
         const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
         await Promise.race([movePromise, (pendingRead = api.read())]);
       }
@@ -307,7 +328,7 @@ export async function move(
       if (dst === api.eof) break;
       if (shouldRead) pendingRead = api.read();
 
-      const npc = getNpc();
+      const npc = getNpcOrThrow();
 
       const movePromise = w.npc.move({ npcKey: npc.key, to: dst, fast: opts.fast }).catch((e) => {
         if (e instanceof Error && e.message === "not navigable") {
