@@ -8,7 +8,7 @@ import {
 } from "@npc-cli/cli";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import {
   error,
   throttle,
@@ -16,7 +16,15 @@ import {
   tryLocalStorageRemove,
   tryLocalStorageSet,
 } from "@npc-cli/util/legacy/generic";
-import { CaretRightIcon, CheckIcon, CopyIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  CaretRightIcon,
+  CheckIcon,
+  CopyIcon,
+  PauseIcon,
+  PlayIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
@@ -106,7 +114,7 @@ export default function Jobs() {
           return;
         }
         const pid = Number(e.currentTarget.dataset.pid);
-        const act = e.currentTarget.dataset.act as "pause" | "resume" | "kill";
+        const act = e.currentTarget.dataset.act as "kill" | "pause" | "reset" | "resume";
 
         switch (act) {
           case "kill":
@@ -119,10 +127,14 @@ export default function Jobs() {
           case "pause":
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, STOP: true });
             break;
+          case "reset":
+            sessionApi.sendSignalToGroup(state.sessionKey, pid, "reset");
+            break;
           case "resume":
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, CONT: true });
             break;
           default:
+            throw new ExhaustiveError(act);
         }
       },
       connectSession() {
@@ -364,6 +376,14 @@ export default function Jobs() {
                       data-pid={p.pid}
                     >
                       <XIcon alt="kill" className="size-4" />
+                    </div>
+                    <div
+                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                      onClick={!killed ? state.changeProcess : undefined}
+                      data-act="reset"
+                      data-pid={p.pid}
+                    >
+                      <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
                     </div>
                   </div>
                 </motion.div>

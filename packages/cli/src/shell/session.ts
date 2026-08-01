@@ -65,6 +65,7 @@ export const sessionApi = {
       src: def.src,
       positionals: ["jsh", ...(def.posPositionals ?? [])],
       cleanups: [],
+      onSignals: [],
       onSuspends: [],
       onResumes: [],
       localVar: {},
@@ -352,6 +353,15 @@ export const sessionApi = {
   resolve(fd: number, meta: JSh.BaseMeta) {
     return useSession.getState().device[meta.fd[fd]];
   },
+  sendSignalToGroup(sessionKey: string, pid: number, signalKey: string) {
+    const pgid = sessionApi.getProcess({ sessionKey, pid })?.pgid;
+    if (pgid === undefined) {
+      return;
+    }
+    for (const process of sessionApi.getProcesses(sessionKey, pgid)) {
+      process.onSignals.forEach((onSignal) => onSignal(signalKey));
+    }
+  },
   setLastExitCode(meta: JSh.BaseMeta, exitCode?: number) {
     const session = sessionApi.getSession(meta.sessionKey);
     if (session === undefined) {
@@ -500,6 +510,10 @@ export type ProcessMeta = {
    * - on Ctrl-C or `kill`
    */
   cleanups: ((SIGINT?: boolean) => void)[];
+  /**
+   * We rely on consumers to filter.
+   */
+  onSignals: ((signalKey: string) => void)[];
   /**
    * Executed on suspend, without clearing `true` returners.
    * The latter should be idempotent, e.g. unsubscribe, pause.

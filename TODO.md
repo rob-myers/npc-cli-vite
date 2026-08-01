@@ -42,10 +42,9 @@
     - ✅ `move_lazy`
   - ✅ un/pausing tty should be reflected in processes
     - added button in header too
+  - ✅ Jobs can send reset signal
+  - 🚧 improve `move` reset
   - 🚧 Jobs has library of commands
-  - BUG sometimes interactive process 0 shows green although killed
-    - need repro
-
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
@@ -64,6 +63,8 @@
   - 🚧 avoid jerky animation when immediately fail
     - also for very close target
 
+- BUG Jobs: sometimes interactive process 0 shows green although killed
+  - need repro
 - could cover up curved room raymarching woes
   - maybe `Walls` can vary opacity
   - provide additional Walls in MapEdit

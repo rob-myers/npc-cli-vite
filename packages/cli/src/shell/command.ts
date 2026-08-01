@@ -1239,11 +1239,12 @@ type CommandName = keyof typeof commandKeys;
 
 export interface HandleStatusHandlers {
   /* An optional cleanup */
-  cleanup?: ProcessMeta["cleanups"][0];
+  cleanup?: ProcessMeta["cleanups"][number];
   /* An optional resume */
-  onResume?: ProcessMeta["onResumes"][0];
+  onResume?: ProcessMeta["onResumes"][number];
+  onSignal?: ProcessMeta["onSignals"][number];
   /* An optional suspend */
-  onSuspend?: ProcessMeta["onSuspends"][0];
+  onSuspend?: ProcessMeta["onSuspends"][number];
 }
 
 export type HandleStatusReturns = ReturnType<CmdService["handleStatus"]>;
