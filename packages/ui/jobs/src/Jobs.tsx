@@ -16,15 +16,7 @@ import {
   tryLocalStorageRemove,
   tryLocalStorageSet,
 } from "@npc-cli/util/legacy/generic";
-import {
-  ArrowsClockwiseIcon,
-  CaretRightIcon,
-  CheckIcon,
-  CopyIcon,
-  PauseIcon,
-  PlayIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { CaretRightIcon, CheckIcon, CopyIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
@@ -35,7 +27,7 @@ import { useShallow } from "zustand/react/shallow";
  * Visual reinterpretation of shell CLI `jobs`.
  */
 export default function Jobs() {
-  const { uiStore } = useContext(UiContext);
+  const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const ttyMetas = uiStore(
     useShallow(({ byId }) =>
@@ -227,6 +219,10 @@ export default function Jobs() {
         state.folded[key] = !state.folded[key];
         state.update();
       },
+      toggleTtyDisabled() {
+        if (!state.ttyMeta) return;
+        uiStoreApi.setUiMeta(state.ttyMeta.id, (draft) => (draft.disabled = !draft.disabled));
+      },
       onChangeSessionKey(e) {
         const { value } = e.currentTarget;
         state.sessionKey = value as `tty-${number}`;
@@ -276,7 +272,7 @@ export default function Jobs() {
     <div className="p-2 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2 font-mono">
         {sessionsExist ? (
-          <div className="flex gap-2">
+          <>
             <select
               ref={state.ref("sessionSelectEl")}
               onChange={state.onChangeSessionKey}
@@ -290,15 +286,20 @@ export default function Jobs() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              title="refresh"
-              className="cursor-pointer px-2 bg-[#222]"
-              onClick={state.connectSession}
-            >
-              <ArrowsClockwiseIcon alt="refresh" className="size-3" />
-            </button>
-          </div>
+            {state.ttyMeta && (
+              <button
+                type="button"
+                title="refresh"
+                className={cn(
+                  "cursor-pointer px-2 bg-[#222] text-sm",
+                  state.ttyMeta.disabled ? "text-gray-400" : "text-green-400",
+                )}
+                onClick={state.toggleTtyDisabled}
+              >
+                {state.ttyMeta?.disabled ? "paused" : "enabled"}
+              </button>
+            )}
+          </>
         ) : (
           <div className="text-[#999]">{`[No sessions]`}</div>
         )}
@@ -498,6 +499,7 @@ type State = {
   copiedTimeoutId: number;
   copySrc: (src: string) => void;
   toggleFold: (key: HistoryGroupKey) => void;
+  toggleTtyDisabled: () => void;
   /** Has "clear history" been clicked once i.e. awaiting confirmation? */
   confirmClear: boolean;
   /** Forgets `confirmClear` after `confirmClearMs` */
