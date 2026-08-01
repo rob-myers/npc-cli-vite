@@ -35,6 +35,8 @@
     - ✅ try-catch every resume with logging
     - ✅ fix `move` cleanup/pause/resume
   - 🚧 split `move` into `move_const`, `move_next`, `move_lazy`
+    - ✅ `move` uses `moveHandlingFactory`
+    - 🚧 `moveHandlingFactory` preserves clones of "targets"
   - BUG sometimes interactive process 0 shows green although killed
   - lib
 

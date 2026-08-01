@@ -112,4 +112,6 @@ declare namespace JshCli {
   };
 
   type BaseDoableMeta = { decorKey?: string; groundPoint?: Geom.VectJson; y?: number; orient?: number };
+
+  type Npc = import("./components/npc").Npc;
 }
