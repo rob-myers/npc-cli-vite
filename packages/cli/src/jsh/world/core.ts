@@ -228,6 +228,11 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
         cleanup(killed) {
           killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
         },
+        onSignal(signalKey) {
+          // 🚧 clear somehow: flush reads, clear pendingMoves
+          // - for move_const this means we need to use pendingMoves...
+          alert(`saw signalKey: ${signalKey}`);
+        },
         onSuspend: () => {
           const npc = getNpcOrUndefined();
           if (!npc) {
@@ -280,10 +285,8 @@ export async function move(
     along: boolean;
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { api } = ct;
-
-  if (!opts.to && api.isTtyAt(0)) {
-    throw Error("opts.to required sans pipe");
+  if (!opts.to && ct.api.isTtyAt(0)) {
+    throw Error("opts.to required when not piping");
   }
 
   if (opts.to) {

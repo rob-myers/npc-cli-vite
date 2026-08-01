@@ -426,6 +426,7 @@ export class TtyShell implements Device {
         // must clear in case of session leader (reused)
         process.cleanups.length = 0;
         process.onResumes.length = 0;
+        process.onSignals.length = 0;
         process.onSuspends.length = 0;
       }
     }
