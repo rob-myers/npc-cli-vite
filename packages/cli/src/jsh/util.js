@@ -279,14 +279,14 @@ export async function narrate({ api, args }, opts = api.jsArg(args, { as: "voice
   }
 
   const handlers = api.handleStatus({
-    cleanups() {
+    cleanup() {
       window.speechSynthesis.cancel();
     },
-    onResumes() {
+    onResume() {
       window.speechSynthesis.resume();
       return true;
     },
-    onSuspends() {
+    onSuspend() {
       window.speechSynthesis.pause();
       return true;
     },
