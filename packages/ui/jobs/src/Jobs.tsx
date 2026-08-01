@@ -193,12 +193,12 @@ export default function Jobs() {
             state.update();
             break;
           case "started": {
-            if (msg.pid === 0 && item.src) {
-              // interactive process never removed
-              state.addHistory([{ ...item, status: toProcessStatus.Killed }]);
-            }
             item.status = toProcessStatus.Running;
             item.src = process.src;
+            // 🔔 record as soon as shown, rather than when it dies
+            if (item.src) {
+              state.addHistory([{ ...item }]);
+            }
             state.debouncedUpdate();
             break;
           }
@@ -267,8 +267,9 @@ export default function Jobs() {
 
   const sessionsExist = ttyMetas.length > 0;
   const historyGroups: { key: HistoryGroupKey; items: ProcessLeader[] }[] = [
-    { key: "interactive", items: state.history.filter((p) => p.pid === 0) },
-    { key: "background", items: state.history.filter((p) => p.pid !== 0) },
+    // 🔔 most recent first
+    { key: "interactive", items: state.history.filter((p) => p.pid === 0).reverse() },
+    { key: "background", items: state.history.filter((p) => p.pid !== 0).reverse() },
   ];
 
   return (
@@ -390,19 +391,17 @@ export default function Jobs() {
               {state.confirmClear ? "confirm" : "clear"}
             </button>
           </div>
-          <div className="flex flex-col gap-0.5 max-h-40 overflow-auto [scrollbar-width:thin] p-1 bg-black border border-[#505050] rounded">
-            {historyGroups.map(({ key, items }) => (
-              <HistoryGroup
-                key={key}
-                groupKey={key}
-                items={items}
-                folded={state.folded[key]}
-                onToggle={state.toggleFold}
-                copiedSrc={state.copiedSrc}
-                onCopy={state.copySrc}
-              />
-            ))}
-          </div>
+          {historyGroups.map(({ key, items }) => (
+            <HistoryGroup
+              key={key}
+              groupKey={key}
+              items={items}
+              folded={state.folded[key]}
+              onToggle={state.toggleFold}
+              copiedSrc={state.copiedSrc}
+              onCopy={state.copySrc}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -432,7 +431,7 @@ function HistoryGroup({
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-0.5 p-1 bg-black border border-[#505050] rounded">
       <button
         type="button"
         className="flex items-center gap-1 cursor-pointer text-[#999]"
@@ -442,30 +441,31 @@ function HistoryGroup({
         {`${groupKey} (${items.length})`}
       </button>
 
-      {!folded &&
-        items.map((p, i) => (
-          <div key={`${groupKey}@${i}`} className="flex items-center gap-2">
-            {/* 🔔 interactive is always pid 0 */}
-            {groupKey === "background" && <div className="shrink-0 text-[#ff9]">{p.pid}</div>}
-            {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>}
-            <div className="grow min-w-0 truncate text-white" title={p.src}>
-              {p.src || "[empty]"}
+      {folded === false && (
+        <div className="flex flex-col gap-0.5 max-h-40 overflow-auto [scrollbar-width:thin]">
+          {items.map((p, i) => (
+            <div key={`${groupKey}@${i}`} className="flex items-center gap-2 pl-1">
+              <button
+                type="button"
+                title="copy"
+                className="shrink-0 cursor-pointer text-[#777] hover:text-white"
+                onClick={() => onCopy(p.src)}
+              >
+                {copiedSrc === p.src ? (
+                  <CheckIcon alt="copied" className="size-3 text-[#0f0]" />
+                ) : (
+                  <CopyIcon alt="copy" className="size-3" />
+                )}
+              </button>
+              {/* {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>} */}
+              <div className="grow min-w-0 truncate text-white" title={p.src}>
+                {p.src || "[empty]"}
+              </div>
             </div>
-            <button
-              type="button"
-              title="copy"
-              className="shrink-0 cursor-pointer text-[#777] hover:text-white"
-              onClick={() => onCopy(p.src)}
-            >
-              {copiedSrc === p.src ? (
-                <CheckIcon alt="copied" className="size-3 text-[#0f0]" />
-              ) : (
-                <CopyIcon alt="copy" className="size-3" />
-              )}
-            </button>
-          </div>
-        ))}
-    </>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
