@@ -280,58 +280,64 @@ export async function move(
     along: boolean;
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { api, w } = ct;
+  const { api } = ct;
 
-  // 🚧 split into move_const, move_next, move_lazy
-  // - each invoking `moveHandlingFactory`
+  if (!opts.to && api.isTtyAt(0)) {
+    throw Error("opts.to required sans pipe");
+  }
 
-  const { getNpcOrThrow, pendingMoves, handleStatus, handleMoveError, handlePausedError } = moveHandlingFactory(
-    ct,
-    opts.npcKey,
-  );
+  if (opts.to) {
+    await move_const(ct, { ...opts, to: opts.to });
+  } else if (!opts.along) {
+    await move_next(ct, opts);
+  } else {
+    await move_lazy(ct, opts);
+  }
+}
+
+/**
+ * move to point or smoothly along points
+ * e.g. `move npc:rob to:$( pick 3 )`
+ */
+export async function move_const(
+  ct: JshCli.RunArg,
+  opts: Omit<JshCli.MoveOpts, "to"> & {
+    to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
+  } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+) {
+  const { getNpcOrThrow, pendingMoves, handleStatus, handlePausedError } = moveHandlingFactory(ct, opts.npcKey);
   const { dispose } = handleStatus();
+  const { w } = ct;
 
   try {
-    if (opts.to) {
-      const npc = getNpcOrThrow();
+    const npc = getNpcOrThrow();
 
-      /**
-       * move to point or smoothly along points
-       * e.g. `move npc:rob to:$( pick 3 )`
-       */
-      pendingMoves.push(...(isArrayOfPoints(opts.to) ? opts.to : [opts.to]));
-      let next: undefined | JshCli.PointAnyFormat;
+    pendingMoves.push(...(isArrayOfPoints(opts.to) ? opts.to : [opts.to]));
+    let next: undefined | JshCli.PointAnyFormat;
 
-      while ((next = pendingMoves.shift())) {
-        await w.npc
-          .move({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast })
-          .catch(handlePausedError);
-      }
-      return;
-    } else if (api.isTtyAt(0)) {
-      throw Error("opts.to is required");
+    while ((next = pendingMoves.shift())) {
+      await w.npc
+        .move({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast })
+        .catch(handlePausedError);
     }
+  } finally {
+    dispose();
+  }
+}
 
-    if (!opts.along) {
-      /**
-       * move immediately to latest destination
-       * e.g. `pick | move npc:rob`
-       */
-      let pendingRead = api.read();
-      let next: undefined | JshCli.PointAnyFormat;
+/**
+ * move smoothly along lazily supplied path
+ * e.g. `pick | move npc:rob along`
+ */
+export async function move_lazy(
+  ct: JshCli.RunArg,
+  opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+) {
+  const { getNpcOrThrow, pendingMoves, handleStatus, handlePausedError } = moveHandlingFactory(ct, opts.npcKey);
+  const { dispose } = handleStatus();
+  const { w, api } = ct;
 
-      while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
-        const npc = getNpcOrThrow();
-        const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
-        await Promise.race([movePromise, (pendingRead = api.read())]);
-      }
-      return;
-    }
-
-    /**
-     * move smoothly along lazily supplied path
-     * e.g. `pick | move npc:rob along`
-     */
+  try {
     let pendingRead = api.read();
     while (true) {
       const shouldRead = pendingMoves.length === 0;
@@ -358,6 +364,32 @@ export async function move(
 
       await Promise.race([movePromise, pendingRead.then(() => npc.preventArrival())]);
       await movePromise;
+    }
+  } finally {
+    dispose();
+  }
+}
+
+/**
+ * move immediately to latest destination
+ * e.g. `pick | move npc:rob`
+ */
+export async function move_next(
+  ct: JshCli.RunArg,
+  opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+) {
+  const { getNpcOrThrow, pendingMoves, handleStatus, handleMoveError } = moveHandlingFactory(ct, opts.npcKey);
+  const { dispose } = handleStatus();
+  const { w, api } = ct;
+
+  try {
+    let pendingRead = api.read();
+    let next: undefined | JshCli.PointAnyFormat;
+
+    while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
+      const npc = getNpcOrThrow();
+      const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
+      await Promise.race([movePromise, (pendingRead = api.read())]);
     }
   } finally {
     dispose();
