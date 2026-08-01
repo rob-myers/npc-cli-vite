@@ -211,6 +211,13 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
   const pendingLooks: JshCli.PointAnyFormat[] = [];
   const pendingMoves: JshCli.PointAnyFormat[] = [];
 
+  function handlePausedError(e: any) {
+    if (e instanceof Error && e.message === "paused") {
+      return api.awaitResume();
+    }
+    throw e;
+  }
+
   return {
     pendingLooks,
     pendingMoves,
@@ -236,12 +243,7 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
           return true;
         },
       }),
-    handlePausedError(e: any) {
-      if (e instanceof Error && e.message === "paused") {
-        return api.awaitResume();
-      }
-      throw e;
-    },
+    handlePausedError,
     /**
      * Awaiting a move surfaces errors the destination itself caused,
      * which shouldn't stop us reading further destinations.
@@ -250,7 +252,7 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
       if (e instanceof Error && ["not navigable", "occupied", "stuck"].includes(e.message)) {
         return Promise.resolve();
       }
-      return this.handlePausedError(e);
+      return handlePausedError(e);
     },
   };
 }
