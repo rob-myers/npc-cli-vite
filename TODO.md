@@ -40,9 +40,12 @@
     - ✅ `move_const`
     - ✅ `move_next`
     - ✅ `move_lazy`
-  - 🚧 BUG sometimes interactive process 0 shows green although killed
-  - un/pausing world should be reflected in processes
-  - Jobs has library of commands
+  - ✅ un/pausing tty should be reflected in processes
+    - added button in header too
+  - 🚧 Jobs has library of commands
+  - BUG sometimes interactive process 0 shows green although killed
+    - need repro
+
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
