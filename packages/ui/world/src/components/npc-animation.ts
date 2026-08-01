@@ -179,7 +179,7 @@ export class NpcAnimation {
     last.dstGrId = this.w.e.findRoomContaining(groundPoint);
     last.blockingArea = -1;
     last.navNodeRef = -1;
-    last.pos = this.npc.point;
+    last.point = this.npc.point;
 
     this.npc.nodeCount = 0;
     this.stuckAccum = 0;
@@ -205,16 +205,20 @@ export class NpcAnimation {
   }
 
   updateStuck(delta: number, worldSeconds: number): boolean {
+    const { position, last } = this.npc;
+
     // delay stuck a bit
-    if (worldSeconds - this.npc.last.pinTime < 2.5) {
+    if (worldSeconds - last.pinTime < 2.5) {
       return false;
     }
 
-    const dx = this.npc.position.x - this.npc.last.pos.x;
-    const dz = this.npc.position.z - this.npc.last.pos.y;
+    const dx = position.x - last.point.x;
+    const dz = position.z - last.point.y;
     const dist = Math.hypot(dx, dz);
     this.stuckAccum += dist < 0.002 ? delta : 0;
-    this.npc.last.pos = { x: this.npc.position.x, y: this.npc.position.z };
+    last.point.x = position.x;
+    last.point.y = position.z;
+
     return this.stuckAccum > 0.4;
   }
 }

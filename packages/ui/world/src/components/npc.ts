@@ -50,16 +50,23 @@ export class Npc {
 
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   labelStyle: JshCli.NpcLabelStyle = { color: "#ff9", speaking: false };
-  last = {
+  last: JshCli.NpcLast = {
+    /** Seen blocking area in navmesh */
     blockingArea: -1,
+    /** Target ground point */
     dst: { x: 0, y: 0 },
+    /** Target room */
     dstGrId: null as Geomorph.GmRoomId | null,
-    /** World time when NPC last became idle (seconds) */
+    /** World time (seconds) when NPC last became idle */
     idleTime: 0,
+    /** Look target */
+    look: { x: 0, y: 0 },
+    /** Seen nav node ref */
     navNodeRef: -1,
     /** Seconds elapsed */
     pinTime: 0,
-    pos: { x: 0, y: 0 },
+    /** Position (used in stuck detection)  */
+    point: { x: 0, y: 0 },
   };
   /**
    * Number of times current nav node changed during current/last navigation.
@@ -71,10 +78,11 @@ export class Npc {
   spawns = 0;
 
   resolve = {
-    spawn: (_k: string): void => {},
-    move: (_k: string): void => {},
     fade: (_k: string): void => {},
     look: (_k: string): void => {},
+    move: (_k: string): void => {},
+    /** First spawn only */
+    spawn: (_k: string): void => {},
   };
   reject = {
     spawn: rejectNoop,
@@ -281,6 +289,10 @@ export class Npc {
     this.brightness.value = typeof brightnessMeta === "number" ? brightnessMeta : 0.4;
   }
 
+  isLooking() {
+    return this.anim.lookState.active;
+  }
+
   isMoving() {
     return this.anim.moving;
   }
@@ -290,11 +302,11 @@ export class Npc {
    */
   async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
     const p = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
+    this.last.look = p;
 
-    if (this.anim.idleClip.name === "sit") {
-      throw Error("not while sitting");
-    } else if (this.anim.idleClip.name === "lie") {
-      throw Error("not while lying");
+    const cannotLook = npcCannotLookForClip[this.anim.idleClip.name];
+    if (cannotLook !== undefined) {
+      throw Error(cannotLook);
     }
 
     const target = geomService.getThreeRotationY(p.y - this.position.z, p.x - this.position.x);
@@ -302,13 +314,12 @@ export class Npc {
       this.skinnedMesh.rotation.y = target;
       return;
     }
+
     const startAngle = this.skinnedMesh.rotation.y;
     const totalDiff = deltaAngle(startAngle, target);
-    // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-    const duration = Math.abs(totalDiff) < 0.001 ? 0 : (2 * Math.abs(totalDiff)) / Math.abs(angularVelocity);
-    const thresholdDegrees = 30;
-    const longLook = Math.abs(totalDiff) > thresholdDegrees * (Math.PI / 180);
-    const { lookState: lookAtState } = this.anim;
+    const arc = Math.abs(totalDiff);
+    const longLook = arc > longLookAngle;
+    const { lookState } = this.anim;
 
     try {
       await new Promise<string>((resolve, reject) => {
@@ -316,22 +327,25 @@ export class Npc {
         this.resolve.look = resolve;
         this.reject.look = reject;
 
-        lookAtState.active = true;
-        lookAtState.startAngle = startAngle;
-        lookAtState.totalDiff = totalDiff;
-        lookAtState.duration = duration;
-        lookAtState.elapsed = 0;
-        lookAtState.longLook = longLook;
+        Object.assign(lookState, {
+          active: true,
+          startAngle,
+          totalDiff,
+          // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
+          duration: arc < 0.001 ? 0 : (2 * arc) / Math.abs(angularVelocity),
+          elapsed: 0,
+          longLook,
+        } satisfies typeof lookState);
 
         if (longLook) {
-          this.anim.moveClip = this.clips.breathe; // breathe if look large angle
+          this.anim.moveClip = this.clips.idle; // different from breathe?
           this.anim.mixer.existingAction(this.anim.idleClip)?.fadeOut(0.15);
           this.anim.mixer.clipAction(this.anim.moveClip).reset().fadeIn(0.15).play();
           this.anim.mixer.timeScale = 0.75;
         }
       });
     } finally {
-      lookAtState.longLook = false;
+      lookState.longLook = false;
       this.anim.mixer.timeScale = 1;
       this.anim.moveClip = this.clips.walk;
     }
@@ -407,6 +421,14 @@ export type NpcInit = {
   rotation: THREE.Euler;
   skinnedMesh: THREE.SkinnedMesh;
   skinIndexUniform: THREE.UniformNode<"float", number>;
+};
+
+/** Beyond this angle a look gets its own idle animation */
+const longLookAngle = (30 * Math.PI) / 180;
+
+const npcCannotLookForClip: Record<string, string | undefined> = {
+  sit: "not while sitting",
+  lie: "not while lying",
 };
 
 export function npcBubbleHeightForClip(clipName: string): number {

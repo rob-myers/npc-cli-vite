@@ -114,4 +114,23 @@ declare namespace JshCli {
   type BaseDoableMeta = { decorKey?: string; groundPoint?: Geom.VectJson; y?: number; orient?: number };
 
   type Npc = import("./components/npc").Npc;
+
+  type NpcLast = {
+    /** Target ground point */
+    dst: Geom.VectJson;
+    /** Look target */
+    look: Geom.VectJson;
+    /** Seen blocking area in navmesh */
+    blockingArea: number;
+    /** Target room */
+    dstGrId: Geomorph.GmRoomId | null;
+    /** World time (seconds) when NPC last became idle */
+    idleTime: number;
+    /** Seen nav node ref */
+    navNodeRef: number;
+    /** Seconds elapsed */
+    pinTime: number;
+    /** Position (used in stuck detection)  */
+    point: Geom.VectJson;
+  };
 }

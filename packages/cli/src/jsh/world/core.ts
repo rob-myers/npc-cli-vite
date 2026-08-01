@@ -191,7 +191,7 @@ export async function meta(
 }
 
 /**
- * Generic machinary for pausing any motion in progress,
+ * Generic machinary for pausing any look/move in progress,
  * storing the unreached target at the front of `pendings`.
  *
  * `npcKey` is a literal string or a path to a literal string relative to CWD.
@@ -207,10 +207,13 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
     }
   }
 
-  const pendings: JshCli.PointAnyFormat[] = [];
+  // usually singletons or empty
+  const pendingLooks: JshCli.PointAnyFormat[] = [];
+  const pendingMoves: JshCli.PointAnyFormat[] = [];
 
   return {
-    pendings,
+    pendingLooks,
+    pendingMoves,
     getNpcOrUndefined,
     getNpcOrThrow,
     handleStatus: () =>
@@ -220,10 +223,16 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
         },
         onSuspends: () => {
           const npc = getNpcOrUndefined();
-          if (npc) {
-            if (npc.isMoving()) pendings.unshift(npc.last.dst);
-            npc.rejectAll(Error("paused"));
+          if (!npc) {
+            return true;
           }
+
+          if (npc.isMoving()) {
+            pendingMoves.unshift({ ...npc.last.dst });
+          } else if (npc.isLooking()) {
+            pendingLooks.unshift({ ...npc.last.look });
+          }
+          npc.rejectAll(Error("paused"));
           return true;
         },
       }),
@@ -274,7 +283,7 @@ export async function move(
   // 🚧 split into move_const, move_next, move_lazy
   // - each invoking `moveHandlingFactory`
 
-  const { getNpcOrThrow, pendings, handleStatus, handleMoveError, handlePausedError } = moveHandlingFactory(
+  const { getNpcOrThrow, pendingMoves, handleStatus, handleMoveError, handlePausedError } = moveHandlingFactory(
     ct,
     opts.npcKey,
   );
@@ -288,12 +297,12 @@ export async function move(
        * move to point or smoothly along points
        * e.g. `move npc:rob to:$( pick 3 )`
        */
-      pendings.push(...(expectArrayOfPoints(opts.to) ? opts.to : [opts.to]));
+      pendingMoves.push(...(isArrayOfPoints(opts.to) ? opts.to : [opts.to]));
       let next: undefined | JshCli.PointAnyFormat;
 
-      while ((next = pendings.shift())) {
+      while ((next = pendingMoves.shift())) {
         await w.npc
-          .move({ npcKey: npc.key, to: next, arrive: pendings.length === 0, fast: opts.fast })
+          .move({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast })
           .catch(handlePausedError);
       }
       return;
@@ -309,7 +318,7 @@ export async function move(
       let pendingRead = api.read();
       let next: undefined | JshCli.PointAnyFormat;
 
-      while ((next = pendings.shift() ?? (await pendingRead)) !== api.eof && next) {
+      while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
         const npc = getNpcOrThrow();
         const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
         await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -323,25 +332,27 @@ export async function move(
      */
     let pendingRead = api.read();
     while (true) {
-      const shouldRead = pendings.length === 0;
-      const dst = pendings.shift() ?? (await pendingRead);
+      const shouldRead = pendingMoves.length === 0;
+      const dst: undefined | symbol | JshCli.PointAnyFormat = pendingMoves.shift() ?? (await pendingRead);
       if (dst === api.eof) break;
       if (shouldRead) pendingRead = api.read();
 
       const npc = getNpcOrThrow();
 
-      const movePromise = w.npc.move({ npcKey: npc.key, to: dst, fast: opts.fast }).catch((e) => {
-        if (e instanceof Error && e.message === "not navigable") {
-          return; // ignore non-navigable stdin
-        }
-        if (e instanceof Error && e.message === "stuck") {
-          // ignore all pending destinations when stuck
-          api.flush();
-          pendings.length = 0;
-          return;
-        }
-        return handlePausedError(e);
-      });
+      const movePromise = w.npc
+        .move({ npcKey: npc.key, to: dst as JshCli.PointAnyFormat, fast: opts.fast })
+        .catch((e) => {
+          if (e instanceof Error && e.message === "not navigable") {
+            return; // ignore non-navigable stdin
+          }
+          if (e instanceof Error && e.message === "stuck") {
+            // ignore all pending destinations when stuck
+            api.flush();
+            pendingMoves.length = 0;
+            return;
+          }
+          return handlePausedError(e);
+        });
 
       await Promise.race([movePromise, pendingRead.then(() => npc.preventArrival())]);
       await movePromise;
@@ -903,6 +914,6 @@ export async function warp(
   await npc.fadeSpawn({ at: opts.to });
 }
 
-function expectArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
+function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
 }
