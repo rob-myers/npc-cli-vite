@@ -301,7 +301,7 @@ export class JShSemantics {
             .forEach((x) => void killProcess(x, SIGINT));
         }
         const statusHandlers = cmdService.handleStatus(node.meta, {
-          cleanups: killPipeChildren,
+          cleanup: killPipeChildren,
         });
 
         const fifos = stmts

@@ -49,7 +49,7 @@ export async function demo_auto_nudge(ct: JshCli.RunArg) {
   const nudgedEpoch = {} as { [npcKey: string]: number };
 
   const handled = api.handleStatus({
-    cleanups: w.e.addFrameCallback(() => {
+    cleanup: w.e.addFrameCallback(() => {
       if (w.disabled === true) {
         return;
       }

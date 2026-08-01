@@ -7,7 +7,7 @@ declare namespace JshCli {
 
   type WorldState = import("@npc-cli/ui__world").WorldState;
 
-  export interface RunArg<Datum = any> {
+  interface RunArg<Datum = any> {
     api: ProcessApi & {
       getCached(key: "__WORLD_KEY_VALUE__"): WorldState;
     };

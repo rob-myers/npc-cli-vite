@@ -38,7 +38,7 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
-    cleanups() {
+    cleanup() {
       asyncIterable.return?.();
     },
   });
@@ -140,7 +140,7 @@ export async function look(
   const npc = w.npc.get(opts.npcKey);
 
   const { dispose } = api.handleStatus({
-    cleanups: (killed) => killed && npc.rejectAll(new Error("killed")),
+    cleanup: (killed) => killed && npc.rejectAll(new Error("killed")),
   });
 
   try {
@@ -225,10 +225,10 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
     getNpcOrThrow,
     handleStatus: () =>
       api.handleStatus({
-        cleanups(killed) {
+        cleanup(killed) {
           killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
         },
-        onSuspends: () => {
+        onSuspend: () => {
           const npc = getNpcOrUndefined();
           if (!npc) {
             return true;
@@ -600,7 +600,7 @@ export async function* pick(ct: JshCli.RunArg) {
 
   // suspend/resume handled by `api.isRunning()` below
   const handlers = api.handleStatus({
-    cleanups() {
+    cleanup() {
       w.view.clickIds = w.view.clickIds.filter(({ id }) => id !== clickId);
       eventsSub?.unsubscribe();
     },
@@ -909,7 +909,7 @@ export async function* w(ct: JshCli.RunArg) {
 
   let reject = (_e: any) => {};
   const handlers = api.handleStatus({
-    cleanups() {
+    cleanup() {
       reject(new Error("potential ongoing computation"));
     },
   });

@@ -74,8 +74,8 @@ class CmdService {
     try {
       await new Promise<void>((resolve, reject) => {
         handlers = cmdService.handleStatus(meta, {
-          onResumes: resolve,
-          cleanups: () => reject(killError(meta)),
+          onResume: resolve,
+          cleanup: () => reject(killError(meta)),
         });
         exposeReject?.(reject);
       });
@@ -105,7 +105,7 @@ class CmdService {
       }
 
       yield await new Promise<any>((resolve, reject) => {
-        handlers = cmdService.handleStatus(node.meta, { cleanups: reject });
+        handlers = cmdService.handleStatus(node.meta, { cleanup: reject });
         parsedLines.forEach(
           ({ ttyTextKey, linkCtxtsFactory }) =>
             void (
@@ -160,11 +160,11 @@ class CmdService {
     const process = sessionApi.getProcess(meta);
     const handlerEntries = entries(handlers);
     for (const [key, fn] of handlerEntries) {
-      process[key].push(fn as any);
+      process[`${key}s`].push(fn as any);
     }
     return Object.assign(handlers, {
       dispose() {
-        for (const [key, fn] of handlerEntries) removeLast(process[key], fn);
+        for (const [key, fn] of handlerEntries) removeLast(process[`${key}s`], fn);
       },
     });
   }
@@ -1132,17 +1132,17 @@ class CmdService {
     let timeoutId = 0;
 
     const handlers = this.handleStatus(meta, {
-      onResumes() {
+      onResume() {
         startedAt = Date.now();
         timeoutId = window.setTimeout(resolve, durationMs);
         return true;
       },
-      onSuspends() {
+      onSuspend() {
         window.clearTimeout(timeoutId);
         durationMs -= Date.now() - startedAt;
         return true;
       },
-      cleanups() {
+      cleanup() {
         reject(killError(meta));
       },
     });
@@ -1151,8 +1151,8 @@ class CmdService {
       await new Promise<void>((resolveSleep, rejectSleep) => {
         resolve = resolveSleep;
         reject = rejectSleep; // cannot resume until now:
-        if (process.status === toProcessStatus.Running) handlers.onResumes!();
-        if (process.status === toProcessStatus.Killed) handlers.cleanups!();
+        if (process.status === toProcessStatus.Running) handlers.onResume!();
+        if (process.status === toProcessStatus.Killed) handlers.cleanup!();
       });
     } finally {
       handlers.dispose();
@@ -1239,11 +1239,11 @@ type CommandName = keyof typeof commandKeys;
 
 export interface HandleStatusHandlers {
   /* An optional cleanup */
-  cleanups?: ProcessMeta["cleanups"][0];
+  cleanup?: ProcessMeta["cleanups"][0];
   /* An optional resume */
-  onResumes?: ProcessMeta["onResumes"][0];
+  onResume?: ProcessMeta["onResumes"][0];
   /* An optional suspend */
-  onSuspends?: ProcessMeta["onSuspends"][0];
+  onSuspend?: ProcessMeta["onSuspends"][0];
 }
 
 export type HandleStatusReturns = ReturnType<CmdService["handleStatus"]>;
