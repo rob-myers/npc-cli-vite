@@ -3,6 +3,7 @@ import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
+  pause,
   testNever,
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -107,9 +108,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       unlitScale: uniform(persisted.getAmbientIntensity()),
 
       async createRenderer(props) {
-        // 🔔 fix mismatched canvas size on chrome re-open tab (cmd+shift+t)
-        // - "The depth stencil attachment [TextureView of Texture "depthBuffer"] size (width: 300, height: 150) does not match the size of the other attachments' base plane (width: 1190, height: 1296). "
         const canvas = props.canvas as HTMLCanvasElement;
+
+        // 🔔 why can this be null ?!
+        while (w.rootEl === null) await pause(30);
+
+        // avoid error: The resolve target ... does not match the size of the other attachments ...
         const parent = w.rootEl as HTMLDivElement;
         const parentRect = parent.getBoundingClientRect();
         if (parentRect.width > 0 && parentRect.height > 0) {
