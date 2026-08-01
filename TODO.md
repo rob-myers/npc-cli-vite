@@ -34,11 +34,15 @@
     - ✅ try-catch every pause with logging
     - ✅ try-catch every resume with logging
     - ✅ fix `move` cleanup/pause/resume
-  - 🚧 split `move` into `move_const`, `move_next`, `move_lazy`
+  - ✅ split `move` into `move_const`, `move_next`, `move_lazy`
     - ✅ `move` uses `moveHandlingFactory`
-    - 🚧 `moveHandlingFactory` preserves clones of "targets"
-  - BUG sometimes interactive process 0 shows green although killed
-  - lib
+    - ✅ `moveHandlingFactory` preserves clones of "targets"
+    - ✅ `move_const`
+    - ✅ `move_next`
+    - ✅ `move_lazy`
+  - 🚧 BUG sometimes interactive process 0 shows green although killed
+  - un/pausing world should be reflected in processes
+  - Jobs has library of commands
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
