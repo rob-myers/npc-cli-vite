@@ -394,7 +394,7 @@ export default function Jobs() {
       )}
 
       {sessionsExist && (
-        <div className="flex flex-row flex-wrap justify-center items-stretch gap-x-1 gap-y-0.5 text-base text-white">
+        <div className="flex flex-col items-center gap-0.5 text-base text-white">
           {/* 🔔 keyed, so switching session swaps items without exit animations */}
           <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
             {state.ordered.map((p) => {
@@ -408,7 +408,7 @@ export default function Jobs() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex flex-col grow min-w-48 max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
+                  className="flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                 >
                   {/* 🔔 header, connected to the session leader */}
                   {p.pid === 0 && sessionHeader}
