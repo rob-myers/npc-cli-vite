@@ -212,24 +212,31 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }
   const pendingLooks: JshCli.PointAnyFormat[] = [];
   const pendingMoves: JshCli.PointAnyFormat[] = [];
 
+  /**
+   * - a named error is either ignored (false) or handled, else rethrown/
+   * - "paused" handled by default.
+   */
+  function handleErrors(extra: NamedErrorHandlers = {}) {
+    const handlers: NamedErrorHandlers = { paused: () => api.awaitResume(), ...extra };
+    return (e: any) => {
+      const handler = e instanceof Error ? handlers[e.message] : undefined;
+      if (handler === undefined) {
+        throw e;
+      }
+      return handler === false ? undefined : handler();
+    };
+  }
+
   return {
     pendingLooks,
     pendingMoves,
     getNpcOrUndefined,
     getNpcOrThrow,
-    /**
-     * A named error is either ignored (`false`) or handled,
-     * anything else is rethrown. "paused" is handled by default.
-     */
-    handleErrors(extra: NamedErrorHandlers = {}) {
-      const handlers: NamedErrorHandlers = { paused: () => api.awaitResume(), ...extra };
-      return (e: any) => {
-        const handler = e instanceof Error ? handlers[e.message] : undefined;
-        if (handler === undefined) {
-          throw e;
-        }
-        return handler === false ? undefined : handler();
-      };
+    /** Move, handling named errors and any pause the move deferred */
+    async move(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
+      await w.npc.move(moveOpts).catch(handleErrors(extra));
+      // needed in case we allowed fade to complete
+      await api.awaitResume();
     },
     processHandled: api.handleStatus({
       cleanup(killed) {
@@ -241,14 +248,16 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }
           return true;
         }
 
+        // fadeSpawn must complete
+        if (npc.isFading()) {
+          return true;
+        }
+
         if (npc.isMoving()) {
           pendingMoves.unshift({ ...npc.last.dst });
         } else if (npc.isLooking()) {
           pendingLooks.unshift({ ...npc.last.look });
         }
-
-        // 🚧 do not reject whilst fadeSpawn until done
-
         npc.rejectAll(Error("paused"));
         return true;
       },
@@ -306,7 +315,12 @@ export async function move_const(
 ) {
   const fixedPoints = isArrayOfPoints(opts.to) ? opts.to : [opts.to];
 
-  const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
+  const {
+    getNpcOrThrow,
+    pendingMoves,
+    processHandled,
+    move: movePausable,
+  } = moveHandlingFactory(ct, {
     npcKey: opts.npcKey,
   });
 
@@ -316,9 +330,7 @@ export async function move_const(
     let next: undefined | JshCli.PointAnyFormat;
 
     while ((next = pendingMoves.shift())) {
-      await ct.w.npc
-        .move({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast })
-        .catch(handleErrors());
+      await movePausable({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast });
     }
   } finally {
     processHandled.dispose();
@@ -335,7 +347,12 @@ export async function move_lazy(
 ) {
   const { api, w } = ct;
 
-  const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
+  const {
+    getNpcOrThrow,
+    pendingMoves,
+    processHandled,
+    move: movePausable,
+  } = moveHandlingFactory(ct, {
     npcKey: opts.npcKey,
   });
 
@@ -350,14 +367,15 @@ export async function move_lazy(
 
       const npc = getNpcOrThrow();
 
-      const movePromise = w.npc.move({ npcKey: npc.key, to: dst, fast: opts.fast }).catch(
-        handleErrors({
+      const movePromise = movePausable(
+        { npcKey: npc.key, to: dst, fast: opts.fast },
+        {
           "not navigable": false,
           stuck: () => {
             pendingMoves.length = 0;
             api.flush();
           },
-        }),
+        },
       );
 
       // glide through destination if next step is a navigation
@@ -382,7 +400,12 @@ export async function move_next(
 ) {
   const { w, api } = ct;
 
-  const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
+  const {
+    getNpcOrThrow,
+    pendingMoves,
+    processHandled,
+    move: movePausable,
+  } = moveHandlingFactory(ct, {
     npcKey: opts.npcKey,
   });
 
@@ -392,9 +415,10 @@ export async function move_next(
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
-      const movePromise = w.npc
-        .move({ npcKey: npc.key, to: next, fast: opts.fast })
-        .catch(handleErrors({ "not navigable": false, occupied: false, stuck: false }));
+      const movePromise = movePausable(
+        { npcKey: npc.key, to: next, fast: opts.fast },
+        { "not navigable": false, occupied: false, stuck: false },
+      );
       await Promise.race([movePromise, (pendingRead = api.read())]);
     }
   } finally {

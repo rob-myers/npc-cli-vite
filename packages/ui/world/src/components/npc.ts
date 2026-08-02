@@ -287,6 +287,10 @@ export class Npc {
     this.brightness.value = typeof brightnessMeta === "number" ? brightnessMeta : 0.4;
   }
 
+  isFading() {
+    return this.anim.fadeState.delta !== 0;
+  }
+
   isLooking() {
     return this.anim.lookState.active;
   }
