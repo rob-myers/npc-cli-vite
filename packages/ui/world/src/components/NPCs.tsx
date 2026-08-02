@@ -276,6 +276,9 @@ export default function NPCs() {
       getSkinMeta(skinKey: string) {
         return state.skin.manifest.byKey[skinKey]?.meta ?? {};
       },
+      hasDoMeta(meta) {
+        return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
+      },
       async move({ npcKey, to, arrive = true, fast }) {
         const npc = state.get(npcKey);
         const groundPoint = helper.parseGroundPoint(to);
@@ -285,13 +288,14 @@ export default function NPCs() {
 
         if (doResult.type === "occupied") {
           throw Error("occupied");
-        } else if (doResult.type === "none") {
-          // noop
-        } else {
+        } else if (doResult.type !== "none") {
           // doable overrides navigable
           if (doResult.type === "use-current") {
+            // respawn
             await state.spawn({ npcKey, at: to });
           } else {
+            // small delay
+            await npc.look(to, { minMs: 500 });
             await npc.fadeSpawn({ at: to });
           }
           // fix contiguous move
@@ -753,6 +757,7 @@ export type State = {
   getSkinIndexBySkinKey(skinKey: string): number;
   getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;
+  hasDoMeta(meta: Meta): boolean;
   /** Follows this npc with a room-aware light (a room-poly clip that refreshes on `"enter-room"`). `null`/omitted stops tracking. */
   trackNpc(npcKey?: string): void;
   move(opts: JshCli.MoveOpts): Promise<void>;

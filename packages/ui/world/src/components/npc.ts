@@ -298,7 +298,7 @@ export class Npc {
   /**
    * Can look at `npcKey` or point.
    */
-  async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { angularVelocity = 2 * Math.PI, immediate = false } = {}) {
+  async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { minMs = 0, immediate = false } = {}) {
     const p = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
     this.last.look = p;
 
@@ -330,7 +330,7 @@ export class Npc {
           startAngle,
           totalDiff,
           // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-          duration: arc < 0.001 ? 0 : (2 * arc) / Math.abs(angularVelocity),
+          duration: Math.max(arc < 0.001 ? 0 : (2 * arc) / (2 * Math.PI), minMs / 1000),
           elapsed: 0,
           longLook,
         } satisfies typeof lookState);

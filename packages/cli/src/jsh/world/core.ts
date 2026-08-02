@@ -360,8 +360,11 @@ export async function move_lazy(
         }),
       );
 
-      // glide through this destination as soon as the next arrives
-      await Promise.race([movePromise, pendingRead.then(() => npc.preventArrival())]);
+      // glide through destination if next step is a navigation
+      await Promise.race([
+        movePromise,
+        pendingRead.then((next) => next !== api.eof && !w.npc.hasDoMeta(next?.meta ?? {}) && npc.preventArrival()),
+      ]);
       await movePromise;
     }
   } finally {
