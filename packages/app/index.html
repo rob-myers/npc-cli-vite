@@ -8,13 +8,15 @@
     <link href="/src/styles/main.css" rel="stylesheet">
     <script>
       (function themeInitialization() {
+        // zustand persists `{ state: { theme } }` absent until first written
+        let theme = 'dark';
         try {
-          const { state: { theme } } = JSON.parse(localStorage.getItem('theme-storage'));
-          document.documentElement.classList.add(`theme-${theme}`);
+          const stored = localStorage.getItem('theme-storage');
+          theme = (stored !== null && JSON.parse(stored)?.state?.theme) || theme;
         } catch (e) {
           console.error('Theme initialization failed', e);
-          document.documentElement.classList.add(`theme-dark`);
         }
+        document.documentElement.classList.add(`theme-${theme}`);
       })();
     </script>
   </head>

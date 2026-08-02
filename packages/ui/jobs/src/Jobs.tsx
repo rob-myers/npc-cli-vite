@@ -287,8 +287,8 @@ export default function Jobs() {
           return;
         }
         state.sessionKey = sessionKey as `tty-${number}`;
-        state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)];
-        state.update();
+        state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] ?? null;
+        state.set({ processes: [], ordered: [] });
       },
     }),
     { deps: [ttyMetas] },
@@ -301,7 +301,7 @@ export default function Jobs() {
     } else if (state.sessionKey === null || !sessionKeys.includes(state.sessionKey)) {
       state.set({
         sessionKey: sessionKeys[0],
-        ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)],
+        ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] ?? null,
       });
     } else {
       // Must sync
@@ -311,6 +311,7 @@ export default function Jobs() {
 
   useEffect(() => {
     const intervalId = setInterval(state.cleanupDead, cleanupDeadMs);
+
     return () => {
       clearInterval(intervalId);
       window.clearTimeout(state.confirmClearTimeoutId);
@@ -329,13 +330,73 @@ export default function Jobs() {
     { key: "background", items: state.history.filter((p) => p.pid !== 0).reverse() },
   ];
 
+  // rendered standalone when no session leader, else we couldn't switch session
+  const sessionHeader = sessionsExist ? (
+    <div className="flex items-stretch justify-end gap-1 pb-2">
+      <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
+        <Select.Trigger
+          title="sessionKey"
+          className={cn(
+            "flex items-center gap-2 cursor-pointer px-3 py-1 rounded-sm text-sm",
+            "border border-[#aaca] shadow-sm shadow-black/50 bg-black text-[#ff9]",
+            "transition-colors hover:bg-[#111]",
+          )}
+        >
+          <Select.Value placeholder="session" />
+          <CaretRightIcon alt="open" className="size-3 rotate-90 text-[#999]" />
+        </Select.Trigger>
+
+        <Select.Portal>
+          <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
+            <Select.Popup className="py-1 rounded-sm border border-[#505050] shadow-lg shadow-black/50 bg-black font-mono text-sm">
+              <Select.List>
+                {ttyMetas.map(({ sessionKey: key }) => (
+                  <Select.Item
+                    key={key}
+                    value={key}
+                    className={cn(
+                      "px-3 py-1 cursor-pointer text-[#ccc]",
+                      "data-highlighted:bg-[#222] data-selected:text-[#ff9]",
+                    )}
+                  >
+                    <Select.ItemText>{key}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.List>
+            </Select.Popup>
+          </Select.Positioner>
+        </Select.Portal>
+      </Select.Root>
+      {state.ttyMeta !== null && (
+        <button
+          type="button"
+          title={state.ttyMeta.disabled ? "resume tty" : "pause tty"}
+          className="cursor-pointer flex items-center px-3 py-1 rounded-sm border border-[#555] shadow-sm shadow-black/50 transition-colors hover:bg-[#333]"
+          onClick={state.toggleTtyDisabled}
+        >
+          {state.ttyMeta.disabled ? (
+            <PlayIcon alt="resume tty" className="size-4 text-green-400" />
+          ) : (
+            <PauseIcon alt="pause tty" className="size-4 text-[#ccc]" />
+          )}
+        </button>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div className="p-4 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
       {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
+      {state.processes[0] === undefined && (
+        // 🔔 `p-1` matches the card, so the header doesn't shift when it attaches
+        <div className="self-center w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
+      )}
+
       {sessionsExist && (
         <div className="flex flex-row flex-wrap justify-center items-stretch gap-x-1 gap-y-0.5 text-base text-white">
-          <AnimatePresence initial={false}>
+          {/* 🔔 keyed, so switching session swaps items without exit animations */}
+          <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
             {state.ordered.map((p) => {
               const killed = p.status === toProcessStatus.Killed;
               const paused = p.status === toProcessStatus.Suspended;
@@ -350,58 +411,7 @@ export default function Jobs() {
                   className="flex flex-col grow min-w-48 max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                 >
                   {/* 🔔 header, connected to the session leader */}
-                  {p.pid === 0 && (
-                    <div className="flex items-stretch justify-end gap-1 pb-2">
-                      <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
-                        <Select.Trigger
-                          title="sessionKey"
-                          className={cn(
-                            "flex items-center gap-2 cursor-pointer px-3 py-1 rounded-sm text-sm",
-                            "border border-[#aaca] shadow-sm shadow-black/50 bg-black text-[#ff9]",
-                            "transition-colors hover:bg-[#111]",
-                          )}
-                        >
-                          <Select.Value placeholder="session" />
-                          <CaretRightIcon alt="open" className="size-3 rotate-90 text-[#999]" />
-                        </Select.Trigger>
-
-                        <Select.Portal>
-                          <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
-                            <Select.Popup className="py-1 rounded-sm border border-[#505050] shadow-lg shadow-black/50 bg-black font-mono text-sm">
-                              <Select.List>
-                                {ttyMetas.map(({ sessionKey: key }) => (
-                                  <Select.Item
-                                    key={key}
-                                    value={key}
-                                    className={cn(
-                                      "px-3 py-1 cursor-pointer text-[#ccc]",
-                                      "data-highlighted:bg-[#222] data-selected:text-[#ff9]",
-                                    )}
-                                  >
-                                    <Select.ItemText>{key}</Select.ItemText>
-                                  </Select.Item>
-                                ))}
-                              </Select.List>
-                            </Select.Popup>
-                          </Select.Positioner>
-                        </Select.Portal>
-                      </Select.Root>
-                      {state.ttyMeta !== null && (
-                        <button
-                          type="button"
-                          title={state.ttyMeta.disabled ? "resume tty" : "pause tty"}
-                          className="cursor-pointer flex items-center px-3 py-1 rounded-sm border border-[#555] shadow-sm shadow-black/50 transition-colors hover:bg-[#333]"
-                          onClick={state.toggleTtyDisabled}
-                        >
-                          {state.ttyMeta.disabled ? (
-                            <PlayIcon alt="resume tty" className="size-4 text-green-400" />
-                          ) : (
-                            <PauseIcon alt="pause tty" className="size-4 text-[#ccc]" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  {p.pid === 0 && sessionHeader}
 
                   <div className="flex flex-wrap items-stretch gap-y-0.5">
                     {/* 🔔 fixed width so cards align */}
@@ -580,7 +590,6 @@ const copiedMs = 1000;
 /** Max number of `history` entries, dropping oldest */
 const maxHistory = 100;
 
-/** per session persisted history  */
 function getHistoryKey(sessionKey: `tty-${number}`) {
   return `jobs-history:${sessionKey}`;
 }
