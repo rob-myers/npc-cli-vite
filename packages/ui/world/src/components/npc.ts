@@ -414,7 +414,6 @@ export class Npc {
 
 export type NpcInit = {
   key: string;
-  alphaTest: THREE.UniformNode<"float", number>;
   brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
