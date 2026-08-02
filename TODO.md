@@ -48,8 +48,8 @@
     - ❌ reset handled at-process-level although can supply callback
       - e.g. `() => api.flush()` for `move_lazy`
     - ✅ reset by kill then re-reun
-    - pause handled per move/look/fade via `catch(handlePauseError)`
-    - fade is not interrupted but should throw after resolve
+    - ✅ pause handled per move/look via `catch(handlePauseError)`
+    - ✅ fade is not interrupted but pauses after resolve
       - fade can be rejected on respawn or remove npc
       - but in other cases we should wait for fade to complete
   

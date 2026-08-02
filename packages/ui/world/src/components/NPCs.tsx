@@ -291,11 +291,11 @@ export default function NPCs() {
         } else if (doResult.type !== "none") {
           // doable overrides navigable
           if (doResult.type === "use-current") {
-            // respawn
-            await state.spawn({ npcKey, at: to });
+            await state.spawn({ npcKey, at: to }); // respawn
           } else {
-            // small delay
-            await npc.look(to, { minMs: 500 });
+            // small delay when standing
+            if (w.e.npcToDoable[npcKey] === null) await npc.look(to, { minMs: 500 });
+
             await npc.fadeSpawn({ at: to });
           }
           // fix contiguous move
