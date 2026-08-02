@@ -483,7 +483,7 @@ export default function Jobs() {
 
           {state.ordered.length === 0 && (
             <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
-              Switch to tab "{state.ttyMeta?.title}" to mount it
+              Switch to the terminal tab to mount it
             </div>
           )}
         </div>
