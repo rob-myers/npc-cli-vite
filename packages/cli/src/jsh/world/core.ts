@@ -194,16 +194,17 @@ export async function meta(
  * Generic machinary for pausing any look/move in progress,
  * storing the unreached target at the front of `pendings`.
  *
- * `npcKey` is a literal string or a path to a literal string relative to CWD.
+ * - `npcKey` is a literal string or a path to a literal string relative to CWD.
  */
-function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
-  const getNpcOrUndefined = (): undefined | JshCli.Npc => w.n[npcKey in w.n ? npcKey : api.get(npcKey, true)];
+function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+  const getNpcOrUndefined = (): undefined | JshCli.Npc =>
+    w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
   function getNpcOrThrow() {
     try {
-      return w.npc.get(npcKey in w.n ? npcKey : api.get(npcKey));
+      return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
     } catch {
-      throw Error(`npc not found: ${npcKey}`);
+      throw Error(`npc not found: ${opts.npcKey}`);
     }
   }
 
@@ -211,56 +212,54 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, npcKey: string) {
   const pendingLooks: JshCli.PointAnyFormat[] = [];
   const pendingMoves: JshCli.PointAnyFormat[] = [];
 
-  function handlePausedError(e: any) {
-    if (e instanceof Error && e.message === "paused") {
-      return api.awaitResume();
-    }
-    throw e;
-  }
-
   return {
     pendingLooks,
     pendingMoves,
     getNpcOrUndefined,
     getNpcOrThrow,
-    handleStatus: () =>
-      api.handleStatus({
-        cleanup(killed) {
-          killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
-        },
-        onSignal(signalKey) {
-          // 🚧 clear somehow: flush reads, clear pendingMoves
-          // - for move_const this means we need to use pendingMoves...
-          alert(`saw signalKey: ${signalKey}`);
-        },
-        onSuspend: () => {
-          const npc = getNpcOrUndefined();
-          if (!npc) {
-            return true;
-          }
-
-          if (npc.isMoving()) {
-            pendingMoves.unshift({ ...npc.last.dst });
-          } else if (npc.isLooking()) {
-            pendingLooks.unshift({ ...npc.last.look });
-          }
-          npc.rejectAll(Error("paused"));
-          return true;
-        },
-      }),
-    handlePausedError,
     /**
-     * Awaiting a move surfaces errors the destination itself caused,
-     * which shouldn't stop us reading further destinations.
+     * A named error is either ignored (`false`) or handled,
+     * anything else is rethrown. "paused" is handled by default.
      */
-    handleMoveError(e: any) {
-      if (e instanceof Error && ["not navigable", "occupied", "stuck"].includes(e.message)) {
-        return Promise.resolve();
-      }
-      return handlePausedError(e);
+    handleErrors(extra: NamedErrorHandlers = {}) {
+      const handlers: NamedErrorHandlers = { paused: () => api.awaitResume(), ...extra };
+      return (e: any) => {
+        const handler = e instanceof Error ? handlers[e.message] : undefined;
+        if (handler === undefined) {
+          throw e;
+        }
+        return handler === false ? undefined : handler();
+      };
     },
+    processHandled: api.handleStatus({
+      cleanup(killed) {
+        killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
+      },
+      // onSignal(signalKey) {
+      //   if (signalKey === "reset") {
+      //     getNpcOrUndefined()?.rejectAll(Error("reset"));
+      //   }
+      //   opts.onSignal?.(signalKey);
+      // },
+      onSuspend: () => {
+        const npc = getNpcOrUndefined();
+        if (!npc) {
+          return true;
+        }
+
+        if (npc.isMoving()) {
+          pendingMoves.unshift({ ...npc.last.dst });
+        } else if (npc.isLooking()) {
+          pendingLooks.unshift({ ...npc.last.look });
+        }
+        npc.rejectAll(Error("paused"));
+        return true;
+      },
+    }),
   };
 }
+
+type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
 
 /**
  * Usage
@@ -308,23 +307,24 @@ export async function move_const(
     to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { getNpcOrThrow, pendingMoves, handleStatus, handlePausedError } = moveHandlingFactory(ct, opts.npcKey);
-  const { dispose } = handleStatus();
-  const { w } = ct;
+  const fixedPoints = isArrayOfPoints(opts.to) ? opts.to : [opts.to];
+
+  const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
+    npcKey: opts.npcKey,
+  });
 
   try {
     const npc = getNpcOrThrow();
-
-    pendingMoves.push(...(isArrayOfPoints(opts.to) ? opts.to : [opts.to]));
+    pendingMoves.push(...fixedPoints);
     let next: undefined | JshCli.PointAnyFormat;
 
     while ((next = pendingMoves.shift())) {
-      await w.npc
+      await ct.w.npc
         .move({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast })
-        .catch(handlePausedError);
+        .catch(handleErrors());
     }
   } finally {
-    dispose();
+    processHandled.dispose();
   }
 }
 
@@ -336,40 +336,40 @@ export async function move_lazy(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { getNpcOrThrow, pendingMoves, handleStatus, handlePausedError } = moveHandlingFactory(ct, opts.npcKey);
-  const { dispose } = handleStatus();
-  const { w, api } = ct;
+  const { api, w } = ct;
+
+  const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
+    npcKey: opts.npcKey,
+    // onSignal: (signalKey) => signalKey === "reset" && api.flush(),
+  });
+
+  let pendingRead = api.read();
 
   try {
-    let pendingRead = api.read();
     while (true) {
-      const shouldRead = pendingMoves.length === 0;
-      const dst: undefined | symbol | JshCli.PointAnyFormat = pendingMoves.shift() ?? (await pendingRead);
-      if (dst === api.eof) break;
-      if (shouldRead) pendingRead = api.read();
-
       const npc = getNpcOrThrow();
 
-      const movePromise = w.npc
-        .move({ npcKey: npc.key, to: dst as JshCli.PointAnyFormat, fast: opts.fast })
-        .catch((e) => {
-          if (e instanceof Error && e.message === "not navigable") {
-            return; // ignore non-navigable stdin
-          }
-          if (e instanceof Error && e.message === "stuck") {
-            // ignore all pending destinations when stuck
-            api.flush();
-            pendingMoves.length = 0;
-            return;
-          }
-          return handlePausedError(e);
-        });
+      const readNext = pendingMoves.length === 0;
+      const dst = pendingMoves.shift() ?? (await pendingRead);
+      if (dst === api.eof) break;
+      if (readNext) pendingRead = api.read();
 
+      const movePromise = w.npc.move({ npcKey: npc.key, to: dst, fast: opts.fast }).catch(
+        handleErrors({
+          "not navigable": false,
+          stuck: () => {
+            pendingMoves.length = 0;
+            api.flush();
+          },
+        }),
+      );
+
+      // glide through this destination as soon as the next arrives
       await Promise.race([movePromise, pendingRead.then(() => npc.preventArrival())]);
       await movePromise;
     }
   } finally {
-    dispose();
+    processHandled.dispose();
   }
 }
 
@@ -381,9 +381,11 @@ export async function move_next(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { getNpcOrThrow, pendingMoves, handleStatus, handleMoveError } = moveHandlingFactory(ct, opts.npcKey);
-  const { dispose } = handleStatus();
   const { w, api } = ct;
+
+  const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
+    npcKey: opts.npcKey,
+  });
 
   try {
     let pendingRead = api.read();
@@ -391,11 +393,13 @@ export async function move_next(
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
-      const movePromise = w.npc.move({ npcKey: npc.key, to: next, fast: opts.fast }).catch(handleMoveError);
+      const movePromise = w.npc
+        .move({ npcKey: npc.key, to: next, fast: opts.fast })
+        .catch(handleErrors({ "not navigable": false, occupied: false, stuck: false }));
       await Promise.race([movePromise, (pendingRead = api.read())]);
     }
   } finally {
-    dispose();
+    processHandled.dispose();
   }
 }
 

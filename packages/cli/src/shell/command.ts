@@ -992,7 +992,7 @@ class CmdService {
             ct.args = args.slice(2); // discard e.g. "core spawn"
 
             if (functionOrAsync.includes(func.constructor.name)) {
-              yield await func(ct); // support all sh/src/* functions
+              yield await func(ct);
             } else {
               yield* func(ct);
             }
