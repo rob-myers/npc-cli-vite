@@ -134,6 +134,11 @@ export class Npc {
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
   }
 
+  distanceTo(point: JshCli.PointAnyFormat) {
+    const groundPoint = helper.parseGroundPoint(point);
+    return Math.hypot(this.position.x - groundPoint.x, this.position.z - groundPoint.y);
+  }
+
   drawLabel(partialStyle?: Partial<JshCli.NpcLabelStyle>) {
     Object.assign(this.labelStyle, partialStyle);
 
