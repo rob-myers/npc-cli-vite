@@ -258,10 +258,7 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className={cn(
-          "outline-none absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-0.5 max-w-full overflow-x-hidden",
-          w.touchDevice && "scale-125",
-        )}
+        className="outline-none absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-0.5 max-w-full overflow-x-hidden"
         style={{ y }}
         drag="y"
         dragListener={false}
@@ -275,496 +272,507 @@ export function WorldMenu() {
           requestAnimationFrame(() => (state.dragged = false));
         }}
       >
-        {/* main menu */}
-        <Menu.Root
-          open={state.menuOpen}
-          onOpenChange={(open, { reason }) => {
-            if (open) {
-              state.set({ menuOpen: true });
-            } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
-              state.set({ menuOpen: false });
-            }
-          }}
-        >
-          <Menu.Trigger
-            className="cursor-pointer"
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={() => {
-              if (state.dragged) return;
-              state.set({ menuOpen: !state.menuOpen });
+        <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
+          {/* main menu */}
+          <Menu.Root
+            open={state.menuOpen}
+            onOpenChange={(open, { reason }) => {
+              if (open) {
+                state.set({ menuOpen: true });
+              } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
+                state.set({ menuOpen: false });
+              }
             }}
           >
-            <div className="outline-width-1 w-fit grid grid-flow-col items-center bg-gray-800 text-white">
-              <div className="grid place-items-center size-9">
-                <GlobeStandIcon className="size-5" weight="bold" />
-              </div>
-              {pendingKeys.length > 0 && <Spinner className="mr-2 size-4" />}
-            </div>
-          </Menu.Trigger>
-
-          <Menu.Portal container={w.rootEl} className="w-full">
-            <Menu.Positioner
-              className="z-50 overflow-auto max-w-[calc(100%-40px)]"
-              side="right"
-              sideOffset={4}
-              align="start"
+            <Menu.Trigger
+              className="cursor-pointer"
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (state.dragged) return;
+                state.set({ menuOpen: !state.menuOpen });
+              }}
             >
-              <Menu.Popup
-                className="relative select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1"
-                style={{ width: state.menuWidth }}
-              >
-                <div
-                  className={cn(
-                    "flex flex-col overflow-y-auto pb-6",
-                    "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
-                    "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600",
-                  )}
-                  style={{ maxHeight: state.menuHeight, scrollbarWidth: "thin" }}
-                >
-                  <div className="flex flex-wrap max-w-52">
-                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                      <BrightnessPie
-                        ratio={brightnessToRatio(w.brightness)}
-                        onClick={() => {
-                          const brightness = 2;
-                          w.set({ brightness });
-                          tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
-                        }}
-                      />
-                      <input
-                        type="range"
-                        min="1"
-                        max="4"
-                        step="0.1"
-                        value={w.brightness}
-                        onChange={(e) => {
-                          w.brightness = Number(e.target.value);
-                          w.update();
-                          tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                      />
-                    </div>
+              <div className="outline-width-1 w-fit grid grid-flow-col items-center bg-gray-800 text-white">
+                <div className="grid place-items-center size-9">
+                  <GlobeStandIcon className="size-5" weight="bold" />
+                </div>
+                {pendingKeys.length > 0 && <Spinner className="mr-2 size-4" />}
+              </div>
+            </Menu.Trigger>
 
-                    {w.view && (
+            <Menu.Portal container={w.rootEl} className="w-full">
+              <Menu.Positioner
+                className="z-50 overflow-auto max-w-[calc(100%-40px)]"
+                side="right"
+                sideOffset={4}
+                align="start"
+              >
+                <Menu.Popup
+                  className="relative select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1"
+                  style={{ width: state.menuWidth }}
+                >
+                  <div
+                    className={cn(
+                      "flex flex-col overflow-y-auto pb-6",
+                      "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
+                      "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600",
+                    )}
+                    style={{ maxHeight: state.menuHeight, scrollbarWidth: "thin" }}
+                  >
+                    <div className="flex flex-wrap max-w-52">
                       <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                        <ArrowsOutIcon
-                          className="size-4 text-white cursor-pointer shrink-0"
+                        <BrightnessPie
+                          ratio={brightnessToRatio(w.brightness)}
                           onClick={() => {
-                            w.view.fov = defaultDesktopFov;
-                            const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                            if (cam?.isPerspectiveCamera) {
-                              cam.fov = defaultDesktopFov;
-                              cam.updateProjectionMatrix();
-                            }
-                            w.r3f?.invalidate();
-                            tryLocalStorageSet(fovStorageKey, String(defaultDesktopFov));
-                            w.update();
+                            const brightness = 2;
+                            w.set({ brightness });
+                            tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
                           }}
                         />
                         <input
                           type="range"
-                          min="20"
-                          max="100"
-                          step="5"
-                          value={w.view.fov}
+                          min="1"
+                          max="4"
+                          step="0.1"
+                          value={w.brightness}
                           onChange={(e) => {
-                            const fov = Number(e.target.value);
-                            w.view.fov = fov;
-                            const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                            if (cam?.isPerspectiveCamera) {
-                              cam.fov = fov;
-                              cam.updateProjectionMatrix();
-                            }
-                            w.r3f?.invalidate();
-                            tryLocalStorageSet(fovStorageKey, String(fov));
+                            w.brightness = Number(e.target.value);
                             w.update();
+                            tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                           }}
                           onClick={(e) => e.stopPropagation()}
                           className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                         />
                       </div>
-                    )}
-                  </div>
-                  {w.view && (
-                    <Menu.Item
-                      className="flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer"
-                      closeOnClick={false}
-                      onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
-                    >
-                      <div>camera: {w.view.cameraMode}</div>
-                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
-                          <MenuSelect
-                            side="bottom"
-                            value={String(w.view.cameraDirections)}
-                            items={cardinalDirItems}
-                            onValueChange={(v) => {
-                              if (v) w.view.setNumCardinalDirections(Number(v));
+
+                      {w.view && (
+                        <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
+                          <ArrowsOutIcon
+                            className="size-4 text-white cursor-pointer shrink-0"
+                            onClick={() => {
+                              w.view.fov = defaultDesktopFov;
+                              const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
+                              if (cam?.isPerspectiveCamera) {
+                                cam.fov = defaultDesktopFov;
+                                cam.updateProjectionMatrix();
+                              }
+                              w.r3f?.invalidate();
+                              tryLocalStorageSet(fovStorageKey, String(defaultDesktopFov));
+                              w.update();
                             }}
                           />
-                        </div>
-                        <span title="reset camera" onClick={() => w.view.resetCamera()}>
-                          <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
-                        </span>
-                      </div>
-                    </Menu.Item>
-                  )}
-
-                  <div className="flex">
-                    <div className="text-white text-xs flex items-center px-2">map:</div>
-                    <MenuSelect
-                      label={w.mapKey}
-                      value={w.mapKey}
-                      items={mapKeys.map((key) => ({ key, value: key }))}
-                      side="bottom"
-                      onValueChange={async (key) => {
-                        if (!key || key === w.mapKey) return;
-                        await w.setCanvasOpacity(0);
-                        uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
-                      }}
-                    />
-                  </div>
-                  {import.meta.env.DEV && (
-                    <>
-                      <div
-                        className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          state.themeEditorOpen = !state.themeEditorOpen;
-                          tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
-                          w.update();
-                        }}
-                      >
-                        {state.themeEditorOpen ? (
-                          <CaretDownIcon className="size-3" />
-                        ) : (
-                          <CaretRightIcon className="size-3" />
-                        )}
-                        edit theme
-                      </div>
-                      {state.themeEditorOpen && (
-                        <div className="p-2 pt-0 flex flex-col gap-1">
-                          <textarea
-                            key={w.themeKey}
-                            ref={state.ref("themeEditorRef")}
-                            className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
-                            defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={() => {
-                              const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                              if (parsed.success && w.assets) {
-                                (w.assets.theme ??= {})[w.themeKey] = parsed.data;
-                                w.e.onChangeTheme();
-                                state.saveThemeDevDebounced();
+                          <input
+                            type="range"
+                            min="20"
+                            max="100"
+                            step="5"
+                            value={w.view.fov}
+                            onChange={(e) => {
+                              const fov = Number(e.target.value);
+                              w.view.fov = fov;
+                              const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
+                              if (cam?.isPerspectiveCamera) {
+                                cam.fov = fov;
+                                cam.updateProjectionMatrix();
                               }
+                              w.r3f?.invalidate();
+                              tryLocalStorageSet(fovStorageKey, String(fov));
+                              w.update();
                             }}
-                            onBlur={() => {
-                              state.saveThemeDev();
-                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                           />
                         </div>
                       )}
-                    </>
-                  )}
+                    </div>
+                    {w.view && (
+                      <Menu.Item
+                        className="flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer"
+                        closeOnClick={false}
+                        onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
+                      >
+                        <div>camera: {w.view.cameraMode}</div>
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
+                            <MenuSelect
+                              side="bottom"
+                              value={String(w.view.cameraDirections)}
+                              items={cardinalDirItems}
+                              onValueChange={(v) => {
+                                if (v) w.view.setNumCardinalDirections(Number(v));
+                              }}
+                            />
+                          </div>
+                          <span title="reset camera" onClick={() => w.view.resetCamera()}>
+                            <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
+                          </span>
+                        </div>
+                      </Menu.Item>
+                    )}
 
-                  <div
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      state.lightsOpen = !state.lightsOpen;
-                      tryLocalStorageSet(lightsOpenStorageKey, String(state.lightsOpen));
-                      state.update();
-                    }}
-                  >
-                    {state.lightsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-                    lights
-                  </div>
-
-                  {state.lightsOpen && (
-                    <div
-                      className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="w-20">
-                        <LightsMenuSlider
-                          label="Ambient"
-                          value={w.view.ambientIntensity ?? defaultAmbientIntensity}
-                          defaultValue={defaultAmbientIntensity}
-                          onChange={(next) => w.view.setAmbientIntensity(next)}
-                        />
-                      </div>
-
-                      <div className="w-24 flex items-stretch">
-                        <MenuSelect
-                          side="bottom"
-                          className="border rounded-l border-white/30 border-r-0"
-                          label={truncateLabel(w.view.dynamicLightTarget?.npcKey ?? "no npc", 10)}
-                          value={w.view.dynamicLightTarget?.npcKey ?? ""}
-                          items={[{ key: "no tracked npc", value: "" }, ...npcKeys.map((k) => ({ key: k, value: k }))]}
-                          onValueChange={(v) => w.npc.trackNpc(v || undefined)}
-                        />
-                        <button
-                          type="button"
-                          title="Cycle tracked npc"
-                          className="grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700"
+                    <div className="flex">
+                      <div className="text-white text-xs flex items-center px-2">map:</div>
+                      <MenuSelect
+                        label={w.mapKey}
+                        value={w.mapKey}
+                        items={mapKeys.map((key) => ({ key, value: key }))}
+                        side="bottom"
+                        onValueChange={async (key) => {
+                          if (!key || key === w.mapKey) return;
+                          await w.setCanvasOpacity(0);
+                          uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
+                        }}
+                      />
+                    </div>
+                    {import.meta.env.DEV && (
+                      <>
+                        <div
+                          className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const current = w.view.dynamicLightTarget?.npcKey;
-                            const currentIdx = current ? npcKeys.indexOf(current) : -1;
-                            w.npc.trackNpc(npcKeys[currentIdx + 1]);
+                            state.themeEditorOpen = !state.themeEditorOpen;
+                            tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
+                            w.update();
                           }}
                         >
-                          <CaretRightIcon className="size-3" />
-                        </button>
-                      </div>
+                          {state.themeEditorOpen ? (
+                            <CaretDownIcon className="size-3" />
+                          ) : (
+                            <CaretRightIcon className="size-3" />
+                          )}
+                          edit theme
+                        </div>
+                        {state.themeEditorOpen && (
+                          <div className="p-2 pt-0 flex flex-col gap-1">
+                            <textarea
+                              key={w.themeKey}
+                              ref={state.ref("themeEditorRef")}
+                              className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                              defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={() => {
+                                const parsed = WorldThemeSchema.safeParse(
+                                  JSON.parse(state.themeEditorRef?.value ?? ""),
+                                );
+                                if (parsed.success && w.assets) {
+                                  (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                                  w.e.onChangeTheme();
+                                  state.saveThemeDevDebounced();
+                                }
+                              }}
+                              onBlur={() => {
+                                state.saveThemeDev();
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
 
-                      <div className="w-20">
-                        <LightsMenuSlider
-                          label="npc radius"
-                          min={0.2}
-                          max={maxDynamicLightRadius}
-                          step={0.1}
-                          value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
-                          defaultValue={defaultDynamicLightRadius}
-                          onChange={(next) => w.view.setDynamicLightRadius(next)}
-                        />
-                      </div>
-                      <div className="w-20">
-                        <LightsMenuSlider
-                          label="npc lit"
-                          value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
-                          defaultValue={defaultDynamicLightIntensity}
-                          onChange={(next) => w.view.setDynamicLightIntensity(next)}
-                        />
-                      </div>
-                      <div className="w-20">
-                        <LightsMenuSlider
-                          label="Rooms"
-                          value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                          defaultValue={defaultRoomLightIntensity}
-                          onChange={(next) => w.view.setRoomLightIntensity(next)}
-                        />
-                      </div>
-
-                      <div className="flex gap-1">
-                        <LightsIconButton
-                          active={w.view.roomLightEditingEnabled}
-                          icon={PencilSimpleIcon}
-                          title="Edit (long press)"
-                          onClick={() => w.view.toggleRoomLightEditing()}
-                        />
-                        <LightsIconButton
-                          active={w.view.roomLight?.roomLightingEnabled.value === 1}
-                          icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
-                          title="Lights shown"
-                          onClick={() => {
-                            w.view.setPostProcessingEnabled(true);
-                            w.view.setRoomLightingEnabled();
-                            state.update();
-                          }}
-                        />
-                        <LightsIconButton
-                          danger
-                          icon={TrashIcon}
-                          title="Clear lighting"
-                          onClick={() => w.view.resetAllRooms()}
-                        />
-                      </div>
+                    <div
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        state.lightsOpen = !state.lightsOpen;
+                        tryLocalStorageSet(lightsOpenStorageKey, String(state.lightsOpen));
+                        state.update();
+                      }}
+                    >
+                      {state.lightsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                      lights
                     </div>
-                  )}
 
-                  <div
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      state.debugOpen = !state.debugOpen;
-                      tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
-                      state.update();
-                    }}
-                  >
-                    {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-                    debug
-                  </div>
+                    {state.lightsOpen && (
+                      <div
+                        className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="w-20">
+                          <LightsMenuSlider
+                            label="Ambient"
+                            value={w.view.ambientIntensity ?? defaultAmbientIntensity}
+                            defaultValue={defaultAmbientIntensity}
+                            onChange={(next) => w.view.setAmbientIntensity(next)}
+                          />
+                        </div>
 
-                  {state.debugOpen && (
-                    <>
-                      <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
-                        {debugItems.map((item) => (
+                        <div className="w-24 flex items-stretch">
+                          <MenuSelect
+                            side="bottom"
+                            className="border rounded-l border-white/30 border-r-0"
+                            label={truncateLabel(w.view.dynamicLightTarget?.npcKey ?? "no npc", 10)}
+                            value={w.view.dynamicLightTarget?.npcKey ?? ""}
+                            items={[
+                              { key: "no tracked npc", value: "" },
+                              ...npcKeys.map((k) => ({ key: k, value: k })),
+                            ]}
+                            onValueChange={(v) => w.npc.trackNpc(v || undefined)}
+                          />
                           <button
-                            key={item}
                             type="button"
-                            className={cn(
-                              "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                              isDebugActive(item)
-                                ? "text-green-400 bg-slate-700"
-                                : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
-                            )}
+                            title="Cycle tracked npc"
+                            className="grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDebugToggle(item);
+                              const current = w.view.dynamicLightTarget?.npcKey;
+                              const currentIdx = current ? npcKeys.indexOf(current) : -1;
+                              w.npc.trackNpc(npcKeys[currentIdx + 1]);
                             }}
                           >
-                            {item}
+                            <CaretRightIcon className="size-3" />
                           </button>
-                        ))}
+                        </div>
+
+                        <div className="w-20">
+                          <LightsMenuSlider
+                            label="npc radius"
+                            min={0.2}
+                            max={maxDynamicLightRadius}
+                            step={0.1}
+                            value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
+                            defaultValue={defaultDynamicLightRadius}
+                            onChange={(next) => w.view.setDynamicLightRadius(next)}
+                          />
+                        </div>
+                        <div className="w-20">
+                          <LightsMenuSlider
+                            label="npc lit"
+                            value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
+                            defaultValue={defaultDynamicLightIntensity}
+                            onChange={(next) => w.view.setDynamicLightIntensity(next)}
+                          />
+                        </div>
+                        <div className="w-20">
+                          <LightsMenuSlider
+                            label="Rooms"
+                            value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                            defaultValue={defaultRoomLightIntensity}
+                            onChange={(next) => w.view.setRoomLightIntensity(next)}
+                          />
+                        </div>
+
+                        <div className="flex gap-1">
+                          <LightsIconButton
+                            active={w.view.roomLightEditingEnabled}
+                            icon={PencilSimpleIcon}
+                            title="Edit (long press)"
+                            onClick={() => w.view.toggleRoomLightEditing()}
+                          />
+                          <LightsIconButton
+                            active={w.view.roomLight?.roomLightingEnabled.value === 1}
+                            icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
+                            title="Lights shown"
+                            onClick={() => {
+                              w.view.setPostProcessingEnabled(true);
+                              w.view.setRoomLightingEnabled();
+                              state.update();
+                            }}
+                          />
+                          <LightsIconButton
+                            danger
+                            icon={TrashIcon}
+                            title="Clear lighting"
+                            onClick={() => w.view.resetAllRooms()}
+                          />
+                        </div>
                       </div>
-
-                      <button
-                        type="button"
-                        className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          w.debug.logGPUInfo = true;
-                          w.view.forceUpdate();
-                        }}
-                      >
-                        log gpu info
-                      </button>
-                    </>
-                  )}
-
-                  {import.meta.env.DEV && (
-                    <div className="flex mt-2">
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          w.setNextPending({ obstacles: true });
-                          try {
-                            const res = await fetch("/api/gen-starship-sheets", {
-                              method: "POST",
-                            });
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            await queryClientApi.queryClient.invalidateQueries({
-                              queryKey: [...w.worldQueryPrefix, "sheets"],
-                            });
-                            await queryClientApi.queryClient.invalidateQueries({
-                              queryKey: [...w.worldQueryPrefix, "obstacle-images"],
-                            });
-                          } catch (err) {
-                            console.error("Failed to update obstacles:", err);
-                          } finally {
-                            delete w.pending.obstacles;
-                            w.update();
-                          }
-                        }}
-                      >
-                        obstacles
-                        <ArrowsClockwiseIcon className="size-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            const res = await fetch("/api/gen-assets-json", {
-                              method: "POST",
-                            });
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            await queryClientApi.queryClient.invalidateQueries({
-                              exact: false,
-                              queryKey: w.worldQueryPrefix,
-                            });
-                          } catch (err) {
-                            console.error("Failed to update assets:", err);
-                          }
-                        }}
-                      >
-                        assets
-                        <ArrowsClockwiseIcon className="size-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* drag to resize the popup — bottom-right corner, since it opens rightward/downward from the trigger */}
-                <div
-                  className="absolute bottom-0 right-0 size-5 touch-none cursor-nwse-resize"
-                  onMouseDown={state.onResizeMouseDown}
-                  onTouchStart={state.onResizeTouchStart}
-                >
-                  <div
-                    className={cn(
-                      "absolute bottom-1 right-1 size-2.5 border-b-2 border-r-2 border-slate-600 rounded-br",
-                      state.resizing && "border-slate-400",
                     )}
-                  />
-                </div>
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
 
-        {w.view && (
-          <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
-            <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
-              <SunIcon className="size-4 shrink-0" />
-            </button>
-            <Slider.Root
-              orientation="vertical"
-              min={0}
-              max={1}
-              step={0.01}
-              value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
-              onValueChange={(v) => w.view.setAmbientIntensity(ambientSliderPosToValue(v))}
-            >
-              <Slider.Control
-                className="h-20 w-4 flex justify-center cursor-pointer touch-none"
-                onPointerDown={(e) => e.stopPropagation()}
+                    <div
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        state.debugOpen = !state.debugOpen;
+                        tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
+                        state.update();
+                      }}
+                    >
+                      {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                      debug
+                    </div>
+
+                    {state.debugOpen && (
+                      <>
+                        <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
+                          {debugItems.map((item) => (
+                            <button
+                              key={item}
+                              type="button"
+                              className={cn(
+                                "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                                isDebugActive(item)
+                                  ? "text-green-400 bg-slate-700"
+                                  : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDebugToggle(item);
+                              }}
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            w.debug.logGPUInfo = true;
+                            w.view.forceUpdate();
+                          }}
+                        >
+                          log gpu info
+                        </button>
+                      </>
+                    )}
+
+                    {import.meta.env.DEV && (
+                      <div className="flex mt-2">
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            w.setNextPending({ obstacles: true });
+                            try {
+                              const res = await fetch("/api/gen-starship-sheets", {
+                                method: "POST",
+                              });
+                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                              await queryClientApi.queryClient.invalidateQueries({
+                                queryKey: [...w.worldQueryPrefix, "sheets"],
+                              });
+                              await queryClientApi.queryClient.invalidateQueries({
+                                queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+                              });
+                            } catch (err) {
+                              console.error("Failed to update obstacles:", err);
+                            } finally {
+                              delete w.pending.obstacles;
+                              w.update();
+                            }
+                          }}
+                        >
+                          obstacles
+                          <ArrowsClockwiseIcon className="size-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const res = await fetch("/api/gen-assets-json", {
+                                method: "POST",
+                              });
+                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                              await queryClientApi.queryClient.invalidateQueries({
+                                exact: false,
+                                queryKey: w.worldQueryPrefix,
+                              });
+                            } catch (err) {
+                              console.error("Failed to update assets:", err);
+                            }
+                          }}
+                        >
+                          assets
+                          <ArrowsClockwiseIcon className="size-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* drag to resize the popup — bottom-right corner, since it opens rightward/downward from the trigger */}
+                  <div
+                    className="absolute bottom-0 right-0 size-5 touch-none cursor-nwse-resize"
+                    onMouseDown={state.onResizeMouseDown}
+                    onTouchStart={state.onResizeTouchStart}
+                  >
+                    <div
+                      className={cn(
+                        "absolute bottom-1 right-1 size-2.5 border-b-2 border-r-2 border-slate-600 rounded-br",
+                        state.resizing && "border-slate-400",
+                      )}
+                    />
+                  </div>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
+
+          {w.view && (
+            <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
+              <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
+                <SunIcon className="size-4 shrink-0" />
+              </button>
+              <Slider.Root
+                orientation="vertical"
+                min={0}
+                max={1}
+                step={0.01}
+                value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
+                onValueChange={(v) => w.view.setAmbientIntensity(ambientSliderPosToValue(v))}
               >
-                <Slider.Track className="relative w-1 h-full rounded-full bg-white/50">
-                  <Slider.Indicator className="rounded-full bg-white" />
-                  <Slider.Thumb className="size-3.5 rounded-full bg-white outline-none" />
-                </Slider.Track>
-              </Slider.Control>
-            </Slider.Root>
-            <div className="relative">
-              {w.view.roomLightEditingEnabled ? (
-                <PencilSimpleIcon
-                  className="size-4 shrink-0 cursor-pointer"
-                  weight="fill"
-                  onClick={() => w.view.toggleRoomLightEditing()}
-                />
-              ) : (
-                <PencilSimpleSlashIcon
-                  className="size-4 shrink-0 cursor-pointer text-red-400"
-                  weight="regular"
-                  onClick={() => w.view.toggleRoomLightEditing()}
-                />
-              )}
-              {litRootCount > 0 && (
-                <span className="absolute -bottom-1.5 -right-1.5 min-w-3.5 px-0.5 rounded-full bg-black text-white text-[11px] leading-3.5 text-center font-bold pointer-events-none">
-                  {litRootCount}
-                </span>
-              )}
+                <Slider.Control
+                  className="h-20 w-4 flex justify-center cursor-pointer touch-none"
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <Slider.Track className="relative w-1 h-full rounded-full bg-white/50">
+                    <Slider.Indicator className="rounded-full bg-white" />
+                    <Slider.Thumb className="size-3.5 rounded-full bg-white outline-none" />
+                  </Slider.Track>
+                </Slider.Control>
+              </Slider.Root>
+              <div className="relative">
+                {w.view.roomLightEditingEnabled ? (
+                  <PencilSimpleIcon
+                    className="size-4 shrink-0 cursor-pointer"
+                    weight="fill"
+                    onClick={() => w.view.toggleRoomLightEditing()}
+                  />
+                ) : (
+                  <PencilSimpleSlashIcon
+                    className="size-4 shrink-0 cursor-pointer text-red-400"
+                    weight="regular"
+                    onClick={() => w.view.toggleRoomLightEditing()}
+                  />
+                )}
+                {litRootCount > 0 && (
+                  <span className="absolute -bottom-1.5 -right-1.5 min-w-3.5 px-0.5 rounded-full bg-black text-white text-[11px] leading-3.5 text-center font-bold pointer-events-none">
+                    {litRootCount}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* play/pause */}
-        <button
-          className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
-          onClick={() => w.setDisabled()}
-        >
-          {w.disabled ? <PlayIcon className="size-5" weight="bold" /> : <PauseIcon className="size-5" weight="bold" />}
-        </button>
-
-        {(extraZoomActive || readyForExtraZoom) && (
-          <div
-            className={cn(
-              "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none size-9",
-              extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
-            )}
+          {/* play/pause */}
+          <button
+            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
+            onClick={() => w.setDisabled()}
           >
-            <MagnifyingGlassIcon className="size-5" weight="bold" />
-          </div>
-        )}
+            {w.disabled ? (
+              <PlayIcon className="size-5" weight="bold" />
+            ) : (
+              <PauseIcon className="size-5" weight="bold" />
+            )}
+          </button>
+
+          {(extraZoomActive || readyForExtraZoom) && (
+            <div
+              className={cn(
+                "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none size-9",
+                extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
+              )}
+            >
+              <MagnifyingGlassIcon className="size-5" weight="bold" />
+            </div>
+          )}
+        </div>
 
         <div>
           <AnimatePresence>
@@ -973,6 +981,9 @@ export type State = {
   saveThemeDev(): Promise<void>;
   saveThemeDevDebounced(): void;
 };
+
+/** Enlarges the menu controls on touch devices */
+const touchDeviceZoom = 1.25;
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const menuWidthStorageKey = (id: string) => `world-context-menu-width-${id}`;
