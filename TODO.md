@@ -44,7 +44,7 @@
     - added button in header too
   - ✅ Jobs can send reset signal
   - ✅ improve `move` reset
-  - 🚧 clean event handling
+  - ✅ clean event handling
     - ❌ reset handled at-process-level although can supply callback
       - e.g. `() => api.flush()` for `move_lazy`
     - ✅ reset by kill then re-reun

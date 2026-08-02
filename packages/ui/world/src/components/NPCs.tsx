@@ -293,8 +293,10 @@ export default function NPCs() {
           if (doResult.type === "use-current") {
             await state.spawn({ npcKey, at: to }); // respawn
           } else {
-            // small delay when standing
-            if (w.e.npcToDoable[npcKey] === null) await npc.look(to, { minMs: 500 });
+            if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < 1) {
+              // look + delay when standing nearby
+              await npc.look(to, { minMs: 500 });
+            }
 
             await npc.fadeSpawn({ at: to });
           }
