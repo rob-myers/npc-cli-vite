@@ -55,6 +55,8 @@ export default function Jobs() {
       confirmClearTimeoutId: 0,
       copiedSrc: null,
       copiedTimeoutId: 0,
+      resetPids: new Set(),
+      resetting: new Map(),
       folded: { interactive: true, background: true },
       history: [],
       ordered: [],
@@ -128,7 +130,7 @@ export default function Jobs() {
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, STOP: true });
             break;
           case "reset":
-            // sessionApi.sendSignalToGroup(state.sessionKey, pid, "reset");
+            state.onReset(pid);
             break;
           case "resume":
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, CONT: true });
@@ -180,11 +182,25 @@ export default function Jobs() {
         }
 
         // console.log(msg);
+        // 🔔 a reset re-runs under a new pid, so we keep the original item i.e. its ui
+        const adopted = msg.act === "started" ? state.resetting.get(process.src) : undefined;
+        if (adopted !== undefined) {
+          state.resetting.delete(process.src);
+          delete state.processes[adopted.pid];
+          adopted.pid = msg.pid;
+          state.processes[msg.pid] = adopted;
+        }
+
         const item = (state.processes[msg.pid] ??= processMetaToProcessLeader(process));
 
         switch (msg.act) {
           case "ended": {
             item.status = toProcessStatus.Killed;
+            if (state.resetPids.delete(msg.pid)) {
+              // interactive becomes a new background item, others keep theirs
+              msg.pid !== 0 && state.resetting.set(item.src, item);
+              void state.rerunProcess(item.src);
+            }
             msg.pid === 0 ? state.debouncedUpdate() : state.update();
             break;
           }
@@ -209,6 +225,37 @@ export default function Jobs() {
         }
 
         state.reorder();
+      },
+      onReset(pid) {
+        const item = state.processes[pid];
+        if (state.sessionKey === null || item === undefined) {
+          return;
+        }
+        if (item.status === toProcessStatus.Killed) {
+          void state.rerunProcess(item.src);
+          return;
+        }
+
+        // re-run after kill i.e. on "ended"
+        state.resetPids.add(pid);
+        if (pid === 0) {
+          sessionApi.killSessionLeader(state.sessionKey);
+        } else {
+          sessionApi.kill(state.sessionKey, [pid], { GROUP: true, SIGINT: true });
+        }
+      },
+      async rerunProcess(src) {
+        const session = state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
+        if (session === undefined || !src) {
+          return;
+        }
+
+        try {
+          // relaunched as a background process even when interactive
+          await session.ttyShell.sourceExternal(src, { background: true });
+        } catch (e) {
+          error(e);
+        }
       },
       restoreHistory() {
         if (state.sessionKey === null) {
@@ -325,7 +372,7 @@ export default function Jobs() {
               const paused = p.status === toProcessStatus.Suspended;
               return (
                 <motion.div
-                  key={p.pid}
+                  key={p.uid}
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -335,7 +382,7 @@ export default function Jobs() {
                 >
                   {/* 🔔 fixed width so cards align */}
                   <div className="relative flex shrink-0 bg-black border border-[#aaca]">
-                    <div className="w-12 px-1 text-center text-[#ff9]">{p.pid}</div>
+                    <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
                     {p.ptagsText && (
                       <div
                         title={p.ptagsText}
@@ -349,7 +396,9 @@ export default function Jobs() {
                   <div
                     title={p.src}
                     className={cn(
-                      "grow min-w-0 truncate px-2 py-1 bg-black border border-[#505050] text-sm",
+                      // up to two lines i.e. 2 * 1.25rem + py-1
+                      "grow min-w-0 max-h-12 overflow-auto [scrollbar-width:thin] break-words",
+                      "px-2 py-1 bg-black border border-[#505050] text-sm",
                       killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
                     )}
                   >
@@ -377,13 +426,19 @@ export default function Jobs() {
                     >
                       <XIcon alt="kill" className="size-4" />
                     </div>
+                    {/* 🔔 available when killed, where it just re-runs */}
                     <div
-                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
-                      onClick={!killed ? state.changeProcess : undefined}
+                      className={controlCss}
+                      title={p.pid === 0 ? "re-run in background" : "reset"}
+                      onClick={state.changeProcess}
                       data-act="reset"
                       data-pid={p.pid}
                     >
-                      <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                      {p.pid === 0 ? (
+                        <span className="text-sm leading-none text-[#999]">{"&"}</span>
+                      ) : (
+                        <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -518,6 +573,13 @@ type State = {
   /** Forgets `copiedSrc` after `copiedMs` */
   copiedTimeoutId: number;
   copySrc: (src: string) => void;
+  /** pids whose "ended" should trigger a re-run — see `onReset` */
+  resetPids: Set<number>;
+  /** `src` -> item awaiting the pid of its re-run */
+  resetting: Map<string, ProcessLeader>;
+  /** Kill the process group of `pid`, then re-run its `src` */
+  onReset: (pid: number) => void;
+  rerunProcess: (src: string) => Promise<void>;
   toggleFold: (key: HistoryGroupKey) => void;
   toggleTtyDisabled: () => void;
   /** Has "clear history" been clicked once i.e. awaiting confirmation? */
@@ -546,6 +608,8 @@ type State = {
 type HistoryGroupKey = "interactive" | "background";
 
 type ProcessLeader = {
+  /** Initial `pid`, stable across resets i.e. usable as a React key */
+  uid: number;
   pid: number;
   src: string;
   status: ProcessStatus;
@@ -571,6 +635,7 @@ function compareProcessLeaders(p: ProcessLeader, q: ProcessLeader) {
 
 function processMetaToProcessLeader({ key: pid, src, status, ptags }: ProcessMeta): ProcessLeader {
   return {
+    uid: pid,
     pid,
     src,
     status,

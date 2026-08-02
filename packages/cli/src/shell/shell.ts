@@ -434,12 +434,22 @@ export class TtyShell implements Device {
 
   /**
    * 🔔 This runs code `src` in a process whose parent is the session leader.
-   * @param src should only contain shell function declarations
    */
-  async sourceExternal(src: string) {
+  async sourceExternal(src: string, opts: { background?: boolean } = {}) {
     const term = await parseService.parse(src);
     this.provideContextToParsed(term);
-    await this.spawn(term, { by: "source-external" });
+
+    if (opts.background !== true) {
+      return await this.spawn(term, { by: "source-external" });
+    }
+
+    // own process group so it leads and emits external events
+    term.meta.pgid = sessionApi.getSession(this.sessionKey).nextPid;
+    await this.spawn(term, {
+      by: "source-external",
+      localVar: true,
+      ptags: { [ProcessTag.interactive]: undefined },
+    });
   }
 
   private storeSrcLine(srcLine: string) {

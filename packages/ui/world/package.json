@@ -36,6 +36,7 @@
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
+    "react-use-measure": "catalog:",
     "short-uuid": "catalog:",
     "three": "catalog:",
     "three-stdlib": "catalog:",

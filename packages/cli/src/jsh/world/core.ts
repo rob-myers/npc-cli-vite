@@ -235,12 +235,6 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }
       cleanup(killed) {
         killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
       },
-      // onSignal(signalKey) {
-      //   if (signalKey === "reset") {
-      //     getNpcOrUndefined()?.rejectAll(Error("reset"));
-      //   }
-      //   opts.onSignal?.(signalKey);
-      // },
       onSuspend: () => {
         const npc = getNpcOrUndefined();
         if (!npc) {
@@ -252,6 +246,9 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }
         } else if (npc.isLooking()) {
           pendingLooks.unshift({ ...npc.last.look });
         }
+
+        // 🚧 do not reject whilst fadeSpawn until done
+
         npc.rejectAll(Error("paused"));
         return true;
       },
@@ -340,19 +337,18 @@ export async function move_lazy(
 
   const { getNpcOrThrow, pendingMoves, processHandled, handleErrors } = moveHandlingFactory(ct, {
     npcKey: opts.npcKey,
-    // onSignal: (signalKey) => signalKey === "reset" && api.flush(),
   });
 
   let pendingRead = api.read();
 
   try {
     while (true) {
-      const npc = getNpcOrThrow();
-
       const readNext = pendingMoves.length === 0;
       const dst = pendingMoves.shift() ?? (await pendingRead);
       if (dst === api.eof) break;
       if (readNext) pendingRead = api.read();
+
+      const npc = getNpcOrThrow();
 
       const movePromise = w.npc.move({ npcKey: npc.key, to: dst, fast: opts.fast }).catch(
         handleErrors({
