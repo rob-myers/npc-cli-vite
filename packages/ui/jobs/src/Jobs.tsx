@@ -1,3 +1,4 @@
+import { Select } from "@base-ui/react/select";
 import {
   type ExternalMessageProcessLeader,
   getPtagsPreview,
@@ -62,7 +63,6 @@ export default function Jobs() {
       ordered: [],
       processes: [],
       sessionKey: null,
-      sessionSelectEl: null,
       ttyMeta: null,
 
       addHistory(items) {
@@ -282,9 +282,11 @@ export default function Jobs() {
         if (!state.ttyMeta) return;
         uiStoreApi.setUiMeta(state.ttyMeta.id, (draft) => (draft.disabled = !draft.disabled));
       },
-      onChangeSessionKey(e) {
-        const { value } = e.currentTarget;
-        state.sessionKey = value as `tty-${number}`;
+      onChangeSessionKey(sessionKey) {
+        if (sessionKey === null) {
+          return;
+        }
+        state.sessionKey = sessionKey as `tty-${number}`;
         state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)];
         state.update();
       },
@@ -298,14 +300,14 @@ export default function Jobs() {
       state.set({ sessionKey: null, ttyMeta: null });
     } else if (state.sessionKey === null || !sessionKeys.includes(state.sessionKey)) {
       state.set({
-        sessionKey: (state.sessionSelectEl?.value as `tty-${number}`) ?? sessionKeys[0],
+        sessionKey: sessionKeys[0],
         ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)],
       });
     } else {
       // Must sync
       state.set({ ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] });
     }
-  }, [ttyMetas, state.sessionSelectEl?.value]);
+  }, [ttyMetas]);
 
   useEffect(() => {
     const intervalId = setInterval(state.cleanupDead, cleanupDeadMs);
@@ -328,44 +330,11 @@ export default function Jobs() {
   ];
 
   return (
-    <div className="p-2 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2 font-mono">
-        {sessionsExist ? (
-          <>
-            <select
-              ref={state.ref("sessionSelectEl")}
-              onChange={state.onChangeSessionKey}
-              title="sessionKey"
-              // 🔔 text-align-last fixes safari
-              className="p-1 text-md bg-black"
-            >
-              {ttyMetas.map(({ sessionKey: key }) => (
-                <option key={key} value={key}>
-                  {key}
-                </option>
-              ))}
-            </select>
-            {state.ttyMeta && (
-              <button
-                type="button"
-                title="refresh"
-                className={cn(
-                  "cursor-pointer px-2 bg-[#222] text-sm",
-                  state.ttyMeta.disabled ? "text-gray-400" : "text-green-400",
-                )}
-                onClick={state.toggleTtyDisabled}
-              >
-                {state.ttyMeta?.disabled ? "paused" : "enabled"}
-              </button>
-            )}
-          </>
-        ) : (
-          <div className="text-[#999]">{`[No sessions]`}</div>
-        )}
-      </div>
+    <div className="p-4 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
+      {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
       {sessionsExist && (
-        <div className="flex flex-row flex-wrap items-stretch gap-x-1 gap-y-0.5 text-base text-white">
+        <div className="flex flex-row flex-wrap justify-center items-stretch gap-x-1 gap-y-0.5 text-base text-white">
           <AnimatePresence initial={false}>
             {state.ordered.map((p) => {
               const killed = p.status === toProcessStatus.Killed;
@@ -378,67 +347,123 @@ export default function Jobs() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex items-stretch grow min-w-64 max-w-[400px] p-1 rounded bg-[#222] text-[#0f0] font-mono"
+                  className="flex flex-col grow min-w-48 max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                 >
-                  {/* 🔔 fixed width so cards align */}
-                  <div className="relative flex shrink-0 bg-black border border-[#aaca]">
-                    <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
-                    {p.ptagsText && (
+                  {/* 🔔 header, connected to the session leader */}
+                  {p.pid === 0 && (
+                    <div className="flex items-stretch justify-end gap-1 pb-2">
+                      <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
+                        <Select.Trigger
+                          title="sessionKey"
+                          className={cn(
+                            "flex items-center gap-2 cursor-pointer px-3 py-1 rounded-sm text-sm",
+                            "border border-[#aaca] shadow-sm shadow-black/50 bg-black text-[#ff9]",
+                            "transition-colors hover:bg-[#111]",
+                          )}
+                        >
+                          <Select.Value placeholder="session" />
+                          <CaretRightIcon alt="open" className="size-3 rotate-90 text-[#999]" />
+                        </Select.Trigger>
+
+                        <Select.Portal>
+                          <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
+                            <Select.Popup className="py-1 rounded-sm border border-[#505050] shadow-lg shadow-black/50 bg-black font-mono text-sm">
+                              <Select.List>
+                                {ttyMetas.map(({ sessionKey: key }) => (
+                                  <Select.Item
+                                    key={key}
+                                    value={key}
+                                    className={cn(
+                                      "px-3 py-1 cursor-pointer text-[#ccc]",
+                                      "data-highlighted:bg-[#222] data-selected:text-[#ff9]",
+                                    )}
+                                  >
+                                    <Select.ItemText>{key}</Select.ItemText>
+                                  </Select.Item>
+                                ))}
+                              </Select.List>
+                            </Select.Popup>
+                          </Select.Positioner>
+                        </Select.Portal>
+                      </Select.Root>
+                      {state.ttyMeta !== null && (
+                        <button
+                          type="button"
+                          title={state.ttyMeta.disabled ? "resume tty" : "pause tty"}
+                          className="cursor-pointer flex items-center px-3 py-1 rounded-sm border border-[#555] shadow-sm shadow-black/50 transition-colors hover:bg-[#333]"
+                          onClick={state.toggleTtyDisabled}
+                        >
+                          {state.ttyMeta.disabled ? (
+                            <PlayIcon alt="resume tty" className="size-4 text-green-400" />
+                          ) : (
+                            <PauseIcon alt="pause tty" className="size-4 text-[#ccc]" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-stretch gap-y-0.5">
+                    {/* 🔔 fixed width so cards align */}
+                    <div className="relative flex shrink-0 bg-black border border-[#aaca]">
+                      <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
+                      {/* {p.ptagsText && (
+                        <div
+                          title={p.ptagsText}
+                          className="absolute bottom-0 right-0 px-1 py-0.5 rounded-tl bg-[#333] text-[#ccc] text-xs leading-none"
+                        >
+                          {p.ptagsText}
+                        </div>
+                      )} */}
+                    </div>
+
+                    <div className="flex shrink-0 items-stretch text-white">
                       <div
-                        title={p.ptagsText}
-                        className="absolute bottom-0 right-0 px-1 py-0.5 rounded-tl bg-[#333] text-[#ccc] text-xs leading-none"
+                        className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                        onClick={!killed ? state.changeProcess : undefined}
+                        data-act={paused ? "resume" : "pause"}
+                        data-pid={p.pid}
                       >
-                        {p.ptagsText}
+                        {paused ? (
+                          <PlayIcon alt="resume" className="size-3" />
+                        ) : (
+                          <PauseIcon alt="pause" className="size-3" />
+                        )}
                       </div>
-                    )}
-                  </div>
-
-                  <div
-                    title={p.src}
-                    className={cn(
-                      // up to two lines i.e. 2 * 1.25rem + py-1
-                      "grow min-w-0 max-h-12 overflow-auto [scrollbar-width:thin] break-words",
-                      "px-2 py-1 bg-black border border-[#505050] text-sm",
-                      killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
-                    )}
-                  >
-                    {p.src || "[empty]"}
-                  </div>
-
-                  <div className="flex shrink-0 items-stretch text-white">
-                    <div
-                      className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
-                      onClick={!killed ? state.changeProcess : undefined}
-                      data-act={paused ? "resume" : "pause"}
-                      data-pid={p.pid}
-                    >
-                      {paused ? (
-                        <PlayIcon alt="resume" className="size-3" />
-                      ) : (
-                        <PauseIcon alt="pause" className="size-3" />
-                      )}
+                      <div
+                        className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
+                        onClick={!killed ? state.changeProcess : undefined}
+                        data-act="kill"
+                        data-pid={p.pid}
+                      >
+                        <XIcon alt="kill" className="size-4" />
+                      </div>
+                      {/* 🔔 available when killed, where it just re-runs */}
+                      <div
+                        className={controlCss}
+                        title={p.pid === 0 ? "re-run in background" : "reset"}
+                        onClick={state.changeProcess}
+                        data-act="reset"
+                        data-pid={p.pid}
+                      >
+                        {p.pid === 0 ? (
+                          <span className="text-sm leading-none text-[#999]">{"&"}</span>
+                        ) : (
+                          <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                        )}
+                      </div>
                     </div>
+
                     <div
-                      className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
-                      onClick={!killed ? state.changeProcess : undefined}
-                      data-act="kill"
-                      data-pid={p.pid}
-                    >
-                      <XIcon alt="kill" className="size-4" />
-                    </div>
-                    {/* 🔔 available when killed, where it just re-runs */}
-                    <div
-                      className={controlCss}
-                      title={p.pid === 0 ? "re-run in background" : "reset"}
-                      onClick={state.changeProcess}
-                      data-act="reset"
-                      data-pid={p.pid}
-                    >
-                      {p.pid === 0 ? (
-                        <span className="text-sm leading-none text-[#999]">{"&"}</span>
-                      ) : (
-                        <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                      title={p.src}
+                      className={cn(
+                        // up to two lines i.e. 2 * 1.25rem + py-1
+                        "grow min-w-32 max-h-12 overflow-auto [scrollbar-width:thin] break-words",
+                        "px-2 py-1 bg-black border border-[#505050] text-sm",
+                        killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
                       )}
+                    >
+                      {p.src || "[empty]"}
                     </div>
                   </div>
                 </motion.div>
@@ -455,7 +480,7 @@ export default function Jobs() {
       )}
 
       {sessionsExist && state.history.length > 0 && (
-        <div className="flex flex-col gap-1 font-mono text-sm">
+        <div className="self-center w-full max-w-[400px] flex flex-col gap-1 font-mono text-sm">
           <div className="flex items-center justify-between gap-3 pl-1">
             <div className="text-[#999]">history</div>
             <button
@@ -484,7 +509,8 @@ export default function Jobs() {
   );
 }
 
-const controlCss = "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer";
+const controlCss =
+  "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer transition-colors hover:bg-[#333]";
 
 /** A foldable group of historical processes, each line copyable */
 function HistoryGroup({
@@ -507,7 +533,7 @@ function HistoryGroup({
   }
 
   return (
-    <div className="flex flex-col gap-0.5 p-1 bg-black border border-[#505050] rounded">
+    <div className="flex flex-col gap-0.5 p-1 bg-black border border-[#505050] rounded shadow-md shadow-black/40">
       <button
         type="button"
         className="flex items-center gap-1 cursor-pointer text-[#999]"
@@ -593,14 +619,13 @@ type State = {
   cleanupDead: () => void;
   restoreHistory: () => ProcessLeader[];
   sessionKey: null | `tty-${number}`;
-  sessionSelectEl: null | HTMLSelectElement;
   ttyMeta: null | JshUiMeta;
   changeProcess: (e: React.PointerEvent<HTMLDivElement>) => void;
   connectSession: () => boolean;
   debouncedUpdate: () => void;
   disconnectSession: null | (() => void);
   handleLeaderMessage: (msg: ExternalMessageProcessLeader) => void;
-  onChangeSessionKey: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChangeSessionKey: (sessionKey: null | string) => void;
   /** Recompute `ordered`, at most once per 200ms */
   reorder: () => void;
 };
