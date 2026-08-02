@@ -128,7 +128,7 @@ export default function Jobs() {
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, STOP: true });
             break;
           case "reset":
-            sessionApi.sendSignalToGroup(state.sessionKey, pid, "reset");
+            // sessionApi.sendSignalToGroup(state.sessionKey, pid, "reset");
             break;
           case "resume":
             sessionApi.kill(state.sessionKey, [pid], { GROUP: true, CONT: true });

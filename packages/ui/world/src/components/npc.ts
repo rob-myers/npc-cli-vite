@@ -38,7 +38,6 @@ export class Npc {
   rotation: THREE.Euler;
   skinnedMesh: THREE.SkinnedMesh;
 
-  alphaTest: THREE.UniformNode<"float", number>;
   brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   /** points into ArrayTexture */
@@ -116,7 +115,6 @@ export class Npc {
 
     // Object.assign(this, init);
     this.key = init.key;
-    this.alphaTest = init.alphaTest;
     this.brightness = init.brightness;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
