@@ -20,14 +20,18 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
     return null;
   }, [root.selectedIds, root.nodes]);
 
-  const multiSelectionBounds = useMemo(() => {
+  const multiSelection = useMemo(() => {
     if (root.selectedIds.size <= 1) return null;
     const selectedNodes: MapNode[] = [];
     for (const id of root.selectedIds) {
       const [node] = findNodeById(root.nodes, id);
       if (node && node.type !== "group") selectedNodes.push(node);
     }
-    return selectedNodes.length > 0 ? getNodeBounds(...selectedNodes) : null;
+    if (selectedNodes.length === 0) return null;
+    return {
+      bounds: getNodeBounds(...selectedNodes),
+      eachBounds: selectedNodes.map((node) => ({ id: node.id, rect: getNodeBounds(node) })),
+    };
   }, [root.selectedIds, root.nodes]);
 
   return (
@@ -59,16 +63,29 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
         />
       )}
       {resizableNode && <ResizeHandles selectedNode={resizableNode} root={root} />}
-      {multiSelectionBounds && (
-        <rect
-          data-multi-bounds=""
-          x={multiSelectionBounds.x + root.selectionBoundsOffset.x}
-          y={multiSelectionBounds.y + root.selectionBoundsOffset.y}
-          width={multiSelectionBounds.width}
-          height={multiSelectionBounds.height}
-          strokeWidth={2 / root.zoom}
-          className="stroke-blue-700 fill-transparent cursor-move"
-        />
+      {multiSelection && (
+        <g transform={`translate(${root.selectionBoundsOffset.x} ${root.selectionBoundsOffset.y})`}>
+          {/* 🔔 invisible, yet drives dragging the selection */}
+          <rect
+            data-multi-bounds=""
+            x={multiSelection.bounds.x}
+            y={multiSelection.bounds.y}
+            width={multiSelection.bounds.width}
+            height={multiSelection.bounds.height}
+            className="fill-transparent stroke-none cursor-move"
+          />
+          {multiSelection.eachBounds.map(({ id, rect }) => (
+            <rect
+              key={id}
+              x={rect.x}
+              y={rect.y}
+              width={rect.width}
+              height={rect.height}
+              strokeWidth={2 / root.zoom}
+              className="stroke-blue-700 fill-none pointer-events-none"
+            />
+          ))}
+        </g>
       )}
     </svg>
   );
