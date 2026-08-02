@@ -105,14 +105,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       }),
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
-      shouldMount: false,
       unlitScale: uniform(persisted.getAmbientIntensity()),
 
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
 
-        canvas.width = state.bounds.width * devicePixelRatio;
-        canvas.height = state.bounds.height * devicePixelRatio;
+        // three seeds its *logical* size from `canvas.width` (see `CanvasTarget`),
+        // which otherwise defaults to 300x150. It must not be scaled by the pixel
+        // ratio, which `setPixelRatio` applies below i.e. `canvas.width = w * ratio`.
+        canvas.width = state.bounds.width;
+        canvas.height = state.bounds.height;
 
         const renderer = new THREE.WebGPURenderer({
           canvas,
@@ -124,7 +126,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.onDeviceLost = (event) => {
           console.warn("WebGPU device lost", event);
         };
-        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // before `init`, so attachments are created at the drawing buffer size,
+        // rather than at 1x whilst the canvas is already scaled. Matches the `dpr`
+        // given to `<Canvas>`, so r3f's own `setPixelRatio` is a no-op.
+        renderer.setPixelRatio(getPixelRatio());
 
         await renderer.init();
         return renderer;
@@ -591,63 +597,61 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   const [ref, bounds] = useMeasure();
   state.bounds = bounds;
-  state.shouldMount ||= bounds.width > 0;
 
   return (
     <div className="size-full" ref={ref}>
-      {state.shouldMount && (
-        <Canvas
-          className={props.className}
-          style={{
-            filter: `brightness(${w.brightness})`,
-            backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
-          }}
-          ref={state.ref("canvas")}
-          frameloop={state.syncRenderMode()}
-          gl={state.createRenderer}
-          onCreated={state.onCreated}
-          onPointerDown={state.onPointerDown}
-          onPointerLeave={state.onPointerLeave}
-          onPointerMove={state.onPointerMove}
-          onPointerUp={state.onPointerUp}
-          resize={{ debounce: 0 }}
-          flat // 🔔 hopefully fix sporadic colorspace issues on refresh
-          tabIndex={0}
-        >
-          <Stats
-            showPanel={0}
-            className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
-            parent={{ current: w.rootEl }}
-          />
+      <Canvas
+        className={props.className}
+        style={{
+          filter: `brightness(${w.brightness})`,
+          backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
+        }}
+        ref={state.ref("canvas")}
+        frameloop={state.syncRenderMode()}
+        gl={state.createRenderer}
+        onCreated={state.onCreated}
+        onPointerDown={state.onPointerDown}
+        onPointerLeave={state.onPointerLeave}
+        onPointerMove={state.onPointerMove}
+        onPointerUp={state.onPointerUp}
+        dpr={getPixelRatio()}
+        resize={{ debounce: 0 }}
+        flat // 🔔 hopefully fix sporadic colorspace issues on refresh
+        tabIndex={0}
+      >
+        <Stats
+          showPanel={0}
+          className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
+          parent={{ current: w.rootEl }}
+        />
 
-          <PerspectiveCamera fov={state.fov} makeDefault zoom={1} />
+        <PerspectiveCamera fov={state.fov} makeDefault zoom={1} />
 
-          <CameraControls
-            ref={state.ref("controls")}
-            cameraMode={state.cameraMode}
-            numCardinalDirections={state.cameraDirections}
-            domElement={state.canvas}
-            initialAzimuthal={state.initial.azimuthal}
-            initialPolar={state.initial.polar}
-            initialPosition={state.initial.position}
-            minPanDistance={w.touchDevice ? 0.05 : 0}
-            onFrame={state.onCameraChange}
-            onEnd={state.onCameraEnd}
-            {...state.ctrlOpts}
-          />
+        <CameraControls
+          ref={state.ref("controls")}
+          cameraMode={state.cameraMode}
+          numCardinalDirections={state.cameraDirections}
+          domElement={state.canvas}
+          initialAzimuthal={state.initial.azimuthal}
+          initialPolar={state.initial.polar}
+          initialPosition={state.initial.position}
+          minPanDistance={w.touchDevice ? 0.05 : 0}
+          onFrame={state.onCameraChange}
+          onEnd={state.onCameraEnd}
+          {...state.ctrlOpts}
+        />
 
-          <NpcBubbles />
+        <NpcBubbles />
 
-          {state.postProcessing && <PostProcessing />}
+        {state.postProcessing && <PostProcessing />}
 
-          {props.children}
-        </Canvas>
-      )}
+        {props.children}
+      </Canvas>
 
       <AnimatePresence>
         {w.disabled && (
           <motion.div
-            className="absolute inset-x-0 top-[30%] flex justify-center pointer-events-none"
+            className="absolute inset-x-0 top-[20%] flex justify-center pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -683,7 +687,6 @@ export type State = {
   };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
-  shouldMount: boolean;
   objectPick: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
@@ -759,6 +762,11 @@ export type State = {
 function getBackgroundColor(theme: WorldTheme, ambientIntensity: number) {
   const color = theme.background.match(/^bg-\[(.+)\]$/)?.[1];
   return color === undefined ? undefined : `color-mix(in srgb-linear, ${color} ${ambientIntensity * 100}%, #000)`;
+}
+
+/** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
+function getPixelRatio() {
+  return Math.min(Math.max(1, window.devicePixelRatio), 2);
 }
 
 function defaultInitialCamera(touchDevice: boolean): State["initial"] {
