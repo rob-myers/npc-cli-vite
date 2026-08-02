@@ -9,7 +9,7 @@ export default function Lights() {
         position={[Math.cos(2 * Math.PI * (0 / 3)), 1, Math.sin(2 * Math.PI * (0 / 3))]}
         lookAt={origin}
         intensity={directionLightIntensity}
-        color="red"
+        // color="red"
       />
       <directionalLight
         position={[Math.cos(2 * Math.PI * (1 / 3)), 1, Math.sin(2 * Math.PI * (1 / 3))]}
