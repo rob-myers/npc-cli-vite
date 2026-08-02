@@ -109,10 +109,7 @@ export default function NPCs() {
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
         const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(brightness);
-        const mainColor = vec4(
-          mix(vec3(0.4, 1, 1).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),
-          skinTex.a,
-        );
+        const mainColor = vec4(mix(vec3(0).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale), skinTex.a);
 
         const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(uniform(pickId));
         const labelColor = vec4(labelTex.rgb, labelTex.a.mul(labelVisible));
@@ -120,8 +117,6 @@ export default function NPCs() {
         // Output node: encode NPC pick ID for body; suppress label during picking
         const isPickMode = w.view.objectPick.notEqual(0);
         const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
-
-        const alphaTest = uniform(0.9);
 
         const material = new THREE.MeshStandardNodeMaterial({
           transparent: true,
@@ -132,7 +127,7 @@ export default function NPCs() {
           metalness: 0,
           roughness: 1,
         });
-        material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.1), alphaTest);
+        material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.1), float(0.9));
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         material.colorNode = (select as any)(isLabel, labelColor, mainColor);
         material.outputNode = (select as SelectAnyType)(
@@ -142,7 +137,6 @@ export default function NPCs() {
         );
 
         return {
-          alphaTest,
           brightness,
           colorScale,
           labelVisible,
@@ -712,7 +706,7 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "alphaTest" | "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
+    "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
   >;
   determineSpawnedAngle(opts: {
     /** Spawn destination */
