@@ -222,8 +222,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-locked":
           case "door-unlocked":
           case "enabled":
-          case "enter-topdown":
-          case "exit-topdown":
           case "nav-updated":
           case "spawned-many":
             break;

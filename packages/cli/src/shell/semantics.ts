@@ -66,10 +66,14 @@ export class JShSemantics {
       return handleProcessError(node, e);
     }
 
-    // Non-blocking write to stderr
     const message = [prefix, e.message].filter(Boolean).join(": ");
     const device = sessionApi.resolve(2, node.meta);
-    if (device !== undefined) {
+
+    if (sessionApi.getProcess(node.meta)?.status === toProcessStatus.Killed) {
+      // suppress errors on kill
+      ttyError(`${node.meta.sessionKey}: pid ${node.meta.pid}: killed`, message);
+    } else if (device !== undefined) {
+      // Non-blocking write to stderr
       const lines = message.split(/\r?\n/);
       device.writeData(`${lines.map((line) => formatMessage(line, "error")).join("\n")}${ansi.Reset}`);
     } else {

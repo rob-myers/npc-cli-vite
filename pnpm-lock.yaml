@@ -174,6 +174,9 @@ catalogs:
     react-reverse-portal:
       specifier: 2.3.0
       version: 2.3.0
+    react-use-measure:
+      specifier: ^2.1.7
+      version: 2.1.7
     rxjs:
       specifier: ^7.8.2
       version: 7.8.2
@@ -183,6 +186,9 @@ catalogs:
     skia-canvas:
       specifier: 3.0.8
       version: 3.0.8
+    sugar-high:
+      specifier: ^0.9.5
+      version: 0.9.5
     svg-path-parser:
       specifier: ^1.1.0
       version: 1.1.0
@@ -406,13 +412,13 @@ importers:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
       react-use-measure:
-        specifier: ^2.1.7
+        specifier: 'catalog:'
         version: 2.1.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       rxjs:
         specifier: 'catalog:'
         version: 7.8.2
       sugar-high:
-        specifier: ^0.9.5
+        specifier: 'catalog:'
         version: 0.9.5
       zustand:
         specifier: 'catalog:'
@@ -811,6 +817,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      react-use-measure:
+        specifier: 'catalog:'
+        version: 2.1.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       short-uuid:
         specifier: 'catalog:'
         version: 6.0.3

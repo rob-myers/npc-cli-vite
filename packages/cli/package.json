@@ -32,9 +32,9 @@
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
-    "react-use-measure": "^2.1.7",
+    "react-use-measure": "catalog:",
     "rxjs": "catalog:",
-    "sugar-high": "^0.9.5",
+    "sugar-high": "catalog:",
     "zustand": "catalog:"
   },
   "devDependencies": {

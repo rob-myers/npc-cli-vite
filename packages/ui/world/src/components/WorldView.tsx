@@ -3,7 +3,6 @@ import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
-  pause,
   testNever,
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -15,6 +14,7 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
+import useMeasure from "react-use-measure";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
 import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -56,6 +56,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   const state = useStateRef(
     (): State => ({
       ambientIntensity: persisted.getAmbientIntensity(),
+      bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
       cameraDirections:
         tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ??
@@ -104,22 +105,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       }),
       roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
-      topDown: false,
+      shouldMount: false,
       unlitScale: uniform(persisted.getAmbientIntensity()),
 
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
 
-        // 🔔 why can this be null ?!
-        while (w.rootEl === null) await pause(30);
-
-        // avoid error: The resolve target ... does not match the size of the other attachments ...
-        const parent = w.rootEl as HTMLDivElement;
-        const parentRect = parent.getBoundingClientRect();
-        if (parentRect.width > 0 && parentRect.height > 0) {
-          canvas.width = parentRect.width * devicePixelRatio;
-          canvas.height = parentRect.height * devicePixelRatio;
-        }
+        canvas.width = state.bounds.width * devicePixelRatio;
+        canvas.height = state.bounds.height * devicePixelRatio;
 
         const renderer = new THREE.WebGPURenderer({
           canvas,
@@ -253,13 +246,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
-      onCameraChange(spherical: THREE.Spherical, _target: THREE.Vector3) {
-        const topDown = spherical.phi <= 2 * (Math.PI / 18);
-        if (topDown !== state.topDown) {
-          state.topDown = topDown;
-          w.events.next({ key: topDown ? "enter-topdown" : "exit-topdown" });
-        }
-
+      onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
         const camera = state.controls?.object ?? w.r3f.camera;
         state.roomLight.update(camera);
         state.dynamicLight.update(camera);
@@ -593,72 +580,69 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   w.view = state;
 
-  useEffect(() => {
-    if (w.rootEl) {
-      return state.setupDom();
-    }
-  }, [w.rootEl]);
+  useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 
-  useEffect(() => {
-    state.setupLights();
-  }, [w.hash, w.gmsData, w.mapKey]);
+  useEffect(() => void state.setupLights(), [w.hash, w.gmsData, w.mapKey]);
 
-  useEffect(() => {
-    // `dynamicLight` is fully rebuilt on HMR (see `reset` below) — `dynamicLightTarget` survives
-    // that reset (it's not listed there), so re-apply tracking onto the freshly-built instance.
-    if (state.dynamicLightTarget !== null) {
-      w.npc.trackNpc(state.dynamicLightTarget.npcKey);
-    }
-  }, [state.dynamicLight]);
+  // useEffect(
+  //   () => void (state.dynamicLightTarget !== null && w.npc.trackNpc(state.dynamicLightTarget.npcKey)),
+  //   [state.dynamicLight],
+  // );
+
+  const [ref, bounds] = useMeasure();
+  state.bounds = bounds;
+  state.shouldMount ||= bounds.width > 0;
 
   return (
-    <div className="size-full">
-      <Canvas
-        className={props.className}
-        style={{
-          filter: `brightness(${w.brightness})`,
-          backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
-        }}
-        ref={state.ref("canvas")}
-        frameloop={state.syncRenderMode()}
-        gl={state.createRenderer}
-        onCreated={state.onCreated}
-        onPointerDown={state.onPointerDown}
-        onPointerLeave={state.onPointerLeave}
-        onPointerMove={state.onPointerMove}
-        onPointerUp={state.onPointerUp}
-        resize={{ debounce: 0 }}
-        flat // 🔔 hopefully fix sporadic colorspace issues on refresh
-        tabIndex={0}
-      >
-        <Stats
-          showPanel={0}
-          className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
-          parent={{ current: w.rootEl }}
-        />
+    <div className="size-full" ref={ref}>
+      {state.shouldMount && (
+        <Canvas
+          className={props.className}
+          style={{
+            filter: `brightness(${w.brightness})`,
+            backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
+          }}
+          ref={state.ref("canvas")}
+          frameloop={state.syncRenderMode()}
+          gl={state.createRenderer}
+          onCreated={state.onCreated}
+          onPointerDown={state.onPointerDown}
+          onPointerLeave={state.onPointerLeave}
+          onPointerMove={state.onPointerMove}
+          onPointerUp={state.onPointerUp}
+          resize={{ debounce: 0 }}
+          flat // 🔔 hopefully fix sporadic colorspace issues on refresh
+          tabIndex={0}
+        >
+          <Stats
+            showPanel={0}
+            className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
+            parent={{ current: w.rootEl }}
+          />
 
-        <PerspectiveCamera fov={state.fov} makeDefault zoom={1} />
+          <PerspectiveCamera fov={state.fov} makeDefault zoom={1} />
 
-        <CameraControls
-          ref={state.ref("controls")}
-          cameraMode={state.cameraMode}
-          numCardinalDirections={state.cameraDirections}
-          domElement={state.canvas}
-          initialAzimuthal={state.initial.azimuthal}
-          initialPolar={state.initial.polar}
-          initialPosition={state.initial.position}
-          minPanDistance={w.touchDevice ? 0.05 : 0}
-          onFrame={state.onCameraChange}
-          onEnd={state.onCameraEnd}
-          {...state.ctrlOpts}
-        />
+          <CameraControls
+            ref={state.ref("controls")}
+            cameraMode={state.cameraMode}
+            numCardinalDirections={state.cameraDirections}
+            domElement={state.canvas}
+            initialAzimuthal={state.initial.azimuthal}
+            initialPolar={state.initial.polar}
+            initialPosition={state.initial.position}
+            minPanDistance={w.touchDevice ? 0.05 : 0}
+            onFrame={state.onCameraChange}
+            onEnd={state.onCameraEnd}
+            {...state.ctrlOpts}
+          />
 
-        <NpcBubbles />
+          <NpcBubbles />
 
-        {state.postProcessing && <PostProcessing />}
+          {state.postProcessing && <PostProcessing />}
 
-        {props.children}
-      </Canvas>
+          {props.children}
+        </Canvas>
+      )}
 
       <AnimatePresence>
         {w.disabled && (
@@ -680,12 +664,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 }
 
 export type State = {
+  bounds: Geom.RectJson;
   cameraMode: CameraModeType;
   cameraDirections: number;
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
-  topDown: boolean;
   ctrlOpts: MapControlsProps & { extraZoom?: number };
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
@@ -699,6 +683,7 @@ export type State = {
   };
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
+  shouldMount: boolean;
   objectPick: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
