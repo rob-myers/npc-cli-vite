@@ -161,6 +161,10 @@ export default function Jobs() {
             (agg, meta) => ((agg[meta.key] = processMetaToProcessLeader(meta)), agg),
             [] as ProcessLeader[],
           );
+          // session leader has its status reset; show as killed if not running
+          if (session.process[0].cleanups.length === 0) {
+            state.processes[0].status = toProcessStatus.Killed;
+          }
 
           state.ordered = toOrdered(state.processes);
           state.history = state.restoreHistory();
