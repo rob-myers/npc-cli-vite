@@ -15,50 +15,6 @@
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
     <bx:grid x="0" y="0" width="16" height="16"/>
-    <filter id="inner-shadow-filter-0" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="filter-1" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="filter-2" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
-    <filter id="filter-3" bx:preset="inner-shadow 1 0 0 9 0.54 rgba(0,0,0,0.7)" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feOffset dx="0" dy="0"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite operator="out" in="SourceGraphic"/>
-      <feComponentTransfer result="choke">
-        <feFuncA type="linear" slope="1.08"/>
-      </feComponentTransfer>
-      <feFlood flood-color="rgba(0,0,0,0.7)" result="color"/>
-      <feComposite operator="in" in="color" in2="choke" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
   </defs>
   <g style="pointer-events: none;">
     <title>meta prefix=medic firstSeen=NoneType_ doctor mask brightness=0.3</title>
@@ -68,82 +24,127 @@
   </g>
   <g style="pointer-events: none;">
     <title>right-leg</title>
-    <rect x="16" y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="16" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>front</title>
     </rect>
-    <rect y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>right</title>
     </rect>
-    <rect x="32" y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="32" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>left</title>
     </rect>
-    <rect x="48" y="80" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="48" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>back</title>
+    </rect>
+    <rect x="16" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>front</title>
+    </rect>
+    <rect y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>right</title>
+    </rect>
+    <rect x="32" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>left</title>
+    </rect>
+    <rect x="48" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>back</title>
     </rect>
   </g>
-  <g style="pointer-events: none; visibility: hidden;">
+  <g style="">
     <title>right-arm</title>
     <g>
       <title>top</title>
-      <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>front</title>
       </rect>
-      <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>right</title>
       </rect>
-      <rect x="192" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>left</title>
       </rect>
-      <rect x="208" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>back</title>
       </rect>
-    </g>
-    <g style="" transform="matrix(1, 0, 0, 0.5, 0, 72.000002)">
-      <title>bottom</title>
-      <rect x="176" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+      <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+        <title>top</title>
+      </rect>
+      <rect x="176" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>front</title>
       </rect>
-      <rect x="160" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+      <rect x="160" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
       </rect>
-      <rect x="192" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+      <rect x="192" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
       </rect>
-      <rect x="208" y="80" width="16" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; fill-opacity: 0.2;">
+      <rect x="208" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>back</title>
+      </rect>
+      <rect x="176" y="128" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
       </rect>
     </g>
   </g>
   <g style="pointer-events: none;">
     <title>left-leg</title>
-    <rect x="80" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="80" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>front</title>
     </rect>
-    <rect y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;" x="64">
+    <rect y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;" x="64">
       <title>right</title>
     </rect>
-    <rect x="96" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="96" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>left</title>
     </rect>
-    <rect x="112" y="208" width="16" height="48" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px; fill: none;">
+    <rect x="112" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>back</title>
+    </rect>
+    <rect x="16" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>front</title>
+    </rect>
+    <rect y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>right</title>
+    </rect>
+    <rect x="32" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>left</title>
+    </rect>
+    <rect x="48" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
       <title>back</title>
     </rect>
   </g>
-  <g style="pointer-events: none; visibility: hidden;" transform="matrix(1, 0, 0, 1, -32.000001, 128.000003)">
+  <g style="pointer-events: none;" transform="matrix(1, 0, 0, 1, -32.000001, 128.000003)">
     <title>left-arm</title>
     <g>
-      <title>top</title>
-      <rect x="176" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <title>sans-hand</title>
+      <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>front</title>
       </rect>
-      <rect x="160" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
       </rect>
-      <rect x="192" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
       </rect>
-      <rect x="208" y="80" width="16" height="32" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>back</title>
+      </rect>
+      <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
+      </rect>
+      <rect x="240" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="224" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>right</title>
+      </rect>
+      <rect x="256" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>left</title>
+      </rect>
+      <rect x="272" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>back</title>
+      </rect>
+      <rect x="240" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
       </rect>
     </g>
   </g>
@@ -167,16 +168,52 @@
   </g>
   <g style="">
     <title>body</title>
-    <rect width="32" height="48" style="fill: rgb(255, 255, 255); filter: url(&quot;#inner-shadow-filter-0&quot;); mix-blend-mode: darken; opacity: 0.67;" y="80" x="128">
+    <rect width="32" height="48" style="filter: none; mix-blend-mode: darken;" y="80" x="128">
       <title>back</title>
     </rect>
-    <rect width="32" height="48" style="fill: rgb(255, 255, 255); mix-blend-mode: darken; opacity: 0.67; filter: url(&quot;#filter-1&quot;);" y="80" x="80">
+    <rect width="32" height="48" style="mix-blend-mode: darken; filter: none;" y="80" x="80">
       <title>front</title>
     </rect>
-    <rect width="16" height="48" style="fill: rgb(255, 255, 255); mix-blend-mode: darken; opacity: 0.67; filter: url(&quot;#filter-2&quot;);" y="80" x="112">
+    <rect width="16" height="48" style="mix-blend-mode: darken; filter: none;" y="80" x="112">
       <title>left</title>
     </rect>
-    <rect width="16" height="48" style="fill: rgb(255, 255, 255); mix-blend-mode: darken; opacity: 0.67; filter: url(&quot;#filter-3&quot;);" y="80" x="64">
+    <rect width="16" height="48" style="mix-blend-mode: darken; filter: none;" y="80" x="64">
+      <title>right</title>
+    </rect>
+    <rect width="32" height="48" style="filter: none; mix-blend-mode: darken;" y="144" x="128">
+      <title>back</title>
+    </rect>
+    <rect width="32" height="48" style="mix-blend-mode: darken; filter: none;" y="144" x="80">
+      <title>front</title>
+    </rect>
+    <rect width="16" height="48" style="mix-blend-mode: darken; filter: none;" y="144" x="112">
+      <title>left</title>
+    </rect>
+    <rect width="16" height="48" style="mix-blend-mode: darken; filter: none;" y="144" x="64">
+      <title>right</title>
+    </rect>
+    <rect width="21.3333" height="16" style="filter: none; mix-blend-mode: darken;" y="128" x="122.666">
+      <title>back</title>
+    </rect>
+    <rect width="21.3333" height="16" style="mix-blend-mode: darken; filter: none;" y="128" x="90.6666">
+      <title>front</title>
+    </rect>
+    <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none;" y="128" x="112">
+      <title>left</title>
+    </rect>
+    <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none;" y="128" x="80">
+      <title>right</title>
+    </rect>
+    <rect width="21.3333" height="16" style="filter: none; mix-blend-mode: darken;" y="64" x="122.666">
+      <title>back</title>
+    </rect>
+    <rect width="21.3333" height="16" style="mix-blend-mode: darken; filter: none;" y="64" x="90.6666">
+      <title>front</title>
+    </rect>
+    <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none;" y="64" x="112">
+      <title>left</title>
+    </rect>
+    <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none;" y="64" x="80">
       <title>right</title>
     </rect>
   </g>
