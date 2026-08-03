@@ -30,35 +30,22 @@ pick 1 | move npc:rob
 pick 1 | move npc:rob along
 
 # move two npcs interactively to same position
-# tty-0
+# pause so one-at-a-time
 pick | move npc:rob
-# tty-1
 pick | move npc:kate
 
-# move two npcs interactively interleaved
-# tty-0
-while true; do move npc:rob to:$( pick 1 --fifo ); done
-# tty-1
-while true; do move npc:kate to:$( pick 1 --fifo ); done
+demo_npc_ui rob
 
-w bubble.ensure rob
-w bubble.delete rob
-w bubble.ensure rob >/dev/null
-
+# whilst on navmesh
 w n.rob.agent.maxSpeed
+
 move npc:rob to:$( pick 1 ) fast
-
 ```
 
 ```sh
+# get a doors gdKey
+pick 1 as:meta.gdKey
 # toggle a specific door's lock
-w e.toggleLock g0d15
-# toggle a picked door's lock
-w e.toggleLock $( pick 1 as:meta.gdKey )
-```
-
-```sh
-w gms.0.doors | split | map 'x => x.roomIds'
-
-w decor.grid | map Object.values | split | map Array.from | log
+lock g0d19
+lock $( pick 1 as:meta.gdKey )
 ```
