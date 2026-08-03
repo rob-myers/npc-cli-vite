@@ -26,7 +26,7 @@
     - ✅ tidy dead processes
     - ✅ historical record of source code
 
-- 🚧 Jobs
+- ✅ Jobs: initial stability
   - ✅ indicate when tty-{i} is not mounted
   - ✅ can copy old scripts
   - ✅ BUG can kill `pick | move npc:abe along &` immediately in Jobs
@@ -53,7 +53,7 @@
       - fade can be rejected on respawn or remove npc
       - but in other cases we should wait for fade to complete
   
-- Jobs has library of commands
+- 🚧 Jobs has library of commands
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
