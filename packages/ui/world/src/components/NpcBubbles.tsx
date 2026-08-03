@@ -1,5 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { DotsSixIcon, DotsThreeIcon, ResizeIcon, XIcon } from "@phosphor-icons/react";
+import { DotsThreeIcon, ResizeIcon, XIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect, useLayoutEffect } from "react";
 import { Html3d } from "../components/Html3d";
 import { SpeechBubbleApi } from "./speech-bubble-api";
@@ -142,12 +142,6 @@ function NpcBubble({ bubble: b }: SpeechBubbleProps) {
         onTouchStart={b.onTouchStart}
         onWheel={b.onWheel}
       >
-        {b.interact.active && (
-          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-white/30">
-            <DotsSixIcon className="size-8" weight="bold" />
-          </div>
-        )}
-
         <div className="flex items-center gap-3 px-5">
           <div
             className={cn(
