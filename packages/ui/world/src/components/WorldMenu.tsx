@@ -20,6 +20,8 @@ import {
   PlayIcon,
   SunIcon,
   TrashIcon,
+  VideoCameraIcon,
+  VideoCameraSlashIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
@@ -254,6 +256,24 @@ export function WorldMenu() {
   const toggleToastKeys = useToastTs(state.toastTs);
   const { extraZoomActive, readyForExtraZoom } = w.view.controls ?? {};
   const litRootCount = w.view.roomLight?.getLitRoomCount() ?? 0;
+  const introEnabled = w.player.introEnabled;
+  // click replays the intro, whereas long press disables it
+  const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
+    longPressed: false,
+  });
+  const onIntroPressStart = () => {
+    introPress.current.longPressed = false;
+    introPress.current.timeoutId = setTimeout(() => {
+      introPress.current.longPressed = true;
+      w.player.setIntroEnabled(false);
+    }, introLongPressMs);
+  };
+  const onIntroPressEnd = (cancelled = false) => {
+    clearTimeout(introPress.current.timeoutId);
+    if (cancelled === false && introPress.current.longPressed === false) {
+      w.player.setIntroEnabled(true);
+    }
+  };
 
   return (
     <>
@@ -750,6 +770,29 @@ export function WorldMenu() {
             </div>
           )}
 
+          {/* pan to the player: long press disables it on load */}
+          <div
+            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            onPointerDown={onIntroPressStart}
+            onPointerUp={() => onIntroPressEnd()}
+            onPointerLeave={() => onIntroPressEnd(true)}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {introEnabled ? (
+              <VideoCameraIcon
+                className="size-5"
+                alt="pan to the player (long press to disable on load)"
+                weight="bold"
+              />
+            ) : (
+              <VideoCameraSlashIcon
+                className="size-5 text-red-400"
+                alt="pan to the player (disabled on load)"
+                weight="bold"
+              />
+            )}
+          </div>
+
           {/* play/pause */}
           <button
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
@@ -993,6 +1036,8 @@ const minMenuHeight = 120;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const lightsOpenStorageKey = "world-lights-section-open";
+/** Long press the intro button to disable it, since a click always replays it */
+const introLongPressMs = 500;
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
 const cardinalDirItems = [1, 2, 4, 8].map((n) => ({ key: String(n), value: String(n) }));
 const debugItems = [

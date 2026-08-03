@@ -81,6 +81,14 @@ export const roomLightEditingEnabledKey = "world-room-light-editing-enabled";
 export const roomLightingEnabledKey = "world-room-lighting-enabled";
 /** Prefix for the per-map lit-rooms localStorage key — actual key is `${roomLitStorageKeyPrefix}:${mapKey}` */
 export const roomLitStorageKeyPrefix = "world-room-lit";
+/** Prefix for the per-map persisted player localStorage key — actual key is `${playerStorageKeyPrefix}:${mapKey}` */
+export const playerStorageKeyPrefix = "world-player";
+/** Persists `w.player.introEnabled` */
+export const introEnabledKey = "world-intro-enabled";
+/** Default `w.player.key` */
+export const defaultPlayerKey = "rob";
+/** How many random rooms we'll try when spawning the player */
+export const spawnPlayerAttempts = 10;
 /** Per-instance cap on room count, for sizing the `roomLit` boolean array */
 export const MAX_ROOMS_PER_GM = 32;
 export const roomLightIntensityKey = "world-room-light-intensity";
@@ -90,7 +98,7 @@ export const defaultRoomLightIntensity = 0.7;
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
 export const defaultDynamicLightRadius = 1;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
-export const maxDynamicLightRadius = 3;
+export const maxDynamicLightRadius = 4.5;
 export const dynamicLightRadiusKey = "world-tracked-light-radius";
 /** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
 export const defaultDynamicLightIntensity = 1;

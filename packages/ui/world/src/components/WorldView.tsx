@@ -83,8 +83,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       }),
       dynamicLightTarget: null,
       fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? defaultMobileFov : defaultDesktopFov),
-      initial:
-        tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? defaultInitialCamera(w.touchDevice),
+      initial: getInitialCamera(w.touchDevice),
+      lookAtAnimId: 0,
+      ambientAnimId: 0,
+      lightTweenId: 0,
       lastPointer: {
         epochMs: 0,
         longPressTimer: 0,
@@ -438,6 +440,71 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.set({ cameraMode });
         w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
       },
+      async lookAt(groundPoint, opts = {}) {
+        const { controls } = state;
+        if (controls === null) {
+          return;
+        }
+
+        cancelAnimationFrame(state.lookAtAnimId);
+        const from = controls.target.clone();
+        const to = new THREE.Vector3(groundPoint.x, 0, groundPoint.y);
+
+        /** Keeps the current zoom/orientation, only moving the orbit target */
+        const applyTarget = (alpha: number) => {
+          controls.target.copy(from).lerp(to, alpha);
+          const delta = new THREE.Vector3().setFromSphericalCoords(
+            controls.spherical.radius,
+            controls.spherical.phi,
+            controls.spherical.theta,
+          );
+          controls.object.position.copy(controls.target).add(delta);
+          controls.update();
+          w.r3f?.invalidate();
+        };
+
+        if (opts.animate !== true) {
+          return applyTarget(1);
+        }
+
+        // further pans take longer, so the apparent speed stays similar
+        const durationMs = Math.min(lookAtMaxMs, lookAtMinMs + from.distanceTo(to) * lookAtMsPerUnit);
+        const startEpochMs = performance.now();
+
+        await new Promise<void>((resolve) => {
+          const step = () => {
+            if (controls.pointers.length > 0) {
+              applyTarget(1); // interacting, so stop tweening
+              return resolve();
+            }
+            const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
+            // smootherstep: unlike smoothstep its acceleration is zero at both ends too
+            applyTarget(ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10));
+            if (ratio < 1) {
+              state.lookAtAnimId = requestAnimationFrame(step);
+            } else {
+              resolve();
+            }
+          };
+          step();
+        });
+      },
+      fadeAmbient(next, durationMs = ambientFadeDurationMs) {
+        cancelAnimationFrame(state.ambientAnimId);
+        const from = state.ambientIntensity;
+
+        const startEpochMs = performance.now();
+        const step = () => {
+          const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
+          if (ratio < 1) {
+            state.setAmbientIntensity(from + (next - from) * ratio, false);
+            state.ambientAnimId = requestAnimationFrame(step);
+          } else {
+            state.setAmbientIntensity(next);
+          }
+        };
+        step();
+      },
       resetCamera() {
         const initial = defaultInitialCamera(w.touchDevice);
         state.initial = initial;
@@ -557,12 +624,60 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         tryLocalStorageSet(roomLightEditingEnabledKey, String(state.roomLightEditingEnabled));
         w.update();
       },
-      updateDynamicLight(rawTarget) {
-        state.dynamicLight.displayCenter.copy(rawTarget);
-        state.dynamicLight.setTracked({ x: state.dynamicLight.displayCenter.x, z: state.dynamicLight.displayCenter.z });
+      updateDynamicLight(rawTarget, opts = {}) {
+        const { displayCenter } = state.dynamicLight;
+        const target = tmpVector3.set(rawTarget.x, rawTarget.y, rawTarget.z);
+
+        if (opts.snap === true) {
+          cancelAnimationFrame(state.lightTweenId);
+          state.lightTweenId = 0;
+        }
+
+        if (state.lightTweenId === 0) {
+          if (opts.snap !== true && displayCenter.distanceTo(target) > dynamicLightTweenFrom) {
+            state.tweenDynamicLight(); // a teleport e.g. fadeSpawn
+          } else {
+            displayCenter.copy(target);
+          }
+        }
+
+        state.dynamicLight.setTracked({ x: displayCenter.x, z: displayCenter.z });
         state.dynamicLight.setActiveGmDoorRatios(
           state.dynamicLight.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
         );
+      },
+      tweenDynamicLight() {
+        cancelAnimationFrame(state.lightTweenId);
+        const { displayCenter } = state.dynamicLight;
+        let lastEpochMs = performance.now();
+
+        // self-driving, so the light also catches up whilst the world is paused
+        const step = () => {
+          const position = state.dynamicLightTarget?.position;
+          if (position === undefined) {
+            state.lightTweenId = 0;
+            return;
+          }
+
+          const nowEpochMs = performance.now();
+          const deltaSecs = (nowEpochMs - lastEpochMs) / 1000;
+          lastEpochMs = nowEpochMs;
+
+          const target = tmpVector3.set(position.x, position.y, position.z);
+          displayCenter.lerp(target, 1 - Math.exp(-dynamicLightTweenRate * deltaSecs));
+
+          if (displayCenter.distanceTo(target) > dynamicLightTweenUntil) {
+            state.lightTweenId = requestAnimationFrame(step);
+          } else {
+            displayCenter.copy(target);
+            state.lightTweenId = 0;
+          }
+
+          state.dynamicLight.setTracked({ x: displayCenter.x, z: displayCenter.z });
+          w.r3f?.invalidate();
+        };
+
+        state.lightTweenId = requestAnimationFrame(step);
       },
       withPickOutput(typeId, forceAlpha) {
         const idx = float(instanceIndex);
@@ -702,6 +817,8 @@ export type State = {
   dynamicLight: DynamicLightPostprocess;
   /** Set by `w.npc.trackNpc`; `position` is a live reference (e.g. `npc.position`), not a snapshot. `null` means off. Lives outside `dynamicLight` so it survives that object's HMR reset (see the re-hydration effect in `WorldView`). */
   dynamicLightTarget: null | { npcKey: string; position: { x: number; y: number; z: number } };
+  /** Non-zero whilst the tracked light is catching up with a teleported target */
+  lightTweenId: number;
   fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
@@ -721,7 +838,9 @@ export type State = {
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
   /** Advances `dynamicLight.displayCenter` from a live target — called every tick from `World`'s `onTick` while `dynamicLightTarget` is set (see `w.npc.trackNpc`) */
-  updateDynamicLight(rawTarget: { x: number; y: number; z: number }): void;
+  updateDynamicLight(rawTarget: { x: number; y: number; z: number }, opts?: { snap?: boolean }): void;
+  /** Eases `dynamicLight.displayCenter` onto the tracked target, e.g. after a teleport */
+  tweenDynamicLight(): void;
   toggleRoomLightEditing(): void;
   /** Toggles `roomLight.roomLightingEnabled` — persisted to localStorage */
   setRoomLightingEnabled(next?: boolean): void;
@@ -742,6 +861,14 @@ export type State = {
   setupLights(): void;
   setCameraMode(cameraMode: CameraModeType): void;
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
+  /** Moves the camera's orbit target onto `groundPoint`, preserving zoom/orientation. Resolves on arrival. */
+  lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean }): Promise<void>;
+  /** Non-zero whilst `lookAt` is animating */
+  lookAtAnimId: number;
+  /** Animates `ambientIntensity`, persisting the final value */
+  fadeAmbient(next: number, durationMs?: number): void;
+  /** Non-zero whilst `fadeAmbient` is animating */
+  ambientAnimId: number;
   resetCamera(): void;
   setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
@@ -769,6 +896,24 @@ function getPixelRatio() {
   return Math.min(Math.max(1, window.devicePixelRatio), 2);
 }
 
+/** An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped */
+const lookAtMinMs = 700;
+const lookAtMsPerUnit = 60;
+const lookAtMaxMs = 2500;
+/** A tracked-light jump beyond this (world units) tweens rather than snaps */
+const dynamicLightTweenFrom = 1;
+/** Tween ends once this close (world units) to the target */
+const dynamicLightTweenUntil = 0.05;
+/** Exponential approach rate of the tween, per second */
+const dynamicLightTweenRate = 6;
+/** Default duration of `fadeAmbient` */
+const ambientFadeDurationMs = 1000;
+
+/** The intro pans from here to the player, via `w.player.panToPlayer` */
+function getInitialCamera(touchDevice: boolean): State["initial"] {
+  return tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? defaultInitialCamera(touchDevice);
+}
+
 function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
     azimuthal: touchDevice ? 0 : Math.PI / 4,
@@ -784,6 +929,7 @@ function PostProcessing() {
 }
 
 const tmpVect = new Vect();
+const tmpVector3 = new THREE.Vector3();
 
 export type Picked = {
   instanceId: number;

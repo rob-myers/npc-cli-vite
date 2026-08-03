@@ -147,7 +147,7 @@ export default function Ceiling() {
     const opacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores ceiling for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      1, // beauty render
+      0.7, // beauty render
     );
 
     return {
