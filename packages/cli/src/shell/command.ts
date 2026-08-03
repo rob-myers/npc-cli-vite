@@ -978,6 +978,9 @@ class CmdService {
        * ```
        */
       case "run": {
+        /** support `move --force ...` */
+        const shouldIgnoreError = args[2] === "--force";
+
         try {
           const ct = this.provideProcessCtxt(node, args.slice(1));
 
@@ -1005,17 +1008,24 @@ class CmdService {
         } catch (e) {
           if (e instanceof SigKillError) {
             handleProcessError(node, e);
-          } else if (e instanceof ShError) {
-            node.exitCode = e.exitCode;
-            // Permit silent errors i.e. just set exit code
-            if (e.message.length > 0) {
-              throw e;
-            }
-          } else {
-            ttyError(e); // Provide JS stack
-            node.exitCode = 1;
-            throw new ShError(`${(e as Error)?.message ?? safeJsStringify(e)}`, 1);
+            return;
           }
+
+          if (e instanceof ShError) {
+            node.exitCode = e.exitCode;
+            if (e.message.length === 0) {
+              return; // silent error i.e. just set exit code
+            }
+            throw e;
+          }
+
+          if (shouldIgnoreError) {
+            return;
+          }
+
+          ttyError(e); // provide JS stack
+          node.exitCode = 1;
+          throw new ShError(`${(e as Error)?.message ?? safeJsStringify(e)}`, 1);
         }
         break;
       }
