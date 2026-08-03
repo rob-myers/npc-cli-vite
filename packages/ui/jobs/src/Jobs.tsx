@@ -24,6 +24,7 @@ import {
   CopyIcon,
   PauseIcon,
   PlayIcon,
+  PlugsIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -46,27 +47,28 @@ export default function Jobs() {
 
   const state = useStateRef(
     (): State => ({
-      debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
-      disconnectSession: null,
-      reorder: throttle(() => {
-        state.ordered = toOrdered(state.processes);
-        state.update();
-      }, 200),
       confirmClear: false,
       confirmClearTimeoutId: 0,
+      connected: false,
       copiedSrc: null,
       copiedTimeoutId: 0,
-      resetPids: new Set(),
-      resetting: new Map(),
+      debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
+      disconnectSession: null,
       folded: { interactive: true, background: true },
       history: [],
       ordered: [],
       processes: [],
+      reorder: throttle(() => {
+        state.ordered = toOrdered(state.processes);
+        state.update();
+      }, 200),
+      resetPids: new Set(),
+      resetting: new Map(),
       sessionKey: null,
       ttyMeta: null,
 
       addHistory(items) {
-        // 🔔 one entry per src, appended with its most recent pid
+        // one entry per src, appended with its most recent pid
         const bySrc = new Map(items.map((p) => [p.src, p]));
         state.history = state.history
           .filter((p) => !bySrc.has(p.src))
@@ -80,7 +82,7 @@ export default function Jobs() {
         window.clearTimeout(state.confirmClearTimeoutId);
 
         if (state.confirmClear === false) {
-          // 🔔 click again to confirm, else we forget
+          // click again to confirm, else we forget
           state.confirmClearTimeoutId = window.setTimeout(() => state.set({ confirmClear: false }), confirmClearMs);
           return state.set({ confirmClear: true });
         }
@@ -139,6 +141,10 @@ export default function Jobs() {
             throw new ExhaustiveError(act);
         }
       },
+      connect() {
+        state.connected = true;
+        state.connectSession();
+      },
       connectSession() {
         try {
           state.disconnectSession?.();
@@ -182,7 +188,7 @@ export default function Jobs() {
         }
 
         // console.log(msg);
-        // 🔔 a reset re-runs under a new pid, so we keep the original item i.e. its ui
+        // a reset re-runs under a new pid, so we keep the original item i.e. its ui
         const adopted = msg.act === "started" ? state.resetting.get(process.src) : undefined;
         if (adopted !== undefined) {
           state.resetting.delete(process.src);
@@ -215,7 +221,7 @@ export default function Jobs() {
           case "started": {
             item.status = toProcessStatus.Running;
             item.src = process.src;
-            // 🔔 record as soon as shown, rather than when it dies
+            // record as soon as shown, rather than when it dies
             if (item.src) {
               state.addHistory([{ ...item }]);
             }
@@ -299,12 +305,13 @@ export default function Jobs() {
     if (ttyMetas.length === 0) {
       state.set({ sessionKey: null, ttyMeta: null });
     } else if (state.sessionKey === null || !sessionKeys.includes(state.sessionKey)) {
+      // select first
       state.set({
         sessionKey: sessionKeys[0],
         ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] ?? null,
       });
     } else {
-      // Must sync
+      // select current
       state.set({ ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] });
     }
   }, [ttyMetas]);
@@ -320,12 +327,18 @@ export default function Jobs() {
   }, []);
 
   useEffect(() => {
-    state.connectSession();
-  }, [state.ttyMeta?.sessionBootedAt]); // sync onchange session
+    // connect explicitly the first time; thereafter e.g. session switches reconnect
+    if (state.connected === true) {
+      state.connectSession();
+    } else {
+      state.set({ history: state.restoreHistory() }); // viewable before connecting
+    }
+  }, [state.connected, state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
+  const sessionExists = state.sessionKey !== null && sessionApi.getSession(state.sessionKey) !== undefined;
   const historyGroups: { key: HistoryGroupKey; items: ProcessLeader[] }[] = [
-    // 🔔 most recent first
+    // most recent first
     { key: "interactive", items: state.history.filter((p) => p.pid === 0).reverse() },
     { key: "background", items: state.history.filter((p) => p.pid !== 0).reverse() },
   ];
@@ -367,6 +380,17 @@ export default function Jobs() {
           </Select.Positioner>
         </Select.Portal>
       </Select.Root>
+      {sessionExists === true && state.connected === false && (
+        <button
+          type="button"
+          title="connect to session"
+          className="cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-sm border border-[#aaca] shadow-sm shadow-black/50 text-sm text-[#ff9] transition-colors hover:bg-[#111]"
+          onClick={state.connect}
+        >
+          <PlugsIcon alt="connect" className="size-4" />
+          connect
+        </button>
+      )}
       {state.ttyMeta !== null && (
         <button
           type="button"
@@ -389,13 +413,12 @@ export default function Jobs() {
       {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
       {state.processes[0] === undefined && (
-        // 🔔 `p-1` matches the card, so the header doesn't shift when it attaches
         <div className="self-center w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
       )}
 
       {sessionsExist && (
         <div className="flex flex-col items-center gap-0.5 text-base text-white">
-          {/* 🔔 keyed, so switching session swaps items without exit animations */}
+          {/* keyed, so switching session swaps items without exit animations */}
           <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
             {state.ordered.map((p) => {
               const killed = p.status === toProcessStatus.Killed;
@@ -410,11 +433,11 @@ export default function Jobs() {
                   transition={{ duration: 0.3 }}
                   className="flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                 >
-                  {/* 🔔 header, connected to the session leader */}
+                  {/* header, connected to the session leader */}
                   {p.pid === 0 && sessionHeader}
 
                   <div className="flex flex-wrap items-stretch gap-y-0.5">
-                    {/* 🔔 fixed width so cards align */}
+                    {/* fixed width so cards align */}
                     <div className="relative flex shrink-0 bg-black border border-[#aaca]">
                       <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
                       {/* {p.ptagsText && (
@@ -448,7 +471,7 @@ export default function Jobs() {
                       >
                         <XIcon alt="kill" className="size-4" />
                       </div>
-                      {/* 🔔 available when killed, where it just re-runs */}
+                      {/* available when killed, where it just re-runs */}
                       <div
                         className={controlCss}
                         title={p.pid === 0 ? "re-run in background" : "reset"}
@@ -481,7 +504,7 @@ export default function Jobs() {
             })}
           </AnimatePresence>
 
-          {state.ordered.length === 0 && (
+          {sessionExists === false && (
             <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
               Switch to the terminal tab to mount it
             </div>
@@ -489,8 +512,8 @@ export default function Jobs() {
         </div>
       )}
 
-      {sessionsExist && state.history.length > 0 && (
-        <div className="self-center w-full max-w-[400px] flex flex-col gap-1 font-mono text-sm">
+      {state.history.length > 0 && (
+        <div className="mt-auto self-center w-full max-w-[400px] flex flex-col gap-1 font-mono text-sm">
           <div className="flex items-center justify-between gap-3 pl-1">
             <div className="text-[#999]">history</div>
             <button
@@ -519,8 +542,9 @@ export default function Jobs() {
   );
 }
 
-const controlCss =
-  "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer transition-colors hover:bg-[#333]";
+const controlCss = cn(
+  "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer transition-colors hover:bg-[#333]",
+);
 
 /** A foldable group of historical processes, each line copyable */
 function HistoryGroup({
@@ -630,6 +654,10 @@ type State = {
   sessionKey: null | `tty-${number}`;
   ttyMeta: null | JshUiMeta;
   changeProcess: (e: React.PointerEvent<HTMLDivElement>) => void;
+  /** Have we connected to the selected session? Until then nothing is shown */
+  connected: boolean;
+  /** Connect, and stay connected e.g. when the session changes */
+  connect: () => void;
   connectSession: () => boolean;
   debouncedUpdate: () => void;
   disconnectSession: null | (() => void);
@@ -650,7 +678,7 @@ type ProcessLeader = {
   ptagsText: string;
 };
 
-/** 🔔 the interactive process (pid 0) stays put, even when killed */
+/** the interactive process (pid 0) stays put, even when killed */
 function isDeadAndNonInteractive(p: ProcessLeader) {
   return p.status === toProcessStatus.Killed && p.pid !== 0;
 }
