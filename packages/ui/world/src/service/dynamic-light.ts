@@ -116,7 +116,7 @@ export type DynamicLightPostprocess = {
   setActiveGmDoorRatios(ratios: number[]): void;
 
   /**
-   * `1` inside the light, fading to `0` over `falloff`; `0` if occluded.
+   * `1` at the tracked npc, fading uniformly to `0` at `radius + falloff`; `0` if occluded.
    * @param sceneDepth Raw logarithmic depth (not pre-linearized).
    */
   litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
@@ -132,6 +132,8 @@ export type DynamicLightPostprocess = {
 /** Ignores rooms, occludes only against baked wall/door textures via a fixed-step march. */
 export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts): DynamicLightPostprocess {
   const falloff = opts.falloff ?? 0.6;
+  /** Width (meters) of the dither applied to the falloff distance — match the visible banding */
+  const ditherWorldDist = 0.25;
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
@@ -298,7 +300,17 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         const litOut = float(0).toVar();
         If(tracked.z.notEqual(0).and(inHeightRange), () => {
           const dist = worldXZ.sub(tracked.xy).length();
-          const litVal = float(1).sub(dist.sub(tracked.w).div(falloff).clamp(0, 1));
+          // the light is a fraction of the final colour, so 8-bit output quantises this gentle
+          // gradient into wide rings — jitter the distance by ~one ring to dissolve them
+          const jitter = screenUV
+            .dot(vec2(12.9898, 78.233))
+            .sin()
+            .mul(43758.5453)
+            .fract()
+            .sub(0.5)
+            .mul(ditherWorldDist);
+          // uniform fade from the tracked npc out to the edge, rather than a flat core
+          const litVal = float(1).sub(dist.add(jitter).div(tracked.w.add(falloff)).clamp(0, 1));
 
           If(litVal.greaterThan(0), () => {
             // step positions stay a FRACTION of this ray's own `dist` (like the original fixed-count
