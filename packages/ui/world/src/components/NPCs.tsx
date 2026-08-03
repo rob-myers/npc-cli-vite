@@ -571,8 +571,8 @@ export default function NPCs() {
           };
         });
         w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
-        // immediate update so works while paused
-        w.view.updateDynamicLight(npc.position);
+        // immediate update so works while paused; a new target snaps rather than sweeps
+        w.view.updateDynamicLight(npc.position, { snap: true });
         w.view.forceUpdate();
       },
     }),
@@ -591,10 +591,9 @@ export default function NPCs() {
           return null; // ignore 1st stale invoke after HMR
         }
 
+        // 🚧 avoid SVG load in prod
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
-          // new GLTFLoader().loadAsync(url.extraRootThinnerGltf),
-          // new GLTFLoader().loadAsync(url.templateMoreAnimsGltf),
           new GLTFLoader().loadAsync(url.templateMoreAnimsWipGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => {

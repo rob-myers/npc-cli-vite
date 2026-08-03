@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -145,11 +144,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       onBootstrap() {
-        w.view.setAmbientIntensity(
-          w.view.dynamicLightTarget === null
-            ? Math.max(persisted.getAmbientIntensity(), w.touchDevice ? 1 : 0.4)
-            : persisted.getAmbientIntensity(),
-        );
         state.onChangeTheme();
       },
       onChangeTheme() {

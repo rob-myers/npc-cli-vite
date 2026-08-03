@@ -46,6 +46,7 @@ import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import useWorldEvents from "./use-world-events";
+import useWorldPlayer from "./use-world-player";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
 import { WorldSpeech } from "./WorldSpeech";
@@ -123,6 +124,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       door: null as any,
       d: null as any,
       e: null as any,
+      player: null as any,
       floor: null as any,
       menu: {} as State["menu"],
       npc: null as any,
@@ -302,6 +304,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     }).data ?? state.sheets; // spritesheets: decor, skins, symbols (obstacles)
 
   useWorldEvents(state);
+  useWorldPlayer(state);
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
@@ -371,6 +374,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   useBeforeUnloadOrVisibilityChange(() => {
     state.menu?.persistY();
     state.speech?.persistY();
+    state.player?.persist();
   });
 
   return (
@@ -475,6 +479,7 @@ export type State = {
   decor: UseStateRef<import("./Decor").State>;
   door: UseStateRef<import("./Doors").State>;
   e: UseStateRef<import("./use-world-events").State>;
+  player: UseStateRef<import("./use-world-player").State>;
   floor: UseStateRef<import("./Floor").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   n: UseStateRef<import("./NPCs").State>["npc"];
