@@ -58,6 +58,9 @@
   - runnable
   - editable
 
+- BUG change map to 301-101-301 and dynamicLight fails to propagate through some doors
+  - fixed by saving texture.ts (hmr)
+
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
   - all variants use `pendings` which we can insert into

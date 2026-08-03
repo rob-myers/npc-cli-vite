@@ -600,6 +600,9 @@ importers:
       '@phosphor-icons/react':
         specifier: 'catalog:'
         version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.90.12(react@19.2.1)
       debounce:
         specifier: 'catalog:'
         version: 3.0.0
@@ -927,6 +930,9 @@ importers:
       '@npc-cli/media':
         specifier: workspace:^
         version: link:../packages/media
+      '@npc-cli/ui__jobs':
+        specifier: workspace:^
+        version: link:../packages/ui/jobs
       '@npc-cli/ui__map-edit':
         specifier: workspace:^
         version: link:../packages/ui/map-edit

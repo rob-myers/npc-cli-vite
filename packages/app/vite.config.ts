@@ -1,4 +1,5 @@
 import mdx from "@mdx-js/rollup";
+import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import tailwindcss from "@tailwindcss/vite";
@@ -24,6 +25,7 @@ export default defineConfig({
     tailwindcss(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
+    jobsExamplesPlugin(),
 
     process.env.BUILD_AND_ANALYZE ? analyzer() : undefined,
 
