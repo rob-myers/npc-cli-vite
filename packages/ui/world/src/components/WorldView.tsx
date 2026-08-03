@@ -474,8 +474,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         await new Promise<void>((resolve) => {
           const step = () => {
             if (controls.pointers.length > 0) {
-              applyTarget(1); // interacting, so stop tweening
-              return resolve();
+              return resolve(); // interacting: leave the camera where they put it
             }
             const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
             // smootherstep: unlike smoothstep its acceleration is zero at both ends too
