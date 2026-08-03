@@ -42790,7 +42790,7 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-[#000]",
+      "background": "bg-[#555]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
         "nonHull": {"fill": "#000", "stroke": "#111"}
