@@ -69,6 +69,12 @@ lock g0d19
 lock $( pick 1 as:meta.gdKey )
 ```
 
+# events
+
+```sh
+events /enter-room/
+```
+
 # unsorted
 
 ```sh

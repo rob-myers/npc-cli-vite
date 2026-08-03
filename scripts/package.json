@@ -3,6 +3,7 @@
   "name": "@npc-cli/scripts",
   "type": "module",
   "exports": {
+    "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
     "./vite-plugin-watch-assets": "./src/vite-plugin-watch-assets.ts"
   },
@@ -22,6 +23,7 @@
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/graph": "workspace:^",
     "@npc-cli/media": "workspace:^",
+    "@npc-cli/ui__jobs": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",

@@ -32,11 +32,13 @@ import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useContext, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
+import JobsLibrary from "./JobsLibrary";
+import type { TemplateUiMeta } from "./schema";
 
 /**
  * Visual reinterpretation of shell CLI `jobs`.
  */
-export default function Jobs() {
+export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const ttyMetas = uiStore(
@@ -270,6 +272,14 @@ export default function Jobs() {
           error(e);
         }
       },
+      pasteSrc(src) {
+        const session = state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
+        if (session === undefined || !src) {
+          return;
+        }
+        // xterm assumes newlines are \r\n
+        session.ttyShell.xterm.spliceInput(src.replace(/\r?\n/g, "\r\n"));
+      },
       restoreHistory() {
         if (state.sessionKey === null) {
           return [];
@@ -391,7 +401,7 @@ export default function Jobs() {
         <button
           type="button"
           title="connect to session"
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-sm border border-[#aaca] shadow-sm shadow-black/50 text-sm text-[#ff9] transition-colors hover:bg-[#111]"
+          className="cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-sm border border-[#99f]/50 shadow-sm shadow-black/50 text-sm text-[#99f] transition-colors hover:bg-[#111]"
           onClick={state.connect}
         >
           <PlugsIcon alt="connect" className="size-4" />
@@ -416,7 +426,7 @@ export default function Jobs() {
   ) : null;
 
   return (
-    <div className="p-4 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
+    <div data-jobs-root className="p-4 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
       {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
       {state.processes[0] === undefined && (
@@ -511,32 +521,43 @@ export default function Jobs() {
         </div>
       )}
 
-      {state.history.length > 0 && (
-        <div className="mt-auto self-center w-full max-w-[400px] flex flex-col gap-1 font-mono text-sm">
-          <div className="flex items-center justify-between gap-3 pl-1">
-            <div className="text-[#999]">history</div>
-            <button
-              type="button"
-              title="clear history"
-              className={cn("cursor-pointer", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
-              onClick={state.clearHistory}
-            >
-              {state.confirmClear ? "confirm" : "clear"}
-            </button>
+      <div className="mt-auto self-center w-full max-w-[400px] flex flex-col gap-2 font-mono text-sm">
+        <JobsLibrary
+          uiId={meta.id}
+          canRun={sessionExists}
+          copiedSrc={state.copiedSrc}
+          onCopy={state.copySrc}
+          onPaste={state.pasteSrc}
+          onRun={state.rerunProcess}
+        />
+
+        {state.history.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-3 pl-1">
+              <div className="text-[#999]">history</div>
+              <button
+                type="button"
+                title="clear history"
+                className={cn("cursor-pointer", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
+                onClick={state.clearHistory}
+              >
+                {state.confirmClear ? "confirm" : "clear"}
+              </button>
+            </div>
+            {historyGroups.map(({ key, items }) => (
+              <HistoryGroup
+                key={key}
+                groupKey={key}
+                items={items}
+                folded={state.folded[key]}
+                onToggle={state.toggleFold}
+                copiedSrc={state.copiedSrc}
+                onCopy={state.copySrc}
+              />
+            ))}
           </div>
-          {historyGroups.map(({ key, items }) => (
-            <HistoryGroup
-              key={key}
-              groupKey={key}
-              items={items}
-              folded={state.folded[key]}
-              onToggle={state.toggleFold}
-              copiedSrc={state.copiedSrc}
-              onCopy={state.copySrc}
-            />
-          ))}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -638,6 +659,8 @@ type State = {
   /** Kill the process group of `pid`, then re-run its `src` */
   onReset: (pid: number) => void;
   rerunProcess: (src: string) => Promise<void>;
+  /** Insert `src` at the tty prompt, without running it */
+  pasteSrc: (src: string) => void;
   toggleFold: (key: HistoryGroupKey) => void;
   toggleTtyDisabled: () => void;
   /** Has "clear history" been clicked once i.e. awaiting confirmation? */
