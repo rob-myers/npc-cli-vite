@@ -434,7 +434,7 @@ export default function Jobs() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
+                  className="min-w-32 flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                 >
                   {/* header, connected to the session leader */}
                   {p.pid === 0 && sessionHeader}
@@ -443,14 +443,6 @@ export default function Jobs() {
                     {/* fixed width so cards align */}
                     <div className="relative flex shrink-0 bg-black border border-[#aaca]">
                       <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
-                      {/* {p.ptagsText && (
-                        <div
-                          title={p.ptagsText}
-                          className="absolute bottom-0 right-0 px-1 py-0.5 rounded-tl bg-[#333] text-[#ccc] text-xs leading-none"
-                        >
-                          {p.ptagsText}
-                        </div>
-                      )} */}
                     </div>
 
                     <div className="flex shrink-0 items-stretch text-white">
@@ -507,7 +499,7 @@ export default function Jobs() {
             })}
           </AnimatePresence>
 
-          {sessionExists === false && (
+          {state.connected && sessionExists === false && (
             <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
               Switch to the terminal tab to mount it
             </div>
