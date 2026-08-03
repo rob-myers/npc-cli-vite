@@ -403,9 +403,7 @@ export function mapValues(input, transform) {
  * @param {string[]} args
  * @param {{ [aliasKey: string]: string; }} [alias]
  * Map alias keys to their true keys.
- * @param {{
- *   array?: { [key: string]: true };
- * }} [opts]
+ * @param {{ array?: { [key: string]: true }; }} [opts]
  * - `opts.array` if value isn't an array try to convert space-separated js values into one
  * @returns {T}
  */
@@ -415,23 +413,24 @@ export function jsArg(args, alias, opts) {
       (agg, arg) => {
         const colonIndex = arg.indexOf(":");
         if (colonIndex === -1) {
-          agg[arg] = true;
-        } else {
-          let key = arg.slice(0, colonIndex);
-          if (key.startsWith("{")) {
-            throw Error(`${key}: bad key (try quotes)`);
-          }
-
-          key = alias?.[key] ?? key;
-
-          let value = parseJsArg(arg.slice(colonIndex + 1));
-
-          if (opts?.array?.[key] === true && Array.isArray(value) === false) {
-            value = parseJsArg(`[${arg.slice(colonIndex + 1).split(/\s+/)}]`);
-          }
-
-          agg[key] = value;
+          agg[alias?.[arg] ?? arg] = true;
+          return agg;
         }
+
+        let key = arg.slice(0, colonIndex);
+        if (key.startsWith("{")) {
+          throw Error(`${key}: bad key (try quotes)`);
+        }
+
+        key = alias?.[key] ?? key;
+
+        let value = parseJsArg(arg.slice(colonIndex + 1));
+
+        if (opts?.array?.[key] === true && Array.isArray(value) === false) {
+          value = parseJsArg(`[${arg.slice(colonIndex + 1).split(/\s+/)}]`);
+        }
+
+        agg[key] = value;
         return agg;
       },
       /** @type {Record<string, any>} */ ({}),
