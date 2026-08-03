@@ -36,7 +36,7 @@
         "firstSeen": "NoneType_",
         "doctor": true,
         "mask": true,
-        "brightness": 0.4
+        "brightness": 0.3
       },
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
       "svgPath": "skin/medic-0.svg"
@@ -45,7 +45,7 @@
       "key": "robot-0",
       "id": "e91cc700154075b2",
       "filename": "robot-0--e91cc700154075b2.png",
-      "meta": {"skinKey": "robot-0", "prefix": "robot", "brightness": 0.35},
+      "meta": {"skinKey": "robot-0", "prefix": "robot", "brightness": 0.2},
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
     }
