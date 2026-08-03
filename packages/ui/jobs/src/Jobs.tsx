@@ -181,6 +181,9 @@ export default function Jobs() {
         if (state.sessionKey === null) {
           return;
         }
+        if (msg.profile === true) {
+          return; // ignore profile
+        }
 
         const process = sessionApi.getProcess({ sessionKey: state.sessionKey, pid: msg.pid });
         if (msg.act !== "ended" && process === undefined) {
