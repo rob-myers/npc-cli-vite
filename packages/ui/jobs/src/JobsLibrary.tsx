@@ -75,7 +75,7 @@ export default function JobsLibrary(props: Props) {
         if (state.resizing === false) {
           return;
         }
-        const next = state.startHeight - (e.clientY - state.startY); // drag up to grow
+        const next = state.startHeight + (e.clientY - state.startY); // drag down to grow
         state.set({ height: Math.min(state.getMaxHeight(), Math.max(minLibraryHeight, next)) });
       },
       onResizeUp(e) {
@@ -100,7 +100,8 @@ export default function JobsLibrary(props: Props) {
         state.update();
       },
       setCategory(categoryKey) {
-        state.set({ categoryKey, focusedId: null });
+        // a tab also unfolds, else it'd seem inert
+        state.set({ categoryKey, focusedId: null, open: true });
         state.persist();
       },
       toggleFold(sectionKey) {
@@ -136,48 +137,33 @@ export default function JobsLibrary(props: Props) {
       className="shrink-0 flex flex-col font-sans bg-black border border-[#505050] rounded shadow-md shadow-black/40"
       style={state.open ? { height: state.height } : undefined}
     >
-      {state.open && (
-        <div
-          title="resize"
-          className="group shrink-0 h-2 -mt-1 flex items-center justify-center cursor-ns-resize touch-none"
-          onPointerDown={state.onResizeDown}
-          onPointerMove={state.onResizeMove}
-          onPointerUp={state.onResizeUp}
-          onLostPointerCapture={state.onResizeUp}
-        >
-          <div className="w-10 h-0.5 rounded bg-[#505050] group-hover:bg-[#aaca]" />
-        </div>
-      )}
-
       <div className={cn("shrink-0 flex items-end gap-3 px-2", state.open && "border-b border-[#2a2a2a]")}>
+        <nav className="flex items-end -mb-px">
+          {categories.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              className={cn(
+                "px-2 py-1 cursor-pointer text-sm border-b transition-colors",
+                state.open && key === category?.key
+                  ? "text-[#ff9] border-[#ff9]"
+                  : "text-[#999] border-transparent hover:text-white",
+              )}
+              onClick={() => state.setCategory(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
         <button
           type="button"
-          className="flex items-center gap-1 py-1 cursor-pointer text-sm text-[#999] hover:text-white"
+          title={state.open ? "fold library" : "unfold library"}
+          className="ml-auto flex items-center py-1 cursor-pointer text-[#999] hover:text-white"
           onClick={state.toggleOpen}
         >
           <CaretRightIcon alt={state.open ? "fold" : "unfold"} className={cn("size-3", state.open && "rotate-90")} />
-          library
         </button>
-
-        {state.open && (
-          <nav className="ml-auto flex items-end -mb-px">
-            {categories.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                className={cn(
-                  "px-2 py-1 cursor-pointer text-sm border-b transition-colors",
-                  key === category?.key
-                    ? "text-[#ff9] border-[#ff9]"
-                    : "text-[#999] border-transparent hover:text-white",
-                )}
-                onClick={() => state.setCategory(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
-        )}
       </div>
 
       {state.open && category !== null && (
@@ -230,6 +216,19 @@ export default function JobsLibrary(props: Props) {
           })}
         </article>
       )}
+
+      {state.open && (
+        <div
+          title="resize"
+          className="group shrink-0 h-2 -mb-1 flex items-center justify-center cursor-ns-resize touch-none"
+          onPointerDown={state.onResizeDown}
+          onPointerMove={state.onResizeMove}
+          onPointerUp={state.onResizeUp}
+          onLostPointerCapture={state.onResizeUp}
+        >
+          <div className="w-10 h-0.5 rounded bg-[#505050] group-hover:bg-[#aaca]" />
+        </div>
+      )}
     </div>
   );
 }
@@ -265,10 +264,10 @@ function LibraryExample({
 
   return (
     <div className="relative">
-      {/* a code fence, clickable to reveal its args */}
+      {/* a code fence, clickable to reveal its comment and args */}
       <button
         type="button"
-        title={example.args.length === 0 ? undefined : focused ? "hide args" : "edit args"}
+        title={focused ? "hide detail" : "show detail"}
         className={cn(
           "block w-full text-left cursor-pointer transition-colors",
           // `pr` leaves room for the overlaid toolbar
@@ -280,7 +279,7 @@ function LibraryExample({
         onClick={() => onFocus(example.id)}
       >
         <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
-          {example.comment && <span className={tokenCss.comment}>{`# ${example.comment}\n`}</span>}
+          {focused && example.comment && <span className={tokenCss.comment}>{`# ${example.comment}\n`}</span>}
           {toSegments(example, edits).map((segment, i) => (
             <span
               key={i}
