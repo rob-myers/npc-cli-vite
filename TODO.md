@@ -54,6 +54,9 @@
       - but in other cases we should wait for fade to complete
   
 - 🚧 Jobs has library of commands
+  - provided via markdown
+  - runnable
+  - editable
 
 - ✅ can pause/resume `move`
   - rewrite so that immediate pause/resume are possible
