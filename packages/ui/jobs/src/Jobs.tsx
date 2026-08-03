@@ -56,7 +56,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       copiedTimeoutId: 0,
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       disconnectSession: null,
-      folded: { interactive: true, background: true },
       history: [],
       ordered: [],
       processes: [],
@@ -67,6 +66,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       resetPids: new Set(),
       resetting: new Map(),
       sessionKey: null,
+      shownHistory: null,
       ttyMeta: null,
 
       addHistory(items) {
@@ -297,9 +297,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           })
           .catch(error);
       },
-      toggleFold(key) {
-        state.folded[key] = !state.folded[key];
-        state.update();
+      toggleHistory(key) {
+        state.set({ shownHistory: state.shownHistory === key ? null : key });
       },
       toggleTtyDisabled() {
         if (!state.ttyMeta) return;
@@ -359,10 +358,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
     { key: "interactive", items: state.history.filter((p) => p.pid === 0).reverse() },
     { key: "background", items: state.history.filter((p) => p.pid !== 0).reverse() },
   ];
+  const shownHistoryItems = historyGroups.find((x) => x.key === state.shownHistory)?.items ?? [];
 
   // rendered standalone when no session leader, else we couldn't switch session
   const sessionHeader = sessionsExist ? (
-    <div className="flex items-stretch justify-end gap-1 pb-2">
+    <div className="flex items-stretch gap-1 pb-2">
       <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
         <Select.Trigger
           title="sessionKey"
@@ -430,11 +430,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
       {state.processes[0] === undefined && (
-        <div className="self-center w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
+        <div className="self-start w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
       )}
 
       {sessionsExist && (
-        <div className="flex flex-col items-center gap-0.5 text-base text-white">
+        <div className="flex flex-col items-start gap-0.5 text-base text-white">
           {/* keyed, so switching session swaps items without exit animations */}
           <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
             {state.ordered.map((p) => {
@@ -521,43 +521,49 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         </div>
       )}
 
-      <div className="mt-auto self-center w-full max-w-[400px] flex flex-col gap-2 font-mono text-sm">
-        <JobsLibrary
-          uiId={meta.id}
-          canRun={sessionExists}
-          copiedSrc={state.copiedSrc}
-          onCopy={state.copySrc}
-          onPaste={state.pasteSrc}
-          onRun={state.rerunProcess}
-        />
+      <JobsLibrary
+        uiId={meta.id}
+        canRun={sessionExists}
+        copiedSrc={state.copiedSrc}
+        onCopy={state.copySrc}
+        onPaste={state.pasteSrc}
+        onRun={state.rerunProcess}
+      />
 
-        {state.history.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-3 pl-1">
-              <div className="text-[#999]">history</div>
-              <button
-                type="button"
-                title="clear history"
-                className={cn("cursor-pointer", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
-                onClick={state.clearHistory}
-              >
-                {state.confirmClear ? "confirm" : "clear"}
-              </button>
-            </div>
-            {historyGroups.map(({ key, items }) => (
-              <HistoryGroup
-                key={key}
-                groupKey={key}
-                items={items}
-                folded={state.folded[key]}
-                onToggle={state.toggleFold}
-                copiedSrc={state.copiedSrc}
-                onCopy={state.copySrc}
-              />
-            ))}
+      {state.history.length > 0 && (
+        <div className="mt-auto self-center w-full max-w-[400px] flex flex-col gap-1 font-mono text-sm">
+          <div className="flex items-center gap-3 pl-1">
+            <div className="text-[#999]">history</div>
+            {historyGroups.map(({ key, items }) =>
+              items.length === 0 ? null : (
+                <button
+                  key={key}
+                  type="button"
+                  className={cn(
+                    "cursor-pointer",
+                    state.shownHistory === key ? "text-[#ff9]" : "text-[#999] hover:text-white",
+                  )}
+                  onClick={() => state.toggleHistory(key)}
+                >
+                  {`${key} (${items.length})`}
+                </button>
+              ),
+            )}
+            <button
+              type="button"
+              title="clear history"
+              className={cn("ml-auto cursor-pointer", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
+              onClick={state.clearHistory}
+            >
+              {state.confirmClear ? "confirm" : "clear"}
+            </button>
           </div>
-        )}
-      </div>
+
+          {shownHistoryItems.length > 0 && (
+            <HistoryList items={shownHistoryItems} copiedSrc={state.copiedSrc} onCopy={state.copySrc} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -566,61 +572,39 @@ const controlCss = cn(
   "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer transition-colors hover:bg-[#333]",
 );
 
-/** A foldable group of historical processes, each line copyable */
-function HistoryGroup({
-  groupKey,
+/** Historical processes, each line copyable */
+function HistoryList({
   items,
-  folded,
-  onToggle,
   copiedSrc,
   onCopy,
 }: {
-  groupKey: HistoryGroupKey;
   items: ProcessLeader[];
-  folded: boolean;
-  onToggle: (key: HistoryGroupKey) => void;
   copiedSrc: null | string;
   onCopy: (src: string) => void;
 }) {
-  if (items.length === 0) {
-    return null;
-  }
-
   return (
     <div className="flex flex-col gap-0.5 p-1 bg-black border border-[#505050] rounded shadow-md shadow-black/40">
-      <button
-        type="button"
-        className="flex items-center gap-1 cursor-pointer text-[#999]"
-        onClick={() => onToggle(groupKey)}
-      >
-        <CaretRightIcon alt={folded ? "unfold" : "fold"} className={cn("size-3", !folded && "rotate-90")} />
-        {`${groupKey} (${items.length})`}
-      </button>
-
-      {folded === false && (
-        <div className="flex flex-col gap-0.5 max-h-40 overflow-auto [scrollbar-width:thin]">
-          {items.map((p, i) => (
-            <div key={`${groupKey}@${i}`} className="flex items-center gap-2 pl-1">
-              <button
-                type="button"
-                title="copy"
-                className="shrink-0 cursor-pointer text-[#777] hover:text-white"
-                onClick={() => onCopy(p.src)}
-              >
-                {copiedSrc === p.src ? (
-                  <CheckIcon alt="copied" className="size-3 text-[#0f0]" />
-                ) : (
-                  <CopyIcon alt="copy" className="size-3" />
-                )}
-              </button>
-              {/* {p.ptagsText && <div className="shrink-0 text-[#777]">{p.ptagsText}</div>} */}
-              <div className="grow min-w-0 truncate text-white" title={p.src}>
-                {p.src || "[empty]"}
-              </div>
+      <div className="flex flex-col gap-0.5 max-h-40 overflow-auto [scrollbar-width:thin]">
+        {items.map((p, i) => (
+          <div key={`${p.src}@${i}`} className="flex items-center gap-2 pl-1">
+            <button
+              type="button"
+              title="copy"
+              className="shrink-0 cursor-pointer text-[#777] hover:text-white"
+              onClick={() => onCopy(p.src)}
+            >
+              {copiedSrc === p.src ? (
+                <CheckIcon alt="copied" className="size-3 text-[#0f0]" />
+              ) : (
+                <CopyIcon alt="copy" className="size-3" />
+              )}
+            </button>
+            <div className="grow min-w-0 truncate text-white" title={p.src}>
+              {p.src || "[empty]"}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -645,8 +629,9 @@ type State = {
   ordered: ProcessLeader[];
   /** Killed processes, most recent last */
   history: ProcessLeader[];
-  /** Which `history` groups are folded away? */
-  folded: Record<HistoryGroupKey, boolean>;
+  /** Which `history` group is shown, if any? */
+  shownHistory: null | HistoryGroupKey;
+  toggleHistory: (key: HistoryGroupKey) => void;
   /** Most recently copied `src`, briefly indicated in `history` */
   copiedSrc: null | string;
   /** Forgets `copiedSrc` after `copiedMs` */
@@ -661,7 +646,6 @@ type State = {
   rerunProcess: (src: string) => Promise<void>;
   /** Insert `src` at the tty prompt, without running it */
   pasteSrc: (src: string) => void;
-  toggleFold: (key: HistoryGroupKey) => void;
   toggleTtyDisabled: () => void;
   /** Has "clear history" been clicked once i.e. awaiting confirmation? */
   confirmClear: boolean;
