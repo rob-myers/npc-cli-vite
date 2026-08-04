@@ -24,7 +24,6 @@ import {
   CopyIcon,
   PauseIcon,
   PlayIcon,
-  PlugsIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -401,10 +400,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         <button
           type="button"
           title="connect to session"
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-sm border border-[#99f]/50 shadow-sm shadow-black/50 text-sm text-[#99f] transition-colors hover:bg-[#111]"
+          className="cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-sm border border-[#ccc]/50 shadow-sm shadow-black/50 text-sm text-[#afa] transition-colors hover:bg-[#111]"
           onClick={state.connect}
         >
-          <PlugsIcon alt="connect" className="size-4" />
+          {/* <PlugsIcon alt="connect" className="size-4" /> */}
           connect
         </button>
       )}
@@ -430,7 +429,15 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
       {state.processes[0] === undefined && (
-        <div className="self-start w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
+        <div className="self-start w-full max-w-[400px] p-1 font-mono">
+          {sessionHeader}
+
+          {state.connected && sessionExists === false && (
+            <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
+              Switch to the terminal tab to mount it
+            </div>
+          )}
+        </div>
       )}
 
       {sessionsExist && (
@@ -512,12 +519,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
               );
             })}
           </AnimatePresence>
-
-          {state.connected && sessionExists === false && (
-            <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
-              Switch to the terminal tab to mount it
-            </div>
-          )}
         </div>
       )}
 
