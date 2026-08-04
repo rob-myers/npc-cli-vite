@@ -406,13 +406,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { onKeyDown } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
 
-        const onExtraZoomChange = (_e: Event) => w.update();
-        w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
+        // both drive the on-screen indicator
+        const onIndicatorChange = (_e: Event) => w.update();
+        w.rootEl.addEventListener("extrazoomchange", onIndicatorChange);
+        w.rootEl.addEventListener("touchgesturechange", onIndicatorChange);
 
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
-          w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
+          w.rootEl?.removeEventListener("extrazoomchange", onIndicatorChange);
+          w.rootEl?.removeEventListener("touchgesturechange", onIndicatorChange);
         };
       },
       setupLights() {
