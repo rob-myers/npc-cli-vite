@@ -64,8 +64,10 @@ move npc:rob to:$( pick 1 ) fast
 ```sh
 # get a doors gdKey
 pick 1 as:meta.gdKey
+
 # toggle a specific door's lock
 lock g0d19
+
 lock $( pick 1 as:meta.gdKey )
 ```
 
