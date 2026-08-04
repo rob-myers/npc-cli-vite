@@ -267,8 +267,7 @@ function LibraryExample({
         title={focused ? "hide detail" : "show detail"}
         className={cn(
           "block w-full text-left cursor-pointer transition-colors",
-          // `pr` leaves room for the overlaid toolbar
-          "px-3 py-2 pr-24 bg-[#131313] border rounded",
+          "px-3 py-2 bg-[#131313] border rounded",
           focused ? "border-[#aaca]" : "border-[#2a2a2a] hover:border-[#444]",
           // the args panel continues this fence
           focused && example.args.length > 0 && "rounded-b-none",
@@ -276,6 +275,8 @@ function LibraryExample({
         onClick={() => onFocus(example.id)}
       >
         <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
+          {/* only the first line makes room for the overlaid toolbar */}
+          <span aria-hidden className="float-right w-22 h-[1.45em]" />
           {focused && example.comment && <span className={tokenCss.comment}>{`# ${example.comment}\n`}</span>}
           {toSegments(example, edits).map((segment, i) => (
             <span
