@@ -53,7 +53,7 @@
       - fade can be rejected on respawn or remove npc
       - but in other cases we should wait for fade to complete
   
-- 🚧 Jobs has library of commands
+- ✅ Jobs has library of commands
   - provided via markdown
   - runnable
   - editable
