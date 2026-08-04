@@ -96,10 +96,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       cleanupDead() {
         const dead = [] as ProcessLeader[];
         const alive = [] as ProcessLeader[];
+        const now = Date.now();
 
         // `processes` is sparse i.e. indexed by pid
         state.processes.forEach((p) => {
-          if (isDeadAndNonInteractive(p)) {
+          if (canCleanup(p, now)) {
             dead.push(p);
           } else {
             alive[p.pid] = p;
@@ -229,6 +230,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           case "started": {
             item.status = toProcessStatus.Running;
             item.src = process.src;
+            // a reset reuses the item, so its window restarts too
+            item.startedAt = Date.now();
             // record as soon as shown, rather than when it dies
             if (item.src) {
               state.addHistory([{ ...item }]);
@@ -432,7 +435,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         <div className="self-start w-full max-w-[400px] p-1 font-mono">
           {sessionHeader}
 
-          {state.connected && sessionExists === false && (
+          {sessionExists === false && (
             <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
               Switch to the terminal tab to mount it
             </div>
@@ -524,7 +527,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
       <JobsLibrary
         uiId={meta.id}
-        canRun={sessionExists}
+        canRun={sessionExists && state.connected}
         copiedSrc={state.copiedSrc}
         onCopy={state.copySrc}
         onPaste={state.pasteSrc}
@@ -612,6 +615,8 @@ function HistoryList({
 
 /** How often killed processes move into `history` */
 const cleanupDeadMs = 3000;
+/** How long a process leader is shown before it can be cleaned up */
+const minShownMs = 1000;
 /** How long "clear history" awaits confirmation */
 const confirmClearMs = 3000;
 /** How long a copied `src` is indicated */
@@ -683,11 +688,17 @@ type ProcessLeader = {
   src: string;
   status: ProcessStatus;
   ptagsText: string;
+  /** When the current run started, so we don't clean up too soon */
+  startedAt: number;
 };
 
-/** the interactive process (pid 0) stays put, even when killed */
-function isDeadAndNonInteractive(p: ProcessLeader) {
-  return p.status === toProcessStatus.Killed && p.pid !== 0;
+/**
+ * The interactive process (pid 0) stays put, even when killed.
+ * Short-lived ones linger too, else the fixed interval could
+ * remove them almost as soon as they were spawned.
+ */
+function canCleanup(p: ProcessLeader, now: number) {
+  return p.status === toProcessStatus.Killed && p.pid !== 0 && now - p.startedAt >= minShownMs;
 }
 
 /** Densify sparse `processes` (indexed by pid) and order it */
@@ -709,5 +720,6 @@ function processMetaToProcessLeader({ key: pid, src, status, ptags }: ProcessMet
     src,
     status,
     ptagsText: getPtagsPreview(ptags).join(""),
+    startedAt: Date.now(),
   };
 }
