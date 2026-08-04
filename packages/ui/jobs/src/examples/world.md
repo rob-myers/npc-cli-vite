@@ -37,6 +37,15 @@ pick | spawn npc:test as:human-1 look
 # move
 
 ```sh
+# move rob to most recent picked
+pick | move npc:rob
+
+# only move to floor or doable
+pick meta.{floor,do} | move npc:rob
+
+# move rob sequentially along picked positions
+pick | move npc:rob along
+
 # move rob to picked position, projected to ground
 move npc:rob to:$( pick 1 )
 
@@ -48,12 +57,6 @@ move npc:rob to:$( pick 1 meta.floor )
 while true; do
   move --force npc:rob to:$( pick meta.floor 1 )
 done
-
-# move rob to most recent picked
-pick | move npc:rob
-
-# move rob sequentially along picked positions
-pick | move npc:rob along
 
 # move rob fast
 move npc:rob to:$( pick 1 ) fast

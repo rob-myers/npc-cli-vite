@@ -10,22 +10,8 @@ import {
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
-import {
-  error,
-  throttle,
-  tryLocalStorageGetParsed,
-  tryLocalStorageRemove,
-  tryLocalStorageSet,
-} from "@npc-cli/util/legacy/generic";
-import {
-  ArrowCounterClockwiseIcon,
-  CaretRightIcon,
-  CheckIcon,
-  CopyIcon,
-  PauseIcon,
-  PlayIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { error, throttle } from "@npc-cli/util/legacy/generic";
+import { ArrowCounterClockwiseIcon, CaretRightIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
@@ -48,14 +34,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
   const state = useStateRef(
     (): State => ({
-      confirmClear: false,
-      confirmClearTimeoutId: 0,
       connected: false,
       copiedSrc: null,
       copiedTimeoutId: 0,
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       disconnectSession: null,
-      history: [],
       ordered: [],
       processes: [],
       reorder: throttle(() => {
@@ -65,54 +48,21 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       resetPids: new Set(),
       resetting: new Map(),
       sessionKey: null,
-      shownHistory: null,
       ttyMeta: null,
 
-      addHistory(items) {
-        // one entry per src, appended with its most recent pid
-        const bySrc = new Map(items.map((p) => [p.src, p]));
-        state.history = state.history
-          .filter((p) => !bySrc.has(p.src))
-          .concat(Array.from(bySrc.values()))
-          .slice(-maxHistory);
-        if (state.sessionKey !== null) {
-          tryLocalStorageSet(getHistoryKey(state.sessionKey), JSON.stringify(state.history));
-        }
-      },
-      clearHistory() {
-        window.clearTimeout(state.confirmClearTimeoutId);
-
-        if (state.confirmClear === false) {
-          // click again to confirm, else we forget
-          state.confirmClearTimeoutId = window.setTimeout(() => state.set({ confirmClear: false }), confirmClearMs);
-          return state.set({ confirmClear: true });
-        }
-
-        if (state.sessionKey !== null) {
-          tryLocalStorageRemove(getHistoryKey(state.sessionKey));
-        }
-        state.set({ confirmClear: false, history: [] });
-      },
       cleanupDead() {
-        const dead = [] as ProcessLeader[];
         const alive = [] as ProcessLeader[];
         const now = Date.now();
+        let removed = 0;
 
         // `processes` is sparse i.e. indexed by pid
         state.processes.forEach((p) => {
-          if (canCleanup(p, now)) {
-            dead.push(p);
-          } else {
-            alive[p.pid] = p;
-          }
+          canCleanup(p, now) ? removed++ : (alive[p.pid] = p);
         });
 
-        if (dead.length === 0) {
-          return;
+        if (removed > 0) {
+          state.set({ processes: alive, ordered: toOrdered(alive) });
         }
-
-        state.addHistory(dead);
-        state.set({ processes: alive, ordered: toOrdered(alive) });
       },
 
       changeProcess(e) {
@@ -153,7 +103,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
           const session = sessionApi.getSession(state.sessionKey ?? "");
           if (session === undefined) {
-            state.set({ processes: [], ordered: [], history: [] });
+            state.set({ processes: [], ordered: [] });
             return false;
           }
 
@@ -169,7 +119,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           }
 
           state.ordered = toOrdered(state.processes);
-          state.history = state.restoreHistory();
 
           // listen for leading process status
           state.disconnectSession = session.ttyShell.io.handleWriters(
@@ -232,10 +181,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             item.src = process.src;
             // a reset reuses the item, so its window restarts too
             item.startedAt = Date.now();
-            // record as soon as shown, rather than when it dies
-            if (item.src) {
-              state.addHistory([{ ...item }]);
-            }
             state.debouncedUpdate();
             break;
           }
@@ -282,13 +227,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         // xterm assumes newlines are \r\n
         session.ttyShell.xterm.spliceInput(src.replace(/\r?\n/g, "\r\n"));
       },
-      restoreHistory() {
-        if (state.sessionKey === null) {
-          return [];
-        }
-        const restored = tryLocalStorageGetParsed<ProcessLeader[]>(getHistoryKey(state.sessionKey));
-        return Array.isArray(restored) ? restored.slice(-maxHistory) : [];
-      },
       copySrc(src) {
         window.clearTimeout(state.copiedTimeoutId);
         navigator.clipboard
@@ -298,9 +236,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             state.copiedTimeoutId = window.setTimeout(() => state.set({ copiedSrc: null }), copiedMs);
           })
           .catch(error);
-      },
-      toggleHistory(key) {
-        state.set({ shownHistory: state.shownHistory === key ? null : key });
       },
       toggleTtyDisabled() {
         if (!state.ttyMeta) return;
@@ -339,7 +274,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
     return () => {
       clearInterval(intervalId);
-      window.clearTimeout(state.confirmClearTimeoutId);
       window.clearTimeout(state.copiedTimeoutId);
     };
   }, []);
@@ -348,19 +282,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
     // connect explicitly the first time; thereafter e.g. session switches reconnect
     if (state.connected === true) {
       state.connectSession();
-    } else {
-      state.set({ history: state.restoreHistory() }); // viewable before connecting
     }
   }, [state.connected, state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
   const sessionExists = state.sessionKey !== null && sessionApi.getSession(state.sessionKey) !== undefined;
-  const historyGroups: { key: HistoryGroupKey; items: ProcessLeader[] }[] = [
-    // most recent first
-    { key: "interactive", items: state.history.filter((p) => p.pid === 0).reverse() },
-    { key: "background", items: state.history.filter((p) => p.pid !== 0).reverse() },
-  ];
-  const shownHistoryItems = historyGroups.find((x) => x.key === state.shownHistory)?.items ?? [];
 
   // rendered standalone when no session leader, else we couldn't switch session
   const sessionHeader = sessionsExist ? (
@@ -428,102 +354,111 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   ) : null;
 
   return (
-    <div data-jobs-root className="p-4 h-full overflow-auto text-white min-h-[50px] flex flex-col gap-2">
-      {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
+    <div data-jobs-root className="p-4 h-full overflow-hidden text-white min-h-[50px] flex flex-col gap-2">
+      {/* process leaders scroll, so spawning does not shift the library */}
+      <div
+        className={cn(
+          // the gutter is stable, so overflowing does not shift either
+          "flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
+          "flex flex-col gap-2 p-2 rounded border border-[#2a2a2a] bg-black/40",
+        )}
+      >
+        {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
-      {state.processes[0] === undefined && (
-        <div className="self-start w-full max-w-[400px] p-1 font-mono">
-          {sessionHeader}
+        {state.processes[0] === undefined && (
+          <div className="self-start w-full max-w-[400px] p-1 font-mono">
+            {sessionHeader}
 
-          {sessionExists === false && (
-            <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
-              Switch to the terminal tab to mount it
-            </div>
-          )}
-        </div>
-      )}
+            {sessionExists === false && (
+              <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
+                Switch to the terminal tab to mount it
+              </div>
+            )}
+          </div>
+        )}
 
-      {sessionsExist && (
-        <div className="flex flex-col items-start gap-0.5 text-base text-white">
-          {/* keyed, so switching session swaps items without exit animations */}
-          <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
-            {state.ordered.map((p) => {
-              const killed = p.status === toProcessStatus.Killed;
-              const paused = p.status === toProcessStatus.Suspended;
-              return (
-                <motion.div
-                  key={p.uid}
-                  layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="min-w-32 flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
-                >
-                  {/* header, connected to the session leader */}
-                  {p.pid === 0 && sessionHeader}
+        {sessionsExist && (
+          <div className="flex flex-col items-start gap-0.5 text-base text-white">
+            {/* keyed, so switching session swaps items without exit animations */}
+            <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
+              {state.ordered.map((p) => {
+                const killed = p.status === toProcessStatus.Killed;
+                const paused = p.status === toProcessStatus.Suspended;
+                return (
+                  <motion.div
+                    key={p.uid}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="min-w-32 flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
+                  >
+                    {/* header, connected to the session leader */}
+                    {p.pid === 0 && sessionHeader}
 
-                  <div className="flex flex-wrap items-stretch gap-y-0.5">
-                    {/* fixed width so cards align */}
-                    <div className="relative flex shrink-0 bg-black border border-[#aaca]">
-                      <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
-                    </div>
+                    <div className="flex flex-wrap items-stretch gap-y-0.5">
+                      {/* fixed width so cards align */}
+                      <div className="relative flex shrink-0 bg-black border border-[#aaca]">
+                        <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
+                      </div>
 
-                    <div className="flex shrink-0 items-stretch text-white">
+                      <div className="flex shrink-0 items-stretch text-white">
+                        <div
+                          className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                          onClick={!killed ? state.changeProcess : undefined}
+                          data-act={paused ? "resume" : "pause"}
+                          data-pid={p.pid}
+                        >
+                          {paused ? (
+                            <PlayIcon alt="resume" className="size-3" />
+                          ) : (
+                            <PauseIcon alt="pause" className="size-3" />
+                          )}
+                        </div>
+                        <div
+                          className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
+                          onClick={!killed ? state.changeProcess : undefined}
+                          data-act="kill"
+                          data-pid={p.pid}
+                        >
+                          <XIcon alt="kill" className="size-4" />
+                        </div>
+                        {/* available when killed, where it just re-runs */}
+                        <div
+                          className={controlCss}
+                          title={p.pid === 0 ? "re-run in background" : "reset"}
+                          onClick={state.changeProcess}
+                          data-act="reset"
+                          data-pid={p.pid}
+                        >
+                          {p.pid === 0 ? (
+                            <span className="text-sm leading-none text-[#999]">{"&"}</span>
+                          ) : (
+                            <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                          )}
+                        </div>
+                      </div>
+
                       <div
-                        className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
-                        onClick={!killed ? state.changeProcess : undefined}
-                        data-act={paused ? "resume" : "pause"}
-                        data-pid={p.pid}
-                      >
-                        {paused ? (
-                          <PlayIcon alt="resume" className="size-3" />
-                        ) : (
-                          <PauseIcon alt="pause" className="size-3" />
+                        title={p.src}
+                        className={cn(
+                          // up to two lines i.e. 2 * 1.25rem + py-1
+                          "grow min-w-32 max-h-12 overflow-auto [scrollbar-width:thin] break-words",
+                          "px-2 py-1 bg-black border border-[#505050] text-sm",
+                          killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
                         )}
-                      </div>
-                      <div
-                        className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
-                        onClick={!killed ? state.changeProcess : undefined}
-                        data-act="kill"
-                        data-pid={p.pid}
                       >
-                        <XIcon alt="kill" className="size-4" />
-                      </div>
-                      {/* available when killed, where it just re-runs */}
-                      <div
-                        className={controlCss}
-                        title={p.pid === 0 ? "re-run in background" : "reset"}
-                        onClick={state.changeProcess}
-                        data-act="reset"
-                        data-pid={p.pid}
-                      >
-                        {p.pid === 0 ? (
-                          <span className="text-sm leading-none text-[#999]">{"&"}</span>
-                        ) : (
-                          <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
-                        )}
+                        {p.src || "[empty]"}
                       </div>
                     </div>
-
-                    <div
-                      title={p.src}
-                      className={cn(
-                        // up to two lines i.e. 2 * 1.25rem + py-1
-                        "grow min-w-32 max-h-12 overflow-auto [scrollbar-width:thin] break-words",
-                        "px-2 py-1 bg-black border border-[#505050] text-sm",
-                        killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
-                      )}
-                    >
-                      {p.src || "[empty]"}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
 
       <JobsLibrary
         uiId={meta.id}
@@ -533,41 +468,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         onPaste={state.pasteSrc}
         onRun={state.rerunProcess}
       />
-
-      {state.history.length > 0 && (
-        <div className="mt-auto self-center w-full max-w-[400px] flex flex-col gap-1 font-mono text-sm">
-          <div className="flex items-center gap-3 pl-1">
-            <div className="text-[#999]">history</div>
-            {historyGroups.map(({ key, items }) =>
-              items.length === 0 ? null : (
-                <button
-                  key={key}
-                  type="button"
-                  className={cn(
-                    "cursor-pointer",
-                    state.shownHistory === key ? "text-[#ff9]" : "text-[#999] hover:text-white",
-                  )}
-                  onClick={() => state.toggleHistory(key)}
-                >
-                  {`${key} (${items.length})`}
-                </button>
-              ),
-            )}
-            <button
-              type="button"
-              title="clear history"
-              className={cn("ml-auto cursor-pointer", state.confirmClear ? "text-[#faa]" : "text-[#999]")}
-              onClick={state.clearHistory}
-            >
-              {state.confirmClear ? "confirm" : "clear"}
-            </button>
-          </div>
-
-          {shownHistoryItems.length > 0 && (
-            <HistoryList items={shownHistoryItems} copiedSrc={state.copiedSrc} onCopy={state.copySrc} />
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -576,69 +476,19 @@ const controlCss = cn(
   "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer transition-colors hover:bg-[#333]",
 );
 
-/** Historical processes, each line copyable */
-function HistoryList({
-  items,
-  copiedSrc,
-  onCopy,
-}: {
-  items: ProcessLeader[];
-  copiedSrc: null | string;
-  onCopy: (src: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 p-1 bg-black border border-[#505050] rounded shadow-md shadow-black/40">
-      <div className="flex flex-col gap-0.5 max-h-40 overflow-auto [scrollbar-width:thin]">
-        {items.map((p, i) => (
-          <div key={`${p.src}@${i}`} className="flex items-center gap-2 pl-1">
-            <button
-              type="button"
-              title="copy"
-              className="shrink-0 cursor-pointer text-[#777] hover:text-white"
-              onClick={() => onCopy(p.src)}
-            >
-              {copiedSrc === p.src ? (
-                <CheckIcon alt="copied" className="size-3 text-[#0f0]" />
-              ) : (
-                <CopyIcon alt="copy" className="size-3" />
-              )}
-            </button>
-            <div className="grow min-w-0 truncate text-white" title={p.src}>
-              {p.src || "[empty]"}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** How often killed processes move into `history` */
+/** How often killed processes are forgotten */
 const cleanupDeadMs = 3000;
 /** How long a process leader is shown before it can be cleaned up */
 const minShownMs = 1000;
-/** How long "clear history" awaits confirmation */
-const confirmClearMs = 3000;
 /** How long a copied `src` is indicated */
 const copiedMs = 1000;
-/** Max number of `history` entries, dropping oldest */
-const maxHistory = 100;
-
-function getHistoryKey(sessionKey: `tty-${number}`) {
-  return `jobs-history:${sessionKey}`;
-}
 
 type State = {
   /** We use an array to represent mapping `pid -> processLeader` */
   processes: ProcessLeader[];
   /**  Re-ordered `processes` */
   ordered: ProcessLeader[];
-  /** Killed processes, most recent last */
-  history: ProcessLeader[];
-  /** Which `history` group is shown, if any? */
-  shownHistory: null | HistoryGroupKey;
-  toggleHistory: (key: HistoryGroupKey) => void;
-  /** Most recently copied `src`, briefly indicated in `history` */
+  /** Most recently copied `src`, briefly indicated */
   copiedSrc: null | string;
   /** Forgets `copiedSrc` after `copiedMs` */
   copiedTimeoutId: number;
@@ -653,16 +503,8 @@ type State = {
   /** Insert `src` at the tty prompt, without running it */
   pasteSrc: (src: string) => void;
   toggleTtyDisabled: () => void;
-  /** Has "clear history" been clicked once i.e. awaiting confirmation? */
-  confirmClear: boolean;
-  /** Forgets `confirmClear` after `confirmClearMs` */
-  confirmClearTimeoutId: number;
-  clearHistory: () => void;
-  /** Append to history and persist */
-  addHistory: (items: ProcessLeader[]) => void;
-  /** Move killed processes from `processes` into `history` */
+  /** Forget killed processes */
   cleanupDead: () => void;
-  restoreHistory: () => ProcessLeader[];
   sessionKey: null | `tty-${number}`;
   ttyMeta: null | JshUiMeta;
   changeProcess: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -678,8 +520,6 @@ type State = {
   /** Recompute `ordered`, at most once per 200ms */
   reorder: () => void;
 };
-
-type HistoryGroupKey = "interactive" | "background";
 
 type ProcessLeader = {
   /** Initial `pid`, stable across resets i.e. usable as a React key */
