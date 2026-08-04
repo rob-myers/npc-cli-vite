@@ -43,7 +43,7 @@ export default function JobsLibrary(props: Props) {
       categoryKey: stored?.categoryKey ?? "",
       edits: {},
       focusedId: null,
-      folded: stored?.folded ?? {},
+      sectionKeys: stored?.sectionKeys ?? {},
       height: stored?.height ?? defaultLibraryHeight,
       open: stored?.open ?? false,
       resizing: false,
@@ -89,7 +89,7 @@ export default function JobsLibrary(props: Props) {
       persist() {
         const stored: Stored = {
           categoryKey: state.categoryKey,
-          folded: state.folded,
+          sectionKeys: state.sectionKeys,
           height: state.height,
           open: state.open,
         };
@@ -104,9 +104,9 @@ export default function JobsLibrary(props: Props) {
         state.set({ categoryKey, focusedId: null, open: true });
         state.persist();
       },
-      toggleFold(sectionKey) {
-        state.folded[sectionKey] = !state.folded[sectionKey];
-        state.update();
+      setSection(categoryKey, sectionKey) {
+        state.sectionKeys[categoryKey] = sectionKey;
+        state.set({ focusedId: null });
         state.persist();
       },
       toggleOpen() {
@@ -130,6 +130,10 @@ export default function JobsLibrary(props: Props) {
   }, []);
 
   const category = categories.find((x) => x.key === state.categoryKey) ?? categories[0] ?? null;
+  const section =
+    category === null
+      ? null
+      : (category.sections.find((x) => x.key === state.sectionKeys[category.key]) ?? category.sections[0] ?? null);
 
   return (
     <div
@@ -167,53 +171,46 @@ export default function JobsLibrary(props: Props) {
       </div>
 
       {state.open && category !== null && (
+        // wraps rather than scrolls, else tabs could hide
+        <nav className="shrink-0 flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#2a2a2a]">
+          {category.sections.map((x) => (
+            <button
+              key={x.key}
+              type="button"
+              className={cn(
+                "shrink-0 px-2 py-0.5 rounded-sm cursor-pointer text-xs transition-colors",
+                x.key === section?.key ? "bg-[#2a2a2a] text-[#eee]" : "text-[#999] hover:text-white",
+              )}
+              onClick={() => state.setSection(category.key, x.key)}
+            >
+              {x.title}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {state.open && section !== null && (
         <article
-          className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-4 px-3 py-3"
+          className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-2 px-3 py-3"
           onKeyDown={state.onKeyDown}
         >
-          {category.sections.map((section) => {
-            const folded = state.folded[section.key] === true;
-            return (
-              <section key={section.key} className="flex flex-col gap-2">
-                <h3 className="border-b border-[#2a2a2a]">
-                  <button
-                    type="button"
-                    className="w-full flex items-baseline gap-1.5 pb-1 cursor-pointer text-base font-semibold text-[#eee] hover:text-white"
-                    onClick={() => state.toggleFold(section.key)}
-                  >
-                    <CaretRightIcon
-                      alt={folded ? "unfold" : "fold"}
-                      className={cn("self-center size-3 shrink-0 text-[#777]", !folded && "rotate-90")}
-                    />
-                    {section.title}
-                    <span className="ml-auto text-xs font-normal text-[#666]">{section.examples.length}</span>
-                  </button>
-                </h3>
-
-                {folded === false && (
-                  <>
-                    {section.prose && <p className="text-[13px]/relaxed text-[#aaa]">{section.prose}</p>}
-                    {section.examples.map((example) => (
-                      <LibraryExample
-                        key={example.id}
-                        example={example}
-                        focused={state.focusedId === example.id}
-                        edits={state.edits}
-                        canRun={props.canRun}
-                        copiedSrc={props.copiedSrc}
-                        onCopy={props.onCopy}
-                        onEdit={state.editArg}
-                        onFocus={state.focusExample}
-                        onPaste={props.onPaste}
-                        onReset={state.resetExample}
-                        onRun={props.onRun}
-                      />
-                    ))}
-                  </>
-                )}
-              </section>
-            );
-          })}
+          {section.prose && <p className="text-[13px]/relaxed text-[#aaa]">{section.prose}</p>}
+          {section.examples.map((example) => (
+            <LibraryExample
+              key={example.id}
+              example={example}
+              focused={state.focusedId === example.id}
+              edits={state.edits}
+              canRun={props.canRun}
+              copiedSrc={props.copiedSrc}
+              onCopy={props.onCopy}
+              onEdit={state.editArg}
+              onFocus={state.focusExample}
+              onPaste={props.onPaste}
+              onReset={state.resetExample}
+              onRun={props.onRun}
+            />
+          ))}
         </article>
       )}
 
@@ -404,17 +401,17 @@ type Props = {
 };
 
 /** Persisted per UI instance */
-type Stored = Pick<State, "categoryKey" | "folded" | "height" | "open">;
+type Stored = Pick<State, "categoryKey" | "height" | "open" | "sectionKeys">;
 
 type State = {
   /** Currently shown category i.e. tab */
   categoryKey: string;
   /** `${exampleId}#${argIndex}` -> value; not persisted */
   edits: Record<string, string>;
-  /** Example whose args are shown */
+  /** Example whose comment and args are shown */
   focusedId: null | string;
-  /** sectionKey -> folded, defaulting to unfolded */
-  folded: Record<string, boolean>;
+  /** categoryKey -> currently shown sectionKey */
+  sectionKeys: Record<string, string>;
   /** Height in pixels when `open` */
   height: number;
   open: boolean;
@@ -433,6 +430,6 @@ type State = {
   persist: () => void;
   resetExample: (example: Example) => void;
   setCategory: (categoryKey: string) => void;
-  toggleFold: (sectionKey: string) => void;
+  setSection: (categoryKey: string, sectionKey: string) => void;
   toggleOpen: () => void;
 };
