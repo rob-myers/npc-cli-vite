@@ -59,7 +59,7 @@ export function WorldMenu() {
       skinDebugOpen: false,
       lightMapOpen: false,
       menuOpen: false,
-      lightsOpen: tryLocalStorageGetParsed(lightsOpenStorageKey) === true,
+      playerOpen: tryLocalStorageGetParsed(playerOpenStorageKey) === true,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
@@ -261,6 +261,8 @@ export function WorldMenu() {
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
     longPressed: false,
   });
+  /** Buttons whose press should not dismiss the menu as an "outside press" */
+  const keepMenuOpenEl = useRef<HTMLDivElement>(null);
   const onIntroPressStart = () => {
     introPress.current.longPressed = false;
     introPress.current.timeoutId = setTimeout(() => {
@@ -296,9 +298,14 @@ export function WorldMenu() {
           {/* main menu */}
           <Menu.Root
             open={state.menuOpen}
-            onOpenChange={(open, { reason }) => {
+            onOpenChange={(open, { reason, event }) => {
               if (open) {
                 state.set({ menuOpen: true });
+              } else if (
+                reason === "outside-press" &&
+                keepMenuOpenEl.current?.contains(event.target as Node) === true
+              ) {
+                // panning to the player, or pausing, should not close the menu
               } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
                 state.set({ menuOpen: false });
               }
@@ -491,53 +498,80 @@ export function WorldMenu() {
                     )}
 
                     <div
+                      className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="w-24">
+                        <LightsMenuSlider
+                          label="Room lights"
+                          value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                          defaultValue={defaultRoomLightIntensity}
+                          onChange={(next) => w.view.setRoomLightIntensity(next)}
+                        />
+                      </div>
+
+                      <div className="flex gap-1">
+                        <LightsIconButton
+                          active={w.view.roomLightEditingEnabled}
+                          icon={PencilSimpleIcon}
+                          title="Edit (long press)"
+                          onClick={() => w.view.toggleRoomLightEditing()}
+                        />
+                        <LightsIconButton
+                          active={w.view.roomLight?.roomLightingEnabled.value === 1}
+                          icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
+                          title="Lights shown"
+                          onClick={() => {
+                            w.view.setPostProcessingEnabled(true);
+                            w.view.setRoomLightingEnabled();
+                            state.update();
+                          }}
+                        />
+                        <LightsIconButton
+                          danger
+                          icon={TrashIcon}
+                          title="Clear lighting"
+                          onClick={() => w.view.resetAllRooms()}
+                        />
+                      </div>
+                    </div>
+
+                    <div
                       className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
                       onClick={(e) => {
                         e.stopPropagation();
-                        state.lightsOpen = !state.lightsOpen;
-                        tryLocalStorageSet(lightsOpenStorageKey, String(state.lightsOpen));
+                        state.playerOpen = !state.playerOpen;
+                        tryLocalStorageSet(playerOpenStorageKey, String(state.playerOpen));
                         state.update();
                       }}
                     >
-                      {state.lightsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-                      lights
+                      {state.playerOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                      player
                     </div>
 
-                    {state.lightsOpen && (
+                    {state.playerOpen && (
                       <div
                         className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="w-20">
-                          <LightsMenuSlider
-                            label="Ambient"
-                            value={w.view.ambientIntensity ?? defaultAmbientIntensity}
-                            defaultValue={defaultAmbientIntensity}
-                            onChange={(next) => w.view.setAmbientIntensity(next)}
-                          />
-                        </div>
-
                         <div className="w-24 flex items-stretch">
                           <MenuSelect
                             side="bottom"
                             className="border rounded-l border-white/30 border-r-0"
-                            label={truncateLabel(w.view.dynamicLightTarget?.npcKey ?? "no npc", 10)}
-                            value={w.view.dynamicLightTarget?.npcKey ?? ""}
-                            items={[
-                              { key: "no tracked npc", value: "" },
-                              ...npcKeys.map((k) => ({ key: k, value: k })),
-                            ]}
-                            onValueChange={(v) => w.npc.trackNpc(v || undefined)}
+                            label={truncateLabel(w.player?.key ?? "no npc", 10)}
+                            value={w.player?.key ?? ""}
+                            items={npcKeys.map((k) => ({ key: k, value: k }))}
+                            onValueChange={(v) => v && w.player.setKey(v)}
                           />
                           <button
                             type="button"
-                            title="Cycle tracked npc"
+                            title="Cycle player"
                             className="grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const current = w.view.dynamicLightTarget?.npcKey;
-                              const currentIdx = current ? npcKeys.indexOf(current) : -1;
-                              w.npc.trackNpc(npcKeys[currentIdx + 1]);
+                              if (npcKeys.length === 0) return;
+                              const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                              w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
                             }}
                           >
                             <CaretRightIcon className="size-3" />
@@ -546,7 +580,7 @@ export function WorldMenu() {
 
                         <div className="w-20">
                           <LightsMenuSlider
-                            label="npc radius"
+                            label="radius"
                             min={0.2}
                             max={maxDynamicLightRadius}
                             step={0.1}
@@ -557,43 +591,10 @@ export function WorldMenu() {
                         </div>
                         <div className="w-20">
                           <LightsMenuSlider
-                            label="npc lit"
+                            label="lit"
                             value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
                             defaultValue={defaultDynamicLightIntensity}
                             onChange={(next) => w.view.setDynamicLightIntensity(next)}
-                          />
-                        </div>
-                        <div className="w-20">
-                          <LightsMenuSlider
-                            label="Rooms"
-                            value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                            defaultValue={defaultRoomLightIntensity}
-                            onChange={(next) => w.view.setRoomLightIntensity(next)}
-                          />
-                        </div>
-
-                        <div className="flex gap-1">
-                          <LightsIconButton
-                            active={w.view.roomLightEditingEnabled}
-                            icon={PencilSimpleIcon}
-                            title="Edit (long press)"
-                            onClick={() => w.view.toggleRoomLightEditing()}
-                          />
-                          <LightsIconButton
-                            active={w.view.roomLight?.roomLightingEnabled.value === 1}
-                            icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
-                            title="Lights shown"
-                            onClick={() => {
-                              w.view.setPostProcessingEnabled(true);
-                              w.view.setRoomLightingEnabled();
-                              state.update();
-                            }}
-                          />
-                          <LightsIconButton
-                            danger
-                            icon={TrashIcon}
-                            title="Clear lighting"
-                            onClick={() => w.view.resetAllRooms()}
                           />
                         </div>
                       </div>
@@ -770,40 +771,43 @@ export function WorldMenu() {
             </div>
           )}
 
-          {/* pan to the player: long press disables it on load */}
-          <div
-            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
-            onPointerDown={onIntroPressStart}
-            onPointerUp={() => onIntroPressEnd()}
-            onPointerLeave={() => onIntroPressEnd(true)}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            {introEnabled ? (
-              <VideoCameraIcon
-                className="size-5"
-                alt="pan to the player (long press to disable on load)"
-                weight="bold"
-              />
-            ) : (
-              <VideoCameraSlashIcon
-                className="size-5 text-red-400"
-                alt="pan to the player (disabled on load)"
-                weight="bold"
-              />
-            )}
-          </div>
+          {/* `contents` so these still lay out as siblings, whilst sharing one ref */}
+          <div ref={keepMenuOpenEl} className="contents">
+            {/* pan to the player: long press disables it on load */}
+            <div
+              className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+              onPointerDown={onIntroPressStart}
+              onPointerUp={() => onIntroPressEnd()}
+              onPointerLeave={() => onIntroPressEnd(true)}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              {introEnabled ? (
+                <VideoCameraIcon
+                  className="size-5"
+                  alt="pan to the player (long press to disable on load)"
+                  weight="bold"
+                />
+              ) : (
+                <VideoCameraSlashIcon
+                  className="size-5 text-red-400"
+                  alt="pan to the player (disabled on load)"
+                  weight="bold"
+                />
+              )}
+            </div>
 
-          {/* play/pause */}
-          <button
-            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
-            onClick={() => w.setDisabled()}
-          >
-            {w.disabled ? (
-              <PlayIcon className="size-5" weight="bold" />
-            ) : (
-              <PauseIcon className="size-5" weight="bold" />
-            )}
-          </button>
+            {/* play/pause */}
+            <button
+              className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
+              onClick={() => w.setDisabled()}
+            >
+              {w.disabled ? (
+                <PlayIcon className="size-5" weight="bold" />
+              ) : (
+                <PauseIcon className="size-5" weight="bold" />
+              )}
+            </button>
+          </div>
 
           {(extraZoomActive || readyForExtraZoom) && (
             <div
@@ -997,8 +1001,8 @@ export type State = {
   lightMapOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  /** Collapsible "lights" section within the main menu */
-  lightsOpen: boolean;
+  /** Collapsible "player" section within the main menu */
+  playerOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
@@ -1035,7 +1039,7 @@ const minMenuWidth = 200;
 const minMenuHeight = 120;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
-const lightsOpenStorageKey = "world-lights-section-open";
+const playerOpenStorageKey = "world-player-section-open";
 /** Long press the intro button to disable it, since a click always replays it */
 const introLongPressMs = 500;
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;

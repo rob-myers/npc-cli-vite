@@ -1,7 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
-import { error, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { error } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
-import { defaultPlayerKey, defaultSkinKey, playerStorageKeyPrefix, spawnPlayerAttempts } from "../const";
+import { defaultPlayerKey, defaultSkinKey, spawnPlayerAttempts } from "../const";
 import * as persisted from "../service/get-persisted";
 import type { State as WorldState } from "./World";
 
@@ -30,7 +30,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
       },
       async ensure() {
-        if (w.n[state.key] === undefined && (await state.restore()) === false) {
+        const saved = persisted.getPlayer(w.mapKey);
+        if (saved?.key !== undefined) {
+          state.key = saved.key; // adopt before testing existence
+        }
+
+        if (w.n[state.key] === undefined && (await state.restore(saved)) === false) {
           await state.spawnSomewhere();
         }
 
@@ -52,16 +57,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return;
         }
 
-        const player: PersistedPlayer = {
+        const player: persisted.PersistedPlayer = {
+          key: state.key,
           at: { x: npc.point.x, y: npc.point.y },
           angle: npc.rotation.y,
           skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
           decorKey: w.e.npcToDoable[npc.key] ?? undefined,
         };
-        tryLocalStorageSet(`${playerStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(player));
+        persisted.setPlayer(w.mapKey, player);
       },
-      async restore() {
-        const saved = tryLocalStorageGetParsed<PersistedPlayer>(`${playerStorageKeyPrefix}:${w.mapKey}`);
+      async restore(saved = persisted.getPlayer(w.mapKey)) {
         if (saved === null) {
           return false;
         }
@@ -80,6 +85,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           error(e); // e.g. no longer placable
           return false;
         }
+      },
+      setKey(npcKey) {
+        if (npcKey === state.key || w.n[npcKey] === undefined) {
+          return;
+        }
+        state.set({ key: npcKey });
+        // retargets the dynamic light, snapping it so it shows whilst paused
+        w.npc.trackNpc(npcKey);
+        state.persist();
+        void state.panTo(); // as on load
       },
       setIntroEnabled(next) {
         persisted.setIntroEnabled(next);
@@ -150,21 +165,14 @@ export type State = {
   /** Saves the player for `w.mapKey`, so `restore` can bring them back */
   persist(): void;
   /** Respawns the player saved by `persist` — `false` if there was none, or it failed */
-  restore(): Promise<boolean>;
+  restore(saved?: null | persisted.PersistedPlayer): Promise<boolean>;
   /** Enabling replays the intro immediately; disabling remembers the current view */
   setIntroEnabled(next: boolean): void;
+  /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
+  setKey(npcKey: string): void;
   /** Spawns the player in a random room — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
 
 /** How long nothing must be pending before `w.player.settled` */
 const settledMs = 500;
-
-type PersistedPlayer = {
-  at: { x: number; y: number };
-  /** Radians, CW from north viewed from above */
-  angle: number;
-  skinKey: string;
-  /** Set when the player was doing something e.g. sitting */
-  decorKey?: string;
-};
