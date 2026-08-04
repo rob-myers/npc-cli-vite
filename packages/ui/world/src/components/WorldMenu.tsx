@@ -254,7 +254,7 @@ export function WorldMenu() {
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
   const toggleToastKeys = useToastTs(state.toastTs);
-  const { extraZoomActive, readyForExtraZoom } = w.view.controls ?? {};
+  const { extraZoomActive, readyForExtraZoom, touchGesture } = w.view.controls ?? {};
   const litRootCount = w.view.roomLight?.getLitRoomCount() ?? 0;
   const introEnabled = w.player.introEnabled;
   // click replays the intro, whereas long press disables it
@@ -809,14 +809,21 @@ export function WorldMenu() {
             </button>
           </div>
 
-          {(extraZoomActive || readyForExtraZoom) && (
+          {/* the decided touch gesture, else extra zoom */}
+          {(touchGesture !== "none" || extraZoomActive || readyForExtraZoom) && (
             <div
               className={cn(
                 "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none size-9",
-                extraZoomActive ? "bg-gray-800/90 text-white" : "bg-gray-800/50 text-gray-400",
+                touchGesture !== "none" || extraZoomActive
+                  ? "bg-gray-800/90 text-white"
+                  : "bg-gray-800/50 text-gray-400",
               )}
             >
-              <MagnifyingGlassIcon className="size-5" weight="bold" />
+              {touchGesture === "rotate" ? (
+                <ArrowsClockwiseIcon className="size-5" alt="rotating" weight="bold" />
+              ) : (
+                <MagnifyingGlassIcon className="size-5" alt="zooming" weight="bold" />
+              )}
             </div>
           )}
         </div>
