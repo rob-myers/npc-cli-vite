@@ -109,7 +109,7 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const baseAlpha = float(1)
     .sub(distToCenter.sub(shadowRadius - edgeSoftness).div(edgeSoftness))
     .clamp(0, 1)
-    .mul(0.3)
+    .mul(0.4)
     .mul(xzo.z);
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
