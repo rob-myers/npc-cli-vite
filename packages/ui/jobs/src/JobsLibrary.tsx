@@ -75,7 +75,7 @@ export default function JobsLibrary(props: Props) {
         if (state.resizing === false) {
           return;
         }
-        const next = state.startHeight + (e.clientY - state.startY); // drag down to grow
+        const next = state.startHeight - (e.clientY - state.startY); // drag up to grow
         state.set({ height: Math.min(state.getMaxHeight(), Math.max(minLibraryHeight, next)) });
       },
       onResizeUp(e) {
@@ -141,6 +141,19 @@ export default function JobsLibrary(props: Props) {
       className="shrink-0 flex flex-col font-sans bg-black border border-[#505050] rounded shadow-md shadow-black/40"
       style={state.open ? { height: state.height } : undefined}
     >
+      {state.open && (
+        <div
+          title="resize"
+          className="group shrink-0 h-2 -mt-1 flex items-center justify-center cursor-ns-resize touch-none"
+          onPointerDown={state.onResizeDown}
+          onPointerMove={state.onResizeMove}
+          onPointerUp={state.onResizeUp}
+          onLostPointerCapture={state.onResizeUp}
+        >
+          <div className="w-10 h-0.5 rounded bg-[#505050] group-hover:bg-[#aaca]" />
+        </div>
+      )}
+
       <div className={cn("shrink-0 flex items-end gap-3 px-2", state.open && "border-b border-[#2a2a2a]")}>
         <nav className="flex items-end -mb-px">
           {categories.map(({ key, label }) => (
@@ -212,19 +225,6 @@ export default function JobsLibrary(props: Props) {
             />
           ))}
         </article>
-      )}
-
-      {state.open && (
-        <div
-          title="resize"
-          className="group shrink-0 h-2 -mb-1 flex items-center justify-center cursor-ns-resize touch-none"
-          onPointerDown={state.onResizeDown}
-          onPointerMove={state.onResizeMove}
-          onPointerUp={state.onResizeUp}
-          onLostPointerCapture={state.onResizeUp}
-        >
-          <div className="w-10 h-0.5 rounded bg-[#505050] group-hover:bg-[#aaca]" />
-        </div>
       )}
     </div>
   );
