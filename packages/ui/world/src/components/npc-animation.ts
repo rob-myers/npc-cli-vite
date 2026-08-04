@@ -4,9 +4,12 @@ import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
 import {
+  defaultFadeSecs,
+  fadeSecs,
   idleAgentMaxSpeed,
   idleMaxAcceleration,
   idleSeparationWeight,
+  npcfg,
   npcScale,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
@@ -147,7 +150,7 @@ export class NpcAnimation {
       this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
     }
 
-    this.playIdleClip(0.3, this.idleClip, forceIdleFadeIn);
+    this.playIdleClip(this.getFadeSecs(this.moveClip, this.idleClip), this.idleClip, forceIdleFadeIn);
     this.npc.setBubbleHeight(bubbleHeightForClip(this.idleClip.name));
     this.npc.setLabelYShift(labelYShiftForClip(this.idleClip.name));
 
@@ -180,6 +183,9 @@ export class NpcAnimation {
     last.blockingArea = -1;
     last.navNodeRef = -1;
     last.point = this.npc.point;
+    last.moveTime = this.w.timer.getElapsedTime();
+    // arrival radius is relative to this, else a short move starts arrived
+    last.targetDistance = this.npc.distanceTo(groundPoint);
 
     this.npc.nodeCount = 0;
     this.stuckAccum = 0;
@@ -193,8 +199,23 @@ export class NpcAnimation {
     this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
     this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
 
-    this.mixer.existingAction(this.idleClip)?.fadeOut(0.3);
-    this.mixer.clipAction(this.moveClip).reset().fadeIn(0.3).play();
+    const fade = this.getFadeSecs(this.idleClip, this.moveClip);
+    this.mixer.existingAction(this.idleClip)?.fadeOut(fade);
+    this.mixer.clipAction(this.moveClip).reset().fadeIn(fade).play();
+  }
+
+  getFadeSecs(src: THREE.AnimationClip, dst: THREE.AnimationClip) {
+    const srcKey = src.name as AnimationClipKey;
+    const dstKey = dst.name as AnimationClipKey;
+    return fadeSecs[srcKey]?.[dstKey] ?? defaultFadeSecs;
+  }
+
+  /**
+   * Has the move clip finished fading in?
+   * Arriving before then would cut it off, looking jerky.
+   */
+  moveClipFadedIn() {
+    return (this.mixer.existingAction(this.moveClip)?.getEffectiveWeight() ?? 0) >= 0.99;
   }
 
   syncAnimation(speed: number) {
@@ -207,19 +228,19 @@ export class NpcAnimation {
   updateStuck(delta: number, worldSeconds: number): boolean {
     const { position, last } = this.npc;
 
-    // delay stuck a bit
-    if (worldSeconds - last.pinTime < 2.5) {
+    // grace whilst accelerating away from standstill
+    if (worldSeconds - last.moveTime < npcfg.time.stuckGrace) {
       return false;
     }
 
     const dx = position.x - last.point.x;
     const dz = position.z - last.point.y;
     const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < 0.002 ? delta : 0;
+    this.stuckAccum += dist < npcfg.dist.stuckEpsilon ? delta : 0;
     last.point.x = position.x;
     last.point.y = position.z;
 
-    return this.stuckAccum > 0.4;
+    return this.stuckAccum > npcfg.time.stuckDuration;
   }
 }
 

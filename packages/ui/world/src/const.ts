@@ -144,8 +144,6 @@ export const MAX_OBSTACLE_SKIRT_INSTANCES = 2048;
  */
 export const MAX_DECOR_QUAD_INSTANCES = 1024;
 
-/** Meters */
-export const npcHeight = 1.2;
 export const npcScale = 0.7;
 
 export const MAX_NPCS = 256;
@@ -172,7 +170,41 @@ export const runAgentMaxSpeed = 2.5;
 export const walkSeparationWeight = 0.5;
 export const idleSeparationWeight = 0.1; // Less pushable
 
-export const maxAgentRadius = 0.5;
+/**
+ * NPC tuning: `npcfg.dist` in meters, `npcfg.time` in seconds.
+ */
+export const npcfg = {
+  dist: {
+    /** Arrival radius, per `running` and whether we slow down beforehand */
+    arrive: { walk: 0.15, run: 0.025 },
+    /** Arrival radius when gliding through, i.e. `arrive` is false */
+    glide: { walk: 0.4, run: 0.8 },
+    /** Arrival radius floor, else a zero-distance move never arrives */
+    arriveMin: 0.02,
+    /** Arrival radius is also capped at this fraction of `npc.last.targetDistance` */
+    arriveFraction: 0.4,
+    /** Manhattan distance below which a move uses `shuffle` rather than `walk` */
+    shuffleTarget: 0.25,
+    /** Within this of the closest reachable point we look rather than walk */
+    blockedLook: 0.3,
+    /** Look before teleporting onto a doable this close by */
+    doableLook: 1,
+    /** Below this much movement per frame an npc counts as motionless */
+    stuckEpsilon: 0.002,
+    /** Height of an npc */
+    height: 1.2,
+    /** Sizes the crowd */
+    maxAgentRadius: 0.5,
+  },
+  time: {
+    /** Grace after a move starts, before stuck detection applies */
+    stuckGrace: 0.5,
+    /** How long an npc must stay motionless to count as stuck */
+    stuckDuration: 0.4,
+    /** Minimum look duration before teleporting onto a nearby doable */
+    look: 0.5,
+  },
+} as const;
 
 export const defaultDoorCloseMs = 3000;
 
@@ -193,6 +225,27 @@ export const fromAnimationClipKey = {
 };
 
 export const defaultIdleAnimationClipKey = "breathe" satisfies import("./components/NPCs").AnimationClipKey;
+
+/** Fallback for @see {fadeSecs} */
+export const defaultFadeSecs = 0.3;
+
+/**
+ * Cross-fade seconds `fadeSecs[src][dst]`, from one animation clip into another.
+ * A missing destination falls back to @see {defaultFadeSecs}.
+ */
+export const fadeSecs: Record<
+  keyof typeof fromAnimationClipKey,
+  Partial<Record<keyof typeof fromAnimationClipKey, number>>
+> = {
+  breathe: { shuffle: 0.15 },
+  idle: { shuffle: 0.15 },
+  lie: {},
+  run: {},
+  // brief, so it must fade quickly to be seen at all
+  shuffle: { breathe: 0.15, idle: 0.15 },
+  sit: {},
+  walk: {},
+};
 
 export const pickOpenDoorsKey = "world-debug-pick-open-doors";
 

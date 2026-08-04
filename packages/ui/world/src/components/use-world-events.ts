@@ -32,9 +32,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
         return closeNpcs === undefined || (door.locked ? closeNpcs.inside.size === 0 : closeNpcs.nearby.size === 0);
       },
-      checkNpcTargetUnreachable(npc) {
+      checkNpcTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
-        const dstGrId = npc.last.dstGrId;
 
         if (grId === null || dstGrId === null || grId.grKey === dstGrId.grKey) {
           return null; // not moving or same room
@@ -712,7 +711,11 @@ export type State = {
    *   and the room is inaccessible (e.g. locked doors) we want to avoid
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
-  checkNpcTargetUnreachable(npc: Npc): null | { blockingGdKey: Geomorph.GmDoorKey; nearbyPoint: Geom.VectJson };
+  /** Defaults to the npc's current destination */
+  checkNpcTargetUnreachable(
+    npc: Npc,
+    dstGrId?: null | Geomorph.GmRoomId,
+  ): null | { blockingGdKey: Geomorph.GmDoorKey; nearbyPoint: Geom.VectJson };
   findPath(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
