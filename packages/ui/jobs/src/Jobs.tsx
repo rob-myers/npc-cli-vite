@@ -378,7 +378,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         )}
 
         {sessionsExist && (
-          <div className="flex flex-col items-start gap-0.5 text-base text-white">
+          <div className="flex flex-col items-start text-base text-white">
             {/* keyed, so switching session swaps items without exit animations */}
             <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
               {state.ordered.map((p) => {
@@ -399,7 +399,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
                     <div className="flex flex-wrap items-stretch gap-y-0.5">
                       {/* fixed width so cards align */}
-                      <div className="relative flex shrink-0 bg-black border border-[#aaca]">
+                      <div className="relative flex shrink-0 bg-black border border-[#555]">
                         <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
                       </div>
 
