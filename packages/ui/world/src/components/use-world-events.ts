@@ -67,7 +67,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           blockingGdKey: door.gdKey,
           nearbyPoint: firstBadDoorNode.astar.centroid
             .clone()
-            .addScaled(door.normal, 0.5 * (indexOfRoomId === 0 ? 1 : -1)),
+            .addScaled(door.normal, 0.15 * (indexOfRoomId === 0 ? 1 : -1)),
         };
       },
       findGmIdContaining(input) {
