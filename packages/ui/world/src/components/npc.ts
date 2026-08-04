@@ -60,12 +60,14 @@ export class Npc {
     idleTime: 0,
     /** Look target */
     look: { x: 0, y: 0 },
+    /** World time (seconds) when the current move started */
+    moveTime: 0,
     /** Seen nav node ref */
     navNodeRef: -1,
-    /** Seconds elapsed */
-    pinTime: 0,
     /** Position (used in stuck detection)  */
     point: { x: 0, y: 0 },
+    /** Distance to `dst` when the current move started */
+    targetDistance: 0,
   };
   /**
    * Number of times current nav node changed during current/last navigation.
@@ -362,7 +364,6 @@ export class Npc {
     if (this.agentId === null || result.success === false) {
       return false;
     }
-    this.last.pinTime = this.w.timer.getElapsedTime();
     return crowdApi.requestMoveTarget(
       this.w.npc.crowd,
       this.agentId,

@@ -46,8 +46,7 @@ import {
   idleAgentMaxSpeed,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
-  maxAgentRadius,
-  npcHeight,
+  npcfg,
   walkMaxAcceleration,
 } from "../const";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
@@ -67,7 +66,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
-      crowd: crowdApi.create(maxAgentRadius),
+      crowd: crowdApi.create(npcfg.dist.maxAgentRadius),
       gltf: null,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
@@ -287,9 +286,9 @@ export default function NPCs() {
           if (doResult.type === "use-current") {
             await state.spawn({ npcKey, at: to }); // respawn
           } else {
-            if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < 1) {
+            if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcfg.dist.doableLook) {
               // look + delay when standing nearby
-              await npc.look(to, { minMs: 500 });
+              await npc.look(to, { minMs: npcfg.time.look * 1000 });
             }
 
             await npc.fadeSpawn({ at: to });
@@ -312,8 +311,18 @@ export default function NPCs() {
         w.e.setNpcDo(npcKey, null); // in case do=stand
         npc.rejectAll(new Error("move again"));
 
+        // already at the closest reachable point e.g. locked door alongside,
+        // so look rather than begin a walk we'd immediately abort
+        const unreachable = w.e.checkNpcTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
+        if (unreachable !== null && npc.distanceTo(unreachable.nearbyPoint) < npcfg.dist.blockedLook) {
+          await npc.look(unreachable.nearbyPoint, { minMs: npcfg.time.look * 1000 });
+          return;
+        }
+
         // shuffle, walk or run
-        const closeTarget = Math.abs(groundPoint.x - npc.position.x) + Math.abs(groundPoint.y - npc.position.z) < 0.25;
+        const closeTarget =
+          Math.abs(groundPoint.x - npc.position.x) + Math.abs(groundPoint.y - npc.position.z) <
+          npcfg.dist.shuffleTarget;
         npc.anim.moveClip = closeTarget ? state.clips.shuffle : fast ? state.clips.run : state.clips.walk;
 
         npc.anim.startMoving(groundPoint, result, arrive);
@@ -369,11 +378,8 @@ export default function NPCs() {
           if (stuck === true) {
             npc.rejectAll(new Error("stuck"));
           } else if (
-            crowdApi.isAgentAtTarget(
-              state.crowd,
-              npc.agentId,
-              npc.anim.arrive ? (npc.running ? 0.025 : 0.15) : npc.running ? 0.8 : 0.4,
-            ) === true
+            npc.anim.moveClipFadedIn() === true &&
+            crowdApi.isAgentAtTarget(state.crowd, npc.agentId, getArriveDistance(npc)) === true
           ) {
             // arrived
             npc.anim.startIdle();
@@ -776,10 +782,17 @@ export type State = {
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
 };
 
+/** Capped by the initial distance, so a short move need not start arrived */
+function getArriveDistance(npc: Npc) {
+  const { arrive, glide, arriveMin, arriveFraction } = npcfg.dist;
+  const base = (npc.anim.arrive ? arrive : glide)[npc.running ? "run" : "walk"];
+  return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
+}
+
 function getAgentParams(): crowd.AgentParams {
   return {
     radius: 0.2,
-    height: npcHeight,
+    height: npcfg.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
     // collisionQueryRange: 1,
