@@ -522,6 +522,7 @@ export default function NPCs() {
         }
 
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
+        const playerExisted = w.player.key in w.n;
 
         const npc = state.rawSpawn({ npcKey, doResult, groundPoint: groundAt, angle, as, closePolyResult, facing });
 
@@ -538,6 +539,11 @@ export default function NPCs() {
           if (as) npc.setSkin(as);
           if (prevIdleClip !== npc.anim.idleClip) npc.anim.playIdleClip(0); // before update
           w.view.forceUpdate(0.01);
+        }
+
+        if (!playerExisted) {
+          w.player.key = npcKey;
+          await w.player.ensure();
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });

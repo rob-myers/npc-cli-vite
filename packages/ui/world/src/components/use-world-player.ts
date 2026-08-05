@@ -21,8 +21,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 
       async ensure() {
         if (w.n[state.key] === undefined) {
-          // prefer continuity of position over this map's saved spot
-          (await state.restoreNearPrevMap()) || (await state.restore()) || (await state.spawnSomewhere());
+          // prefer continuity of position, then this map's saved spot, then what we're looking at
+          (await state.restoreNearPrevMap()) ||
+            (await state.restore()) ||
+            (await state.restoreNearCamera()) ||
+            (await state.spawnSomewhere());
         }
         state.prevMapPosition = null;
 
@@ -61,6 +64,36 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           error(e); // e.g. no longer placable
           return false;
         }
+      },
+      async restoreNearCamera() {
+        const target = w.view.controls?.target;
+        if (target === undefined) {
+          return false;
+        }
+        const at = { x: target.x, y: target.z };
+
+        // the exact point if navigable, else the nearest room centres
+        const candidates: JshCli.PointAnyFormat[] = [];
+        const snapped = w.npc.getClosestPoly(at, "0.5");
+        if (snapped.success === true) {
+          candidates.push(snapped.position);
+        }
+        candidates.push(
+          ...w.gms
+            .flatMap((gm) => gm.rooms.map((room) => gm.matrix.transformPoint({ ...room.center })))
+            .sort((p, q) => Math.hypot(p.x - at.x, p.y - at.y) - Math.hypot(q.x - at.x, q.y - at.y))
+            .slice(0, spawnPlayerAttempts),
+        );
+
+        for (const point of candidates) {
+          try {
+            await w.npc.spawn({ npcKey: state.key, at: point });
+            return true;
+          } catch {
+            // e.g. "not placable": try the next candidate
+          }
+        }
+        return false;
       },
       async restoreNearPrevMap() {
         if (state.prevMapPosition === null) {
@@ -144,6 +177,8 @@ export type State = {
   persist(): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;
+  /** Spawns the player as near the camera as we can manage — `false` if we couldn't */
+  restoreNearCamera(): Promise<boolean>;
   /** Respawns the player near where they were on the previous map — `false` if we couldn't */
   restoreNearPrevMap(): Promise<boolean>;
   /** Enabling replays the intro immediately; disabling remembers the current view */
