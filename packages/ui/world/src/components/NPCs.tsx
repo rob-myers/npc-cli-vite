@@ -16,9 +16,10 @@ import {
 } from "navcat";
 import { type crowd, crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect, useMemo } from "react";
-import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+// deep import: the `Addons.js` barrel drags all 268 example modules into the bundle
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 import {
   attribute,
   cameraPosition,

@@ -30,6 +30,17 @@ export default defineConfig({
     process.env.BUILD_AND_ANALYZE ? analyzer() : undefined,
 
     {
+      // zod's `export * as locales` is a namespace re-export, so all 47 locales survive
+      // tree-shaking even though we only ever use `en`
+      name: "trim-zod-locales",
+      load(id) {
+        if (id.replace(/\\/g, "/").endsWith("/zod/v4/locales/index.js")) {
+          return `export { default as en } from "./en.js";`;
+        }
+      },
+    },
+
+    {
       name: "patch-vite-client",
       transform(code, id) {
         if (id.includes("@vite/client") || id.endsWith("client.mjs")) {

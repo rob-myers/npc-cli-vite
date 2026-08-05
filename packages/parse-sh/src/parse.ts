@@ -7,17 +7,22 @@ export async function loadWasm() {
   const go = new Go();
 
   // source https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L156
-  // doesn't use instantiateStreaming
   if (!wasm.ready) {
     console.log("Loading WASM from", wasm.url);
-    wasm.buffer = await (wasm.promise ??= fetch(wasm.url).then((resp) => resp.arrayBuffer()));
+    // compile a fresh module while it downloads, rather than after
+    wasm.module = await (wasm.promise ??= WebAssembly.compileStreaming(fetch(wasm.url)).catch(
+      // e.g. server sent the wrong Content-Type, which makes streaming throw
+      async () => WebAssembly.compile(await fetch(wasm.url).then((resp) => resp.arrayBuffer())),
+    ));
     wasm.ready = true;
   }
 
-  const wasmInstance = await WebAssembly.instantiate(wasm.buffer, go.importObject).then((obj) => {
-    go.run(obj.instance);
-    return obj.instance;
-  });
+  const wasmInstance = await WebAssembly.instantiate(wasm.module as WebAssembly.Module, go.importObject).then(
+    (instance) => {
+      go.run(instance);
+      return instance;
+    },
+  );
 
   return {
     go,
@@ -26,8 +31,9 @@ export async function loadWasm() {
 }
 
 const wasm = {
-  buffer: new ArrayBuffer(),
-  promise: null as null | Promise<ArrayBuffer>,
+  /** Compiled once, then instantiated per `loadWasm` */
+  module: null as null | WebAssembly.Module,
+  promise: null as null | Promise<WebAssembly.Module>,
   ready: false,
   url: new URL("../main.wasm", import.meta.url).href,
 };
