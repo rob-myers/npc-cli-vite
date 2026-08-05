@@ -406,14 +406,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { onKeyDown } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
 
-        // shows/hides the "two fingers zoom" indicator
-        const onTouchModeChange = (_e: Event) => w.update();
-        w.rootEl.addEventListener("touchmodechange", onTouchModeChange);
-
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
-          w.rootEl?.removeEventListener("touchmodechange", onTouchModeChange);
         };
       },
       setupLights() {

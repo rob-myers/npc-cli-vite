@@ -284,47 +284,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     committed: false,
   };
 
-  /**
-   * What two fingers do:
-   * - `zoom` by default — pinch to dolly
-   * - `rotate` after a long two-finger press, until every finger lifts;
-   *   horizontal then drags the azimuth, vertical the polar
-   *
-   * One finger pans either way.
-   */
-  touchMode: "rotate" | "zoom" = "zoom";
-  /** Pending long two-finger press, which switches into `rotate` */
-  twoFingerTimer = 0;
-  /** Where each finger went down, so a drag can cancel the long press */
-  twoFingerStart: Record<number, THREE.Vector2> = {};
-  /** Midpoint of the two fingers, so a pinch can ignore their shared motion */
+  /** Midpoint of the two fingers, whose motion rotates the camera */
   twoFingerCentroid = new THREE.Vector2();
-
-  setTouchMode(touchMode: CameraControls["touchMode"]) {
-    if (this.touchMode === touchMode) {
-      return;
-    }
-    this.touchMode = touchMode;
-    this.domElement.dispatchEvent(new CustomEvent("touchmodechange", { detail: { touchMode }, bubbles: true }));
-  }
-
-  /** Await a long press, unless the fingers drag first */
-  startTwoFingerTimer() {
-    this.clearTwoFingerTimer();
-    this.twoFingerStart = Object.fromEntries(
-      this.pointers.map((p) => [p.pointerId, this.pointerPositions[p.pointerId].clone()]),
-    );
-    this.twoFingerTimer = window.setTimeout(() => {
-      this.twoFingerTimer = 0;
-      this.handleTouchStartRotate(); // baseline the rotate
-      this.setTouchMode("rotate");
-    }, twoFingerLongPressMs);
-  }
-
-  clearTwoFingerTimer() {
-    window.clearTimeout(this.twoFingerTimer);
-    this.twoFingerTimer = 0;
-  }
 
   get extraZoomActive() {
     return this._ez.active;
@@ -544,46 +505,40 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     if (this.enableRotate === true) this.handleTouchMoveRotate(event);
   }
 
+  /**
+   * Two-finger motion decomposes into a centroid translation and a change of
+   * spread, which are independent — so we apply both every frame, giving
+   * azimuth, polar and zoom at once with no gesture to classify.
+   *
+   * Each has its own deadzone, else a pinch's slight centroid drift would
+   * rotate, and a drag's slight spread change would zoom. Baselines only
+   * advance when we act, so sub-deadzone motion accumulates rather than being lost.
+   */
   handleTwoFingerMove(event: PointerEvent) {
-    if (this.touchMode === "rotate") {
-      return this.handleTouchMoveRotate(event);
-    }
-
-    // moving means they meant to pinch, rather than long press
-    if (this.twoFingerTimer !== 0 && this.movedBeyondLongPress() === true) {
-      this.clearTwoFingerTimer();
-    }
-
     const other = this.getSecondPointerPosition(event);
     if (!other) return;
-    const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
 
-    // only pinching counts: if the fingers moved together more than they
-    // moved apart, it's a two-finger pan, which we ignore
+    const element = this.domElement;
     const cx = 0.5 * (event.pageX + other.x);
     const cy = 0.5 * (event.pageY + other.y);
-    const panned = Math.hypot(cx - this.twoFingerCentroid.x, cy - this.twoFingerCentroid.y);
-    this.twoFingerCentroid.set(cx, cy);
+    const dx = (cx - this.twoFingerCentroid.x) * this.rotateSpeed;
+    const dy = (cy - this.twoFingerCentroid.y) * this.rotateSpeed;
 
-    if (Math.abs(dist - this.u.dollyStart.y) <= panned) {
-      this.u.dollyStart.set(0, dist); // re-baseline, else the drift zooms later
-      return;
+    if (Math.hypot(dx, dy) > twoFingerDeadzone) {
+      this.rotateLeft((2 * Math.PI * dx) / element.clientHeight);
+      if (this.params.fixedPolar !== true) {
+        this.rotateUp((2 * Math.PI * dy) / element.clientHeight);
+      }
+      this.twoFingerCentroid.set(cx, cy);
     }
 
-    this.u.dollyEnd.set(0, dist);
-    const baseRatio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
-    const ratio = 1 + (baseRatio - 1) * twoFingerZoomBoost;
-    if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
-    this.dollyOut(ratio);
-    this.u.dollyStart.copy(this.u.dollyEnd);
-  }
-
-  /** Has either finger dragged far enough to rule out a long press? */
-  movedBeyondLongPress() {
-    return this.pointers.some((p) => {
-      const start = this.twoFingerStart[p.pointerId];
-      return start !== undefined && this.pointerPositions[p.pointerId].distanceTo(start) > twoFingerLongPressMove;
-    });
+    const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
+    if (Math.abs(dist - this.u.dollyStart.y) > twoFingerDeadzone) {
+      const ratio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
+      if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
+      this.dollyOut(ratio);
+      this.u.dollyStart.set(0, dist);
+    }
   }
 
   handleTouchMovePan(event: PointerEvent) {
@@ -862,12 +817,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     this.removePointer(event);
 
-    if (this.pointers.length !== 2) {
-      this.clearTwoFingerTimer();
-    }
-
     if (this.pointers.length === 0) {
-      this.setTouchMode("zoom"); // rotate lasts until every finger lifts
       this.domElement.releasePointerCapture(event.pointerId);
       this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
       this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
@@ -927,8 +877,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
     this.rotateAxis = "none";
-    this.clearTwoFingerTimer();
-    this.setTouchMode("zoom");
     this.snapAzimuth.animating = false;
     this._ez.onPointerUp();
     this.dispatchEvent(endEvent);
@@ -987,12 +935,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
       this.dispatchEvent(startEvent);
     } else if (this.pointers.length === 2) {
-      if (this.touchMode === "rotate") {
-        this.handleTouchStartRotate();
-      } else {
-        this.handleTouchStartDolly();
-        this.startTwoFingerTimer();
-      }
+      this.handleTouchStartRotate(); // also uncommits the azimuth snap
+      this.handleTouchStartDolly(); // baselines both spread and centroid
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
     } else {
@@ -1259,11 +1203,8 @@ const defaultDampingFactor = 0.05;
 const snapAzimuthOffset = Math.PI / 4;
 /** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
 const snapAzimuthEaseIn = 2;
-/** How long two fingers must rest before they rotate rather than zoom */
-const twoFingerLongPressMs = 400;
-/** Drag beyond this (px) and the long press is cancelled */
-const twoFingerLongPressMove = 8;
-const twoFingerZoomBoost = 3.0;
+/** Pixels of centroid or spread change below which a two-finger motion is noise */
+const twoFingerDeadzone = 2;
 
 const twoPI = 2 * Math.PI;
 
