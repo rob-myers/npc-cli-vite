@@ -284,7 +284,7 @@ function LibraryExample({
               className={cn(
                 segment.arg === "key" ? "text-[#eaeaae]" : tokenCss[segment.kind],
                 // editable values are underlined
-                segment.arg === "value" && "decoration-dotted decoration-[#919ba6] underline underline-offset-4",
+                // segment.arg === "value" && "decoration-dotted decoration-[#919ba6] underline underline-offset-4",
               )}
             >
               {segment.text}
