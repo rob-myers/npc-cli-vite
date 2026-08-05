@@ -136,7 +136,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       rings: null as any,
       shadows: null as any,
       speech: null as any,
-      view: { roomLightEditingEnabled: true } as State["view"],
+      view: null as any,
       wall: null as any,
       worker: { worker: { postMessage() {} } } as any,
 
@@ -418,7 +418,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         )}
         <FadeOverlay ref={state.ref("fadeEl")} />
         <WorldWorker />
-        <WorldMenu />
+        {state.view && <WorldMenu />}
         <WorldSpeech />
       </div>
     </WorldContext.Provider>
