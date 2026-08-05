@@ -252,7 +252,6 @@ export function WorldMenu() {
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
   const toggleToastKeys = useToastTs(state.toastTs);
-  const rotatingByTouch = w.view.controls?.touchMode === "rotate";
   const introEnabled = w.player.introEnabled;
   // click replays the intro, whereas long press disables it
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
@@ -781,13 +780,6 @@ export function WorldMenu() {
               )}
             </button>
           </div>
-
-          {/* two fingers zoom by default, and rotate after a long press */}
-          {rotatingByTouch === true && (
-            <div className="outline-width-1 grid place-items-center bg-gray-800 text-white pointer-events-none select-none size-9">
-              <ArrowsClockwiseIcon className="size-5" alt="two fingers rotate" weight="bold" />
-            </div>
-          )}
         </div>
 
         <div>
