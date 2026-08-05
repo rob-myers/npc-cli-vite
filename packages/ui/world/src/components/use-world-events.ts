@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
+import { defaultDoorCloseMs, defaultPlayerKey, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
@@ -148,8 +148,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const introDone = player.introMapKey === w.mapKey;
         player.introMapKey = w.mapKey;
 
-        await state.restoreNpcs();
+        const saved = persisted.getNpcs(w.mapKey);
+
+        const firstBootstrap = player.prevMapPosition === null;
+        if (firstBootstrap) {
+          player.key = saved?.playerKey ?? defaultPlayerKey;
+        }
+
+        // the player goes first, else a restored npc would be adopted as them
         await player.ensure();
+        await state.restoreNpcs(saved);
 
         if (introDone === false && player.introEnabled === true) {
           await player.panTo();
@@ -515,7 +523,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       persistNpcs() {
         persisted.setNpcs(w.mapKey, {
-          playerKey: w.player.key,
+          playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
           npcs: Object.values(w.n).map((npc) => ({
             key: npc.key,
             at: { x: npc.point.x, y: npc.point.y },
@@ -525,20 +533,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           })),
         });
       },
-      async restoreNpcs() {
-        const saved = persisted.getNpcs(w.mapKey);
+      async restoreNpcs(saved = persisted.getNpcs(w.mapKey)) {
         if (saved === null) {
           return;
         }
 
-        // on load we adopt the player, but on map change they carry across
-        if (w.player.prevMapPosition === null) {
-          w.player.key = saved.playerKey;
-        }
-
         for (const { key, at, angle, skinKey, decorKey } of saved.npcs) {
           if (key === w.player.key || w.n[key] !== undefined) {
-            continue; // player is placed by `w.player.ensure`, others may already exist
+            continue;
           }
           try {
             // the decor meta re-establishes what they were doing e.g. sitting
@@ -822,7 +824,7 @@ export type State = {
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
   persistNpcs(): void;
   /** Respawn the npcs persisted for `w.mapKey`, excluding the player */
-  restoreNpcs(): Promise<void>;
+  restoreNpcs(saved?: null | persisted.PersistedNpcs): Promise<void>;
   onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;

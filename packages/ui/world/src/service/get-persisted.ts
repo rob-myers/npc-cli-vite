@@ -19,8 +19,8 @@ export const setNpcs = (mapKey: string, value: PersistedNpcs) =>
 
 /** The npcs of some map, as left by the previous session */
 export type PersistedNpcs = {
-  /** Which of `npcs` was the player */
-  playerKey: string;
+  /** Which of `npcs` was the player; `null` if there wasn't one */
+  playerKey: null | string;
   npcs: PersistedNpc[];
 };
 
