@@ -3,6 +3,7 @@ import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import {
+  mapValues,
   testNever,
   tryLocalStorageGet,
   tryLocalStorageGetParsed,
@@ -16,7 +17,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
+import { Fn, float, If, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { WorldTheme } from "../assets.schema";
 import {
@@ -45,6 +46,7 @@ import * as persisted from "../service/get-persisted";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
 import type { SelectAnyType } from "../service/texture";
+import { applyVignette } from "../service/vignette";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -99,6 +101,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
+      // each is 0 or 1, driving a `mix` so 0 is exactly identity
+      fx: mapValues(fxDefaults, (value, key) =>
+        uniform(tryLocalStorageGetParsed<Record<string, number>>(fxKey)?.[key] ?? value),
+      ),
       raycaster: new THREE.Raycaster(),
       roomLight: createRoomLightPostprocess({
         roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
@@ -543,6 +549,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.set({ cameraDirections: n });
         w.update();
       },
+      setFx(key, next = state.fx[key].value === 0 ? 1 : 0) {
+        state.fx[key].value = next;
+        tryLocalStorageSet(fxKey, JSON.stringify(mapValues(state.fx, (u) => u.value)));
+        state.setPostProcessingEnabled(true);
+        state.forceUpdate();
+      },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
         tryLocalStorageSet(postProcessingEnabledKey, String(next));
@@ -572,7 +584,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
 
         const litEffect = Fn(() => {
-          const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
+          // `If` rather than `select`, so at full ambient the march is genuinely skipped
+          // rather than evaluated and discarded. The condition is a uniform, so the
+          // branch is coherent across the draw
+          const dynamicLitAmount = float(0).toVar();
+          If(state.unlitScale.lessThan(1), () => {
+            dynamicLitAmount.assign(state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity));
+          });
 
           const isBright = state.roomLight
             .litAmount(sceneDepth.r)
@@ -583,8 +601,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return mix(sceneColor.rgb.mul(state.unlitScale), brightColor, isBright);
         })();
 
+        // cheap toggleable effects, each a no-op whilst its uniform is 0
+        const withFx = Fn(() => {
+          const color = vec3(litEffect).toVar();
+          color.assign(applyVignette(color, state.fx.vignette));
+          return color;
+        })();
+
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = vec4(litEffect, sceneColor.a);
+        pipeline.outputNode = vec4(withFx, sceneColor.a);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -801,6 +826,10 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  /** Cheap post effects, each `0` (off) or `1` (on) */
+  fx: Record<FxKey, ReturnType<typeof uniform<"float", number>>>;
+  /** Toggles (or sets) one of `fx` */
+  setFx(key: FxKey, next?: number): void;
   roomLight: RoomLightPostprocess;
   /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling in `use-world-events.ts` */
   roomLightEditingEnabled: boolean;
@@ -923,6 +952,12 @@ function PostProcessing() {
   useEffect(() => w.view.setupPostProcessing(), []);
   return null;
 }
+
+export type FxKey = keyof typeof fxDefaults;
+
+/** Add a key here and a branch in `setupPostProcessing`, and it shows up under "debug" */
+const fxDefaults = { vignette: 1 };
+const fxKey = "world-fx";
 
 const tmpVect = new Vect();
 const tmpVector3 = new THREE.Vector3();

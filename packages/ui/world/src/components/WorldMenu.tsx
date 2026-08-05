@@ -187,6 +187,8 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
+      case "Vignette":
+        return w.view.fx?.vignette.value === 1;
       default:
         return false;
     }
@@ -240,6 +242,9 @@ export function WorldMenu() {
       case "Door Normals":
         w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
         w.view.forceUpdate();
+        break;
+      case "Vignette":
+        w.view.setFx("vignette");
         break;
       case "Decor Points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
@@ -1019,6 +1024,7 @@ const debugItems = [
   "Door Normals",
   "Decor Points",
   "NavMesh",
+  "Vignette",
 ] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
