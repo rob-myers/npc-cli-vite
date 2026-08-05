@@ -33,6 +33,7 @@ import {
   defaultDynamicLightIntensity,
   defaultDynamicLightRadius,
   defaultRoomLightIntensity,
+  defaultVignette,
   fovStorageKey,
   maxDynamicLightRadius,
   pickOpenDoorsKey,
@@ -52,6 +53,7 @@ export function WorldMenu() {
     (): State => ({
       debugHitOpen: false,
       debugOpen: tryLocalStorageGetParsed(debugStorageKey) === true,
+      devScriptsOpen: tryLocalStorageGetParsed(devScriptsOpenStorageKey) === true,
       dragged: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
@@ -73,14 +75,18 @@ export function WorldMenu() {
       getClampedY(y: number) {
         return Math.min(state.getMaxY(), Math.max(state.minY, y));
       },
+      /** The popup is zoomed on touch devices, so its own lengths are in pre-zoom px */
+      getZoom() {
+        return w.touchDevice ? touchDeviceZoom : 1;
+      },
       getMaxMenuWidth() {
-        return Math.max(minMenuWidth, (w.rootEl?.clientWidth ?? Infinity) - 32);
+        return Math.max(minMenuWidth, ((w.rootEl?.clientWidth ?? Infinity) - 32) / state.getZoom());
       },
       getClampedMenuWidth(width: number) {
         return Math.min(state.getMaxMenuWidth(), Math.max(minMenuWidth, width));
       },
       getMaxMenuHeight() {
-        return Math.max(minMenuHeight, (w.rootEl?.clientHeight ?? Infinity) - 160);
+        return Math.max(minMenuHeight, ((w.rootEl?.clientHeight ?? Infinity) - 160) / state.getZoom());
       },
       getClampedMenuHeight(height: number) {
         return Math.min(state.getMaxMenuHeight(), Math.max(minMenuHeight, height));
@@ -100,8 +106,9 @@ export function WorldMenu() {
         state.resizing = true;
         const onMove = (ev: MouseEvent) => {
           // popup opens rightward/downward from the trigger, so dragging the corner out grows it
-          state.menuWidth = state.getClampedMenuWidth(startWidth + (ev.clientX - startX));
-          state.menuHeight = state.getClampedMenuHeight(startHeight + (ev.clientY - startY));
+          const zoom = state.getZoom();
+          state.menuWidth = state.getClampedMenuWidth(startWidth + (ev.clientX - startX) / zoom);
+          state.menuHeight = state.getClampedMenuHeight(startHeight + (ev.clientY - startY) / zoom);
           state.update();
         };
         const onUp = () => {
@@ -125,8 +132,9 @@ export function WorldMenu() {
         const onMove = (ev: TouchEvent) => {
           const t2 = ev.touches[0];
           if (t2) {
-            state.menuWidth = state.getClampedMenuWidth(startWidth + (t2.clientX - startX));
-            state.menuHeight = state.getClampedMenuHeight(startHeight + (t2.clientY - startY));
+            const zoom = state.getZoom();
+            state.menuWidth = state.getClampedMenuWidth(startWidth + (t2.clientX - startX) / zoom);
+            state.menuHeight = state.getClampedMenuHeight(startHeight + (t2.clientY - startY) / zoom);
             state.update();
           }
         };
@@ -187,8 +195,6 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
-      case "Vignette":
-        return w.view.fx?.vignette.value === 1;
       default:
         return false;
     }
@@ -242,9 +248,6 @@ export function WorldMenu() {
       case "Door Normals":
         w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
         w.view.forceUpdate();
-        break;
-      case "Vignette":
-        w.view.setFx("vignette");
         break;
       case "Decor Points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
@@ -344,7 +347,8 @@ export function WorldMenu() {
               >
                 <Menu.Popup
                   className="relative select-none bg-slate-800/70 border border-slate-700 rounded-md shadow-lg py-1"
-                  style={{ width: state.menuWidth }}
+                  // portalled, so it does not inherit the column's zoom
+                  style={{ width: state.menuWidth, zoom: w.touchDevice ? touchDeviceZoom : undefined }}
                 >
                   <div
                     className={cn(
@@ -543,6 +547,16 @@ export function WorldMenu() {
                           onClick={() => w.view.resetAllRooms()}
                         />
                       </div>
+
+                      <div className="w-20">
+                        <LightsMenuSlider
+                          label="focus"
+                          step={0.1}
+                          value={w.view.fx?.vignette.value ?? defaultVignette}
+                          defaultValue={defaultVignette}
+                          onChange={(next) => w.view.setFx("vignette", next)}
+                        />
+                      </div>
                     </div>
 
                     <div
@@ -660,7 +674,26 @@ export function WorldMenu() {
                     )}
 
                     {import.meta.env.DEV && (
-                      <div className="flex mt-2">
+                      <div
+                        className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          state.devScriptsOpen = !state.devScriptsOpen;
+                          tryLocalStorageSet(devScriptsOpenStorageKey, String(state.devScriptsOpen));
+                          state.update();
+                        }}
+                      >
+                        {state.devScriptsOpen ? (
+                          <CaretDownIcon className="size-3" />
+                        ) : (
+                          <CaretRightIcon className="size-3" />
+                        )}
+                        dev scripts
+                      </div>
+                    )}
+
+                    {import.meta.env.DEV && state.devScriptsOpen && (
+                      <div className="flex">
                         <button
                           type="button"
                           className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
@@ -718,6 +751,9 @@ export function WorldMenu() {
                   {/* drag to resize the popup — bottom-right corner, since it opens rightward/downward from the trigger */}
                   <div
                     className="absolute bottom-0 right-0 size-5 touch-none cursor-nwse-resize"
+                    // the portal still propagates React events to the draggable column, and
+                    // pointerdown precedes mouse/touch, so the drag must be stopped here
+                    onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={state.onResizeMouseDown}
                     onTouchStart={state.onResizeTouchStart}
                   >
@@ -976,6 +1012,8 @@ export type State = {
   menuOpen: boolean;
   /** Collapsible "player" section within the main menu */
   playerOpen: boolean;
+  /** Collapsible "dev scripts" section, only rendered in DEV */
+  devScriptsOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
@@ -989,6 +1027,7 @@ export type State = {
   resizing: boolean;
   getMaxY(): number;
   getClampedY(y: number): number;
+  getZoom(): number;
   getMaxMenuWidth(): number;
   getClampedMenuWidth(width: number): number;
   getMaxMenuHeight(): number;
@@ -1018,6 +1057,7 @@ const spinnerMinMs = 300;
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const playerOpenStorageKey = "world-player-section-open";
+const devScriptsOpenStorageKey = "world-dev-scripts-section-open";
 /** Long press the intro button to disable it, since a click always replays it */
 const introLongPressMs = 500;
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
@@ -1036,7 +1076,6 @@ const debugItems = [
   "Door Normals",
   "Decor Points",
   "NavMesh",
-  "Vignette",
 ] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */

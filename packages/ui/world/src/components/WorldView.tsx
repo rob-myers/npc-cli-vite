@@ -24,12 +24,14 @@ import {
   ambientIntensityKey,
   cameraModeStorageKey,
   cameraPositionStorageKey,
-  defaultCameraMode,
+  defaultCameraModeDesktop,
+  defaultCameraModeMobile,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
   defaultDesktopFov,
   defaultMobileFov,
   defaultRoomLightIntensity,
+  defaultVignette,
   fovStorageKey,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
@@ -63,7 +65,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       cameraDirections:
         tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ??
         (w.touchDevice ? defaultCardinalDirectionsMobile : defaultCardinalDirectionsDesktop),
-      cameraMode: tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ?? defaultCameraMode,
+      cameraMode:
+        tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
+        (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
@@ -101,7 +105,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
       postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
-      // each is 0 or 1, driving a `mix` so 0 is exactly identity
+      // each is 0..1, driving a `mix` so 0 is exactly identity
       fx: mapValues(fxDefaults, (value, key) =>
         uniform(tryLocalStorageGetParsed<Record<string, number>>(fxKey)?.[key] ?? value),
       ),
@@ -947,7 +951,7 @@ function PostProcessing() {
 export type FxKey = keyof typeof fxDefaults;
 
 /** Add a key here and a branch in `setupPostProcessing`, and it shows up under "debug" */
-const fxDefaults = { vignette: 1 };
+const fxDefaults = { vignette: defaultVignette };
 const fxKey = "world-fx";
 
 const tmpVect = new Vect();
