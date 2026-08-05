@@ -597,6 +597,8 @@ export default function NPCs() {
           return null; // ignore 1st stale invoke after HMR
         }
 
+        w.setNextPending({ gltf: true });
+
         // 🚧 avoid SVG load in prod
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
@@ -628,15 +630,12 @@ export default function NPCs() {
         ct.imageSmoothingEnabled = false;
         skinEntries.forEach(({ sheetId, rect }, i) => {
           ct.clearRect(0, 0, tw, th);
-
           const svgImage = skinKeyToSvgOverride[skinEntries[i].key];
-
           if (svgImage) {
             ct.drawImage(svgImage, 0, 0, tw, th);
           } else {
             ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
           }
-
           w.texSkin.updateIndex(i);
         });
         return { gltf, skinEntries, skinManifest };
@@ -673,7 +672,7 @@ export default function NPCs() {
     }
 
     state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
-    w.setNextPending({ skins: false });
+    w.setNextPending({ gltf: false, skins: false });
   }, [queryData]);
 
   w.r3fStore = useReactThreeFiberStore();

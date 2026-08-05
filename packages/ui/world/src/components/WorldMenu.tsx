@@ -447,6 +447,7 @@ export function WorldMenu() {
                         onValueChange={async (key) => {
                           if (!key || key === w.mapKey) return;
                           await w.setCanvasOpacity(0);
+                          w.e.onChangeMap(); // persist + remove whilst the old map still exists
                           uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
                         }}
                       />
@@ -672,8 +673,7 @@ export function WorldMenu() {
                             } catch (err) {
                               console.error("Failed to update obstacles:", err);
                             } finally {
-                              delete w.pending.obstacles;
-                              w.update();
+                              w.setNextPending({ obstacles: false });
                             }
                           }}
                         >

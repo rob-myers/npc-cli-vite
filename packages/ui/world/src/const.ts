@@ -81,8 +81,8 @@ export const roomLightEditingEnabledKey = "world-room-light-editing-enabled";
 export const roomLightingEnabledKey = "world-room-lighting-enabled";
 /** Prefix for the per-map lit-rooms localStorage key — actual key is `${roomLitStorageKeyPrefix}:${mapKey}` */
 export const roomLitStorageKeyPrefix = "world-room-lit";
-/** Prefix for the per-map persisted player localStorage key — actual key is `${playerStorageKeyPrefix}:${mapKey}` */
-export const playerStorageKeyPrefix = "world-player";
+/** Prefix for the per-map persisted npcs */
+export const npcsStorageKeyPrefix = "world-npcs";
 /** Persists `w.player.introEnabled` */
 export const introEnabledKey = "world-intro-enabled";
 /** Default `w.player.key` */

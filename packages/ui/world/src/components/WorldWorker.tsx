@@ -29,6 +29,9 @@ export default function WorldWorker() {
 
         if (type === "nearby" || type === "inside") {
           const door = w.door.byKey[subKey];
+          if (door === undefined) {
+            return warn(`${npcKey}: ignored collider of absent door: "${subKey}"`); // onchange map
+          }
           w.events.next({
             key: isEnter === true ? "enter-collider" : "exit-collider",
             npcKey,
@@ -37,6 +40,9 @@ export default function WorldWorker() {
           });
         } else {
           const decor = w.decor.byKey[subKey];
+          if (decor === undefined) {
+            return warn(`${npcKey}: ignored collider of absent decor: "${subKey}"`); // onchange map
+          }
           w.events.next({
             key: isEnter === true ? "enter-collider" : "exit-collider",
             npcKey,

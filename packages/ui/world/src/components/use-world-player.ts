@@ -1,14 +1,15 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { useEffect } from "react";
-import { defaultPlayerKey, defaultSkinKey, spawnPlayerAttempts } from "../const";
+import { defaultPlayerKey, spawnPlayerAttempts } from "../const";
 import * as persisted from "../service/get-persisted";
 import type { State as WorldState } from "./World";
 
 /**
- * Brings the player into a World: restores them where the previous session left
- * them (else spawns them somewhere random), and runs the "intro" i.e. pans the
- * camera onto them.
+ * The player of a World: which npc they are, where they appear on
+ * arriving at a map, and the "intro" i.e. panning the camera onto them.
+ *
+ * Their per-map position is persisted alongside every other npc — see
+ * `w.e.persistNpcs`.
  */
 export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
@@ -16,28 +17,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       introEnabled: persisted.getIntroEnabled(),
       introMapKey: null,
       key: defaultPlayerKey,
-      settled: false,
+      prevMapPosition: null,
 
-      async bootstrap() {
-        // hmr re-runs this, so the intro is per-map rather than per-call
-        const introDone = state.introMapKey === w.mapKey;
-        state.introMapKey = w.mapKey;
-
-        await state.ensure();
-
-        if (introDone === false && state.introEnabled === true) {
-          await state.panTo();
-        }
-      },
       async ensure() {
-        const saved = persisted.getPlayer(w.mapKey);
-        if (saved?.key !== undefined) {
-          state.key = saved.key; // adopt before testing existence
+        if (w.n[state.key] === undefined) {
+          // prefer continuity of position over this map's saved spot
+          (await state.restoreNearPrevMap()) || (await state.restore()) || (await state.spawnSomewhere());
         }
-
-        if (w.n[state.key] === undefined && (await state.restore(saved)) === false) {
-          await state.spawnSomewhere();
-        }
+        state.prevMapPosition = null;
 
         const npc = w.n[state.key];
         if (npc !== undefined) {
@@ -52,22 +39,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
       },
       persist() {
-        const npc = w.n[state.key];
-        if (npc === undefined) {
-          return;
-        }
-
-        const player: persisted.PersistedPlayer = {
-          key: state.key,
-          at: { x: npc.point.x, y: npc.point.y },
-          angle: npc.rotation.y,
-          skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
-          decorKey: w.e.npcToDoable[npc.key] ?? undefined,
-        };
-        persisted.setPlayer(w.mapKey, player);
+        w.e.persistNpcs();
       },
-      async restore(saved = persisted.getPlayer(w.mapKey)) {
-        if (saved === null) {
+      async restore() {
+        const saved = persisted.getNpcs(w.mapKey)?.npcs.find((x) => x.key === state.key);
+        if (saved === undefined) {
           return false;
         }
 
@@ -83,6 +59,24 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return true;
         } catch (e) {
           error(e); // e.g. no longer placable
+          return false;
+        }
+      },
+      async restoreNearPrevMap() {
+        if (state.prevMapPosition === null) {
+          return false; // on load, rather than onchange map
+        }
+
+        const result = w.npc.getClosestPoly(state.prevMapPosition, "0.5");
+        if (result.success === false) {
+          return false; // nowhere nearby is navigable
+        }
+
+        try {
+          await w.npc.spawn({ npcKey: state.key, at: result.position });
+          return true;
+        } catch (e) {
+          error(e);
           return false;
         }
       },
@@ -130,20 +124,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   );
 
   w.player = state;
-
-  // gate the initial spawn, so the player doesn't mount whilst the world is still loading
-  useEffect(() => {
-    if (state.settled === true || Object.keys(w.pending).length > 0) return;
-    const timer = setTimeout(() => state.set({ settled: true }), settledMs);
-    return () => clearTimeout(timer);
-  }, [Object.keys(w.pending).join(","), state.settled]);
-
-  useEffect(() => {
-    // decor must be ready, else the player cannot resume what they were doing
-    if (w.npc?.gltf != null && w.decor?.ready === true && w.isReady() === true && state.settled === true) {
-      void state.bootstrap();
-    }
-  }, [w.npc?.gltf, w.decor?.ready, state.settled, w.mapKey]);
 }
 
 export type State = {
@@ -151,21 +131,21 @@ export type State = {
   introEnabled: boolean;
   /** The map whose intro already ran, so hmr doesn't repeat it */
   introMapKey: null | string;
-  /** Key of the npc we consider the player — spawned on start if absent */
+  /** Key of the npc we consider the player — spawned on arrival if absent */
   key: string;
-  /** Has nothing been pending for `settledMs`? Latched, gating the initial spawn */
-  settled: boolean;
+  /** Where they stood on the previous map, set by `w.e.onChangeMap` */
+  prevMapPosition: null | Geom.VectJson;
 
-  /** Ensure the player exists, then run the intro once */
-  bootstrap(): Promise<void>;
-  /** Restores the player, else spawns them somewhere random, then tracks them */
+  /** Place the player if absent, then track them */
   ensure(): Promise<void>;
   /** Pans the camera onto the player */
   panTo(): Promise<void>;
-  /** Saves the player for `w.mapKey`, so `restore` can bring them back */
+  /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
-  /** Respawns the player saved by `persist` — `false` if there was none, or it failed */
-  restore(saved?: null | persisted.PersistedPlayer): Promise<boolean>;
+  /** Respawns the player where they were on this map — `false` if we couldn't */
+  restore(): Promise<boolean>;
+  /** Respawns the player near where they were on the previous map — `false` if we couldn't */
+  restoreNearPrevMap(): Promise<boolean>;
   /** Enabling replays the intro immediately; disabling remembers the current view */
   setIntroEnabled(next: boolean): void;
   /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
@@ -173,6 +153,3 @@ export type State = {
   /** Spawns the player in a random room — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
-
-/** How long nothing must be pending before `w.player.settled` */
-const settledMs = 500;

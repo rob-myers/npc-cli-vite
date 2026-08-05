@@ -8,6 +8,7 @@ import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/uti
 import type { RootState, RootStore } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
+import debounce from "debounce";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
@@ -112,7 +113,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       gmGraph: new GmGraph([]),
       gmRoomGraph: new GmRoomGraph(),
       nav: emptyTiledNavmeshResponse,
-      pending: {},
+      // gltf is pending from the outset, else the first map could settle without npcs
+      pending: { gltf: true },
+      settledMapKey: null,
       r3f: null as any,
       r3fStore: null as any,
 
@@ -205,7 +208,16 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const next = { ...state.pending };
         for (const [key, value] of entries(partial)) value ? (next[key] = true) : delete next[key];
         state.set({ pending: next });
+        state.mapSettled();
       },
+      /** Announce the map once its pending keys stop changing */
+      mapSettled: debounce(() => {
+        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).length > 0) {
+          return;
+        }
+        state.settledMapKey = state.mapKey;
+        state.events.next({ key: "map-settled" });
+      }, settledMs),
       setupDevAssetsSync() {
         const hot = import.meta.hot;
         if (!(import.meta.env.DEV && hot)) return () => {};
@@ -347,7 +359,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       if (state.hash === 0) {
         // first load only
-        state.e.onBootstrap();
+        state.e.onChangeTheme();
       }
 
       state.hash = hashJson(state.assets);
@@ -507,6 +519,9 @@ export type State = {
   setCanvasOpacity(opacity: number): Promise<void>;
   setDisabled(nextDisabled?: boolean): void;
   setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
+  mapSettled: () => void;
+  /** The map we last announced via "map-settled" */
+  settledMapKey: null | string;
   setupDevAssetsSync(): () => void;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
@@ -543,7 +558,10 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
   }
 });
 
-type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "nav" | "obstacles" | "skins";
+/** How long the pending keys must stop changing before "map-settled" */
+const settledMs = 500;
+
+type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins";
 
 function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
   return (
