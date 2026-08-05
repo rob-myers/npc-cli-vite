@@ -253,7 +253,7 @@ export function WorldMenu() {
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
   const toggleToastKeys = useToastTs(state.toastTs);
-  const touchMode = w.view.ctrlOpts.touchMode ?? "rotate";
+  const zoomingByTouch = w.view.controls?.touchMode === "zoom";
   const introEnabled = w.player.introEnabled;
   // click replays the intro, whereas long press disables it
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
@@ -783,20 +783,11 @@ export function WorldMenu() {
             </button>
           </div>
 
-          {/* what two fingers do; one finger always pans */}
-          {w.touchDevice === true && (
-            <button
-              type="button"
-              title={touchMode === "rotate" ? "two fingers rotate" : "two fingers zoom"}
-              className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
-              onClick={() => w.view.setTouchMode(touchMode === "rotate" ? "zoom" : "rotate")}
-            >
-              {touchMode === "rotate" ? (
-                <ArrowsClockwiseIcon className="size-5" alt="two fingers rotate" weight="bold" />
-              ) : (
-                <MagnifyingGlassIcon className="size-5" alt="two fingers zoom" weight="bold" />
-              )}
-            </button>
+          {/* two fingers rotate by default, and zoom after a long press */}
+          {zoomingByTouch === true && (
+            <div className="outline-width-1 grid place-items-center bg-gray-800 text-white pointer-events-none select-none size-9">
+              <MagnifyingGlassIcon className="size-5" alt="two fingers zoom" weight="bold" />
+            </div>
           )}
         </div>
 

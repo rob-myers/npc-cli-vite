@@ -98,7 +98,6 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       zoomSpeed={props.zoomSpeed}
       zoomToCursor={props.zoomToCursor}
       extraZoom={props.extraZoom ?? 1}
-      touchMode={props.touchMode ?? "rotate"}
     />
   );
 });
@@ -109,7 +108,6 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [numCardinalDirections]
  * @property {HTMLElement} domElement
  * @property {number} [extraZoom]
- * @property {'rotate' | 'zoom'} [touchMode] What two fingers do
  * @property {number} [initialAzimuthal]
  * @property {number} [initialPolar]
  * @property {{ x: number; y: number; z: number }} [initialPosition]
