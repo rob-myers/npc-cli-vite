@@ -17,7 +17,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { Fn, float, If, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
+import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { WorldTheme } from "../assets.schema";
 import {
@@ -432,9 +432,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.unlitScale.value = next;
         state.setPostProcessingEnabled(true);
         persist && tryLocalStorageSet(ambientIntensityKey, String(next));
-
-        state.setRoomLightingEnabled(state.ambientIntensity < 0.9);
-
         state.forceUpdate();
       },
       setCameraMode(cameraMode) {
@@ -584,32 +581,26 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
 
         const litEffect = Fn(() => {
-          // `If` rather than `select`, so at full ambient the march is genuinely skipped
-          // rather than evaluated and discarded. The condition is a uniform, so the
-          // branch is coherent across the draw
-          const dynamicLitAmount = float(0).toVar();
-          If(state.unlitScale.lessThan(1), () => {
-            dynamicLitAmount.assign(state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity));
-          });
+          const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
 
           const isBright = state.roomLight
             .litAmount(sceneDepth.r)
             // lit rooms start darkening when intensity low
             .mul(select(state.unlitScale.lessThan(0.25), state.unlitScale.div(0.25), 1))
             .mul(state.roomLightIntensity)
-            .max(dynamicLitAmount);
-          return mix(sceneColor.rgb.mul(state.unlitScale), brightColor, isBright);
-        })();
+            .max(dynamicLitAmount)
+            .toVar(); // reused by the vignette below
 
-        // cheap toggleable effects, each a no-op whilst its uniform is 0
-        const withFx = Fn(() => {
-          const color = vec3(litEffect).toVar();
-          color.assign(applyVignette(color, state.fx.vignette));
+          const color = mix(sceneColor.rgb.mul(state.unlitScale), brightColor, isBright).toVar();
+
+          // cheap toggleable effects, each a no-op whilst its uniform is 0
+          color.assign(applyVignette(color, state.fx.vignette, isBright));
+
           return color;
         })();
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = vec4(withFx, sceneColor.a);
+        pipeline.outputNode = vec4(litEffect, sceneColor.a);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;

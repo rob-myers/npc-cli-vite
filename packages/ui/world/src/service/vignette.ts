@@ -5,10 +5,18 @@ import type * as THREE from "three/webgpu";
  * Darkens `color` towards the corners of the frame.
  *
  * @param amount `0` is exactly identity, `1` fully applies it — see `w.view.fx`
+ * @param lit How lit this pixel is (room or dynamic light), which holds the darkening off
  */
-export function applyVignette(color: THREE.Node<"vec3">, amount: THREE.Node<"float">): THREE.Node<"vec3"> {
+export function applyVignette(
+  color: THREE.Node<"vec3">,
+  amount: THREE.Node<"float">,
+  lit: THREE.Node<"float">,
+): THREE.Node<"vec3"> {
   // bright within `inner`, dark beyond `outer`
-  const factor = smoothstep(vignetteInner, vignetteOuter, length(uv().sub(0.5))).oneMinus();
+  const corners = smoothstep(vignetteInner, vignetteOuter, length(uv().sub(0.5))).oneMinus();
+  // light wins: a lit pixel is darkened at most down to its own brightness, so a lamp
+  // near the edge of frame still reads rather than being crushed
+  const factor = corners.max(lit);
   return color.mul(mix(1, factor, amount));
 }
 
