@@ -70,6 +70,8 @@ export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
+/** Persists what two fingers do on touch devices */
+export const touchModeStorageKey = "world-touch-mode";
 export const cameraPositionStorageKey = "world-camera-position";
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
