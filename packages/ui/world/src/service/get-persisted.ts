@@ -1,5 +1,5 @@
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { ambientIntensityKey, defaultAmbientIntensity, introEnabledKey, playerStorageKeyPrefix } from "../const";
+import { ambientIntensityKey, defaultAmbientIntensity, introEnabledKey, npcsStorageKeyPrefix } from "../const";
 
 export const getAmbientIntensity = () =>
   tryLocalStorageGetParsed<number>(ambientIntensityKey) ?? defaultAmbientIntensity;
@@ -10,21 +10,26 @@ export const getIntroEnabled = () => tryLocalStorageGetParsed<boolean>(introEnab
 
 export const setIntroEnabled = (next: boolean) => tryLocalStorageSet(introEnabledKey, String(next));
 
-const playerKey = (mapKey: string) => `${playerStorageKeyPrefix}:${mapKey}`;
+const npcsKey = (mapKey: string) => `${npcsStorageKeyPrefix}:${mapKey}`;
 
-export const getPlayer = (mapKey: string) => tryLocalStorageGetParsed<PersistedPlayer>(playerKey(mapKey));
+export const getNpcs = (mapKey: string) => tryLocalStorageGetParsed<PersistedNpcs>(npcsKey(mapKey));
 
-export const setPlayer = (mapKey: string, player: PersistedPlayer) =>
-  tryLocalStorageSet(playerKey(mapKey), JSON.stringify(player));
+export const setNpcs = (mapKey: string, value: PersistedNpcs) =>
+  tryLocalStorageSet(npcsKey(mapKey), JSON.stringify(value));
 
-/** The player of some map, as left by the previous session */
-export type PersistedPlayer = {
-  /** Which npc was the player; absent in blobs saved before this existed */
-  key?: string;
+/** The npcs of some map, as left by the previous session */
+export type PersistedNpcs = {
+  /** Which of `npcs` was the player */
+  playerKey: string;
+  npcs: PersistedNpc[];
+};
+
+export type PersistedNpc = {
+  key: string;
   at: { x: number; y: number };
   /** Radians, CW from north viewed from above */
   angle: number;
   skinKey: string;
-  /** Set when the player was doing something e.g. sitting */
+  /** Set when the npc was doing something e.g. sitting */
   decorKey?: string;
 };

@@ -65,11 +65,6 @@
 
 - ✅ remove `packages/ui/demo`
 
-- replace `meta` by `decor` i.e. decor queries by rect
-  - `decor at:...`
-  - `decor near:...`
-  - can specify exact e.g. check obstacle outline contains
-
 - ✅ refine unreachable nav via locked door
   - ✅ do not go right up to locked door
   - ✅ more robust: fallback to centroid
@@ -82,22 +77,10 @@
   - Npc select + npc radius/lit go up-one-level, organized into "player" subsection
     - onchange select change the `w.player.key` to that npcKey and ensure dynamicLight target updated
 
-## Stability
-
-onchange map with npc close to door -- pending collider?
-
-```js
-installHook.js:1 TypeError: Cannot read properties of undefined (reading 'open')
-    at Object.toggleDoor (use-world-events.ts:614:29)
-    at Object.onNpcEvent (use-world-events.ts:364:21)
-    at onEvent (use-world-events.ts:154:24)
-    at broadcaster.js:32:47
-    at Array.forEach (<anonymous>)
-    at Broadcaster.next (broadcaster.js:32:20)
-    at Object.onTick (NPCs.tsx:397:65)
-    at Object.onTick (World.tsx:172:19)
-    at World.tsx:286:41
-```
+- replace `meta` by `decor` i.e. decor queries by rect
+  - `decor at:...`
+  - `decor near:...`
+  - can specify exact e.g. check obstacle outline contains
 
 ## Other
 

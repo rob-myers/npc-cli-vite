@@ -11,6 +11,10 @@ declare namespace JshCli {
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
     | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | {
+        /** The map's pending keys have stopped changing i.e. it is ready */
+        key: "map-settled";
+      }
     | { key: "nav-updated" }
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }

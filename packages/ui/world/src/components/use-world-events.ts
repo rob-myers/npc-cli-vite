@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
+import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import type { Npc } from "./npc";
@@ -133,17 +134,47 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       npcCanAccess(npcKey, gdKey) {
         const door = w.d[gdKey];
-        if (door.locked === false) {
-          return true;
+        if (!door || door.locked === false) {
+          return true; // absent onchange map
         }
-        if (door.open === true && state.doorToNpcs[door.gdKey].nearby.has(npcKey)) {
+        if (door.open === true && state.doorToNpcs[door.gdKey]?.nearby.has(npcKey)) {
           return true;
         }
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
-      onBootstrap() {
-        state.onChangeTheme();
+      async onBootstrapMap() {
+        const { player } = w;
+        const introDone = player.introMapKey === w.mapKey;
+        player.introMapKey = w.mapKey;
+
+        await state.restoreNpcs();
+        await player.ensure();
+
+        if (introDone === false && player.introEnabled === true) {
+          await player.panTo();
+        }
+      },
+      onChangeMap() {
+        // whilst the outgoing map still exists
+        state.persistNpcs();
+        const player = w.n[w.player.key];
+        w.player.prevMapPosition = player === undefined ? null : { ...player.point };
+
+        state.removeNpcs(...Object.keys(w.n));
+
+        state.doableToNpc = {};
+        state.doorOpen = {};
+        state.doorToNpcs = {};
+        state.externalNpcs = new Set();
+        state.npcToAccess = {};
+        state.npcToDoable = {};
+        state.npcToDoors = {};
+        state.npcToRoom = new Map();
+        state.roomToNpcs = [];
+
+        // arm "map-settled" ahead of the world query
+        w.setNextPending({ assets: true });
       },
       onChangeTheme() {
         w.obs.setBrightness(w.getTheme().obstacles.brightness);
@@ -188,7 +219,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               const gmRoomId = state.npcToRoom.get(npcKey);
               if (gmRoomId !== undefined) {
                 state.npcToRoom.delete(npcKey);
-                state.roomToNpcs[gmRoomId.gmId][gmRoomId.roomId].delete(npcKey);
+                state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npcKey);
               } else {
                 state.externalNpcs.delete(npcKey);
               }
@@ -211,6 +242,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.tryCloseDoor(e.gdKey);
             break;
           }
+          case "map-settled":
+            void state.onBootstrapMap();
+            break;
           case "disabled":
           case "door-locked":
           case "door-unlocked":
@@ -223,6 +257,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onEnterCollider(e, npc) {
+        const door = w.door.byKey[e.meta.gdKey];
+        if (!door) {
+          return; // onchange map
+        }
         if (e.type === "nearby" || e.type === "inside") {
           state.toggleDoor(e.meta.gdKey, {
             open: true,
@@ -231,7 +269,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
-        if (e.type === "nearby" && w.d[e.meta.gdKey].hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
+        if (e.type === "nearby" && door.hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
           const inside = state.npcToDoors[npc.key]?.inside ?? null;
           if (inside === null) {
             // shrink on approach
@@ -240,8 +278,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onExitCollider(e, npc) {
+        const door = w.door.byKey[e.meta.gdKey];
+        if (!door) {
+          return; // onchange map
+        }
+
         if (e.type === "inside") {
-          const door = w.door.byKey[e.meta.gdKey];
           if (door.locked === true && door.auto === true) {
             state.tryCloseDoor(e.meta.gdKey);
           }
@@ -262,7 +304,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (e.type === "nearby") {
           // try close door under conditions
-          const door = w.door.byKey[e.meta.gdKey];
           if (door.open === true) {
             if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
               state.tryCloseDoor(e.meta.gdKey);
@@ -278,7 +319,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // grow back once clear of every nearby hull door — but not while inside a threshold sensor
             // (that case grows via the "enter-room" gmId-change branch instead, see onNpcEvent)
             const inside = state.npcToDoors[npc.key]?.inside ?? null;
-            const stillNearHull = [...(state.npcToDoors[npc.key]?.nearby ?? [])].some((gdKey) => w.d[gdKey].hull);
+            const stillNearHull = [...(state.npcToDoors[npc.key]?.nearby ?? [])].some((gdKey) => w.d[gdKey]?.hull);
             if (inside === null && !stillNearHull) {
               w.view.dynamicLight.setNearHullDoor(false);
             }
@@ -287,6 +328,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onNpcEvent(e) {
         const npc = w.npc.npc[e.npcKey];
+        if (npc === undefined) {
+          return; // removing an npc fires its exit colliders afterwards
+        }
         switch (e.key) {
           case "enter-collider": {
             if (e.type === "nearby") {
@@ -304,12 +348,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "enter-room": {
             const gmRoomId = state.npcToRoom.get(npc.key);
             if (gmRoomId) {
-              state.roomToNpcs[gmRoomId.gmId][gmRoomId.roomId].delete(npc.key);
+              state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npc.key);
             } else {
               state.externalNpcs.delete(npc.key);
             }
             state.npcToRoom.set(npc.key, e.gmRoomId);
-            (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
+            if (state.roomToNpcs[e.gmRoomId.gmId]) {
+              (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
+            }
 
             if (w.view.dynamicLightTarget?.npcKey === npc.key && gmRoomId?.gmId !== e.gmRoomId.gmId) {
               state.switchTrackedNpcGm(e.gmRoomId.gmId);
@@ -320,12 +366,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "exit-collider": {
             if (e.type === "nearby") {
-              state.doorToNpcs[e.meta.gdKey].nearby?.delete(npc.key);
-              state.npcToDoors[e.npcKey].nearby?.delete(e.meta.gdKey);
+              state.doorToNpcs[e.meta.gdKey]?.nearby.delete(npc.key);
+              state.npcToDoors[e.npcKey]?.nearby.delete(e.meta.gdKey);
             }
             if (e.type === "inside") {
-              state.doorToNpcs[e.meta.gdKey].inside?.delete(npc.key);
-              state.npcToDoors[e.npcKey].inside = null;
+              state.doorToNpcs[e.meta.gdKey]?.inside.delete(npc.key);
+              if (state.npcToDoors[e.npcKey]) state.npcToDoors[e.npcKey].inside = null;
             }
 
             state.onExitCollider(e, npc);
@@ -466,6 +512,46 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           doors: gdIds.map(({ gdKey }) => gdKey),
           rooms: grIds.map(({ grKey }) => grKey),
         };
+      },
+      persistNpcs() {
+        persisted.setNpcs(w.mapKey, {
+          playerKey: w.player.key,
+          npcs: Object.values(w.n).map((npc) => ({
+            key: npc.key,
+            at: { x: npc.point.x, y: npc.point.y },
+            angle: npc.rotation.y,
+            skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
+            decorKey: state.npcToDoable[npc.key] ?? undefined,
+          })),
+        });
+      },
+      async restoreNpcs() {
+        const saved = persisted.getNpcs(w.mapKey);
+        if (saved === null) {
+          return;
+        }
+
+        // on load we adopt the player, but on map change they carry across
+        if (w.player.prevMapPosition === null) {
+          w.player.key = saved.playerKey;
+        }
+
+        for (const { key, at, angle, skinKey, decorKey } of saved.npcs) {
+          if (key === w.player.key || w.n[key] !== undefined) {
+            continue; // player is placed by `w.player.ensure`, others may already exist
+          }
+          try {
+            // the decor meta re-establishes what they were doing e.g. sitting
+            await w.npc.spawn({
+              npcKey: key,
+              at: { ...at, meta: decorKey ? w.decor.byKey[decorKey]?.meta : undefined },
+              angle,
+              as: skinKey,
+            });
+          } catch (e) {
+            warn(`${key}: could not restore`, e); // e.g. no longer placable
+          }
+        }
       },
       async recomputeNpcRoomRelationships() {
         const prevRoomToNpcs = state.roomToNpcs;
@@ -609,6 +695,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
+        if (!door) {
+          return false; // onchange map
+        }
 
         // clear if already closed and no npc colliding with "inside" collider
         opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
@@ -726,7 +815,14 @@ export type State = {
   fixInaccessibleTarget(npc: Npc): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
-  onBootstrap(): void;
+  /** Restore this map's npcs, place the player, then maybe run the intro */
+  onBootstrapMap(): Promise<void>;
+  /** Persist and remove every npc, whilst the outgoing map still exists */
+  onChangeMap(): void;
+  /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
+  persistNpcs(): void;
+  /** Respawn the npcs persisted for `w.mapKey`, excluding the player */
+  restoreNpcs(): Promise<void>;
   onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
