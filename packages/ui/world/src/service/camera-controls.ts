@@ -286,13 +286,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   /**
    * What two fingers do:
-   * - `rotate` by default — horizontal drags the azimuth, vertical the polar
-   * - `zoom` after a long two-finger press, until every finger lifts
+   * - `zoom` by default — pinch to dolly
+   * - `rotate` after a long two-finger press, until every finger lifts;
+   *   horizontal then drags the azimuth, vertical the polar
    *
    * One finger pans either way.
    */
-  touchMode: "rotate" | "zoom" = "rotate";
-  /** Pending long two-finger press, which switches into `zoom` */
+  touchMode: "rotate" | "zoom" = "zoom";
+  /** Pending long two-finger press, which switches into `rotate` */
   twoFingerTimer = 0;
   /** Where each finger went down, so a drag can cancel the long press */
   twoFingerStart: Record<number, THREE.Vector2> = {};
@@ -313,8 +314,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     );
     this.twoFingerTimer = window.setTimeout(() => {
       this.twoFingerTimer = 0;
-      this.handleTouchStartDolly(); // baseline the pinch
-      this.setTouchMode("zoom");
+      this.handleTouchStartRotate(); // baseline the rotate
+      this.setTouchMode("rotate");
     }, twoFingerLongPressMs);
   }
 
@@ -543,11 +544,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   handleTwoFingerMove(event: PointerEvent) {
     if (this.touchMode === "rotate") {
-      // dragging means they meant to rotate, rather than long press
-      if (this.twoFingerTimer !== 0 && this.movedBeyondLongPress() === true) {
-        this.clearTwoFingerTimer();
-      }
       return this.handleTouchMoveRotate(event);
+    }
+
+    // moving means they meant to pinch, rather than long press
+    if (this.twoFingerTimer !== 0 && this.movedBeyondLongPress() === true) {
+      this.clearTwoFingerTimer();
     }
 
     const other = this.getSecondPointerPosition(event);
@@ -870,7 +872,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     if (this.pointers.length === 0) {
-      this.setTouchMode("rotate"); // zoom lasts until every finger lifts
+      this.setTouchMode("zoom"); // rotate lasts until every finger lifts
       this.domElement.releasePointerCapture(event.pointerId);
       this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
       this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
@@ -931,7 +933,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
     this.rotateAxis = "none";
     this.clearTwoFingerTimer();
-    this.setTouchMode("rotate");
+    this.setTouchMode("zoom");
     this.snapAzimuth.animating = false;
     this._ez.onPointerUp();
     this.dispatchEvent(endEvent);
@@ -992,9 +994,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     } else if (this.pointers.length === 2) {
       if (this.touchMode === "rotate") {
         this.handleTouchStartRotate();
-        this.startTwoFingerTimer();
       } else {
         this.handleTouchStartDolly();
+        this.startTwoFingerTimer();
       }
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
@@ -1262,7 +1264,7 @@ const defaultDampingFactor = 0.05;
 const snapAzimuthOffset = Math.PI / 4;
 /** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
 const snapAzimuthEaseIn = 2;
-/** How long two fingers must rest before they zoom rather than rotate */
+/** How long two fingers must rest before they rotate rather than zoom */
 const twoFingerLongPressMs = 400;
 /** Drag beyond this (px) and the long press is cancelled */
 const twoFingerLongPressMove = 8;
