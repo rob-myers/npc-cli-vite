@@ -286,6 +286,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   /** Midpoint of the two fingers, whose motion rotates the camera */
   twoFingerCentroid = new THREE.Vector2();
+  /** Smoothed 0..1 measure of how much of the gesture is centroid motion, not pinch */
+  twoFingerRotateRatio = 1;
 
   get extraZoomActive() {
     return this._ez.active;
@@ -513,6 +515,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * Each has its own deadzone, else a pinch's slight centroid drift would
    * rotate, and a drag's slight spread change would zoom. Baselines only
    * advance when we act, so sub-deadzone motion accumulates rather than being lost.
+   *
+   * A deadzone alone cannot separate them, because a pinch genuinely moves the
+   * centroid — fingers rarely close symmetrically, and one stationary finger moves
+   * it by half the other's travel. So rotation is additionally faded out as the
+   * change of spread comes to dominate the drift, which reads as wobble otherwise.
    */
   handleTwoFingerMove(event: PointerEvent) {
     const other = this.getSecondPointerPosition(event);
@@ -521,19 +528,26 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const element = this.domElement;
     const cx = 0.5 * (event.pageX + other.x);
     const cy = 0.5 * (event.pageY + other.y);
-    const dx = (cx - this.twoFingerCentroid.x) * this.rotateSpeed;
-    const dy = (cy - this.twoFingerCentroid.y) * this.rotateSpeed;
+    const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
 
-    if (Math.hypot(dx, dy) > twoFingerDeadzone) {
-      this.rotateLeft((2 * Math.PI * dx) / element.clientHeight);
+    const drift = Math.hypot(cx - this.twoFingerCentroid.x, cy - this.twoFingerCentroid.y);
+    const spread = Math.abs(dist - this.u.dollyStart.y);
+    // smoothed, since per-event deltas are only a few px and too noisy to classify
+    const driftRatio = drift + spread > 0 ? drift / (drift + spread) : this.twoFingerRotateRatio;
+    this.twoFingerRotateRatio += (driftRatio - this.twoFingerRotateRatio) * twoFingerRatioSmoothing;
+    // squared, so a one-finger pinch (ratio 1/3) keeps a ninth of its rotation, not a third
+    const rotateScale = this.rotateSpeed * this.twoFingerRotateRatio ** 2;
+
+    // deadzone on the raw drift, so the baseline still advances whilst suppressed
+    if (drift * this.rotateSpeed > twoFingerDeadzone) {
+      this.rotateLeft((2 * Math.PI * (cx - this.twoFingerCentroid.x) * rotateScale) / element.clientHeight);
       if (this.params.fixedPolar !== true) {
-        this.rotateUp((2 * Math.PI * dy) / element.clientHeight);
+        this.rotateUp((2 * Math.PI * (cy - this.twoFingerCentroid.y) * rotateScale) / element.clientHeight);
       }
       this.twoFingerCentroid.set(cx, cy);
     }
 
-    const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
-    if (Math.abs(dist - this.u.dollyStart.y) > twoFingerDeadzone) {
+    if (spread > twoFingerDeadzone) {
       const ratio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
       if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
       this.dollyOut(ratio);
@@ -617,6 +631,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const y1 = p1?.y ?? this.pointers[1].pageY;
     this.u.dollyStart.set(0, Math.hypot(x0 - x1, y0 - y1));
     this.twoFingerCentroid.set(0.5 * (x0 + x1), 0.5 * (y0 + y1));
+    this.twoFingerRotateRatio = 1; // assume rotation until a pinch says otherwise
   }
 
   handleTouchStartPan() {
@@ -1205,6 +1220,8 @@ const snapAzimuthOffset = Math.PI / 4;
 const snapAzimuthEaseIn = 2;
 /** Pixels of centroid or spread change below which a two-finger motion is noise */
 const twoFingerDeadzone = 2;
+/** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
+const twoFingerRatioSmoothing = 0.25;
 
 const twoPI = 2 * Math.PI;
 
